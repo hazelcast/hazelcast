@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
 
@@ -194,6 +196,22 @@ public final class MetricNames {
     public static final String DISTRIBUTED_BYTES_OUT = "distributedBytesOut";
 
     /**
+     * {@linkplain JobStatus#getId() Numerical ID} of the job's status.
+     *
+     * @see Job#getStatus()
+     * @since 5.4
+     */
+    public static final String JOB_STATUS = "status";
+
+    /**
+     * Indicates whether the job was cancelled by the user.
+     *
+     * @see Job#isUserCancelled()
+     * @since 5.4
+     */
+    public static final String IS_USER_CANCELLED = "userCancelled";
+
+    /**
      * Number of jobs submitted to the Jet cluster.
      * <p>
      * This metric is zero on non-master members. When a master fails and a new
@@ -247,7 +265,5 @@ public final class MetricNames {
      */
     public static final String JOB_EXECUTIONS_COMPLETED = "jobs.executionCompleted";
 
-    private MetricNames() {
-    }
-
+    private MetricNames() { }
 }

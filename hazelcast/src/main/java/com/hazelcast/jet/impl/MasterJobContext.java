@@ -21,6 +21,10 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -45,7 +49,7 @@ import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
-import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
+import com.hazelcast.jet.impl.operation.GetLocalExecutionMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
@@ -63,7 +67,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -81,9 +84,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
@@ -123,6 +126,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -146,8 +150,16 @@ public class MasterJobContext {
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
     private volatile boolean verticesCompleted;
+
+    /** Execution-level metrics. Available after the job finishes. */
     @Nonnull
-    private volatile List<RawJobMetrics> jobMetrics = Collections.emptyList();
+    private volatile List<RawJobMetrics> finalExecutionMetrics = emptyList();
+
+    /** Job-level metrics. Nonnull iff metrics are enabled. */
+    private volatile RawJobMetrics jobMetrics;
+
+    private final MetricDescriptor statusMetricDescriptor;
+    private final MetricDescriptor userCancelledMetricDescriptor;
 
     /**
      * A new instance is (re)assigned when the execution is started and
@@ -181,11 +193,23 @@ public class MasterJobContext {
     private volatile TerminationRequest terminationRequest;
 
     MasterJobContext(MasterContext masterContext, ILogger logger) {
-        this.mc = masterContext;
+        mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
-        this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
+        defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
+        defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
+        MetricDescriptorImpl jobMetricDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                .withTag(MetricTags.JOB, mc.jobIdString())
+                .withTag(MetricTags.JOB_NAME, mc.jobName());
+        statusMetricDescriptor = jobMetricDescriptor.copy()
+                .withMetric(MetricNames.JOB_STATUS)
+                .withUnit(ProbeUnit.ENUM);
+        userCancelledMetricDescriptor = jobMetricDescriptor.copy()
+                .withMetric(MetricNames.IS_USER_CANCELLED)
+                .withUnit(ProbeUnit.BOOLEAN);
+
+        // Set initial status metrics
+        setJobMetrics(mc.jobStatus(), false);
     }
 
     public CompletableFuture<Void> jobCompletionFuture() {
@@ -655,7 +679,7 @@ public class MasterJobContext {
 
         // If all exceptions are of certain type, treat it as TopologyChangedException
         Map<Boolean, List<Entry<Address, Object>>> splitFailures = failures.stream()
-                .collect(Collectors.partitioningBy(
+                .collect(partitioningBy(
                         e -> e.getValue() instanceof CancellationException
                                 || e.getValue() instanceof TerminatedWithSnapshotException
                                 || isTopologyException((Throwable) e.getValue())));
@@ -686,10 +710,10 @@ public class MasterJobContext {
             error = new IllegalStateException("Job coordination failed");
         }
 
-        setJobMetrics(responses.stream()
-                .filter(en -> en.getValue() instanceof RawJobMetrics)
-                .map(e1 -> (RawJobMetrics) e1.getValue())
-                .collect(Collectors.toList()));
+        setFinalExecutionMetrics(responses.stream()
+                .filter(e -> e.getValue() instanceof RawJobMetrics)
+                .map(e -> (RawJobMetrics) e.getValue())
+                .collect(toList()));
 
         if (error instanceof JobTerminateRequestedException
                 && ((JobTerminateRequestedException) error).mode().isWithTerminalSnapshot()) {
@@ -848,10 +872,10 @@ public class MasterJobContext {
         sb.append("Execution of ").append(mc.jobIdString()).append(' ').append(conclusion);
         sb.append("\n\t").append("Start time: ").append(Util.toLocalDateTime(executionStartTime));
         sb.append("\n\t").append("Duration: ").append(formatJobDuration(completionTime - executionStartTime));
-        if (jobMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
+        if (finalExecutionMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
             sb.append("\n\tTo see additional job metrics enable JobConfig.storeMetricsAfterJobCompletion");
         } else {
-            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(this.jobMetrics);
+            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(finalExecutionMetrics);
 
             Map<String, Long> receivedCounts = mergeByVertex(jobMetrics.get(MetricNames.RECEIVED_COUNT));
             Map<String, Long> emittedCounts = mergeByVertex(jobMetrics.get(MetricNames.EMITTED_COUNT));
@@ -1000,13 +1024,72 @@ public class MasterJobContext {
         return false;
     }
 
-    List<RawJobMetrics> jobMetrics() {
-        return jobMetrics;
+    /**
+     * Returns aggregated job and execution metrics.
+     *
+     * @implNote
+     * {@linkplain JobCoordinationService#completeJob When terminal metrics are requested},
+     * job and execution metrics must have already been collected, for which there are two
+     * code paths. In both cases, the same coordinator thread follows the given flow before
+     * requesting the terminal metrics. <ol type=a>
+     * <li> If the job is not suspended before termination: <ol>
+     *      <li> {@link JobExecutionService#beginExecution0}: Collection of terminal execution
+     *           metrics is triggered.
+     *      <li> {@link #onStartExecutionComplete} → <ol type=i>
+     *           <li> {@link #setFinalExecutionMetrics}: Terminal execution metrics are saved.
+     *           <li> {@link #finalizeExecution} → {@link MasterContext#setJobStatus} →
+     *                {@link #setJobMetrics}: Terminal job metrics are saved. </ol></ol>
+     * <li> If the job is suspended before termination: <ol>
+     *      <li> Terminal execution metrics are already collected when suspending the job.
+     *      <li> {@link #requestTermination} → {@link MasterContext#setJobStatus} →
+     *           {@link #setJobMetrics}: Terminal job metrics are saved. </ol></ol>
+     *
+     * @see MasterContext#provideDynamicMetrics
+     */
+    List<RawJobMetrics> persistentMetrics() {
+        if (!mc.metricsEnabled()) {
+            return emptyList();
+        }
+        return withJobMetrics(finalExecutionMetrics);
     }
 
-    private void setJobMetrics(List<RawJobMetrics> jobMetrics) {
-        assert jobMetrics.stream().allMatch(Objects::nonNull) : "responses=" + jobMetrics;
-        this.jobMetrics = Objects.requireNonNull(jobMetrics);
+    /**
+     * Enriches execution metrics with job metrics if any.
+     */
+    @Nonnull
+    private List<RawJobMetrics> withJobMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
+        List<RawJobMetrics> metrics = new ArrayList<>(executionMetrics.size() + 1);
+        if (jobMetrics != null) {
+            // It is initialized in the constructor, but due to instruction reordering, it can be null.
+            metrics.add(jobMetrics);
+        }
+        metrics.addAll(executionMetrics);
+        return metrics;
+    }
+
+    /**
+     * Generates persistent job metrics, namely {@link MetricNames#JOB_STATUS} and
+     * {@link MetricNames#IS_USER_CANCELLED}.
+     *
+     * @see MasterContext#provideDynamicMetrics
+     */
+    void setJobMetrics(JobStatus status, boolean userRequested) {
+        if (!mc.metricsEnabled()) {
+            return;
+        }
+        MetricsCompressor compressor = new MetricsCompressor();
+        compressor.addLong(statusMetricDescriptor, status.getId());
+        boolean isUserCancelled = status == FAILED && userRequested;
+        compressor.addLong(userCancelledMetricDescriptor, isUserCancelled ? 1 : 0);
+        jobMetrics = RawJobMetrics.of(compressor.getBlobAndClose());
+    }
+
+    private void setFinalExecutionMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
+        if (!mc.metricsEnabled()) {
+            return;
+        }
+        assert executionMetrics.stream().allMatch(Objects::nonNull) : "responses=" + executionMetrics;
+        finalExecutionMetrics = executionMetrics;
     }
 
     void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {
@@ -1014,13 +1097,13 @@ public class MasterJobContext {
             long jobId = mc.jobId();
             long executionId = mc.executionId();
             mc.invokeOnParticipants(
-                    plan -> new GetLocalJobMetricsOperation(jobId, executionId),
+                    plan -> new GetLocalExecutionMetricsOperation(jobId, executionId),
                     objects -> completeWithMetrics(clientFuture, objects),
                     null,
                     false
             );
         } else {
-            clientFuture.complete(jobMetrics);
+            clientFuture.complete(persistentMetrics());
         }
     }
 
@@ -1044,7 +1127,7 @@ public class MasterJobContext {
         if (firstThrowable != null) {
             clientFuture.completeExceptionally(firstThrowable);
         } else {
-            clientFuture.complete(toList(metrics, e -> (RawJobMetrics) e.getValue()));
+            clientFuture.complete(withJobMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue())));
         }
     }
 
