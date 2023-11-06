@@ -112,7 +112,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearGlobalIndexes() {
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             return;
         }
         IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();

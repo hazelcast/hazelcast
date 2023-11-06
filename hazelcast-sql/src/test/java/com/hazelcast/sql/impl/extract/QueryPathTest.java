@@ -75,6 +75,6 @@ public class QueryPathTest extends CoreSqlTestSupport {
         assertEquals(expectedKey, path.isKey());
         assertEquals(expectedPath, path.getPath());
 
-        assertEquals(expectedPath == null, path.isTop());
+        assertEquals(expectedPath == null, path.isTopLevel());
     }
 }

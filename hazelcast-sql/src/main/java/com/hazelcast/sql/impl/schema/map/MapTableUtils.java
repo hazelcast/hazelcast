@@ -75,7 +75,7 @@ public final class MapTableUtils {
     public static List<MapTableIndex> getPartitionedMapIndexes(MapContainer mapContainer, List<TableField> fields) {
         Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
 
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             return Collections.emptyList();
         }
 

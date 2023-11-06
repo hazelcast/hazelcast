@@ -24,8 +24,8 @@ import java.nio.file.StandardCopyOption;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResourcesAsStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.is32bitJVM;
-import static com.hazelcast.internal.util.OsHelper.OS;
-import static com.hazelcast.internal.util.OsHelper.isUnixFamily;
+import static com.hazelcast.internal.tpcengine.util.OS.osName;
+import static com.hazelcast.internal.tpcengine.util.OS.isUnixFamily;
 
 /**
  * Helper class that uses JNI to check whether the JVM process has enough permission to create raw-sockets.
@@ -59,7 +59,7 @@ public final class ICMPHelper {
 
     private static String getBundledLibraryPath() {
         if (!isUnixFamily()) {
-            throw new IllegalStateException("ICMP not supported in this platform: " + OS);
+            throw new IllegalStateException("ICMP not supported in this platform: " + osName());
         }
 
         return is32bitJVM()

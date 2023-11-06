@@ -82,11 +82,13 @@ class KafkaTable extends JetTable {
     }
 
     Properties kafkaConsumerProperties() {
-        return PropertiesResolver.resolveConsumerProperties(options);
+        return PropertiesResolver.resolveConsumerProperties(options,
+                keyUpsertDescriptor.getSchema(), valueUpsertDescriptor.getSchema());
     }
 
     Properties kafkaProducerProperties() {
-        return PropertiesResolver.resolveProducerProperties(options);
+        return PropertiesResolver.resolveProducerProperties(options,
+                keyUpsertDescriptor.getSchema(), valueUpsertDescriptor.getSchema());
     }
 
     QueryTargetDescriptor keyQueryDescriptor() {

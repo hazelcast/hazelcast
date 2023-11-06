@@ -144,7 +144,7 @@ public class MapChunkContext {
     public final MapIndexInfo createMapIndexInfo() {
         MapContainer mapContainer = recordStore.getMapContainer();
         Set<IndexConfig> indexConfigs = new HashSet<>();
-        if (mapContainer.isGlobalIndexEnabled()) {
+        if (mapContainer.shouldUseGlobalIndex()) {
             // global-index
             final IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
             for (Index index : indexRegistry.getIndexes()) {

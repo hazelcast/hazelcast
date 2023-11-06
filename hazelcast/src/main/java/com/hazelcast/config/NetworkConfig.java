@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.tpc.TpcConfig;
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -79,8 +79,7 @@ public class NetworkConfig {
     private TpcSocketConfig tpcSocketConfig = new TpcSocketConfig();
 
     public NetworkConfig() {
-        String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
-        reuseAddress = (!os.contains("win"));
+        reuseAddress = !OS.isWindows();
     }
 
     /**

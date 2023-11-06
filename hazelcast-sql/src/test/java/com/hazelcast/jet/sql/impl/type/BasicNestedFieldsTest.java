@@ -18,10 +18,11 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -44,9 +45,15 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.createCompactMapping;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
-import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
@@ -77,16 +84,57 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         return useClient ? client() : instance();
     }
 
+    static void createJavaMapping(HazelcastInstance instance, String name, Class<?> valueClass, String... valueFields) {
+        new SqlMapping(name, IMapSqlConnector.class)
+                .fields("__key BIGINT")
+                .fields(valueFields)
+                // com.hazelcast.jet.sql.impl.connector.keyvalue.JavaClassNameResolver.CLASS_NAMES_BY_FORMAT
+                .options(OPTION_KEY_FORMAT, "bigint",
+                         OPTION_VALUE_FORMAT, JAVA_FORMAT,
+                         OPTION_VALUE_CLASS, valueClass.getName())
+                .create(instance);
+    }
+
+    private void createJavaMapping(String name, Class<?> valueClass, String... valueFields) {
+        createJavaMapping(testInstance(), name, valueClass, valueFields);
+    }
+
+    private void createType(String name, String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .create(testInstance());
+    }
+
+    private SqlResult execute(String sql, Object... args) {
+        return testInstance().getSql().execute(sql, args);
+    }
+
+    private User initDefault() {
+        createType("UserType", "id BIGINT", "name VARCHAR", "organization OrganizationType");
+        createType("OrganizationType", "id BIGINT", "name VARCHAR", "office OfficeType");
+        createType("OfficeType", "id BIGINT", "name VARCHAR");
+
+        final IMap<Long, User> testMap = testInstance().getMap("test");
+        createJavaMapping("test", User.class, "this UserType");
+
+        final Office office = new Office(3L, "office1");
+        final Organization organization = new Organization(2L, "organization1", office);
+        final User user = new User(1L, "user1", organization);
+        testMap.put(1L, user);
+
+        return user;
+    }
+
     @Test
     public void test_simpleNestedColumnSelect() {
         initDefault();
-
         final String sql = "SELECT "
                 + "test.this.name AS user_name, "
                 + "test.this.organization.name AS org_name, "
                 + "test.this.organization.office.name AS office_name, "
                 + "test.this.organization.office.id AS office_id "
                 + "FROM test";
+
         assertRowsAnyOrder(testInstance(), sql, rows(4, "user1", "organization1", "office1", 3L));
     }
 
@@ -95,8 +143,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         initDefault();
         final String sql = "SELECT "
                 + "ABS((this).id) * 2 AS C1, "
-                + "FLOOR(CAST(((this).organization).id AS REAL) * 5.0 / 2.0) AS c2"
-                + " FROM test";
+                + "FLOOR(CAST(((this).organization).id AS REAL) * 5.0 / 2.0) AS c2 "
+                + "FROM test";
+
         assertRowsAnyOrder(testInstance(), sql, rows(2, 2L, 5.0f));
     }
 
@@ -110,7 +159,8 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "test.this.organization, "
                 + "test.this.organization.office "
                 + "FROM test";
-        SqlResult res = testInstance().getSql().execute(sql);
+
+        SqlResult res = execute(sql);
         assertEquals(OBJECT, res.getRowMetadata().getColumn(0).getType());
         assertRowsAnyOrder(testInstance(), sql, rows(2, organization, office));
     }
@@ -133,12 +183,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_fullInsert() {
         initDefault();
-        execute("CREATE OR REPLACE MAPPING test (__key BIGINT, this UserType) TYPE IMap OPTIONS ("
-                + "'keyFormat'='bigint',"
-                + "'valueFormat'='java',"
-                + format("'valueJavaClass'='%s'", User.class.getName())
-                + ")");
-
         final Office office = new Office(5L, "office2");
         final Organization organization = new Organization(4L, "organization2", office);
         final User user = new User(2L, "user1", organization);
@@ -146,24 +190,25 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         execute("INSERT INTO test (__key, this) VALUES (?, ?)",
                 2L, new User(2L, "user2", user.organization));
 
-        assertRowsAnyOrder(testInstance(), "SELECT test.this.organization, test.this.organization.office FROM test WHERE __key = 2",
+        assertRowsAnyOrder(testInstance(),
+                "SELECT test.this.organization, test.this.organization.office FROM test WHERE __key = 2",
                 rows(2, organization, office));
     }
 
     @Test
     public void test_update() {
         final User oldUser = initDefault();
-
         final User newUser = new User(1L, "new-name", oldUser.organization);
 
         execute("UPDATE test SET this = ? WHERE __key = 1", newUser);
-        assertRowsAnyOrder(testInstance(), "SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
+        assertRowsAnyOrder(testInstance(),
+                "SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
                 rows(3, 1L, "new-name", oldUser.organization));
     }
 
     @Test
     public void test_selfRefType() {
-        createJavaType("SelfRefType", SelfRef.class, "id BIGINT", "other SelfRefType");
+        createType("SelfRefType", "id BIGINT", "name VARCHAR", "other SelfRefType");
 
         final SelfRef first = new SelfRef(1L, "first");
         final SelfRef second = new SelfRef(2L, "second");
@@ -175,7 +220,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         third.other = fourth;
         fourth.other = first;
 
-        createJavaMapping("test", SelfRef.class,  "this SelfRefType");
+        createJavaMapping("test", SelfRef.class, "this SelfRefType");
         testInstance().getMap("test").put(1L, first);
 
         assertRowsAnyOrder(testInstance(), "SELECT "
@@ -196,9 +241,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_circularlyRecurrentTypes() {
-        createJavaType("AType", A.class, "name VARCHAR", "b BType");
-        createJavaType("BType", B.class, "name VARCHAR", "c CType");
-        createJavaType("CType", C.class, "name VARCHAR", "a AType");
+        createType("AType", "name VARCHAR", "b BType");
+        createType("BType", "name VARCHAR", "c CType");
+        createType("CType", "name VARCHAR", "a AType");
 
         final A a = new A("a");
         final B b = new B("b");
@@ -218,8 +263,8 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_deepInsert() {
         initDefault();
-        execute("INSERT INTO test VALUES (2, " +
-                "(2, 'user2', (2, 'organization2', (2, 'office2'))))");
+        execute("INSERT INTO test VALUES (2, (2, 'user2', (2, 'organization2', (2, 'office2'))))");
+
         assertRowsAnyOrder(testInstance(), "SELECT "
                         + "test.this.name, "
                         + "test.this.organization.name, "
@@ -249,43 +294,39 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_mixedModeQuerying() {
-        createType("NestedType", NestedPOJO.class);
+        createType("NestedType");
         createJavaMapping("test", RegularPOJO.class, "name VARCHAR", "child NestedType");
 
         testInstance().getMap("test")
                 .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
 
-        assertRowsAnyOrder(testInstance(), "SELECT name, (child).name FROM test", rows(2,
-                "parentPojo",
-                "childPojo"
-        ));
+        assertRowsAnyOrder(testInstance(), "SELECT name, (child).name FROM test",
+                rows(2, "parentPojo", "childPojo"));
 
-        assertRowsAnyOrder(testInstance(), "SELECT child FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
+        assertRowsAnyOrder(testInstance(), "SELECT child FROM test",
+                rows(1, new NestedPOJO(1L, "childPojo")));
     }
 
     @Test
     public void test_mixedModeAliasQuerying() {
-        createType("NestedType", NestedPOJO.class);
-        execute(format("CREATE MAPPING test ("
-                + "__key BIGINT,"
-                + "parentName VARCHAR EXTERNAL NAME \"name\","
-                + "childObj NestedType EXTERNAL NAME \"child\""
-                + ")"
-                + "TYPE IMap "
-                + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='java', 'valueJavaClass'='%s')", RegularPOJO.class.getName()));
+        createType("NestedType");
+        createJavaMapping("test", RegularPOJO.class,
+                "parentName VARCHAR EXTERNAL NAME \"name\"",
+                "childObj NestedType EXTERNAL NAME \"child\"");
 
         testInstance().getMap("test")
                 .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
 
-        assertRowsAnyOrder(testInstance(), "SELECT parentName, (childObj).name FROM (SELECT * FROM test)", rows(2,
-                "parentPojo", "childPojo"
-        ));
-        assertRowsAnyOrder(testInstance(), "SELECT childObj FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
+        assertRowsAnyOrder(testInstance(), "SELECT parentName, (childObj).name FROM (SELECT * FROM test)",
+                rows(2, "parentPojo", "childPojo"));
+
+        assertRowsAnyOrder(testInstance(), "SELECT childObj FROM test",
+                rows(1, new NestedPOJO(1L, "childPojo")));
     }
 
     @Test
     public void test_mixedModeUpsert() {
-        createType("NestedType", NestedPOJO.class);
+        createType("NestedType");
         createJavaMapping("test", RegularPOJO.class, "name VARCHAR", "child NestedType");
 
         execute("INSERT INTO test (__key, name, child) "
@@ -300,7 +341,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_typeCoercionUpserts() {
-        createType("AllTypesValue", AllTypesValue.class);
+        createType("AllTypesValue");
         createJavaMapping("test", AllTypesParent.class, "name VARCHAR", "child AllTypesValue");
 
         final String allTypesValueRowLiteral = "("
@@ -327,8 +368,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "'1970-01-01T00:00:00Z'"
                 + ")";
 
-        execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', "
-                + allTypesValueRowLiteral + ")");
+        execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', " + allTypesValueRowLiteral + ")");
 
         assertRowsAnyOrder(testInstance(), "SELECT "
                 + "test.child.bigDecimal,"
@@ -383,9 +423,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_compoundAliases() {
         initDefault();
-        assertRowsAnyOrder(testInstance(), "SELECT ((org).office).name FROM " +
-                        "(SELECT (this).organization as org FROM (SELECT * FROM test))",
+
+        assertRowsAnyOrder(testInstance(),
+                "SELECT ((org).office).name FROM (SELECT (this).organization as org FROM (SELECT * FROM test))",
                 rows(1, "office1"));
+
         assertRowsAnyOrder(testInstance(), "SELECT (((this).organization).office).name FROM (SELECT * FROM test)",
                 rows(1, "office1"));
     }
@@ -393,6 +435,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_newDotOperatorSyntax() {
         initDefault();
+
         assertRowsAnyOrder(testInstance(), "SELECT (((this).organization).office).name FROM test",
                 rows(1, "office1"));
     }
@@ -400,15 +443,12 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_joins() {
         initDefault();
-        execute("CREATE MAPPING test2 (__key BIGINT, this UserType) "
-                + "TYPE IMap OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='java', "
-                + "'valueJavaClass'='" + User.class.getName() + "')");
+        createJavaMapping("test2", User.class, "this UserType");
 
         execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
-        assertRowsAnyOrder(testInstance(), "SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
+        assertRowsAnyOrder(testInstance(),
+                "SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
                         + "FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key",
                 rows(2, "office1", "office2"));
 
@@ -420,8 +460,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                         + "FROM (SELECT t2.this FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
                 rows(1, "office2"));
 
-        assertRowsAnyOrder(testInstance(), "SELECT (((this1).organization).office).name, (((this2).organization).office).name "
-                        + "FROM (SELECT t1.this as this1, t2.this AS this2 FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
+        assertRowsAnyOrder(testInstance(),
+                "SELECT (((this1).organization).office).name, (((this2).organization).office).name "
+                        + "FROM (SELECT t1.this as this1, t2.this AS this2 "
+                        + "      FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
                 rows(2, "office1", "office2"));
     }
 
@@ -431,7 +473,8 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         createJavaMapping("test2", User.class, "this UserType");
         execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
-        assertRowsAnyOrder(testInstance(), "SELECT t1.this.organization.office.name, t2.this.organization.office.name "
+        assertRowsAnyOrder(testInstance(),
+                "SELECT t1.this.organization.office.name, t2.this.organization.office.name "
                         + "FROM test AS t1 JOIN test2 AS t2 "
                         + "ON ABS(t1.this.id) = t2.this.id AND t1.this.id = t2.this.id",
                 rows(2, "office1", "office2"));
@@ -440,120 +483,54 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_missingType() {
         // we create UserType, that has OrganizationType field, but we don't create OrganizationType
-        testInstance().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
+        createType("UserType", "id BIGINT", "name VARCHAR", "organization OrganizationType");
 
-        assertThatThrownBy(() -> execute("CREATE MAPPING test (__key BIGINT, this UserType) "
-                + "TYPE IMap OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='java', "
-                + "'valueJavaClass'='" + User.class.getName() + "')"))
-                .hasMessage("Encountered type 'OrganizationType', which doesn't exist")
-                .isInstanceOf(HazelcastSqlException.class);
+        assertThatThrownBy(() -> createJavaMapping("test", User.class, "this UserType"))
+                .hasMessage("Encountered type 'OrganizationType', which doesn't exist");
     }
 
     @Test
     public void test_nullValueInRow() {
-        instance().getSql().execute("CREATE TYPE Office ("
-                + "id BIGINT, "
-                + "name VARCHAR "
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
+        createType("Office", "id BIGINT", "name VARCHAR");
+        createType("Organization", "id BIGINT", "name VARCHAR", "office Office");
 
-        instance().getSql().execute("CREATE TYPE Organization ("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "office Office"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
+        createCompactMapping(testInstance(), "test", "UserCompactType", "organization Organization");
 
-        instance().getSql().execute(
-                "CREATE MAPPING test ("
-                        + "__key BIGINT,"
-                        + "organization Organization"
-                        + ")"
-                        + "TYPE IMap "
-                        + "OPTIONS ("
-                        + "'keyFormat'='bigint',"
-                        + "'valueFormat'='compact',"
-                        + "'valueCompactTypeName'='UserCompactType'"
-                        + ")");
-
-        instance().getSql().execute("INSERT INTO test VALUES (1, (2, 'orgName', null))");
+        execute("INSERT INTO test VALUES (1, (2, 'orgName', null))");
         assertRowsAnyOrder("SELECT (organization).office FROM test", rows(1, new Object[]{null}));
     }
 
-    private User initDefault() {
-        testInstance().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
-        testInstance().getSql().execute(format("CREATE TYPE OrganizationType (id BIGINT, name VARCHAR, office OfficeType) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", Organization.class.getName()));
-        testInstance().getSql().execute(format("CREATE TYPE OfficeType (id BIGINT, name VARCHAR) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", Office.class.getName()));
-        final IMap<Long, User> testMap = testInstance().getMap("test");
-        execute("CREATE MAPPING test (__key BIGINT, this UserType) "
-                + "TYPE IMap OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='java', "
-                + "'valueJavaClass'='" + User.class.getName() + "')");
+    @Test
+    public void test_customOptions() {
+        new SqlType("Organization")
+                .fields("name VARCHAR", "governmentFunded BOOLEAN")
+                .options(OPTION_TYPE_JAVA_CLASS, NonprofitOrganization.class.getName(),
+                         OPTION_TYPE_COMPACT_TYPE_NAME, "NonprofitOrganization")
+                .create(testInstance());
 
-        final Office office = new Office(3L, "office1");
-        final Organization organization = new Organization(2L, "organization1", office);
-        final User user = new User(1L, "user1", organization);
-        testMap.put(1L, user);
+        createJavaMapping("Users", User.class, "name VARCHAR", "organization Organization");
 
-        return user;
-    }
+        execute("INSERT INTO Users VALUES (1, 'Alice', ('Doctors Without Borders', true))");
+        assertRowsAnyOrder("SELECT name, (organization).name, (organization).governmentFunded FROM Users",
+                rows(3, "Alice", "Doctors Without Borders", true));
 
-    private void createJavaType(String name, Class<?> typeClass, String... columns) {
-        createJavaType(testInstance(), name, typeClass, columns);
-    }
+        createCompactMapping(testInstance(), "Users2", "Users", "name VARCHAR", "organization Organization");
 
-    static void createJavaType(HazelcastInstance inst, String name, Class<?> typeClass, String... columns) {
-        final String sql = "CREATE TYPE " + name
-                + "(" + String.join(",", columns) + ")"
-                + "OPTIONS ("
-                + "'format'='java',"
-                + format("'javaClass'='%s'", typeClass.getName())
-                + ")";
-
-        execute(inst, sql);
-    }
-
-    private void createJavaMapping(String name, Class<?> javaClass, String... columns) {
-        createJavaMapping(testInstance(), name, javaClass, columns);
-    }
-
-    static void createJavaMapping(HazelcastInstance inst, String name, Class<?> javaClass, String... columns) {
-        final String sql = "CREATE MAPPING " + name
-                + "("
-                + "__key BIGINT,"
-                + String.join(",", columns) +
-                ")"
-                + " TYPE IMap "
-                + "OPTIONS ("
-                + "'keyFormat'='bigint',"
-                + "'valueFormat'='java',"
-                + format("'valueJavaClass'='%s'", javaClass.getName())
-                + ")";
-
-        execute(inst, sql);
-    }
-
-    void execute(String sql, Object... args) {
-        execute(testInstance(), sql, args);
-    }
-
-    static void execute(HazelcastInstance inst, String sql, Object... args) {
-        inst.getSql().execute(sql, args);
+        execute("INSERT INTO Users2 VALUES (1, 'Alice', ('Doctors Without Borders', true))");
+        SqlResult result = execute("SELECT this FROM Users2");
+        DeserializedGenericRecord record = result.iterator().next().getObject(0);
+        assertEquals("Users", record.getSchema().getTypeName());
+        assertEquals("NonprofitOrganization",
+                ((DeserializedGenericRecord) record.getObject("organization")).getSchema().getTypeName());
     }
 
     public static class A implements Serializable {
         public String name;
         public B b;
 
-        public A() {
-        }
+        public A() { }
 
-        public A(final String name) {
+        public A(String name) {
             this.name = name;
         }
     }
@@ -562,10 +539,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         public String name;
         public C c;
 
-        public B() {
-        }
+        public B() { }
 
-        public B(final String name) {
+        public B(String name) {
             this.name = name;
         }
     }
@@ -574,10 +550,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         public String name;
         public A a;
 
-        public C() {
-        }
+        public C() { }
 
-        public C(final String name) {
+        public C(String name) {
             this.name = name;
         }
     }
@@ -587,10 +562,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         public String name;
         public SelfRef other;
 
-        public SelfRef() {
-        }
+        @SuppressWarnings("unused")
+        public SelfRef() { }
 
-        public SelfRef(final Long id, final String name) {
+        public SelfRef(Long id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -601,10 +576,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         private String name;
         private Organization organization;
 
-        public User() {
-        }
+        public User() { }
 
-        public User(final Long id, final String name, final Organization organization) {
+        public User(Long id, String name, Organization organization) {
             this.id = id;
             this.name = name;
             this.organization = organization;
@@ -614,7 +588,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -622,7 +596,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -630,19 +604,20 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return organization;
         }
 
-        public void setOrganization(final Organization organization) {
+        @SuppressWarnings("unused")
+        public void setOrganization(Organization organization) {
             this.organization = organization;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final User user = (User) o;
+            User user = (User) o;
             return Objects.equals(id, user.id)
                     && Objects.equals(name, user.name)
                     && Objects.equals(organization, user.organization);
@@ -664,14 +639,13 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     }
 
     public static class Organization implements Serializable, Comparable<Organization> {
-        private Long id;
-        private String name;
-        private Office office;
+        protected Long id;
+        protected String name;
+        protected Office office;
 
-        public Organization() {
-        }
+        public Organization() { }
 
-        public Organization(final Long id, final String name, final Office office) {
+        public Organization(Long id, String name, Office office) {
             this.id = id;
             this.name = name;
             this.office = office;
@@ -681,7 +655,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -689,7 +663,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -697,19 +671,20 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return office;
         }
 
-        public void setOffice(final Office office) {
+        @SuppressWarnings("unused")
+        public void setOffice(Office office) {
             this.office = office;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final Organization that = (Organization) o;
+            Organization that = (Organization) o;
             return Objects.equals(id, that.id)
                     && Objects.equals(name, that.name)
                     && Objects.equals(office, that.office);
@@ -735,14 +710,59 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         }
     }
 
+    @SuppressWarnings("unused")
+    public static class NonprofitOrganization extends Organization {
+        private Boolean governmentFunded;
+
+        public NonprofitOrganization() { }
+
+        public Boolean isGovernmentFunded() {
+            return governmentFunded;
+        }
+
+        public void setGovernmentFunded(Boolean governmentFunded) {
+            this.governmentFunded = governmentFunded;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            NonprofitOrganization that = (NonprofitOrganization) o;
+            return Objects.equals(id, that.id)
+                    && Objects.equals(name, that.name)
+                    && Objects.equals(office, that.office)
+                    && Objects.equals(governmentFunded, that.governmentFunded);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, name, office, governmentFunded);
+        }
+
+        @Override
+        public String toString() {
+            return "Organization{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", office=" + office +
+                    ", governmentFunded=" + governmentFunded +
+                    '}';
+        }
+    }
+
     public static class Office implements Serializable, Comparable<Office> {
         private Long id;
         private String name;
 
-        public Office() {
-        }
+        @SuppressWarnings("unused")
+        public Office() { }
 
-        public Office(final Long id, final String name) {
+        public Office(Long id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -751,7 +771,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -759,19 +779,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final Office office = (Office) o;
+            Office office = (Office) o;
             return Objects.equals(id, office.id) && Objects.equals(name, office.name);
         }
 
@@ -798,10 +818,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         private String name;
         private NestedPOJO child;
 
-        public RegularPOJO() {
-        }
+        @SuppressWarnings("unused")
+        public RegularPOJO() { }
 
-        public RegularPOJO(final String name, final NestedPOJO child) {
+        public RegularPOJO(String name, NestedPOJO child) {
             this.name = name;
             this.child = child;
         }
@@ -810,7 +830,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -818,21 +838,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return child;
         }
 
-        public void setChild(final NestedPOJO child) {
+        public void setChild(NestedPOJO child) {
             this.child = child;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
-
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-
-            final RegularPOJO that = (RegularPOJO) o;
+            RegularPOJO that = (RegularPOJO) o;
             return Objects.equals(name, that.name) && Objects.equals(child, that.child);
         }
 
@@ -846,10 +864,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         private Long id;
         private String name;
 
-        public NestedPOJO() {
-        }
+        @SuppressWarnings("unused")
+        public NestedPOJO() { }
 
-        public NestedPOJO(final Long id, final String name) {
+        public NestedPOJO(Long id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -858,7 +876,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -866,21 +884,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
-
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-
-            final NestedPOJO that = (NestedPOJO) o;
+            NestedPOJO that = (NestedPOJO) o;
             return Objects.equals(id, that.id) && Objects.equals(name, that.name);
         }
 
@@ -894,19 +910,14 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         private String name;
         private AllTypesValue child;
 
-        public AllTypesParent() {
-        }
-
-        public AllTypesParent(final String name, final AllTypesValue child) {
-            this.name = name;
-            this.child = child;
-        }
+        @SuppressWarnings("unused")
+        public AllTypesParent() { }
 
         public String getName() {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -914,19 +925,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return child;
         }
 
-        public void setChild(final AllTypesValue child) {
+        public void setChild(AllTypesValue child) {
             this.child = child;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final AllTypesParent that = (AllTypesParent) o;
+            AllTypesParent that = (AllTypesParent) o;
             return Objects.equals(name, that.name) && Objects.equals(child, that.child);
         }
 

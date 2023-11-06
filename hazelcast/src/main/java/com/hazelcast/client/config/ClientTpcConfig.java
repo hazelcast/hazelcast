@@ -35,7 +35,8 @@ import java.util.Objects;
 @Beta
 public final class ClientTpcConfig {
 
-    private boolean enabled;
+    private boolean enabled = Boolean.parseBoolean(
+            System.getProperty("hazelcast.client.tpc.enabled", "false"));
 
     public ClientTpcConfig() {
     }

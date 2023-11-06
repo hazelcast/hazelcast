@@ -42,6 +42,11 @@ public final class AvroUpsertTargetDescriptor implements UpsertTargetDescriptor 
     }
 
     @Override
+    public Schema getSchema() {
+        return schema;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         if (serializedSchema == null) {
             serializedSchema = schema.toString();

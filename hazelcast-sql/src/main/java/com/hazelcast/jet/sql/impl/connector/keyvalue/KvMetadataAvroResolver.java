@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.QueryException;
@@ -30,7 +29,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.SchemaBuilder.FieldAssembler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.reduce;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
@@ -46,10 +45,16 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.avro.Schema.Type.NULL;
+import static org.apache.avro.Schema.Type.RECORD;
+import static org.apache.avro.Schema.Type.UNION;
 
 public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
@@ -73,13 +78,11 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 .and().stringType()
                 .endUnion();
 
-        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS =
-                CONVERSION_PREFS.entrySet().stream()
-                        .collect(ImmutableMap::<QueryDataTypeFamily, List<Schema.Type>>builder,
-                                 (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue()),
-                                 ExceptionUtil::combinerUnsupported)
-                        .put(QueryDataTypeFamily.OBJECT, List.of(Schema.Type.UNION, Schema.Type.NULL))
-                        .build();
+        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS = reduce(
+                ImmutableMap.<QueryDataTypeFamily, List<Schema.Type>>builder(),
+                CONVERSION_PREFS.entrySet().stream(),
+                (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue())
+        ).build();
     }
 
     private KvMetadataAvroResolver() { }
@@ -99,19 +102,19 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for Avro format");
         }
-        String inlineSchema = options.get(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA);
-        if (inlineSchema != null && options.containsKey("schema.registry.url")) {
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+
+        Schema schema = getSchema(fieldsByPath, options, isKey);
+        if (schema != null && options.containsKey("schema.registry.url")) {
             throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
         }
-        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
         for (QueryPath path : fieldsByPath.keySet()) {
-            if (path.getPath() == null) {
+            if (path.isTopLevel()) {
                 throw QueryException.error("Cannot use the '" + path + "' field with Avro serialization");
             }
         }
-        if (inlineSchema != null) {
-            Schema schema = new Schema.Parser().parse(inlineSchema);
-            validate(schema, fieldsByPath);
+        if (schema != null) {
+            validate(schema, getFields(fieldsByPath).collect(toList()));
         }
         return fieldsByPath.values().stream();
     }
@@ -135,14 +138,11 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
-        Schema schema;
-        String inlineSchema = options.get(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA);
-        if (inlineSchema != null) {
-            schema = new Schema.Parser().parse(inlineSchema);
-        } else {
+        Schema schema = getSchema(fieldsByPath, options, isKey);
+        if (schema == null) {
             String recordName = options.getOrDefault(
                     isKey ? OPTION_KEY_AVRO_RECORD_NAME : OPTION_VALUE_AVRO_RECORD_NAME, "jet.sql");
-            schema = resolveSchema(recordName, fields);
+            schema = resolveSchema(recordName, getFields(fieldsByPath));
         }
         return new KvMetadata(
                 fields,
@@ -152,66 +152,61 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
     }
 
     // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
-    private static Schema resolveSchema(String recordName, List<TableField> fields) {
-        FieldAssembler<Schema> schema = SchemaBuilder.record(recordName).fields();
-        for (TableField field : fields) {
-            String path = ((MapTableField) field).getPath().getPath();
-            if (path == null) {
-                continue;
-            }
-            switch (field.getType().getTypeFamily()) {
+    private static Schema resolveSchema(String recordName, Stream<Field> fields) {
+        return reduce(SchemaBuilder.record(recordName).fields(), fields, (schema, field) -> {
+            switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
-                    schema = schema.optionalBoolean(path);
-                    break;
+                    return schema.optionalBoolean(field.name());
                 case TINYINT:
                 case SMALLINT:
                 case INTEGER:
-                    schema = schema.optionalInt(path);
-                    break;
+                    return schema.optionalInt(field.name());
                 case BIGINT:
-                    schema = schema.optionalLong(path);
-                    break;
+                    return schema.optionalLong(field.name());
                 case REAL:
-                    schema = schema.optionalFloat(path);
-                    break;
+                    return schema.optionalFloat(field.name());
                 case DOUBLE:
-                    schema = schema.optionalDouble(path);
-                    break;
+                    return schema.optionalDouble(field.name());
                 case DECIMAL:
                 case TIME:
                 case DATE:
                 case TIMESTAMP:
                 case TIMESTAMP_WITH_TIME_ZONE:
                 case VARCHAR:
-                    schema = schema.optionalString(path);
-                    break;
+                    return schema.optionalString(field.name());
                 case OBJECT:
-                    schema = schema.name(path).type(Schemas.OBJECT_SCHEMA).withDefault(null);
-                    break;
+                    Schema fieldSchema = field.type().isCustomType()
+                            ? resolveSchema(field.type().getObjectTypeName(),
+                                    field.type().getObjectFields().stream().map(Field::new))
+                            : Schemas.OBJECT_SCHEMA;
+                    return schema.name(field.name()).type(optional(fieldSchema)).withDefault(null);
                 default:
-                    throw new IllegalArgumentException("Unsupported type: " + field.getType());
+                    throw new IllegalArgumentException("Unsupported type: " + field.type());
             }
-        }
-        return schema.endRecord();
+        }).endRecord();
     }
 
-    private static void validate(Schema schema, Map<QueryPath, MappingField> fieldsByPath) {
-        if (schema.getType() != Schema.Type.RECORD) {
+    private static void validate(Schema schema, List<Field> fields) {
+        if (schema.getType() != RECORD) {
             throw new IllegalArgumentException("Schema must be an Avro record");
         }
-        Set<String> mappingFields = fieldsByPath.keySet().stream().map(QueryPath::getPath).collect(toSet());
+        Set<String> mappingFields = fields.stream().map(Field::name).collect(toSet());
         for (Schema.Field schemaField : schema.getFields()) {
-            if (!schemaField.schema().isNullable() && !mappingFields.contains(schemaField.name())) {
+            if (!schemaField.hasDefaultValue() && !mappingFields.contains(schemaField.name())) {
                 throw new IllegalArgumentException("Mandatory field '" + schemaField.name()
                         + "' is not mapped to any column");
             }
         }
-        for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
-            String path = entry.getKey().getPath();
-            QueryDataType mappingFieldType = entry.getValue().type();
+        for (Field field : fields) {
+            String path = field.name();
+            QueryDataType mappingFieldType = field.type();
             QueryDataTypeFamily mappingFieldTypeFamily = mappingFieldType.getTypeFamily();
 
-            List<Schema.Type> conversions = Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
+            List<Schema.Type> conversions = mappingFieldTypeFamily == QueryDataTypeFamily.OBJECT
+                    ? mappingFieldType.isCustomType()
+                            ? List.of(RECORD)  // Unwrapped, so does not include NULL
+                            : List.of(UNION, NULL)  // Ordinary OBJECT can be mapped to NULL
+                    : Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
             if (conversions == null) {
                 throw new IllegalArgumentException("Unsupported type: " + mappingFieldType);
             }
@@ -221,11 +216,45 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 throw new IllegalArgumentException("Field '" + path + "' does not exist in schema");
             }
 
-            Schema.Type schemaFieldType = unwrapNullableType(schemaField.schema()).getType();
+            Schema fieldSchema = unwrapNullableType(schemaField.schema());
+            Schema.Type schemaFieldType = fieldSchema.getType();
             if (!conversions.contains(schemaFieldType)) {
                 throw new IllegalArgumentException(schemaFieldType + " schema type is incompatible with "
                         + mappingFieldType + " mapping type");
             }
+
+            if (mappingFieldType.isCustomType()) {
+                validate(fieldSchema, mappingFieldType.getObjectFields().stream().map(Field::new).collect(toList()));
+            }
         }
+    }
+
+    private static Schema getSchema(Map<QueryPath, MappingField> fields, Map<String, String> options, boolean isKey) {
+        return getMetadata(fields)
+                .map(json -> new Schema.Parser().parse(json))
+                .orElseGet(() -> inlineSchema(options, isKey));
+    }
+
+    /**
+     * A field is <em>nullable</em> if it can be set to null. A nullable field is
+     * <em>optional</em> if it can have null default value, which is only possible if
+     * its type is {@code NULL} or a {@code UNION} with {@code NULL} as the first element.
+     */
+    public static Schema optional(Schema schema) {
+        if (schema.getType() == UNION) {
+            return schema.getTypes().get(0).getType() == NULL ? schema
+                    : reduce(
+                            SchemaBuilder.unionOf().nullType(),
+                            schema.getTypes().stream().filter(type -> type.getType() != NULL),
+                            (union, type) -> union.and().type(type)
+                    ).endUnion();
+        }
+        return schema.getType() == NULL ? schema
+                : SchemaBuilder.unionOf().nullType().and().type(schema).endUnion();
+    }
+
+    public static Schema inlineSchema(Map<String, String> options, boolean isKey) {
+        String json = options.get(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA);
+        return json != null ? new Schema.Parser().parse(json) : null;
     }
 }
