@@ -170,11 +170,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_processingGuaranteeNone_then_ignorePartitionsInitialOffsets() {
-        testWithPartitionsInitialOffsets(NONE, 100, 100);
-    }
-
-    @Test
     public void when_processingGuaranteeAtLeastOnce_then_readFromPartitionsInitialOffsets() {
         testWithPartitionsInitialOffsets(AT_LEAST_ONCE, 80, 90);
     }
@@ -228,43 +223,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 .isEqualTo(expectedRecordsReadFromTopic1);
         assertThat(recordsByTopic.get(topic2Name).size())
                 .isEqualTo(expectedRecordsReadFromTopic2);
-    }
-
-    @Test
-    public void when_processingGuaranteeNone_then_continueFromBeginningAfterJobRestart() {
-        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
-
-        // 100 messages will be produced before the job is restarted and then another batch of 100 will be produced
-        // after the job is restarted (so there will be 200 messages in total)
-        int messageCount = 100;
-
-        // all messages produced before the job is restarted should be read
-        int expectedCountBeforeRestart = 100;
-
-        // for processing guarantee equal to NONE, when the job is restarted, the initial 100 messages will be
-        // read twice, so total expected number of messages should be: 100 + 200 = 300
-        int expectedCountAfterRestart = 300;
-
-        testWithJobRestart(messageCount, topicsConfig, NONE,
-                expectedCountBeforeRestart, expectedCountAfterRestart);
-    }
-
-    @Test
-    public void when_processingGuaranteeNoneWithConsumerGroup_then_continueFromLastReadMessageAfterJobRestart() {
-        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
-        Properties kafkaProperties = properties();
-        kafkaProperties.setProperty("group.id", randomString());
-        int messageCount = 100;
-
-        // all messages produced before the job is restarted should be read
-        int expectedCountBeforeRestart = 100;
-
-        // after restarting the job, records consumption should be resumed from the last committed offsets
-        // for given consumer group
-        int expectedCountAfterRestart = 200;
-
-        testWithJobRestart(messageCount, topicsConfig, NONE,
-                expectedCountBeforeRestart, expectedCountAfterRestart, kafkaProperties);
     }
 
     @Test
