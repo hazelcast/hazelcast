@@ -70,9 +70,12 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertEquals(121L, plan.analyzeJobConfig().getSnapshotIntervalMillis());
         assertEquals("pressF", plan.analyzeJobConfig().getInitialSnapshotName());
         assertEquals(100, plan.analyzeJobConfig().getMaxProcessorAccumulatedRecords());
+    }
 
-        // Test non-default options
-        plan = assertQueryPlan(
+    @Test
+    public void test_overridableOptions() {
+        createMapping("test", Long.class, String.class);
+        SelectPlan plan = assertQueryPlan(
                 "ANALYZE WITH OPTIONS("
                         + "'metricsEnabled'='false', "
                         + "'storeMetricsAfterJobCompletion'='false'"
