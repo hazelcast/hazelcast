@@ -920,7 +920,7 @@ public final class IOUtil {
             }
             return;
         }
-        try (final FileChannel file = open(dir, READ)) {
+        try (FileChannel file = open(dir, READ)) {
             try {
                 file.force(true);
             } catch (final IOException e) {

@@ -46,7 +46,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.management.OperatingSystemMXBean;
 import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
@@ -96,7 +95,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -800,48 +798,52 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testFsyncDirNotForcedOnWindows() throws IOException {
-        MockedStatic<OS> os = mockStatic(OS.class);
-        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class);
-        os.when(OS::isWindows).thenReturn(true);
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class)) {
+            os.when(OS::isWindows).thenReturn(true);
 
-        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
-        fc.verifyNoInteractions();
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            fc.verifyNoInteractions();
+        }
     }
 
     @Test(expected = NoSuchFileException.class)
     public void testFsyncDirThrowsNoSuchFileExceptionWindows() throws IOException {
-        MockedStatic<OS> os = mockStatic(OS.class);
-        MockedStatic<Files> files = mockStatic(Files.class);
-        os.when(OS::isWindows).thenReturn(true);
-        files.when(() -> Files.exists(any(), any())).thenReturn(false);
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+             MockedStatic<Files> files = mockStatic(Files.class)) {
+            os.when(OS::isWindows).thenReturn(true);
+            files.when(() -> Files.exists(any(), any())).thenReturn(false);
 
-        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+        }
     }
 
     @Test
     public void testFsyncDirWhenOSLinux() throws IOException {
-        MockedStatic<OS> os = mockStatic(OS.class);
-        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class);
-        FileChannel mockFileChannel = mock(FileChannel.class);
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+             MockedStatic<FileChannel> fc = mockStatic(FileChannel.class)) {
+            FileChannel mockFileChannel = mock(FileChannel.class);
 
-        os.when(OS::isLinux).thenReturn(true);
-        fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
+            os.when(OS::isLinux).thenReturn(true);
+            fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
 
-        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
-        verify(mockFileChannel).force(true);
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            verify(mockFileChannel).force(true);
+        }
     }
 
     @Test
     public void testFsyncDirWhenOSIsMac() throws IOException {
-        MockedStatic<OS> os = mockStatic(OS.class);
-        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class);
-        FileChannel mockFileChannel = mock(FileChannel.class);
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+             MockedStatic<FileChannel> fc = mockStatic(FileChannel.class)) {
+            FileChannel mockFileChannel = mock(FileChannel.class);
 
-        os.when(OS::isMac).thenReturn(true);
-        fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
+            os.when(OS::isMac).thenReturn(true);
+            fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
 
-        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
-        verify(mockFileChannel).force(true);
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            verify(mockFileChannel).force(true);
+        }
     }
 
     private File newFile(String filename) {
