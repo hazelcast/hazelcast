@@ -827,7 +827,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         // Also, future completion handlers (thenApply etc.) are not guaranteed to run in
         // any particular order and can be executed in parallel.
         //
-        // This is unlikely and we do not care however such scenario is possible:
+        // This is unlikely, and we do not care; however, such scenario is possible:
         // 1. user submits a light job
         // 2. user gets the job by id and joins it (separate Job proxy instance is necessary
         //    because different future will be used than for submit)

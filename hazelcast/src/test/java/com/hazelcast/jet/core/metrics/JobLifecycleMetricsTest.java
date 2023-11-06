@@ -48,7 +48,6 @@ import static com.hazelcast.jet.core.TestProcessors.ListSource;
 import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -89,7 +88,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         //given
         DAG dag = new DAG();
         Throwable e = new AssertionError("mock error");
-        Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
+        Vertex source = dag.newVertex("source", ListSource.supplier(List.of(1)));
 
         Vertex process = dag.newVertex("faulty", new MockPMS(() -> new MockPS(() ->
                         new MockP().initBlocks().setProcessError(() -> e), MEMBER_COUNT)))
@@ -124,17 +123,17 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         //when
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
-        assertTrueEventually(() -> assertJobStatusMetric(job, SUSPENDED));
 
         //then
+        assertTrueEventually(() -> assertJobStatusMetric(job, SUSPENDED));
         assertTrueEventually(() -> assertJobStats(1, 1, 1, 0, 0));
 
         //when
         job.resume();
         assertJobStatusEventually(job, RUNNING);
-        assertTrueEventually(() -> assertJobStatusMetric(job, RUNNING));
 
         //then
+        assertTrueEventually(() -> assertJobStatusMetric(job, RUNNING));
         assertTrueEventually(() -> assertJobStats(1, 2, 1, 0, 0));
     }
 
@@ -167,9 +166,9 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
         //when
         job.cancel();
-        assertTrueEventually(() -> assertJobStatusMetric(job, FAILED));
 
         //then
+        assertTrueEventually(() -> assertJobStatusMetric(job, FAILED));
         assertTrueEventually(() -> assertJobStats(1, 1, 1, 0, 1));
     }
 

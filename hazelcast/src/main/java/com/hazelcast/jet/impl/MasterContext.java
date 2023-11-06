@@ -56,6 +56,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -64,7 +65,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.stream.Collectors.toConcurrentMap;
 
@@ -95,7 +95,7 @@ public class MasterContext implements DynamicMetricsProvider {
     private final JobRepository jobRepository;
     private final JobRecord jobRecord;
     private final JobExecutionRecord jobExecutionRecord;
-    private volatile JobStatus jobStatus = NOT_RUNNING;
+    private volatile JobStatus jobStatus;
     private volatile long executionId;
     private volatile Map<MemberInfo, ExecutionPlan> executionPlanMap;
 
@@ -119,9 +119,8 @@ public class MasterContext implements DynamicMetricsProvider {
         this.jobExecutionRecord = jobExecutionRecord;
         this.jobId = jobRecord.getJobId();
         this.jobName = jobRecord.getJobNameOrId();
-        if (jobExecutionRecord.isSuspended()) {
-            jobStatus = SUSPENDED;
-        }
+
+        jobStatus = jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING;
 
         jobContext = new MasterJobContext(this, nodeEngine.getLogger(MasterJobContext.class));
         snapshotContext = createMasterSnapshotContext(nodeEngine);
@@ -243,7 +242,7 @@ public class MasterContext implements DynamicMetricsProvider {
         return jobContext;
     }
 
-    public MasterSnapshotContext snapshotContext() {
+    MasterSnapshotContext snapshotContext() {
         return snapshotContext;
     }
 
@@ -318,8 +317,8 @@ public class MasterContext implements DynamicMetricsProvider {
     void writeJobExecutionRecord(boolean canCreate) {
         coordinationService.assertOnCoordinatorThread();
         try {
-            coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
-                    canCreate);
+            coordinationService.jobRepository().writeJobExecutionRecord(
+                    jobRecord.getJobId(), jobExecutionRecord, canCreate);
         } catch (RuntimeException e) {
             // We don't bubble up the exceptions, if we can't write the record out, the universe is
             // probably crumbling apart anyway. And we don't depend on it, we only write out for

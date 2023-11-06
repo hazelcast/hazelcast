@@ -255,7 +255,5 @@ public final class MetricNames {
      */
     public static final String JOB_EXECUTIONS_COMPLETED = "jobs.executionCompleted";
 
-    private MetricNames() {
-    }
-
+    private MetricNames() { }
 }

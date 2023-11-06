@@ -83,7 +83,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
@@ -127,6 +126,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -670,7 +670,7 @@ public class MasterJobContext {
 
         // If all exceptions are of certain type, treat it as TopologyChangedException
         Map<Boolean, List<Entry<Address, Object>>> splitFailures = failures.stream()
-                .collect(Collectors.partitioningBy(
+                .collect(partitioningBy(
                         e -> e.getValue() instanceof CancellationException
                                 || e.getValue() instanceof TerminatedWithSnapshotException
                                 || isTopologyException((Throwable) e.getValue())));
@@ -703,9 +703,9 @@ public class MasterJobContext {
 
         setJobMetrics(error == null ? COMPLETED : FAILED);
         setExecutionMetrics(responses.stream()
-                .filter(en -> en.getValue() instanceof RawJobMetrics)
-                .map(e1 -> (RawJobMetrics) e1.getValue())
-                .collect(Collectors.toList()));
+                .filter(e -> e.getValue() instanceof RawJobMetrics)
+                .map(e -> (RawJobMetrics) e.getValue())
+                .collect(toList()));
 
         if (error instanceof JobTerminateRequestedException
                 && ((JobTerminateRequestedException) error).mode().isWithTerminalSnapshot()) {
