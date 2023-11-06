@@ -127,10 +127,14 @@ public class SqlAnalyzeStatement extends SqlCall {
                 case "maxProcessorAccumulatedRecords":
                     jobConfig.setMaxProcessorAccumulatedRecords(QueryUtils.parseLong(validator, option));
                     break;
+                case "metricsEnabled":
+                    jobConfig.setMetricsEnabled(Boolean.parseBoolean(value));
+                    break;
+                case "storeMetricsAfterJobCompletion":
+                    jobConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
+                    break;
                 case "autoScaling":
                 case "splitBrainProtectionEnabled":
-                case "metricsEnabled":
-                case "storeMetricsAfterJobCompletion":
                 case "suspendOnFailure":
                     throw validator.newValidationError(option.key(), RESOURCE.unsupportedAnalyzeJobOption(key));
                 default:

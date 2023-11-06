@@ -48,6 +48,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, String.class);
         assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
         assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
+        // Default options
         SelectPlan plan = assertQueryPlan(
                 "ANALYZE WITH OPTIONS("
                         + "'processingGuarantee'='exactlyOnce', "
@@ -68,6 +69,16 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertEquals(121L, plan.analyzeJobConfig().getSnapshotIntervalMillis());
         assertEquals("pressF", plan.analyzeJobConfig().getInitialSnapshotName());
         assertEquals(100, plan.analyzeJobConfig().getMaxProcessorAccumulatedRecords());
+
+        // Test non-default options
+        plan = assertQueryPlan(
+                "ANALYZE WITH OPTIONS("
+                        + "'metricsEnabled'='false', "
+                        + "'storeMetricsAfterJobCompletion'='false'"
+                        + ") SELECT * FROM test");
+        assertTrue(plan.isAnalyzed());
+        assertFalse(plan.analyzeJobConfig().isMetricsEnabled());
+        assertFalse(plan.analyzeJobConfig().isStoreMetricsAfterJobCompletion());
     }
 
     @Test
