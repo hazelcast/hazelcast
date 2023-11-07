@@ -67,7 +67,7 @@ public class GenericMapStore<K, V> extends GenericMapLoader<K, V>
     public void store(K key, V record) {
         awaitSuccessfulInit();
 
-        JdbcParameters jdbcParameters = convert(key, record, columnMetadataList, genericMapStoreProperties.idColumn);
+        JdbcParameters jdbcParameters = convert(key, record, columnMetadataList, genericMapStoreProperties.idColumn, genericMapStoreProperties.singleColumnAsValue);
 
         try {
             sqlService.execute(queries.storeSink(), jdbcParameters.getParams()).close();

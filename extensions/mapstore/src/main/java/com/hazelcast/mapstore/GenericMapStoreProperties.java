@@ -23,12 +23,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.*;
 
 /**
  * Holds the properties for GenericMapStore and GenericMapLoader
@@ -48,6 +43,11 @@ class GenericMapStoreProperties {
      * Flag that indicates if {@link GenericMapLoader#loadAllKeys()} should run or not
      */
     final boolean loadAllKeys;
+
+    /**
+     * Flag that indicates if a single column or a GenericRecord should be returned as the value
+     */
+    final boolean singleColumnAsValue;
 
     GenericMapStoreProperties(Properties properties, String mapName) {
         dataConnectionRef = properties.getProperty(DATA_CONNECTION_REF_PROPERTY);
@@ -70,6 +70,9 @@ class GenericMapStoreProperties {
 
         String value = properties.getProperty(LOAD_ALL_KEYS_PROPERTY, "true");
         loadAllKeys = Boolean.parseBoolean(value);
+
+        String singleColumnAsValueString = properties.getProperty(SINGLE_COLUMN_AS_VALUE, "false");
+        singleColumnAsValue = Boolean.parseBoolean(singleColumnAsValueString);
     }
 
     boolean hasColumns() {

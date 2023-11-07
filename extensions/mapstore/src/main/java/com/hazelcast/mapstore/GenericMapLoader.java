@@ -119,6 +119,10 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
     public static final String LOAD_ALL_KEYS_PROPERTY = "load-all-keys";
 
     /**
+     * Property key to decide on getting a single column as the value
+     */
+    public static final String SINGLE_COLUMN_AS_VALUE = "single-column-as-value";
+    /**
      * Timeout for initialization of GenericMapLoader
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
@@ -315,7 +319,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
                     throw new IllegalStateException("multiple matching rows for a key " + key);
                 }
                 // If there is a single column as the value, return that column as the value
-                if (queryResult.getRowMetadata().getColumnCount() == 2) {
+                if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
                     return sqlRow.getObject(1);
                 }
                 //else return GenericRecord as the value
@@ -341,7 +345,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
 
             Map<K, V> result = new HashMap<>();
             // If there is a single column as the value, return that column as the value
-            if (queryResult.getRowMetadata().getColumnCount() == 2) {
+            if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
                 SqlRow sqlRow = it.next();
                 K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
                 result.put(id, sqlRow.getObject(1)); //Figure this out it should be either 0 or 1, probably 1 though

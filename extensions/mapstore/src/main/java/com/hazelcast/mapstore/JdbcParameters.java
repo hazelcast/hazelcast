@@ -52,7 +52,8 @@ class JdbcParameters {
             K key,
             V value,
             List<SqlColumnMetadata> columnMetadataList,
-            String idColumn
+            String idColumn,
+            boolean singleColumnAsValue
     ) {
 
         JdbcParameters jdbcParameters = new JdbcParameters();
@@ -73,11 +74,10 @@ class JdbcParameters {
                 params[i] = key;
                 continue;
             }
-            if (columnMetadataList.size() == 2) {
+            if (columnMetadataList.size() == 2 && singleColumnAsValue) {
                 // If we only have a single column as value, we get it as it is.
                 params[i] = value;
             } else {
-                // If we have multiple columns as value, it means the value is a GenericRecord
                 // Get all other values from GenericRecord
                 GenericRecord genericRecord = (GenericRecord) value;
                 switch (columnMetadata.getType()) {
