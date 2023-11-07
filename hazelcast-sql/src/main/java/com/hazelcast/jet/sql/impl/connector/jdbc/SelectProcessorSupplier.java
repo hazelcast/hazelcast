@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -51,12 +52,6 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private static final int DOUBLE_PRECISION_SCALE = 15;
-    private static final int INT_PRECISION = 10;
-    private static final int SMALLINT_PRECISION = 4;
-    private static final int BIGINT_PRECISION = 18;
-    private static final int INT_SCALE = 0;
-    private static final int REAL_PRECISION_SCALE = 7;
     private String query;
     private int[] parameterPositions;
 
@@ -121,13 +116,15 @@ public class SelectProcessorSupplier
         return singleton(processor);
     }
 
-    private BiFunctionEx<ResultSet, Integer, Object>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException {
+    private BiFunctionEx<ResultSet, Integer, Object>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException  {
         ResultSetMetaData metaData = rs.getMetaData();
 
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
-            type = isNumberTypeCheck(metaData, type, j);
+            TriFunction<ResultSetMetaData, String, Integer, String> func = TriFunctionProvider.getTriFunction(dialectName);
+            type = func.apply(metaData, type, j);
+
             Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = GettersProvider.getGetters(dialectName);
             valueGetters[j] = getters.getOrDefault(
                     type,
@@ -159,34 +156,4 @@ public class SelectProcessorSupplier
         dialectName = in.readString();
     }
 
-    private String isNumberTypeCheck(ResultSetMetaData metaData, String type, int column) throws SQLException {
-        if (type.equals("NUMBER")) {
-            int precision = metaData.getPrecision(column + 1);
-            int scale = metaData.getScale(column + 1);
-
-            if (scale == INT_SCALE) {
-                if (precision <= SMALLINT_PRECISION) {
-                    return "SMALLINT";
-                } else if (precision < INT_PRECISION) {
-                    return "INT";
-                } else if (precision <= BIGINT_PRECISION) {
-                    return "BIGINT";
-                } else {
-                    return "DECIMAL";
-                }
-            } else {
-                if ((scale + precision) <= REAL_PRECISION_SCALE) {
-                    return "REAL";
-                } else if ((scale + precision) <= DOUBLE_PRECISION_SCALE) {
-                    return "DOUBLE PRECISION";
-                }
-            }
-
-        }
-        /*
-            If none of the conditions above are met, then the default conversion for
-            NUMBER(p,s) where s != 0 will be DECIMAL(p,s).
-        */
-        return type;
-    }
 }
