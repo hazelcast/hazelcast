@@ -122,7 +122,8 @@ public class SelectProcessorSupplier
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
-            TriFunction<ResultSetMetaData, String, Integer, String>typeCheck = DatabaseSpecificTypeCheck.getTypeCheck(dialectName);
+            TriFunction<ResultSetMetaData, String, Integer, String> typeCheck;
+            typeCheck = DatabaseSpecificTypeCheck.getTypeCheck(dialectName);
             type = typeCheck.apply(metaData, type, j);
 
             Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = GettersProvider.getGetters(dialectName);
