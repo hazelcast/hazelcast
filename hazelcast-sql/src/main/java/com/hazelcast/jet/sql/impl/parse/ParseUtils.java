@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import org.apache.calcite.sql.validate.SqlValidator;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
@@ -29,24 +29,17 @@ public class ParseUtils {
     private ParseUtils() {
     }
 
-    static void parseProcessingGuarantee(SqlValidator validator,
-                                         JobConfig jobConfig,
-                                         SqlOption option,
-                                         String key,
-                                         String value) {
-        switch (value) {
+    static ProcessingGuarantee parseProcessingGuarantee(SqlValidator validator, SqlOption option) {
+        switch (option.valueString()) {
             case "exactlyOnce":
-                jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
-                break;
+                return EXACTLY_ONCE;
             case "atLeastOnce":
-                jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
-                break;
+                return AT_LEAST_ONCE;
             case "none":
-                jobConfig.setProcessingGuarantee(NONE);
-                break;
+                return NONE;
             default:
                 throw validator.newValidationError(option.value(),
-                        RESOURCE.processingGuaranteeBadValue(key, value));
+                        RESOURCE.processingGuaranteeBadValue(option.keyString(), option.valueString()));
         }
     }
 

@@ -128,7 +128,7 @@ public class SqlCreateJob extends SqlCreate {
 
             switch (key) {
                 case "processingGuarantee":
-                    ParseUtils.parseProcessingGuarantee(validator, jobConfig, option, key, value);
+                    jobConfig.setProcessingGuarantee(ParseUtils.parseProcessingGuarantee(validator, option));
                     break;
                 case "snapshotIntervalMillis":
                     jobConfig.setSnapshotIntervalMillis(ParseUtils.parseLong(validator, option));
