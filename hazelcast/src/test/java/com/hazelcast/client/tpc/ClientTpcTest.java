@@ -21,8 +21,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.tcp.TpcChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TpcChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -43,6 +43,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -78,39 +79,50 @@ public class ClientTpcTest extends ClientTestSupport {
 
     @Test
     public void testClientConnectsAllTpcPorts() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        clientConfig.getTpcConfig().setConnectionCount(0);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
-        assertTrueEventually(() -> assertEquals(2, connections.size()));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                System.out.println(connections.size());
+                assertEquals(2, connections.size());
+            }
+        });
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
     }
 
     @Test
     public void testClientConnectsAllTpcPorts_whenNewMemberJoins() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        clientConfig.getTpcConfig().setConnectionCount(0);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(memberConfig);
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
     }
 
     @Test
     public void testClientConnectsAllTpcPorts_afterRestart() {
-        Config config = getMemberConfig();
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         CountDownLatch disconnected = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(state -> {
@@ -120,33 +132,34 @@ public class ClientTpcTest extends ClientTestSupport {
         });
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         instance.shutdown();
         assertOpenEventually(disconnected);
         assertTrueEventually(() -> assertEquals(0, connections.size()));
 
-        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(memberConfig);
 
         assertTrueEventually(() -> assertEquals(1, connections.size()));
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
     }
 
     @Test
     public void testClientRoutesPartitionBoundRequestsToTpcConnections() {
-        Config config = getMemberConfig();
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(memberConfig);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(memberConfig);
         warmUpPartitions(instance1, instance2);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<String, Integer> map = client.getMap(randomMapName());
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         // Wait until the partition table is received on the client-side
         PartitionService partitionService = client.getPartitionService();
@@ -173,16 +186,17 @@ public class ClientTpcTest extends ClientTestSupport {
 
     @Test
     public void testClientRoutesNonPartitionBoundRequestsToClassicConnections() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<String, Integer> map = client.getMap(randomMapName());
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         long currentTimeMillis = System.currentTimeMillis();
         map.size();
@@ -192,14 +206,15 @@ public class ClientTpcTest extends ClientTestSupport {
 
     @Test
     public void testConnectionCloses_whenTpcChannelsClose() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         CountDownLatch disconnected = new CountDownLatch(1);
         CountDownLatch reconnected = new CountDownLatch(1);
@@ -239,19 +254,20 @@ public class ClientTpcTest extends ClientTestSupport {
 
         assertOpenEventually(reconnected);
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
     }
 
     @Test
     public void testTpcChannelsClose_whenConnectionCloses() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         CountDownLatch disconnected = new CountDownLatch(1);
         CountDownLatch reconnected = new CountDownLatch(1);
@@ -279,20 +295,21 @@ public class ClientTpcTest extends ClientTestSupport {
 
         assertOpenEventually(reconnected);
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
     }
 
     @Test
     public void testPartitionBoundPendingInvocations_whenConnectionCloses() {
         String mapName = randomMapName();
-        Config config = getMemberWithMapStoreConfig(mapName);
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberWithMapStoreConfig(mapName);
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = newClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         IMap<Integer, Integer> map = client.getMap(mapName);
         CompletableFuture<Integer> future = map.putAsync(1, 1).toCompletableFuture();
@@ -311,15 +328,16 @@ public class ClientTpcTest extends ClientTestSupport {
         // to make sure that invocation directly to the TPC channels work, and
         // closing the connection (hence the channel) cleanups the pending invocations
         String mapName = randomMapName();
-        Config config = getMemberWithMapStoreConfig(mapName);
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberWithMapStoreConfig(mapName);
+        Hazelcast.newHazelcastInstance(memberConfig);
 
+        ClientConfig clientConfig = newClientConfig();
         HazelcastClientInstanceImpl client
-                = getHazelcastClientInstanceImpl(HazelcastClient.newHazelcastClient(getClientConfig()));
+                = getHazelcastClientInstanceImpl(HazelcastClient.newHazelcastClient(clientConfig));
         ClientConnectionManager connectionManager = client.getConnectionManager();
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         ClientConnection connection = connections.iterator().next();
         Channel[] tpcChannels = connection.getTpcChannels();
@@ -354,7 +372,7 @@ public class ClientTpcTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(newClientConfig());
         IMap<String, String> map = client.getMap(randomMapName());
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
@@ -369,9 +387,9 @@ public class ClientTpcTest extends ClientTestSupport {
 
     @Test
     public void testTpcDisabledClient_inTpcEnabledCluster() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
+        Hazelcast.newHazelcastInstance(memberConfig);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<String, String> map = client.getMap(randomMapName());
@@ -388,17 +406,17 @@ public class ClientTpcTest extends ClientTestSupport {
 
     @Test
     public void testTpcClient_heartbeatsToIdleTpcChannels() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        ClientConfig clientConfig = getClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.setProperty(HEARTBEAT_INTERVAL.getName(), "1000");
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         ClientConnection connection = connectionManager.getRandomConnection();
         assertTrue(connection.isAlive());
@@ -416,10 +434,10 @@ public class ClientTpcTest extends ClientTestSupport {
 
     @Test
     public void testTPCClient_heartbeatsToNotRespondingTPCChannelsTimeouts() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
+        Config memberConfig = newMemberConfig();
+        Hazelcast.newHazelcastInstance(memberConfig);
 
-        ClientConfig clientConfig = getClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.setProperty(HEARTBEAT_INTERVAL.getName(), "1000");
         clientConfig.setProperty(HEARTBEAT_TIMEOUT.getName(), "3000");
 
@@ -427,7 +445,7 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
 
         ClientConnection connection = connections.iterator().next();
         assertTrue(connection.isAlive());
@@ -461,14 +479,22 @@ public class ClientTpcTest extends ClientTestSupport {
         }, 3);
     }
 
-    private void assertClientConnectsAllTpcPortsEventually(Collection<ClientConnection> connections, int expectedPortCount) {
+    private void assertClientConnectsAllTpcPortsEventually(Collection<ClientConnection> connections,
+                                                           Config memberConfig,
+                                                           ClientConfig clientConfig) {
+        final int connectionCount = clientConfig.getTpcConfig().getConnectionCount() == 0
+                ? memberConfig.getTpcConfig().getEventloopCount()
+                : clientConfig.getTpcConfig().getConnectionCount();
+
         assertTrueEventually(() -> {
             for (ClientConnection connection : connections) {
                 TcpClientConnection clientConnection = (TcpClientConnection) connection;
 
                 Channel[] tpcChannels = clientConnection.getTpcChannels();
+                System.out.println("tpcChannels:" + tpcChannels);
                 assertNotNull(tpcChannels);
-                assertEquals(expectedPortCount, tpcChannels.length);
+                System.out.println("tpcChannels.length:" + tpcChannels.length);
+                assertEquals(connectionCount, tpcChannels.length);
 
                 for (Channel channel : tpcChannels) {
                     assertNotNull(channel);
@@ -482,13 +508,13 @@ public class ClientTpcTest extends ClientTestSupport {
         return getHazelcastClientInstanceImpl(client).getConnectionManager();
     }
 
-    private ClientConfig getClientConfig() {
+    private ClientConfig newClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getTpcConfig().setEnabled(true);
         return clientConfig;
     }
 
-    private Config getMemberConfig() {
+    private Config newMemberConfig() {
         Config config = new Config();
         // Jet prints too many logs
         config.getJetConfig().setEnabled(false);
@@ -500,8 +526,8 @@ public class ClientTpcTest extends ClientTestSupport {
         return config;
     }
 
-    private Config getMemberWithMapStoreConfig(String mapName) {
-        Config config = getMemberConfig();
+    private Config newMemberWithMapStoreConfig(String mapName) {
+        Config config = newMemberConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setImplementation(new MapStoreAdapter<Integer, Integer>() {
             @Override
