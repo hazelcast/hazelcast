@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * newValue.
  */
 @SuppressWarnings("unused")
-@Generated("4e61407e958045821c475dc713e1e437")
+@Generated("f6639933f5e2c5fc315fa4e20d0ca863")
 public final class CPMapCompareAndSetCodec {
     //hex: 0x230600
     public static final int REQUEST_MESSAGE_TYPE = 2295296;
@@ -72,15 +72,15 @@ public final class CPMapCompareAndSetCodec {
         /**
          * The expected value associated with key.
          */
-        public @Nullable com.hazelcast.internal.serialization.Data expectedValue;
+        public com.hazelcast.internal.serialization.Data expectedValue;
 
         /**
          * The new value to associate with key.
          */
-        public @Nullable com.hazelcast.internal.serialization.Data newValue;
+        public com.hazelcast.internal.serialization.Data newValue;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data expectedValue, @Nullable com.hazelcast.internal.serialization.Data newValue) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data expectedValue, com.hazelcast.internal.serialization.Data newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -92,8 +92,8 @@ public final class CPMapCompareAndSetCodec {
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
-        CodecUtil.encodeNullable(clientMessage, expectedValue, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, newValue, DataCodec::encode);
+        DataCodec.encode(clientMessage, expectedValue);
+        DataCodec.encode(clientMessage, newValue);
         return clientMessage;
     }
 
@@ -105,8 +105,8 @@ public final class CPMapCompareAndSetCodec {
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
-        request.expectedValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.newValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.expectedValue = DataCodec.decode(iterator);
+        request.newValue = DataCodec.decode(iterator);
         return request;
     }
 

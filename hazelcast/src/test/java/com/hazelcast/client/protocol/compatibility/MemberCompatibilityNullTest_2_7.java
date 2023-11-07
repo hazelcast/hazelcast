@@ -7796,7 +7796,7 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aData, parameters.key));
-        assertTrue(isEqual(null, parameters.value));
+        assertTrue(isEqual(aData, parameters.value));
     }
 
     @Test
@@ -7815,7 +7815,7 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aData, parameters.key));
-        assertTrue(isEqual(null, parameters.value));
+        assertTrue(isEqual(aData, parameters.value));
     }
 
     @Test
@@ -7870,8 +7870,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aData, parameters.key));
-        assertTrue(isEqual(null, parameters.expectedValue));
-        assertTrue(isEqual(null, parameters.newValue));
+        assertTrue(isEqual(aData, parameters.expectedValue));
+        assertTrue(isEqual(aData, parameters.newValue));
     }
 
     @Test

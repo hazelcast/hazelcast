@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts the key-value into the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("a7cfc02e0d85fb1470f30b3007299d87")
+@Generated("ad924bb694123345ebdf99fa3c236f3d")
 public final class CPMapPutCodec {
     //hex: 0x230200
     public static final int REQUEST_MESSAGE_TYPE = 2294272;
@@ -70,10 +70,10 @@ public final class CPMapPutCodec {
         /**
          * Value to associate with the key.
          */
-        public @Nullable com.hazelcast.internal.serialization.Data value;
+        public com.hazelcast.internal.serialization.Data value;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -85,7 +85,7 @@ public final class CPMapPutCodec {
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
-        CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
+        DataCodec.encode(clientMessage, value);
         return clientMessage;
     }
 
@@ -97,7 +97,7 @@ public final class CPMapPutCodec {
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
-        request.value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.value = DataCodec.decode(iterator);
         return request;
     }
 

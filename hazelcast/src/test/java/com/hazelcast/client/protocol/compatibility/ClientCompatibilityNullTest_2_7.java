@@ -6928,7 +6928,7 @@ public class ClientCompatibilityNullTest_2_7 {
     @Test
     public void test_CPMapPutCodec_encodeRequest() {
         int fileClientMessageIndex = 879;
-        ClientMessage encoded = CPMapPutCodec.encodeRequest(aRaftGroupId, aString, aData, null);
+        ClientMessage encoded = CPMapPutCodec.encodeRequest(aRaftGroupId, aString, aData, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6943,7 +6943,7 @@ public class ClientCompatibilityNullTest_2_7 {
     @Test
     public void test_CPMapSetCodec_encodeRequest() {
         int fileClientMessageIndex = 881;
-        ClientMessage encoded = CPMapSetCodec.encodeRequest(aRaftGroupId, aString, aData, null);
+        ClientMessage encoded = CPMapSetCodec.encodeRequest(aRaftGroupId, aString, aData, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6988,7 +6988,7 @@ public class ClientCompatibilityNullTest_2_7 {
     @Test
     public void test_CPMapCompareAndSetCodec_encodeRequest() {
         int fileClientMessageIndex = 887;
-        ClientMessage encoded = CPMapCompareAndSetCodec.encodeRequest(aRaftGroupId, aString, aData, null, null);
+        ClientMessage encoded = CPMapCompareAndSetCodec.encodeRequest(aRaftGroupId, aString, aData, aData, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
