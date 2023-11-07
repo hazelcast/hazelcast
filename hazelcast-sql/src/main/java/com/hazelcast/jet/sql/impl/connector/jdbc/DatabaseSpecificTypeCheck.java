@@ -8,7 +8,7 @@ import java.sql.ResultSetMetaData;
 import java.util.HashMap;
 import java.util.Map;
 
-final class TriFunctionProvider {
+final class DatabaseSpecificTypeCheck {
 
     private static final Map<String, TriFunction<ResultSetMetaData, String, Integer, String>> dialectFunction = new HashMap<>();
 
@@ -16,9 +16,9 @@ final class TriFunctionProvider {
         dialectFunction.put(HazelcastOracleDialect.class.getSimpleName(), HazelcastOracleDialect::isNumberTypeCheck);
     }
 
-    private TriFunctionProvider(){}
+    private DatabaseSpecificTypeCheck(){}
 
-    public static TriFunction<ResultSetMetaData, String, Integer, String> getTriFunction(String dialect) {
+    public static TriFunction<ResultSetMetaData, String, Integer, String> getTypeCheck(String dialect) {
         return dialectFunction.getOrDefault(dialect, (rsMetaData, sqlType, col) -> sqlType);
     }
 }
