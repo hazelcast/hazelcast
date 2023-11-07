@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.security.permission.AllPermissions;
 import com.hazelcast.security.permission.AtomicLongPermission;
 import com.hazelcast.security.permission.AtomicReferencePermission;
+import com.hazelcast.security.permission.CPMapPermission;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.CardinalityEstimatorPermission;
 import com.hazelcast.security.permission.ConfigPermission;
@@ -215,7 +216,11 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
         /**
          * Specific SQL permissions
          */
-        SQL("sql-permission", SqlPermission.class);
+        SQL("sql-permission", SqlPermission.class),
+        /**
+         * CP Map permissions
+         */
+        CPMAP("cpmap-permission", CPMapPermission.class);
 
         private final String nodeName;
         private final String className;

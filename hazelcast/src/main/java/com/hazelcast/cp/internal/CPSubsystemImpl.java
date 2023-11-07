@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
@@ -38,9 +39,9 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -54,15 +55,15 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class CPSubsystemImpl implements CPSubsystem {
 
-    private final HazelcastInstanceImpl instance;
-    private final boolean cpSubsystemEnabled;
+    protected final boolean cpSubsystemEnabled;
+    private final NodeEngine nodeEngine;
     private volatile CPSubsystemManagementService cpSubsystemManagementService;
 
-    public CPSubsystemImpl(HazelcastInstanceImpl instance) {
-        this.instance = instance;
-        int cpMemberCount = instance.getConfig().getCPSubsystemConfig().getCPMemberCount();
+    public CPSubsystemImpl(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        int cpMemberCount = nodeEngine.getConfig().getCPSubsystemConfig().getCPMemberCount();
         this.cpSubsystemEnabled = cpMemberCount > 0;
-        ILogger logger = instance.node.getLogger(CPSubsystem.class);
+        ILogger logger = nodeEngine.getLogger(CPSubsystem.class);
         if (cpSubsystemEnabled) {
             logger.info("CP Subsystem is enabled with " + cpMemberCount + " members.");
         } else {
@@ -135,10 +136,10 @@ public class CPSubsystemImpl implements CPSubsystem {
     }
 
     private <T> T getService(@Nonnull String serviceName) {
-        return instance.node.getNodeEngine().getService(serviceName);
+        return nodeEngine.getService(serviceName);
     }
 
-    private <T extends DistributedObject> T createProxy(String serviceName, String name) {
+    protected  <T extends DistributedObject> T createProxy(String serviceName, String name) {
         RaftRemoteService service = getService(serviceName);
         return service.createProxy(name);
     }
@@ -165,6 +166,12 @@ public class CPSubsystemImpl implements CPSubsystem {
     public boolean removeGroupAvailabilityListener(UUID id) {
         RaftService raftService = getService(RaftService.SERVICE_NAME);
         return raftService.removeAvailabilityListener(id);
+    }
+
+    @Nonnull
+    @Override
+    public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
+        throw new UnsupportedOperationException("CPMap is not supported in Open Source");
     }
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {

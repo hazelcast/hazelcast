@@ -18,6 +18,8 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -41,8 +43,10 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
@@ -398,6 +402,11 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
+     * Creates the relevant CP subsystem implementation.
+     */
+    CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
+
+    /**
      * Returns a JetService.
      */
     JetService getJet();
@@ -405,4 +414,10 @@ public interface NodeExtension {
     /** Returns the internal jet service backend */
     @Nullable
     JetServiceBackend getJetServiceBackend();
+
+    /**
+     * @return an instance of {@link com.hazelcast.nio.ssl.SSLEngineFactory} when TLS is enabled, {@code null} otherwise
+     * @throws java.lang.IllegalStateException if the method call is not allowed
+     */
+    SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig);
 }
