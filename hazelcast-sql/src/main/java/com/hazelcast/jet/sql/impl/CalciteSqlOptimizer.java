@@ -605,7 +605,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             boolean isCreateJob,
             String query,
             boolean analyze,
-            JobConfig analyzeJobConfig
+            @Nullable JobConfig analyzeJobConfig
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
