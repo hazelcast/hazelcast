@@ -196,38 +196,34 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void when_inlineSchemaUsedWithSchemaRegistry_then_fail() {
-        assumeTrue(useSchemaRegistry);
-        assertThatThrownBy(() ->
-                kafkaMapping("kafka")
-                        .fields("id INT EXTERNAL NAME \"__key.id\"",
-                                "name VARCHAR")
-                        .options(OPTION_VALUE_AVRO_SCHEMA, NAME_SCHEMA)
-                        .create())
-                .hasMessage("Inline schema cannot be used with schema registry");
-    }
-
-    @Test
-    public void when_schemaIsNotRecord_then_fail() {
+    public void when_mappingOrTypeSchemaHasMissingField_then_fail() {
         assumeFalse(useSchemaRegistry);
-        assertThatThrownBy(() ->
-                kafkaMapping("kafka", ID_SCHEMA, Schema.create(Schema.Type.STRING))
-                        .fields("id INT EXTERNAL NAME \"__key.id\"",
-                                "name VARCHAR")
-                        .create())
-                .hasMessage("Schema must be an Avro record");
-    }
+        new SqlType("Parent").fields("name VARCHAR", "phone VARCHAR").create();
 
-    @Test
-    public void when_schemaHasMissingField_then_fail() {
-        assumeFalse(useSchemaRegistry);
+        Schema parentSchema = SchemaBuilder.record("Parent").fields()
+                .requiredString("name")
+                .endRecord();
+        Schema studentSchema = SchemaBuilder.record("Student").fields()
+                .requiredString("name")
+                .name("parent").type(parentSchema).noDefault()
+                .endRecord();
+
         assertThatThrownBy(() ->
-                kafkaMapping("kafka", ID_SCHEMA, NAME_SCHEMA)
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
                         .fields("id INT EXTERNAL NAME \"__key.id\"",
                                 "name VARCHAR",
-                                "ssn BIGINT")
+                                "address VARCHAR",
+                                "parent Parent")
                         .create())
-                .hasMessage("Field 'ssn' does not exist in schema");
+                .hasMessage("Field 'address' does not exist in schema");
+
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
+                        .fields("id INT EXTERNAL NAME \"__key.id\"",
+                                "name VARCHAR",
+                                "parent Parent")
+                        .create())
+                .hasMessage("Field 'phone' does not exist in schema");
     }
 
     @Test
