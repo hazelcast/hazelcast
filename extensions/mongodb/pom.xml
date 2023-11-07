@@ -52,21 +52,35 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>${maven.shade.plugin.version}</version>
-                <configuration>
-                    <shadedArtifactAttached>false</shadedArtifactAttached>
-                    <relocations>
-                        <relocation>
-                            <pattern>org.apache.calcite</pattern>
-                            <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
-                        </relocation>
-                    </relocations>
-                    <artifactSet>
-                        <includes>
-                            <include>org.apache.calcite:calcite-core</include>
-                        </includes>
-                    </artifactSet>
-                </configuration>
                 <executions>
+                    <execution>
+                        <id>relocate</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.hazelcast.jet:hazelcast-jet-mongodb</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>com.mongodb:*</exclude>
+                                    <exclude>org.apache.calcite:*</exclude>
+                                    <exclude>com.hazelcast:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>jar-with-dependencies</id>
                         <phase>package</phase>
@@ -75,6 +89,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-build-utils</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
