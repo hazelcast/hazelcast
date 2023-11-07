@@ -49,7 +49,7 @@ public class ClientTpcConfigTest {
     }
 
     @Test
-    public void testEnabledDefault() {
+    public void test_constructor_enabledDefaultBehavior() {
         ClientTpcConfig config = new ClientTpcConfig();
         assertFalse(config.isEnabled());
 
@@ -63,7 +63,7 @@ public class ClientTpcConfigTest {
     }
 
     @Test
-    public void testConnectionCountDefault() {
+    public void test_constructor_connectionCountDefaultBehavior() {
         ClientTpcConfig config = new ClientTpcConfig();
         assertEquals(1, config.getConnectionCount());
 
