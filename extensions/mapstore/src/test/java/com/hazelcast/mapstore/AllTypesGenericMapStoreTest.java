@@ -67,7 +67,7 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
     public BiConsumer<GenericRecordBuilder, String> setField;
 
     private String tableName;
-    private GenericMapStore<Integer> mapStore;
+    private GenericMapStore<Integer, GenericRecord> mapStore;
 
     @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, value:{2}, expected:{3}")
     public static Collection<Object[]> parameters() {

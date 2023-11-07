@@ -64,7 +64,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     protected String mapName;
 
     protected HazelcastInstance hz;
-    private GenericMapLoader<Integer> mapLoader;
+    private GenericMapLoader<Integer, GenericRecord> mapLoader;
 
     @BeforeClass
     public static void beforeClass() {
@@ -133,7 +133,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         mapLoader = createMapLoader();
         assertMappingCreated();
 
-        GenericMapLoader<Object> mapLoaderNotMaster = createMapLoader(instances()[1]);
+        GenericMapLoader<Object, GenericRecord> mapLoaderNotMaster = createMapLoader(instances()[1]);
         mapLoaderNotMaster.destroy();
         assertMappingDestroyed();
     }
@@ -143,7 +143,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         createTable(mapName);
         insertItems(mapName, 1);
 
-        GenericMapLoader<Object> mapLoaderNonMaster = createMapLoader(instances()[1]);
+        GenericMapLoader<Object, GenericRecord> mapLoaderNonMaster = createMapLoader(instances()[1]);
         mapLoader = createMapLoader();
 
         GenericRecord record = mapLoaderNonMaster.load(0);
@@ -181,7 +181,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         createTable(mapName, "id VARCHAR(100)", "name VARCHAR(100)");
         executeJdbc("INSERT INTO " + mapName + " VALUES('0', 'name-0')");
 
-        GenericMapLoader<String> mapLoader = createMapLoader();
+        GenericMapLoader<String, GenericRecord> mapLoader = createMapLoader();
         GenericRecord record = mapLoader.load("0");
 
         assertThat(record.getString("id")).isEqualTo("0");
@@ -564,26 +564,26 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         executeJdbc(databaseProvider.createSchemaQuery(schemaName));
     }
 
-    private <K> GenericMapLoader<K> createMapLoader() {
+    private <K, V> GenericMapLoader<K, V> createMapLoader() {
         return createMapLoader(hz);
     }
 
-    private <K> GenericMapLoader<K> createMapLoader(HazelcastInstance instance) {
+    private <K, V> GenericMapLoader<K, V> createMapLoader(HazelcastInstance instance) {
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         return createMapLoader(properties, instance);
     }
 
-    private <K> GenericMapLoader<K> createMapLoader(Properties properties, HazelcastInstance instance) {
+    private <K, V> GenericMapLoader<K, V> createMapLoader(Properties properties, HazelcastInstance instance) {
         return createUnitUnderTest(properties, instance, true);
     }
 
-    protected <K> GenericMapLoader<K> createUnitUnderTest(Properties properties, HazelcastInstance instance,
+    protected <K, V> GenericMapLoader<K, V> createUnitUnderTest(Properties properties, HazelcastInstance instance,
                                                           boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
-        GenericMapLoader<K> mapLoader = new GenericMapLoader<>();
+        GenericMapLoader<K, V> mapLoader = new GenericMapLoader<>();
         if (init) {
             mapLoader.init(instance, properties, mapName);
             mapLoader.awaitInitFinished();

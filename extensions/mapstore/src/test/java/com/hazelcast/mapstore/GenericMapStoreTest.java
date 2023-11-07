@@ -56,7 +56,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, SerialTest.class})
 public class GenericMapStoreTest extends GenericMapLoaderTest {
 
-    private GenericMapStore<Integer> mapStore;
+    private GenericMapStore<Integer, GenericRecord> mapStore;
 
     @After
     public void after() {
@@ -131,7 +131,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore = createMapStore();
         assertMappingCreated();
 
-        GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
+        GenericMapStore<Object, GenericRecord> mapStoreNotMaster = createMapStore(instances()[1]);
         mapStoreNotMaster.destroy();
         assertMappingDestroyed();
     }
@@ -141,7 +141,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         createTable(mapName);
         insertItems(mapName, 1);
 
-        GenericMapStore<Object> mapStoreNonMaster = createMapStore(instances()[1]);
+        GenericMapStore<Object, GenericRecord> mapStoreNonMaster = createMapStore(instances()[1]);
         mapStore = createMapStore();
 
         GenericRecord record = mapStoreNonMaster.load(0);
@@ -376,26 +376,26 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         );
     }
 
-    private <K> GenericMapStore<K> createMapStore() {
+    private <K, V> GenericMapStore<K, V> createMapStore() {
         return createMapStore(hz);
     }
 
-    private <K> GenericMapStore<K> createMapStore(HazelcastInstance instance) {
+    private <K, V> GenericMapStore<K, V> createMapStore(HazelcastInstance instance) {
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         return createMapStore(properties, instance);
     }
 
-    private <K> GenericMapStore<K> createMapStore(Properties properties, HazelcastInstance instance) {
+    private <K, V> GenericMapStore<K, V> createMapStore(Properties properties, HazelcastInstance instance) {
         return createUnitUnderTest(properties, instance, true);
     }
 
     @Override
-    protected <K> GenericMapStore<K> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
+    protected <K, V> GenericMapStore<K, V> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
-        GenericMapStore<K> mapStore = new GenericMapStore<>();
+        GenericMapStore<K, V> mapStore = new GenericMapStore<>();
         if (init) {
             mapStore.init(instance, properties, mapName);
             mapStore.awaitInitFinished();
