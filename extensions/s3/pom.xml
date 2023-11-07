@@ -96,7 +96,7 @@
             <groupId>com.adobe.testing</groupId>
             <artifactId>s3mock-testcontainers</artifactId>
             <!-- Remember to update tag in S3MockContainer constructor as well -->
-            <version>2.17.0</version>
+            <version>3.2.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
