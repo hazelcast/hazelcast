@@ -18,15 +18,12 @@ package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -50,19 +47,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
+import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
@@ -135,13 +131,13 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
                         (ctx, item) -> Map.entry(item, ctx))
                 .setLocalParallelism(localParallelism)
-                .writeTo(Sinks.map(processors));
+                .writeTo(map(processors));
 
         mappedValueStage
                 .mapUsingService(nonSharedService(ctx -> ctx.hazelcastInstance().getName()),
                         (ctx, item) -> Map.entry(item, ctx))
                 .setLocalParallelism(localParallelism)
-                .writeTo(Sinks.map(processorInstances));
+                .writeTo(map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
@@ -161,6 +157,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
     @Test
     public void testDynamicReconfiguration() throws Exception {
+        int localParallelism = 2;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -170,40 +167,77 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("connection.user", USERNAME);
         randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "dynamic_test_items1,dynamic_test_items2,dynamic_test_items3");
-        randomProperties.setProperty("table.poll.interval.ms", "1000");
+        randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2,parallel_items_3");
+        randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        createTableAndFill(connectionUrl, "dynamic_test_items1");
+        createTableAndFill(connectionUrl, "parallel_items_1");
+        createTableAndFill(connectionUrl, "parallel_items_2");
 
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance[] instances = createHazelcastInstances(config, 3);
+        HazelcastInstance instance = instances[0];
+
+        IMap<String, Integer> processors = instance.getMap("processors_" + randomName());
+        IMap<String, String> processorInstances = instance.getMap("processorInstances_" + randomName());
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+        StreamStage<String> mappedValueStage = pipeline
+                .readFrom(KafkaConnectSources.connect(randomProperties,
                         SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(1);
-        streamStage.writeTo(Sinks.logger());
-        streamStage
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(3 * ITEM_COUNT, list.size())));
+                .setLocalParallelism(localParallelism);
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(Context::globalProcessorIndex),
+                        (ctx, item) -> Tuple2.tuple2(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(map(processors));
+
+
+        IMap<String, Integer> itemToHowManyProc = instance.getMap("itemToHowManyProc" + randomName());
+        mappedValueStage
+                .mapUsingService(nonSharedService(Context::globalProcessorIndex),
+                        (ctx, item) ->  Tuple2.tuple2(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .groupingKey(Entry::getKey)
+                .mapStateful(AtomicInteger::new, (state, key, item) -> {
+                    state.incrementAndGet();
+                    return Tuple2.tuple2(key, state.get());
+                })
+                .writeTo(map(itemToHowManyProc));
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(ctx -> ctx.hazelcastInstance().getName()),
+                        (ctx, item) -> Map.entry(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+        instance.getJet().newJob(pipeline, jobConfig);
 
-        createTableAndFill(connectionUrl, "dynamic_test_items2");
-        createTableAndFill(connectionUrl, "dynamic_test_items3");
+        var expectedProcessorIndexArray = IntStream.range(0, 3 * localParallelism).boxed().toArray(Integer[]::new);
+        var allInstancesNames = Arrays.stream(instances).map(HazelcastInstance::getName).toArray(String[]::new);
+        assertTrueEventually(() -> {
+            Set<Integer> array = new TreeSet<>(processors.values());
+            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
 
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-        }
+            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
+            assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
+        });
+
+        processors.clear();
+        processorInstances.clear();
+        createTableAndFill(connectionUrl, "parallel_items_3");
+
+        assertTrueEventually(() -> {
+            Set<Integer> array = new TreeSet<>(processors.values());
+            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+
+            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
+            assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
+        });
     }
 
     private void createTableAndFill(String connectionUrl, String tableName) throws SQLException {

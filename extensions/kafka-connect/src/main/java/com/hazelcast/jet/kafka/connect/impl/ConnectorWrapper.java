@@ -84,6 +84,7 @@ public class ConnectorWrapper {
     }
 
     private SourceTask createSourceTask() {
+//        connector.taskConfigs()
         Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
