@@ -44,6 +44,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.INSTANCE;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -130,6 +131,28 @@ public class KvMetadataAvroResolverTest {
                 ),
                 null
         )).hasMessage("Inline schema cannot be used with schema registry");
+    }
+
+    @Test
+    public void when_schemaHasUnsupportedType_then_fieldResolutionFails() {
+        List<Schema> unsupportedSchemaTypes = List.of(
+                Schema.create(Schema.Type.BYTES),
+                SchemaBuilder.array().items(Schema.create(Schema.Type.INT)),
+                SchemaBuilder.map().values(Schema.create(Schema.Type.INT)),
+                SchemaBuilder.enumeration("enum").symbols("symbol"),
+                SchemaBuilder.fixed("fixed").size(0)
+        );
+        for (Schema schema : unsupportedSchemaTypes) {
+            assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
+                    isKey,
+                    emptyList(),
+                    Map.of(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA,
+                            SchemaBuilder.record("jet.sql").fields()
+                                    .name("field").type(schema).noDefault()
+                                    .endRecord().toString()),
+                    null
+            ).toArray()).hasMessage("Unsupported schema type: " + schema.getType());
+        }
     }
 
     @Test

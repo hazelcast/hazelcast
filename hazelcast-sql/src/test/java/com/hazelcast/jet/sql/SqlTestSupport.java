@@ -811,6 +811,72 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 ? String.valueOf(value) : "'" + value + "'";
     }
 
+    public static class SqlInsert {
+        public final String mapping;
+        public final List<String> fields = new ArrayList<>();
+        public final List<String> literals = new ArrayList<>();
+        public final List<Object> params = new ArrayList<>();
+
+        public SqlInsert(String mapping) {
+            this.mapping = mapping;
+        }
+
+        public SqlInsert literals(Object... values) {
+            for (int i = 0; i < values.length / 2; i++) {
+                fields.add((String) values[2 * i]);
+                literals.add(toSQL(values[2 * i + 1]));
+            }
+            return this;
+        }
+
+        public SqlInsert params(Object... values) {
+            for (int i = 0; i < values.length / 2; i++) {
+                fields.add((String) values[2 * i]);
+                literals.add("?");
+                params.add(values[2 * i + 1]);
+            }
+            return this;
+        }
+
+        public void execute() {
+            execute(instance());
+        }
+
+        public void execute(HazelcastInstance instance) {
+            instance.getSql().execute("INSERT INTO " + mapping
+                    + (fields.isEmpty() ? "" : " (" + String.join(", ", fields) + ")")
+                    + " VALUES (" + String.join(", ", literals) + ")", params.toArray());
+        }
+
+        public class RowValue {
+            private final String field;
+            private final List<String> literals = new ArrayList<>();
+            private final List<Object> params = new ArrayList<>();
+
+            RowValue(String field) {
+                this.field = field;
+            }
+
+            public RowValue literals(Object... values) {
+                Arrays.stream(values).map(SqlTestSupport::toSQL).forEach(literals::add);
+                return this;
+            }
+
+            public RowValue params(Object... values) {
+                literals.addAll(Collections.nCopies(values.length, "?"));
+                params.addAll(asList(values));
+                return this;
+            }
+
+            public SqlInsert end() {
+                fields.add(field);
+                SqlInsert.this.literals.add("(" + String.join(", ", literals) + ")");
+                SqlInsert.this.params.addAll(params);
+                return SqlInsert.this;
+            }
+        }
+    }
+
     public static class SqlMapping extends SqlStructure<SqlMapping> {
         private static final Map<Class<? extends SqlConnector>, String> TYPES = Map.of(
                 FileSqlConnector.class, FileSqlConnector.TYPE_NAME,

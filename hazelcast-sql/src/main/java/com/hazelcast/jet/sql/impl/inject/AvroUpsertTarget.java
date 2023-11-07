@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import static com.google.common.collect.Sets.toImmutableEnumSet;
-import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -98,7 +98,7 @@ public class AvroUpsertTarget implements UpsertTarget {
             case FLOAT:
             case DOUBLE:
             case STRING:
-                QueryDataType targetType = AVRO_TO_SQL.getOrDefault(fieldSchemaType);
+                QueryDataType targetType = AVRO_TO_SQL.get(fieldSchemaType);
                 return (record, value) -> {
                     try {
                         record.set(path, targetType.convert(value));
@@ -127,7 +127,7 @@ public class AvroUpsertTarget implements UpsertTarget {
                         .map(Schema::getType).collect(toImmutableEnumSet())::contains;
                 DefaultedMap<Class<?>, List<QueryDataType>> availableTargets =
                         CONVERSION_PREFS.mapKeysAndValues(identity(), targets -> targets.stream()
-                                .filter(hasType).map(AVRO_TO_SQL::getOrDefault).collect(toList()));
+                                .filter(hasType).map(AVRO_TO_SQL::get).collect(toList()));
                 return (record, value) -> {
                     if (value == null) {
                         record.set(path, null);
