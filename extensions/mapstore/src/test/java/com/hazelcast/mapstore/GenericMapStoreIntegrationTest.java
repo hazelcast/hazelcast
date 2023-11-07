@@ -110,8 +110,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     @Before
     public void setUp() throws Exception {
         tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
-        createTableThreeColumns(tableName);
-        insertItemsThreeColumns(tableName, 1);
+        createTable(tableName);
+        insertItems(tableName, 1);
 
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -162,11 +162,11 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
-        map.put(42, new Person(42, "name-42", 35));
+        map.put(42, new Person(42, "name-42"));
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "name-0", 0),
-                new Row(42, "name-42", 35)
+                new Row(0, "name-0"),
+                new Row(42, "name-42")
         );
     }
 
@@ -176,13 +176,13 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "name-0", 0)
+                new Row(0, "name-0")
         );
 
-        map.put(0, new Person(0, "updated", 0));
+        map.put(0, new Person(0, "updated"));
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "updated", 0)
+                new Row(0, "updated")
         );
     }
 
@@ -202,7 +202,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     public void testDynamicDataConnectionConfig() throws Exception {
         String randomTableName = randomTableName();
 
-        createTableThreeColumns(randomTableName);
+        createTable(randomTableName);
         assertThat(jdbcRowsTable(randomTableName)).isEmpty();
 
         HazelcastInstance client = client();
@@ -221,10 +221,10 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         client.getConfig().addMapConfig(mapConfig);
 
         IMap<Integer, Person> someTestMap = client.getMap(randomTableName);
-        someTestMap.put(42, new Person(42, "some-name-42", 35));
+        someTestMap.put(42, new Person(42, "some-name-42"));
 
         assertJdbcRowsAnyOrder(randomTableName,
-                new Row(42, "some-name-42", 35)
+                new Row(42, "some-name-42")
         );
     }
 
@@ -247,7 +247,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         });
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "new-name-0", 0)
+                new Row(0, "new-name-0")
         );
     }
 
@@ -271,13 +271,12 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 GenericRecordBuilder.compact("org.example.Person")
                         .setString("id", "42")
                         .setString("name", "name-400")
-                        .setInt32("age", 40)
                         .build()
         );
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "name-0", 0),
-                new Row(400, "name-400", 40)
+                new Row(0, "name-0"),
+                new Row(400, "name-400")
         );
     }
 
@@ -298,7 +297,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
-        map.put(42, new Person(42, "name-42", 35));
+        map.put(42, new Person(42, "name-42"));
         map.evictAll();
 
         assertThat(map.size()).isZero();
@@ -317,16 +316,16 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Map<Integer, Person> putMap = new HashMap<>();
-        putMap.put(42, new Person(42, "name-42", 42));
-        putMap.put(43, new Person(43, "name-43", 43));
-        putMap.put(44, new Person(44, "name-44", 44));
+        putMap.put(42, new Person(42, "name-42"));
+        putMap.put(43, new Person(43, "name-43"));
+        putMap.put(44, new Person(44, "name-44"));
         map.putAll(putMap);
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "name-0", 0),
-                new Row(42, "name-42", 42),
-                new Row(43, "name-43", 43),
-                new Row(44, "name-44", 44)
+                new Row(0, "name-0"),
+                new Row(42, "name-42"),
+                new Row(43, "name-43"),
+                new Row(44, "name-44")
         );
     }
 
@@ -336,15 +335,15 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Map<Integer, Person> putMap = new LinkedHashMap<>();
-        putMap.put(42, new Person(42, "name-42", 42));
-        putMap.put(0, new Person(0, "updated", 0));
-        putMap.put(44, new Person(44, "name-44", 44));
+        putMap.put(42, new Person(42, "name-42"));
+        putMap.put(0, new Person(0, "updated"));
+        putMap.put(44, new Person(44, "name-44"));
         map.putAll(putMap);
 
         assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "updated", 0),
-                new Row(42, "name-42", 42),
-                new Row(44, "name-44", 44)
+                new Row(0, "updated"),
+                new Row(42, "name-42"),
+                new Row(44, "name-44")
         );
     }
 
@@ -352,7 +351,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     public void testExceptionIsConstructable() throws SQLException {
         HazelcastInstance client = client();
         // Add some more items for all members
-        insertItemsThreeColumns(tableName, 2, 5);
+        insertItems(tableName, 2, 5);
 
         IMap<Integer, Person> map = client.getMap(tableName);
         // Method call to create the lazy mapping in GenericMapStore
@@ -370,7 +369,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
 
         String message = "did you forget to CREATE MAPPING?";
-        Person person = new Person(42, "name-42", 42);
+        Person person = new Person(42, "name-42");
         assertThatThrownBy(() -> map.put(42, person))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining(message)
@@ -406,7 +405,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
             logger.info("Iteration " + i);
             Map<Integer, Person> toInsert = new HashMap<>();
             for (int j = 0; j < 10_000; j++) {
-                toInsert.put(j, new Person(j, "name-" + j, j));
+                toInsert.put(j, new Person(j, "name-" + j));
             }
             map.putAll(toInsert);
             logger.info("Inserted 10k items");
@@ -434,7 +433,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         Integer itemSize = 1000;
         logger.info("Putting data into the IMap");
         for (int i = 1; i < itemSize; i++) {
-            map.put(i, new Person(i, "name-" + i, i));
+            map.put(i, new Person(i, "name-" + i));
         }
         logger.info("Putting data into the IMap finished");
 
@@ -459,7 +458,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         logger.info("Hz3 was shut down");
 
         // The new item should still be loadable via the mapping
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000', 100)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
         logger.info("Executed the INSERT query");
         Person p = map.get(itemSize);
         assertThat(p.getId()).isEqualTo(itemSize);

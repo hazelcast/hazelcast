@@ -25,15 +25,13 @@ public class Person {
 
     Integer id;
     String name;
-    Integer age;
 
     public Person() {
     }
 
-    public Person(Integer id, String name, Integer age) {
+    public Person(Integer id, String name) {
         this.id = id;
         this.name = name;
-        this.age = age;
     }
 
     public Integer getId() {
@@ -51,21 +49,12 @@ public class Person {
     public void setName(String name) {
         this.name = name;
     }
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
 
     @Override
     public String toString() {
         return "Person{" +
                 "personId=" + id +
-                ", name='" + name +
-                ", age=" + age +'\'' +
+                ", name='" + name + '\'' +
                 '}';
     }
 
@@ -78,11 +67,11 @@ public class Person {
             return false;
         }
         Person person = (Person) o;
-        return Objects.equals(id, person.id) && Objects.equals(name, person.name) && Objects.equals(age, person.age);
+        return Objects.equals(id, person.id) && Objects.equals(name, person.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, age);
+        return Objects.hash(id, name);
     }
 }

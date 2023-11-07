@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
-import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -86,6 +85,7 @@ import static java.util.stream.Collectors.toMap;
  * This mapping is removed when the map is destroyed.
  *
  * @param <K>
+ * @param <V>
  */
 public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecycleSupport {
 

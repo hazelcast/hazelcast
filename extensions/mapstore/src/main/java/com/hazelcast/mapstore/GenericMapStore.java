@@ -19,7 +19,6 @@ package com.hazelcast.mapstore;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -59,6 +58,7 @@ import static com.hazelcast.mapstore.JdbcParameters.convert;
  * the primary key is still received from @{link {@link com.hazelcast.map.IMap} method call
  *
  * @param <K>
+ * @param <V>
  */
 public class GenericMapStore<K, V> extends GenericMapLoader<K, V>
         implements MapStore<K, V>, MapLoaderLifecycleSupport {
