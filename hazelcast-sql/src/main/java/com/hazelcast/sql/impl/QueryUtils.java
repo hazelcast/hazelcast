@@ -62,6 +62,8 @@ public final class QueryUtils {
     // This is an arbitrarily-chosen prefix so that data connection names don't clash with other object names
     private static final String DATA_CONNECTION_KEY_PREFIX = "57ae1d3a-d379-44cb-bb60-86b1d2dcd744-";
 
+    // TODO: tech debt: revisit and this class, move some methods to other classes.
+
     private QueryUtils() {
         // No-op.
     }
