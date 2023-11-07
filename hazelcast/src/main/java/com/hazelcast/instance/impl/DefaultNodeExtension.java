@@ -31,6 +31,7 @@ import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.PersistenceConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -104,6 +105,7 @@ import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -706,5 +708,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public MessageTaskFactoryProvider createMessageTaskFactoryProvider(NodeEngine nodeEngine) {
         return new DefaultMessageTaskFactoryProvider(nodeEngine);
+    }
+
+    @Override
+    public SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig) {
+        throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
     }
 }
