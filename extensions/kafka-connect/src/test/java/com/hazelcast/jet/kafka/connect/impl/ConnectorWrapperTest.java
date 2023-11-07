@@ -48,6 +48,7 @@ public class ConnectorWrapperTest {
     @Test
     public void should_create_task_runners() {
         ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        connectorWrapper.setMasterProcessor(true);
 
         TaskRunner taskRunner1 = connectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
@@ -56,7 +57,8 @@ public class ConnectorWrapperTest {
         expectedTaskProperties.put("name", "some-name");
         expectedTaskProperties.put("connector.class", DummySourceConnector.class.getName());
         expectedTaskProperties.put("task.id", "0");
-        assertThat(lastTaskInstance().getProperties()).containsAllEntriesOf(expectedTaskProperties);
+        DummySourceConnector.DummyTask dummyTask = lastTaskInstance();
+        assertThat(dummyTask.getProperties()).containsAllEntriesOf(expectedTaskProperties);
 
         TaskRunner taskRunner2 = connectorWrapper.createTaskRunner();
         taskRunner2.poll();

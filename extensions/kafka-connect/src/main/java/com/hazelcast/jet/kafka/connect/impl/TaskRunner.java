@@ -27,12 +27,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-class TaskRunner {
-    private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
+public class TaskRunner {
+    private ILogger logger = Logger.getLogger(TaskRunner.class);
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
@@ -40,8 +41,7 @@ class TaskRunner {
     private volatile boolean running;
     private volatile boolean reconfigurationNeeded;
     private SourceTask task;
-    private Map<String, String> taskConfig;
-
+    private final AtomicReference<Map<String, String>> taskConfigReference = new AtomicReference<>();
 
     TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
@@ -49,7 +49,11 @@ class TaskRunner {
         this.sourceTaskFactory = sourceTaskFactory;
     }
 
-    List<SourceRecord> poll() {
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
+    public List<SourceRecord> poll() {
         restartTaskIfNeeded();
         if (running) {
             return doPoll();
@@ -58,13 +62,13 @@ class TaskRunner {
         }
     }
 
-    void stop() {
+    public void stop() {
         try {
             taskLifecycleLock.lock();
             if (running) {
-                LOGGER.fine("Stopping task '" + name + "'");
+                logger.fine("Stopping task '" + name + "'");
                 task.stop();
-                LOGGER.fine("Task '" + name + "' stopped");
+                logger.fine("Task '" + name + "' stopped");
             }
         } finally {
             running = false;
@@ -88,18 +92,18 @@ class TaskRunner {
             try {
                 stop();
             } catch (Exception ex) {
-                LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
+                logger.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
             }
         }
         start();
     }
 
-    void updateTaskConfig(Map<String, String> taskConfig) {
+    public void updateTaskConfig(Map<String, String> taskConfig) {
         try {
             taskLifecycleLock.lock();
-            if (!Objects.equals(this.taskConfig, taskConfig)) {
-                LOGGER.info("Updating task '" + name + "' configuration");
-                this.taskConfig = taskConfig;
+            if (!Objects.equals(this.taskConfigReference.get(), taskConfig)) {
+                logger.info("Updating task '" + name + "' configuration");
+                taskConfigReference.set(taskConfig);
                 reconfigurationNeeded = true;
             }
         } finally {
@@ -111,16 +115,16 @@ class TaskRunner {
         try {
             taskLifecycleLock.lock();
             if (!running) {
-                if (taskConfig != null) {
+                if (taskConfigReference.get() != null) {
                     SourceTask taskLocal = sourceTaskFactory.create();
-                    LOGGER.info("Initializing task '" + name + "'");
-                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
-                    LOGGER.info("Starting task '" + name + "'");
-                    taskLocal.start(taskConfig);
+                    logger.info("Initializing task '" + name + "'");
+                    taskLocal.initialize(new JetSourceTaskContext(taskConfigReference.get(), state));
+                    logger.info("Starting task '" + name + "'");
+                    taskLocal.start(taskConfigReference.get());
                     this.task = taskLocal;
                     running = true;
                 } else {
-                    LOGGER.finest("No task config for task '" + name + "'");
+                    logger.finest("No task config for task '" + name + "'");
                 }
             }
         } finally {
@@ -133,7 +137,7 @@ class TaskRunner {
             try {
                 task.commit();
             } catch (InterruptedException e) {
-                LOGGER.warning("Interrupted while committing");
+                logger.warning("Interrupted while committing");
                 Thread.currentThread().interrupt();
             }
         }
@@ -167,12 +171,12 @@ class TaskRunner {
                 task.commitRecord(rec, null);
             }
         } catch (InterruptedException ie) {
-            LOGGER.warning("Interrupted while committing record");
+            logger.warning("Interrupted while committing record");
             Thread.currentThread().interrupt();
         }
     }
 
-    public State createSnapshot() {
+    public State getSnapshotCopy() {
         State snapshot = new State();
         snapshot.load(state);
         return snapshot;
@@ -197,5 +201,4 @@ class TaskRunner {
     interface SourceTaskFactory {
         SourceTask create();
     }
-
 }

@@ -66,6 +66,10 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     @Nonnull
     Collection<? extends Processor> get(int count);
 
+    default boolean checkLocalParallelism() {
+        return true;
+    }
+
     /**
      * Returns {@code true} if the {@link #close(Throwable)} method of this
      * instance is cooperative. If it's not, the call to the {@code close()}

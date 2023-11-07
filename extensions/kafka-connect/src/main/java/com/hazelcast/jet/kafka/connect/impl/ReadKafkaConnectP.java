@@ -33,57 +33,88 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
-
-    private final ConnectorWrapper connectorWrapper;
+    private ConnectorWrapper connectorWrapper;
     private final EventTimeMapper<T> eventTimeMapper;
     private final FunctionEx<SourceRecord, T> projectionFn;
-    private TaskRunner taskRunner;
+    private Properties propertiesFromUser;
     private boolean snapshotInProgress;
     private Traverser<Entry<BroadcastKey<String>, State>> snapshotTraverser;
     private boolean snapshotsEnabled;
-    private int processorIndex;
     private Traverser<?> traverser = Traversers.empty();
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
+    private int globalProcessorIndex;
+    private int localProcessorIndex;
+    private int processorOrder;
+    private final AtomicInteger counter = new AtomicInteger();
 
-    public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
-                             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+    public ReadKafkaConnectP(@Nonnull EventTimePolicy<? super T> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
-        checkNotNull(connectorWrapper, "connectorWrapper is required");
-        checkNotNull(eventTimePolicy, "eventTimePolicy is required");
-        checkNotNull(projectionFn, "projectionFn is required");
-        this.connectorWrapper = connectorWrapper;
+        Objects.requireNonNull(eventTimePolicy, "eventTimePolicy is required");
+        Objects.requireNonNull(projectionFn, "projectionFn is required");
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         this.projectionFn = projectionFn;
         eventTimeMapper.addPartitions(1);
     }
 
+    public void setPropertiesFromUser(Properties propertiesFromUser) {
+        this.propertiesFromUser = propertiesFromUser;
+    }
+
+    public void setConnectorWrapper(ConnectorWrapper connectorWrapper) {
+        this.connectorWrapper = connectorWrapper;
+    }
+
+    // Used via reflection
+    public void setProcessorOrder(int processorOrder) {
+        this.processorOrder = processorOrder;
+    }
+
     @Override
     protected void init(@Nonnull Context context) {
-        taskRunner = connectorWrapper.createTaskRunner();
+        globalProcessorIndex = context.globalProcessorIndex();
+        localProcessorIndex = context.localProcessorIndex();
+        getLogger().info("Entering ReadKafkaConnectP init processorOrder=" +
+                         processorOrder + " localProcessorIndex= " + localProcessorIndex);
+
+        if (connectorWrapper == null) {
+            connectorWrapper = new ConnectorWrapper(propertiesFromUser);
+            connectorWrapper.setTaskId(localProcessorIndex);
+        }
+        connectorWrapper.setLogger(getLogger());
+        connectorWrapper.setProcessorOrder(processorOrder);
+        connectorWrapper.setMasterProcessor(isMasterProcessor());
+
+        // Any processor can create the topic
+        connectorWrapper.createTopic(context.hazelcastInstance(), context.executionId());
+
+        connectorWrapper.createTaskRunner();
         snapshotsEnabled = context.snapshottingEnabled();
-        processorIndex = context.globalProcessorIndex();
         NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+    }
+
+    private boolean isMasterProcessor() {
+        return processorOrder == 0;
     }
 
     @Override
@@ -93,6 +124,9 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public boolean complete() {
+        if (!connectorWrapper.hasTaskConfiguration()) {
+            return false;
+        }
         if (snapshotInProgress) {
             return false;
         }
@@ -101,7 +135,10 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         }
 
         long start = Timer.nanos();
-        List<SourceRecord> sourceRecords = taskRunner.poll();
+        List<SourceRecord> sourceRecords = connectorWrapper.poll();
+
+        getLogger().info("polled record size " + counter.addAndGet(sourceRecords.size()));
+
         long durationInNanos = Timer.nanosElapsed(start);
         localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
         localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
@@ -112,7 +149,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
                                     EventTimeMapper.NO_NATIVE_TIME
                                     : rec.timestamp();
                             T projectedRecord = projectionFn.apply(rec);
-                            taskRunner.commitRecord(rec);
+                            connectorWrapper.commitRecord(rec);
                             return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
                         });
         emitFromTraverser(traverser);
@@ -121,12 +158,15 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public boolean saveToSnapshot() {
+        getLogger().info("saveToSnapshot  for globalProcessorIndex=" + globalProcessorIndex +
+                         " localProcessorIndex= " + localProcessorIndex);
+
         if (!snapshotsEnabled) {
             return true;
         }
         snapshotInProgress = true;
         if (snapshotTraverser == null) {
-            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), taskRunner.createSnapshot()))
+            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), connectorWrapper.getSnapshotCopy()))
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
                         getLogger().finest("Finished saving snapshot");
@@ -136,14 +176,16 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     }
 
     private BroadcastKey<String> snapshotKey() {
-        return broadcastKey("snapshot-" + processorIndex);
+        return broadcastKey("snapshot-" + globalProcessorIndex);
     }
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        getLogger().info("restoreFromSnapshot key " + key + " value " + value);
+
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
-            taskRunner.restoreSnapshot((State) value);
+            connectorWrapper.restoreSnapshot((State) value);
         }
     }
 
@@ -151,7 +193,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     public boolean snapshotCommitFinish(boolean success) {
         try {
             if (success) {
-                taskRunner.commit();
+                connectorWrapper.commit();
             }
         } finally {
             snapshotInProgress = false;
@@ -162,54 +204,45 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public void close() {
-        if (taskRunner != null) {
-            taskRunner.stop();
-        }
+
+        connectorWrapper.taskRunnerStop();
+        connectorWrapper.stop();
+        connectorWrapper.destroyTopic();
+
+        getLogger().info("Closed ReadKafkaConnectP");
     }
 
     public Map<String, LocalKafkaConnectStats> getStats() {
         Map<String, LocalKafkaConnectStats> connectStats = new HashMap<>();
-        if (taskRunner != null) {
-            connectStats.put(taskRunner.getName(), localKafkaConnectStats);
+        if (connectorWrapper.hasTaskRunner()) {
+            connectStats.put(connectorWrapper.getName(), localKafkaConnectStats);
         }
         return connectStats;
     }
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        if (taskRunner != null) {
-            descriptor.copy().withTag("task.runner", taskRunner.getName());
+        if (connectorWrapper.hasTaskRunner()) {
+            descriptor.copy().withTag("task.runner", connectorWrapper.getName());
         }
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
-    public static <T> ProcessorSupplier processSupplier(@Nonnull Properties properties,
+    public static <T> ProcessorSupplier processSupplier(@Nonnull Properties propertiesFromUser,
                                                         @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                                                         @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         return new ProcessorSupplier() {
-            private transient ConnectorWrapper connectorWrapper;
-
-            @Override
-            public void init(@Nonnull Context context) {
-                properties.put("tasks.max", Integer.toString(context.localParallelism()));
-                this.connectorWrapper = new ConnectorWrapper(properties);
-            }
-
-            @Override
-            public void close(@Nullable Throwable error) {
-                if (connectorWrapper != null) {
-                    connectorWrapper.stop();
-                }
-            }
-
             @Nonnull
             @Override
-            public Collection<? extends Processor> get(int count) {
-                return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy, projectionFn))
+            public Collection<? extends Processor> get(int localParallelismForMember) {
+                return IntStream.range(0, localParallelismForMember)
+                        .mapToObj(i -> {
+                            ReadKafkaConnectP<T> processor = new ReadKafkaConnectP<>(eventTimePolicy, projectionFn);
+                            processor.setPropertiesFromUser(propertiesFromUser);
+                            return processor;
+                        })
                         .collect(Collectors.toList());
             }
-
         };
     }
 }

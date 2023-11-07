@@ -63,7 +63,8 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> (Integer) rec.value());
+        readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> (Integer) rec.value());
+        readKafkaConnectP.setConnectorWrapper(connectorWrapper);
         outbox = new TestOutbox(new int[]{10}, 10);
         context = new TestProcessorContext();
         hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
@@ -83,7 +84,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
     @Test
     public void should_filter_items() throws Exception {
         ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> {
+        readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> {
             Integer value = (Integer) rec.value();
             if (value % 2 == 0) {
                 return null;
@@ -91,6 +92,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
                 return value;
             }
         });
+        readKafkaConnectP.setConnectorWrapper(connectorWrapper);
 
         readKafkaConnectP.init(outbox, context);
         boolean complete = readKafkaConnectP.complete();
@@ -99,25 +101,21 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(1, 3);
     }
 
-
-    @Test
-    public void should_require_connectorWrapper() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(null, noEventTime(), rec -> (Integer) rec.value()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("connectorWrapper is required");
-    }
-
     @Test
     public void should_require_eventTimePolicy() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null,
-                rec -> (Integer) rec.value()))
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(null,
+                rec -> (Integer) rec.value())
+                .setConnectorWrapper(connectorWrapper))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("eventTimePolicy is required");
     }
 
     @Test
     public void should_require_projectionFn() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), noEventTime(), null))
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(noEventTime(), null)
+                .setConnectorWrapper(connectorWrapper))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("projectionFn is required");
     }

@@ -63,6 +63,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int EXPECT_NOTHING_PROCESSOR_SUPPLIER = 19;
     public static final int SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 20;
     public static final int RANDOM_MEMBER_PROCESSOR_META_SUPPLIER = 21;
+    public static final int TASK_MAX_PROCESSOR_META_SUPPLIER = 22;
 
     /**
      * Factory ID
@@ -127,6 +128,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new ProcessorMetaSupplier.SpecificMemberPms();
                 case RANDOM_MEMBER_PROCESSOR_META_SUPPLIER:
                     return new ProcessorMetaSupplier.RandomMemberPms();
+                case TASK_MAX_PROCESSOR_META_SUPPLIER:
+                    return new TaskMaxProcessorMetaSupplier();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

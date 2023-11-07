@@ -17,7 +17,7 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.TaskMaxProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -82,15 +82,18 @@ public final class KafkaConnectSources {
 
         //fail fast, required by lazy-initialized KafkaConnectSource
         checkRequiredProperty(properties, "connector.class");
+        checkRequiredProperty(properties, "tasks.max");
 
-        if (properties.containsKey("tasks.max")) {
-            throw new IllegalArgumentException("Property 'tasks.max' not allowed. Use setLocalParallelism("
-                    + properties.getProperty("tasks.max") + ") in the pipeline instead");
-        }
+        String tasksMax = properties.getProperty("tasks.max");
+
+        TaskMaxProcessorMetaSupplier metaSupplier = new TaskMaxProcessorMetaSupplier();
+        metaSupplier.setTasksMax(Integer.parseInt(tasksMax));
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
-                eventTimePolicy -> ProcessorMetaSupplier.randomMember(processSupplier(properties, eventTimePolicy,
-                        projectionFn)));
+                eventTimePolicy -> {
+                    metaSupplier.setSupplier(processSupplier(properties, eventTimePolicy, projectionFn));
+                    return metaSupplier;
+                });
     }
 
     /**

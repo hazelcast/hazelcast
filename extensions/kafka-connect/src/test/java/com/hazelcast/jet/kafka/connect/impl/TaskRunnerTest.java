@@ -128,7 +128,7 @@ public class TaskRunnerTest {
         for (SourceRecord sourceRecord : taskRunner.poll()) {
             taskRunner.commitRecord(sourceRecord);
         }
-        State snapshot = taskRunner.createSnapshot();
+        State snapshot = taskRunner.getSnapshotCopy();
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(2);
@@ -138,7 +138,7 @@ public class TaskRunnerTest {
 
     @Test
     public void should_restore_snapshot() {
-        State initialSnapshot = taskRunner.createSnapshot();
+        State initialSnapshot = taskRunner.getSnapshotCopy();
         assertThat(initialSnapshot).isEqualTo(new State(new HashMap<>()));
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
@@ -148,7 +148,7 @@ public class TaskRunnerTest {
 
         taskRunner.restoreSnapshot(stateToRestore);
 
-        State snapshot = taskRunner.createSnapshot();
+        State snapshot = taskRunner.getSnapshotCopy();
         assertThat(snapshot).isEqualTo(new State(partitionsToOffset));
     }
 

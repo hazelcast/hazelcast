@@ -17,17 +17,22 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigPublisher;
+import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.topic.ReliableMessageListener;
+import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
@@ -35,25 +40,123 @@ import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
+/**
+ * This class wraps a Kafka Connector and TaskRunner
+ */
 public class ConnectorWrapper {
-    private static final ILogger LOGGER = Logger.getLogger(ConnectorWrapper.class);
-    private final SourceConnector connector;
+    private ILogger logger = Logger.getLogger(ConnectorWrapper.class);
+    private final SourceConnector sourceConnector;
     private final int tasksMax;
-    private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
-    private final AtomicInteger taskIdGenerator = new AtomicInteger();
+    private TaskRunner taskRunner;
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
+    private int taskId;
     private final State state = new State();
     private final String name;
+    private boolean isMasterProcessor;
+    private TaskConfigPublisher taskConfigPublisher;
+    private int processorOrder;
+    private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
 
-    public ConnectorWrapper(Properties properties) {
-        String connectorClazz = checkRequiredProperty(properties, "connector.class");
-        this.name = checkRequiredProperty(properties, "name");
-        tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
-        this.connector = newConnectorInstance(connectorClazz);
-        LOGGER.fine("Initializing connector '" + name + "'");
-        this.connector.initialize(new JetConnectorContext());
-        LOGGER.fine("Starting connector '" + name + "'");
-        this.connector.start(toMap(properties));
+    public ConnectorWrapper(Properties propertiesFromUser) {
+        String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
+        this.name = checkRequiredProperty(propertiesFromUser, "name");
+        tasksMax = Integer.parseInt(propertiesFromUser.getProperty("tasks.max"));
+        this.sourceConnector = newConnectorInstance(connectorClazz);
+        logger.fine("Initializing connector '" + name + "'");
+        this.sourceConnector.initialize(new JetConnectorContext());
+        logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
+        Map<String, String> map = toMap(propertiesFromUser);
+        this.sourceConnector.start(map);
+    }
+
+    public boolean hasTaskConfiguration() {
+        return receivedTaskConfiguration.get();
+    }
+
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
+    public void setTaskId(int taskId) {
+        this.taskId = taskId;
+    }
+
+    public void setMasterProcessor(boolean masterProcessor) {
+        isMasterProcessor = masterProcessor;
+    }
+
+    public void setProcessorOrder(int processorOrder) {
+        this.processorOrder = processorOrder;
+    }
+
+    public void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
+        taskConfigPublisher = new TaskConfigPublisher();
+        taskConfigPublisher.createTopic(hazelcastInstance, executionId);
+
+        // All processors must listen the topic
+        addTopicListener(new ReliableMessageListenerAdapter<>(message -> {
+            TaskConfigTopic taskConfigTopic = message.getMessageObject();
+            state.setTaskConfigs(taskConfigTopic.getTaskConfigs());
+            Map<String, String> taskConfig = state.getTaskConfig(processorOrder);
+
+            logger.info("Updating taskRunner with processorOrder = " + processorOrder
+                        + " taskConfigTopic=" + taskConfig);
+
+            taskRunner.updateTaskConfig(taskConfig);
+
+            receivedTaskConfiguration.set(true);
+        }));
+    }
+
+    public void destroyTopic() {
+        removeTopicListeners();
+        if (isMasterProcessor) {
+            // Only master processor can destroy the topic
+            taskConfigPublisher.destroyTopic();
+        }
+    }
+
+    private void addTopicListener(ReliableMessageListener<TaskConfigTopic> reliableMessageListener) {
+        taskConfigPublisher.addListener(reliableMessageListener);
+    }
+
+    private void removeTopicListeners() {
+        taskConfigPublisher.removeListeners();
+    }
+
+    private void publishTopic(TaskConfigTopic taskConfigTopic) {
+        logger.fine("Publishing TaskConfigTopic");
+        if (taskConfigPublisher != null) {
+            taskConfigPublisher.publish(taskConfigTopic);
+        }
+    }
+
+    public List<SourceRecord> poll() {
+        return taskRunner.poll();
+    }
+
+    public void commitRecord(SourceRecord sourceRecord) {
+        taskRunner.commitRecord(sourceRecord);
+    }
+
+    public State getSnapshotCopy() {
+        return taskRunner.getSnapshotCopy();
+    }
+
+    public void restoreSnapshot(State state) {
+        taskRunner.restoreSnapshot(state);
+    }
+
+    public void commit() {
+        taskRunner.commit();
+    }
+
+    public String getName() {
+        return taskRunner.getName();
+    }
+
+    public void taskRunnerStop() {
+        taskRunner.stop();
     }
 
     private static SourceConnector newConnectorInstance(String connectorClazz) {
@@ -62,35 +165,64 @@ public class ConnectorWrapper {
         } catch (Exception e) {
             if (e instanceof ClassNotFoundException) {
                 throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
-                        "Did you add the connector jar to the job?", e);
+                                             "Did you add the connector jar to the job?", e);
             }
             throw rethrow(e);
         }
     }
 
     public void stop() {
-        LOGGER.fine("Stopping connector '" + name + "'");
-        connector.stop();
-        LOGGER.fine("Connector '" + name + "' stopped");
-
+        logger.fine("Stopping connector '" + name + "'");
+        sourceConnector.stop();
+        logger.fine("Connector '" + name + "' stopped");
     }
 
     public TaskRunner createTaskRunner() {
-        String taskName = name + "-task-" + taskIdGenerator.getAndIncrement();
-        TaskRunner taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
-        taskRunners.add(taskRunner);
+        String taskName = name + "-task-" + taskId;
+        taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
+        taskRunner.setLogger(logger);
         requestTaskReconfiguration();
         return taskRunner;
     }
 
     private SourceTask createSourceTask() {
-        Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
+        Class<? extends SourceTask> taskClass = sourceConnector.taskClass().asSubclass(SourceTask.class);
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
+    public void requestTaskReconfiguration() {
+        if (!isMasterProcessor) {
+            logger.fine("requestTaskReconfiguration is skipped");
+            return;
+        }
+        try {
+            reconfigurationLock.lock();
+            logger.fine("Updating tasks configuration");
+            List<Map<String, String>> taskConfigs = sourceConnector.taskConfigs(tasksMax);
+            for (int index = 0; index < taskConfigs.size(); index++) {
+                Map<String, String> map = taskConfigs.get(index);
+                logger.fine("sourceConnector index " + index + " taskConfig=" + map);
+            }
+            TaskConfigTopic taskConfigTopic = new TaskConfigTopic();
+            taskConfigTopic.setTaskConfigs(taskConfigs);
+            publishTopic(taskConfigTopic);
+        } finally {
+            reconfigurationLock.unlock();
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ConnectorWrapper{" +
+               "name='" + name + '\'' +
+               '}';
+    }
+
+    public boolean hasTaskRunner() {
+        return taskRunner != null;
+    }
 
     private class JetConnectorContext implements ConnectorContext {
-
         @Override
         public void requestTaskReconfiguration() {
             ConnectorWrapper.this.requestTaskReconfiguration();
@@ -100,31 +232,5 @@ public class ConnectorWrapper {
         public void raiseError(Exception e) {
             throw rethrow(e);
         }
-    }
-
-    private void requestTaskReconfiguration() {
-        if (taskRunners.isEmpty()) {
-            return;
-        }
-        try {
-            reconfigurationLock.lock();
-            LOGGER.fine("Updating tasks configuration");
-            int taskRunnersSize = taskRunners.size();
-            List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunnersSize));
-
-            for (int i = 0; i < taskRunnersSize; i++) {
-                Map<String, String> taskConfig = i < taskConfigs.size() ? taskConfigs.get(i) : null;
-                taskRunners.get(i).updateTaskConfig(taskConfig);
-            }
-        } finally {
-            reconfigurationLock.unlock();
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "ConnectorWrapper{" +
-                "name='" + name + '\'' +
-                '}';
     }
 }

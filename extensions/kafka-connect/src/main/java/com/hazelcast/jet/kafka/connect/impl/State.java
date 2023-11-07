@@ -19,11 +19,15 @@ package com.hazelcast.jet.kafka.connect.impl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-class State implements Serializable {
+public class State implements Serializable {
+
+    private List<Map<String, String>> taskConfigs;
 
     /**
      * Key represents the partition which the record originated from. Value
@@ -43,6 +47,18 @@ class State implements Serializable {
      */
     State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
         this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
+    }
+
+    public void setTaskConfigs(List<Map<String, String>> taskConfigs) {
+        this.taskConfigs = taskConfigs;
+    }
+
+    public Map<String, String> getTaskConfig(int globalProcessorIndex) {
+        if (globalProcessorIndex < taskConfigs.size()) {
+            return taskConfigs.get(globalProcessorIndex);
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
     void commitRecord(SourceRecord rec) {
@@ -67,18 +83,20 @@ class State implements Serializable {
         }
 
         State state = (State) o;
-        return partitionsToOffset.equals(state.partitionsToOffset);
+        return Objects.equals(taskConfigs, state.taskConfigs) &&
+               Objects.equals(partitionsToOffset, state.partitionsToOffset);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(partitionsToOffset);
+        return Objects.hash(taskConfigs, partitionsToOffset);
     }
 
     @Override
     public String toString() {
         return "State{" +
-                "partitionsToOffset=" + partitionsToOffset +
-                '}';
+               "taskConfigs=" + taskConfigs +
+               ", partitionsToOffset=" + partitionsToOffset +
+               '}';
     }
 }

@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -140,9 +142,10 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
     @Test
     public void testScaling() throws Exception {
-        int localParallelism = 2;
+        int localParallelism = 1;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("tasks.max", "2");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
         randomProperties.setProperty("mode", "incrementing");
         String connectionUrl = mysql.getJdbcUrl();
@@ -181,6 +184,63 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
+    }
+
+    @Test
+    public void testScaling_with_new_member() throws Exception {
+        int localParallelism = 1;
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
+        randomProperties.setProperty("mode", "incrementing");
+        String connectionUrl = mysql.getJdbcUrl();
+        randomProperties.setProperty("connection.url", connectionUrl);
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
+        randomProperties.setProperty("incrementing.column.name", "id");
+        randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2");
+        randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("batch.max.rows", "1");
+
+        createTableAndFill(connectionUrl, "parallel_items_1");
+        createTableAndFill(connectionUrl, "parallel_items_2");
+
+
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps()
+                .setLocalParallelism(localParallelism);
+        streamStage.writeTo(Sinks.logger());
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(2 * ITEM_COUNT, list.size())));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance hazelcastInstance = createHazelcastInstances(config, 1) [0];
+        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        System.out.println("job is running");
+
+        HazelcastInstance newHazelcastInstances = createHazelcastInstances(config, 1)[0];
+        System.out.println("Created new member");
+        assertClusterStateEventually(ClusterState.ACTIVE, hazelcastInstance, newHazelcastInstances);
+        System.out.println("Cluster is stable");
+        job.restart();
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
         }
     }
 
