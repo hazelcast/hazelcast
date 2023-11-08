@@ -68,7 +68,6 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         }
 
         TpcToken token = new TpcToken();
-        System.out.println("token: " + token);
         endpoint.setTpcToken(token);
     }
 
