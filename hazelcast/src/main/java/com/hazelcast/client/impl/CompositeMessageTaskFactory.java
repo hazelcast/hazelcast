@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.DefaultMessageTaskFactoryProvider;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
@@ -43,7 +44,7 @@ public class CompositeMessageTaskFactory implements MessageTaskFactory {
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
-        MessageTaskFactoryProvider defaultProvider = node.getNodeExtension().createMessageTaskFactoryProvider(nodeEngine);
+        MessageTaskFactoryProvider defaultProvider = new DefaultMessageTaskFactoryProvider(this.nodeEngine);
         this.factories = new Int2ObjectHashMap<>(defaultProvider.getFactories().size());
         loadProvider(defaultProvider);
         loadServices();

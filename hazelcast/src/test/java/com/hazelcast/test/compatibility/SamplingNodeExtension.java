@@ -18,7 +18,6 @@ package com.hazelcast.test.compatibility;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
-import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.CPSubsystem;
@@ -322,11 +321,6 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public JetServiceBackend getJetServiceBackend() {
         return nodeExtension.getJetServiceBackend();
-    }
-
-    @Override
-    public MessageTaskFactoryProvider createMessageTaskFactoryProvider(NodeEngine nodeEngine) {
-        return nodeExtension.createMessageTaskFactoryProvider(nodeEngine);
     }
 
     @Override

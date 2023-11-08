@@ -35,7 +35,6 @@ import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
@@ -96,7 +95,6 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
-        when(nodeExtension.createMessageTaskFactoryProvider(any())).thenReturn(Int2ObjectHashMap::new);
         return nodeExtension;
     }
 

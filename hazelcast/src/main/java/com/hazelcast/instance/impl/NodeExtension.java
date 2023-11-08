@@ -17,7 +17,6 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
-import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.CPSubsystem;
@@ -415,11 +414,6 @@ public interface NodeExtension {
     /** Returns the internal jet service backend */
     @Nullable
     JetServiceBackend getJetServiceBackend();
-
-    /**
-     * Creates the relevant {@link MessageTaskFactoryProvider}.
-     */
-    MessageTaskFactoryProvider createMessageTaskFactoryProvider(NodeEngine nodeEngine);
 
     /**
      * @return an instance of {@link com.hazelcast.nio.ssl.SSLEngineFactory} when TLS is enabled, {@code null} otherwise
