@@ -33,7 +33,7 @@ class InstancePermissionTest {
     @NullSource
     @EmptySource
     @ParameterizedTest
-    void testThrows(String name) {
+    void testInvalidNameThrows(String name) {
         assertThrows(IllegalArgumentException.class, () -> new InstantiatableInstancePermission(name));
     }
 
