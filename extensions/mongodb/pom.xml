@@ -87,6 +87,8 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration combine.self="append">
+                        </configuration>
                     </execution>
                 </executions>
                 <dependencies>
