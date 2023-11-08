@@ -25,6 +25,8 @@ import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
  */
 public interface InternalIndex extends Index {
 
+    int GLOBAL_INDEX_NOOP_PARTITION_ID = -1;
+
     /**
      * Canonicalizes the given value for the purpose of a hash-based lookup.
      * <p>
