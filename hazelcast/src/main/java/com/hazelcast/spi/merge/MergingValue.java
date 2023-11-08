@@ -40,7 +40,7 @@ public interface MergingValue<V> extends MergingView {
      */
     @Deprecated
     default V getValue() {
-        return getValue();
+        return getDeserializedValue();
     }
 
     /**
