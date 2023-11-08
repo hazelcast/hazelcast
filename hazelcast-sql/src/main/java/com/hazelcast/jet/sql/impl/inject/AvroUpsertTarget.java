@@ -27,7 +27,6 @@ import org.apache.avro.generic.GenericRecordBuilder;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

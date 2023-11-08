@@ -184,14 +184,14 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * Assert the contents of a given table via Hazelcast SQL engine
      */
     public static void assertRowsAnyOrder(String sql, Row... rows) {
-        assertRowsAnyOrder(sql, Arrays.asList(rows));
+        assertRowsAnyOrder(sql, List.of(rows));
     }
 
     /**
      * Assert the contents of a given table via Hazelcast SQL engine
      */
     public static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
-        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
+        assertRowsAnyOrder(sql, arguments, List.of(rows));
     }
 
     public static void assertRowsEventuallyInAnyOrder(
@@ -770,7 +770,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         return ExpressionEvalContext.createContext(
-                Arrays.asList(args),
+                asList(args),
                 instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngineImpl.class),
                 TEST_SS,
                 null
@@ -877,7 +877,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         public T fields(String... fields) {
-            this.fields.addAll(asList(fields));
+            this.fields.addAll(List.of(fields));
             return me();
         }
 
@@ -976,7 +976,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * - It's not easy to create SqlRow instance
      */
     public static final class Row {
-
         private final Object[] values;
 
         public Row(SqlRow row) {

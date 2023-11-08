@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
@@ -51,6 +50,7 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.m
 import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.avro.Schema.Type.NULL;
 import static org.apache.avro.Schema.Type.RECORD;
@@ -78,11 +78,9 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 .and().stringType()
                 .endUnion();
 
-        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS = reduce(
-                ImmutableMap.<QueryDataTypeFamily, List<Schema.Type>>builder(),
-                CONVERSION_PREFS.entrySet().stream(),
-                (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue())
-        ).build();
+        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS =
+                CONVERSION_PREFS.entrySet().stream().collect(
+                        toMap(e -> getConverter(e.getKey()).getTypeFamily(), Entry::getValue));
     }
 
     private KvMetadataAvroResolver() { }
@@ -103,15 +101,15 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             throw QueryException.error("Column list is required for Avro format");
         }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
-
-        Schema schema = getSchema(fieldsByPath, options, isKey);
-        if (schema != null && options.containsKey("schema.registry.url")) {
-            throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
-        }
         for (QueryPath path : fieldsByPath.keySet()) {
             if (path.isTopLevel()) {
                 throw QueryException.error("Cannot use the '" + path + "' field with Avro serialization");
             }
+        }
+
+        Schema schema = getSchema(fieldsByPath, options, isKey);
+        if (schema != null && options.containsKey("schema.registry.url")) {
+            throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
         }
         if (schema != null) {
             validate(schema, getFields(fieldsByPath).collect(toList()));
