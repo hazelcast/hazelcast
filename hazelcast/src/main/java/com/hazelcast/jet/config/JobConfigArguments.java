@@ -41,11 +41,11 @@ public final class JobConfigArguments {
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
 
     /**
-     * The key under which the SQL engine marks analyzed job.
+     * The key under which the SQL engine (now) marks analyzed job.
      * The reason for not having a separate flag in {@link JobConfig}
      * is that we want to preserve Jet's independence from SQL.
      */
-    public static final String KEY_SQL_PLAN_ANALYZED = "__sql.planIsAnalyzed";
+    public static final String IS_JOB_SUSPENDABLE = "__jet.jobIsSuspendable";
 
     private JobConfigArguments() {
     }

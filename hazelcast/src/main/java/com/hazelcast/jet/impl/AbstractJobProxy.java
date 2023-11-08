@@ -25,7 +25,6 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
@@ -193,7 +192,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     /**
      * Returns the string {@code <jobId> (name <jobName>)} without risking
      * triggering of lazy-loading of JobConfig: if we don't have it, it will
-     * say {@code name ??}. If we have it and it is null, it will say {@code
+     * say {@code name ??}. If we have it, and it is null, it will say {@code
      * name ''}.
      */
     @SuppressWarnings({"StringEquality", "java:S4973"})
@@ -272,17 +271,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     @Override
     public void suspend() {
-        // Note: `checkJobIsAnalyzed` includes an operation sending, not the best way at all.
-        if (!isLightJob() && !checkJobIsAnalyzed(getConfig())) {
-            terminate(TerminationMode.SUSPEND_GRACEFUL);
-        }
+        terminate(TerminationMode.SUSPEND_GRACEFUL);
     }
 
     @Override
     public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        if (checkJobIsAnalyzed(getConfig())) {
-            throw new UnsupportedOperationException("cancelAndExportSnapshot is not supported for analyzed jobs");
-        }
         return doExportSnapshot(name, true);
     }
 
@@ -305,7 +298,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                         // it can happen that we enqueued the submit operation, but the master handled
                         // the terminate op before the submit op and doesn't yet know about the job. But
                         // it can be that the job already completed, we don't know. We'll look at the submit
-                        // future, if it's done, the job is done. Otherwise we'll retry - the job will eventually
+                        // future, if it's done, the job is done. Otherwise, we'll retry - the job will eventually
                         // start or complete.
                         // This scenario is possible only on the client or lite member. On normal member,
                         // the submit op is executed directly.
@@ -476,10 +469,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         }
     }
 
-    protected static boolean checkJobIsAnalyzed(JobConfig jobConfig) {
-        return jobConfig.getArgument(JobConfigArguments.KEY_SQL_PLAN_ANALYZED) != null;
-    }
-
     public static IllegalStateException cannotAddStatusListener(JobStatus status) {
         return new IllegalStateException("Cannot add status listener to a " + status + " job");
     }
@@ -516,7 +505,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
         private void retryAction(Throwable t) {
             try {
-                // calling for the side-effect of throwing ISE if master not known
+                // calling for the side effect of throwing ISE if master not known
                 masterId();
             } catch (IllegalStateException e) {
                 // job data will be cleaned up eventually by the coordinator

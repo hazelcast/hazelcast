@@ -110,6 +110,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.config.JobConfigArguments.IS_JOB_SUSPENDABLE;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -493,6 +494,12 @@ public class JobCoordinationService {
                     if (jobStatus != RUNNING && terminationMode != CANCEL_FORCEFUL) {
                         throw new IllegalStateException("Cannot " + terminationMode + ", job status is " + jobStatus
                                 + ", should be " + RUNNING);
+                    }
+
+                    if ((terminationMode == TerminationMode.SUSPEND_GRACEFUL
+                            || terminationMode == TerminationMode.SUSPEND_FORCEFUL)
+                            && masterContext.jobConfig().getArgument(IS_JOB_SUSPENDABLE) != null) {
+                        throw new IllegalStateException("Cannot suspend the job being analyzing");
                     }
 
                     String terminationResult = masterContext.jobContext()
