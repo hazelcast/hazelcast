@@ -22,6 +22,7 @@ import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigPublisher;
 import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.topic.Message;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import org.apache.kafka.connect.connector.ConnectorContext;
@@ -43,13 +44,13 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 /**
  * This class wraps a Kafka Connector and TaskRunner
  */
-public class ConnectorWrapper {
-    private ILogger logger = Logger.getLogger(ConnectorWrapper.class);
+public class SourceConnectorWrapper {
+    private ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
     private final SourceConnector sourceConnector;
     private final int tasksMax;
     private TaskRunner taskRunner;
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
-    private int taskId;
+    private int localProcessorIndex;
     private final State state = new State();
     private final String name;
     private boolean isMasterProcessor;
@@ -57,10 +58,11 @@ public class ConnectorWrapper {
     private int processorOrder;
     private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
 
-    public ConnectorWrapper(Properties propertiesFromUser) {
+    public SourceConnectorWrapper(Properties propertiesFromUser) {
         String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
         this.name = checkRequiredProperty(propertiesFromUser, "name");
-        tasksMax = Integer.parseInt(propertiesFromUser.getProperty("tasks.max"));
+        // If "tasks.max" is not from test data use default value
+        tasksMax = Integer.parseInt(propertiesFromUser.getProperty("tasks.max" , "1"));
         this.sourceConnector = newConnectorInstance(connectorClazz);
         logger.fine("Initializing connector '" + name + "'");
         this.sourceConnector.initialize(new JetConnectorContext());
@@ -77,8 +79,8 @@ public class ConnectorWrapper {
         this.logger = logger;
     }
 
-    public void setTaskId(int taskId) {
-        this.taskId = taskId;
+    public void setLocalProcessorIndex(int localProcessorIndex) {
+        this.localProcessorIndex = localProcessorIndex;
     }
 
     public void setMasterProcessor(boolean masterProcessor) {
@@ -94,18 +96,7 @@ public class ConnectorWrapper {
         taskConfigPublisher.createTopic(hazelcastInstance, executionId);
 
         // All processors must listen the topic
-        addTopicListener(new ReliableMessageListenerAdapter<>(message -> {
-            TaskConfigTopic taskConfigTopic = message.getMessageObject();
-            state.setTaskConfigs(taskConfigTopic.getTaskConfigs());
-            Map<String, String> taskConfig = state.getTaskConfig(processorOrder);
-
-            logger.info("Updating taskRunner with processorOrder = " + processorOrder
-                        + " taskConfigTopic=" + taskConfig);
-
-            taskRunner.updateTaskConfig(taskConfig);
-
-            receivedTaskConfiguration.set(true);
-        }));
+        addTopicListener(new ReliableMessageListenerAdapter<>(this::processMessage));
     }
 
     public void destroyTopic() {
@@ -124,11 +115,32 @@ public class ConnectorWrapper {
         taskConfigPublisher.removeListeners();
     }
 
-    private void publishTopic(TaskConfigTopic taskConfigTopic) {
-        logger.fine("Publishing TaskConfigTopic");
+    protected void publishTopic(TaskConfigTopic taskConfigTopic) {
         if (taskConfigPublisher != null) {
+            logger.info("Publishing TaskConfigTopic");
             taskConfigPublisher.publish(taskConfigTopic);
         }
+    }
+
+    private void processMessage(Message<TaskConfigTopic> message) {
+        TaskConfigTopic taskConfigTopic = message.getMessageObject();
+        processMessage(taskConfigTopic);
+    }
+
+    protected void processMessage(TaskConfigTopic taskConfigTopic) {
+        // Update state
+        state.setTaskConfigs(taskConfigTopic.getTaskConfigs());
+
+        // Get my taskConfig
+        Map<String, String> taskConfig = state.getTaskConfig(processorOrder);
+
+        // Pass my taskConfig to taskRunner
+        logger.info("Updating taskRunner with processorOrder = " + processorOrder
+                    + " taskConfigTopic=" + taskConfig);
+
+        taskRunner.updateTaskConfig(taskConfig);
+
+        receivedTaskConfiguration.set(true);
     }
 
     public List<SourceRecord> poll() {
@@ -159,6 +171,7 @@ public class ConnectorWrapper {
         taskRunner.stop();
     }
 
+    @SuppressWarnings({"ConstantConditions", "java:S1193"})
     private static SourceConnector newConnectorInstance(String connectorClazz) {
         try {
             return newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
@@ -178,7 +191,7 @@ public class ConnectorWrapper {
     }
 
     public TaskRunner createTaskRunner() {
-        String taskName = name + "-task-" + taskId;
+        String taskName = name + "-task-" + localProcessorIndex;
         taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
         taskRunner.setLogger(logger);
         requestTaskReconfiguration();
@@ -190,7 +203,12 @@ public class ConnectorWrapper {
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-    public void requestTaskReconfiguration() {
+    /**
+     * This method is called from two different places
+     * 1. When Connector starts for the first time, it calls this method to distribute taskConfigs
+     * 2. When Kafka Connect plugin discovers that task reconfiguration is necessary
+     */
+    private void requestTaskReconfiguration() {
         if (!isMasterProcessor) {
             logger.fine("requestTaskReconfiguration is skipped");
             return;
@@ -199,10 +217,13 @@ public class ConnectorWrapper {
             reconfigurationLock.lock();
             logger.fine("Updating tasks configuration");
             List<Map<String, String>> taskConfigs = sourceConnector.taskConfigs(tasksMax);
+
+            // Log taskConfigs
             for (int index = 0; index < taskConfigs.size(); index++) {
                 Map<String, String> map = taskConfigs.get(index);
                 logger.fine("sourceConnector index " + index + " taskConfig=" + map);
             }
+            // Publish taskConfigs
             TaskConfigTopic taskConfigTopic = new TaskConfigTopic();
             taskConfigTopic.setTaskConfigs(taskConfigs);
             publishTopic(taskConfigTopic);
@@ -215,6 +236,11 @@ public class ConnectorWrapper {
     public String toString() {
         return "ConnectorWrapper{" +
                "name='" + name + '\'' +
+               ", taskId=" + localProcessorIndex +
+               ", tasksMax=" + tasksMax +
+               ", isMasterProcessor=" + isMasterProcessor +
+               ", processorOrder=" + processorOrder +
+               ", receivedTaskConfiguration=" + receivedTaskConfiguration +
                '}';
     }
 
@@ -225,7 +251,7 @@ public class ConnectorWrapper {
     private class JetConnectorContext implements ConnectorContext {
         @Override
         public void requestTaskReconfiguration() {
-            ConnectorWrapper.this.requestTaskReconfiguration();
+            SourceConnectorWrapper.this.requestTaskReconfiguration();
         }
 
         @Override

@@ -20,8 +20,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
-import org.apache.kafka.connect.source.SourceTaskContext;
-import org.apache.kafka.connect.storage.OffsetStorageReader;
 
 import java.util.Collections;
 import java.util.List;
@@ -143,27 +141,6 @@ public class TaskRunner {
         }
     }
 
-    private static final class JetSourceTaskContext implements SourceTaskContext {
-        private final Map<String, String> taskConfig;
-        private final State state;
-
-        private JetSourceTaskContext(Map<String, String> taskConfig,
-                                     State state) {
-            this.taskConfig = taskConfig;
-            this.state = state;
-        }
-
-        @Override
-        public Map<String, String> configs() {
-            return taskConfig;
-        }
-
-        @Override
-        public OffsetStorageReader offsetStorageReader() {
-            return new SourceOffsetStorageReader(state);
-        }
-    }
-
     public void commitRecord(SourceRecord rec) {
         state.commitRecord(rec);
         try {
@@ -193,12 +170,13 @@ public class TaskRunner {
     @Override
     public String toString() {
         return "TaskRunner{" +
-                "name='" + name + '\'' +
-                '}';
+               "name='" + name + '\'' +
+               '}';
     }
 
     @FunctionalInterface
     interface SourceTaskFactory {
         SourceTask create();
     }
+
 }

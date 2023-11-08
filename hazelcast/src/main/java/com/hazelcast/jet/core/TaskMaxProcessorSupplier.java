@@ -28,7 +28,7 @@ public class TaskMaxProcessorSupplier implements ProcessorSupplier {
     private final int localParallelismForMember;
     private final ProcessorSupplier supplier;
 
-    private final int processorOrder;
+    private int processorOrder;
 
     public TaskMaxProcessorSupplier(int localParallelismForMember, ProcessorSupplier supplier, int processorOrder) {
         this.localParallelismForMember = localParallelismForMember;
@@ -77,11 +77,12 @@ public class TaskMaxProcessorSupplier implements ProcessorSupplier {
         return processors;
     }
 
+    @SuppressWarnings({"java:S108", "java:S3011"})
     private void setProcessorOrderByReflection(Processor processor) {
         try {
             Method setter = processor.getClass().getDeclaredMethod("setProcessorOrder", int.class);
             setter.setAccessible(true);
-            setter.invoke(processor, processorOrder);
+            setter.invoke(processor, processorOrder++);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignore) {
         }
     }

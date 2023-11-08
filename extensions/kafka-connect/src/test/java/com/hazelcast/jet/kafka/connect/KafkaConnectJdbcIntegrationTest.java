@@ -73,6 +73,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static final String PASSWORD = "mysql";
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
 
+    @SuppressWarnings("resource")
     private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
             .withUsername(USERNAME).withPassword(PASSWORD)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
@@ -199,12 +200,12 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("connection.user", USERNAME);
         randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2");
+        randomProperties.setProperty("table.whitelist", "newmember_parallel_items_1,newmember_parallel_items_2");
         randomProperties.setProperty("table.poll.interval.ms", "5000");
         randomProperties.setProperty("batch.max.rows", "1");
 
-        createTableAndFill(connectionUrl, "parallel_items_1");
-        createTableAndFill(connectionUrl, "parallel_items_2");
+        createTableAndFill(connectionUrl, "newmember_parallel_items_1");
+        createTableAndFill(connectionUrl, "newmember_parallel_items_2");
 
 
         Pipeline pipeline = Pipeline.create();
@@ -218,7 +219,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
         Config config = smallInstanceConfig();

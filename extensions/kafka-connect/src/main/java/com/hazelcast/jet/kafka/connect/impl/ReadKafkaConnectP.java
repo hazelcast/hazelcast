@@ -53,7 +53,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
-    private ConnectorWrapper connectorWrapper;
+    private SourceConnectorWrapper sourceConnectorWrapper;
     private final EventTimeMapper<T> eventTimeMapper;
     private final FunctionEx<SourceRecord, T> projectionFn;
     private Properties propertiesFromUser;
@@ -80,11 +80,13 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         this.propertiesFromUser = propertiesFromUser;
     }
 
-    public void setConnectorWrapper(ConnectorWrapper connectorWrapper) {
-        this.connectorWrapper = connectorWrapper;
+    // Used for testing
+    public void setSourceConnectorWrapper(SourceConnectorWrapper sourceConnectorWrapper) {
+        this.sourceConnectorWrapper = sourceConnectorWrapper;
     }
 
     // Used via reflection
+    @SuppressWarnings("unused")
     public void setProcessorOrder(int processorOrder) {
         this.processorOrder = processorOrder;
     }
@@ -96,18 +98,18 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         getLogger().info("Entering ReadKafkaConnectP init processorOrder=" +
                          processorOrder + " localProcessorIndex= " + localProcessorIndex);
 
-        if (connectorWrapper == null) {
-            connectorWrapper = new ConnectorWrapper(propertiesFromUser);
-            connectorWrapper.setTaskId(localProcessorIndex);
+        if (sourceConnectorWrapper == null) {
+            sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser);
+            sourceConnectorWrapper.setLocalProcessorIndex(localProcessorIndex);
         }
-        connectorWrapper.setLogger(getLogger());
-        connectorWrapper.setProcessorOrder(processorOrder);
-        connectorWrapper.setMasterProcessor(isMasterProcessor());
+        sourceConnectorWrapper.setLogger(getLogger());
+        sourceConnectorWrapper.setProcessorOrder(processorOrder);
+        sourceConnectorWrapper.setMasterProcessor(isMasterProcessor());
 
         // Any processor can create the topic
-        connectorWrapper.createTopic(context.hazelcastInstance(), context.executionId());
+        sourceConnectorWrapper.createTopic(context.hazelcastInstance(), context.executionId());
 
-        connectorWrapper.createTaskRunner();
+        sourceConnectorWrapper.createTaskRunner();
         snapshotsEnabled = context.snapshottingEnabled();
         NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
@@ -124,7 +126,8 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public boolean complete() {
-        if (!connectorWrapper.hasTaskConfiguration()) {
+        // The taskConfig has not been received yet. We can not complete the processor
+        if (!sourceConnectorWrapper.hasTaskConfiguration()) {
             return false;
         }
         if (snapshotInProgress) {
@@ -135,7 +138,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         }
 
         long start = Timer.nanos();
-        List<SourceRecord> sourceRecords = connectorWrapper.poll();
+        List<SourceRecord> sourceRecords = sourceConnectorWrapper.poll();
 
         getLogger().info("polled record size " + counter.addAndGet(sourceRecords.size()));
 
@@ -144,12 +147,15 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
         this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
                 traverseIterable(sourceRecords)
-                        .flatMap(rec -> {
-                            long eventTime = rec.timestamp() == null ?
-                                    EventTimeMapper.NO_NATIVE_TIME
-                                    : rec.timestamp();
-                            T projectedRecord = projectionFn.apply(rec);
-                            connectorWrapper.commitRecord(rec);
+                        .flatMap(sourceRecord -> {
+                            long eventTime;
+                            if (sourceRecord.timestamp() == null) {
+                                eventTime = EventTimeMapper.NO_NATIVE_TIME;
+                            } else {
+                                eventTime = sourceRecord.timestamp();
+                            }
+                            T projectedRecord = projectionFn.apply(sourceRecord);
+                            sourceConnectorWrapper.commitRecord(sourceRecord);
                             return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
                         });
         emitFromTraverser(traverser);
@@ -166,7 +172,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         }
         snapshotInProgress = true;
         if (snapshotTraverser == null) {
-            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), connectorWrapper.getSnapshotCopy()))
+            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), sourceConnectorWrapper.getSnapshotCopy()))
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
                         getLogger().finest("Finished saving snapshot");
@@ -185,7 +191,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
-            connectorWrapper.restoreSnapshot((State) value);
+            sourceConnectorWrapper.restoreSnapshot((State) value);
         }
     }
 
@@ -193,7 +199,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     public boolean snapshotCommitFinish(boolean success) {
         try {
             if (success) {
-                connectorWrapper.commit();
+                sourceConnectorWrapper.commit();
             }
         } finally {
             snapshotInProgress = false;
@@ -204,26 +210,25 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public void close() {
-
-        connectorWrapper.taskRunnerStop();
-        connectorWrapper.stop();
-        connectorWrapper.destroyTopic();
+        sourceConnectorWrapper.taskRunnerStop();
+        sourceConnectorWrapper.stop();
+        sourceConnectorWrapper.destroyTopic();
 
         getLogger().info("Closed ReadKafkaConnectP");
     }
 
     public Map<String, LocalKafkaConnectStats> getStats() {
         Map<String, LocalKafkaConnectStats> connectStats = new HashMap<>();
-        if (connectorWrapper.hasTaskRunner()) {
-            connectStats.put(connectorWrapper.getName(), localKafkaConnectStats);
+        if (sourceConnectorWrapper.hasTaskRunner()) {
+            connectStats.put(sourceConnectorWrapper.getName(), localKafkaConnectStats);
         }
         return connectStats;
     }
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        if (connectorWrapper.hasTaskRunner()) {
-            descriptor.copy().withTag("task.runner", connectorWrapper.getName());
+        if (sourceConnectorWrapper != null && (sourceConnectorWrapper.hasTaskRunner())) {
+            descriptor.copy().withTag("task.runner", sourceConnectorWrapper.getName());
         }
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }

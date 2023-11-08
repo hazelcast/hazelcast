@@ -16,34 +16,32 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
-class SourceOffsetStorageReader implements OffsetStorageReader {
-
+/**
+ * SourceTaskContext is provided to SourceTasks to allow them to interact with the underlying
+ * runtime.
+ */
+class JetSourceTaskContext implements SourceTaskContext {
+    private final Map<String, String> taskConfig;
     private final State state;
 
-    SourceOffsetStorageReader(State state) {
+    JetSourceTaskContext(Map<String, String> taskConfig,
+                         State state) {
+        this.taskConfig = taskConfig;
         this.state = state;
     }
 
     @Override
-    public <V> Map<String, Object> offset(Map<String, V> partition) {
-        return offsets(Collections.singletonList(partition)).get(partition);
+    public Map<String, String> configs() {
+        return taskConfig;
     }
 
     @Override
-    public <V> Map<Map<String, V>, Map<String, Object>> offsets(Collection<Map<String, V>> partitions) {
-        Map<Map<String, V>, Map<String, Object>> map = new HashMap<>();
-        for (Map<String, V> partition : partitions) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> offset = (Map<String, Object>) state.getOffset(partition);
-            map.put(partition, offset);
-        }
-        return map;
+    public OffsetStorageReader offsetStorageReader() {
+        return new JetSourceOffsetStorageReader(state);
     }
 }

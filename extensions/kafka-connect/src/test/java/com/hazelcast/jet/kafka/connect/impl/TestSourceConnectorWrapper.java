@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.connect.impl.topic;
+package com.hazelcast.jet.kafka.connect.impl;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
+import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
 
-public class TaskConfigTopic implements Serializable {
-    private static final long serialVersionUID = 1L;
+import java.util.Properties;
 
-    private List<Map<String, String>> taskConfigs;
-
-    public List<Map<String, String>> getTaskConfigs() {
-        return taskConfigs;
+// Test ConnectorWrapper that passes topic directly to taskrunners
+public class TestSourceConnectorWrapper extends SourceConnectorWrapper {
+    public TestSourceConnectorWrapper(Properties propertiesFromUser) {
+        super(propertiesFromUser);
+        setMasterProcessor(true);
     }
 
-    public void setTaskConfigs(List<Map<String, String>> taskConfigs) {
-        this.taskConfigs = taskConfigs;
+    @Override
+    protected void publishTopic(TaskConfigTopic taskConfigTopic) {
+        processMessage(taskConfigTopic);
     }
 }

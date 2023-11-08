@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * This class distributes specified number of processors evenly among cluster members
+ */
 public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, IdentifiedDataSerializable {
     private int tasksMax;
     private ProcessorSupplier supplier;
@@ -44,8 +47,23 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Iden
         this.supplier = supplier;
     }
 
-    private int getAndIncrementProcessorOrder() {
-        return processorOrder++;
+    private int getAndIncrementProcessorOrder(int delta) {
+        int result = processorOrder;
+        processorOrder = processorOrder + delta;
+        return result;
+    }
+
+    @Override
+    public void init(@Nonnull Context context) {
+        int totalParallelism = context.totalParallelism();
+        if (totalParallelism < tasksMax) {
+            throw new IllegalArgumentException("The requested parallelism of " + tasksMax + " is greater than " +
+                                               "the available parallelism of " + totalParallelism +
+                                               " for Kafka Connect vertices. " +
+                                               "Please call setLocalParallelism(" + tasksMax + ") " +
+                                               "for Kafka Connect Source"
+            );
+        }
     }
 
     @Nonnull
@@ -60,7 +78,8 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Iden
             if (indexOf != -1) {
                 memberAddressList.remove(indexOf);
                 Integer localParallelismForMember = memberLocalParallelismList.remove(indexOf);
-                return new TaskMaxProcessorSupplier(localParallelismForMember, supplier, getAndIncrementProcessorOrder());
+                return new TaskMaxProcessorSupplier(localParallelismForMember, supplier,
+                        getAndIncrementProcessorOrder(localParallelismForMember));
             } else {
                 return new ExpectNothingProcessorSupplier();
             }
