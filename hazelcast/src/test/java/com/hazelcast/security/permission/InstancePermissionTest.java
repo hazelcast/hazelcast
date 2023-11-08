@@ -16,18 +16,36 @@
 
 package com.hazelcast.security.permission;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InstancePermissionTest {
     @Test
     void testActions() {
-        assertEquals("A B C", new InstancePermission(getClass().getSimpleName(), "A", "B", "C") {
-            @Override
-            protected int initMask(String[] actions) {
-                return 0;
-            }
-        }.getActions());
+        assertEquals("A B C", new InstantiatableInstancePermission(getClass().getSimpleName(), "A", "B", "C").getActions());
+    }
+
+    @NullSource
+    @EmptySource
+    @ParameterizedTest
+    void testThrows(String name) {
+        assertThrows(IllegalArgumentException.class, () -> new InstantiatableInstancePermission(name));
+    }
+
+    @SuppressWarnings("serial")
+    private static class InstantiatableInstancePermission extends InstancePermission {
+        protected InstantiatableInstancePermission(String name, String... actions) {
+            super(name, actions);
+        }
+
+        @Override
+        protected int initMask(String[] actions) {
+            return Integer.MIN_VALUE;
+        }
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.security.permission;
 
 import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.Preconditions;
 
 import java.security.Permission;
 
@@ -37,9 +37,7 @@ public abstract class InstancePermission extends ClusterPermission {
 
     protected InstancePermission(String name, String... actions) {
         super(name);
-        if (StringUtil.isNullOrEmpty(name)) {
-            throw new IllegalArgumentException("Permission name is mandatory!");
-        }
+        Preconditions.checkHasText(name, "Permission name is mandatory!");
         mask = initMask(actions);
 
         this.actions = String.join(" ", actions);
