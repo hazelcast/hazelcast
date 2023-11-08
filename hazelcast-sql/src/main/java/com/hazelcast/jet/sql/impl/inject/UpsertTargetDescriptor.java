@@ -22,4 +22,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 public interface UpsertTargetDescriptor extends DataSerializable {
 
     UpsertTarget create(InternalSerializationService serializationService);
+
+    default Object getSchema() {
+        return null;
+    }
 }

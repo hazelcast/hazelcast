@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -63,7 +64,7 @@ class PortableUpsertTarget implements UpsertTarget {
 
         int fieldIndex = classDefinition.hasField(path) ? classDefinition.getField(path).getIndex() : -1;
 
-        if (type.isCustomType() && type.getObjectTypeKind() == QueryDataType.OBJECT_TYPE_KIND_PORTABLE) {
+        if (type.isCustomType() && type.getObjectTypeKind() == TypeKind.PORTABLE) {
             dataTypeMap.put(fieldIndex, type);
         }
 

@@ -808,6 +808,10 @@ hazelcast:
         - name: "*"
           actions:
             - all
+      cpmap:
+        - name: "*"
+          actions:
+            - all
       transaction:
         principal: deployer
         deny: true

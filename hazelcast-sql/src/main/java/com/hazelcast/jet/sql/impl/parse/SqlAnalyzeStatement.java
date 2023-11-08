@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.sql.impl.QueryUtils;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -32,9 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
-import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
@@ -103,29 +99,16 @@ public class SqlAnalyzeStatement extends SqlCall {
 
             switch (key) {
                 case "processingGuarantee":
-                    switch (value) {
-                        case "exactlyOnce":
-                            jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
-                            break;
-                        case "atLeastOnce":
-                            jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
-                            break;
-                        case "none":
-                            jobConfig.setProcessingGuarantee(NONE);
-                            break;
-                        default:
-                            throw validator.newValidationError(option.value(),
-                                    RESOURCE.processingGuaranteeBadValue(key, value));
-                    }
+                    jobConfig.setProcessingGuarantee(ParseUtils.parseProcessingGuarantee(validator, option));
                     break;
                 case "snapshotIntervalMillis":
-                    jobConfig.setSnapshotIntervalMillis(QueryUtils.parseLong(validator, option));
+                    jobConfig.setSnapshotIntervalMillis(ParseUtils.parseLong(validator, option));
                     break;
                 case "initialSnapshotName":
                     jobConfig.setInitialSnapshotName(value);
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(QueryUtils.parseLong(validator, option));
+                    jobConfig.setMaxProcessorAccumulatedRecords(ParseUtils.parseLong(validator, option));
                     break;
                 case "metricsEnabled":
                     jobConfig.setMetricsEnabled(Boolean.parseBoolean(value));

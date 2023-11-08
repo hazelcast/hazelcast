@@ -28,7 +28,6 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectTypeReference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -37,6 +36,7 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -350,49 +350,41 @@ public final class OptUtils {
         }
     }
 
-    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
-        final Map<String, RelDataType> dataTypeMap = new HashMap<>();
-        convertCustomTypeRecursively(fieldType, typeFactory, dataTypeMap);
-        return dataTypeMap.get(fieldType.getObjectTypeName());
+    private static RelDataType convertCustomType(QueryDataType type, RelDataTypeFactory typeFactory) {
+        Map<String, HazelcastObjectType> typeMap = new HashMap<>();
+        RelDataType converted = convertCustomType(type, typeFactory, typeMap);
+        typeMap.values().forEach(HazelcastObjectType::finalizeFields);
+        return converted;
     }
 
-    private static void convertCustomTypeRecursively(
+    private static RelDataType convertCustomType(
             QueryDataType type,
             RelDataTypeFactory typeFactory,
-            Map<String, RelDataType> typeMap
+            Map<String, HazelcastObjectType> typeMap
     ) {
-        if (typeMap.get(type.getObjectTypeName()) != null) {
-            return;
+        HazelcastObjectType converted = typeMap.get(type.getObjectTypeName());
+        if (converted != null) {
+            return converted;
         }
 
-        final List<HazelcastObjectType.Field> fields = new ArrayList<>();
-        final HazelcastObjectTypeReference typeRef = new HazelcastObjectTypeReference();
-        typeMap.put(type.getObjectTypeName(), typeRef);
+        converted = new HazelcastObjectType(type.getObjectTypeName());
+        typeMap.put(type.getObjectTypeName(), converted);
 
         for (int i = 0; i < type.getObjectFields().size(); i++) {
-            final String fieldName = type.getObjectFields().get(i).getName();
-            final QueryDataType fieldType = type.getObjectFields().get(i).getDataType();
+            QueryDataTypeField field = type.getObjectFields().get(i);
+            QueryDataType fieldType = field.getType();
 
-            RelDataType fieldRelDataType;
-            if (fieldType.isCustomType()) {
-                fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
-                if (fieldRelDataType == null) {
-                    convertCustomTypeRecursively(fieldType, typeFactory, typeMap);
-                    fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
-                }
-            } else {
-                fieldRelDataType = typeFactory.createTypeWithNullability(
-                        typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType)),
-                        true
-                );
-            }
-
-            fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
+            RelDataType convertedFieldType = fieldType.isCustomType()
+                    ? convertCustomType(fieldType, typeFactory, typeMap)
+                    : typeFactory.createTypeWithNullability(
+                            typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType)),
+                            true
+                    );
+            converted.addField(new HazelcastObjectType.Field(field.getName(), i, convertedFieldType));
         }
 
-        typeRef.setOriginal(new HazelcastObjectType(type.getObjectTypeName(), fields));
+        return converted;
     }
-
 
     private static RelDataType convertOtherType(QueryDataType fieldType) {
         switch (fieldType.getTypeFamily()) {

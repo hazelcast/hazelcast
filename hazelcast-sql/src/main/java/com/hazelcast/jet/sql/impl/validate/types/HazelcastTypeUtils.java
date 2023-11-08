@@ -132,7 +132,7 @@ public final class HazelcastTypeUtils {
     }
 
     private static QueryDataType convertHazelcastObjectType(final RelDataType relDataType) {
-        final HazelcastObjectType hazelcastObjectType = extractHzObjectType(relDataType);
+        final HazelcastObjectType hazelcastObjectType = (HazelcastObjectType) relDataType;
 
         final Map<String, QueryDataType> typeMap = new HashMap<>();
         traverseHzObjectType(hazelcastObjectType, typeMap);
@@ -149,8 +149,8 @@ public final class HazelcastTypeUtils {
 
         for (final RelDataTypeField field : source.getFieldList()) {
             final QueryDataType fieldType;
-            if (field.getType() instanceof HazelcastObjectType || field.getType() instanceof HazelcastObjectTypeReference) {
-                final HazelcastObjectType fieldRelDataType = extractHzObjectType(field.getType());
+            if (field.getType() instanceof HazelcastObjectType) {
+                final HazelcastObjectType fieldRelDataType = (HazelcastObjectType) field.getType();
                 if (!discovered.containsKey(fieldRelDataType.getTypeName())) {
                     traverseHzObjectType(fieldRelDataType, discovered);
                 }
@@ -204,16 +204,6 @@ public final class HazelcastTypeUtils {
 
     public static boolean isJsonType(RelDataType type) {
         return SqlTypeName.OTHER.equals(type.getSqlTypeName()) && HazelcastJsonType.FAMILY.equals(type.getFamily());
-    }
-
-    public static boolean isHzObjectType(final RelDataType type) {
-        return type instanceof HazelcastObjectType || type instanceof HazelcastObjectTypeReference;
-    }
-
-    public static HazelcastObjectType extractHzObjectType(final RelDataType relDataType) {
-        return relDataType instanceof HazelcastObjectTypeReference
-                ? (HazelcastObjectType) ((HazelcastObjectTypeReference) relDataType).getOriginal()
-                : (HazelcastObjectType) relDataType;
     }
 
     /**

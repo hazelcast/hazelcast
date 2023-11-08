@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectTypeReference;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -43,8 +42,7 @@ public class HazelcastUdtObjectToJsonFunction extends HazelcastFunction {
 
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
-        return callBinding.getOperandType(0) instanceof HazelcastObjectTypeReference ||
-                callBinding.getOperandType(0) instanceof HazelcastObjectType;
+        return callBinding.getOperandType(0) instanceof HazelcastObjectType;
     }
 
     @Override

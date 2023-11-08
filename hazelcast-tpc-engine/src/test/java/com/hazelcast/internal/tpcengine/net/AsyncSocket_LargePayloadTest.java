@@ -57,6 +57,12 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     public abstract ReactorBuilder newReactorBuilder();
 
+    protected void customizeClientSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
+    protected void customizeServerSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         assumeNotIbmJDK8();
@@ -232,12 +238,13 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+        AsyncSocketBuilder asyncSocketBuilder = clientReactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new ClientAsyncSocketReader(completionLatch))
-                .build();
+                .setReader(new ClientAsyncSocketReader(completionLatch));
+        customizeClientSocketBuilder(asyncSocketBuilder);
+        AsyncSocket clientSocket = asyncSocketBuilder.build();
 
         clientSocket.start();
         clientSocket.connect(serverAddress).join();
@@ -248,11 +255,13 @@ public abstract class AsyncSocket_LargePayloadTest {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    serverReactor.newAsyncSocketBuilder(acceptRequest)
+                    AsyncSocketBuilder asyncSocketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new ServerAsyncSocketReader())
+                            .setReader(new ServerAsyncSocketReader());
+                    customizeServerSocketBuilder(asyncSocketBuilder);
+                    asyncSocketBuilder
                             .build()
                             .start();
                 })

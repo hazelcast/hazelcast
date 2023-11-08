@@ -124,17 +124,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, Long.class);
 
         final String insertQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
-        instance().getSql().execute("ANALYZE " + insertQuery);
-        final Job job = instance().getJet().getJobs()
-                .stream()
-                .filter(j -> Objects.equals(
-                        j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + insertQuery
-                ))
-                .findFirst()
-                .orElse(null);
-        assertNotNull(job);
-        assertFalse(job.isLightJob());
+        assertJobIsAnalyzed(insertQuery);
+        assertEquals(2, instance().getMap("test").size());
     }
 
     @Test
@@ -143,17 +134,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         instance().getMap("test").put(1L, 1L);
 
         final String updateQuery = "UPDATE test SET this = 3 WHERE this = 1 AND this IS NOT NULL";
-        instance().getSql().execute("ANALYZE " + updateQuery);
-        Job job = instance().getJet().getJobs()
-                .stream()
-                .filter(j -> Objects.equals(
-                        j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + updateQuery
-                ))
-                .findFirst()
-                .orElse(null);
-        assertNotNull(job);
-        assertFalse(job.isLightJob());
+        assertJobIsAnalyzed(updateQuery);
+        assertEquals(3L, instance().getMap("test").get(1L));
     }
 
     @Test
@@ -162,15 +144,17 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         instance().getMap("test").put(1L, 1L);
 
         final String deleteQuery = "DELETE FROM test WHERE this = 1 AND this IS NOT NULL";
-        instance().getSql().execute("ANALYZE " + deleteQuery);
-
+        assertJobIsAnalyzed(deleteQuery);
         assertTrue(instance().getMap("test").isEmpty());
+    }
 
+    private static void assertJobIsAnalyzed(String query) {
+        instance().getSql().execute("ANALYZE " + query);
         Job job = instance().getJet().getJobs()
                 .stream()
                 .filter(j -> Objects.equals(
                         j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + deleteQuery
+                        "ANALYZE " + query
                 ))
                 .findFirst()
                 .orElse(null);

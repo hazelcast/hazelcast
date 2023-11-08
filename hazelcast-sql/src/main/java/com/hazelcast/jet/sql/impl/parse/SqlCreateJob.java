@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.sql.impl.QueryUtils;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -37,9 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
-import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
@@ -87,12 +83,14 @@ public class SqlCreateJob extends SqlCreate {
         return ifNotExists;
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public SqlOperator getOperator() {
         return OPERATOR;
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public List<SqlNode> getOperandList() {
         return ImmutableNullableList.of(name, options, sqlInsert);
     }
@@ -130,23 +128,10 @@ public class SqlCreateJob extends SqlCreate {
 
             switch (key) {
                 case "processingGuarantee":
-                    switch (value) {
-                        case "exactlyOnce":
-                            jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
-                            break;
-                        case "atLeastOnce":
-                            jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
-                            break;
-                        case "none":
-                            jobConfig.setProcessingGuarantee(NONE);
-                            break;
-                        default:
-                            throw validator.newValidationError(option.value(),
-                                    RESOURCE.processingGuaranteeBadValue(key, value));
-                    }
+                    jobConfig.setProcessingGuarantee(ParseUtils.parseProcessingGuarantee(validator, option));
                     break;
                 case "snapshotIntervalMillis":
-                    jobConfig.setSnapshotIntervalMillis(QueryUtils.parseLong(validator, option));
+                    jobConfig.setSnapshotIntervalMillis(ParseUtils.parseLong(validator, option));
                     break;
                 case "autoScaling":
                     jobConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -164,7 +149,7 @@ public class SqlCreateJob extends SqlCreate {
                     jobConfig.setInitialSnapshotName(value);
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(QueryUtils.parseLong(validator, option));
+                    jobConfig.setMaxProcessorAccumulatedRecords(ParseUtils.parseLong(validator, option));
                     break;
                 case "suspendOnFailure":
                     jobConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
