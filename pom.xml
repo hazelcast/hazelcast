@@ -572,7 +572,6 @@
                                 <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                                 <includedLicense>EPL-1.0</includedLicense>
                                 <includedLicense>EPL-2.0</includedLicense>
-                                <includedLicense>JSON</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                             </includedLicenses>
                             <licenseMerges>
@@ -646,10 +645,6 @@
                                     EPL 2.0 |
                                     Eclipse Public License - Version 2.0 |
                                     Eclipse Public License, Version 2.0
-                                </licenseMerge>
-                                <licenseMerge>
-                                    JSON |
-                                    The JSON License
                                 </licenseMerge>
                             </licenseMerges>
                         </configuration>
