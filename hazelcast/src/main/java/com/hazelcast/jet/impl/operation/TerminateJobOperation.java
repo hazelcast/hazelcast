@@ -61,7 +61,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
             return completedFuture(null);
         } else {
             JobCoordinationService jobCoordinationService = getJobCoordinationService();
-            return checkJobIsSuspendable(jobCoordinationService)
+            return checkJobIsNotSuspendable(jobCoordinationService)
                     ? jobCoordinationService.terminateJob(jobId(), terminationMode, true)
                     : jobCoordinationService.terminateJob(jobId(), TerminationMode.CANCEL_FORCEFUL, false);
         }
@@ -86,7 +86,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
         isLightJob = in.readBoolean();
     }
 
-    private boolean checkJobIsSuspendable(JobCoordinationService jcs) {
+    private boolean checkJobIsNotSuspendable(JobCoordinationService jcs) {
         MasterContext masterContext = jcs.getMasterContext(jobId());
         JobConfig jobConfig = masterContext.jobConfig();
 
