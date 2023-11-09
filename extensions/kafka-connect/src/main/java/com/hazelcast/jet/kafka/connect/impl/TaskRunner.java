@@ -30,13 +30,11 @@ import static java.util.Collections.emptyList;
 
 interface TaskRunner {
     List<SourceRecord> poll();
-    void stop();
-
     void start();
-
     void commit();
 
     void commitRecord(SourceRecord rec);
+    void stop();
 
     State createSnapshot();
 
@@ -51,10 +49,9 @@ class DefaultTaskRunner implements TaskRunner {
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
     private final SourceTaskFactory sourceTaskFactory;
+    private final Map<String, String> taskConfig;
     private volatile boolean running;
     private SourceTask task;
-    private Map<String, String> taskConfig;
-
 
     DefaultTaskRunner(String name, State state, Map<String, String> taskConfig, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
@@ -99,7 +96,24 @@ class DefaultTaskRunner implements TaskRunner {
 
     @Override
     public void start() {
-            if (!running) {^
+        try {
+            taskLifecycleLock.lock();
+            if (!running) {
+                if (taskConfig != null) {
+                    SourceTask taskLocal = sourceTaskFactory.create();
+                    LOGGER.info("Initializing task '" + name + "'");
+                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
+                    LOGGER.info("Starting task '" + name + "'");
+                    taskLocal.start(taskConfig);
+                    this.task = taskLocal;
+                    running = true;
+                } else {
+                    LOGGER.finest("No task config for task '" + name + "'");
+                }
+            }
+        } finally {
+            taskLifecycleLock.unlock();
+        }
     }
 
     @Override
@@ -141,10 +155,6 @@ class DefaultTaskRunner implements TaskRunner {
 
     @Override
     public String name() {
-        return null;
-    }
-
-    public String getName() {
         return name;
     }
 
@@ -191,5 +201,10 @@ class NoOpRunner implements TaskRunner {
 
     @Override
     public void restoreSnapshot(State state) {
+    }
+
+    @Override
+    public String name() {
+        return null;
     }
 }

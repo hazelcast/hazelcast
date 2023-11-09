@@ -188,7 +188,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         if (taskRunner != null) {
-            descriptor.copy().withTag("task.runner", taskRunner.getName());
+            descriptor.copy().withTag("task.runner", taskRunner.name());
         }
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
