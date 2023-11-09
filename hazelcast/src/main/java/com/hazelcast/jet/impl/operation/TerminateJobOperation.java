@@ -61,7 +61,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
             return completedFuture(null);
         } else {
             JobCoordinationService jobCoordinationService = getJobCoordinationService();
-            return checkJobIsNotSuspendable(jobCoordinationService)
+            return checkJobIsAllowedToBeSuspended(jobCoordinationService)
                     ? jobCoordinationService.terminateJob(jobId(), terminationMode, true)
                     : jobCoordinationService.terminateJob(jobId(), TerminationMode.CANCEL_FORCEFUL, false);
         }
@@ -86,14 +86,18 @@ public class TerminateJobOperation extends AsyncJobOperation {
         isLightJob = in.readBoolean();
     }
 
-    private boolean checkJobIsNotSuspendable(JobCoordinationService jcs) {
+    private boolean checkJobIsAllowedToBeSuspended(JobCoordinationService jcs) {
         MasterContext masterContext = jcs.getMasterContext(jobId());
         JobConfig jobConfig = masterContext.jobConfig();
 
+        Boolean argument = jobConfig.getArgument(KEY_JOB_IS_NOT_SUSPENDABLE);
+        if (argument == null) {
+            return true;
+        }
+
         if ((terminationMode == SUSPEND_GRACEFUL || terminationMode == SUSPEND_FORCEFUL
                 || terminationMode == RESTART_GRACEFUL || terminationMode == RESTART_FORCEFUL)) {
-            Boolean argument = jobConfig.getArgument(KEY_JOB_IS_NOT_SUSPENDABLE);
-            return argument != null && !argument;
+            return !argument;
         }
         return true;
     }

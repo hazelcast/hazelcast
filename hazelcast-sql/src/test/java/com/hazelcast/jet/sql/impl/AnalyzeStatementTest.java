@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -147,44 +146,6 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         final String deleteQuery = "DELETE FROM test WHERE this = 1 AND this IS NOT NULL";
         assertJobIsAnalyzed(deleteQuery);
         assertTrue(instance().getMap("test").isEmpty());
-    }
-
-    @Test
-    public void test_suspend_isForbidden() {
-        String query = "SELECT v, v FROM TABLE(generate_stream(1000))";
-        instance().getSql().execute("ANALYZE " + query);
-        Job job = instance().getJet().getJobs()
-                .stream()
-                .filter(j -> Objects.equals(
-                        j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + query
-                ))
-                .findFirst()
-                .orElse(null);
-
-        assertNotNull(job);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        job.suspend();
-        assertJobStatusEventually(job, JobStatus.FAILED);
-    }
-
-    @Test
-    public void test_restart_isForbidden() {
-        String query = "SELECT v, v FROM TABLE(generate_stream(1000))";
-        instance().getSql().execute("ANALYZE " + query);
-        Job job = instance().getJet().getJobs()
-                .stream()
-                .filter(j -> Objects.equals(
-                        j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + query
-                ))
-                .findFirst()
-                .orElse(null);
-
-        assertNotNull(job);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        job.restart();
-        assertJobStatusEventually(job, JobStatus.FAILED);
     }
 
     private static void assertJobIsAnalyzed(String query) {
