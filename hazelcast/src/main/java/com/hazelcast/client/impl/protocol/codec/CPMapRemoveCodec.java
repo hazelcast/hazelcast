@@ -34,107 +34,83 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Returns current lock ownership status of the given FencedLock instance.
+ * Removes the value associated with the key in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("64e748beca2c26b10195b5751d7916d8")
-public final class FencedLockGetLockOwnershipCodec {
-    //hex: 0x070400
-    public static final int REQUEST_MESSAGE_TYPE = 459776;
-    //hex: 0x070401
-    public static final int RESPONSE_MESSAGE_TYPE = 459777;
+@Generated("35cacb59abeea74efd464b9d8689ee62")
+public final class CPMapRemoveCodec {
+    //hex: 0x230400
+    public static final int REQUEST_MESSAGE_TYPE = 2294784;
+    //hex: 0x230401
+    public static final int RESPONSE_MESSAGE_TYPE = 2294785;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_FENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_LOCK_COUNT_FIELD_OFFSET = RESPONSE_FENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_SESSION_ID_FIELD_OFFSET = RESPONSE_LOCK_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_THREAD_ID_FIELD_OFFSET = RESPONSE_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private FencedLockGetLockOwnershipCodec() {
+    private CPMapRemoveCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * CP group id of this FencedLock instance
+         * CP group ID of this CPMap instance.
          */
         public com.hazelcast.cp.internal.RaftGroupId groupId;
 
         /**
-         * Name of this FencedLock instance
+         * Name of this CPMap instance.
          */
         public java.lang.String name;
+
+        /**
+         * Key of the value to remove.
+         */
+        public com.hazelcast.internal.serialization.Data key;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
-        clientMessage.setOperationName("FencedLock.GetLockOwnership");
+        clientMessage.setContainsSerializedDataInRequest(true);
+        clientMessage.setRetryable(false);
+        clientMessage.setOperationName("CPMap.Remove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
+        DataCodec.encode(clientMessage, key);
         return clientMessage;
     }
 
-    public static FencedLockGetLockOwnershipCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static CPMapRemoveCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
+        request.key = DataCodec.decode(iterator);
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Fence token of the lock
-         */
-        public long fence;
-
-        /**
-         * Reentrant lock count
-         */
-        public int lockCount;
-
-        /**
-         * Id of the session that holds the lock
-         */
-        public long sessionId;
-
-        /**
-         * Id of the thread that holds the lock
-         */
-        public long threadId;
-    }
-
-    public static ClientMessage encodeResponse(long fence, int lockCount, long sessionId, long threadId) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeLong(initialFrame.content, RESPONSE_FENCE_FIELD_OFFSET, fence);
-        encodeInt(initialFrame.content, RESPONSE_LOCK_COUNT_FIELD_OFFSET, lockCount);
-        encodeLong(initialFrame.content, RESPONSE_SESSION_ID_FIELD_OFFSET, sessionId);
-        encodeLong(initialFrame.content, RESPONSE_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
 
+        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
         return clientMessage;
     }
 
-    public static FencedLockGetLockOwnershipCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * The result of the remove. 
+     */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        response.fence = decodeLong(initialFrame.content, RESPONSE_FENCE_FIELD_OFFSET);
-        response.lockCount = decodeInt(initialFrame.content, RESPONSE_LOCK_COUNT_FIELD_OFFSET);
-        response.sessionId = decodeLong(initialFrame.content, RESPONSE_SESSION_ID_FIELD_OFFSET);
-        response.threadId = decodeLong(initialFrame.content, RESPONSE_THREAD_ID_FIELD_OFFSET);
-        return response;
+        //empty initial frame
+        iterator.next();
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 }
