@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.parse.SqlCreateJob.parseLong;
 import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
@@ -124,7 +123,7 @@ public class SqlAlterJob extends SqlAlter {
 
             switch (key) {
                 case "snapshotIntervalMillis":
-                    deltaConfig.setSnapshotIntervalMillis(parseLong(validator, option));
+                    deltaConfig.setSnapshotIntervalMillis(ParseUtils.parseLong(validator, option));
                     break;
                 case "autoScaling":
                     deltaConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -139,7 +138,7 @@ public class SqlAlterJob extends SqlAlter {
                     deltaConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    deltaConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
+                    deltaConfig.setMaxProcessorAccumulatedRecords(ParseUtils.parseLong(validator, option));
                     break;
                 case "suspendOnFailure":
                     deltaConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
