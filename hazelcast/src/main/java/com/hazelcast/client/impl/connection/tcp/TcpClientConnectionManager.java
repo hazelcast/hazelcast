@@ -1326,7 +1326,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 authenticationTimeout,
                 clientUuid,
                 connection,
-                targetTpcPorts,
+                tpcPorts,
                 tpcToken,
                 executor,
                 this::createTpcChannel,
