@@ -71,7 +71,7 @@ public class ClientTpcBasicTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientConnectsToSingleTpcPort_byDefault() {
+    public void testClientConnectsToAllTpcPorts_byDefault() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
@@ -89,7 +89,7 @@ public class ClientTpcBasicTest extends ClientTestSupport {
 
                 Channel[] tpcChannels = clientConnection.getTpcChannels();
                 assertNotNull(tpcChannels);
-                assertEquals(1, tpcChannels.length);
+                assertEquals(config.getTpcConfig().getEventloopCount(), tpcChannels.length);
 
                 for (Channel channel : tpcChannels) {
                     assertNotNull(channel);
