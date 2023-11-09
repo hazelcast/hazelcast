@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -31,13 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.List;
-
-import static com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager.getTargetTpcPorts;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -54,36 +48,6 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
     @After
     public void cleanup() {
         factory.terminateAll();
-    }
-
-    @Test
-    public void testGetTargetTpcPorts_whenConnectToAll() {
-        ClientTpcConfig config = new ClientTpcConfig();
-        List<Integer> tpcPorts = asList(1, 2, 3);
-
-        // when larger than the number of tpc ports, return the full set.
-        config.setConnectionCount(tpcPorts.size() + 1);
-        assertEquals(tpcPorts, getTargetTpcPorts(tpcPorts, config));
-
-        // when equal than the number of tpc ports, return the full set.
-        config.setConnectionCount(tpcPorts.size());
-        assertEquals(tpcPorts, getTargetTpcPorts(tpcPorts, config));
-
-        // When 0, return the full set.
-        config.setConnectionCount(0);
-        assertEquals(tpcPorts, getTargetTpcPorts(tpcPorts, config));
-    }
-
-    @Test
-    public void testGetTargetTpcPorts_whenConnectToSubset() {
-        ClientTpcConfig config = new ClientTpcConfig();
-
-        config.setConnectionCount(2);
-        List<Integer> tpcPorts = asList(1, 2, 3);
-        List<Integer> result = getTargetTpcPorts(tpcPorts, config);
-
-        assertEquals(2, result.size());
-        assertTrue(tpcPorts.containsAll(result));
     }
 
     @Test

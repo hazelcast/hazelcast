@@ -175,11 +175,9 @@ public class ClientConfigTest {
         assertFalse(tpcConfig.isEnabled());
 
         tpcConfig.setEnabled(true);
-        tpcConfig.setConnectionCount(10);
         config.setTpcConfig(tpcConfig);
 
-        assertTrue(tpcConfig.isEnabled());
-        assertEquals(tpcConfig.getConnectionCount(), 10);
+        assertTrue(config.getTpcConfig().isEnabled());
         assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
     }
 }

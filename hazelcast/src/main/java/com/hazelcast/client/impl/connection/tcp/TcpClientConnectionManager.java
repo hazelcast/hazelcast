@@ -24,7 +24,6 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
@@ -99,7 +98,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -509,7 +507,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     <A> ClientConnection connect(A target, Function<A, ClientConnection> getOrConnectFunction,
-                                 Function<A, Address> addressTranslator) {
+                           Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
@@ -1332,25 +1330,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 this::createTpcChannel,
                 client.getLoggingService());
         connector.initiate();
-    }
-
-    static List<Integer> getTargetTpcPorts(List<Integer> tpcPorts, ClientTpcConfig tpcConfig) {
-        List<Integer> targetTpcPorts;
-        int tpcConnectionCount = tpcConfig.getConnectionCount();
-        if (tpcConnectionCount == 0 || tpcConnectionCount >= tpcPorts.size()) {
-            // zero means connect to all.
-            targetTpcPorts = tpcPorts;
-        } else {
-            // we make a copy of the tpc ports because items are removed.
-            List<Integer> tpcPortsCopy = new LinkedList<>(tpcPorts);
-            targetTpcPorts = new ArrayList<>(tpcConnectionCount);
-            ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
-            for (int k = 0; k < tpcConnectionCount; k++) {
-                int index = threadLocalRandom.nextInt(tpcPortsCopy.size());
-                targetTpcPorts.add(tpcPortsCopy.remove(index));
-            }
-        }
-        return targetTpcPorts;
     }
 
     private class ClientChannelErrorHandler implements ChannelErrorHandler {

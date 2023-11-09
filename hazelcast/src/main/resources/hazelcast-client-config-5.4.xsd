@@ -1200,15 +1200,6 @@
                 changes, or it can be removed in future releases without a prior notice.
             </xs:documentation>
         </xs:annotation>
-        <xs:all>
-            <xs:element name="connection-count" type="xs:unsignedInt" default="1" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                       The number of connections to the TPC ports offered by the server.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
