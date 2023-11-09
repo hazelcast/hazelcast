@@ -24,6 +24,10 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericArray;
+import org.apache.avro.generic.GenericContainer;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericData.StringType;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -38,7 +42,13 @@ import org.apache.avro.util.Utf8;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -69,45 +79,56 @@ public final class AvroSerializerHooks {
         }
     }
 
-    public static class GenericRecordHook implements SerializerHook<GenericRecord> {
+    public static class GenericContainerHook implements SerializerHook<GenericContainer> {
         private final Map<String, Schema> jsonToSchema = new HashMap<>();
         private final Map<Schema, String> schemaToJson = new HashMap<>();
 
         @Override
-        public Class<GenericRecord> getSerializationType() {
-            return GenericRecord.class;
+        public Class<GenericContainer> getSerializationType() {
+            return GenericContainer.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<GenericRecord>() {
+            return new StreamSerializer<GenericContainer>() {
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.AVRO_GENERIC_RECORD;
+                    return SerializerHookConstants.AVRO_GENERIC_CONTAINER;
                 }
 
                 @Override
-                public void write(@Nonnull ObjectDataOutput out, @Nonnull GenericRecord record) throws IOException {
+                public void write(@Nonnull ObjectDataOutput out, @Nonnull GenericContainer datum) throws IOException {
                     // SchemaNormalization.toParsingForm() drops details that are irrelevant to reader,
                     // such as field default values. However:
                     // 1. GenericData.Record.equals() compares record schemas without ignoring the dropped
                     //    details, which is effectively schema1.toString().equals(schema2.toString()).
                     // 2. There must be a 1-to-1 mapping between Schema's and their string representations
                     //    for bidirectional lookup.
-                    String schemaJson = schemaToJson.computeIfAbsent(record.getSchema(), Schema::toString);
+                    String schemaJson = schemaToJson.computeIfAbsent(datum.getSchema(), Schema::toString);
                     out.writeString(schemaJson);
-                    out.writeByteArray(record instanceof LazyImmutableRecord
-                            ? ((LazyImmutableRecord) record).serializedRecord
-                            : serialize(new GenericDatumWriter<>(record.getSchema()), record));
+                    out.writeByteArray(datum instanceof LazyImmutableContainer
+                            ? ((LazyImmutableContainer<?>) datum).serialized
+                            : serialize(new GenericDatumWriter<>(datum.getSchema()), datum));
                 }
 
                 @Nonnull
                 @Override
-                public GenericRecord read(@Nonnull ObjectDataInput in) throws IOException {
+                public GenericContainer read(@Nonnull ObjectDataInput in) throws IOException {
                     String schemaJson = in.readString();
                     Schema schema = jsonToSchema.computeIfAbsent(schemaJson,
                             json -> new Schema.Parser().parse(json));
-                    return new LazyImmutableRecord(in.readByteArray(), schema);
+                    byte[] serializedDatum = in.readByteArray();
+                    switch (schema.getType()) {
+                        case RECORD:
+                            return new LazyImmutableRecord(serializedDatum, schema);
+                        case ARRAY:
+                            return new LazyImmutableArray<>(serializedDatum, schema);
+                        case ENUM:  // GenericEnumSymbol
+                        case FIXED: // GenericFixed
+                            return deserialize(new GenericDatumReader<>(schema), serializedDatum);
+                        default:
+                            throw new UnsupportedOperationException("Schema type " + schema.getType() + " is unsupported");
+                    }
                 }
             };
         }
@@ -118,28 +139,37 @@ public final class AvroSerializerHooks {
         }
     }
 
-    public static final class Utf8Hook implements SerializerHook<Utf8> {
+    /**
+     * Replaces {@link Utf8} with {@link String} globally. Alternatively,
+     * the string class can be set on a per-schema basis via <ol>
+     * <li> {@link GenericData#setStringType GenericData.setStringType}{@code (schema,}
+     *      {@link StringType#String String}{@code )} or,
+     * <li> {@code SchemaBuilder.record("name").prop(}{@link GenericData#STRING_PROP STRING_PROP}{@code ,}
+     *      {@link StringType#String String}{@code )}.
+     */
+    public static final class CharSequenceHook implements SerializerHook<CharSequence> {
         @Override
-        public Class<Utf8> getSerializationType() {
-            return Utf8.class;
+        public Class<CharSequence> getSerializationType() {
+            return CharSequence.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new ByteArraySerializer<Utf8>() {
+            return new ByteArraySerializer<CharSequence>() {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.AVRO_UTF8;
                 }
 
                 @Override
-                public byte[] write(Utf8 string) {
-                    return string.getBytes();
+                public byte[] write(CharSequence cs) {
+                    return cs instanceof Utf8 ? ((Utf8) cs).getBytes()
+                            : cs.toString().getBytes(StandardCharsets.UTF_8);
                 }
 
                 @Override
-                public Utf8 read(byte[] buffer) {
-                    return new Utf8(buffer);
+                public CharSequence read(byte[] buffer) {
+                    return new String(buffer, StandardCharsets.UTF_8);
                 }
             };
         }
@@ -150,21 +180,52 @@ public final class AvroSerializerHooks {
         }
     }
 
-    public static final class LazyImmutableRecord implements GenericRecord {
-        private final byte[] serializedRecord;
+    private abstract static class LazyImmutableContainer<T extends GenericContainer> implements GenericContainer {
+        private final byte[] serialized;
         private final Schema schema;
-        private GenericRecord record;
+        private T deserialized;
 
-        private LazyImmutableRecord(byte[] serializedRecord, Schema schema) {
-            this.serializedRecord = serializedRecord;
+        protected LazyImmutableContainer(byte[] serialized, Schema schema) {
+            this.serialized = serialized;
             this.schema = schema;
         }
 
-        private GenericRecord deserialized() {
-            if (record == null) {
-                record = AvroSerializerHooks.deserialize(new GenericDatumReader<>(schema), serializedRecord);
+        protected T deserialized() {
+            if (deserialized == null) {
+                deserialized = deserialize(new GenericDatumReader<>(schema), serialized);
             }
-            return record;
+            return deserialized;
+        }
+
+        @Override
+        public Schema getSchema() {
+            return schema;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof GenericContainer
+                    && ((GenericContainer) obj).getSchema().getType() == schema.getType())) {
+                return false;
+            }
+            return deserialized().equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return deserialized().hashCode();
+        }
+    }
+
+    //region Lazy Immutable Containers
+    private static final class LazyImmutableRecord extends LazyImmutableContainer<GenericRecord>
+            implements GenericRecord {
+
+        private LazyImmutableRecord(byte[] serializedRecord, Schema schema) {
+            super(serializedRecord, schema);
         }
 
         @Override
@@ -178,27 +239,6 @@ public final class AvroSerializerHooks {
         }
 
         @Override
-        public Schema getSchema() {
-            return schema;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof GenericRecord)) {
-                return false;
-            }
-            return deserialized().equals(obj);
-        }
-
-        @Override
-        public int hashCode() {
-            return deserialized().hashCode();
-        }
-
-        @Override
         public void put(String key, Object v) {
             throw new UnsupportedOperationException();
         }
@@ -208,4 +248,147 @@ public final class AvroSerializerHooks {
             throw new UnsupportedOperationException();
         }
     }
+
+    private static final class LazyImmutableArray<T> extends LazyImmutableContainer<GenericArray<T>>
+            implements GenericArray<T> {
+        private List<T> immutable;
+
+        private LazyImmutableArray(byte[] serializedArray, Schema schema) {
+            super(serializedArray, schema);
+        }
+
+        private List<T> immutable() {
+            if (immutable == null) {
+                immutable = Collections.unmodifiableList(deserialized());
+            }
+            return immutable;
+        }
+
+        @Override
+        public T peek() {
+            return deserialized().peek();
+        }
+
+        @Override
+        public int size() {
+            return deserialized().size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return deserialized().isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return deserialized().contains(o);
+        }
+
+        @Override
+        @SuppressWarnings("SlowListContainsAll")
+        public boolean containsAll(@Nonnull Collection<?> c) {
+            return deserialized().containsAll(c);
+        }
+
+        @Override
+        public T get(int index) {
+            return deserialized().get(index);
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            return deserialized().indexOf(o);
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            return deserialized().lastIndexOf(o);
+        }
+
+        @Nonnull @Override
+        public Object[] toArray() {
+            return deserialized().toArray();
+        }
+
+        @Nonnull @Override
+        public <T1> T1[] toArray(@Nonnull T1[] a) {
+            return deserialized().toArray(a);
+        }
+
+        @Nonnull @Override
+        public Iterator<T> iterator() {
+            return immutable().iterator();
+        }
+
+        @Nonnull @Override
+        public ListIterator<T> listIterator() {
+            return immutable().listIterator();
+        }
+
+        @Nonnull @Override
+        public ListIterator<T> listIterator(int index) {
+            return immutable().listIterator(index);
+        }
+
+        @Nonnull @Override
+        public List<T> subList(int fromIndex, int toIndex) {
+            return immutable().subList(fromIndex, toIndex);
+        }
+
+        @Override
+        public boolean add(T t) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void reverse() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(@Nonnull Collection<? extends T> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(int index, @Nonnull Collection<? extends T> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(@Nonnull Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(@Nonnull Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public T set(int index, T element) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void add(int index, T element) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public T remove(int index) {
+            throw new UnsupportedOperationException();
+        }
+    }
+    //endregion
 }

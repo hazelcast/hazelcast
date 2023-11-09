@@ -58,7 +58,7 @@ public final class SerializerHookConstants {
     public static final int QUERY_ENTRY = -327;
     public static final int DEFERRED_MAP = -328;
     public static final int AVRO_UTF8 = -329;
-    public static final int AVRO_GENERIC_RECORD = -330;
+    public static final int AVRO_GENERIC_CONTAINER = -330;
 
     public static final int CDC_RECORD = -340;
     public static final int CDC_RECORD_PART = -341;

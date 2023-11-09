@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,6 +31,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
@@ -37,7 +40,6 @@ import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_PATH;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -45,12 +47,13 @@ public class SqlAvroTest extends SqlTestSupport {
     private static final File AVRO_FILE = FileUtil.createAvroFile(FileUtil.AVRO_RECORD);
     private static final File AVRO_NULLABLE_FILE = FileUtil.createAvroFile(FileUtil.AVRO_NULLABLE_RECORD);
     private static final File AVRO_NULL_FILE = FileUtil.createAvroFile(FileUtil.AVRO_NULL_RECORD);
+    private static final File AVRO_COMPLEX_FILE = FileUtil.createAvroFile(FileUtil.AVRO_COMPLEX_TYPES);
 
     private static SqlService sqlService;
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        initializeWithClient(1, null, null);
         sqlService = instance().getSql();
     }
 
@@ -71,7 +74,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row((Object) null))
+                List.of(new Row((Object) null))
         );
     }
 
@@ -85,12 +88,12 @@ public class SqlAvroTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT id, name FROM " + name,
-                singletonList(new Row((byte) 127, "string"))
+                List.of(new Row((byte) 127, "string"))
         );
     }
 
     @Test
-    public void test_allTypes() {
+    public void test_allSqlTypes() {
         String name = randomName();
         fileMapping(name, AVRO_FILE)
                 .fields("string VARCHAR",
@@ -111,7 +114,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(
+                List.of(new Row(
                         "string",
                         true,
                         (byte) 127,
@@ -127,6 +130,17 @@ public class SqlAvroTest extends SqlTestSupport {
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
                         new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build()
                 ))
+        );
+    }
+
+    @Test
+    public void test_complexAvroTypes() {
+        String name = randomName();
+        fileMapping(name, AVRO_COMPLEX_FILE).create();
+
+        assertRowsAnyOrder(client(),
+                "SELECT * FROM " + name,
+                List.of(new Row(getAllValues(FileUtil.AVRO_COMPLEX_TYPES)))
         );
     }
 
@@ -167,7 +181,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"null\""
                         + ", object "
                         + "FROM " + name,
-                singletonList(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
+                List.of(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
                         "string",
                         true,
                         127,
@@ -223,7 +237,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         + "FROM TABLE("
                         + "  AVRO_FILE('" + avroFile.getParent() + "')"
                         + ")",
-                singletonList(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
+                List.of(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
                         "string",
                         true,
                         127,
@@ -304,5 +318,11 @@ public class SqlAvroTest extends SqlTestSupport {
                 "  )" +
                 ")")
         ).hasMessageContaining("matches no files");
+    }
+
+    private static Object[] getAllValues(GenericRecord record) {
+        return IntStream.range(0, record.getSchema().getFields().size())
+                .mapToObj(record::get)
+                .toArray();
     }
 }

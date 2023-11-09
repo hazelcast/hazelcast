@@ -38,6 +38,7 @@ import com.hazelcast.internal.serialization.impl.defaultserializers.DelayQueueSt
 import com.hazelcast.internal.serialization.impl.defaultserializers.HashMapStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.HashSetStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers;
+import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.ByteBufferSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.EnumSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OptionalSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.LinkedBlockingQueueStreamSerializer;
@@ -72,6 +73,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -320,6 +322,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
         safeRegister(HazelcastJsonValue.class, new HazelcastJsonValueSerializer());
+        safeRegister(ByteBuffer.class, new ByteBufferSerializer());
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions) {

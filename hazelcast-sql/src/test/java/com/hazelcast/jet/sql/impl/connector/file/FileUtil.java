@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
+import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -31,7 +33,10 @@ import org.apache.parquet.io.OutputFile;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.reduce;
@@ -102,6 +107,31 @@ final class FileUtil {
             AVRO_NULLABLE_RECORD.getSchema().getFields().stream(),
             (record, field) -> record.set(field, null)
     ).build();
+
+    static final Record AVRO_COMPLEX_TYPES;
+    static {
+        Schema recordSchema = SchemaBuilder.record("record").fields().requiredInt("field").endRecord();
+        Schema arraySchema = SchemaBuilder.array().items(Schema.create(Schema.Type.INT));
+        Schema enumSchema = SchemaBuilder.enumeration("enum").symbols("symbol");
+        Schema fixedSchema = SchemaBuilder.fixed("fixed").size(1);
+
+        AVRO_COMPLEX_TYPES = new GenericRecordBuilder(SchemaBuilder.record("complex")
+                .fields()
+                .requiredBytes("bytes")
+                .name("map").type().map().values(Schema.create(Schema.Type.INT)).noDefault()
+                .name("record").type(recordSchema).noDefault()
+                .name("array").type(arraySchema).noDefault()
+                .name("enum").type(enumSchema).noDefault()
+                .name("fixed").type(fixedSchema).noDefault()
+                .endRecord()
+        ).set("bytes", ByteBuffer.wrap(new byte[]{(byte) 19}))
+         .set("map", Map.of("key", 71))
+         .set("record", new GenericRecordBuilder(recordSchema).set("field", 23).build())
+         .set("array", new GenericData.Array<>(arraySchema, List.of(53)))
+         .set("enum", new GenericData.EnumSymbol(enumSchema, "symbol"))
+         .set("fixed", new GenericData.Fixed(fixedSchema, new byte[]{(byte) 74}))
+         .build();
+    }
 
     private static final Record PARQUET_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")

@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.avro.AvroSerializerHooks$GenericRecordHook
-com.hazelcast.jet.avro.AvroSerializerHooks$Utf8Hook
+com.hazelcast.jet.avro.AvroSerializerHooks$CharSequenceHook
+com.hazelcast.jet.avro.AvroSerializerHooks$GenericContainerHook

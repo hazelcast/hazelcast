@@ -42,8 +42,8 @@ public class AvroSerializerTest {
     public void testUtf8() {
         Utf8 expected = new Utf8(newUnsecureUuidString());
         Data data = serializationService.toData(expected);
-        Utf8 actual = serializationService.toObject(data);
-        assertEquals(expected, actual);
+        String actual = serializationService.toObject(data);
+        assertEquals(expected.toString(), actual);
     }
 
 }

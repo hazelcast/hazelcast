@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -37,6 +38,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -48,6 +50,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_BYTE_BUFFER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OPTIONAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
@@ -474,6 +477,24 @@ public final class JavaDefaultSerializers {
         @Override
         public int getTypeId() {
             return JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+        }
+    }
+
+    public static final class ByteBufferSerializer implements ByteArraySerializer<ByteBuffer> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_BYTE_BUFFER;
+        }
+
+        @Override
+        public byte[] write(ByteBuffer buffer) throws IOException {
+            return buffer.array();
+        }
+
+        @Override
+        public ByteBuffer read(byte[] buffer) throws IOException {
+            return ByteBuffer.wrap(buffer);
         }
     }
 
