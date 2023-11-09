@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Objects;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -63,8 +64,8 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
 
         assertNotNull(job);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        job.suspend();
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThatThrownBy(job::suspend)
+                .hasMessageContaining("Cannot suspend the job being analyzed");
     }
 
     @Test
@@ -82,7 +83,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
 
         assertNotNull(job);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        job.restart();
-        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertThatThrownBy(job::restart)
+                .hasMessageContaining("Cannot suspend the job being analyzed");
     }
 }

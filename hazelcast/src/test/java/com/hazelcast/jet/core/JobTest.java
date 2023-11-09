@@ -26,6 +26,7 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.core.TestProcessors.Identity;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.TestProcessors.MockP;
@@ -785,6 +786,42 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertThatThrownBy(() -> instances()[1].getJet().newJob(dag, config))
                 .isInstanceOf(JobAlreadyExistsException.class);
+    }
+
+    @Test
+    public void given_suspensionIsForbidden_when_suspendJob_then_jobIsTerminated() {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
+
+        // When
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // Then
+        assertJobStatusEventually(job, RUNNING);
+        assertThatThrownBy(job::suspend)
+                .hasMessageContaining("Cannot suspend the job being analyzed");
+
+        cancelAndJoin(job);
+    }
+
+    @Test
+    public void given_suspensionIsForbidden_when_restartJob_then_jobIsTerminated() {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
+
+        // When
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // Then
+        assertJobStatusEventually(job, RUNNING);
+        assertThatThrownBy(job::restart)
+                .hasMessageContaining("Cannot suspend the job being analyzed");
+
+        cancelAndJoin(job);
     }
 
     @Test

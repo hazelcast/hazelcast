@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
@@ -91,6 +92,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
@@ -111,6 +113,8 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
@@ -435,9 +439,10 @@ public class MasterJobContext {
      * <li> a string with a message why this call did nothing or null, if
      *      this call actually initiated the termination
      * </ol>
+     *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *        SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
-     * @param userInitiated if the termination was requested by the user
+     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     * @param userInitiated               if the termination was requested by the user
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(
@@ -450,6 +455,10 @@ public class MasterJobContext {
         // cancellation, which is allowed even if not snapshotting.
         if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
             mode = mode.withoutTerminalSnapshot();
+        }
+
+        if (!checkJobIsAllowedToBeSuspended(mode)) {
+            return tuple2(executionCompletionFuture, "Cannot suspend the job being analyzed");
         }
 
         JobStatus localStatus;
@@ -1129,6 +1138,21 @@ public class MasterJobContext {
         } else {
             clientFuture.complete(withJobMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue())));
         }
+    }
+
+    private boolean checkJobIsAllowedToBeSuspended(TerminationMode terminationMode) {
+        JobConfig jobConfig = mc.jobConfig();
+
+        Boolean argument = jobConfig.getArgument(KEY_JOB_IS_SUSPENDABLE);
+        if (argument == null) {
+            return true;
+        }
+
+        if ((terminationMode == SUSPEND_GRACEFUL || terminationMode == SUSPEND_FORCEFUL
+                || terminationMode == RESTART_GRACEFUL || terminationMode == RESTART_FORCEFUL)) {
+            return argument;
+        }
+        return true;
     }
 
     /**

@@ -31,7 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_NOT_SUSPENDABLE;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
@@ -88,7 +88,7 @@ public class SqlAnalyzeStatement extends SqlCall {
         jobConfig.setSplitBrainProtection(false);
         jobConfig.setAutoScaling(false);
         jobConfig.setSuspendOnFailure(false);
-        jobConfig.setArgument(KEY_JOB_IS_NOT_SUSPENDABLE, true);
+        jobConfig.setArgument(KEY_JOB_IS_SUSPENDABLE, false);
 
         for (SqlNode option0 : options) {
             SqlOption option = (SqlOption) option0;

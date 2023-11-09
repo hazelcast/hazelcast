@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.JobCoordinationService;
-import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,11 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_NOT_SUSPENDABLE;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -60,10 +52,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
             getJobCoordinationService().terminateLightJob(jobId(), true);
             return completedFuture(null);
         } else {
-            JobCoordinationService jobCoordinationService = getJobCoordinationService();
-            return checkJobIsAllowedToBeSuspended(jobCoordinationService)
-                    ? jobCoordinationService.terminateJob(jobId(), terminationMode, true)
-                    : jobCoordinationService.terminateJob(jobId(), TerminationMode.CANCEL_FORCEFUL, false);
+            return getJobCoordinationService().terminateJob(jobId(), terminationMode, true);
         }
     }
 
@@ -84,21 +73,5 @@ public class TerminateJobOperation extends AsyncJobOperation {
         super.readInternal(in);
         terminationMode = TerminationMode.values()[in.readByte()];
         isLightJob = in.readBoolean();
-    }
-
-    private boolean checkJobIsAllowedToBeSuspended(JobCoordinationService jcs) {
-        MasterContext masterContext = jcs.getMasterContext(jobId());
-        JobConfig jobConfig = masterContext.jobConfig();
-
-        Boolean argument = jobConfig.getArgument(KEY_JOB_IS_NOT_SUSPENDABLE);
-        if (argument == null) {
-            return true;
-        }
-
-        if ((terminationMode == SUSPEND_GRACEFUL || terminationMode == SUSPEND_FORCEFUL
-                || terminationMode == RESTART_GRACEFUL || terminationMode == RESTART_FORCEFUL)) {
-            return !argument;
-        }
-        return true;
     }
 }
