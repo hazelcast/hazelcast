@@ -23,7 +23,7 @@ import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.Message;
-import com.hazelcast.topic.ReliableMessageListener;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -50,7 +50,6 @@ public class SourceConnectorWrapper {
     private final int tasksMax;
     private TaskRunner taskRunner;
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
-    private int localProcessorIndex;
     private final State state = new State();
     private final String name;
     private boolean isMasterProcessor;
@@ -79,9 +78,6 @@ public class SourceConnectorWrapper {
         this.logger = logger;
     }
 
-    public void setLocalProcessorIndex(int localProcessorIndex) {
-        this.localProcessorIndex = localProcessorIndex;
-    }
 
     public void setMasterProcessor(boolean masterProcessor) {
         isMasterProcessor = masterProcessor;
@@ -92,8 +88,8 @@ public class SourceConnectorWrapper {
     }
 
     public void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
-        taskConfigPublisher = new TaskConfigPublisher();
-        taskConfigPublisher.createTopic(hazelcastInstance, executionId);
+        taskConfigPublisher = new TaskConfigPublisher(hazelcastInstance);
+        taskConfigPublisher.createTopic(executionId);
 
         // All processors must listen the topic
         addTopicListener(new ReliableMessageListenerAdapter<>(this::processMessage));
@@ -107,8 +103,8 @@ public class SourceConnectorWrapper {
         }
     }
 
-    private void addTopicListener(ReliableMessageListener<TaskConfigTopic> reliableMessageListener) {
-        taskConfigPublisher.addListener(reliableMessageListener);
+    private void addTopicListener(MessageListener<TaskConfigTopic> messageListener) {
+        taskConfigPublisher.addListener(messageListener);
     }
 
     private void removeTopicListeners() {
@@ -123,6 +119,7 @@ public class SourceConnectorWrapper {
     }
 
     private void processMessage(Message<TaskConfigTopic> message) {
+        logger.info("Received TaskConfigTopic topic");
         TaskConfigTopic taskConfigTopic = message.getMessageObject();
         processMessage(taskConfigTopic);
     }
@@ -191,7 +188,7 @@ public class SourceConnectorWrapper {
     }
 
     public TaskRunner createTaskRunner() {
-        String taskName = name + "-task-" + localProcessorIndex;
+        String taskName = name + "-task-" + processorOrder;
         taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
         taskRunner.setLogger(logger);
         requestTaskReconfiguration();
@@ -236,7 +233,6 @@ public class SourceConnectorWrapper {
     public String toString() {
         return "ConnectorWrapper{" +
                "name='" + name + '\'' +
-               ", taskId=" + localProcessorIndex +
                ", tasksMax=" + tasksMax +
                ", isMasterProcessor=" + isMasterProcessor +
                ", processorOrder=" + processorOrder +

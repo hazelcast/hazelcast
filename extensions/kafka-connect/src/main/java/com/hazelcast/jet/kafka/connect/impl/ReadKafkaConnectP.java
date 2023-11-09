@@ -100,7 +100,6 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
         if (sourceConnectorWrapper == null) {
             sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser);
-            sourceConnectorWrapper.setLocalProcessorIndex(localProcessorIndex);
         }
         sourceConnectorWrapper.setLogger(getLogger());
         sourceConnectorWrapper.setProcessorOrder(processorOrder);
@@ -164,7 +163,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public boolean saveToSnapshot() {
-        getLogger().info("saveToSnapshot  for globalProcessorIndex=" + globalProcessorIndex +
+        getLogger().info("saveToSnapshot for globalProcessorIndex=" + globalProcessorIndex +
                          " localProcessorIndex= " + localProcessorIndex);
 
         if (!snapshotsEnabled) {

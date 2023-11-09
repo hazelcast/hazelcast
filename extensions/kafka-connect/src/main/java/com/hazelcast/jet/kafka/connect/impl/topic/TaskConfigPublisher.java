@@ -16,32 +16,34 @@
 
 package com.hazelcast.jet.kafka.connect.impl.topic;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.ReliableMessageListener;
+import com.hazelcast.topic.MessageListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class TaskConfigPublisher {
+    private final HazelcastInstance hazelcastInstance;
+    private String topicName;
     private ITopic<TaskConfigTopic> reliableTopic;
+    private final List<UUID> listeners = new ArrayList<>();
 
-    private List<UUID> listeners = new ArrayList<>();
+    public TaskConfigPublisher(HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
+    }
 
-    public void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
-        Config config = hazelcastInstance.getConfig();
-
-        String topicName = String.valueOf(executionId);
-        /*RingbufferConfig ringbufferConfig = config.getRingbufferConfig(topicName);
-        ringbufferConfig.setCapacity(1);
-        */
+    public void createTopic(long executionId) {
+        topicName = String.valueOf(executionId);
         reliableTopic = hazelcastInstance.getReliableTopic(topicName);
     }
 
-    public void addListener(ReliableMessageListener<TaskConfigTopic> reliableMessageListener) {
-        UUID uuid = reliableTopic.addMessageListener(reliableMessageListener);
+    public void addListener(MessageListener<TaskConfigTopic> reliableMessageListener) {
+        UUID uuid = reliableTopic.addMessageListener(new LateJoiningListener<>(
+                hazelcastInstance,
+                topicName,
+                reliableMessageListener));
         listeners.add(uuid);
     }
 
