@@ -335,17 +335,13 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         }
     }
 
+    public void clearDestroyedNames() {
+        destroyedNames.clear();
+    }
+
     @Override
     public String toString() {
         return "ResourceRegistry{" + "groupId=" + groupId + ", resources=" + resources + ", destroyedNames=" + destroyedNames
                 + ", waitTimeouts=" + waitTimeouts + '}';
-    }
-
-    Set<String> getDestroyedNames() {
-        return destroyedNames;
-    }
-
-    public void clearDestroyedNames() {
-        destroyedNames.clear();
     }
 }

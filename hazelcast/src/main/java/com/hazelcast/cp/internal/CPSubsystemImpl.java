@@ -40,12 +40,10 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -129,7 +127,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
         RaftService raftService = getService(RaftService.SERVICE_NAME);
         cpSubsystemManagementService =
-                new CPSubsystemManagementServiceImpl(raftService, instance.getCluster());
+                new CPSubsystemManagementServiceImpl(raftService, nodeEngine.getHazelcastInstance().getCluster());
         return cpSubsystemManagementService;
     }
 

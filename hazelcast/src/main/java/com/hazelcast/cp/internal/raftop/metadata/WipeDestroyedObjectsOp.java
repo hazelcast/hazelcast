@@ -20,8 +20,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
-import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
+import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,19 +31,13 @@ import java.util.Collection;
 public class WipeDestroyedObjectsOp extends RaftOp implements IdentifiedDataSerializable {
     @Override
     public Void run(CPGroupId groupId, long commitIndex) throws Exception {
-        clearRaftAtomicValueServices(groupId);
-        clearAbstractBlockingServices(groupId);
+        clearDestroyedNamesInAllServices(groupId);
         return null;
     }
 
-    private void clearRaftAtomicValueServices(CPGroupId groupId) {
-        Collection<RaftAtomicValueService> services = getNodeEngine().getServices(RaftAtomicValueService.class);
-        services.forEach(service -> service.clearDestroyedValues(groupId));
-    }
-
-    private void clearAbstractBlockingServices(CPGroupId cpGroupId) {
-        Collection<AbstractBlockingService> services = getNodeEngine().getServices(AbstractBlockingService.class);
-        services.forEach(service -> service.clearDestroyedNames(cpGroupId));
+    private void clearDestroyedNamesInAllServices(CPGroupId groupId) {
+        Collection<RaftRemoteService> services = getNodeEngine().getServices(RaftRemoteService.class);
+        services.forEach(service -> service.clearDestroyedNames(groupId));
     }
 
     @Override

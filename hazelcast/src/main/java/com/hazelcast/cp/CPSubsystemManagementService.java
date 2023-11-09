@@ -269,10 +269,13 @@ public interface CPSubsystemManagementService {
      *     <li>{@link com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService}</li>
      *     <li>{@link com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService}</li>
      *     <li>{@link com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService}</li>
+     *     <li>{@link com.hazelcast.cp.internal.datastructures.cpmap.CPMapService}</li>
      * </ul>
      * <p>
      * Upon completion the user can create objects within the CP subsystem under names that were destroyed
      * pre-invocation.
+     * <p><b>Warning! When a CP object is destroyed and re-created, it's linearizable history will be broken.
+     * Not all users of a CP object may be aware of this and they can observe an inconsistent state.</b>
      *
      * @since 5.4
      */

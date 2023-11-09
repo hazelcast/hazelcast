@@ -38,4 +38,12 @@ public interface RaftRemoteService {
      * This operation is committed on the given CP group.
      */
     boolean destroyRaftObject(CPGroupId groupId, String objectName);
+
+    /**
+     * Clear destroyed CP object names on the CP group.
+     * This allows to reuse the name of a destroyed CP object.
+     * This operation is committed on the given CP group.
+     */
+    default void clearDestroyedNames(CPGroupId groupId) {
+    }
 }

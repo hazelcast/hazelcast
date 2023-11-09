@@ -424,6 +424,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         getGroupIdSet().removeIf(groupId -> raftService.getCPGroupPartitionId(groupId) == partitionId);
     }
 
+    @Override
     public void clearDestroyedNames(CPGroupId cpGroupId) {
         ResourceRegistry<?, ?> resourceRegistry = getRegistryOrNull(cpGroupId);
         if (resourceRegistry != null) {

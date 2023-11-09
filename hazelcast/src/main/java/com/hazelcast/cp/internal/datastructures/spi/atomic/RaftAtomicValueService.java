@@ -209,11 +209,8 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         atomicValues.keySet().removeIf(t -> raftService.getCPGroupPartitionId(t.element1) == partitionId);
     }
 
-    Set<BiTuple<CPGroupId, String>> getDestroyedValues() {
-        return destroyedValues;
-    }
-
-    public void clearDestroyedValues(CPGroupId cpGroupId) {
+    @Override
+    public void clearDestroyedNames(CPGroupId cpGroupId) {
         List<BiTuple<CPGroupId, String>> toWipe =
                 destroyedValues.stream().filter(tuple -> tuple.element1.equals(cpGroupId)).collect(Collectors.toList());
         toWipe.forEach(destroyedValues::remove);

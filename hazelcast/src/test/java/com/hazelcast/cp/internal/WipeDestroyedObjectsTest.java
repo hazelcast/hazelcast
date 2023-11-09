@@ -23,8 +23,13 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +38,8 @@ import java.util.function.Consumer;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
     private static final Set<String> CP_GROUP_NAMES = Set.of("mygroup1", "mygroup2", "default");
     private HazelcastInstance[] instances;
