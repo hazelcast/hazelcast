@@ -34,81 +34,79 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
- * become available.
+ * Tests if the value associated with the key is expectedValue and if so associates key with
+ * newValue.
  */
 @SuppressWarnings("unused")
-@Generated("1139c7af89463bfed2f2eedabf8d858b")
-public final class TransactionalQueueOfferCodec {
-    //hex: 0x120100
-    public static final int REQUEST_MESSAGE_TYPE = 1179904;
-    //hex: 0x120101
-    public static final int RESPONSE_MESSAGE_TYPE = 1179905;
-    private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+@Generated("f6639933f5e2c5fc315fa4e20d0ca863")
+public final class CPMapCompareAndSetCodec {
+    //hex: 0x230600
+    public static final int REQUEST_MESSAGE_TYPE = 2295296;
+    //hex: 0x230601
+    public static final int RESPONSE_MESSAGE_TYPE = 2295297;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private TransactionalQueueOfferCodec() {
+    private CPMapCompareAndSetCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Name of the Transactional Queue
+         * CP group ID of this CPMap instance.
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of this CPMap instance.
          */
         public java.lang.String name;
 
         /**
-         * ID of the transaction
+         * Key of the data that is subject of the compare and set.
          */
-        public java.util.UUID txnId;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
-         * The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+         * The expected value associated with key.
          */
-        public long threadId;
+        public com.hazelcast.internal.serialization.Data expectedValue;
 
         /**
-         * The element to add
+         * The new value to associate with key.
          */
-        public com.hazelcast.internal.serialization.Data item;
-
-        /**
-         * How long to wait before giving up, in milliseconds
-         */
-        public long timeout;
+        public com.hazelcast.internal.serialization.Data newValue;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data item, long timeout) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data expectedValue, com.hazelcast.internal.serialization.Data newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("TransactionalQueue.Offer");
+        clientMessage.setOperationName("CPMap.CompareAndSet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
-        encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
-        encodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET, timeout);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
-        DataCodec.encode(clientMessage, item);
+        DataCodec.encode(clientMessage, key);
+        DataCodec.encode(clientMessage, expectedValue);
+        DataCodec.encode(clientMessage, newValue);
         return clientMessage;
     }
 
-    public static TransactionalQueueOfferCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static CPMapCompareAndSetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.txnId = decodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET);
-        request.threadId = decodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET);
-        request.timeout = decodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
-        request.item = DataCodec.decode(iterator);
+        request.key = DataCodec.decode(iterator);
+        request.expectedValue = DataCodec.decode(iterator);
+        request.newValue = DataCodec.decode(iterator);
         return request;
     }
 
@@ -123,7 +121,7 @@ public final class TransactionalQueueOfferCodec {
     }
 
     /**
-     * <tt>true</tt> if successful, or <tt>false</tt> if the specified waiting time elapses before space is available
+     * True if key was associated with newValue, otherwise false.
      */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
