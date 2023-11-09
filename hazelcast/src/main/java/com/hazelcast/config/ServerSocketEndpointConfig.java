@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -58,8 +58,7 @@ public class ServerSocketEndpointConfig
     private String publicAddress;
 
     public ServerSocketEndpointConfig() {
-        String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
-        reuseAddress = (!os.contains("win"));
+        reuseAddress = !OS.isWindows();
     }
 
     public String getPublicAddress() {

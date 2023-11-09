@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData.Record;
@@ -84,7 +85,11 @@ public class AvroUpsertTarget implements UpsertTarget {
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
+        Injector injector = createInjector(schema, path, type);
+        return value -> injector.set(record, value);
+    }
 
+    private Injector createInjector(Schema schema, String path, QueryDataType type) {
         Schema fieldSchema = unwrapNullableType(schema.getField(path).schema());
         Schema.Type fieldSchemaType = fieldSchema.getType();
         switch (fieldSchemaType) {
@@ -95,7 +100,7 @@ public class AvroUpsertTarget implements UpsertTarget {
             case DOUBLE:
             case STRING:
                 QueryDataType targetType = AVRO_TO_SQL.getOrDefault(fieldSchemaType);
-                return value -> {
+                return (record, value) -> {
                     try {
                         record.set(path, targetType.convert(value));
                     } catch (QueryException e) {
@@ -103,13 +108,28 @@ public class AvroUpsertTarget implements UpsertTarget {
                                 + " (field=" + path + ")");
                     }
                 };
+            case RECORD:
+                List<Injector> injectors = type.getObjectFields().stream()
+                        .map(field -> createInjector(fieldSchema, field.getName(), field.getType()))
+                        .collect(toList());
+                return (record, value) -> {
+                    if (value == null) {
+                        record.set(path, null);
+                        return;
+                    }
+                    GenericRecordBuilder nestedRecord = new GenericRecordBuilder(fieldSchema);
+                    for (int i = 0; i < injectors.size(); i++) {
+                        injectors.get(i).set(nestedRecord, ((RowValue) value).getValues().get(i));
+                    }
+                    record.set(path, nestedRecord.build());
+                };
             case UNION:
                 Predicate<Schema.Type> hasType = fieldSchema.getTypes().stream()
                         .map(Schema::getType).collect(toImmutableEnumSet())::contains;
                 DefaultedMap<Class<?>, List<QueryDataType>> availableTargets =
                         CONVERSION_PREFS.mapKeysAndValues(identity(), targets -> targets.stream()
                                 .filter(hasType).map(AVRO_TO_SQL::getOrDefault).collect(toList()));
-                return value -> {
+                return (record, value) -> {
                     if (value == null) {
                         record.set(path, null);
                         return;
@@ -124,7 +144,7 @@ public class AvroUpsertTarget implements UpsertTarget {
                             + value.getClass().getSimpleName() + ") (field=" + path + ")");
                 };
             case NULL:
-                return value -> {
+                return (record, value) -> {
                     if (value != null) {
                         throw QueryException.error("Cannot convert " + value + " to NULL (field=" + path + ")");
                     }
@@ -145,5 +165,10 @@ public class AvroUpsertTarget implements UpsertTarget {
         Record record = this.record.build();
         this.record = null;
         return record;
+    }
+
+    @FunctionalInterface
+    private interface Injector {
+        void set(GenericRecordBuilder record, Object value);
     }
 }

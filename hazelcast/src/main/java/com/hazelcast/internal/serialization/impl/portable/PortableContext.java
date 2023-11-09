@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -34,6 +35,8 @@ public interface PortableContext {
     void setClassVersion(int factoryId, int classId, int version);
 
     ClassDefinition lookupClassDefinition(int factoryId, int classId, int version);
+
+    ClassDefinition lookupClassDefinition(PortableId portableId);
 
     ClassDefinition lookupClassDefinition(Data data) throws IOException;
 

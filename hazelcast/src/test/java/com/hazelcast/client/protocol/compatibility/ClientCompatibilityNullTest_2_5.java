@@ -44,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCompatibilityNullTest_2_5 {
@@ -6819,13 +6820,11 @@ public class ClientCompatibilityNullTest_2_5 {
 
     private static class CPSubsystemAddGroupAvailabilityListenerCodecHandler extends CPSubsystemAddGroupAvailabilityListenerCodec.AbstractEventHandler {
         @Override
-        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers,
-                                                      boolean isIsShutdownExists, boolean isShutdown) {
+        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers, boolean isIsShutdownExists, boolean isShutdown) {
             assertTrue(isEqual(aRaftGroupId, groupId));
             assertTrue(isEqual(aListOfCpMembers, members));
             assertTrue(isEqual(aListOfCpMembers, unavailableMembers));
-            assertFalse(isIsShutdownExists); // < 2.7
-            assertFalse(isShutdown); // < 2.7
+            assertFalse(isIsShutdownExists);
         }
     }
 

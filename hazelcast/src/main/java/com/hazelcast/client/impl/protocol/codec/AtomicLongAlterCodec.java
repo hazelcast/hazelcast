@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Alters the currently stored value by applying a function on it.
  */
-@Generated("c433b81be16e7e2ee0d6f09d90999bbe")
+@SuppressWarnings("unused")
+@Generated("ef42ffb677fca280232880516b017aca")
 public final class AtomicLongAlterCodec {
     //hex: 0x090200
     public static final int REQUEST_MESSAGE_TYPE = 590336;

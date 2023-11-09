@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("c4f658501f57154d3761cbbf2822cd28")
+@SuppressWarnings("unused")
+@Generated("15e1de7a82fbb76ceb416ab465693d84")
 public final class ScheduledExecutorDisposeFromPartitionCodec {
     //hex: 0x1A1100
     public static final int REQUEST_MESSAGE_TYPE = 1708288;

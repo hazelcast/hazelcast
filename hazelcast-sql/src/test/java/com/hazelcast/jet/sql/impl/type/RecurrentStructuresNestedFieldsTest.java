@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -25,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.function.Consumer;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,57 +40,47 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         initializeWithClient(2, config, null);
     }
 
+    private static void createJavaMapping(String name, Class<?> valueClass, String... valueFields) {
+        BasicNestedFieldsTest.createJavaMapping(client(), name, valueClass, valueFields);
+    }
+
+    private static void createType(String name, String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .create(client());
+    }
+
     @Test
     public void test_cyclicTypeUpsertsValidationError() {
-        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
-        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
-        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createType("FCA", "name VARCHAR", "b FCB", "c FCC");
+        createType("FCB", "name VARCHAR", "a FCA", "c FCC");
+        createType("FCC", "name VARCHAR", "a FCA", "b FCB");
         createJavaMapping("tableA", FullyConnectedA.class, "this FCA");
         createJavaMapping("tableB", FullyConnectedB.class, "this FCB");
         createJavaMapping("tableC", FullyConnectedC.class, "this FCC");
 
-        createJavaType("DualGraph", DualPathGraph.class,
-                "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
+        createType("DualGraph", "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
         createJavaMapping("tableD", DualPathGraph.class, "this DualGraph");
 
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableA VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
+        Consumer<String> assertNotSupported = sql -> assertThatThrownBy(() -> client().getSql().execute(sql))
                 .hasMessageContaining("Upserts are not supported for cyclic data type columns");
 
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableB VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+        assertNotSupported.accept("INSERT INTO tableA VALUES (1, ?)");
+        assertNotSupported.accept("INSERT INTO tableB VALUES (1, ?)");
+        assertNotSupported.accept("INSERT INTO tableC VALUES (1, ?)");
+        assertNotSupported.accept("INSERT INTO tableD VALUES (1, ?)");
 
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableC VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableD VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableA SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableB SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableC SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableD SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+        assertNotSupported.accept("UPDATE tableA SET this = ? WHERE __key = 1");
+        assertNotSupported.accept("UPDATE tableB SET this = ? WHERE __key = 1");
+        assertNotSupported.accept("UPDATE tableC SET this = ? WHERE __key = 1");
+        assertNotSupported.accept("UPDATE tableD SET this = ? WHERE __key = 1");
     }
 
     @Test
     public void test_fullyConnectedGraph() {
-        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
-        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
-        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createType("FCA", "name VARCHAR", "b FCB", "c FCC");
+        createType("FCB", "name VARCHAR", "a FCA", "c FCC");
+        createType("FCC", "name VARCHAR", "a FCA", "b FCB");
 
         final FullyConnectedA a = new FullyConnectedA("A1");
         final FullyConnectedB b = new FullyConnectedB("B1");
@@ -122,9 +112,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_sameTypesDifferentInstances() {
-        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
-        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
-        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createType("FCA", "name VARCHAR", "b FCB", "c FCC");
+        createType("FCB", "name VARCHAR", "a FCA", "c FCC");
+        createType("FCC", "name VARCHAR", "a FCA", "b FCB");
 
         // A1 -> B1 -> C1 -> A2 -> B2 -> C2 -> <A1>
         final FullyConnectedA a1 = new FullyConnectedA("A1");
@@ -169,8 +159,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
                 |   \     \
                [A1][A4]   [A3]
          */
-        createJavaType("DualGraph", DualPathGraph.class,
-                "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
+        createType("DualGraph", "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
         DualPathGraph a1 = new DualPathGraph("A1");
         DualPathGraph a2 = new DualPathGraph("A2");
         DualPathGraph a3 = new DualPathGraph("A3");
@@ -204,22 +193,15 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     }
 
-    private void createJavaType(String name, Class<?> typeClass, String... columns) {
-        BasicNestedFieldsTest.createJavaType(client(), name, typeClass, columns);
-    }
-
-    private void createJavaMapping(String name, Class<?> javaClass, String... columns) {
-        BasicNestedFieldsTest.createJavaMapping(client(), name, javaClass, columns);
-    }
-
     public static class FullyConnectedA implements Serializable {
         private String name;
         private FullyConnectedB b;
         private FullyConnectedC c;
 
+        @SuppressWarnings("unused")
         public FullyConnectedA() { }
 
-        public FullyConnectedA(final String name) {
+        public FullyConnectedA(String name) {
             this.name = name;
         }
 
@@ -227,7 +209,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -235,7 +217,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return b;
         }
 
-        public void setB(final FullyConnectedB b) {
+        public void setB(FullyConnectedB b) {
             this.b = b;
         }
 
@@ -243,7 +225,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return c;
         }
 
-        public void setC(final FullyConnectedC c) {
+        public void setC(FullyConnectedC c) {
             this.c = c;
         }
     }
@@ -253,9 +235,10 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private FullyConnectedA a;
         private FullyConnectedC c;
 
+        @SuppressWarnings("unused")
         public FullyConnectedB() { }
 
-        public FullyConnectedB(final String name) {
+        public FullyConnectedB(String name) {
             this.name = name;
         }
 
@@ -263,7 +246,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -271,7 +254,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return a;
         }
 
-        public void setA(final FullyConnectedA a) {
+        public void setA(FullyConnectedA a) {
             this.a = a;
         }
 
@@ -279,7 +262,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return c;
         }
 
-        public void setC(final FullyConnectedC c) {
+        public void setC(FullyConnectedC c) {
             this.c = c;
         }
     }
@@ -289,13 +272,14 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private FullyConnectedA a;
         private FullyConnectedB b;
 
+        @SuppressWarnings("unused")
         public FullyConnectedC() { }
 
         public String getName() {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -303,7 +287,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return a;
         }
 
-        public void setA(final FullyConnectedA a) {
+        public void setA(FullyConnectedA a) {
             this.a = a;
         }
 
@@ -311,11 +295,11 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return b;
         }
 
-        public void setB(final FullyConnectedB b) {
+        public void setB(FullyConnectedB b) {
             this.b = b;
         }
 
-        public FullyConnectedC(final String name) {
+        public FullyConnectedC(String name) {
             this.name = name;
         }
     }
@@ -325,9 +309,10 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private DualPathGraph left;
         private DualPathGraph right;
 
+        @SuppressWarnings("unused")
         public DualPathGraph() { }
 
-        public DualPathGraph(final String name) {
+        public DualPathGraph(String name) {
             this.name = name;
         }
 
@@ -335,7 +320,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -343,7 +328,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return left;
         }
 
-        public void setLeft(final DualPathGraph left) {
+        public void setLeft(DualPathGraph left) {
             this.left = left;
         }
 
@@ -351,7 +336,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return right;
         }
 
-        public void setRight(final DualPathGraph right) {
+        public void setRight(DualPathGraph right) {
             this.right = right;
         }
     }

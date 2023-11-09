@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a WAN replication configuration.
  */
-@Generated("342a0c2d9bd6845933491471a63262a2")
+@SuppressWarnings("unused")
+@Generated("60993b49fb05b81dfd3f162720d14b4d")
 public final class DynamicConfigAddWanReplicationConfigCodec {
     //hex: 0x1B1200
     public static final int REQUEST_MESSAGE_TYPE = 1774080;

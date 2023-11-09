@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a cluster view listener to a connection.
  */
-@Generated("1cd775b33c778bc96ee05b73edf7277b")
+@SuppressWarnings("unused")
+@Generated("a4902e02f8c76cfe010a9cfb7e083f1b")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;

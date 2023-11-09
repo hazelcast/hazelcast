@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -72,6 +73,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
@@ -374,7 +376,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlCreateType) {
             return toCreateTypePlan(planKey, (SqlCreateType) node);
         } else {
-            QueryConvertResult convertResult = context.convert(parseResult.getNode());
+            // only Select and DML are currently eligible for ANALYZE
+            boolean analyze = false;
+            SqlAnalyzeStatement analyzeStatement = null;
+            if (node instanceof SqlAnalyzeStatement) {
+                analyze = true;
+                analyzeStatement = (SqlAnalyzeStatement) node;
+                node = analyzeStatement.getQuery();
+            }
+
+            QueryConvertResult convertResult = context.convert(node);
             return toPlan(
                     planKey,
                     parseResult.getParameterMetadata(),
@@ -382,7 +393,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getFieldNames(),
                     context,
                     false,
-                    task.getSql());
+                    task.getSql(),
+                    analyze,
+                    analyze ? analyzeStatement.getJobConfig() : null
+            );
         }
     }
 
@@ -472,7 +486,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlConvertedResult.getFieldNames(),
                 context,
                 true,
-                query);
+                query,
+                false,
+                null
+        );
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
@@ -578,7 +595,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
+    @SuppressWarnings({"ReturnCount", "ParameterNumber"})
     private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
@@ -586,7 +603,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             List<String> fieldNames,
             OptimizerContext context,
             boolean isCreateJob,
-            String query
+            String query,
+            boolean analyze,
+            @Nullable JobConfig analyzeJobConfig
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
@@ -664,8 +683,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    permissions
-            );
+                    permissions,
+                    analyze,
+                    analyzeJobConfig);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
@@ -695,8 +715,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    permissions
-            );
+                    permissions,
+                    analyze,
+                    analyzeJobConfig);
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
@@ -713,7 +734,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    permissions
+                    permissions,
+                    analyze,
+                    analyzeJobConfig
             );
         } else {
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
@@ -737,7 +760,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     rowMetadata,
                     planExecutor,
                     permissions,
-                    partitionStrategyCandidates(physicalRel, parameterMetadata)
+                    partitionStrategyCandidates(physicalRel, parameterMetadata),
+                    analyze,
+                    analyzeJobConfig
             );
         }
     }

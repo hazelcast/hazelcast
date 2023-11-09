@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.impl.portable.ClassDefinitionImpl;
 import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -30,15 +31,12 @@ import java.util.Set;
  * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
  *
  * @see ClassDefinition
- * @see com.hazelcast.nio.serialization.Portable
- * @see com.hazelcast.config.SerializationConfig#addClassDefinition(ClassDefinition)
+ * @see Portable
+ * @see SerializationConfig#addClassDefinition(ClassDefinition)
  */
 public final class ClassDefinitionBuilder {
-
-    private final int factoryId;
-    private final int classId;
-    private final int version;
-    private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<FieldDefinitionImpl>();
+    private final PortableId portableId;
+    private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<>();
     private final Set<String> addedFieldNames = new HashSet<>();
     private int index;
     private boolean done;
@@ -47,27 +45,25 @@ public final class ClassDefinitionBuilder {
      * IMPORTANT: It uses a default portableVersion (0) for non-versioned classes.
      * Make sure to specify the portableVersion in the constructor if you override the default portableVersion
      * in the SerializationService
-     *
-     * @param factoryId factoryId to use
-     * @param classId   classId to use
      */
     public ClassDefinitionBuilder(int factoryId, int classId) {
-        this.factoryId = factoryId;
-        this.classId = classId;
-        this.version = 0;
+        this(factoryId, classId, 0);
+    }
+
+    /**
+     * IMPORTANT: Make sure that the version matches the portableVersion in the SerializationService
+     */
+    public ClassDefinitionBuilder(int factoryId, int classId, int version) {
+        this(new PortableId(factoryId, classId, version));
     }
 
     /**
      * IMPORTANT: Make sure that the version matches the portableVersion in the SerializationService
      *
-     * @param factoryId factoryId to use
-     * @param classId   classId to use
-     * @param version   portableVersion to use
+     * @since 5.4
      */
-    public ClassDefinitionBuilder(int factoryId, int classId, int version) {
-        this.factoryId = factoryId;
-        this.classId = classId;
-        this.version = version;
+    public ClassDefinitionBuilder(PortableId portableId) {
+        this.portableId = portableId;
     }
 
     /**
@@ -369,19 +365,19 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     @Nonnull
-    public ClassDefinitionBuilder addPortableField(@Nonnull String fieldName, ClassDefinition def) {
-        if (def.getClassId() == 0) {
+    public ClassDefinitionBuilder addPortableField(@Nonnull String fieldName, ClassDefinition classDefinition) {
+        if (classDefinition.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
         check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE,
+                classDefinition.getPortableId()));
         return this;
     }
 
     /**
-     * @param fieldName       name of the field that will be add to this class definition
-     * @param classDefinition class definition of the nested portable that will be add to this class definition
+     * @param fieldName       name of the field that will be added to this class definition
+     * @param classDefinition class definition of the nested portable that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -393,7 +389,7 @@ public final class ClassDefinitionBuilder {
         }
         check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY,
-                classDefinition.getFactoryId(), classDefinition.getClassId(), classDefinition.getVersion()));
+                classDefinition.getPortableId()));
         return this;
     }
 
@@ -469,7 +465,7 @@ public final class ClassDefinitionBuilder {
 
     private ClassDefinitionBuilder addField(@Nonnull String fieldName, FieldType fieldType) {
         check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, fieldType, version));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, fieldType, portableId.getVersion()));
         return this;
     }
 
@@ -489,7 +485,7 @@ public final class ClassDefinitionBuilder {
     @Nonnull
     public ClassDefinition build() {
         done = true;
-        final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
+        final ClassDefinitionImpl cd = new ClassDefinitionImpl(portableId);
         for (FieldDefinitionImpl fd : fieldDefinitions) {
             cd.addFieldDef(fd);
         }
@@ -501,19 +497,24 @@ public final class ClassDefinitionBuilder {
             throw new HazelcastSerializationException("Field with field name : " + fieldName + " already exists");
         }
         if (done) {
-            throw new HazelcastSerializationException("ClassDefinition is already built for " + classId);
+            throw new HazelcastSerializationException("ClassDefinition is already built for " + portableId.getClassId());
         }
     }
 
     public int getFactoryId() {
-        return factoryId;
+        return portableId.getFactoryId();
     }
 
     public int getClassId() {
-        return classId;
+        return portableId.getClassId();
     }
 
     public int getVersion() {
-        return version;
+        return portableId.getVersion();
+    }
+
+    /** @since 5.4 */
+    public PortableId getPortableId() {
+        return portableId;
     }
 }

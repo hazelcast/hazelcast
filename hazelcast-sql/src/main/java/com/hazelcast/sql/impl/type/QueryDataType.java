@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
@@ -62,13 +63,8 @@ import java.util.Map;
  * Java serialization is needed for Jet.
  */
 public class QueryDataType implements IdentifiedDataSerializable, Serializable {
-
     public static final int MAX_DECIMAL_PRECISION = 76;
     public static final int MAX_DECIMAL_SCALE = 38;
-    public static final int OBJECT_TYPE_KIND_NONE = TypeKind.NONE.value();
-    public static final int OBJECT_TYPE_KIND_JAVA = TypeKind.JAVA.value();
-    public static final int OBJECT_TYPE_KIND_PORTABLE = TypeKind.PORTABLE.value();
-    public static final int OBJECT_TYPE_KIND_COMPACT = TypeKind.COMPACT.value();
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
@@ -105,26 +101,23 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
 
     private Converter converter;
-    // never empty for custom types (nested types)
-    private String objectTypeName = "";
-    private Integer objectTypeKind = OBJECT_TYPE_KIND_NONE;
-    private List<QueryDataTypeField> objectFields = new ArrayList<>();
-    private String objectTypeMetadata = "";
+    // nonnull for custom types (nested types)
+    private String objectTypeName;
+    private TypeKind objectTypeKind = TypeKind.NONE;
+    private String objectTypeMetadata;
+    private final List<QueryDataTypeField> objectFields = new ArrayList<>();
 
-    public QueryDataType() {
-        // No-op.
-    }
+    public QueryDataType() { }
 
     public QueryDataType(String objectTypeName) {
-        this.converter = ObjectConverter.INSTANCE;
-        this.objectTypeKind = OBJECT_TYPE_KIND_NONE;
-        this.objectTypeName = objectTypeName;
+        this(objectTypeName, TypeKind.NONE, null);
     }
 
-    public QueryDataType(String objectTypeName, int typeKind) {
-        this.converter = ObjectConverter.INSTANCE;
+    public QueryDataType(String objectTypeName, TypeKind typeKind, String typeMetadata) {
+        converter = ObjectConverter.INSTANCE;
         this.objectTypeName = objectTypeName;
-        this.objectTypeKind = typeKind;
+        objectTypeKind = typeKind;
+        objectTypeMetadata = typeMetadata;
     }
 
     QueryDataType(Converter converter) {
@@ -143,10 +136,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return objectTypeMetadata;
     }
 
-    public void setObjectTypeMetadata(final String objectTypeMetadata) {
-        this.objectTypeMetadata = objectTypeMetadata;
-    }
-
     public QueryDataTypeFamily getTypeFamily() {
         return converter.getTypeFamily();
     }
@@ -155,12 +144,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return converter;
     }
 
-    public Integer getObjectTypeKind() {
+    public TypeKind getObjectTypeKind() {
         return objectTypeKind;
-    }
-
-    public void setObjectTypeKind(final Integer objectTypeKind) {
-        this.objectTypeKind = objectTypeKind;
     }
 
     /**
@@ -222,49 +207,55 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return SqlDataSerializerHook.QUERY_DATA_TYPE;
     }
 
+    /**
+     * @implNote Collects all distinct custom types into a <em>type map</em> beforehand
+     * to avoid infinite recursion. Then, it writes each type with its direct children,
+     * i.e. each subtree, in an arbitrary order. {@link #readData} first creates a type
+     * map that initially contains only this {@code QueryDataType}, i.e. the root. Then,
+     * it reads all subtrees by creating a type only if it is not created before using
+     * the type map. Even though subtrees don't lie in a particular order, the children
+     * of all subtrees will eventually be populated, including the root.
+     */
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
-        // TODO this needs to be backwards-compatible, it's stored as a part of MappingField in the catalog
-        if (!converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+        if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
             return;
         }
 
         writeObjectTypeMetadata(this, out);
-
         if (!isCustomType()) {
             return;
         }
 
-        final Map<String, QueryDataType> nestedTypes = new HashMap<>();
-        collectNestedTypes(this, nestedTypes);
+        Map<String, QueryDataType> typeMap = new HashMap<>();
+        collectCustomTypes(this, typeMap);
 
-        out.writeInt(nestedTypes.size());
-        for (final QueryDataType nestedType : nestedTypes.values()) {
+        out.writeInt(typeMap.size());
+        for (QueryDataType nestedType : typeMap.values()) {
             writeObjectTypeMetadata(nestedType, out);
             out.writeInt(nestedType.getObjectFields().size());
-            for (final QueryDataTypeField field : nestedType.getObjectFields()) {
+            for (QueryDataTypeField field : nestedType.getObjectFields()) {
                 out.writeString(field.name);
-                out.writeInt(field.dataType.converter.getId());
-                writeObjectTypeMetadata(field.dataType, out);
+                out.writeInt(field.type.converter.getId());
+                writeObjectTypeMetadata(field.type, out);
             }
         }
     }
 
-    private static void writeObjectTypeMetadata(final QueryDataType queryDataType, ObjectDataOutput out)
-            throws IOException {
-        out.writeInt(queryDataType.objectTypeKind);
-        out.writeString(queryDataType.objectTypeName);
-        out.writeString(queryDataType.objectTypeMetadata);
+    private static void writeObjectTypeMetadata(QueryDataType type, ObjectDataOutput out) throws IOException {
+        out.writeInt(type.objectTypeKind.value());
+        out.writeString(type.objectTypeName);
+        out.writeString(type.objectTypeMetadata);
     }
 
-    private void collectNestedTypes(final QueryDataType dataType, final Map<String, QueryDataType> collected) {
-        collected.putIfAbsent(dataType.objectTypeName, dataType);
+    private void collectCustomTypes(QueryDataType type, Map<String, QueryDataType> typeMap) {
+        typeMap.put(type.objectTypeName, type);
 
-        for (final QueryDataTypeField field : dataType.objectFields) {
-            if (field.getDataType().isCustomType()) {
-                if (!collected.containsKey(field.dataType.objectTypeName)) {
-                    collectNestedTypes(field.dataType, collected);
+        for (QueryDataTypeField field : type.objectFields) {
+            if (field.getType().isCustomType()) {
+                if (!typeMap.containsKey(field.type.objectTypeName)) {
+                    collectCustomTypes(field.type, typeMap);
                 }
             }
         }
@@ -272,82 +263,74 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.converter = Converters.getConverter(in.readInt());
-        if (!converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+        converter = Converters.getConverter(in.readInt());
+        if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
             return;
         }
 
-        this.objectTypeKind = in.readInt();
-        this.objectTypeName = in.readString();
-        this.objectTypeMetadata = in.readString();
+        readObjectTypeMetadata(this, in);
         if (!isCustomType()) {
             return;
         }
 
-        this.objectFields = new ArrayList<>();
-        final int typeMapSize = in.readInt();
-        final Map<String, QueryDataType> nestedTypes = new HashMap<>();
-        nestedTypes.put(objectTypeName, this);
+        Map<String, QueryDataType> typeMap = new HashMap<>();
+        typeMap.put(objectTypeName, this);
 
+        int typeMapSize = in.readInt();
         for (int i = 0; i < typeMapSize; i++) {
-            final Integer currentTypeKind = in.readInt();
-            final String currentTypeName = in.readString();
-            final String currentTypeMetadata = in.readString();
-
-            final int fieldsSize = in.readInt();
-            final QueryDataType currentType = nestedTypes.computeIfAbsent(currentTypeName, s -> {
-                // TODO: simplify?
-                final QueryDataType fieldType = new QueryDataType(currentTypeName);
-                fieldType.setObjectTypeMetadata(currentTypeMetadata);
-                fieldType.setObjectTypeKind(currentTypeKind);
-                return fieldType;
-            });
-
-            for (int j = 0; j < fieldsSize; j++) {
-                final String fieldName = in.readString();
-                final int fieldConverterId = in.readInt();
-                final int fieldTypeKind = in.readInt();
-                final String fieldTypeName = in.readString();
-                final String fieldTypeMetadata = in.readString();
-
-                if (fieldConverterId == QueryDataType.OBJECT.getConverter().getId()
-                        && (fieldTypeName != null && !fieldTypeName.isEmpty())) {
-                    currentType.getObjectFields().add(new QueryDataTypeField(fieldName,
-                            nestedTypes.computeIfAbsent(fieldTypeName, s -> {
-                                // TODO: simplify?
-                                final QueryDataType fieldType = new QueryDataType(fieldTypeName);
-                                fieldType.setObjectTypeMetadata(fieldTypeMetadata);
-                                fieldType.setObjectTypeKind(fieldTypeKind);
-                                return fieldType;
-                            })));
-                } else {
-                    final QueryDataType fieldDataType = QueryDataTypeUtils
-                            .resolveTypeForClass(Converters.getConverter(fieldConverterId).getValueClass());
-                    currentType.getObjectFields().add(new QueryDataTypeField(fieldName, fieldDataType));
-                }
+            QueryDataType type = readNestedType(OBJECT.getConverter(), in, typeMap);
+            int fields = in.readInt();
+            for (int j = 0; j < fields; j++) {
+                String fieldName = in.readString();
+                Converter converter = Converters.getConverter(in.readInt());
+                QueryDataType nestedType = readNestedType(converter, in, typeMap);
+                type.getObjectFields().add(new QueryDataTypeField(fieldName, nestedType));
             }
         }
     }
 
+    private static void readObjectTypeMetadata(QueryDataType type, ObjectDataInput in) throws IOException {
+        type.objectTypeKind = TypeKind.of(in.readInt());
+        type.objectTypeName = in.readString();
+        type.objectTypeMetadata = in.readString();
+    }
+
+    private static QueryDataType readNestedType(Converter converter, ObjectDataInput in,
+                                                Map<String, QueryDataType> typeMap) throws IOException {
+        QueryDataType type = new QueryDataType(converter);
+        readObjectTypeMetadata(type, in);
+
+        return type.objectTypeName == null
+                ? QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass())
+                : typeMap.computeIfAbsent(type.objectTypeName, k -> type);
+    }
+
+    public boolean isCustomType() {
+        return converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && objectTypeName != null;
+    }
+
     @Override
     public int hashCode() {
-        return 251 * converter.getId();
+        return !isCustomType()
+                ? converter.getId()
+                : Objects.hash(objectTypeName, objectTypeKind, objectTypeMetadata);
     }
 
     @Override
     public boolean equals(Object o) {
-        // TODO: proper equals
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        QueryDataType type = (QueryDataType) o;
-
-        return converter.getId() == type.converter.getId();
+        QueryDataType that = (QueryDataType) o;
+        return !isCustomType()
+                ? converter.getId() == that.converter.getId()
+                : objectTypeName.equals(that.objectTypeName)
+                        && objectTypeKind == that.objectTypeKind
+                        && Objects.equals(objectTypeMetadata, that.objectTypeMetadata)
+                        && objectFields.equals(that.objectFields);
     }
 
     @Override
@@ -355,48 +338,35 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
     }
 
-    public boolean isCustomType() {
-        return this.converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && (!this.objectTypeName.isEmpty());
-    }
-
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {
         private String name;
-        private QueryDataType dataType;
+        private QueryDataType type;
 
-        public QueryDataTypeField() {
-        }
+        public QueryDataTypeField() { }
 
-        public QueryDataTypeField(final String name, final QueryDataType dataType) {
+        public QueryDataTypeField(String name, QueryDataType type) {
             this.name = name;
-            this.dataType = dataType;
+            this.type = type;
         }
 
         public String getName() {
             return name;
         }
 
-        public void setName(final String name) {
-            this.name = name;
-        }
-
-        public QueryDataType getDataType() {
-            return dataType;
-        }
-
-        public void setDataType(final QueryDataType dataType) {
-            this.dataType = dataType;
+        public QueryDataType getType() {
+            return type;
         }
 
         @Override
-        public void writeData(final ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeString(name);
-            out.writeObject(dataType);
+            out.writeObject(type);
         }
 
         @Override
-        public void readData(final ObjectDataInput in) throws IOException {
-            this.name = in.readString();
-            this.dataType = in.readObject();
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readString();
+            type = in.readObject();
         }
 
         @Override
@@ -407,6 +377,23 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         @Override
         public int getClassId() {
             return SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            QueryDataTypeField that = (QueryDataTypeField) o;
+            return name.equals(that.name) && type.equals(that.type);
         }
     }
 }

@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
+public class MongoStreamSqlConnectorIT extends MongoSqlIT {
     private final Random random = new Random();
 
     @Test
@@ -87,11 +87,14 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
             String force = useUnsupportedExpr ? " and cast(jedi as varchar) = 'true' " : "";
             spawn(() -> {
                 sleep(1000);
-                collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+                collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker")
+                                                                      .append("jedi", true));
                 sleep(100);
-                collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+                collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo")
+                                                                     .append("jedi", false));
                 sleep(100);
-                collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+                collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker")
+                                                                        .append("jedi", true));
             });
             assertRowsEventuallyInAnyOrder("select firstName, lastName, operation from " + tableName
                             + " where lastName = ? and jedi=true" + force,

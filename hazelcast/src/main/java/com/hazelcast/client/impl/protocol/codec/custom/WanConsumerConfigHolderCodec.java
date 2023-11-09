@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("420a265d5fdceed83dd70274a571c1f0")
+@SuppressWarnings("unused")
+@Generated("e85e91becf67068f5c72714b991b439e")
 public final class WanConsumerConfigHolderCodec {
     private static final int PERSIST_WAN_REPLICATED_DATA_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PERSIST_WAN_REPLICATED_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

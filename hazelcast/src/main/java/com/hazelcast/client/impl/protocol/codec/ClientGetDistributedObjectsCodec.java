@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the list of distributed objects in the cluster.
  */
-@Generated("44f92cdc95df940bf6de9e80e6741cd7")
+@SuppressWarnings("unused")
+@Generated("4bd78b92d3a3a3b52cab2eb951a197dc")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;

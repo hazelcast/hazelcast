@@ -23,9 +23,12 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -34,7 +37,27 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * A {@link AsyncSocketBuilder} specific to the {@link NioAsyncSocket}.
  */
 public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
+
     static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
+
+    private static final Constructor<AsyncSocket> TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR;
+
+    private static final String TLS_NIO_ASYNC_SOCKET_CLASS_NAME = "com.hazelcast.internal.tpcengine.nio.TlsNioAsyncSocket";
+
+    static {
+        Constructor<AsyncSocket> tlsNioAsyncSocketConstructor = null;
+        try {
+            Class<?> clazz = NioAsyncSocketBuilder.class.getClassLoader().loadClass(TLS_NIO_ASYNC_SOCKET_CLASS_NAME);
+            tlsNioAsyncSocketConstructor = (Constructor<AsyncSocket>) clazz.getDeclaredConstructor(NioAsyncSocketBuilder.class);
+            tlsNioAsyncSocketConstructor.setAccessible(true);
+        } catch (ClassNotFoundException e) {
+            tlsNioAsyncSocketConstructor = null;
+        } catch (NoSuchMethodException e) {
+            throw new Error(e);
+        } finally {
+            TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR = tlsNioAsyncSocketConstructor;
+        }
+    }
 
     final NioReactor reactor;
     final SocketChannel socketChannel;
@@ -42,7 +65,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     final boolean clientSide;
     boolean regularSchedule = true;
     boolean writeThrough;
-    boolean receiveBufferIsDirect = true;
+    boolean directBuffers = true;
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
     AsyncSocketReader reader;
     NioAsyncSocketOptions options;
@@ -67,16 +90,24 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     }
 
     @Override
+    public <T> NioAsyncSocketBuilder set(Option<T> option, T value) {
+        verifyNotBuilt();
+
+        options.set(option, value);
+        return this;
+    }
+
+    @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
         verifyNotBuilt();
 
         return options.set(option, value);
     }
 
-    public NioAsyncSocketBuilder setReceiveBufferIsDirect(boolean receiveBufferIsDirect) {
+    public NioAsyncSocketBuilder setDirectBuffers(boolean directBuffers) {
         verifyNotBuilt();
 
-        this.receiveBufferIsDirect = receiveBufferIsDirect;
+        this.directBuffers = directBuffers;
         return this;
     }
 
@@ -127,12 +158,17 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         }
 
         if (Thread.currentThread() == reactor.eventloopThread()) {
-            return new NioAsyncSocket(NioAsyncSocketBuilder.this);
+            return options.get(SSL_ENGINE_FACTORY) == null
+                    ? new NioAsyncSocket(this)
+                    : newTlsNioAsyncSocket(this);
         } else {
-            CompletableFuture<NioAsyncSocket> future = new CompletableFuture<>();
+            CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
-                    NioAsyncSocket asyncSocket = new NioAsyncSocket(NioAsyncSocketBuilder.this);
+                    AsyncSocket asyncSocket = options.get(SSL_ENGINE_FACTORY) == null
+                            ? new NioAsyncSocket(NioAsyncSocketBuilder.this)
+                            : newTlsNioAsyncSocket(NioAsyncSocketBuilder.this);
+
                     future.complete(asyncSocket);
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
@@ -141,6 +177,18 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
             });
 
             return future.join();
+        }
+    }
+
+    private AsyncSocket newTlsNioAsyncSocket(NioAsyncSocketBuilder nioAsyncSocketBuilder) {
+        if (TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR == null) {
+            throw new IllegalStateException("class " + TLS_NIO_ASYNC_SOCKET_CLASS_NAME + " is not found");
+        }
+
+        try {
+            return TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR.newInstance(nioAsyncSocketBuilder);
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 

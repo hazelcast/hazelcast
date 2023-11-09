@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b63ec8b35ad16019f8eb6a835aebc49a")
+@SuppressWarnings("unused")
+@Generated("1b8ebe68ac9395406158684ac820418d")
 public final class CapacityCodec {
     private static final int VALUE_FIELD_OFFSET = 0;
     private static final int UNIT_FIELD_OFFSET = VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

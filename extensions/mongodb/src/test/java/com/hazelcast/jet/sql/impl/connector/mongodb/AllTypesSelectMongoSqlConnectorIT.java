@@ -57,7 +57,7 @@ import static java.util.Arrays.asList;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
+public class AllTypesSelectMongoSqlConnectorIT extends MongoSqlIT {
     private static final ObjectId EXAMPLE_OBJECT_ID = ObjectId.get();
 
     @Parameterized.Parameter(0)

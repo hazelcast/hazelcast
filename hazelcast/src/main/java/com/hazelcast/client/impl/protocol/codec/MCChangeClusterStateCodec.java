@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("eab01501bec8203dcc47716d6fba7744")
+@SuppressWarnings("unused")
+@Generated("b28afd45b6d7a6431276683ce89b789e")
 public final class MCChangeClusterStateCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;

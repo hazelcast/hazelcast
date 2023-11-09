@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -142,7 +142,7 @@ public class MulticastDeserializationTest {
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
             multicastSocket.setTimeToLive(MULTICAST_TTL);
-            if (OsHelper.isMac()) {
+            if (OS.isMac()) {
                 multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
             }
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
