@@ -36,10 +36,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConnectorWrapperTest {
+public class KafkaConnectConnectorTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new ConnectorWrapper(minimalProperties());
+        new KafkaConnectConnector(minimalProperties());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -47,9 +47,9 @@ public class ConnectorWrapperTest {
 
     @Test
     public void should_create_task_runners() {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        KafkaConnectConnector connectorWrapper = new KafkaConnectConnector(minimalProperties());
 
-        TaskRunner taskRunner1 = connectorWrapper.createTaskRunner();
+        TaskRunner taskRunner1 = connectorWrapper.createTaskRunner(processorIndex);
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
         taskRunner1.poll();
         Map<String, String> expectedTaskProperties = new HashMap<>();
@@ -58,7 +58,7 @@ public class ConnectorWrapperTest {
         expectedTaskProperties.put("task.id", "0");
         assertThat(lastTaskInstance().getProperties()).containsAllEntriesOf(expectedTaskProperties);
 
-        TaskRunner taskRunner2 = connectorWrapper.createTaskRunner();
+        TaskRunner taskRunner2 = connectorWrapper.createTaskRunner(processorIndex);
         taskRunner2.poll();
         assertThat(taskRunner2.getName()).isEqualTo("some-name-task-1");
         expectedTaskProperties = new HashMap<>();
@@ -70,9 +70,9 @@ public class ConnectorWrapperTest {
 
     @Test
     public void should_reconfigure_task_runners() {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        KafkaConnectConnector connectorWrapper = new KafkaConnectConnector(minimalProperties());
 
-        TaskRunner taskRunner1 = connectorWrapper.createTaskRunner();
+        TaskRunner taskRunner1 = connectorWrapper.createTaskRunner(processorIndex);
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
         taskRunner1.poll();
         Map<String, String> expectedTaskProperties = new HashMap<>();
@@ -106,7 +106,7 @@ public class ConnectorWrapperTest {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        assertThatThrownBy(() -> new ConnectorWrapper(properties))
+        assertThatThrownBy(() -> new KafkaConnectConnector(properties))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
@@ -116,7 +116,7 @@ public class ConnectorWrapperTest {
     public void should_cleanup_on_destroy() {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(properties);
+        KafkaConnectConnector connectorWrapper = new KafkaConnectConnector(properties);
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
         connectorWrapper.stop();

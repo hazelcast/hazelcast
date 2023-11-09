@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.util.Timer;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
@@ -51,10 +51,11 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
 
-    private final ConnectorWrapper connectorWrapper;
+    private final KafkaConnectConnector connectorWrapper;
     private final EventTimeMapper<T> eventTimeMapper;
     private final FunctionEx<SourceRecord, T> projectionFn;
     private TaskRunner taskRunner;
@@ -64,8 +65,10 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private int processorIndex;
     private Traverser<?> traverser = Traversers.empty();
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
+    private long jobId;
+    private int totalParallelism;
 
-    public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
+    public ReadKafkaConnectP(@Nonnull KafkaConnectConnector connectorWrapper,
                              @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         requireNonNull(connectorWrapper, "connectorWrapper is required");
@@ -79,11 +82,18 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     protected void init(@Nonnull Context context) {
-        taskRunner = connectorWrapper.createTaskRunner();
+        jobId = context.jobId();
+        taskRunner = connectorWrapper.createTaskRunner(processorIndex);
         snapshotsEnabled = context.snapshottingEnabled();
         processorIndex = context.globalProcessorIndex();
+        totalParallelism = context.totalParallelism();
+
         NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+
+        Job job = context.hazelcastInstance().getJet().getJob(jobId);
+        requireNonNull(job, "Somehow... job is missing");
+        job.restart();
     }
 
     @Override
@@ -170,7 +180,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     public Map<String, LocalKafkaConnectStats> getStats() {
         Map<String, LocalKafkaConnectStats> connectStats = new HashMap<>();
         if (taskRunner != null) {
-            connectStats.put(taskRunner.getName(), localKafkaConnectStats);
+            connectStats.put(taskRunner.name(), localKafkaConnectStats);
         }
         return connectStats;
     }
@@ -187,12 +197,12 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
                                                         @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                                                         @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         return new ProcessorSupplier() {
-            private transient ConnectorWrapper connectorWrapper;
+            private transient KafkaConnectConnector connectorWrapper;
 
             @Override
             public void init(@Nonnull Context context) {
                 properties.put("tasks.max", Integer.toString(context.totalParallelism()));
-                this.connectorWrapper = new ConnectorWrapper(properties);
+                this.connectorWrapper = new KafkaConnectConnector(properties);
             }
 
             @Override
@@ -207,7 +217,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
                         .mapToObj(i -> new ReadKafkaConnectP<>(connectorWrapper, eventTimePolicy, projectionFn))
-                        .collect(Collectors.toList());
+                        .collect(toList());
             }
 
         };

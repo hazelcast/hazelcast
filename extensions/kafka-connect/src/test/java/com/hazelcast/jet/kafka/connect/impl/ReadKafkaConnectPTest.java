@@ -62,7 +62,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        KafkaConnectConnector connectorWrapper = new KafkaConnectConnector(minimalProperties());
         readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> (Integer) rec.value());
         outbox = new TestOutbox(new int[]{10}, 10);
         context = new TestProcessorContext();
@@ -82,7 +82,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_filter_items() throws Exception {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        KafkaConnectConnector connectorWrapper = new KafkaConnectConnector(minimalProperties());
         readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> {
             Integer value = (Integer) rec.value();
             if (value % 2 == 0) {
@@ -109,7 +109,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_require_eventTimePolicy() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null,
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new KafkaConnectConnector(minimalProperties()), null,
                 rec -> (Integer) rec.value()))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("eventTimePolicy is required");
@@ -117,7 +117,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_require_projectionFn() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), noEventTime(), null))
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new KafkaConnectConnector(minimalProperties()), noEventTime(), null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("projectionFn is required");
     }

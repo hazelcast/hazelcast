@@ -20,45 +20,60 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
-import org.apache.kafka.connect.source.SourceTaskContext;
-import org.apache.kafka.connect.storage.OffsetStorageReader;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.util.Collections.emptyList;
 
-class TaskRunner {
+interface TaskRunner {
+    List<SourceRecord> poll();
+    void stop();
+
+    void start();
+
+    void commit();
+
+    void commitRecord(SourceRecord rec);
+
+    State createSnapshot();
+
+    void restoreSnapshot(State state);
+
+    String name();
+}
+
+class DefaultTaskRunner implements TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
     private final SourceTaskFactory sourceTaskFactory;
     private volatile boolean running;
-    private volatile boolean reconfigurationNeeded;
     private SourceTask task;
     private Map<String, String> taskConfig;
 
 
-    TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory) {
+    DefaultTaskRunner(String name, State state, Map<String, String> taskConfig, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
         this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
+        this.taskConfig = taskConfig;
     }
 
-    List<SourceRecord> poll() {
-        restartTaskIfNeeded();
+    @Override
+    public List<SourceRecord> poll() {
         if (running) {
             return doPoll();
         } else {
-            return Collections.emptyList();
+            return emptyList();
         }
     }
 
-    void stop() {
+    @Override
+    public void stop() {
         try {
             taskLifecycleLock.lock();
             if (running) {
@@ -75,59 +90,19 @@ class TaskRunner {
     private List<SourceRecord> doPoll() {
         try {
             List<SourceRecord> sourceRecords = task.poll();
-            return sourceRecords == null ? Collections.emptyList() : sourceRecords;
+            return sourceRecords == null ? emptyList() : sourceRecords;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw rethrow(e);
         }
     }
 
-    private void restartTaskIfNeeded() {
-        if (reconfigurationNeeded) {
-            reconfigurationNeeded = false;
-            try {
-                stop();
-            } catch (Exception ex) {
-                LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
-            }
-        }
-        start();
+    @Override
+    public void start() {
+            if (!running) {^
     }
 
-    void updateTaskConfig(Map<String, String> taskConfig) {
-        try {
-            taskLifecycleLock.lock();
-            if (!Objects.equals(this.taskConfig, taskConfig)) {
-                LOGGER.info("Updating task '" + name + "' configuration");
-                this.taskConfig = taskConfig;
-                reconfigurationNeeded = true;
-            }
-        } finally {
-            taskLifecycleLock.unlock();
-        }
-    }
-
-    private void start() {
-        try {
-            taskLifecycleLock.lock();
-            if (!running) {
-                if (taskConfig != null) {
-                    SourceTask taskLocal = sourceTaskFactory.create();
-                    LOGGER.info("Initializing task '" + name + "'");
-                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
-                    LOGGER.info("Starting task '" + name + "'");
-                    taskLocal.start(taskConfig);
-                    this.task = taskLocal;
-                    running = true;
-                } else {
-                    LOGGER.finest("No task config for task '" + name + "'");
-                }
-            }
-        } finally {
-            taskLifecycleLock.unlock();
-        }
-    }
-
+    @Override
     public void commit() {
         if (running) {
             try {
@@ -139,27 +114,7 @@ class TaskRunner {
         }
     }
 
-    private static final class JetSourceTaskContext implements SourceTaskContext {
-        private final Map<String, String> taskConfig;
-        private final State state;
-
-        private JetSourceTaskContext(Map<String, String> taskConfig,
-                                     State state) {
-            this.taskConfig = taskConfig;
-            this.state = state;
-        }
-
-        @Override
-        public Map<String, String> configs() {
-            return taskConfig;
-        }
-
-        @Override
-        public OffsetStorageReader offsetStorageReader() {
-            return new SourceOffsetStorageReader(state);
-        }
-    }
-
+    @Override
     public void commitRecord(SourceRecord rec) {
         state.commitRecord(rec);
         try {
@@ -172,14 +127,21 @@ class TaskRunner {
         }
     }
 
+    @Override
     public State createSnapshot() {
         State snapshot = new State();
         snapshot.load(state);
         return snapshot;
     }
 
+    @Override
     public void restoreSnapshot(State state) {
         this.state.load(state);
+    }
+
+    @Override
+    public String name() {
+        return null;
     }
 
     public String getName() {
@@ -198,4 +160,36 @@ class TaskRunner {
         SourceTask create();
     }
 
+}
+
+class NoOpRunner implements TaskRunner {
+    @Override
+    public List<SourceRecord> poll() {
+        return emptyList();
+    }
+
+    @Override
+    public void stop() {
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void commit() {
+    }
+
+    @Override
+    public void commitRecord(SourceRecord rec) {
+    }
+
+    @Override
+    public State createSnapshot() {
+        return null;
+    }
+
+    @Override
+    public void restoreSnapshot(State state) {
+    }
 }

@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
@@ -35,23 +34,22 @@ import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
-public class ConnectorWrapper {
-    private static final ILogger LOGGER = Logger.getLogger(ConnectorWrapper.class);
+public class KafkaConnectConnector {
+    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectConnector.class);
     private final SourceConnector connector;
     private final int tasksMax;
-    private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
-    private final AtomicInteger taskIdGenerator = new AtomicInteger();
-    private final ReentrantLock reconfigurationLock = new ReentrantLock();
     private final State state = new State();
     private final String name;
 
-    public ConnectorWrapper(Properties properties) {
+    public KafkaConnectConnector(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
         this.name = checkRequiredProperty(properties, "name");
-        tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
+        this.tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
         this.connector = newConnectorInstance(connectorClazz);
+
         LOGGER.fine("Initializing connector '" + name + "'");
         this.connector.initialize(new JetConnectorContext());
+
         LOGGER.fine("Starting connector '" + name + "'");
         this.connector.start(toMap(properties));
     }
@@ -60,6 +58,7 @@ public class ConnectorWrapper {
         try {
             return newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
         } catch (Exception e) {
+            //noinspection ConstantValue ClassNotFoundException is possible
             if (e instanceof ClassNotFoundException) {
                 throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
                         "Did you add the connector jar to the job?", e);
@@ -72,19 +71,23 @@ public class ConnectorWrapper {
         LOGGER.fine("Stopping connector '" + name + "'");
         connector.stop();
         LOGGER.fine("Connector '" + name + "' stopped");
-
     }
 
-    public TaskRunner createTaskRunner() {
-        String taskName = name + "-task-" + taskIdGenerator.getAndIncrement();
-        TaskRunner taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
-        taskRunners.add(taskRunner);
-        requestTaskReconfiguration();
+    TaskRunner createTaskRunner(int processorIndex) {
+        String taskName = name + "-task-" + processorIndex;
+        // we request tasksMax == totalParallelism
+        // however, taskConfigs may return AT MOST tasksMax configs
+        // so if our index < taskConfigs, then we become basically NoOp
+        List<Map<String, String>> taskConfigs = connector.taskConfigs(tasksMax);
+        if (taskConfigs.size() < tasksMax) {
+            return new NoOpRunner();
+        }
+        var taskConfig = taskConfigs.get(tasksMax);
+        TaskRunner taskRunner = new DefaultTaskRunner(taskName, state, taskConfig, this::createSourceTask);
         return taskRunner;
     }
 
     private SourceTask createSourceTask() {
-//        connector.taskConfigs()
         Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
@@ -94,7 +97,7 @@ public class ConnectorWrapper {
 
         @Override
         public void requestTaskReconfiguration() {
-            ConnectorWrapper.this.requestTaskReconfiguration();
+            KafkaConnectConnector.this.requestTaskReconfiguration();
         }
 
         @Override
@@ -104,22 +107,7 @@ public class ConnectorWrapper {
     }
 
     private void requestTaskReconfiguration() {
-        if (taskRunners.isEmpty()) {
-            return;
-        }
-        try {
-            reconfigurationLock.lock();
-            LOGGER.fine("Updating tasks configuration");
-            int taskRunnersSize = taskRunners.size();
-            List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunnersSize));
-
-            for (int i = 0; i < taskRunnersSize; i++) {
-                Map<String, String> taskConfig = i < taskConfigs.size() ? taskConfigs.get(i) : null;
-                taskRunners.get(i).updateTaskConfig(taskConfig);
-            }
-        } finally {
-            reconfigurationLock.unlock();
-        }
+      // TODO RESTART JOB
     }
 
     @Override
