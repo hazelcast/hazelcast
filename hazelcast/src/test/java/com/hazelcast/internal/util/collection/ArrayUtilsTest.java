@@ -186,8 +186,7 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     public void concat() {
         Integer[] first = new Integer[]{1, 2, 3};
         Integer[] second = new Integer[]{4};
-        Integer[] concatenated = new Integer[4];
-        ArrayUtils.concat(first, second, concatenated);
+        Integer[] concatenated = ArrayUtils.concat(first, second);
         assertEquals(4, concatenated.length);
         assertEquals(Integer.valueOf(1), concatenated[0]);
         assertEquals(Integer.valueOf(2), concatenated[1]);
@@ -199,8 +198,7 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     public void concat_whenFirstNull() {
         Integer[] first = null;
         Integer[] second = new Integer[]{4};
-        Integer[] concatenated = new Integer[4];
-        ArrayUtils.concat(first, second, concatenated);
+        ArrayUtils.concat(first, second);
         fail();
     }
 
@@ -208,8 +206,7 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     public void concat_whenSecondNull() {
         Integer[] first = new Integer[]{1, 2, 3};
         Integer[] second = null;
-        Integer[] concatenated = new Integer[4];
-        ArrayUtils.concat(first, second, concatenated);
+        ArrayUtils.concat(first, second);
         fail();
     }
 

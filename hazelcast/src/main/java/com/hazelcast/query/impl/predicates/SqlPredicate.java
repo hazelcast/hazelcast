@@ -339,8 +339,7 @@ public class SqlPredicate
             Predicate[] left = getSubPredicatesIfClass(predicateLeft, klass);
             Predicate[] right = getSubPredicatesIfClass(predicateRight, klass);
 
-            predicates = new Predicate[left.length + right.length];
-            ArrayUtils.concat(left, right, predicates);
+            predicates = ArrayUtils.concat(left, right);
         } else {
             predicates = new Predicate[]{predicateLeft, predicateRight};
         }

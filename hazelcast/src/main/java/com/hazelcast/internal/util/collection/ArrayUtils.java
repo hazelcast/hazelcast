@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.util.collection;
 
+import javax.annotation.Nonnull;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
@@ -146,10 +148,26 @@ public final class ArrayUtils {
      * @param sourceSecond
      * @param dest
      * @param <T>
+     * @return the concatenated array ({@code dest})
      */
-    public static <T> void concat(T[] sourceFirst, T[] sourceSecond, T[] dest) {
+    public static <T> T[] concat(@Nonnull T[] sourceFirst, @Nonnull T[] sourceSecond, @Nonnull T[] dest) {
         System.arraycopy(sourceFirst, 0, dest, 0, sourceFirst.length);
         System.arraycopy(sourceSecond, 0, dest, sourceFirst.length, sourceSecond.length);
+
+        return dest;
+    }
+
+    /**
+     * Copies in order {@code sourceFirst} and {@code sourceSecond} into a new array.
+     *
+     * @param sourceFirst
+     * @param sourceSecond
+     * @param <T>
+     * @return the concatenated array
+     */
+    public static <T> T[] concat(@Nonnull T[] first, @Nonnull T... second) {
+        return concat(first, second,
+                (T[]) Array.newInstance(first.getClass().getComponentType(), first.length + second.length));
     }
 
     /**
