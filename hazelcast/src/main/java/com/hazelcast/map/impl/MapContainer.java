@@ -67,6 +67,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.query.impl.InternalIndex.GLOBAL_INDEX_NOOP_PARTITION_ID;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_EVICTION_BATCH_SIZE;
 import static java.lang.System.getProperty;
 
@@ -76,7 +77,6 @@ import static java.lang.System.getProperty;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
-    static final int GLOBAL_INDEX_NOOP_PARTITION_ID = -1;
 
     protected final String name;
     protected final String splitBrainProtectionName;
@@ -155,7 +155,7 @@ public class MapContainer {
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
 
         Node node = ((NodeEngineImpl) mapServiceContext.getNodeEngine()).getNode();
-        IndexRegistry newIndexRegistry = IndexRegistry.newBuilder(node, getName(),
+        return IndexRegistry.newBuilder(node, getName(),
                         serializationService, mapServiceContext.getIndexCopyBehavior(),
                         mapConfig.getInMemoryFormat())
                 .global(global)
@@ -167,17 +167,6 @@ public class MapContainer {
                 .partitionId(partitionId)
                 .resultFilterFactory(new IndexResultFilterFactory())
                 .build();
-
-        // if global index, return registry
-        if (partitionId == GLOBAL_INDEX_NOOP_PARTITION_ID) {
-            return newIndexRegistry;
-        } else {
-            // if partitioned index, first register it to
-            // partitionedIndexRegistry then return registry
-            IndexRegistry currentIndexRegistry
-                    = partitionedIndexRegistry.putIfAbsent(partitionId, newIndexRegistry);
-            return currentIndexRegistry == null ? newIndexRegistry : currentIndexRegistry;
-        }
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -190,8 +179,8 @@ public class MapContainer {
             throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
         }
 
-        IndexRegistry existing = partitionedIndexRegistry.get(partitionId);
-        return existing != null ? existing : createIndexRegistry(false, partitionId);
+        return partitionedIndexRegistry.computeIfAbsent(partitionId,
+                integer -> createIndexRegistry(false, partitionId));
     }
 
     public AtomicLong getLastInvalidMergePolicyCheckTime() {
