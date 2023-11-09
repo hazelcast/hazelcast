@@ -169,11 +169,6 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Override
-    public JobStateSnapshot exportSnapshot(String name) {
-        return doExportSnapshot(name, false);
-    }
-
     protected JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         checkNotLightJob("export snapshot");
         JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);

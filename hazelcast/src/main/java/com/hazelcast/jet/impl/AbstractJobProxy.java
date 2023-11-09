@@ -275,6 +275,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     @Override
+    public JobStateSnapshot exportSnapshot(String name) {
+        return doExportSnapshot(name, false);
+    }
+
+    @Override
     public JobStateSnapshot cancelAndExportSnapshot(String name) {
         return doExportSnapshot(name, true);
     }
