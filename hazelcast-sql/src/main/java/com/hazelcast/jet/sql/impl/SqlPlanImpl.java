@@ -1068,7 +1068,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
         private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
         private final boolean analyzed;
-        private final Map<String, String> analyzeOptions;
+        private final JobConfig analyzeJobConfig;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
@@ -1083,7 +1083,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 List<Permission> permissions,
                 Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
                 final boolean analyzed,
-                final Map<String, String> analyzeOptions
+                final JobConfig analyzeJobConfig
         ) {
             super(planKey);
 
@@ -1097,7 +1097,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
             this.analyzed = analyzed;
-            this.analyzeOptions = analyzeOptions;
+            this.analyzeJobConfig = analyzeJobConfig;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1138,8 +1138,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return analyzed;
         }
 
-        public Map<String, String> getAnalyzeOptions() {
-            return analyzeOptions;
+        public JobConfig analyzeJobConfig() {
+            return analyzeJobConfig;
         }
 
         @Override
@@ -1169,7 +1169,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
         private final boolean analyzed;
-        private final Map<String, String> analyzeOptions;
+        private final JobConfig analyzeJobConfig;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         DmlPlan(
@@ -1183,7 +1183,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
                 boolean analyzed,
-                Map<String, String> analyzeOptions) {
+                JobConfig analyzeJobConfig) {
             super(planKey);
 
             this.operation = operation;
@@ -1195,7 +1195,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
             this.permissions = permissions;
             this.analyzed = analyzed;
-            this.analyzeOptions = analyzeOptions;
+            this.analyzeJobConfig = analyzeJobConfig;
         }
 
         Operation getOperation() {
@@ -1232,8 +1232,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return analyzed;
         }
 
-        public Map<String, String> getAnalyzeOptions() {
-            return analyzeOptions;
+        public JobConfig analyzeJobConfig() {
+            return analyzeJobConfig;
         }
 
         @Override
