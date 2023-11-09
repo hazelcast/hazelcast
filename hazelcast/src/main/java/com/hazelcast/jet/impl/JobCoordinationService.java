@@ -112,7 +112,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.config.JobConfigArguments.IS_JOB_SUSPENDABLE;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -121,7 +120,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
-import static com.hazelcast.jet.impl.TerminationMode.*;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
@@ -497,12 +495,6 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                     if (jobStatus != RUNNING && terminationMode != CANCEL_FORCEFUL) {
                         throw new IllegalStateException("Cannot " + terminationMode + ", job status is " + jobStatus
                                 + ", should be " + RUNNING);
-                    }
-
-                    if ((terminationMode == SUSPEND_GRACEFUL || terminationMode == SUSPEND_FORCEFUL
-                            || terminationMode == RESTART_GRACEFUL || terminationMode == RESTART_FORCEFUL)
-                            && masterContext.jobConfig().getArgument(IS_JOB_SUSPENDABLE) != null) {
-                        throw new IllegalStateException("Cannot suspend the job being analyzing");
                     }
 
                     String terminationResult = masterContext.jobContext()

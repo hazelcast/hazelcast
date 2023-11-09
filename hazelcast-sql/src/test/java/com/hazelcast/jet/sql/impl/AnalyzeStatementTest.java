@@ -164,8 +164,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         assertNotNull(job);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertThatThrownBy(job::suspend)
-                .hasMessageContaining("Cannot suspend the job being analyzing");
+        job.suspend();
+        assertJobStatusEventually(job, JobStatus.FAILED);
     }
 
     @Test
@@ -183,8 +183,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         assertNotNull(job);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertThatThrownBy(job::restart)
-                .hasMessageContaining("Cannot suspend the job being analyzing");
+        job.restart();
+        assertJobStatusEventually(job, JobStatus.FAILED);
     }
 
     private static void assertJobIsAnalyzed(String query) {
