@@ -873,9 +873,9 @@ import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private static final int MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY = 500;
 
-    protected final Int2ObjectHashMap<MessageTaskFactory> factories;
+    private final Int2ObjectHashMap<MessageTaskFactory> factories;
 
-    protected final Node node;
+    private final Node node;
 
     public DefaultMessageTaskFactoryProvider(NodeEngine nodeEngine) {
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
