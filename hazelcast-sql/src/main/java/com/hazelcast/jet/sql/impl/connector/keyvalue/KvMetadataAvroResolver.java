@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
@@ -31,10 +30,12 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.reduce;
@@ -51,6 +52,7 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.m
 import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.avro.Schema.Type.NULL;
 import static org.apache.avro.Schema.Type.RECORD;
@@ -78,11 +80,20 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 .and().stringType()
                 .endUnion();
 
-        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS = reduce(
-                ImmutableMap.<QueryDataTypeFamily, List<Schema.Type>>builder(),
-                CONVERSION_PREFS.entrySet().stream(),
-                (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue())
-        ).build();
+        public static final Map<Schema.Type, QueryDataType> AVRO_TO_SQL = new EnumMap<>(Map.of(
+                Schema.Type.BOOLEAN, QueryDataType.BOOLEAN,
+                Schema.Type.INT, QueryDataType.INT,
+                Schema.Type.LONG, QueryDataType.BIGINT,
+                Schema.Type.FLOAT, QueryDataType.REAL,
+                Schema.Type.DOUBLE, QueryDataType.DOUBLE,
+                Schema.Type.STRING, QueryDataType.VARCHAR,
+                Schema.Type.UNION, QueryDataType.OBJECT,
+                Schema.Type.NULL, QueryDataType.OBJECT
+        ));
+
+        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS =
+                CONVERSION_PREFS.entrySet().stream().collect(
+                        toMap(e -> getConverter(e.getKey()).getTypeFamily(), Entry::getValue));
     }
 
     private KvMetadataAvroResolver() { }
@@ -99,24 +110,31 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        if (userFields.isEmpty()) {
-            throw QueryException.error("Column list is required for Avro format");
-        }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
-
-        Schema schema = getSchema(fieldsByPath, options, isKey);
-        if (schema != null && options.containsKey("schema.registry.url")) {
-            throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
-        }
         for (QueryPath path : fieldsByPath.keySet()) {
             if (path.isTopLevel()) {
                 throw QueryException.error("Cannot use the '" + path + "' field with Avro serialization");
             }
         }
-        if (schema != null) {
-            validate(schema, getFields(fieldsByPath).collect(toList()));
+
+        Schema schema = getSchema(fieldsByPath, options, isKey);
+        if (schema != null && options.containsKey("schema.registry.url")) {
+            throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
         }
-        return fieldsByPath.values().stream();
+
+        if (userFields.isEmpty()) {
+            if (schema == null) {
+                throw QueryException.error(
+                        "Either a column list or an inline schema is required to create Avro-based mapping");
+            }
+            return resolveFields(schema, (name, type) ->
+                    new MappingField(name, type, new QueryPath(name, isKey).toString()));
+        } else {
+            if (schema != null) {
+                validate(schema, getFields(fieldsByPath).collect(toList()));
+            }
+            return fieldsByPath.values().stream();
+        }
     }
 
     @Override
@@ -184,6 +202,20 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                     throw new IllegalArgumentException("Unsupported type: " + field.type());
             }
         }).endRecord();
+    }
+
+    public static <T> Stream<T> resolveFields(Schema schema, BiFunction<String, QueryDataType, T> constructor) {
+        return schema.getFields().stream().map(field -> {
+            Schema fieldSchema = unwrapNullableType(field.schema());
+            if (fieldSchema.getType() == RECORD) {
+                throw QueryException.error("Column list is required to create nested fields");
+            }
+            QueryDataType type = Schemas.AVRO_TO_SQL.get(fieldSchema.getType());
+            if (type == null) {
+                throw new IllegalArgumentException("Unsupported schema type: " + fieldSchema.getType());
+            }
+            return constructor.apply(field.name(), type);
+        });
     }
 
     private static void validate(Schema schema, List<Field> fields) {
