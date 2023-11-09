@@ -1,27 +1,5 @@
 This document lists the enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.6 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
 
-NOTE: Due to an error in the tooling, the Platform releases 5.3.3 and 5.3.4 needed to be skipped numerically.
-
-## Enhancements
-
-* Improved the permission checks by fixing the [CVE-2023-45859](https://nvd.nist.gov/vuln/detail/CVE-2023-45859) and [CVE-2023-45860](https://nvd.nist.gov/vuln/detail/CVE-2023-45860) vulnerabilities.
-* Changed the exception type from `CancellationException` to `CancellationByUserException` in case the user cancels a job before it is initialized. [#25452]
-* Updated the versions of following dependencies
-  ** gRPC to 1.57.0
-  ** Netty to 4.1.100
-  ** Avro to 1.1.13
-  ** Snappy Java to 1.1.10.5
-  ** Elasticsearch to 7.17.13
-  [#25430], [#25670], [#25659]
-* Renamed the service port for Hazelcast clusters deployed in Kubernetes environments as `hazelcast`.
-Previously, the name was `hazelcast-service-port` causing the member auto-discovery (for embedded deployments) to fail. [#24834]
-
 ## Fixes
 
-* Fixed an issue where the map entries' metadata, such as time-to-live and expiration, was not replicated correctly over WAN after updating existing entries. [#25505]
-* Fixed an issue where the member list was not updated after a cluster failover scenario. [#25504]
-* Fixed a memory leak issue happening in Hazelcast members and clients while destroying fenced locks. [#25421]
-
-## Removed/Deprecated Features
-
-* Removed the evaluation tool (to try out Platform 5.x features for IMDG 3.x users) and the relevant IMDG 3.x JAR libraries from Hazelcast Platform distributions. [#25663]
+* Fixed a WAN replication failure - when using maps with WAN replication enabled, and BINARY or NATIVE in-memory formats for the entries, WAN replication was failing when an entry is updated with the same key/value pair, and the cluster members lack serialization information. [#25899]
