@@ -27,6 +27,7 @@ import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.rest.InternalRestService;
+import com.hazelcast.internal.ascii.rest.MissingRestService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
@@ -224,13 +225,12 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    private InternalRestService createRestService() throws ClassNotFoundException,
-            NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private InternalRestService createRestService() {
         Class<?> clz;
         try {
             clz = Class.forName("com.hazelcast.rest.service.RestServiceImpl");
         }  catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            return new MissingRestService();
         }
         try {
             Constructor<?> constructor = clz.getConstructor(getClass());
@@ -311,6 +311,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
+        restService.start();
         tpcServerBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);

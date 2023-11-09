@@ -24,7 +24,14 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.context.ConfigurableApplicationContext;
 
 public class RestServiceImpl implements InternalRestService {
+    private final NodeEngineImpl nodeEngine;
+
     public RestServiceImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
+
+    @Override
+    public void start() {
         SpringApplication application = new SpringApplication(HazelcastRestSpringApplication.class);
         application.setWebApplicationType(WebApplicationType.SERVLET);
         ConfigurableApplicationContext context = application.run();

@@ -15,6 +15,10 @@
  */
 package com.hazelcast.internal.ascii.rest;
 
-public interface InternalRestService {
-    void start();
+public class MissingRestService implements InternalRestService {
+
+    @Override
+    public void start() {
+
+    }
 }
