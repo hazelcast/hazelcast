@@ -300,6 +300,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             registerConstant(LinkedHashSet.class, new LinkedHashSetStreamSerializer());
             registerConstant(CopyOnWriteArraySet.class, new CopyOnWriteArraySetStreamSerializer());
             registerConstant(ConcurrentSkipListSet.class, new ConcurrentSkipListSetStreamSerializer());
+
             registerConstant(ArrayDeque.class, new ArrayDequeStreamSerializer());
             registerConstant(LinkedBlockingQueue.class, new LinkedBlockingQueueStreamSerializer());
             registerConstant(ArrayBlockingQueue.class, new ArrayBlockingQueueStreamSerializer());

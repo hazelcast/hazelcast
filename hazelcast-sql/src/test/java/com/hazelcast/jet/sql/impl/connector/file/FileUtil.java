@@ -20,7 +20,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
@@ -43,7 +42,7 @@ import static com.hazelcast.jet.impl.util.Util.reduce;
 
 final class FileUtil {
 
-    static final Record AVRO_RECORD =
+    static final GenericRecord AVRO_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")
                      .fields()
                      .name("string").type().stringType().noDefault()
@@ -79,7 +78,7 @@ final class FileUtil {
              .set("object", new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build())
              .build();
 
-    static final Record AVRO_NULLABLE_RECORD = reduce(
+    static final GenericRecord AVRO_NULLABLE_RECORD = reduce(
             new GenericRecordBuilder(SchemaBuilder.record("name")
                     .fields()
                     .name("string").type().nullable().stringType().noDefault()
@@ -102,13 +101,13 @@ final class FileUtil {
             (record, field) -> record.set(field, AVRO_RECORD.get(field.pos()))
     ).build();
 
-    static final Record AVRO_NULL_RECORD = reduce(
+    static final GenericRecord AVRO_NULL_RECORD = reduce(
             new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
             AVRO_NULLABLE_RECORD.getSchema().getFields().stream(),
             (record, field) -> record.set(field, null)
     ).build();
 
-    static final Record AVRO_COMPLEX_TYPES;
+    static final GenericRecord AVRO_COMPLEX_TYPES;
     static {
         Schema recordSchema = SchemaBuilder.record("record").fields().requiredInt("field").endRecord();
         Schema arraySchema = SchemaBuilder.array().items(Schema.create(Schema.Type.INT));
@@ -133,7 +132,7 @@ final class FileUtil {
          .build();
     }
 
-    private static final Record PARQUET_RECORD =
+    private static final GenericRecord PARQUET_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")
                     .fields()
                     .name("string").type().stringType().noDefault()
@@ -171,7 +170,7 @@ final class FileUtil {
      * Creates a temporary directory with prefix 'sql-avro-test', writes the
      * specified Avro record to 'file.avro' in this directory and returns the file.
      */
-    static File createAvroFile(Record avroRecord) {
+    static File createAvroFile(GenericRecord avroRecord) {
         try {
             File directory = Files.createTempDirectory("sql-avro-test").toFile();
             directory.deleteOnExit();

@@ -30,7 +30,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class AvroSerializerTest {
-
     static InternalSerializationService serializationService;
 
     @BeforeClass
@@ -45,5 +44,4 @@ public class AvroSerializerTest {
         String actual = serializationService.toObject(data);
         assertEquals(expected.toString(), actual);
     }
-
 }
