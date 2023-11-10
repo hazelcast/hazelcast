@@ -36,13 +36,11 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         appendMergeClause(sb);
         sb.append(' ');
         appendMatchedClause(sb);
-        //sb.append(" EXIT; EXCEPTION WHEN NO_DATA_FOUND THEN NULL; WHEN DUP_VAL_ON_INDEX THEN NULL; END; END LOOP;");
 
         query = sb.toString();
     }
 
     void appendMergeClause(StringBuilder sb) {
-        //sb.append("LOOP BEGIN ");
         sb.append("MERGE INTO ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         sb.append(" TARGET USING (SELECT");
