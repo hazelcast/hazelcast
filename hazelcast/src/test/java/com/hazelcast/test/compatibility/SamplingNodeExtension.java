@@ -19,6 +19,7 @@ package com.hazelcast.test.compatibility;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
@@ -45,6 +46,7 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -319,5 +321,10 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public JetServiceBackend getJetServiceBackend() {
         return nodeExtension.getJetServiceBackend();
+    }
+
+    @Override
+    public SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig) {
+        return nodeExtension.createSslEngineFactory(sslConfig);
     }
 }

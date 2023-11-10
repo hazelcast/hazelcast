@@ -17,7 +17,6 @@
 package com.hazelcast.client.cp.internal;
 
 import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddMembershipListenerCodec;
@@ -65,11 +64,11 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class CPSubsystemImpl implements CPSubsystem {
 
-    private final ClientRaftProxyFactory proxyFactory;
+    protected final ClientRaftProxyFactory proxyFactory;
     private volatile ClientContext context;
 
-    public CPSubsystemImpl(HazelcastClientInstanceImpl client) {
-        this.proxyFactory = new ClientRaftProxyFactory(client);
+    public CPSubsystemImpl(ClientRaftProxyFactory proxyFactory) {
+        this.proxyFactory = proxyFactory;
     }
 
     public void init(ClientContext context) {
