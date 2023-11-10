@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -50,28 +52,45 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     }
 
     @Test
-    public void test_suspend_isForbidden() {
-        String query = "SELECT v, v FROM TABLE(generate_stream(1000))";
-        instance.getSql().execute("ANALYZE " + query);
-        Job job = instance.getJet().getJobs()
-                .stream()
-                .filter(j -> Objects.equals(
-                        j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + query
-                ))
-                .findFirst()
-                .orElse(null);
+    public void when_suspend_isForbidden() {
+        // When
+        Job job = assertRunQuery();
 
-        assertNotNull(job);
-        assertJobStatusEventually(job, JobStatus.RUNNING);
+        // Then
         assertThatThrownBy(job::suspend)
                 .hasMessageContaining("Cannot suspend the job being analyzed");
     }
 
     @Test
-    public void test_restart_isForbidden() {
+    public void when_restart_isForbidden() {
+        // When
+        Job job = assertRunQuery();
+
+        // Then
+        assertThatThrownBy(job::restart)
+                .hasMessageContaining("Cannot suspend the job being analyzed");
+    }
+
+    @Test
+    public void test_changedClusterState() {
+        // When
+        Job job = assertRunQuery();
+
+        // Then
+        instance.getCluster().changeClusterState(ClusterState.PASSIVE);
+        instance.getCluster().changeClusterState(ClusterState.ACTIVE);
+
+        JobResult jobResult = getJetServiceBackend(instance).getJobRepository().getJobResult(job.getId());
+        assertNotNull(jobResult);
+        assertContains(jobResult.getFailureText(), "CancellationException");
+    }
+
+    private Job assertRunQuery() {
+        // Given
         String query = "SELECT v, v FROM TABLE(generate_stream(1000))";
         instance.getSql().execute("ANALYZE " + query);
+
+        // When
         Job job = instance.getJet().getJobs()
                 .stream()
                 .filter(j -> Objects.equals(
@@ -81,9 +100,9 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
                 .findFirst()
                 .orElse(null);
 
+        // Then
         assertNotNull(job);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertThatThrownBy(job::restart)
-                .hasMessageContaining("Cannot suspend the job being analyzed");
+        return job;
     }
 }

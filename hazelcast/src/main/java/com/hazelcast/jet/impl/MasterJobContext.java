@@ -92,7 +92,6 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
@@ -113,8 +112,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
@@ -457,7 +454,7 @@ public class MasterJobContext {
             mode = mode.withoutTerminalSnapshot();
         }
 
-        if (!checkJobIsAllowedToBeSuspended(mode)) {
+        if (!Util.checkJobIsAllowedToBeSuspended(mode, mc.jobConfig())) {
             return tuple2(executionCompletionFuture, "Cannot suspend the job being analyzed");
         }
 
@@ -995,6 +992,15 @@ public class MasterJobContext {
         return future.thenCompose(Function.identity());
     }
 
+    @Nonnull
+    CompletableFuture<Void> gracefullyTerminateOrCancel() {
+        JobConfig jobConfig = mc.jobConfig();
+        TerminationMode mode = Util.isJobSuspendable(jobConfig) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
+        CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
+                () -> requestTermination(mode, false, false).f0());
+        return future.thenCompose(Function.identity());
+    }
+
     /**
      * Checks if the job is running on all members and maybe restart it.
      * <p>
@@ -1138,21 +1144,6 @@ public class MasterJobContext {
         } else {
             clientFuture.complete(withJobMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue())));
         }
-    }
-
-    private boolean checkJobIsAllowedToBeSuspended(TerminationMode terminationMode) {
-        JobConfig jobConfig = mc.jobConfig();
-
-        Boolean argument = jobConfig.getArgument(KEY_JOB_IS_SUSPENDABLE);
-        if (argument == null) {
-            return true;
-        }
-
-        if ((terminationMode == SUSPEND_GRACEFUL || terminationMode == SUSPEND_FORCEFUL
-                || terminationMode == RESTART_GRACEFUL || terminationMode == RESTART_FORCEFUL)) {
-            return argument;
-        }
-        return true;
     }
 
     /**

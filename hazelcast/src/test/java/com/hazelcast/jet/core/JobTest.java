@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -61,6 +63,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -822,6 +825,27 @@ public class JobTest extends SimpleTestInClusterSupport {
                 .hasMessageContaining("Cannot suspend the job being analyzed");
 
         cancelAndJoin(job);
+    }
+
+    @Test
+    public void given_suspensionIsForbidden_when_changedClusterState_then_jobIsCanceled() {
+        // Given
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig().setName("foo").setArgument(KEY_JOB_IS_SUSPENDABLE, false);
+
+        // When
+        Job activeJob = instance().getJet().newJob(streamingDag, jobConfig);
+
+        // Then
+        assertJobStatusEventually(activeJob, RUNNING);
+        instance().getCluster().changeClusterState(ClusterState.PASSIVE);
+        instance().getCluster().changeClusterState(ClusterState.ACTIVE);
+        assertJobStatusEventually(activeJob, FAILED);
+
+        JobResult jobResult = getJetServiceBackend(instance()).getJobRepository().getJobResult(activeJob.getId());
+        assertNotNull(jobResult);
+        assertContains(jobResult.getFailureText(), "CancellationException");
     }
 
     @Test

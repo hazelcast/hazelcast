@@ -423,7 +423,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         return submitToCoordinatorThread(() -> {
             CompletableFuture[] futures = masterContexts
                     .values().stream()
-                    .map(mc -> mc.jobContext().gracefullyTerminate())
+                    .map(mc -> mc.jobContext().gracefullyTerminateOrCancel())
                     .toArray(CompletableFuture[]::new);
             return CompletableFuture.allOf(futures);
         }).thenCompose(identity());
