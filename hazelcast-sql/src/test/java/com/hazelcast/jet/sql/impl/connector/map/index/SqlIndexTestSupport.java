@@ -80,15 +80,20 @@ abstract class SqlIndexTestSupport extends OptimizerTestSupport {
         );
     }
 
-    protected static List<ExpressionType<?>> nonBaseTypes() {
+    protected static List<ExpressionType<?>> widelyUsedTypes() {
         return Arrays.asList(
                 BYTE,
-                SHORT,
                 LONG,
                 BIG_DECIMAL,
+                DOUBLE
+        );
+    }
+
+    protected static List<ExpressionType<?>> rarelyUsedTypes() {
+        return Arrays.asList(
+                SHORT,
                 BIG_INTEGER,
                 FLOAT,
-                DOUBLE,
                 CHARACTER
         );
     }

@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.connector.map.index.SqlIndexAbstractTest.nonBaseTypes;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @SuppressWarnings("FieldCanBeLocal")

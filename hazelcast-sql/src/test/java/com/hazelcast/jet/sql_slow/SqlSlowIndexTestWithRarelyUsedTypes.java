@@ -34,7 +34,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class SqlSlowIndexTest extends SqlIndexAbstractTest {
+public class SqlSlowIndexTestWithRarelyUsedTypes extends SqlIndexAbstractTest {
 
     // override default global timeout
     // this test takes very long time, especially in code coverage builds
@@ -43,6 +43,6 @@ public class SqlSlowIndexTest extends SqlIndexAbstractTest {
 
     @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
     public static Collection<Object[]> parameters() {
-        return parametersSlowWithWidelyUsedTypes();
+        return parametersSlowWithRarelyUsedTypes();
     }
 }

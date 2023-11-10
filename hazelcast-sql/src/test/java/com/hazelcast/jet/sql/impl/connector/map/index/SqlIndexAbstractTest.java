@@ -81,6 +81,14 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicate
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.neq;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.neq_2;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.or;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BIG_DECIMAL;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BIG_INTEGER;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BYTE;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.CHARACTER;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.DOUBLE;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.FLOAT;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.LONG;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
@@ -889,15 +897,50 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     /**
-     * It tests all non-base types. Base type interactions were tested by quick test suite.
+     * It tests widely all non-base types. Base type interactions were tested by quick test suite.
      */
-    protected static Collection<Object[]> parametersSlow() {
+    public static List<ExpressionType<?>> nonBaseTypes() {
+        return Arrays.asList(
+                BYTE,
+                SHORT,
+                LONG,
+                BIG_DECIMAL,
+                BIG_INTEGER,
+                FLOAT,
+                DOUBLE,
+                CHARACTER
+        );
+    }
+
+    /**
+     * It tests widely used non-base types. Base type interactions were tested by quick test suite.
+     */
+    protected static Collection<Object[]> parametersSlowWithWidelyUsedTypes() {
         List<Object[]> res = new ArrayList<>();
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> firstType : nonBaseTypes()) {
-                    for (ExpressionType<?> secondType : nonBaseTypes()) {
+                for (ExpressionType<?> firstType : widelyUsedTypes()) {
+                    for (ExpressionType<?> secondType : widelyUsedTypes()) {
+                        res.add(new Object[]{indexType, composite, firstType, secondType});
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+
+    /**
+     * It tests rarely used non-base types. Base type interactions were tested by quick test suite.
+     */
+    protected static Collection<Object[]> parametersSlowWithRarelyUsedTypes() {
+        List<Object[]> res = new ArrayList<>();
+
+        for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
+            for (boolean composite : Arrays.asList(true, false)) {
+                for (ExpressionType<?> firstType : rarelyUsedTypes()) {
+                    for (ExpressionType<?> secondType : rarelyUsedTypes()) {
                         res.add(new Object[]{indexType, composite, firstType, secondType});
                     }
                 }
