@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class TaskMaxProcessorSupplier implements ProcessorSupplier {
+    private static final long serialVersionUID = 1L;
     private final int localParallelismForMember;
     private final ProcessorSupplier supplier;
 
@@ -63,7 +64,7 @@ public class TaskMaxProcessorSupplier implements ProcessorSupplier {
     }
 
     @Override
-    public boolean checkLocalParallelism() {
+    public boolean checkNumberOfProcessors() {
         return false;
     }
 

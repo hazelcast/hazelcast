@@ -66,7 +66,11 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     @Nonnull
     Collection<? extends Processor> get(int count);
 
-    default boolean checkLocalParallelism() {
+    /**
+     * Flag that indicates whether ExecutionPlan should check if the local parallelism of a vertex is the same as the
+     * number of processors created.
+     */
+    default boolean checkNumberOfProcessors() {
         return true;
     }
 
