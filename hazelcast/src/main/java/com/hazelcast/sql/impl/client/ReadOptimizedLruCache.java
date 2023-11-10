@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
 
 /**
  * Implementation of an LRU cache optimized for read-heavy use cases.
@@ -88,6 +89,16 @@ public class ReadOptimizedLruCache<K, V> {
         if (oldValue == null && cache.size() > cleanupThreshold) {
             doCleanup();
         }
+    }
+
+    public V computeIfAbsent(K key, Function<K, V> mappingFn) {
+        V value = get(key);
+        if (value != null) {
+            return value;
+        }
+        value = mappingFn.apply(key);
+        put(key, value);
+        return value;
     }
 
     public void remove(K key) {

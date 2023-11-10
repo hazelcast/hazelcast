@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.sql.impl.client.ReadOptimizedLruCache;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericArray;
 import org.apache.avro.generic.GenericContainer;
@@ -46,11 +47,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -81,8 +80,12 @@ public final class AvroSerializerHooks {
     }
 
     public static class GenericContainerHook implements SerializerHook<GenericContainer> {
-        private final Map<String, Schema> jsonToSchema = new HashMap<>();
-        private final Map<Schema, String> schemaToJson = new HashMap<>();
+        private static final int CACHE_SIZE = 500;
+        private static final int CACHE_THRESHOLD = CACHE_SIZE + Math.min(CACHE_SIZE / 10, 50);
+        private final ReadOptimizedLruCache<String, Schema> jsonToSchema =
+                new ReadOptimizedLruCache<>(CACHE_SIZE, CACHE_THRESHOLD);
+        private final ReadOptimizedLruCache<Schema, String> schemaToJson =
+                new ReadOptimizedLruCache<>(CACHE_SIZE, CACHE_THRESHOLD);
 
         @Override
         public Class<GenericContainer> getSerializationType() {
