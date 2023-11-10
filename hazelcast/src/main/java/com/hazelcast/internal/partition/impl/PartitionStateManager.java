@@ -295,8 +295,8 @@ public class PartitionStateManager {
                 }
             }
         }
-        partitionOwnersChanged(changedOwnerPartitions);
         if (foundReplica) {
+            partitionOwnersChanged(changedOwnerPartitions);
             setInitialized();
         }
     }
