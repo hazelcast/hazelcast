@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.Objects;
 
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -42,16 +44,67 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     }
 
     @Test
-    public void test_select() {
+    public void test_options() {
         createMapping("test", Long.class, String.class);
         assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
         assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
-        SelectPlan plan = assertQueryPlan(
-                "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') SELECT * FROM test");
-        assertTrue(plan.isAnalyzed());
-        assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
-        assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
 
+        // Default options
+        SelectPlan plan = assertQueryPlan(
+                "ANALYZE WITH OPTIONS("
+                        + "'processingGuarantee'='exactlyOnce', "
+                        + "'snapshotIntervalMillis'='121', "
+                        + "'initialSnapshotName'='pressF', "
+                        + "'maxProcessorAccumulatedRecords'='100'"
+                        + ") SELECT * FROM test");
+        assertTrue(plan.isAnalyzed());
+
+        assertFalse(plan.analyzeJobConfig().isSplitBrainProtectionEnabled());
+        assertFalse(plan.analyzeJobConfig().isAutoScaling());
+        assertFalse(plan.analyzeJobConfig().isSuspendOnFailure());
+
+        assertTrue(plan.analyzeJobConfig().isMetricsEnabled());
+        assertTrue(plan.analyzeJobConfig().isStoreMetricsAfterJobCompletion());
+
+        assertEquals(ProcessingGuarantee.EXACTLY_ONCE, plan.analyzeJobConfig().getProcessingGuarantee());
+        assertEquals(121L, plan.analyzeJobConfig().getSnapshotIntervalMillis());
+        assertEquals("pressF", plan.analyzeJobConfig().getInitialSnapshotName());
+        assertEquals(100, plan.analyzeJobConfig().getMaxProcessorAccumulatedRecords());
+    }
+
+    @Test
+    public void test_overridableOptions() {
+        createMapping("test", Long.class, String.class);
+        SelectPlan plan = assertQueryPlan(
+                "ANALYZE WITH OPTIONS("
+                        + "'metricsEnabled'='false', "
+                        + "'storeMetricsAfterJobCompletion'='false'"
+                        + ") SELECT * FROM test");
+        assertTrue(plan.isAnalyzed());
+        assertFalse(plan.analyzeJobConfig().isMetricsEnabled());
+        assertFalse(plan.analyzeJobConfig().isStoreMetricsAfterJobCompletion());
+    }
+
+    @Test
+    public void test_useUnsupportedOptionFails() {
+        createMapping("test", Long.class, String.class);
+        String expectedErrorDescription = "Job option is not supported for ANALYZE";
+        assertThatThrownBy(() -> sqlService.execute(
+                "ANALYZE WITH OPTIONS('splitBrainProtectionEnabled'='true') SELECT * FROM test"))
+                .hasMessageContaining(expectedErrorDescription);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ANALYZE WITH OPTIONS('autoScaling'='true') SELECT * FROM test"))
+                .hasMessageContaining(expectedErrorDescription);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ANALYZE WITH OPTIONS('suspendOnFailure'='true') SELECT * FROM test"))
+                .hasMessageContaining(expectedErrorDescription);
+    }
+
+    @Test
+    public void test_select() {
+        createMapping("test", Long.class, String.class);
         instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
         assertRowsAnyOrder("ANALYZE SELECT * FROM test WHERE TRUE", rows(2, 1L, "testVal"));
         final Job job = instance().getJet().getJobs()
@@ -66,25 +119,42 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertFalse(job.isLightJob());
     }
 
-    // TODO: test other DMLs when we have proper OPTIONS support
     @Test
     public void test_insert() {
         createMapping("test", Long.class, Long.class);
-        final String baseQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
-        assertFalse(assertDmlQueryPlan(baseQuery).isAnalyzed());
-        assertTrue(assertDmlQueryPlan("ANALYZE " + baseQuery).isAnalyzed());
-        SqlPlanImpl.DmlPlan plan = assertDmlQueryPlan(
-                "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') " + baseQuery);
-        assertTrue(plan.isAnalyzed());
-        assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
-        assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
 
-        instance().getSql().execute("ANALYZE " + baseQuery);
-        final Job job = instance().getJet().getJobs()
+        final String insertQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
+        assertJobIsAnalyzed(insertQuery);
+        assertEquals(2, instance().getMap("test").size());
+    }
+
+    @Test
+    public void test_update() {
+        createMapping("test", Long.class, Long.class);
+        instance().getMap("test").put(1L, 1L);
+
+        final String updateQuery = "UPDATE test SET this = 3 WHERE this = 1 AND this IS NOT NULL";
+        assertJobIsAnalyzed(updateQuery);
+        assertEquals(3L, instance().getMap("test").get(1L));
+    }
+
+    @Test
+    public void test_delete() {
+        createMapping("test", Long.class, Long.class);
+        instance().getMap("test").put(1L, 1L);
+
+        final String deleteQuery = "DELETE FROM test WHERE this = 1 AND this IS NOT NULL";
+        assertJobIsAnalyzed(deleteQuery);
+        assertTrue(instance().getMap("test").isEmpty());
+    }
+
+    private static void assertJobIsAnalyzed(String query) {
+        instance().getSql().execute("ANALYZE " + query);
+        Job job = instance().getJet().getJobs()
                 .stream()
                 .filter(j -> Objects.equals(
                         j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + baseQuery
+                        "ANALYZE " + query
                 ))
                 .findFirst()
                 .orElse(null);

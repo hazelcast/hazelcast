@@ -23,53 +23,66 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.INSTANCE;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(JUnitParamsRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KvMetadataAvroResolverTest {
 
+    @Parameters(name = "{1}")
+    public static Object[] parameters() {
+        return new Object[][]{{true, "__key"}, {false, "this"}};
+    }
+
+    @Parameter(0) public boolean isKey;
+    @Parameter(1) public String prefix;
+
     @Test
-    @Parameters({
-            "true, __key",
-            "false, this"
-    })
-    public void test_resolveFields(boolean key, String prefix) {
+    public void test_resolveFields() {
         Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
-                key,
-                List.of(field("field", QueryDataType.INT, prefix + ".field")),
+                isKey,
+                List.of(field("field", QueryDataType.INT)),
                 emptyMap(),
                 null
         );
 
-        assertThat(fields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
+        assertThat(fields).containsExactly(field("field", QueryDataType.INT));
     }
 
     @Test
-    @Parameters({
-            "true",
-            "false"
-    })
-    public void when_noKeyOrThisPrefixInExternalName_then_usesValue(boolean key) {
+    public void when_noKeyOrThisPrefixInExternalName_then_usesValue() {
         KvMetadata metadata = INSTANCE.resolveMetadata(
-                key,
+                isKey,
                 List.of(field("field", QueryDataType.INT, "extField")),
                 emptyMap(),
                 null
         );
-        assertThat(metadata.getFields()).containsExactly(key
+        assertThat(metadata.getFields()).containsExactly(isKey
                 ? new MapTableField[]{
                         new MapTableField("__key", QueryDataType.OBJECT, true, QueryPath.KEY_PATH)
                 }
@@ -80,13 +93,9 @@ public class KvMetadataAvroResolverTest {
     }
 
     @Test
-    @Parameters({
-            "true, __key",
-            "false, this"
-    })
-    public void when_duplicateExternalName_then_throws(boolean key, String prefix) {
+    public void when_duplicateExternalName_then_throws() {
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
-                key,
+                isKey,
                 List.of(
                         field("field1", QueryDataType.INT, prefix + ".field"),
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
@@ -98,29 +107,73 @@ public class KvMetadataAvroResolverTest {
     }
 
     @Test
-    @Parameters({
-            "true, __key",
-            "false, this"
-    })
-    @SuppressWarnings("checkstyle:LineLength")
-    public void test_resolveMetadata(boolean key, String prefix) {
+    public void when_schemaIsNotRecord_then_throws() {
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
+                isKey,
+                List.of(field("field", QueryDataType.INT)),
+                Map.of(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA,
+                        Schema.create(Schema.Type.INT).toString()),
+                null
+        )).hasMessage("Schema must be an Avro record");
+    }
+
+    @Test
+    public void when_inlineSchemaUsedWithSchemaRegistry_then_throws() {
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
+                isKey,
+                List.of(field("field", QueryDataType.INT)),
+                Map.of(
+                        isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA,
+                                SchemaBuilder.record("jet.sql").fields()
+                                        .optionalInt("field")
+                                        .endRecord().toString(),
+                        "schema.registry.url", "http://localhost:8081"
+                ),
+                null
+        )).hasMessage("Inline schema cannot be used with schema registry");
+    }
+
+    @Test
+    public void when_schemaHasUnsupportedType_then_fieldResolutionFails() {
+        List<Schema> unsupportedSchemaTypes = List.of(
+                Schema.create(Schema.Type.BYTES),
+                SchemaBuilder.array().items(Schema.create(Schema.Type.INT)),
+                SchemaBuilder.map().values(Schema.create(Schema.Type.INT)),
+                SchemaBuilder.enumeration("enum").symbols("symbol"),
+                SchemaBuilder.fixed("fixed").size(0)
+        );
+        for (Schema schema : unsupportedSchemaTypes) {
+            assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
+                    isKey,
+                    emptyList(),
+                    Map.of(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA,
+                            SchemaBuilder.record("jet.sql").fields()
+                                    .name("field").type(schema).noDefault()
+                                    .endRecord().toString()),
+                    null
+            ).toArray()).hasMessage("Unsupported schema type: " + schema.getType());
+        }
+    }
+
+    @Test
+    public void test_resolveMetadata() {
         KvMetadata metadata = INSTANCE.resolveMetadata(
-                key,
+                isKey,
                 List.of(
-                        field("string", QueryDataType.VARCHAR, prefix + ".string"),
-                        field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
-                        field("byte", QueryDataType.TINYINT, prefix + ".byte"),
-                        field("short", QueryDataType.SMALLINT, prefix + ".short"),
-                        field("int", QueryDataType.INT, prefix + ".int"),
-                        field("long", QueryDataType.BIGINT, prefix + ".long"),
-                        field("float", QueryDataType.REAL, prefix + ".float"),
-                        field("double", QueryDataType.DOUBLE, prefix + ".double"),
-                        field("decimal", QueryDataType.DECIMAL, prefix + ".decimal"),
-                        field("time", QueryDataType.TIME, prefix + ".time"),
-                        field("date", QueryDataType.DATE, prefix + ".date"),
-                        field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
-                        field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz"),
-                        field("object", QueryDataType.OBJECT, prefix + ".object")
+                        field("string", QueryDataType.VARCHAR),
+                        field("boolean", QueryDataType.BOOLEAN),
+                        field("byte", QueryDataType.TINYINT),
+                        field("short", QueryDataType.SMALLINT),
+                        field("int", QueryDataType.INT),
+                        field("long", QueryDataType.BIGINT),
+                        field("float", QueryDataType.REAL),
+                        field("double", QueryDataType.DOUBLE),
+                        field("decimal", QueryDataType.DECIMAL),
+                        field("time", QueryDataType.TIME),
+                        field("date", QueryDataType.DATE),
+                        field("timestamp", QueryDataType.TIMESTAMP),
+                        field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME),
+                        field("object", QueryDataType.OBJECT)
                 ),
                 emptyMap(),
                 null
@@ -162,6 +215,10 @@ public class KvMetadataAvroResolverTest {
                         .optionalString("timestampTz")
                         .name("object").type(OBJECT_SCHEMA).withDefault(null)
                         .endRecord()));
+    }
+
+    private MappingField field(String name, QueryDataType type) {
+        return new MappingField(name, type, prefix + "." + name);
     }
 
     private static MappingField field(String name, QueryDataType type, String externalName) {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.TpcToken;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.instance.impl.Node;
@@ -61,6 +62,16 @@ public class AuthenticationCustomCredentialsMessageTask
                                        boolean clientFailoverSupported, List<Integer> tpcPorts, byte[] tpcToken) {
         return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
                 serverVersion, partitionCount, clusterId, clientFailoverSupported, tpcPorts, tpcToken);
+    }
+
+    @Override
+    protected void setTpcTokenToEndpoint() {
+        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {
+            return;
+        }
+
+        TpcToken token = new TpcToken();
+        endpoint.setTpcToken(token);
     }
 
     @Override

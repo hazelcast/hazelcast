@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
 @SuppressWarnings("unused")
-@Generated("620471b173e3f78fb4808ed805e335f6")
+@Generated("a0b986d3ce1651ebb6661c307871ca0f")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;
@@ -127,7 +127,7 @@ public final class RingbufferReadManyCodec {
         public int readCount;
 
         /**
-         * List of items that have beee read.
+         * List of items that have been read.
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> items;
 

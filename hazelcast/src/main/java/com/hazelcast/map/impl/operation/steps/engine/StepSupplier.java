@@ -28,7 +28,6 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedEvictionStrategies;
 import static com.hazelcast.map.impl.operation.steps.engine.AppendAsNewHeadStep.appendAsNewHeadStep;
@@ -174,11 +173,13 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
                     step.runStep(state);
                 }
             } catch (NativeOutOfMemoryError e) {
-                assertRunningOnPartitionThread();
-
-                rerunWithForcedEviction(() -> {
-                    step.runStep(state);
-                });
+                if (runningOnPartitionThread) {
+                    rerunWithForcedEviction(() -> {
+                        step.runStep(state);
+                    });
+                } else {
+                    throw e;
+                }
             } finally {
                 state.getRecordStore().afterOperation();
             }
