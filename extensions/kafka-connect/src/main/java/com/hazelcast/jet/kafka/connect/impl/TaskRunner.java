@@ -153,13 +153,13 @@ public class TaskRunner {
         }
     }
 
-    public State getSnapshotCopy() {
+    public State copyState() {
         State snapshot = new State();
         snapshot.load(state);
         return snapshot;
     }
 
-    public void restoreSnapshot(State state) {
+    public void restoreState(State state) {
         this.state.load(state);
     }
 

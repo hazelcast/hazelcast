@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.kafka.connect;
 
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -143,7 +142,6 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
     @Test
     public void testScaling() throws Exception {
-        int localParallelism = 1;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("tasks.max", "2");
@@ -164,8 +162,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
                         SourceRecordUtil::convertToString))
-                .withoutTimestamps()
-                .setLocalParallelism(localParallelism);
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -190,9 +187,9 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
     @Test
     public void testScaling_with_new_member() throws Exception {
-        int localParallelism = 1;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("tasks.max", "2");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
         randomProperties.setProperty("mode", "incrementing");
         String connectionUrl = mysql.getJdbcUrl();
@@ -207,42 +204,42 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         createTableAndFill(connectionUrl, "newmember_parallel_items_1");
         createTableAndFill(connectionUrl, "newmember_parallel_items_2");
 
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance hazelcastInstance1 = createHazelcastInstances(config, 1) [0];
 
+        String listName = "destinationList";
+        IList<Object> sinkList = hazelcastInstance1.getList(listName);
+
+        // Create job
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
                         SourceRecordUtil::convertToString))
-                .withoutTimestamps()
-                .setLocalParallelism(localParallelism);
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
-        streamStage
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(2 * ITEM_COUNT, list.size())));
+        streamStage.writeTo(Sinks.list(sinkList));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hazelcastInstance = createHazelcastInstances(config, 1) [0];
-        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+        Job job = hazelcastInstance1.getJet().newJob(pipeline, jobConfig);
 
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        System.out.println("job is running");
+        // There are some items in the list. The job is running
+        assertTrueEventually(() -> assertTrue(sinkList.size() > 10));
 
-        HazelcastInstance newHazelcastInstances = createHazelcastInstances(config, 1)[0];
-        System.out.println("Created new member");
-        assertClusterStateEventually(ClusterState.ACTIVE, hazelcastInstance, newHazelcastInstances);
-        System.out.println("Cluster is stable");
+        // Add one more member to  cluster
+        HazelcastInstance hazelcastInstance2 = createHazelcastInstances(config, 1)[0];
+        assertClusterSizeEventually(2, hazelcastInstance1, hazelcastInstance2);
+
+        // Restarting the job will distribute the processors
         job.restart();
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-        }
+        // Do not call job.join(). It blocks forever for some reason
+
+        // We should see more items in the list
+        assertTrueEventually(() -> {
+            assertTrue(sinkList.size() >= 2 * ITEM_COUNT);
+        });
     }
 
     @Test

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.connect.impl.topic;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 
@@ -27,7 +28,8 @@ import java.util.UUID;
 public class TaskConfigPublisher {
     private final HazelcastInstance hazelcastInstance;
     private String topicName;
-    private ITopic<TaskConfigTopic> reliableTopic;
+    // The reliableTopic is accessed by multiple threads
+    private volatile ITopic<TaskConfigTopic> reliableTopic;
     private final List<UUID> listeners = new ArrayList<>();
 
     public TaskConfigPublisher(HazelcastInstance hazelcastInstance) {
@@ -35,15 +37,16 @@ public class TaskConfigPublisher {
     }
 
     public void createTopic(long executionId) {
-        topicName = String.valueOf(executionId);
+        topicName = JobRepository.INTERNAL_JET_OBJECTS_PREFIX + executionId;
         reliableTopic = hazelcastInstance.getReliableTopic(topicName);
     }
 
-    public void addListener(MessageListener<TaskConfigTopic> reliableMessageListener) {
+    public void addListener(MessageListener<TaskConfigTopic> messageListener) {
+        // Wrap the listener with LateJoiningListener to get only the latest message
         UUID uuid = reliableTopic.addMessageListener(new LateJoiningListener<>(
                 hazelcastInstance,
                 topicName,
-                reliableMessageListener));
+                messageListener));
         listeners.add(uuid);
     }
 

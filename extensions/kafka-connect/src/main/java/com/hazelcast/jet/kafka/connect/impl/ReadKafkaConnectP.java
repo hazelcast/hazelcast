@@ -139,7 +139,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         long start = Timer.nanos();
         List<SourceRecord> sourceRecords = sourceConnectorWrapper.poll();
 
-        getLogger().info("polled record size " + counter.addAndGet(sourceRecords.size()));
+        getLogger().info("Total polled record size " + counter.addAndGet(sourceRecords.size()));
 
         long durationInNanos = Timer.nanosElapsed(start);
         localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
@@ -171,7 +171,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         }
         snapshotInProgress = true;
         if (snapshotTraverser == null) {
-            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), sourceConnectorWrapper.getSnapshotCopy()))
+            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), sourceConnectorWrapper.copyState()))
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
                         getLogger().finest("Finished saving snapshot");
@@ -190,7 +190,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
-            sourceConnectorWrapper.restoreSnapshot((State) value);
+            sourceConnectorWrapper.restoreState((State) value);
         }
     }
 

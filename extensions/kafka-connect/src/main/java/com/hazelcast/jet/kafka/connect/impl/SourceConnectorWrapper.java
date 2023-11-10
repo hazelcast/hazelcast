@@ -23,8 +23,6 @@ import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -45,7 +43,8 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
  * This class wraps a Kafka Connector and TaskRunner
  */
 public class SourceConnectorWrapper {
-    private ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
+    // The logger is accessed by multiple threads
+    private volatile ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
     private final SourceConnector sourceConnector;
     private final int tasksMax;
     private TaskRunner taskRunner;
@@ -92,23 +91,15 @@ public class SourceConnectorWrapper {
         taskConfigPublisher.createTopic(executionId);
 
         // All processors must listen the topic
-        addTopicListener(new ReliableMessageListenerAdapter<>(this::processMessage));
+        taskConfigPublisher.addListener(this::processMessage);
     }
 
     public void destroyTopic() {
-        removeTopicListeners();
+        taskConfigPublisher.removeListeners();
         if (isMasterProcessor) {
             // Only master processor can destroy the topic
             taskConfigPublisher.destroyTopic();
         }
-    }
-
-    private void addTopicListener(MessageListener<TaskConfigTopic> messageListener) {
-        taskConfigPublisher.addListener(messageListener);
-    }
-
-    private void removeTopicListeners() {
-        taskConfigPublisher.removeListeners();
     }
 
     protected void publishTopic(TaskConfigTopic taskConfigTopic) {
@@ -124,6 +115,7 @@ public class SourceConnectorWrapper {
         processMessage(taskConfigTopic);
     }
 
+    // Protected so that it can be called from tests to simulate received topic
     protected void processMessage(TaskConfigTopic taskConfigTopic) {
         // Update state
         state.setTaskConfigs(taskConfigTopic.getTaskConfigs());
@@ -133,7 +125,7 @@ public class SourceConnectorWrapper {
 
         // Pass my taskConfig to taskRunner
         logger.info("Updating taskRunner with processorOrder = " + processorOrder
-                    + " taskConfigTopic=" + taskConfig);
+                    + " with taskConfig=" + taskConfig);
 
         taskRunner.updateTaskConfig(taskConfig);
 
@@ -148,12 +140,12 @@ public class SourceConnectorWrapper {
         taskRunner.commitRecord(sourceRecord);
     }
 
-    public State getSnapshotCopy() {
-        return taskRunner.getSnapshotCopy();
+    public State copyState() {
+        return taskRunner.copyState();
     }
 
-    public void restoreSnapshot(State state) {
-        taskRunner.restoreSnapshot(state);
+    public void restoreState(State state) {
+        taskRunner.restoreState(state);
     }
 
     public void commit() {
@@ -202,12 +194,14 @@ public class SourceConnectorWrapper {
 
     /**
      * This method is called from two different places
+     * <p>
      * 1. When Connector starts for the first time, it calls this method to distribute taskConfigs
+     * <p>
      * 2. When Kafka Connect plugin discovers that task reconfiguration is necessary
      */
-    private void requestTaskReconfiguration() {
+    void requestTaskReconfiguration() {
         if (!isMasterProcessor) {
-            logger.fine("requestTaskReconfiguration is skipped");
+            logger.fine("requestTaskReconfiguration is skipped because Source Connector is not master");
             return;
         }
         try {
