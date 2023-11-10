@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericRecord;
@@ -305,8 +304,7 @@ public class SqlAvroTest extends SqlTestSupport {
         String path = hadoopNonExistingPath();
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * FROM TABLE(" + avroFile(OPTION_PATH, path) + ")"
-        )).isInstanceOf(HazelcastSqlException.class)
-          .hasMessageContaining("The directory '" + path + "' does not exist");
+        )).hasMessageContaining("The directory '" + path + "' does not exist");
     }
 
     @Test

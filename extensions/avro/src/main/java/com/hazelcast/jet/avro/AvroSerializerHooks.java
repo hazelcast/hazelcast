@@ -83,10 +83,6 @@ public final class AvroSerializerHooks {
     public static class GenericContainerHook implements SerializerHook<GenericContainer> {
         private static final int CACHE_SIZE = 500;
         private static final int CACHE_THRESHOLD = CACHE_SIZE + Math.min(CACHE_SIZE / 10, 50);
-        private final ReadOptimizedLruCache<String, Schema> jsonToSchema =
-                new ReadOptimizedLruCache<>(CACHE_SIZE, CACHE_THRESHOLD);
-        private final ReadOptimizedLruCache<Schema, String> schemaToJson =
-                new ReadOptimizedLruCache<>(CACHE_SIZE, CACHE_THRESHOLD);
 
         @Override
         public Class<GenericContainer> getSerializationType() {
@@ -96,6 +92,11 @@ public final class AvroSerializerHooks {
         @Override
         public Serializer createSerializer() {
             return new StreamSerializer<GenericContainer>() {
+                private final ReadOptimizedLruCache<String, Schema> jsonToSchema =
+                        new ReadOptimizedLruCache<>(CACHE_SIZE, CACHE_THRESHOLD);
+                private final ReadOptimizedLruCache<Schema, String> schemaToJson =
+                        new ReadOptimizedLruCache<>(CACHE_SIZE, CACHE_THRESHOLD);
+
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.AVRO_GENERIC_CONTAINER;
@@ -113,11 +114,9 @@ public final class AvroSerializerHooks {
                         out.writeByteArray(serialize(new SpecificDatumWriter<>(datum.getSchema()), datum));
                     } else {
                         // SchemaNormalization.toParsingForm() drops details that are irrelevant to reader,
-                        // such as field default values. However:
-                        // 1. GenericData.Record.equals() compares record schemas without ignoring the dropped
-                        //    details, which is effectively schema1.toString().equals(schema2.toString()).
-                        // 2. There must be a 1-to-1 mapping between Schema's and their string representations
-                        //    for bidirectional lookup.
+                        // such as field default values. However, GenericData.Record.equals() compares record
+                        // schemas without ignoring the dropped details, which is effectively the same as
+                        // schema1.toString().equals(schema2.toString()).
                         String schemaJson = schemaToJson.computeIfAbsent(datum.getSchema(), Schema::toString);
                         out.writeString(schemaJson);
                         out.writeByteArray(datum instanceof LazyImmutableContainer
@@ -126,8 +125,7 @@ public final class AvroSerializerHooks {
                     }
                 }
 
-                @Nonnull
-                @Override
+                @Nonnull @Override
                 public GenericContainer read(@Nonnull ObjectDataInput in) throws IOException {
                     String descriptor = in.readString();
                     byte[] serializedDatum = in.readByteArray();
@@ -147,8 +145,7 @@ public final class AvroSerializerHooks {
                                         + " is unsupported");
                         }
                     } else {
-                        Class<? extends SpecificRecord> datumClass = (Class<? extends SpecificRecord>)
-                                ReflectionUtils.loadClass(descriptor);
+                        Class<? extends SpecificRecord> datumClass = ReflectionUtils.loadClass(descriptor);
                         return deserialize(new SpecificDatumReader<>(datumClass), serializedDatum);
                     }
                 }
@@ -231,6 +228,11 @@ public final class AvroSerializerHooks {
         @Override
         public int hashCode() {
             return deserialized().hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return deserialized != null ? deserialized.toString() : super.toString();
         }
     }
 

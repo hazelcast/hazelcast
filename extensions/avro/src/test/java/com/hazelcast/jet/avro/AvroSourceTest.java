@@ -49,7 +49,6 @@ import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AvroSourceTest extends SimpleTestInClusterSupport {
-
     private static final int TOTAL_RECORD_COUNT = 20;
 
     private File directory;
@@ -76,14 +75,15 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     public void testReflectReader() throws IOException {
         createAvroFiles(new ReflectDatumWriter<>(User.class), User.classSchema(), i -> new User("name-" + i, i));
 
-        Pipeline p = Pipeline.create();
-        p.readFrom(AvroSources.files(directory.getPath(), User.class))
-         .distinct()
-         .writeTo(Sinks.list(list.getName()));
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(AvroSources.files(directory.getPath(), User.class))
+                .distinct()
+                .writeTo(Sinks.list(list.getName()));
 
-        instance().getJet().newJob(p).join();
+        instance().getJet().newJob(pipeline).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
+        assertTrue(list.contains(new User("name-1", 1)));
     }
 
     @Test
@@ -91,12 +91,12 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
         createAvroFiles(new SpecificDatumWriter<>(SpecificUser.class), SpecificUser.getClassSchema(),
                 i -> new SpecificUser("name-" + i, i));
 
-        Pipeline p = Pipeline.create();
-        p.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
-         .distinct()
-         .writeTo(Sinks.list(list.getName()));
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
+                .distinct()
+                .writeTo(Sinks.list(list.getName()));
 
-        instance().getJet().newJob(p).join();
+        instance().getJet().newJob(pipeline).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
         assertTrue(list.contains(new SpecificUser("name-1", 1)));
@@ -106,14 +106,15 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     public void testGenericReader() throws IOException {
         createAvroFiles(new GenericDatumWriter<>(), User.classSchema(), AvroSourceTest::record);
 
-        Pipeline p = Pipeline.create();
-        p.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
-         .distinct()
-         .writeTo(Sinks.list(list.getName()));
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
+                .distinct()
+                .writeTo(Sinks.list(list.getName()));
 
-        instance().getJet().newJob(p).join();
+        instance().getJet().newJob(pipeline).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
+        assertTrue(list.contains(new User("name-1", 1)));
     }
 
     private <R> void createAvroFiles(DatumWriter<R> datumWriter, Schema schema, Function<Integer, R> datumFn)
@@ -129,7 +130,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     private static GenericRecord record(int i) {
         Schema schema = ReflectData.get().getSchema(User.class);
         GenericRecord record = (GenericRecord) GenericData.get().newRecord(null, schema);
-        record.put("name", "name" + i);
+        record.put("name", "name-" + i);
         record.put("favoriteNumber", i);
         return record;
     }

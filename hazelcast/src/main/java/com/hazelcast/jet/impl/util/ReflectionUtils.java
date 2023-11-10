@@ -51,7 +51,7 @@ public final class ReflectionUtils {
      * Load a class using the current thread's context class loader as a
      * classLoaderHint. Exceptions are sneakily thrown.
      */
-    public static Class<?> loadClass(String name) {
+    public static <T> Class<T> loadClass(String name) {
         return loadClass(Thread.currentThread().getContextClassLoader(), name);
     }
 
@@ -59,7 +59,7 @@ public final class ReflectionUtils {
      * See {@link ClassLoaderUtil#loadClass(ClassLoader, String)}. Exceptions
      * are sneakily thrown.
      */
-    public static Class<?> loadClass(ClassLoader classLoaderHint, String name) {
+    public static <T> Class<T> loadClass(ClassLoader classLoaderHint, String name) {
         try {
             return ClassLoaderUtil.loadClass(classLoaderHint, name);
         } catch (ClassNotFoundException e) {
