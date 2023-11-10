@@ -965,16 +965,16 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // When
         for (int i = 0; i < 10; i++) {
-            Job job = instance().getJet().newJob(streamingDag, new JobConfig().setName("foo"));
+            Job job = instance().getJet().newJob(streamingDag, new JobConfig().setName("foobar"));
             jobIds.add(0, job.getId());
             job.cancel();
             joinAndExpectCancellation(job);
         }
-        Job activeJob = instance().getJet().newJob(streamingDag, new JobConfig().setName("foo"));
+        Job activeJob = instance().getJet().newJob(streamingDag, new JobConfig().setName("foobar"));
         jobIds.add(0, activeJob.getId());
 
         // Then
-        List<Job> actualJobs = instance().getJet().getJobs("foo");
+        List<Job> actualJobs = instance().getJet().getJobs("foobar");
         assertThat(toList(actualJobs, Job::getId))
                 .containsExactlyElementsOf(jobIds);
     }

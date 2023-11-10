@@ -45,7 +45,10 @@ public final class JobConfigArguments {
      * The reason for not having a separate flag in {@link JobConfig}
      * is that we want to preserve Jet's independence from SQL.
      * <p>
-     * The value for that key supposed to have 'false' value to prevent job suspension.
+     * The value for that key supposed to have {@link Boolean} 'false' value
+     * to prevent job suspension.
+     * <p>
+     * By default, any normal Jet job is suspendable.
      */
     public static final String KEY_JOB_IS_SUSPENDABLE = "__jet.jobIsSuspendable";
 
