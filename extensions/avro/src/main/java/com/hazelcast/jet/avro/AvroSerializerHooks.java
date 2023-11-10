@@ -17,6 +17,7 @@
 package com.hazelcast.jet.avro;
 
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
@@ -37,6 +38,9 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.util.Utf8;
 
 import javax.annotation.Nonnull;
@@ -98,36 +102,53 @@ public final class AvroSerializerHooks {
 
                 @Override
                 public void write(@Nonnull ObjectDataOutput out, @Nonnull GenericContainer datum) throws IOException {
-                    // SchemaNormalization.toParsingForm() drops details that are irrelevant to reader,
-                    // such as field default values. However:
-                    // 1. GenericData.Record.equals() compares record schemas without ignoring the dropped
-                    //    details, which is effectively schema1.toString().equals(schema2.toString()).
-                    // 2. There must be a 1-to-1 mapping between Schema's and their string representations
-                    //    for bidirectional lookup.
-                    String schemaJson = schemaToJson.computeIfAbsent(datum.getSchema(), Schema::toString);
-                    out.writeString(schemaJson);
-                    out.writeByteArray(datum instanceof LazyImmutableContainer
-                            ? ((LazyImmutableContainer<?>) datum).serialized
-                            : serialize(new GenericDatumWriter<>(datum.getSchema()), datum));
+                    if (datum instanceof SpecificRecord) {
+                        // SpecificRecord schemas are indistinguishable from others. We cannot add a temporary
+                        // flag to the schema since schema properties are add-only. As a solution, we only write
+                        // the name of the datum class and retrieve the schema from the class. The reader can
+                        // distinguish class names from actual schemas by checking the first character: RECORD,
+                        // ARRAY, ENUM and FIXED schemas start with '{', which is invalid for class names.
+                        out.writeString(datum.getClass().getName());
+                        out.writeByteArray(serialize(new SpecificDatumWriter<>(datum.getSchema()), datum));
+                    } else {
+                        // SchemaNormalization.toParsingForm() drops details that are irrelevant to reader,
+                        // such as field default values. However:
+                        // 1. GenericData.Record.equals() compares record schemas without ignoring the dropped
+                        //    details, which is effectively schema1.toString().equals(schema2.toString()).
+                        // 2. There must be a 1-to-1 mapping between Schema's and their string representations
+                        //    for bidirectional lookup.
+                        String schemaJson = schemaToJson.computeIfAbsent(datum.getSchema(), Schema::toString);
+                        out.writeString(schemaJson);
+                        out.writeByteArray(datum instanceof LazyImmutableContainer
+                                ? ((LazyImmutableContainer<?>) datum).serialized
+                                : serialize(new GenericDatumWriter<>(datum.getSchema()), datum));
+                    }
                 }
 
                 @Nonnull
                 @Override
                 public GenericContainer read(@Nonnull ObjectDataInput in) throws IOException {
-                    String schemaJson = in.readString();
-                    Schema schema = jsonToSchema.computeIfAbsent(schemaJson,
-                            json -> new Schema.Parser().parse(json));
+                    String descriptor = in.readString();
                     byte[] serializedDatum = in.readByteArray();
-                    switch (schema.getType()) {
-                        case RECORD:
-                            return new LazyImmutableRecord(serializedDatum, schema);
-                        case ARRAY:
-                            return new LazyImmutableArray<>(serializedDatum, schema);
-                        case ENUM:  // GenericEnumSymbol
-                        case FIXED: // GenericFixed
-                            return deserialize(new GenericDatumReader<>(schema), serializedDatum);
-                        default:
-                            throw new UnsupportedOperationException("Schema type " + schema.getType() + " is unsupported");
+                    if (descriptor.startsWith("{")) {
+                        Schema schema = jsonToSchema.computeIfAbsent(descriptor,
+                                json -> new Schema.Parser().parse(json));
+                        switch (schema.getType()) {
+                            case RECORD:
+                                return new LazyImmutableRecord(serializedDatum, schema);
+                            case ARRAY:
+                                return new LazyImmutableArray<>(serializedDatum, schema);
+                            case ENUM:  // GenericEnumSymbol
+                            case FIXED: // GenericFixed
+                                return deserialize(new GenericDatumReader<>(schema), serializedDatum);
+                            default:
+                                throw new UnsupportedOperationException("Schema type " + schema.getType()
+                                        + " is unsupported");
+                        }
+                    } else {
+                        Class<? extends SpecificRecord> datumClass = (Class<? extends SpecificRecord>)
+                                ReflectionUtils.loadClass(descriptor);
+                        return deserialize(new SpecificDatumReader<>(datumClass), serializedDatum);
                     }
                 }
             };

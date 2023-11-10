@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AvroSourceTest extends SimpleTestInClusterSupport {
@@ -52,18 +53,18 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     private static final int TOTAL_RECORD_COUNT = 20;
 
     private File directory;
-    private IList<? extends User> list;
+    private IList<?> list;
 
     @BeforeClass
-    public static void beforeClass() {
-        initialize(1, null);
+    public static void setup() {
+        initializeWithClient(2, null, null);
     }
 
     @Before
     public void createDirectory() throws Exception {
         directory = createTempDirectory();
 
-        list = instance().getList(randomName());
+        list = client().getList(randomName());
     }
 
     @After
@@ -77,6 +78,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(AvroSources.files(directory.getPath(), User.class))
+         .distinct()
          .writeTo(Sinks.list(list.getName()));
 
         instance().getJet().newJob(p).join();
@@ -91,11 +93,13 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
+         .distinct()
          .writeTo(Sinks.list(list.getName()));
 
         instance().getJet().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
+        assertTrue(list.contains(new SpecificUser("name-1", 1)));
     }
 
     @Test
@@ -104,6 +108,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
+         .distinct()
          .writeTo(Sinks.list(list.getName()));
 
         instance().getJet().newJob(p).join();
@@ -113,15 +118,9 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
 
     private <R> void createAvroFiles(DatumWriter<R> datumWriter, Schema schema, Function<Integer, R> datumFn)
             throws IOException {
-        createAvroFile(datumWriter, schema, datumFn, TOTAL_RECORD_COUNT / 2);
-        createAvroFile(datumWriter, schema, datumFn, TOTAL_RECORD_COUNT / 2);
-    }
-
-    private <R> void createAvroFile(DatumWriter<R> datumWriter, Schema schema,
-                                    Function<Integer, R> datumFn, int recordCount) throws IOException {
         try (DataFileWriter<R> writer = new DataFileWriter<>(datumWriter)) {
             writer.create(schema, new File(directory, randomString()));
-            for (int i = 0; i < recordCount; i++) {
+            for (int i = 0; i < TOTAL_RECORD_COUNT; i++) {
                 writer.append(datumFn.apply(i));
             }
         }
