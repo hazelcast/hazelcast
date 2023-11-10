@@ -19,58 +19,52 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.logging.ILogger;
 
 /**
- * Utility methods to suppress building of messages for a disabled logging
- * level.
+ * Utility methods to suppress building of messages for a disabled logging level.
+ *
+ * @deprecated just access the methods directly on the {@link ILogger}
  */
+@Deprecated
 public final class LoggingUtil {
     private LoggingUtil() {
     }
 
+    /** @see ILogger#fine(String, Object) */
     public static void logFine(ILogger logger, String template, Object arg1) {
-        if (logger.isFineEnabled()) {
-            logger.fine(String.format(template, arg1));
-        }
+        logger.fine(template, arg1);
     }
 
+    /** @see ILogger#fine(String, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2) {
-        if (logger.isFineEnabled()) {
-            logger.fine(String.format(template, arg1, arg2));
-        }
+        logger.fine(template, arg1, arg2);
     }
 
+    /** @see ILogger#fine(String, Object, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
-        if (logger.isFineEnabled()) {
-            logger.fine(String.format(template, arg1, arg2, arg3));
-        }
+        logger.fine(template, arg1, arg2, arg3);
     }
 
+    /** @see ILogger#fine(String, Object, Object, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
-        if (logger.isFineEnabled()) {
-            logger.fine(String.format(template, arg1, arg2, arg3, arg4));
-        }
+        logger.fine(template, arg1, arg2, arg3, arg4);
     }
 
+    /** @see ILogger#finest(String, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(template, arg1));
-        }
+        logger.finest(template, arg1);
     }
 
+    /** @see ILogger#finest(String, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(template, arg1, arg2));
-        }
+        logger.finest(template, arg1, arg2);
     }
 
+    /** @see ILogger#finest(String, Object, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(template, arg1, arg2, arg3));
-        }
+        logger.finest(template, arg1, arg2, arg3);
     }
 
+    /** @see ILogger#finest(String, Object, Object, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(template, arg1, arg2, arg3, arg4));
-        }
+        logger.finest(template, arg1, arg2, arg3, arg4);
     }
 }
