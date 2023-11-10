@@ -238,7 +238,7 @@ public class PartitionStateManager {
     void partitionOwnersChanged(PartitionIdSet partitionIdSet) {
         partitionIdSet.intIterator().forEachRemaining(
                 (IntConsumer) partitionId -> partitionService.getReplicaManager().cancelReplicaSync(partitionId));
-        partitionService.getPartitionStateManager().updateStamp();
+        updateStamp();
         replicaUpdateInterceptor.onPartitionOwnersChanged();
     }
 

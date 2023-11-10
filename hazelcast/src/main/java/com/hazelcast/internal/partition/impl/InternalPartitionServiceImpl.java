@@ -800,9 +800,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             }
         }
 
-        // Manually trigger partition stamp calculation.
         // Because partition versions are explicitly set to master's versions
-        // while applying the partition table updates.
+        // while applying the partition table updates, we need to
+        // (1) cancel any ongoing replica syncs (for partitions whose owners changed) and
+        // (2) update the partition state stamp.
         partitionStateManager.partitionOwnersChanged(changedOwnerPartitions);
 
         if (logger.isFineEnabled()) {
