@@ -59,7 +59,7 @@ public class ReplicatedMapMergingEntryImpl<K, V>
     }
 
     @Override
-    public V getValue() {
+    public V getDeserializedValue() {
         return serializationService.toObject(value);
     }
 

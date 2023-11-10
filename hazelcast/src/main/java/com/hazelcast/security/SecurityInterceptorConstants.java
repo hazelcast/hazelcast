@@ -182,6 +182,7 @@ public final class SecurityInterceptorConstants {
     public static final String GET_DISTRIBUTED_OBJECTS = "getDistributedObjects";
     public static final String ADD_DISTRIBUTED_OBJECT_LISTENER = "addDistributedObjectListener";
     public static final String REMOVE_DISTRIBUTED_OBJECT_LISTENER = "removeDistributedObjectListener";
+    public static final String COMPARE_AND_SET = "compareAndSet";
 
     private SecurityInterceptorConstants() {
     }
