@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.jet.sql.impl.parse.SqlOption;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -32,7 +31,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
-import org.apache.calcite.sql.validate.SqlValidator;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -45,7 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -185,14 +182,5 @@ public final class QueryUtils {
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(map.getName());
-    }
-
-    public static long parseLong(SqlValidator validator, SqlOption option) {
-        try {
-            return Long.parseLong(option.valueString());
-        } catch (NumberFormatException e) {
-            throw validator.newValidationError(option.value(),
-                    RESOURCE.jobOptionIncorrectNumber(option.keyString(), option.valueString()));
-        }
     }
 }
