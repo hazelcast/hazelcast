@@ -792,7 +792,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void given_suspensionIsForbidden_when_suspendJob_then_jobIsTerminated() {
+    public void given_suspensionIsForbidden_when_suspendJob_then_jobIsCanceled() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig jobConfig = new JobConfig();
@@ -804,13 +804,13 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobStatusEventually(job, RUNNING);
         assertThatThrownBy(job::suspend)
-                .hasMessageContaining("Cannot suspend the job being analyzed");
+                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
 
         cancelAndJoin(job);
     }
 
     @Test
-    public void given_suspensionIsForbidden_when_restartJob_then_jobIsTerminated() {
+    public void given_suspensionIsForbidden_when_restartJob_then_jobIsCanceled() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig jobConfig = new JobConfig();
@@ -822,7 +822,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobStatusEventually(job, RUNNING);
         assertThatThrownBy(job::restart)
-                .hasMessageContaining("Cannot suspend the job being analyzed");
+                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
 
         cancelAndJoin(job);
     }

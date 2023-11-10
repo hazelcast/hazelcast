@@ -455,7 +455,7 @@ public class MasterJobContext {
         }
 
         if (!Util.checkJobIsAllowedToBeSuspended(mode, mc.jobConfig())) {
-            return tuple2(executionCompletionFuture, "Cannot suspend the job being analyzed");
+            return tuple2(executionCompletionFuture, "Cannot suspend or restart non-suspendable job");
         }
 
         JobStatus localStatus;
@@ -982,14 +982,7 @@ public class MasterJobContext {
      */
     @Nonnull
     CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
-        return hasParticipant(uuid) ? gracefullyTerminate() : completedFuture(null);
-    }
-
-    @Nonnull
-    CompletableFuture<Void> gracefullyTerminate() {
-        CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
-        return future.thenCompose(Function.identity());
+        return hasParticipant(uuid) ? gracefullyTerminateOrCancel() : completedFuture(null);
     }
 
     @Nonnull

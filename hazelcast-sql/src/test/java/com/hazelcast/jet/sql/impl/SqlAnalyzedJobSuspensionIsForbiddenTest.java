@@ -58,7 +58,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
 
         // Then
         assertThatThrownBy(job::suspend)
-                .hasMessageContaining("Cannot suspend the job being analyzed");
+                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
     }
 
     @Test
@@ -68,7 +68,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
 
         // Then
         assertThatThrownBy(job::restart)
-                .hasMessageContaining("Cannot suspend the job being analyzed");
+                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
     }
 
     @Test
