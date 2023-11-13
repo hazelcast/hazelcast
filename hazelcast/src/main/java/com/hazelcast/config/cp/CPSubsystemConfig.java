@@ -705,6 +705,7 @@ public class CPSubsystemConfig {
     /**
      * Returns the map of {@link com.hazelcast.cp.CPMap} configurations
      *
+     * @since 5.4
      * @return the map of {@link CPMapConfig} configurations
      */
     public Map<String, CPMapConfig> getCpMapConfigs() {
@@ -718,6 +719,7 @@ public class CPSubsystemConfig {
      * the given {@code name} if present.
      * Returns null if there is no config found by the given {@code name}
      *
+     * @since 5.4
      * @param name name of the {@link CPMapConfig}
      * @return the {@link CPMapConfig} configuration
      */
@@ -730,6 +732,7 @@ public class CPSubsystemConfig {
      * {@link CPMapConfig} could optionally contain a {@link CPGroup} name,
      * like "myMap@group1".
      *
+     * @since 5.4
      * @param cpMapConfig the {@link CPMapConfig} configuration
      * @return this config instance
      */
@@ -743,6 +746,7 @@ public class CPSubsystemConfig {
      * name. Names could optionally contain a {@link CPGroup} name, such as
      * "myLock@group1".
      *
+     * @since 5.4
      * @param cpMapConfigs the {@link CPMapConfig} config map to set
      * @return this config instance
      */
