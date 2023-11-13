@@ -39,6 +39,8 @@ import java.util.Map;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.reduce;
+import static org.apache.avro.generic.GenericData.STRING_PROP;
+import static org.apache.avro.generic.GenericData.StringType.String;
 
 final class FileUtil {
 
@@ -109,6 +111,7 @@ final class FileUtil {
 
     static final GenericRecord AVRO_COMPLEX_TYPES;
     static {
+        Schema mapSchema = SchemaBuilder.map().prop(STRING_PROP, String).values(Schema.create(Schema.Type.INT));
         Schema recordSchema = SchemaBuilder.record("record").fields().requiredInt("field").endRecord();
         Schema arraySchema = SchemaBuilder.array().items(Schema.create(Schema.Type.INT));
         Schema enumSchema = SchemaBuilder.enumeration("enum").symbols("symbol");
@@ -117,7 +120,7 @@ final class FileUtil {
         AVRO_COMPLEX_TYPES = new GenericRecordBuilder(SchemaBuilder.record("complex")
                 .fields()
                 .requiredBytes("bytes")
-                .name("map").type().map().values(Schema.create(Schema.Type.INT)).noDefault()
+                .name("map").type(mapSchema).noDefault()
                 .name("record").type(recordSchema).noDefault()
                 .name("array").type(arraySchema).noDefault()
                 .name("enum").type(enumSchema).noDefault()

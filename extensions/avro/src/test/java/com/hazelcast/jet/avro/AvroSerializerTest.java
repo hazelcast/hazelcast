@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class AvroSerializerTest {
+
     static InternalSerializationService serializationService;
 
     @BeforeClass
@@ -41,7 +42,8 @@ public class AvroSerializerTest {
     public void testUtf8() {
         Utf8 expected = new Utf8(newUnsecureUuidString());
         Data data = serializationService.toData(expected);
-        String actual = serializationService.toObject(data);
-        assertEquals(expected.toString(), actual);
+        Utf8 actual = serializationService.toObject(data);
+        assertEquals(expected, actual);
     }
+
 }

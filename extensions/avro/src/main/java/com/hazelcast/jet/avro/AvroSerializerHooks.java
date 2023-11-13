@@ -27,8 +27,6 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericArray;
 import org.apache.avro.generic.GenericContainer;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.StringType;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -46,7 +44,6 @@ import org.apache.avro.util.Utf8;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,37 +157,28 @@ public final class AvroSerializerHooks {
         }
     }
 
-    /**
-     * Replaces {@link Utf8} with {@link String} globally. Alternatively,
-     * the string class can be set on a per-schema basis via <ol>
-     * <li> {@link GenericData#setStringType GenericData.setStringType}{@code (schema,}
-     *      {@link StringType#String String}{@code )} or,
-     * <li> {@code SchemaBuilder.record("name").prop(}{@link GenericData#STRING_PROP STRING_PROP}{@code ,}
-     *      {@link StringType#String String}{@code )}.
-     */
-    public static final class CharSequenceHook implements SerializerHook<CharSequence> {
+    public static final class Utf8Hook implements SerializerHook<Utf8> {
         @Override
-        public Class<CharSequence> getSerializationType() {
-            return CharSequence.class;
+        public Class<Utf8> getSerializationType() {
+            return Utf8.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new ByteArraySerializer<CharSequence>() {
+            return new ByteArraySerializer<Utf8>() {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.AVRO_UTF8;
                 }
 
                 @Override
-                public byte[] write(CharSequence cs) {
-                    return cs instanceof Utf8 ? ((Utf8) cs).getBytes()
-                            : cs.toString().getBytes(StandardCharsets.UTF_8);
+                public byte[] write(Utf8 string) {
+                    return string.getBytes();
                 }
 
                 @Override
-                public CharSequence read(byte[] buffer) {
-                    return new String(buffer, StandardCharsets.UTF_8);
+                public Utf8 read(byte[] buffer) {
+                    return new Utf8(buffer);
                 }
             };
         }
