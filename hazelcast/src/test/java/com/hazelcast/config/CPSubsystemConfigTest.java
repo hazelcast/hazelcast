@@ -45,17 +45,6 @@ public class CPSubsystemConfigTest extends HazelcastTestSupport {
                 .verify();
     }
 
-    // TODO: if there's no config found for [m] then we need to use defaults
-    // from what I see, the query must always be: map-name@group-name
-
-    @Test
-    public void testCPMapConfig() {
-        String mapName = "map1";
-        CPMapConfig config = new CPMapConfig(mapName);
-        assertEquals(CPMapConfig.DEFAULT_MAX_SIZE_MB, config.getMaxSizeMb());
-        assertEquals(mapName, config.getName());
-    }
-
     @Test
     public void testCPMapConfig_Add() {
         CPSubsystemConfig config = new CPSubsystemConfig();

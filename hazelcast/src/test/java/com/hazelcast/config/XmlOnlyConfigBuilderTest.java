@@ -222,15 +222,11 @@ public class XmlOnlyConfigBuilderTest {
         assertNotNull(config);
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
         assertEquals(2, cpSubsystemConfig.getCpMapConfigs().size());
-        CPMapConfig map1Expected = new CPMapConfig();
-        map1Expected.setMaxSizeMb(50);
-        map1Expected.setName("map1");
+        CPMapConfig map1Expected = new CPMapConfig("map1", 50);
         CPMapConfig map1Actual = cpSubsystemConfig.findCPMapConfig(map1Expected.getName());
         assertNotNull(map1Actual);
         assertEquals(map1Expected, map1Actual);
-        CPMapConfig map2Expected = new CPMapConfig();
-        map2Expected.setMaxSizeMb(25);
-        map2Expected.setName("map2");
+        CPMapConfig map2Expected = new CPMapConfig("map2", 25);
         CPMapConfig map2Actual = cpSubsystemConfig.findCPMapConfig(map2Expected.getName());
         assertNotNull(map2Actual);
         assertEquals(map2Expected, map2Actual);

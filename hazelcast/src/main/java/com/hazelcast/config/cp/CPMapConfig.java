@@ -16,8 +16,10 @@
 
 package com.hazelcast.config.cp;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
@@ -30,67 +32,72 @@ public class CPMapConfig {
     public static final int DEFAULT_MAX_SIZE_MB = 100;
 
     /**
+     * Name of CPMap.
+     */
+    private String name;
+
+    /**
      * Maximum size in MB that the key-value pairs of the CPMap can total.
      */
     private int maxSizeMb = DEFAULT_MAX_SIZE_MB;
 
     /**
-     * Name of CPMap.
+     * @deprecated exists only for DOM processing.
      */
-    private String name;
-
     public CPMapConfig() {
     }
 
     public CPMapConfig(String name) {
-        this.name = name;
+        this(name, DEFAULT_MAX_SIZE_MB);
     }
 
     public CPMapConfig(String name, int maxSizeMb) {
-        this.name = name;
-        this.maxSizeMb = maxSizeMb;
+        setName(name).setMaxSizeMb(maxSizeMb);
     }
 
     public CPMapConfig(CPMapConfig config) {
-        this.maxSizeMb = config.maxSizeMb;
+        setName(config.name).setMaxSizeMb(config.maxSizeMb);
     }
 
     public int getMaxSizeMb() {
         return maxSizeMb;
     }
 
-    public void setMaxSizeMb(int maxSizeMb) {
+    public CPMapConfig setMaxSizeMb(int maxSizeMb) {
         checkPositive("maxSizeMb", maxSizeMb);
         this.maxSizeMb = maxSizeMb;
+        return this;
     }
 
+    @Nullable
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public CPMapConfig setName(String name) {
+        this.name = checkNotNull(name, "Name must not be null");
+        return this;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        CPMapConfig that = (CPMapConfig) o;
+        CPMapConfig that = (CPMapConfig) object;
         return maxSizeMb == that.maxSizeMb && Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maxSizeMb, name);
+        return Objects.hash(name, maxSizeMb);
     }
 
     @Override
     public String toString() {
-        return "CPMapConfig{" + "maxSizeMb=" + maxSizeMb + ", name='" + name + '\'' + '}';
+        return "CPMapConfig{" + "name='" + name + '\'' + ", maxSizeMb=" + maxSizeMb + '}';
     }
 }
