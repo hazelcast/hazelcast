@@ -821,7 +821,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // When
         assertJobStatusEventually(job, RUNNING);
-        job.suspend();
+        job.restart();
 
         // Then
         assertThatThrownBy(job::join)
