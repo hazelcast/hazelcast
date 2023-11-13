@@ -106,6 +106,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void setup() {
         TestProcessors.reset(TOTAL_PARALLELISM);
     }
+
     @Before
     public void after() {
         TestProcessors.assertNoErrorsInProcessors();
@@ -805,7 +806,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         job.suspend();
 
         // Then
-        assertThatThrownBy(() -> job.getFuture().get())
+        assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
     }
 
@@ -823,12 +824,12 @@ public class JobTest extends SimpleTestInClusterSupport {
         job.suspend();
 
         // Then
-        assertThatThrownBy(() -> job.getFuture().get())
+        assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
     }
 
     @Test
-    public void given_suspensionIsForbidden_when_changedClusterState_then_jobIsCanceled() {
+    public void given_suspensionIsForbidden_when_changedClusterStateToPassive_then_jobIsCanceled() {
         // Given
         DAG streamingDag = new DAG();
         streamingDag.newVertex("v", () -> new MockP().streaming());
@@ -1274,7 +1275,8 @@ public class JobTest extends SimpleTestInClusterSupport {
             output.writeInt(value.value);
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Value read(ObjectDataInput input) throws IOException {
             return new Value(input.readInt());
         }

@@ -22,7 +22,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -62,7 +61,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
         job.suspend();
 
         // Then
-        assertThatThrownBy(() -> job.getFuture().get())
+        assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
         // Note: this exception doesn't have message.
     }
@@ -76,7 +75,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
         job.restart();
 
         // Then
-        assertThatThrownBy(() -> job.getFuture().get())
+        assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
         // Note: this exception doesn't have message.
     }
@@ -90,9 +89,8 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
         instance.getCluster().changeClusterState(ClusterState.PASSIVE);
         instance.getCluster().changeClusterState(ClusterState.ACTIVE);
 
-        JobResult jobResult = getJetServiceBackend(instance).getJobRepository().getJobResult(job.getId());
-        assertNotNull(jobResult);
-        assertContains(jobResult.getFailureText(), "CancellationException");
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
     }
 
     private Job assertRunQuery() {
