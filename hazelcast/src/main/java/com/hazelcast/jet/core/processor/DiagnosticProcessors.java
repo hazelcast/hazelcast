@@ -183,7 +183,8 @@ public final class DiagnosticProcessors {
             @Nonnull PredicateEx<T> shouldLogFn,
             @Nonnull SupplierEx<Processor> wrapped
     ) {
-        return () -> new PeekWrappedP<>(wrapped.get(), toStringFn, shouldLogFn, true, false, false);
+        return  wrapped.andThen(p ->
+                new PeekWrappedP<>(p, toStringFn, shouldLogFn, true, false, false));
     }
 
     /**
@@ -301,7 +302,8 @@ public final class DiagnosticProcessors {
             @Nonnull FunctionEx<? super T, ? extends CharSequence> toStringFn,
             @Nonnull PredicateEx<? super T> shouldLogFn,
             @Nonnull SupplierEx<Processor> wrapped) {
-        return () -> new PeekWrappedP<>(wrapped.get(), toStringFn, shouldLogFn, false, true, false);
+        return wrapped.andThen(p ->
+                new PeekWrappedP<>(p, toStringFn, shouldLogFn, false, true, false));
     }
 
     /**
@@ -402,7 +404,8 @@ public final class DiagnosticProcessors {
             @Nonnull FunctionEx<? super Entry<K, V>, ? extends CharSequence> toStringFn,
             @Nonnull PredicateEx<? super Entry<K, V>> shouldLogFn,
             @Nonnull SupplierEx<Processor> wrapped) {
-        return () -> new PeekWrappedP<>(wrapped.get(), toStringFn, shouldLogFn, false, false, true);
+        return wrapped.andThen(p ->
+                new PeekWrappedP<>(p, toStringFn, shouldLogFn, false, false, true));
     }
 
     /**

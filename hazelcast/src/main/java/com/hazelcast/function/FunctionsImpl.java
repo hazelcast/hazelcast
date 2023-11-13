@@ -20,23 +20,22 @@ import com.hazelcast.security.impl.function.SecuredFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class FunctionsImpl {
-    static class ComposedSecuredFunction<F extends SecuredFunction, G extends SecuredFunction> implements SecuredFunction {
+    static class ComposedSecuredFunction<F extends SecuredFunction, G extends SecuredFunction> implements SecuredFunction, Serializable {
         protected final F before;
         protected final G after;
 
         ComposedSecuredFunction(F before, G after) {
-            checkNotNull(before, "before");
-            checkNotNull(after, "after");
-            this.before = before;
-            this.after = after;
+            this.before = Objects.requireNonNull(before, "before");
+            this.after = Objects.requireNonNull(after, "after");
         }
 
         @Nullable
