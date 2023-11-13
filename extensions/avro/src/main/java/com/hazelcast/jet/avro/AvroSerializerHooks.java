@@ -43,6 +43,7 @@ import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.util.Utf8;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -192,10 +193,11 @@ public final class AvroSerializerHooks {
         }
     }
 
+    @ThreadSafe
     private abstract static class LazyImmutableContainer<T extends GenericContainer> implements GenericContainer {
         private final byte[] serialized;
         private final Schema schema;
-        private T deserialized;
+        private volatile T deserialized;
 
         protected LazyImmutableContainer(byte[] serialized, Schema schema) {
             this.serialized = serialized;
@@ -263,7 +265,7 @@ public final class AvroSerializerHooks {
 
     private static final class LazyImmutableArray<T> extends LazyImmutableContainer<GenericArray<T>>
             implements GenericArray<T> {
-        private List<T> immutable;
+        private volatile List<T> immutable;
 
         private LazyImmutableArray(byte[] serializedArray, Schema schema) {
             super(serializedArray, schema);
