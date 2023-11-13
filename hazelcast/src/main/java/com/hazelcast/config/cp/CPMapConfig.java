@@ -24,6 +24,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for {@link com.hazelcast.cp.CPMap}.
+ * @since 5.4
  */
 public class CPMapConfig {
     /**
