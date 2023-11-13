@@ -39,7 +39,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_GLOB;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_PATH;
+import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_SHARED_FILE_SYSTEM;
 import static java.time.ZoneOffset.UTC;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -53,7 +55,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initializeWithClient(1, null, null);
+        initializeWithClient(2, null, null);
         sqlService = instance().getSql();
     }
 
@@ -61,7 +63,8 @@ public class SqlAvroTest extends SqlTestSupport {
         return new SqlMapping(name, FileSqlConnector.class).options(
                 OPTION_FORMAT, AVRO_FORMAT,
                 OPTION_PATH, file.getParent(),
-                OPTION_GLOB, file.getName()
+                OPTION_GLOB, file.getName(),
+                OPTION_SHARED_FILE_SYSTEM, true
         );
     }
 
@@ -138,10 +141,9 @@ public class SqlAvroTest extends SqlTestSupport {
         String name = randomName();
         fileMapping(name, AVRO_COMPLEX_FILE).create();
 
-        assertRowsAnyOrder(client(),
-                "SELECT * FROM " + name,
-                List.of(new Row(getAllValues(FileUtil.AVRO_COMPLEX_TYPES)))
-        );
+        List<Row> rows = List.of(new Row(getAllValues(FileUtil.AVRO_COMPLEX_TYPES)));
+        assertRowsAnyOrder(instances()[1], "SELECT * FROM " + name, rows);
+        assertRowsAnyOrder(client(), "SELECT * FROM " + name, rows);
     }
 
     @Test
@@ -216,7 +218,7 @@ public class SqlAvroTest extends SqlTestSupport {
         test_tableFunction(AVRO_NULL_FILE);
     }
 
-    private void test_tableFunction(File avroFile) {
+    private void test_tableFunction(File file) {
         assertRowsAnyOrder(
                 "SELECT "
                         + "string"
@@ -234,10 +236,11 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"timestampTz\""
                         + ", \"null\""
                         + ", object "
-                        + "FROM TABLE("
-                        + "  AVRO_FILE('" + avroFile.getParent() + "')"
+                        + "FROM TABLE(" + avroFile(
+                                OPTION_PATH, file.getParent(),
+                                OPTION_SHARED_FILE_SYSTEM, true)
                         + ")",
-                List.of(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
+                List.of(file == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
                         "string",
                         true,
                         127,
@@ -301,9 +304,7 @@ public class SqlAvroTest extends SqlTestSupport {
     public void when_directoryDoesNotExist_then_tableFunctionThrowsException() {
         String path = hadoopNonExistingPath();
         assertThatThrownBy(() -> sqlService.execute(
-                "SELECT * FROM TABLE(" +
-                "  avro_file(path => '" + path + "')" +
-                ")"
+                "SELECT * FROM TABLE(" + avroFile(OPTION_PATH, path) + ")"
         )).isInstanceOf(HazelcastSqlException.class)
           .hasMessageContaining("The directory '" + path + "' does not exist");
     }
@@ -311,13 +312,17 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void when_fileDoesNotExist_then_tableFunctionThrowsException() {
         assertThatThrownBy(() -> sqlService.execute(
-                "SELECT * FROM TABLE(" +
-                "  avro_file(" +
-                "    path => '" + AVRO_FILE.getParent() + "'," +
-                "    glob => 'foo.avro'" +
-                "  )" +
-                ")")
-        ).hasMessageContaining("matches no files");
+                "SELECT * FROM TABLE(" + avroFile(
+                        OPTION_PATH, AVRO_FILE.getParent(),
+                        OPTION_GLOB, "foo.avro") +
+                ")"
+        )).hasMessageContaining("matches no files");
+    }
+
+    private static String avroFile(Object... params) {
+        return IntStream.range(0, params.length / 2)
+                .mapToObj(i -> params[2 * i] + " => '" + params[2 * i + 1] + "'")
+                .collect(joining(", ", "AVRO_FILE(", ")"));
     }
 
     private static Object[] getAllValues(GenericRecord record) {

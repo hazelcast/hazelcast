@@ -134,8 +134,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     @BeforeClass
     public static void setup() throws Exception {
-        setupWithClient(1,
-                smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"), null);
+        setup(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
         createSchemaRegistry();
     }
 
@@ -794,7 +793,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         insertRecord(1, "Alice");
 
-        assertRowsEventuallyInAnyOrder(client(),
+        assertRowsEventuallyInAnyOrder(
                 "SELECT __key, this FROM " + name,
                 List.of(new Row(
                         new GenericRecordBuilder(ID_SCHEMA).set("id", 1).build(),
