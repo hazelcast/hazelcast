@@ -40,6 +40,7 @@ public interface CPMap<K, V> extends DistributedObject {
      * @param value non-null value of the entry
      * @return null if {@code key} had no previous mapping, otherwise the previous value associated with {@code key}
      * @throws NullPointerException when {@code key} or {@code value} is null
+     * @throws com.hazelcast.core.HazelcastException when an issue arose while performing the {@code put}
      */
     V put(@Nonnull K key, @Nonnull V value);
 
@@ -53,6 +54,7 @@ public interface CPMap<K, V> extends DistributedObject {
      * @param key non-null key of the entry
      * @param value non-null value of the entry
      * @throws NullPointerException when {@code key} or {@code value} is null
+     * @throws com.hazelcast.core.HazelcastException when an issue arose while performing the {@code set}
      */
     void set(@Nonnull K key, @Nonnull V value);
 
