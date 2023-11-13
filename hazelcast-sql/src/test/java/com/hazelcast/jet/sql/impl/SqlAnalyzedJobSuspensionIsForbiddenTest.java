@@ -32,14 +32,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
 
 /**
  * Note: We prepared a separate test suite to prevent tests to be flaky
- *  because of {@link AnalyzeStatementTest} inherit {@link SimpleTestInClusterSupport},
- *  where cluster members are shared between tests.
+ *  because of {@link AnalyzeStatementTest} inherits {@link SimpleTestInClusterSupport},
+ *  where cluster members are shared between tests. For tests with streaming queries
+ *  it's unlikely to have them running on the same shared instances.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -53,26 +55,34 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
 
     @Test
     public void when_suspend_isForbidden() {
-        // When
+        // Given
         Job job = assertRunQuery();
 
+        // When
+        job.suspend();
+
         // Then
-        assertThatThrownBy(job::suspend)
-                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
+        assertThatThrownBy(() -> job.getFuture().get())
+                .isInstanceOf(CancellationException.class);
+        // Note: this exception doesn't have message.
     }
 
     @Test
     public void when_restart_isForbidden() {
-        // When
+        // Given
         Job job = assertRunQuery();
 
+        // When
+        job.restart();
+
         // Then
-        assertThatThrownBy(job::restart)
-                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
+        assertThatThrownBy(() -> job.getFuture().get())
+                .isInstanceOf(CancellationException.class);
+        // Note: this exception doesn't have message.
     }
 
     @Test
-    public void test_changedClusterState() {
+    public void test_changedClusterState_passive() {
         // When
         Job job = assertRunQuery();
 

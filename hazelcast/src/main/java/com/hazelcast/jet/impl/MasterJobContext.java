@@ -455,7 +455,8 @@ public class MasterJobContext {
         }
 
         if (!Util.checkJobIsAllowedToBeSuspended(mode, mc.jobConfig())) {
-            return tuple2(executionCompletionFuture, "Cannot suspend or restart non-suspendable job");
+            // We cancel the job if it is not allowed to be suspended.
+            mode = CANCEL_FORCEFUL;
         }
 
         JobStatus localStatus;

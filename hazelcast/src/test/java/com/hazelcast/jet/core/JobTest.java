@@ -798,15 +798,15 @@ public class JobTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
 
-        // When
         Job job = instance().getJet().newJob(dag, jobConfig);
 
-        // Then
+        // When
         assertJobStatusEventually(job, RUNNING);
-        assertThatThrownBy(job::suspend)
-                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
+        job.suspend();
 
-        cancelAndJoin(job);
+        // Then
+        assertThatThrownBy(() -> job.getFuture().get())
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
@@ -816,15 +816,15 @@ public class JobTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
 
-        // When
         Job job = instance().getJet().newJob(dag, jobConfig);
 
-        // Then
+        // When
         assertJobStatusEventually(job, RUNNING);
-        assertThatThrownBy(job::restart)
-                .hasMessageContaining("Cannot suspend or restart non-suspendable job");
+        job.suspend();
 
-        cancelAndJoin(job);
+        // Then
+        assertThatThrownBy(() -> job.getFuture().get())
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
