@@ -34,7 +34,6 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -836,17 +835,15 @@ public class JobTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig().setName("foo").setArgument(KEY_JOB_IS_SUSPENDABLE, false);
 
         // When
-        Job activeJob = instance().getJet().newJob(streamingDag, jobConfig);
+        Job job = instance().getJet().newJob(streamingDag, jobConfig);
 
         // Then
-        assertJobStatusEventually(activeJob, RUNNING);
+        assertJobStatusEventually(job, RUNNING);
         instance().getCluster().changeClusterState(ClusterState.PASSIVE);
         instance().getCluster().changeClusterState(ClusterState.ACTIVE);
-        assertJobStatusEventually(activeJob, FAILED);
 
-        JobResult jobResult = getJetServiceBackend(instance()).getJobRepository().getJobResult(activeJob.getId());
-        assertNotNull(jobResult);
-        assertContains(jobResult.getFailureText(), "CancellationException");
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
