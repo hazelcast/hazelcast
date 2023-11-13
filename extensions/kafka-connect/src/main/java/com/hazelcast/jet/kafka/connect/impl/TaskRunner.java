@@ -28,40 +28,38 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.emptyList;
 
-interface TaskRunner {
-    List<SourceRecord> poll();
-    void start();
-    void commit();
-
-    void commitRecord(SourceRecord rec);
-    void stop();
-
-    State createSnapshot();
-
-    void restoreSnapshot(State state);
-
-    String name();
-}
-
-class DefaultTaskRunner implements TaskRunner {
+class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
     private final SourceTaskFactory sourceTaskFactory;
-    private final Map<String, String> taskConfig;
+    final int processorIndex;
+    private Map<String, String> taskConfig;
     private volatile boolean running;
     private SourceTask task;
+    private final boolean noOp;
 
-    DefaultTaskRunner(String name, State state, Map<String, String> taskConfig, SourceTaskFactory sourceTaskFactory) {
+    TaskRunner(String name) {
+        this(name, null, null, -1, null, true);
+    }
+    TaskRunner(String name, State state, Map<String, String> taskConfig, int processorIndex, SourceTaskFactory sourceTaskFactory) {
+        this(name, state, taskConfig, processorIndex, sourceTaskFactory,false);
+    }
+    TaskRunner(String name, State state, Map<String, String> taskConfig, int processorIndex, SourceTaskFactory sourceTaskFactory, boolean noOp) {
         this.name = name;
         this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
         this.taskConfig = taskConfig;
+        this.noOp = noOp;
+        this.processorIndex = processorIndex;
+        start();
     }
 
-    @Override
     public List<SourceRecord> poll() {
+        if (noOp) {
+            return emptyList();
+        }
         if (running) {
             return doPoll();
         } else {
@@ -69,7 +67,6 @@ class DefaultTaskRunner implements TaskRunner {
         }
     }
 
-    @Override
     public void stop() {
         try {
             taskLifecycleLock.lock();
@@ -94,8 +91,17 @@ class DefaultTaskRunner implements TaskRunner {
         }
     }
 
-    @Override
-    public void start() {
+    void restartTask(Map<String, String> newConfig) {
+        this.taskConfig = newConfig;
+        try {
+            stop();
+        } catch (Exception ex) {
+            LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
+        }
+        start();
+    }
+
+    private void start() {
         try {
             taskLifecycleLock.lock();
             if (!running) {
@@ -116,8 +122,7 @@ class DefaultTaskRunner implements TaskRunner {
         }
     }
 
-    @Override
-    public void commit() {
+    void commit() {
         if (running) {
             try {
                 task.commit();
@@ -128,8 +133,7 @@ class DefaultTaskRunner implements TaskRunner {
         }
     }
 
-    @Override
-    public void commitRecord(SourceRecord rec) {
+    void commitRecord(SourceRecord rec) {
         state.commitRecord(rec);
         try {
             if (running) {
@@ -141,19 +145,16 @@ class DefaultTaskRunner implements TaskRunner {
         }
     }
 
-    @Override
     public State createSnapshot() {
         State snapshot = new State();
         snapshot.load(state);
         return snapshot;
     }
 
-    @Override
     public void restoreSnapshot(State state) {
         this.state.load(state);
     }
 
-    @Override
     public String name() {
         return name;
     }
@@ -170,41 +171,4 @@ class DefaultTaskRunner implements TaskRunner {
         SourceTask create();
     }
 
-}
-
-class NoOpRunner implements TaskRunner {
-    @Override
-    public List<SourceRecord> poll() {
-        return emptyList();
-    }
-
-    @Override
-    public void stop() {
-    }
-
-    @Override
-    public void start() {
-    }
-
-    @Override
-    public void commit() {
-    }
-
-    @Override
-    public void commitRecord(SourceRecord rec) {
-    }
-
-    @Override
-    public State createSnapshot() {
-        return null;
-    }
-
-    @Override
-    public void restoreSnapshot(State state) {
-    }
-
-    @Override
-    public String name() {
-        return null;
-    }
 }

@@ -30,7 +30,7 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processSupplier;
+import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectPS.kafkaConnectPS;
 
 /**
  * Contains factory methods to create a Kafka Connect source.
@@ -89,7 +89,7 @@ public final class KafkaConnectSources {
         }
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
-                eventTimePolicy -> ProcessorMetaSupplier.of(processSupplier(properties, eventTimePolicy,
+                eventTimePolicy -> ProcessorMetaSupplier.of(kafkaConnectPS(properties, eventTimePolicy,
                         projectionFn)));
     }
 

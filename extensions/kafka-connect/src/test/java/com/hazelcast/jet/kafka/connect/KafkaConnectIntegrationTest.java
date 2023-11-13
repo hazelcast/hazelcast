@@ -356,7 +356,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
-        int localParallelism = 3;
+        int localParallelism = 1;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");

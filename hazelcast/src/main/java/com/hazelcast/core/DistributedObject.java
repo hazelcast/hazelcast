@@ -91,4 +91,12 @@ public interface DistributedObject {
     default @Nonnull DestroyEventContext getDestroyContextForTenant() {
         return () -> { };
     }
+
+    /**
+     * Returns true if the object is an internal Hazelcast object, not meant to be directly used by clients.
+     * Such objects will not be listed by {@link HazelcastInstance#getDistributedObjects()}.
+     */
+    default boolean isHazelcastInternal() {
+        return false;
+    }
 }

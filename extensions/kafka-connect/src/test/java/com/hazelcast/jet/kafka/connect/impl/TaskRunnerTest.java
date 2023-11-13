@@ -36,6 +36,7 @@ import java.util.Map;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -52,7 +53,7 @@ public class TaskRunnerTest {
     @Before
     public void setUp() {
         connector.start(minimalProperties());
-        taskRunner = new DefaultTaskRunner("some-task-name", new State(), dummyTaskConfig(), DummyTask::new);
+        taskRunner = new TaskRunner("some-task-name", new State(), dummyTaskConfig(), 0, DummyTask::new);
     }
 
     @Test
@@ -64,7 +65,7 @@ public class TaskRunnerTest {
 
     @Test
     public void should_not_poll_data_without_task_config() {
-        taskRunner = new DefaultTaskRunner("some-task-name", new State(), dummyTaskConfig(), DummyTask::new);
+        taskRunner = new TaskRunner("some-task-name", new State(), emptyMap(), 0, DummyTask::new);
         assertPolledRecordsSize(0);
     }
 
