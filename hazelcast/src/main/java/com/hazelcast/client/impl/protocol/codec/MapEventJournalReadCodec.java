@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
+ * the minimum required number of items in the response, the maximum number of items
  * in the response, a predicate that the events should pass and a projection to
  * apply to the events in the journal.
  * If the event journal currently contains less events than {@code minSize}, the
@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and no projection is applied.
  */
 @SuppressWarnings("unused")
-@Generated("a699315c1120fb4a95a7398e0c88b4b0")
+@Generated("672b19f4a7355a280fc06b317804ee81")
 public final class MapEventJournalReadCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
