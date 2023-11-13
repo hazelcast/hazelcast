@@ -88,13 +88,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -812,7 +812,12 @@ public final class Util {
         public static final Identity INSTANCE = new Identity<>();
 
         @Override
-        public T applyEx(T t) throws Exception {
+        public T apply(T t) {
+            return t;
+        }
+
+        @Override
+        public T applyEx(T t) {
             return t;
         }
 
