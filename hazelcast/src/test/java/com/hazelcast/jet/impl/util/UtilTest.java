@@ -38,12 +38,6 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
-import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
@@ -325,27 +319,5 @@ public class UtilTest {
 
         JobConfig suspendableJobConfig = new JobConfig();
         assertTrue(Util.isJobSuspendable(suspendableJobConfig));
-    }
-
-    @Test
-    public void test_checkJobIsAllowedToBeSuspended() {
-        // Non-suspendable Job
-        JobConfig jc = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
-        assertFalse(Util.checkJobIsAllowedToBeSuspended(RESTART_GRACEFUL, jc));
-        assertFalse(Util.checkJobIsAllowedToBeSuspended(RESTART_FORCEFUL, jc));
-        assertFalse(Util.checkJobIsAllowedToBeSuspended(SUSPEND_GRACEFUL, jc));
-        assertFalse(Util.checkJobIsAllowedToBeSuspended(SUSPEND_FORCEFUL, jc));
-
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_GRACEFUL, jc));
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_FORCEFUL, jc));
-
-        // Default Job
-        JobConfig defaultJC = new JobConfig();
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(RESTART_GRACEFUL, defaultJC));
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(RESTART_FORCEFUL, defaultJC));
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(SUSPEND_GRACEFUL, defaultJC));
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(SUSPEND_FORCEFUL, defaultJC));
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_GRACEFUL, defaultJC));
-        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_FORCEFUL, defaultJC));
     }
 }

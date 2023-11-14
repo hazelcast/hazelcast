@@ -28,7 +28,6 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
@@ -106,6 +105,7 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
+import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.CANCEL;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
@@ -448,15 +448,18 @@ public class MasterJobContext {
             boolean userInitiated
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
+
+        // Job is not allowed to be suspended of it is not suspendable in config
+        // and termination mode is SUSPEND or RESTART.
+        if (!Util.isJobSuspendable(mc.jobConfig()) && mode.actionAfterTerminate() != CANCEL) {
+            // We cancel the job if it is not allowed to be suspended.
+            mode = CANCEL_FORCEFUL;
+        }
+
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
         if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
             mode = mode.withoutTerminalSnapshot();
-        }
-
-        if (!Util.checkJobIsAllowedToBeSuspended(mode, mc.jobConfig())) {
-            // We cancel the job if it is not allowed to be suspended.
-            mode = CANCEL_FORCEFUL;
         }
 
         JobStatus localStatus;

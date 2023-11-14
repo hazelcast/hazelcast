@@ -36,9 +36,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.TerminationMode;
-import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
-import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -142,14 +139,6 @@ public final class Util {
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 
     private Util() {
-    }
-
-    public static boolean checkJobIsAllowedToBeSuspended(TerminationMode terminationMode, JobConfig jobConfig) {
-        if (isJobSuspendable(jobConfig)) {
-            return true;
-        }
-
-        return terminationMode.actionAfterTerminate() == ActionAfterTerminate.CANCEL;
     }
 
     public static boolean isJobSuspendable(JobConfig jobConfig) {
