@@ -27,11 +27,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
-
 class FunctionsImpl {
+    // utility class
+    private FunctionsImpl() {
+    }
+
     @SerializableByConvention
-    static class ComposedSecuredFunction<F extends SecuredFunction, G extends SecuredFunction>
+    static class ComposedSecuredFunction<F extends SecuredFunction & Serializable,
+                                         G extends SecuredFunction & Serializable>
             implements SecuredFunction, Serializable {
         protected final F before;
         protected final G after;
@@ -47,6 +50,20 @@ class FunctionsImpl {
             List<Permission> beforeP = before.permissions();
             List<Permission> afterP = after.permissions();
             return sumPermissions(afterP, beforeP);
+        }
+
+        @Nullable
+        private static List<Permission> sumPermissions(@Nullable List<Permission> afterP, @Nullable List<Permission> beforeP) {
+            if (afterP == null || afterP.isEmpty()) {
+                return beforeP;
+            } else if (beforeP == null || beforeP.isEmpty()) {
+                return afterP;
+            } else {
+                List<Permission> permissions = new ArrayList<>(afterP.size() + beforeP.size());
+                permissions.addAll(beforeP);
+                permissions.addAll(afterP);
+                return permissions;
+            }
         }
     }
 
@@ -111,19 +128,6 @@ class FunctionsImpl {
         @Override
         public R getEx() throws Exception {
             return after.applyEx(before.getEx());
-        }
-    }
-
-    private static List<Permission> sumPermissions(@Nullable List<Permission> afterP, @Nullable List<Permission> beforeP) {
-        if (isEmpty(afterP)) {
-            return beforeP;
-        } else if (isEmpty(beforeP)) {
-            return afterP;
-        } else {
-            List<Permission> permissions = new ArrayList<>(afterP.size() + beforeP.size());
-            permissions.addAll(beforeP);
-            permissions.addAll(afterP);
-            return permissions;
         }
     }
 }
