@@ -6997,7 +6997,7 @@ public class ClientCompatibilityTest_2_7 {
     public void test_CPMapCompareAndSetCodec_decodeResponse() {
         int fileClientMessageIndex = 888;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aBoolean, CPMapCompareAndSetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(aData, CPMapCompareAndSetCodec.decodeResponse(fromFile)));
     }
 
     @Test

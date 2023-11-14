@@ -7877,7 +7877,7 @@ public class MemberCompatibilityNullTest_2_7 {
     @Test
     public void test_CPMapCompareAndSetCodec_encodeResponse() {
         int fileClientMessageIndex = 888;
-        ClientMessage encoded = CPMapCompareAndSetCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = CPMapCompareAndSetCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
