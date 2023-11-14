@@ -25,11 +25,11 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.SimpleMemberImpl;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.JavaSerializer;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -52,7 +52,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
@@ -640,23 +639,13 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             if (!wellKnownClasses.contains(name)) {
                 return super.findClass(name);
-            }
-            String path = name.replace('.', '/') + ".class";
-            InputStream in = null;
-            try {
-                in = getParent().getResourceAsStream(path);
-                ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                byte[] buf = new byte[1024];
-                int read;
-                while ((read = in.read(buf)) != -1) {
-                    bout.write(buf, 0, read);
+            } else {
+                try {
+                    byte[] code = ReflectionUtils.getClassContent(name, getParent());
+                    return defineClass(name, code, 0, code.length);
+                } catch (IOException e) {
+                    return super.findClass(name);
                 }
-                byte[] code = bout.toByteArray();
-                return defineClass(name, code, 0, code.length);
-            } catch (IOException e) {
-                return super.findClass(name);
-            } finally {
-                IOUtil.closeResource(in);
             }
         }
     }
