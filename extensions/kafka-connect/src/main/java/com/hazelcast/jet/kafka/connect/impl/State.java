@@ -33,9 +33,11 @@ class State implements Serializable {
      * See {@link SourceRecord} for more information regarding the format.
      */
     private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+    private final Map<Map<String, ?>, Long> partitionsToLastOffsetTime;
 
     State() {
         this.partitionsToOffset = new ConcurrentHashMap<>();
+        this.partitionsToLastOffsetTime = new ConcurrentHashMap<>();
     }
 
     /**
@@ -43,14 +45,32 @@ class State implements Serializable {
      */
     State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
         this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
+        this.partitionsToLastOffsetTime = new ConcurrentHashMap<>();
     }
 
     void commitRecord(SourceRecord rec) {
-        partitionsToOffset.put(rec.sourcePartition(), rec.sourceOffset());
+        Map<String, ?> key = rec.sourcePartition();
+        partitionsToOffset.put(key, rec.sourceOffset());
+        partitionsToLastOffsetTime.put(key, System.currentTimeMillis());
     }
 
     void load(State state) {
+        for (Map<String, ?> partition : partitionsToOffset.keySet()) {
+            if (containsNewerStateFor(partition, state)) {
+                partitionsToOffset.put(partition, state.partitionsToOffset.get(partition));
+                partitionsToLastOffsetTime.put(partition, state.partitionsToLastOffsetTime.get(partition));
+            }
+        }
         partitionsToOffset.putAll(state.partitionsToOffset);
+    }
+
+    boolean containsNewerStateFor(Map<String, ?> partition, State other) {
+        Long thisLastTime = partitionsToLastOffsetTime.get(partition);
+        Long otherLastTime = other.partitionsToLastOffsetTime.get(partition);
+        if (thisLastTime == null) {
+            return false;
+        }
+        return otherLastTime == null || thisLastTime.longValue() == otherLastTime.longValue();
     }
 
     Map<String, ?> getOffset(Map<String, ?> partition) {

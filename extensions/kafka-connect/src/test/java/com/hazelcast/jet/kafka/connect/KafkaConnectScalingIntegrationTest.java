@@ -185,7 +185,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void testScalingOfHazelcast() throws Exception {
+    public void testScalingOfHazelcastUp() throws Exception {
         int localParallelism = 1;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
@@ -254,6 +254,83 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(instances);
+
+            // +1, because we inserted twice as much to parallel_items_1
+            assertThat(values.values()).hasSize((TABLE_COUNT + 1) * ITEM_COUNT);
+        });
+    }
+
+    @Test
+    public void testScalingOfHazelcastDown() throws Exception {
+        int localParallelism = 1;
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
+        randomProperties.setProperty("mode", "incrementing");
+        String connectionUrl = mysql.getJdbcUrl();
+        randomProperties.setProperty("connection.url", connectionUrl);
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
+        randomProperties.setProperty("incrementing.column.name", "id");
+        randomProperties.setProperty("table.whitelist", TESTED_TABLES);
+        randomProperties.setProperty("table.poll.interval.ms", "5000");
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance[] instances = createHazelcastInstances(config, 3);
+        HazelcastInstance instance = instances[0];
+        rangeClosed(1, TABLE_COUNT).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
+
+        IMap<String, Integer> processors = instance.getMap("processors_" + randomName());
+        IMap<String, String> processorInstances = instance.getMap("processorInstances_" + randomName());
+        IMap<String, String> values = instance.getMap("values" + randomName());
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<String> mappedValueStage = pipeline
+                .readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps()
+                .setLocalParallelism(localParallelism);
+
+        mappedValueStage
+                .map(e -> tuple2(e, e))
+                .writeTo(map(values));
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(Context::globalProcessorIndex),
+                        (ctx, item) -> Map.entry(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(map(processors));
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(ctx -> ctx.hazelcastInstance().getName()),
+                        (ctx, item) -> Map.entry(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(map(processorInstances));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        instance.getJet().newJob(pipeline, jobConfig);
+
+        assertTrueEventually(() -> {
+            assertThat(new HashSet<>(processors.values())).containsExactlyInAnyOrder(0, 1, 2);
+
+            assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
+        });
+
+        instances[2].shutdown();
+        assertTrueEventually(() -> assertThat(instance.getCluster().getMembers()).hasSize(2));
+        insertItems(connectionUrl, "parallel_items_1");
+
+        final String[] instancesNames = { instance.getName(), instances[1].getName() };
+        var expectedProcessorIndexArray = new Integer[] { 0, 1 };
+        assertTrueEventually(() -> {
+            Set<Integer> array = new TreeSet<>(processors.values());
+            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+
+            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
+            assertThat(instanceNames).containsExactlyInAnyOrder(instancesNames);
 
             // +1, because we inserted twice as much to parallel_items_1
             assertThat(values.values()).hasSize((TABLE_COUNT + 1) * ITEM_COUNT);

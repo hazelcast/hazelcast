@@ -142,10 +142,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        boolean forThisProcessor = snapshotKey().equals(key);
-        if (forThisProcessor) {
-            taskRunner.restoreSnapshot((State) value);
-        }
+        taskRunner.restoreSnapshot((State) value);
     }
 
     @Override
