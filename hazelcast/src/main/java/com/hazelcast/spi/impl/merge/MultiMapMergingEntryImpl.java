@@ -77,7 +77,7 @@ public class MultiMapMergingEntryImpl<K, V> implements MultiMapMergeTypes<K, V>,
     }
 
     @Override
-    public Collection<V> getValue() {
+    public Collection<V> getDeserializedValue() {
         Collection<Object> deserializedValues = new ArrayList<>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));

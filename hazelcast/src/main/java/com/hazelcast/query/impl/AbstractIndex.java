@@ -73,18 +73,20 @@ public abstract class AbstractIndex implements InternalIndex {
             Extractors extractors,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            String mapName) {
+            String mapName,
+            int partitionId) {
         this.config = config;
         this.components = IndexUtils.getComponents(config);
         this.ordered = config.getType() == IndexType.SORTED;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
-        this.indexStore = createIndexStore(node, config, stats, mapName);
+        this.indexStore = createIndexStore(node, config, stats, mapName, partitionId);
         this.stats = stats;
     }
 
-    protected abstract IndexStore createIndexStore(Node node, IndexConfig config, PerIndexStats stats, String mapName);
+    protected abstract IndexStore createIndexStore(Node node, IndexConfig config,
+                                                   PerIndexStats stats, String mapName, int partitionId);
 
     @Override
     public String getName() {

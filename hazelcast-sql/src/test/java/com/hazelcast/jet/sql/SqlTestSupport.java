@@ -184,14 +184,14 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * Assert the contents of a given table via Hazelcast SQL engine
      */
     public static void assertRowsAnyOrder(String sql, Row... rows) {
-        assertRowsAnyOrder(sql, Arrays.asList(rows));
+        assertRowsAnyOrder(sql, List.of(rows));
     }
 
     /**
      * Assert the contents of a given table via Hazelcast SQL engine
      */
     public static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
-        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
+        assertRowsAnyOrder(sql, arguments, List.of(rows));
     }
 
     public static void assertRowsEventuallyInAnyOrder(
@@ -770,7 +770,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         return ExpressionEvalContext.createContext(
-                Arrays.asList(args),
+                asList(args),
                 instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngineImpl.class),
                 TEST_SS,
                 null
@@ -809,6 +809,72 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
         return value == null || value instanceof Boolean || value instanceof Number
                 ? String.valueOf(value) : "'" + value + "'";
+    }
+
+    public static class SqlInsert {
+        public final String mapping;
+        public final List<String> fields = new ArrayList<>();
+        public final List<String> literals = new ArrayList<>();
+        public final List<Object> params = new ArrayList<>();
+
+        public SqlInsert(String mapping) {
+            this.mapping = mapping;
+        }
+
+        public SqlInsert literals(Object... values) {
+            for (int i = 0; i < values.length / 2; i++) {
+                fields.add((String) values[2 * i]);
+                literals.add(toSQL(values[2 * i + 1]));
+            }
+            return this;
+        }
+
+        public SqlInsert params(Object... values) {
+            for (int i = 0; i < values.length / 2; i++) {
+                fields.add((String) values[2 * i]);
+                literals.add("?");
+                params.add(values[2 * i + 1]);
+            }
+            return this;
+        }
+
+        public void execute() {
+            execute(instance());
+        }
+
+        public void execute(HazelcastInstance instance) {
+            instance.getSql().execute("INSERT INTO " + mapping
+                    + (fields.isEmpty() ? "" : " (" + String.join(", ", fields) + ")")
+                    + " VALUES (" + String.join(", ", literals) + ")", params.toArray());
+        }
+
+        public class RowValue {
+            private final String field;
+            private final List<String> literals = new ArrayList<>();
+            private final List<Object> params = new ArrayList<>();
+
+            RowValue(String field) {
+                this.field = field;
+            }
+
+            public RowValue literals(Object... values) {
+                Arrays.stream(values).map(SqlTestSupport::toSQL).forEach(literals::add);
+                return this;
+            }
+
+            public RowValue params(Object... values) {
+                literals.addAll(Collections.nCopies(values.length, "?"));
+                params.addAll(asList(values));
+                return this;
+            }
+
+            public SqlInsert end() {
+                fields.add(field);
+                SqlInsert.this.literals.add("(" + String.join(", ", literals) + ")");
+                SqlInsert.this.params.addAll(params);
+                return SqlInsert.this;
+            }
+        }
     }
 
     public static class SqlMapping extends SqlStructure<SqlMapping> {
@@ -877,7 +943,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         public T fields(String... fields) {
-            this.fields.addAll(asList(fields));
+            this.fields.addAll(List.of(fields));
             return me();
         }
 
@@ -976,7 +1042,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * - It's not easy to create SqlRow instance
      */
     public static final class Row {
-
         private final Object[] values;
 
         public Row(SqlRow row) {

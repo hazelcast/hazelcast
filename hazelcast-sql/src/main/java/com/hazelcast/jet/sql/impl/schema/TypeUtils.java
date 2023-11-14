@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -50,7 +51,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORT
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.inlineSchema;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver.loadClass;
@@ -242,13 +242,7 @@ public final class TypeUtils {
                 throw QueryException.error(
                         "Either a column list or an inline schema is required to create Avro-based types");
             }
-            return schema.getFields().stream().map(field -> {
-                Schema fieldSchema = unwrapNullableType(field.schema());
-                if (fieldSchema.getType() == Schema.Type.RECORD) {
-                    throw QueryException.error("Column list is required to create nested fields");
-                }
-                return new TypeField(field.name(), AVRO_TO_SQL.getOrDefault(fieldSchema.getType()));
-            }).collect(toList());
+            return KvMetadataAvroResolver.resolveFields(schema, TypeField::new).collect(toList());
         }
 
         @Override

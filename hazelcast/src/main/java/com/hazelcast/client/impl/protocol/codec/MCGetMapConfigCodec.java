@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the config of a map on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("d2dcbc253244ff224513869a94e5df06")
+@Generated("96721e5ff2d1454ce78a32a423967728")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -151,7 +151,7 @@ public final class MCGetMapConfigCodec {
         public java.lang.String mergePolicy;
 
         /**
-         * Global indexs of the map.
+         * Global indexes of the map.
          */
         public java.util.List<com.hazelcast.config.IndexConfig> globalIndexes;
 

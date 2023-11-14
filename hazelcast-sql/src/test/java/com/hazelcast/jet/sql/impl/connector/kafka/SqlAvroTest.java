@@ -33,6 +33,7 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -196,38 +197,34 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void when_inlineSchemaUsedWithSchemaRegistry_then_fail() {
-        assumeTrue(useSchemaRegistry);
-        assertThatThrownBy(() ->
-                kafkaMapping("kafka")
-                        .fields("id INT EXTERNAL NAME \"__key.id\"",
-                                "name VARCHAR")
-                        .options(OPTION_VALUE_AVRO_SCHEMA, NAME_SCHEMA)
-                        .create())
-                .hasMessage("Inline schema cannot be used with schema registry");
-    }
-
-    @Test
-    public void when_schemaIsNotRecord_then_fail() {
+    public void when_mappingOrTypeSchemaHasMissingField_then_fail() {
         assumeFalse(useSchemaRegistry);
-        assertThatThrownBy(() ->
-                kafkaMapping("kafka", ID_SCHEMA, Schema.create(Schema.Type.STRING))
-                        .fields("id INT EXTERNAL NAME \"__key.id\"",
-                                "name VARCHAR")
-                        .create())
-                .hasMessage("Schema must be an Avro record");
-    }
+        new SqlType("Parent").fields("name VARCHAR", "phone VARCHAR").create();
 
-    @Test
-    public void when_schemaHasMissingField_then_fail() {
-        assumeFalse(useSchemaRegistry);
+        Schema parentSchema = SchemaBuilder.record("Parent").fields()
+                .requiredString("name")
+                .endRecord();
+        Schema studentSchema = SchemaBuilder.record("Student").fields()
+                .requiredString("name")
+                .name("parent").type(parentSchema).noDefault()
+                .endRecord();
+
         assertThatThrownBy(() ->
-                kafkaMapping("kafka", ID_SCHEMA, NAME_SCHEMA)
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
                         .fields("id INT EXTERNAL NAME \"__key.id\"",
                                 "name VARCHAR",
-                                "ssn BIGINT")
+                                "address VARCHAR",
+                                "parent Parent")
                         .create())
-                .hasMessage("Field 'ssn' does not exist in schema");
+                .hasMessage("Field 'address' does not exist in schema");
+
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
+                        .fields("id INT EXTERNAL NAME \"__key.id\"",
+                                "name VARCHAR",
+                                "parent Parent")
+                        .create())
+                .hasMessage("Field 'phone' does not exist in schema");
     }
 
     @Test
@@ -399,6 +396,114 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertThatThrownBy(() -> insertRecord(6, Long.MAX_VALUE)).hasMessageContaining(
                 "Not in union [\"null\",\"boolean\",\"int\"]: " + Long.MAX_VALUE + " (Long) (field=info)");
+    }
+
+    @Test
+    public void test_fieldResolution() {
+        assumeFalse(useSchemaRegistry);
+
+        // Test field resolution for top-level fields
+        Schema childSchema = SchemaBuilder.record("child").fields()
+                .requiredBoolean("requiredBoolean")
+                .nullableBoolean("nullableBoolean", true)
+                .optionalBoolean("optionalBoolean")
+                .requiredInt("requiredInt")
+                .nullableInt("nullableInt", 1)
+                .optionalInt("optionalInt")
+                .requiredLong("requiredLong")
+                .nullableLong("nullableLong", 1L)
+                .optionalLong("optionalLong")
+                .requiredFloat("requiredFloat")
+                .nullableFloat("nullableFloat", 1F)
+                .optionalFloat("optionalFloat")
+                .requiredDouble("requiredDouble")
+                .nullableDouble("nullableDouble", 1D)
+                .optionalDouble("optionalDouble")
+                .requiredString("requiredString")
+                .nullableString("nullableString", "A")
+                .optionalString("optionalString")
+                .name("requiredUnion").type().unionOf().intType().and().stringType().endUnion().noDefault()
+                .name("nullableUnion").type().unionOf().intType().and().stringType().and().nullType().endUnion()
+                        .intDefault(1)
+                .name("optionalUnion").type().unionOf().nullType().and().intType().and().stringType().endUnion()
+                        .nullDefault()
+                .endRecord();
+
+        String name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, childSchema).create();
+
+        new SqlInsert(name)
+                .literals("id", 1,
+                          "requiredBoolean", false,
+                          "requiredInt", 0,
+                          "requiredLong", 0L,
+                          "requiredFloat", 0F,
+                          "requiredDouble", 0D,
+                          "requiredString", "",
+                          "requiredUnion", 0)
+                // TODO Remove nullable fields after introducing RexUnset
+                .literals("nullableBoolean", true,
+                          "nullableInt", 1,
+                          "nullableLong", 1L,
+                          "nullableFloat", 1F,
+                          "nullableDouble", 1D,
+                          "nullableString", "A",
+                          "nullableUnion", 1)
+                .execute();
+
+        Object[] allRow = {
+                1,
+                false, true, null,
+                0, 1, null,
+                0L, 1L, null,
+                0F, 1F, null,
+                0D, 1D, null,
+                "", "A", null,
+                0, 1, null
+        };
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                List.of(new Row(allRow))
+        );
+
+        // Test field resolution for nested fields
+        Schema parentSchema = SchemaBuilder.record("parent").fields()
+                .name("requiredChild").type(childSchema).noDefault()
+                .name("nullableChild").type(SchemaBuilder.nullable().type(childSchema))
+                        .withDefault(new GenericRecordBuilder(childSchema)
+                                .set("requiredBoolean", false)
+                                .set("requiredInt", 0)
+                                .set("requiredLong", 0L)
+                                .set("requiredFloat", 0F)
+                                .set("requiredDouble", 0D)
+                                .set("requiredString", "")
+                                .set("requiredUnion", 0)
+                                .build())
+                .name("optionalChild").type().optional().type(childSchema)
+                .endRecord();
+
+        new SqlType("Child").create();
+        name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, parentSchema)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "requiredChild Child",
+                        "nullableChild Child",
+                        "optionalChild Child")
+                .create();
+
+        Object[] valueRow = copyOfRange(allRow, 1, allRow.length);
+        new SqlInsert(name)
+                .literals("id", 1,
+                          "requiredChild", valueRow)
+                // TODO Remove nullableChild after introducing RexUnset
+                .literals("nullableChild", valueRow)
+                .execute();
+
+        GenericRecord record = createRecord(childSchema, valueRow);
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                List.of(new Row(1, record, record, null))
+        );
     }
 
     @Test
@@ -640,12 +745,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                         null
                 ))
         );
-    }
-
-    @Test
-    public void when_createMappingNoColumns_then_fail() {
-        assertThatThrownBy(() -> kafkaMapping("kafka", ID_SCHEMA, NAME_SCHEMA).create())
-                .hasMessage("Column list is required for Avro format");
     }
 
     @Test

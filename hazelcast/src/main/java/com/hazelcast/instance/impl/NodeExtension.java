@@ -402,7 +402,7 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
-     * Creates the relevant CP subsystem implementation.
+     * Creates the relevant {@link CPSubsystem}.
      */
     CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
 

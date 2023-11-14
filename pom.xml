@@ -91,7 +91,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
-        <aws.sdk.version>1.12.582</aws.sdk.version>
+        <aws.sdk.version>1.12.584</aws.sdk.version>
         <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.164</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -155,7 +155,7 @@
         <testcontainers.version>1.19.1</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
-        <archunit.version>1.1.0</archunit.version>
+        <archunit.version>1.2.0</archunit.version>
         <errorprone.version>2.23.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
         <kubernetes-server-mock.version>6.9.2</kubernetes-server-mock.version>
@@ -1898,7 +1898,7 @@
             <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
-                <version>9.37</version>
+                <version>9.37.1</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
