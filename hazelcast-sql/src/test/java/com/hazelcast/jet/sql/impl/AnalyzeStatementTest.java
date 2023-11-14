@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Objects;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +57,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                         + "'snapshotIntervalMillis'='121', "
                         + "'initialSnapshotName'='pressF', "
                         + "'maxProcessorAccumulatedRecords'='100'"
-                        + ") SELECT * FROM test");
+                        + ") AS j SELECT * FROM test");
         assertTrue(plan.isAnalyzed());
 
         assertFalse(plan.analyzeJobConfig().isSplitBrainProtectionEnabled());
@@ -66,6 +67,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertTrue(plan.analyzeJobConfig().isMetricsEnabled());
         assertTrue(plan.analyzeJobConfig().isStoreMetricsAfterJobCompletion());
 
+        assertEquals("j", plan.analyzeJobConfig().getName());
         assertEquals(ProcessingGuarantee.EXACTLY_ONCE, plan.analyzeJobConfig().getProcessingGuarantee());
         assertEquals(121L, plan.analyzeJobConfig().getSnapshotIntervalMillis());
         assertEquals("pressF", plan.analyzeJobConfig().getInitialSnapshotName());
@@ -146,6 +148,60 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         final String deleteQuery = "DELETE FROM test WHERE this = 1 AND this IS NOT NULL";
         assertJobIsAnalyzed(deleteQuery);
         assertTrue(instance().getMap("test").isEmpty());
+    }
+
+    @Test
+    public void when_alterJobWithOptions_then_jobContinues() {
+        String query = "SELECT v, v FROM TABLE(generate_stream(1))";
+        sqlService.execute("ANALYZE AS j " + query);
+
+        // When
+        Job job = instance().getJet().getJob("j");
+        assertNotNull(job);
+        assertJobStatusEventually(job, RUNNING);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ALTER JOB " + job.getName() + " OPTIONS ('maxProcessorAccumulatedRecords'='100')"))
+                .hasMessageContaining("The job 'j' is not suspendable, can't apply ALTER JOB");
+
+        // Ensure job is running after the refusal to alter the job
+        assertJobStatusEventually(job, RUNNING);
+
+        job.cancel();
+    }
+
+    @Test
+    public void when_alterJobWithSuspension_then_jobContinues() {
+        String query = "SELECT v, v FROM TABLE(generate_stream(1))";
+        sqlService.execute("ANALYZE AS j " + query);
+
+        // When
+        Job job = instance().getJet().getJob("j");
+        assertNotNull(job);
+        assertJobStatusEventually(job, RUNNING);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ALTER JOB " + job.getName() + " SUSPEND"))
+                .hasMessageContaining("The job 'j' is not suspendable, can't apply ALTER JOB");
+
+        // Ensure job is running after the refusal to alter the job
+        assertJobStatusEventually(job, RUNNING);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ALTER JOB " + job.getName() + " RESTART"))
+                .hasMessageContaining("The job 'j' is not suspendable, can't apply ALTER JOB");
+
+        // Ensure job is running after the refusal to alter the job
+        assertJobStatusEventually(job, RUNNING);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ALTER JOB " + job.getName() + " RESUME"))
+                .hasMessageContaining("The job 'j' is not suspendable, can't apply ALTER JOB");
+
+        // Ensure job is running after the refusal to alter the job
+        assertJobStatusEventually(job, RUNNING);
+
+        job.cancel();
     }
 
     private static void assertJobIsAnalyzed(String query) {

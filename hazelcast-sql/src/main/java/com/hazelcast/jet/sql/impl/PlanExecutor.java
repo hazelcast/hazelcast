@@ -301,6 +301,13 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
+
+        if (!Util.isJobSuspendable(job.getConfig())) {
+            // We can either cancel or continue a job. An author prefer latter.
+            logger.info("Trying to alter non-suspendable job '" + plan.getJobName() + "', what is not allowed");
+            throw QueryException.error("The job '" + plan.getJobName() + "' is not suspendable, can't apply ALTER JOB");
+        }
+
         assert plan.getDeltaConfig() != null || plan.getOperation() != null;
         if (plan.getDeltaConfig() != null) {
             try {

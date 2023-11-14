@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.config.JobConfig;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
@@ -27,6 +28,7 @@ import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,12 +41,14 @@ public class SqlAnalyzeStatement extends SqlCall {
     public static final SqlSpecialOperator OPERATOR = new SqlSpecialOperator("ANALYZE", SqlKind.OTHER);
 
     private SqlNode query;
+    private final SqlIdentifier jobName;
     private final SqlNodeList options;
     private final JobConfig jobConfig = new JobConfig();
 
-    public SqlAnalyzeStatement(SqlParserPos pos, SqlNode query, SqlNodeList options) {
+    public SqlAnalyzeStatement(SqlParserPos pos, SqlNode query, @Nullable SqlIdentifier jobName, SqlNodeList options) {
         super(pos);
         this.query = query;
+        this.jobName = jobName;
         this.options = requireNonNull(options, "Options should not be null");
     }
 
@@ -59,6 +63,10 @@ public class SqlAnalyzeStatement extends SqlCall {
     @Override
     public SqlOperator getOperator() {
         return OPERATOR;
+    }
+
+    public SqlIdentifier getJobName() {
+        return jobName;
     }
 
     @Override
@@ -82,6 +90,7 @@ public class SqlAnalyzeStatement extends SqlCall {
 
     public void validate(SqlValidator validator) {
         Set<String> optionNames = new HashSet<>();
+        jobConfig.setName(jobName != null ? jobName.getSimple() : null);
         jobConfig.setMetricsEnabled(true);
         jobConfig.setStoreMetricsAfterJobCompletion(true);
 
