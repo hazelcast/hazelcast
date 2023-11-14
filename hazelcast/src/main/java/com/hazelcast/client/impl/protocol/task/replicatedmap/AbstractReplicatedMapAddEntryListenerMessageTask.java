@@ -33,7 +33,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -76,7 +76,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
     @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+        return new ReplicatedMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
     public abstract Predicate getPredicate();
