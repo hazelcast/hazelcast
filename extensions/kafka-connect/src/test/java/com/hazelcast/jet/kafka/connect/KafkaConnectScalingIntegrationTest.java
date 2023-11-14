@@ -20,15 +20,14 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -48,6 +47,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.Sinks.map;
@@ -66,7 +67,7 @@ import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class})
 public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
@@ -131,8 +132,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        rangeClosed(1, TABLE_COUNT + 1).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
-
+        rangeClosed(1, TABLE_COUNT).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -165,6 +165,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
                 .writeTo(map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
         instance.getJet().newJob(pipeline, jobConfig);
@@ -180,6 +181,82 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
             assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
 
             assertThat(values).hasSize(TABLE_COUNT * ITEM_COUNT);
+        });
+    }
+
+    @Test
+    public void testScalingOfHazelcast() throws Exception {
+        int localParallelism = 1;
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
+        randomProperties.setProperty("mode", "incrementing");
+        String connectionUrl = mysql.getJdbcUrl();
+        randomProperties.setProperty("connection.url", connectionUrl);
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
+        randomProperties.setProperty("incrementing.column.name", "id");
+        randomProperties.setProperty("table.whitelist", TESTED_TABLES);
+        randomProperties.setProperty("table.poll.interval.ms", "5000");
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        rangeClosed(1, TABLE_COUNT).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
+
+        IMap<String, Integer> processors = instance.getMap("processors_" + randomName());
+        IMap<String, String> processorInstances = instance.getMap("processorInstances_" + randomName());
+        IMap<String, String> values = instance.getMap("values" + randomName());
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<String> mappedValueStage = pipeline
+                .readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps()
+                .setLocalParallelism(localParallelism);
+
+        mappedValueStage
+                .map(e -> tuple2(e, e))
+                .writeTo(map(values));
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(Context::globalProcessorIndex),
+                        (ctx, item) -> Map.entry(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(map(processors));
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(ctx -> ctx.hazelcastInstance().getName()),
+                        (ctx, item) -> Map.entry(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(map(processorInstances));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        instance.getJet().newJob(pipeline, jobConfig);
+
+        assertTrueEventually(() -> {
+            assertThat(new HashSet<>(processors.values())).containsExactlyInAnyOrder(0);
+
+            assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
+        });
+
+        HazelcastInstance second = createHazelcastInstance(config);
+        assertTrueEventually(() -> assertThat(instance.getCluster().getMembers()).hasSize(2));
+        insertItems(connectionUrl, "parallel_items_1");
+
+        final String[] instances = { instance.getName(), second.getName() };
+        var expectedProcessorIndexArray = new Integer[] { 0, 1 };
+        assertTrueEventually(() -> {
+            Set<Integer> array = new TreeSet<>(processors.values());
+            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+
+            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
+            assertThat(instanceNames).containsExactlyInAnyOrder(instances);
+
+            // +1, because we inserted twice as much to parallel_items_1
+            assertThat(values.values()).hasSize((TABLE_COUNT + 1) * ITEM_COUNT);
         });
     }
 
@@ -217,7 +294,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
         mappedValueStage
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
-                        (ctx, item) -> Tuple2.tuple2(item, ctx))
+                        (ctx, item) -> tuple2(item, ctx))
                 .setLocalParallelism(localParallelism)
                 .writeTo(map(processors));
 
@@ -225,12 +302,12 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         IMap<String, Integer> itemToHowManyProc = instance.getMap("itemToHowManyProc" + randomName());
         mappedValueStage
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
-                        (ctx, item) ->  Tuple2.tuple2(item, ctx))
+                        (ctx, item) ->  tuple2(item, ctx))
                 .setLocalParallelism(localParallelism)
                 .groupingKey(Entry::getKey)
                 .mapStateful(AtomicInteger::new, (state, key, item) -> {
                     state.incrementAndGet();
-                    return Tuple2.tuple2(key, state.get());
+                    return tuple2(key, state.get());
                 })
                 .writeTo(map(itemToHowManyProc));
 
