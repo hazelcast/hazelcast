@@ -80,7 +80,6 @@ public class ConnectorWrapper {
         }
     }
 
-
     public void stop() {
         reconfigurationLock.lock();
         try {
@@ -112,11 +111,9 @@ public class ConnectorWrapper {
             LOGGER.fine("Creating configuration for processor " + processorIndex + " out of " + tasksMax + ", total " +
                     "configuration size " + taskConfigs.size());
         }
-        if (taskConfigs.size() <= processorIndex) {
-            return null;
-        }
-        var taskConfig = taskConfigs.get(processorIndex);
-        return taskConfig;
+        return taskConfigs.size() <= processorIndex
+                ? null
+                : taskConfigs.get(processorIndex);
     }
 
     private SourceTask createSourceTask() {

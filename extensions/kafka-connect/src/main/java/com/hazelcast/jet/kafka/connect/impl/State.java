@@ -98,7 +98,8 @@ class State implements Serializable {
     @Override
     public String toString() {
         return "State{" +
-                "partitionsToOffset=" + partitionsToOffset +
+                "partitionsToOffset=" + partitionsToOffset + ',' +
+                "partitionsToLastOffsetTime=" + partitionsToLastOffsetTime +
                 '}';
     }
 }
