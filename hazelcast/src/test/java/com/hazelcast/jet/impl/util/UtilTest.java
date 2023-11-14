@@ -320,11 +320,11 @@ public class UtilTest {
 
     @Test
     public void test_isJobSuspendable() {
-        JobConfig suspendableJobConfig = new JobConfig();
-        assertTrue(Util.isJobSuspendable(suspendableJobConfig));
-
         JobConfig nonSuspendableJobConfig = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
         assertFalse(Util.isJobSuspendable(nonSuspendableJobConfig));
+
+        JobConfig suspendableJobConfig = new JobConfig();
+        assertTrue(Util.isJobSuspendable(suspendableJobConfig));
     }
 
     @Test
