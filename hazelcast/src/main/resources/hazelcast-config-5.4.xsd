@@ -5486,7 +5486,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="max-size-mb" type="xs:positiveInteger" minOccurs="0" default="0">
+            <xs:element name="max-size-mb" type="xs:positiveInteger" minOccurs="0" default="1">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum size in MB that the constituent key-value pairs of the CPMap can total.
