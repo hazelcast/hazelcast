@@ -16,6 +16,7 @@
 
 package com.hazelcast.function;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.security.impl.function.SecuredFunction;
 
 import javax.annotation.Nonnull;
@@ -29,6 +30,7 @@ import java.util.Objects;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 class FunctionsImpl {
+    @SerializableByConvention
     static class ComposedSecuredFunction<F extends SecuredFunction, G extends SecuredFunction>
             implements SecuredFunction, Serializable {
         protected final F before;
@@ -48,6 +50,7 @@ class FunctionsImpl {
         }
     }
 
+    @SerializableByConvention
     static final class ComposedFunctionEx<V, T, R>
             extends ComposedSecuredFunction<FunctionEx<? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements FunctionEx<V, R> {
@@ -63,6 +66,7 @@ class FunctionsImpl {
         }
     }
 
+    @SerializableByConvention
     static final class ComposedBiFunctionEx<U, V, T, R>
             extends ComposedSecuredFunction<BiFunctionEx<? super U, ? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements BiFunctionEx<U, V, R> {
@@ -78,6 +82,7 @@ class FunctionsImpl {
         }
     }
 
+    @SerializableByConvention
     static final class ComposedConsumerEx<T>
             extends ComposedSecuredFunction<ConsumerEx<? super T>, ConsumerEx<? super T>>
             implements ConsumerEx<T> {
@@ -94,6 +99,7 @@ class FunctionsImpl {
         }
     }
 
+    @SerializableByConvention
     static final class ComposedSupplierEx<T, R>
             extends ComposedSecuredFunction<SupplierEx<? extends T>, FunctionEx<? super T, ? extends R>>
             implements SupplierEx<R> {

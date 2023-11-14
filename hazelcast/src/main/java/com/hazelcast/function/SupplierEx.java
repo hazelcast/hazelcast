@@ -54,6 +54,7 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable, SecuredFunctio
      * java.util.function.Function#andThen(Function)}.
      * @param <V> the type of output of the {@code after} function, and of the
      *           composed function
+     * @since 5.4
      */
     default <V> SupplierEx<V> andThen(FunctionEx<? super T, ? extends V> after) {
         return new FunctionsImpl.ComposedSupplierEx(this, after);
