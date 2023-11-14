@@ -202,11 +202,11 @@ public class FunctionsTest extends HazelcastTestSupport {
 
         private List<Permission> permissions;
 
-        public SecurableFunction(List<Permission> permissions) {
+        SecurableFunction(List<Permission> permissions) {
             this.permissions = permissions;
         }
 
-        public SecurableFunction(Permission permission) {
+        SecurableFunction(Permission permission) {
             this(List.of(permission));
         }
 
@@ -226,11 +226,11 @@ public class FunctionsTest extends HazelcastTestSupport {
 
         private List<Permission> permissions;
 
-        public SecurableBiFunction(List<Permission> permissions) {
+        SecurableBiFunction(List<Permission> permissions) {
             this.permissions = permissions;
         }
 
-        public SecurableBiFunction(Permission permission) {
+        SecurableBiFunction(Permission permission) {
             this(List.of(permission));
         }
 
@@ -250,11 +250,11 @@ public class FunctionsTest extends HazelcastTestSupport {
 
         private List<Permission> permissions;
 
-        public SecurableConsumer(List<Permission> permissions) {
+        SecurableConsumer(List<Permission> permissions) {
             this.permissions = permissions;
         }
 
-        public SecurableConsumer(Permission permission) {
+        SecurableConsumer(Permission permission) {
             this(List.of(permission));
         }
 
@@ -273,11 +273,11 @@ public class FunctionsTest extends HazelcastTestSupport {
 
         private List<Permission> permissions;
 
-        public SecurableSupplier(List<Permission> permissions) {
+        SecurableSupplier(List<Permission> permissions) {
             this.permissions = permissions;
         }
 
-        public SecurableSupplier(Permission permission) {
+        SecurableSupplier(Permission permission) {
             this(List.of(permission));
         }
 

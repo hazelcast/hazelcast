@@ -29,7 +29,8 @@ import java.util.Objects;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 class FunctionsImpl {
-    static class ComposedSecuredFunction<F extends SecuredFunction, G extends SecuredFunction> implements SecuredFunction, Serializable {
+    static class ComposedSecuredFunction<F extends SecuredFunction, G extends SecuredFunction>
+            implements SecuredFunction, Serializable {
         protected final F before;
         protected final G after;
 
@@ -47,11 +48,11 @@ class FunctionsImpl {
         }
     }
 
-    static class ComposedFunctionEx<V, T, R>
+    static final class ComposedFunctionEx<V, T, R>
             extends ComposedSecuredFunction<FunctionEx<? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements FunctionEx<V, R> {
 
-        public ComposedFunctionEx(@Nonnull FunctionEx<? super V, ? extends T> before,
+        ComposedFunctionEx(@Nonnull FunctionEx<? super V, ? extends T> before,
                                   @Nonnull FunctionEx<? super T, ? extends R> after) {
             super(before, after);
         }
@@ -62,11 +63,11 @@ class FunctionsImpl {
         }
     }
 
-    static class ComposedBiFunctionEx<U, V, T, R>
+    static final class ComposedBiFunctionEx<U, V, T, R>
             extends ComposedSecuredFunction<BiFunctionEx<? super U, ? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements BiFunctionEx<U, V, R> {
 
-        public ComposedBiFunctionEx(@Nonnull BiFunctionEx<? super U, ? super V, ? extends T> before,
+        ComposedBiFunctionEx(@Nonnull BiFunctionEx<? super U, ? super V, ? extends T> before,
                                   @Nonnull FunctionEx<? super T, ? extends R> after) {
             super(before, after);
         }
@@ -77,11 +78,11 @@ class FunctionsImpl {
         }
     }
 
-    static class ComposedConsumerEx<T>
+    static final class ComposedConsumerEx<T>
             extends ComposedSecuredFunction<ConsumerEx<? super T>, ConsumerEx<? super T>>
             implements ConsumerEx<T> {
 
-        public ComposedConsumerEx(@Nonnull ConsumerEx<? super T> before,
+        ComposedConsumerEx(@Nonnull ConsumerEx<? super T> before,
                                     @Nonnull ConsumerEx<? super T> after) {
             super(before, after);
         }
@@ -93,7 +94,7 @@ class FunctionsImpl {
         }
     }
 
-    static class ComposedSupplierEx<T, R>
+    static final class ComposedSupplierEx<T, R>
             extends ComposedSecuredFunction<SupplierEx<? extends T>, FunctionEx<? super T, ? extends R>>
             implements SupplierEx<R> {
 
