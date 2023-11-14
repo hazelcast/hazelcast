@@ -438,8 +438,8 @@ public class MasterJobContext {
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
-     * @param userInitiated               if the termination was requested by the user
+     *        SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     * @param userInitiated if the termination was requested by the user
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(
@@ -988,8 +988,7 @@ public class MasterJobContext {
 
     @Nonnull
     CompletableFuture<Void> gracefullyTerminateOrCancel() {
-        JobConfig jobConfig = mc.jobConfig();
-        TerminationMode mode = Util.isJobSuspendable(jobConfig) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
+        TerminationMode mode = Util.isJobSuspendable(mc.jobConfig()) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
                 () -> requestTermination(mode, false, false).f0());
         return future.thenCompose(Function.identity());

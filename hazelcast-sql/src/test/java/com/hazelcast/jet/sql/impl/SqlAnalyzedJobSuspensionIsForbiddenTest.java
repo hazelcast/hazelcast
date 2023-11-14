@@ -38,8 +38,8 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * Note: We prepared a separate test suite to prevent tests to be flaky
- *  because of {@link AnalyzeStatementTest} inherits {@link SimpleTestInClusterSupport},
- *  where cluster members are shared between tests. For tests with streaming queries
+ *  because {@link AnalyzeStatementTest} inherits {@link SimpleTestInClusterSupport},
+ *  where cluster members are shared between tests. For tests with streaming queries,
  *  it's unlikely to have them running on the same shared instances.
  */
 @RunWith(HazelcastSerialClassRunner.class)
