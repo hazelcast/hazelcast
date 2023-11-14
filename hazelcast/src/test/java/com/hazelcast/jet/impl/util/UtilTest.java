@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,9 +34,16 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
@@ -52,6 +60,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -307,5 +316,36 @@ public class UtilTest {
                 .filter(distinctBy(s -> s.charAt(0)))
                 .collect(Collectors.toList());
         assertEquals(asList("alice", "ben"), actual);
+    }
+
+    @Test
+    public void test_isJobSuspendable() {
+        JobConfig suspendableJobConfig = new JobConfig();
+        assertTrue(Util.isJobSuspendable(suspendableJobConfig));
+
+        JobConfig nonSuspendableJobConfig = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
+        assertFalse(Util.isJobSuspendable(nonSuspendableJobConfig));
+    }
+
+    @Test
+    public void test_checkJobIsAllowedToBeSuspended() {
+        // Non-suspendable Job
+        JobConfig jc = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
+        assertFalse(Util.checkJobIsAllowedToBeSuspended(RESTART_GRACEFUL, jc));
+        assertFalse(Util.checkJobIsAllowedToBeSuspended(RESTART_FORCEFUL, jc));
+        assertFalse(Util.checkJobIsAllowedToBeSuspended(SUSPEND_GRACEFUL, jc));
+        assertFalse(Util.checkJobIsAllowedToBeSuspended(SUSPEND_FORCEFUL, jc));
+
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_GRACEFUL, jc));
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_FORCEFUL, jc));
+
+        // Default Job
+        JobConfig defaultJC = new JobConfig();
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(RESTART_GRACEFUL, defaultJC));
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(RESTART_FORCEFUL, defaultJC));
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(SUSPEND_GRACEFUL, defaultJC));
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(SUSPEND_FORCEFUL, defaultJC));
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_GRACEFUL, defaultJC));
+        assertTrue(Util.checkJobIsAllowedToBeSuspended(CANCEL_FORCEFUL, defaultJC));
     }
 }
