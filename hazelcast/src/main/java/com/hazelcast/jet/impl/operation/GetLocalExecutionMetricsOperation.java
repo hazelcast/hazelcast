@@ -29,15 +29,15 @@ import java.io.IOException;
  * An operation sent from the master to all members to query metrics for a
  * specific execution ID.
  */
-public class GetLocalJobMetricsOperation extends AbstractJobOperation {
+public class GetLocalExecutionMetricsOperation extends AbstractJobOperation {
 
     private long executionId;
     private Object response;
 
-    public GetLocalJobMetricsOperation() {
+    public GetLocalExecutionMetricsOperation() {
     }
 
-    public GetLocalJobMetricsOperation(long jobId, long executionId) {
+    public GetLocalExecutionMetricsOperation(long jobId, long executionId) {
         super(jobId);
         this.executionId = executionId;
     }
@@ -49,7 +49,7 @@ public class GetLocalJobMetricsOperation extends AbstractJobOperation {
         if (executionContext == null) {
             throw new ExecutionNotFoundException(executionId);
         }
-        response = executionContext.getJobMetrics();
+        response = executionContext.getMetrics();
     }
 
     @Override

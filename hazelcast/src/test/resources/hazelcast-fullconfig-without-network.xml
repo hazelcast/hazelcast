@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.4.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -890,6 +890,11 @@
                     <action>all</action>
                 </actions>
             </semaphore-permission>
+            <cpmap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cpmap-permission>
             <executor-service-permission name="*">
                 <actions>
                     <action>all</action>

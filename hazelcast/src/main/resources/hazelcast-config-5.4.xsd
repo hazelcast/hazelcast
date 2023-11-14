@@ -2769,6 +2769,7 @@
             <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cpmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>

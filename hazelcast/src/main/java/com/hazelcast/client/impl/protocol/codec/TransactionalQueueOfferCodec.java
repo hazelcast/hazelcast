@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * become available.
  */
 @SuppressWarnings("unused")
-@Generated("0fd30eeb8d74c3a09c33655fbdb8e73f")
+@Generated("1139c7af89463bfed2f2eedabf8d858b")
 public final class TransactionalQueueOfferCodec {
     //hex: 0x120100
     public static final int REQUEST_MESSAGE_TYPE = 1179904;
@@ -58,7 +58,7 @@ public final class TransactionalQueueOfferCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the Transcational Queue
+         * Name of the Transactional Queue
          */
         public java.lang.String name;
 

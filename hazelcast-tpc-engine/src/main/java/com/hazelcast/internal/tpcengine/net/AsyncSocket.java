@@ -213,5 +213,10 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     @Override
     public final String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        //if (clientSide) {
+        //    return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        //} else {
+        //    return "               " + getClass().getSimpleName() + "[" + localAddress + "<-" + remoteAddress + "]";
+        //}
     }
 }
