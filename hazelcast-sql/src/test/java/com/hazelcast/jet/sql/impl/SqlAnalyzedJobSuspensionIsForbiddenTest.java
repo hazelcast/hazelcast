@@ -53,7 +53,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     }
 
     @Test
-    public void when_suspend_isForbidden() {
+    public void test_suspendJob() {
         // Given
         Job job = assertRunQuery();
 
@@ -67,7 +67,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     }
 
     @Test
-    public void when_restart_isForbidden() {
+    public void test_restartJob() {
         // Given
         Job job = assertRunQuery();
 
@@ -81,7 +81,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     }
 
     @Test
-    public void test_changedClusterState_passive() {
+    public void test_changeClusterStateToPassive() {
         // When
         Job job = assertRunQuery();
 

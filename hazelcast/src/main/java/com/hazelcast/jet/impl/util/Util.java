@@ -37,6 +37,8 @@ import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
+import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -89,18 +91,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -151,10 +149,7 @@ public final class Util {
             return true;
         }
 
-        return !(terminationMode == SUSPEND_GRACEFUL
-                || terminationMode == SUSPEND_FORCEFUL
-                || terminationMode == RESTART_GRACEFUL
-                || terminationMode == RESTART_FORCEFUL);
+        return terminationMode.actionAfterTerminate() == ActionAfterTerminate.CANCEL;
     }
 
     public static boolean isJobSuspendable(JobConfig jobConfig) {
