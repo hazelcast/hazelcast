@@ -54,5 +54,8 @@ public class CPMapConfigTest {
 
         t = assertThrows(IllegalArgumentException.class, () -> config.setMaxSizeMb(0));
         assertEquals("maxSizeMb is 0 but must be > 0", t.getMessage());
+
+        t = assertThrows(IllegalArgumentException.class, () -> config.setMaxSizeMb(2001));
+        assertEquals("maxSizeMb is 2001 but must be <= 2000", t.getMessage());
     }
 }
