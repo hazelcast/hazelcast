@@ -30,7 +30,7 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectPS.kafkaConnectPS;
+import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.kafkaConnectPS;
 
 /**
  * Contains factory methods to create a Kafka Connect source.

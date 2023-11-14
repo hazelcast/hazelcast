@@ -62,6 +62,7 @@ import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -73,9 +74,9 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
     public static final String USERNAME = "mysql";
     public static final String PASSWORD = "mysql";
     private static final int TABLE_COUNT = 8;
-    private static final String TESTED_TABLES = IntStream.range(1, TABLE_COUNT + 1)
-                                                         .mapToObj(i -> "parallel_items_" + i)
-                                                         .collect(joining(","));
+    private static final String TESTED_TABLES = rangeClosed(1, TABLE_COUNT)
+            .mapToObj(i -> "parallel_items_" + i)
+            .collect(joining(","));
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectScalingIntegrationTest.class);
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
@@ -83,8 +84,6 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
     private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
             .withUsername(USERNAME).withPassword(PASSWORD)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
-
-
 
     private static final int ITEM_COUNT = 1_000;
 
@@ -132,7 +131,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        IntStream.range(1, TABLE_COUNT + 1).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
+        rangeClosed(1, TABLE_COUNT + 1).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
 
 
         Config config = smallInstanceConfig();

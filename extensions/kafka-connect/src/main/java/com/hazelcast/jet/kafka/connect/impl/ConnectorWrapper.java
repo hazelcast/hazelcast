@@ -26,7 +26,6 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,20 +35,16 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 public class ConnectorWrapper {
-    // job id to instance on given member
-    private static final Map<Long, ConnectorWrapper> ACTIVE_CONNECTORS = new ConcurrentHashMap<>();
     private static final ILogger LOGGER = Logger.getLogger(ConnectorWrapper.class);
     private final SourceConnector connector;
     private final int tasksMax;
     private final State state = new State();
     private final String name;
     private final Runnable onReconfigurationFn;
-    private final long jobId;
     private final List<TaskRunner> runners = new CopyOnWriteArrayList<>();
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
 
-    public ConnectorWrapper(long jobId, Properties properties) {
-        this.jobId = jobId;
+    public ConnectorWrapper(Properties properties) {
         this.onReconfigurationFn = this::requestReconfiguration;
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
         this.name = checkRequiredProperty(properties, "name");
@@ -61,9 +56,6 @@ public class ConnectorWrapper {
 
         LOGGER.fine("Starting connector '" + name + "'");
         this.connector.start(toMap(properties));
-
-        // maybe execution id?
-        ACTIVE_CONNECTORS.put(jobId, this);
     }
 
     private void requestReconfiguration() {
@@ -94,7 +86,6 @@ public class ConnectorWrapper {
     public void stop() {
         reconfigurationLock.lock();
         try {
-            ACTIVE_CONNECTORS.remove(jobId);
             for (TaskRunner runner : runners) {
                 runner.stop();
             }

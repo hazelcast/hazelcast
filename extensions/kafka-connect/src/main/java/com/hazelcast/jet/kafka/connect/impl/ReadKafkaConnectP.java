@@ -27,15 +27,21 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
@@ -44,6 +50,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
 
@@ -175,5 +182,47 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
             descriptor.copy().withTag("task.runner", taskRunner.name());
         }
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
+    }
+
+    public static <T> ProcessorSupplier kafkaConnectPS(@Nonnull Properties properties,
+                                                       @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+                                                       @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
+        return new ReadKafkaConnectPS<>(properties, eventTimePolicy, projectionFn);
+    }
+
+    public static class ReadKafkaConnectPS<T> implements ProcessorSupplier {
+        private final Properties properties;
+        private final EventTimePolicy<? super T> eventTimePolicy;
+        private final FunctionEx<SourceRecord, T> projectionFn;
+        private transient ConnectorWrapper connectorWrapper;
+
+        public ReadKafkaConnectPS(Properties properties, EventTimePolicy<? super T> eventTimePolicy,
+                                  FunctionEx<SourceRecord, T> projectionFn) {
+            this.properties = properties;
+            this.eventTimePolicy = eventTimePolicy;
+            this.projectionFn = projectionFn;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            properties.put("tasks.max", Integer.toString(context.totalParallelism()));
+            this.connectorWrapper = new ConnectorWrapper(properties);
+        }
+
+        @Override
+        public void close(@Nullable Throwable error) {
+            if (connectorWrapper != null) {
+                connectorWrapper.stop();
+            }
+        }
+
+        @Nonnull
+        @Override
+        public Collection<? extends Processor> get(int count) {
+            return IntStream.range(0, count)
+                            .mapToObj(i -> new ReadKafkaConnectP<>(connectorWrapper, eventTimePolicy, projectionFn))
+                            .collect(toList());
+        }
+
     }
 }
