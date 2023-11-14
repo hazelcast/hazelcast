@@ -146,4 +146,19 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-mapred@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Elasticsearch6 is not shipped as part of our distribution
+        ]]></notes>
+        <packageUrl regex="true">^.*$</packageUrl>
+        <cpe>cpe:/a:elastic:elasticsearch:6</cpe>
+        <cpe>cpe:/a:elasticsearch:elasticsearch:6</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Elasticsearch6 is not shipped as part of our distribution but CVE-2023-31419 is for some reason not suppressed by previous suppression
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch/elasticsearch@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-31419</vulnerabilityName>
+    </suppress>
 </suppressions>
