@@ -40,12 +40,10 @@ public class ConnectorWrapper {
     private final int tasksMax;
     private final State state = new State();
     private final String name;
-    private final Runnable onReconfigurationFn;
     private final List<TaskRunner> runners = new CopyOnWriteArrayList<>();
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
 
     public ConnectorWrapper(Properties properties) {
-        this.onReconfigurationFn = this::requestReconfiguration;
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
         this.name = checkRequiredProperty(properties, "name");
         this.tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
@@ -110,7 +108,10 @@ public class ConnectorWrapper {
         // however, taskConfigs may return AT MOST tasksMax configs
         // so if our index < taskConfigs, then we become basically NoOp
         List<Map<String, String>> taskConfigs = connector.taskConfigs(tasksMax);
-        LOGGER.info("TAKING CONF " + processorIndex + " FROM " + tasksMax + " and size " + taskConfigs.size());
+        if (LOGGER.isFineEnabled()) {
+            LOGGER.fine("Creating configuration for processor " + processorIndex + " out of " + tasksMax + ", total " +
+                    "configuration size " + taskConfigs.size());
+        }
         if (taskConfigs.size() <= processorIndex) {
             return null;
         }
@@ -127,7 +128,7 @@ public class ConnectorWrapper {
 
         @Override
         public void requestTaskReconfiguration() {
-            ConnectorWrapper.this.onReconfigurationFn.run();
+            ConnectorWrapper.this.requestReconfiguration();
         }
 
         @Override
