@@ -62,7 +62,7 @@ public class ConnectorWrapper {
         reconfigurationLock.lock();
         try {
             for (TaskRunner runner : runners) {
-                runner.restartTask(createConfig(runner.processorIndex));
+                runner.restartTask(createConfig(runner.index()));
             }
         } finally {
             reconfigurationLock.unlock();

@@ -31,16 +31,17 @@ import static java.util.Collections.emptyList;
 class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
     private final String name;
+    private final int processorIndex;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
     private final SourceTaskFactory sourceTaskFactory;
-    final int processorIndex;
     private Map<String, String> taskConfig;
     private volatile boolean running;
     private SourceTask task;
     private boolean noOp;
 
-    TaskRunner(String name, State state, Map<String, String> taskConfig, int processorIndex, SourceTaskFactory sourceTaskFactory) {
+    TaskRunner(String name, State state, Map<String, String> taskConfig, int processorIndex,
+               SourceTaskFactory sourceTaskFactory) {
         this.name = name;
         this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
@@ -48,6 +49,10 @@ class TaskRunner {
         this.noOp = taskConfig == null;
         this.processorIndex = processorIndex;
         start();
+    }
+
+    int index() {
+        return processorIndex;
     }
 
     public List<SourceRecord> poll() {
@@ -171,5 +176,4 @@ class TaskRunner {
     interface SourceTaskFactory {
         SourceTask create();
     }
-
 }
