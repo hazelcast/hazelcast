@@ -37,10 +37,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KafkaConnectorWrapperTest {
+public class ConnectorWrapperTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new KafkaConnectorWrapper(0L, null, minimalProperties());
+        new ConnectorWrapper(0L, minimalProperties());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -48,7 +48,7 @@ public class KafkaConnectorWrapperTest {
 
     @Test
     public void should_create_task_runners() {
-        KafkaConnectorWrapper connectorWrapper = new KafkaConnectorWrapper(0L, null, minimalProperties());
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(0L, minimalProperties());
 
         TaskRunner taskRunner1 = connectorWrapper.createTaskRunner(0);
         assertThat(taskRunner1.name()).isEqualTo("some-name-task-0");
@@ -72,7 +72,7 @@ public class KafkaConnectorWrapperTest {
     @Ignore
     @Test
     public void should_reconfigure_task_runners() {
-        KafkaConnectorWrapper connectorWrapper = new KafkaConnectorWrapper(0L, null, minimalProperties());
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(0L, minimalProperties());
 
         TaskRunner taskRunner1 = connectorWrapper.createTaskRunner(0);
         assertThat(taskRunner1.name()).isEqualTo("some-name-task-0");
@@ -108,7 +108,7 @@ public class KafkaConnectorWrapperTest {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        assertThatThrownBy(() -> new KafkaConnectorWrapper(0L, null, properties))
+        assertThatThrownBy(() -> new ConnectorWrapper(0L, properties))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
@@ -118,7 +118,7 @@ public class KafkaConnectorWrapperTest {
     public void should_cleanup_on_destroy() {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        KafkaConnectorWrapper connectorWrapper = new KafkaConnectorWrapper(0L, null, properties);
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(0L, properties);
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
         connectorWrapper.stop();

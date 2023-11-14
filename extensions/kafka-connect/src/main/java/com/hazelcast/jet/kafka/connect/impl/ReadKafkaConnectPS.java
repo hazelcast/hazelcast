@@ -1,9 +1,5 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
-import com.hazelcast.cluster.Cluster;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -15,18 +11,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.IntStream;
 
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
 public class ReadKafkaConnectPS<T> implements ProcessorSupplier {
     private final Properties properties;
     private final EventTimePolicy<? super T> eventTimePolicy;
     private final FunctionEx<SourceRecord, T> projectionFn;
-    private transient KafkaConnectorWrapper connectorWrapper;
+    private transient ConnectorWrapper connectorWrapper;
 
     public ReadKafkaConnectPS(Properties properties, EventTimePolicy<? super T> eventTimePolicy,
                               FunctionEx<SourceRecord, T> projectionFn) {
@@ -45,28 +38,9 @@ public class ReadKafkaConnectPS<T> implements ProcessorSupplier {
     public void init(@Nonnull Context context) {
         properties.put("tasks.max", Integer.toString(context.totalParallelism()));
 
-        HazelcastInstance instance = context.hazelcastInstance();
-        Cluster cluster = instance.getCluster();
-        final UUID localMemberUUID = cluster.getLocalMember().getUuid();
-        cluster.addMembershipListener(new MembershipListener() {
-            @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                Set<Member> members = membershipEvent.getMembers();
-                Member member = members.stream()
-                                       .max(comparing(Member::getUuid))
-                                       .orElseThrow(() -> new IllegalStateException("Unable to determine current lead member"));
-                if (localMemberUUID.equals(member.getUuid())) {
-                    connectorWrapper.promoteToLeader();
-                }
-            }
-        });
-
         long jobId = context.jobId();
 
-        this.connectorWrapper = new KafkaConnectorWrapper(jobId, instance, properties);
+        this.connectorWrapper = new ConnectorWrapper(jobId, properties);
     }
 
     @Override

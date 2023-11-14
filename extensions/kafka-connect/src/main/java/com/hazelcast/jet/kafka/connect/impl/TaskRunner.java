@@ -38,20 +38,14 @@ class TaskRunner {
     private Map<String, String> taskConfig;
     private volatile boolean running;
     private SourceTask task;
-    private final boolean noOp;
+    private boolean noOp;
 
-    TaskRunner(String name) {
-        this(name, null, null, -1, null, true);
-    }
     TaskRunner(String name, State state, Map<String, String> taskConfig, int processorIndex, SourceTaskFactory sourceTaskFactory) {
-        this(name, state, taskConfig, processorIndex, sourceTaskFactory,false);
-    }
-    TaskRunner(String name, State state, Map<String, String> taskConfig, int processorIndex, SourceTaskFactory sourceTaskFactory, boolean noOp) {
         this.name = name;
         this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
         this.taskConfig = taskConfig;
-        this.noOp = noOp;
+        this.noOp = taskConfig == null;
         this.processorIndex = processorIndex;
         start();
     }
@@ -92,13 +86,20 @@ class TaskRunner {
     }
 
     void restartTask(Map<String, String> newConfig) {
-        this.taskConfig = newConfig;
+        taskLifecycleLock.lock();
         try {
-            stop();
-        } catch (Exception ex) {
-            LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
+            LOGGER.fine("Restarting task " + name);
+            this.taskConfig = newConfig;
+            noOp = newConfig == null;
+            try {
+                stop();
+            } catch (Exception ex) {
+                LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
+            }
+            start();
+        } finally {
+            taskLifecycleLock.unlock();
         }
-        start();
     }
 
     private void start() {

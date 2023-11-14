@@ -17,8 +17,6 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.Job;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.connector.ConnectorContext;
@@ -28,29 +26,30 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
-public class KafkaConnectorWrapper {
-    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectorWrapper.class);
+public class ConnectorWrapper {
+    // job id to instance on given member
+    private static final Map<Long, ConnectorWrapper> ACTIVE_CONNECTORS = new ConcurrentHashMap<>();
+    private static final ILogger LOGGER = Logger.getLogger(ConnectorWrapper.class);
     private final SourceConnector connector;
     private final int tasksMax;
     private final State state = new State();
     private final String name;
     private final Runnable onReconfigurationFn;
-    private final HazelcastInstance instance;
-    private volatile boolean reconfigured = false;
     private final long jobId;
     private final List<TaskRunner> runners = new CopyOnWriteArrayList<>();
-    private volatile boolean leader;
+    private final ReentrantLock reconfigurationLock = new ReentrantLock();
 
-    public KafkaConnectorWrapper(long jobId, HazelcastInstance instance, Properties properties) {
+    public ConnectorWrapper(long jobId, Properties properties) {
         this.jobId = jobId;
-        this.instance = instance;
         this.onReconfigurationFn = this::requestReconfiguration;
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
         this.name = checkRequiredProperty(properties, "name");
@@ -63,20 +62,18 @@ public class KafkaConnectorWrapper {
         LOGGER.fine("Starting connector '" + name + "'");
         this.connector.start(toMap(properties));
 
-        this.leader = false;
+        // maybe execution id?
+        ACTIVE_CONNECTORS.put(jobId, this);
     }
 
     private void requestReconfiguration() {
-        assert instance != null;
-        if (leader) {
-            Job job = instance.getJet().getJob(jobId);
-            if (job != null) {
-                job.restart();
-            } else {
-                LOGGER.warning("Job " + jobId + " not found, probably ended before the request for reconfiguration");
+        reconfigurationLock.lock();
+        try {
+            for (TaskRunner runner : runners) {
+                runner.restartTask(createConfig(runner.processorIndex));
             }
-        } else {
-            LOGGER.info("Skipping reconfiguration request, as the node is not a leader now");
+        } finally {
+            reconfigurationLock.unlock();
         }
     }
 
@@ -95,20 +92,23 @@ public class KafkaConnectorWrapper {
 
 
     public void stop() {
-        for (TaskRunner runner : runners) {
-            runner.stop();
+        reconfigurationLock.lock();
+        try {
+            ACTIVE_CONNECTORS.remove(jobId);
+            for (TaskRunner runner : runners) {
+                runner.stop();
+            }
+            LOGGER.fine("Stopping connector '" + name + "'");
+            connector.stop();
+            LOGGER.fine("Connector '" + name + "' stopped");
+        } finally {
+            reconfigurationLock.unlock();
         }
-        LOGGER.fine("Stopping connector '" + name + "'");
-        connector.stop();
-        LOGGER.fine("Connector '" + name + "' stopped");
     }
 
     TaskRunner createTaskRunner(int processorIndex) {
         String taskName = name + "-task-" + processorIndex;
         var taskConfig = createConfig(processorIndex);
-        if (taskConfig == null) {
-            return new TaskRunner(taskName);
-        }
         TaskRunner taskRunner = new TaskRunner(taskName, state, taskConfig, processorIndex, this::createSourceTask);
         runners.add(taskRunner);
         return taskRunner;
@@ -119,7 +119,8 @@ public class KafkaConnectorWrapper {
         // however, taskConfigs may return AT MOST tasksMax configs
         // so if our index < taskConfigs, then we become basically NoOp
         List<Map<String, String>> taskConfigs = connector.taskConfigs(tasksMax);
-        if (taskConfigs.size() < tasksMax) {
+        LOGGER.info("TAKING CONF " + processorIndex + " FROM " + tasksMax + " and size " + taskConfigs.size());
+        if (taskConfigs.size() <= processorIndex) {
             return null;
         }
         var taskConfig = taskConfigs.get(processorIndex);
@@ -131,18 +132,11 @@ public class KafkaConnectorWrapper {
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-    public void promoteToLeader() {
-        this.leader = true;
-    }
-
     private class JetConnectorContext implements ConnectorContext {
 
         @Override
         public void requestTaskReconfiguration() {
-            if (!reconfigured) {
-                reconfigured = true;
-                KafkaConnectorWrapper.this.onReconfigurationFn.run();
-            }
+            ConnectorWrapper.this.onReconfigurationFn.run();
         }
 
         @Override

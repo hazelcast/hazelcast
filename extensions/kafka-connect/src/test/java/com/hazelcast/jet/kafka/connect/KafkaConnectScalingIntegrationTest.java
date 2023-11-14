@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
@@ -29,6 +30,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -55,9 +57,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
+import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -68,8 +72,14 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
     public static final String USERNAME = "mysql";
     public static final String PASSWORD = "mysql";
+    private static final int TABLE_COUNT = 8;
+    private static final String TESTED_TABLES = IntStream.range(1, TABLE_COUNT + 1)
+                                                         .mapToObj(i -> "parallel_items_" + i)
+                                                         .collect(joining(","));
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectScalingIntegrationTest.class);
+    private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
+    @SuppressWarnings("resource")
     private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
             .withUsername(USERNAME).withPassword(PASSWORD)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
@@ -94,6 +104,19 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         }
     }
 
+    @After
+    public void removeTables() {
+        for (int i = 1; i <= TABLE_COUNT; i++) {
+            try (Connection conn = DriverManager.getConnection(mysql.getJdbcUrl(), USERNAME, PASSWORD);
+                 Statement stmt = conn.createStatement()
+            ) {
+                stmt.execute("DROP TABLE IF EXISTS parallel_items_" + i);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     @Test
     public void testScaling() throws Exception {
         int localParallelism = 2;
@@ -106,11 +129,10 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("connection.user", USERNAME);
         randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2");
+        randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        createTableAndFill(connectionUrl, "parallel_items_1");
-        createTableAndFill(connectionUrl, "parallel_items_2");
+        IntStream.range(1, TABLE_COUNT + 1).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
 
 
         Config config = smallInstanceConfig();
@@ -120,12 +142,16 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
         IMap<String, Integer> processors = instance.getMap("processors_" + randomName());
         IMap<String, String> processorInstances = instance.getMap("processorInstances_" + randomName());
+        IList<String> values = instance.getList("values" + randomName());
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> mappedValueStage = pipeline
                 .readFrom(KafkaConnectSources.connect(randomProperties,
                         SourceRecordUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
+
+        mappedValueStage
+                .writeTo(list(values));
 
         mappedValueStage
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
@@ -144,6 +170,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
         instance.getJet().newJob(pipeline, jobConfig);
 
+        // 6 not 8, because we are bounded by total parallelism of the job
         var expectedProcessorIndexArray = IntStream.range(0, 3 * localParallelism).boxed().toArray(Integer[]::new);
         var allInstancesNames = Arrays.stream(instances).map(HazelcastInstance::getName).toArray(String[]::new);
         assertTrueEventually(() -> {
@@ -152,6 +179,8 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
+
+            assertThat(values).hasSize(TABLE_COUNT * ITEM_COUNT);
         });
     }
 
@@ -167,7 +196,7 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("connection.user", USERNAME);
         randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2,parallel_items_3");
+        randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
 
         createTableAndFill(connectionUrl, "parallel_items_1");
@@ -217,49 +246,57 @@ public class KafkaConnectScalingIntegrationTest extends JetTestSupport {
 
         instance.getJet().newJob(pipeline, jobConfig);
 
-        var expectedProcessorIndexArray = IntStream.range(0, 3 * localParallelism).boxed().toArray(Integer[]::new);
+        var expectedProcessorIndexArray = new Integer[] { 0, 1 };
         var allInstancesNames = Arrays.stream(instances).map(HazelcastInstance::getName).toArray(String[]::new);
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
             assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
-
-            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
-            assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
         });
 
         processors.clear();
         processorInstances.clear();
+        insertItems(connectionUrl, "parallel_items_1");
+        insertItems(connectionUrl, "parallel_items_2");
         createTableAndFill(connectionUrl, "parallel_items_3");
+        createTableAndFill(connectionUrl, "parallel_items_4");
+        createTableAndFill(connectionUrl, "parallel_items_5");
+        createTableAndFill(connectionUrl, "parallel_items_6");
 
+        var newExpectedProcessorIndexArray = IntStream.range(0, 3 * localParallelism).boxed().toArray(Integer[]::new);
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+            assertThat(array).containsExactlyInAnyOrder(newExpectedProcessorIndexArray);
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
         });
     }
 
-    private void createTableAndFill(String connectionUrl, String tableName) throws SQLException {
+    private void createTableAndFill(String connectionUrl, String tableName) {
         createTable(connectionUrl, tableName);
         insertItems(connectionUrl, tableName);
     }
 
-    private static void insertItems(String connectionUrl, String tableName) throws SQLException {
+    private static void insertItems(String connectionUrl, String tableName) {
         try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
              Statement stmt = conn.createStatement()
         ) {
             for (int i = 0; i < ITEM_COUNT; i++) {
-                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')", i, i));
+                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')",
+                        COUNTER.incrementAndGet(), i));
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private static void createTable(String connectionUrl, String tableName) throws SQLException {
+    private static void createTable(String connectionUrl, String tableName) {
         try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
              Statement stmt = conn.createStatement()
         ) {
             stmt.execute("CREATE TABLE " + tableName + " (id INT PRIMARY KEY, name VARCHAR(128))");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
