@@ -19,8 +19,10 @@ package com.hazelcast.jet.kafka.connect.impl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 class State implements Serializable {
@@ -55,22 +57,23 @@ class State implements Serializable {
     }
 
     void load(State state) {
-        for (Map<String, ?> partition : partitionsToOffset.keySet()) {
-            if (containsNewerStateFor(partition, state)) {
+        Set<Map<String, ?>> allKeys = new HashSet<>(partitionsToOffset.keySet());
+        allKeys.addAll(state.partitionsToOffset.keySet());
+        for (Map<String, ?> partition : allKeys) {
+            if (!alreadyContainsNewerStateFor(partition, state)) {
                 partitionsToOffset.put(partition, state.partitionsToOffset.get(partition));
                 partitionsToLastOffsetTime.put(partition, state.partitionsToLastOffsetTime.get(partition));
             }
         }
-        partitionsToOffset.putAll(state.partitionsToOffset);
     }
 
-    boolean containsNewerStateFor(Map<String, ?> partition, State other) {
+    private boolean alreadyContainsNewerStateFor(Map<String, ?> partition, State other) {
         Long thisLastTime = partitionsToLastOffsetTime.get(partition);
         Long otherLastTime = other.partitionsToLastOffsetTime.get(partition);
         if (thisLastTime == null) {
             return false;
         }
-        return otherLastTime == null || thisLastTime.longValue() == otherLastTime.longValue();
+        return otherLastTime == null || thisLastTime > otherLastTime;
     }
 
     Map<String, ?> getOffset(Map<String, ?> partition) {

@@ -397,6 +397,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
         testResults.clear();
         job.resume();
+        assertJobStatusEventually(job, RUNNING);
 
         Map<String, Integer> minOrderIdByTaskIdAfterSuspend = new HashMap<>();
         assertTrueEventually(() -> {

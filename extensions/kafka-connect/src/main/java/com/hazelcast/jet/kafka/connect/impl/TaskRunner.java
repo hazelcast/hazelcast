@@ -90,6 +90,10 @@ class TaskRunner {
         }
     }
 
+    void restartTask() {
+        restartTask(taskConfig);
+    }
+
     void restartTask(Map<String, String> newConfig) {
         taskLifecycleLock.lock();
         try {

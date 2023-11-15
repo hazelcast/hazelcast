@@ -146,6 +146,12 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     }
 
     @Override
+    public boolean finishSnapshotRestore() {
+        taskRunner.restartTask();
+        return super.finishSnapshotRestore();
+    }
+
+    @Override
     public boolean snapshotCommitFinish(boolean success) {
         try {
             if (success) {
