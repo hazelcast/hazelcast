@@ -28,16 +28,37 @@ public class MariaDBDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
+        //noinspection resource
         container = new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
                 .withDatabaseName(dbName)
-                .withUsername("user")
-                .withUrlParam("user", "user")
-                .withUrlParam("password", "test");
+                .withUsername(user())
+                .withUrlParam("user", user())
+                .withUrlParam("password", password());
 
         container.start();
         String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
+    }
+
+    @Override
+    public String user() {
+        return "user";
+    }
+
+    @Override
+    public String password() {
+        return "test";
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return container.getJdbcUrl();
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return container.getDatabaseName();
     }
 
     @Override

@@ -16,22 +16,52 @@
 
 package com.hazelcast.test.jdbc;
 
+import org.postgresql.ds.PGSimpleDataSource;
+import org.postgresql.xa.PGXADataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class PostgresDatabaseProvider implements TestDatabaseProvider {
+import javax.sql.CommonDataSource;
 
+public class PostgresDatabaseProvider implements TestDatabaseProvider {
     public static final String TEST_POSTGRES_VERSION = System.getProperty("test.postgres.version", "11.19-bullseye");
     private static final int LOGIN_TIMEOUT = 120;
-
     private PostgreSQLContainer<?> container;
+    private String command;
+
+    public PostgresDatabaseProvider withCommand(String command) {
+        this.command = command;
+        return this;
+    }
+
+    @Override
+    public CommonDataSource createDataSource(boolean xa) {
+        if (xa) {
+            PGXADataSource dataSource = new PGXADataSource();
+            dataSource.setUrl(getJdbcUrl());
+            dataSource.setUser(user());
+            dataSource.setPassword(password());
+            dataSource.setDatabaseName(getDatabaseName());
+            return dataSource;
+        } else {
+            PGSimpleDataSource dataSource = new PGSimpleDataSource();
+            dataSource.setUrl(getJdbcUrl());
+            dataSource.setUser(user());
+            dataSource.setPassword(password());
+            dataSource.setDatabaseName(getDatabaseName());
+            return dataSource;
+        }
+    }
 
     @Override
     public String createDatabase(String dbName) {
         //noinspection resource
         container = new PostgreSQLContainer<>("postgres:" + TEST_POSTGRES_VERSION)
                 .withDatabaseName(dbName)
-                .withUrlParam("user", "test")
-                .withUrlParam("password", "test");
+                .withUrlParam("user", user())
+                .withUrlParam("password", password());
+        if (command != null) {
+            container.withCommand(command);
+        }
         container.start();
         String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
@@ -41,8 +71,8 @@ public class PostgresDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String noAuthJdbcUrl() {
         return container.getJdbcUrl()
-                        .replaceAll("&?user=test", "")
-                        .replaceAll("&?password=test", "");
+                .replaceAll("&?user=" + user(), "")
+                .replaceAll("&?password=" + password(), "");
     }
 
     @Override
@@ -53,6 +83,16 @@ public class PostgresDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String password() {
         return "test";
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return container.getJdbcUrl();
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return container.getDatabaseName();
     }
 
     @Override

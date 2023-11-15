@@ -16,9 +16,12 @@
 
 package com.hazelcast.test.jdbc;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
+import com.mysql.cj.jdbc.MysqlXADataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.Network;
 
+import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -30,7 +33,27 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     private static final int LOGIN_TIMEOUT = 120;
 
     private MySQLContainer<?> container;
-    private Network network = Network.newNetwork();
+    private final Network network = Network.newNetwork();
+
+    @Override
+    public DataSource createDataSource(boolean xa) {
+        if (xa) {
+            MysqlXADataSource dataSource = new MysqlXADataSource();
+            dataSource.setUrl(getJdbcUrl());
+            dataSource.setUser(user());
+            dataSource.setPassword(password());
+            dataSource.setDatabaseName(getDatabaseName());
+
+            return dataSource;
+        } else {
+            MysqlDataSource dataSource = new MysqlDataSource();
+            dataSource.setUrl(getJdbcUrl());
+            dataSource.setUser(user());
+            dataSource.setPassword(password());
+            dataSource.setDatabaseName(getDatabaseName());
+            return dataSource;
+        }
+    }
 
     @Override
     public String createDatabase(String dbName) {
@@ -40,8 +63,8 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
                 .withNetworkAliases("mysql")
                 .withDatabaseName(dbName)
                 .withUsername("root")
-                .withUrlParam("user", "root")
-                .withUrlParam("password", "test")
+                .withUrlParam("user", user())
+                .withUrlParam("password", password())
                 .withTmpFs(Map.of(
                         "/var/lib/mysql/", "rw",
                         "/tmp/", "rw"
@@ -55,8 +78,8 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String noAuthJdbcUrl() {
         return container.getJdbcUrl()
-                        .replaceAll("&?user=root", "")
-                        .replaceAll("&?password=test", "");
+                .replaceAll("&?user=" + user(), "")
+                .replaceAll("&?password=" + password(), "");
     }
 
     @Override
@@ -69,8 +92,14 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
         return "test";
     }
 
-    public MySQLContainer<?> container() {
-        return container;
+    @Override
+    public String getJdbcUrl() {
+        return container.getJdbcUrl();
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return container.getDatabaseName();
     }
 
     public Network getNetwork() {
@@ -88,8 +117,8 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String quote(String[] parts) {
         return Arrays.stream(parts)
-                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                     .collect(joining("."));
+                .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                .collect(joining("."));
 
     }
 }

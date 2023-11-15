@@ -16,13 +16,17 @@
 
 package com.hazelcast.test.jdbc;
 
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import com.microsoft.sqlserver.jdbc.SQLServerXADataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
+
+import javax.sql.DataSource;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeNoArm64Architecture;
 
 public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
-    public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2017-CU12");
+    public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2022-latest");
 
     private static final int LOGIN_TIMEOUT = 120;
 
@@ -31,6 +35,7 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String createDatabase(String dbName) {
         assumeNoArm64Architecture();
+        // withDatabaseName() throws UnsupportedOperationException
         container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
         container.acceptLicense()
                  // See https://learn.microsoft.com/en-us/sql/connect/jdbc/using-basic-data-types?view=sql-server-ver16
@@ -43,6 +48,25 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
         String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
+    }
+
+    @Override
+    public DataSource createDataSource(boolean xa) {
+        if (xa) {
+            SQLServerXADataSource dataSource = new SQLServerXADataSource();
+            dataSource.setURL(getJdbcUrl());
+            dataSource.setUser(user());
+            dataSource.setPassword(password());
+            dataSource.setDatabaseName(getDatabaseName());
+            return dataSource;
+        } else {
+            SQLServerDataSource dataSource = new SQLServerDataSource();
+            dataSource.setURL(getJdbcUrl());
+            dataSource.setUser(user());
+            dataSource.setPassword(password());
+            dataSource.setDatabaseName(getDatabaseName());
+            return dataSource;
+        }
     }
 
     @Override
@@ -68,6 +92,16 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String password() {
         return container.getPassword();
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return container.getJdbcUrl();
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return "master";
     }
 
     @Override

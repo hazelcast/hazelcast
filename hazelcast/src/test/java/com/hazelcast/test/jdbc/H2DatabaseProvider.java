@@ -16,6 +16,9 @@
 
 package com.hazelcast.test.jdbc;
 
+import org.h2.jdbcx.JdbcDataSource;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -24,13 +27,36 @@ public class H2DatabaseProvider implements TestDatabaseProvider {
 
     private static final int LOGIN_TIMEOUT = 60;
 
+    private String dbName;
     private String jdbcUrl;
 
     @Override
     public String createDatabase(String dbName) {
+        this.dbName = dbName;
         jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
+    }
+
+    @Override
+    public DataSource createDataSource(boolean xa) {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setUrl(getJdbcUrl());
+        dataSource.setUser(user());
+        dataSource.setPassword(password());
+
+        return dataSource;
+
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return dbName;
     }
 
     @Override

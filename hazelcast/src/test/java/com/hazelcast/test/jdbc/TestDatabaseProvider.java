@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.jdbc;
 
+import javax.sql.CommonDataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -30,6 +31,10 @@ import static java.util.stream.Collectors.joining;
  * For sample use see JdbcSqlTestSupport.
  */
 public interface TestDatabaseProvider {
+
+    default CommonDataSource createDataSource(boolean xa) {
+        throw new RuntimeException("Not supported");
+    }
 
     /**
      * Creates database with given name and returns jdbc url that can
@@ -58,6 +63,11 @@ public interface TestDatabaseProvider {
         throw new RuntimeException("Not supported");
     }
 
+    String getJdbcUrl();
+
+
+    String getDatabaseName();
+
     /**
      * Waits for a connection to the database.
      * @param jdbcUrl JDBC url returned by {@link #createDatabase(String)}.
@@ -84,9 +94,10 @@ public interface TestDatabaseProvider {
         return Arrays.stream(parts)
                      .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
                      .collect(joining("."));
-    };
+    }
 
     default String createSchemaQuery(String schemaName) {
         return "CREATE SCHEMA IF NOT EXISTS " + schemaName;
     }
+
 }
