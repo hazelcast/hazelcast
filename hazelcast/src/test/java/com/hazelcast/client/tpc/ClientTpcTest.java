@@ -89,13 +89,7 @@ public class ClientTpcTest extends ClientTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                System.out.println(connections.size());
-                assertEquals(2, connections.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
 
         assertClientConnectsAllTpcPortsEventually(connections, memberConfig, clientConfig);
     }
