@@ -47,7 +47,7 @@ import java.lang.invoke.VarHandle;
  *     single variable)
  *     </li>
  * </ol>
- * And therefor is super well suited for progress indicators like performance
+ * And therefore is super well suited for progress indicators like performance
  * counters.
  * <p>
  * This counter does not provide padding to prevent false sharing.
