@@ -35,11 +35,14 @@ import java.lang.invoke.VarHandle;
  * are ready for execution. Since there are roughly 10 LFBs (Line Fill Buffers)
  * on modern Intel processor at most 10 cache lines can be invalidated in parallel.
  * <p/>
- * Unlike volatile, opaque doesn't provide any ordering guarantees with respect
- * to other variables. So it will not lead to loads stalling till the store buffer
- * has been drained.
+ * On platforms with a more relaxed memory model like ARM or RISC-V, volatile
+ * imposes additional memory fences that are not needed to update a counter.
  * <p/>
- * Opaque does provide:
+ * Unlike volatile, opaque doesn't provide any ordering guarantees with respect
+ * to other variables. The only thing the counter provides is coherence and
+ * not consistency.
+ * <p/>
+ * Opaque provides:
  * <ol>
  *     <li>atomicity: so no torn reads/writes</li>
  *     <li>coherence: (1) you don't go back reading an older version after you read a
@@ -52,15 +55,17 @@ import java.lang.invoke.VarHandle;
  * <p>
  * This counter does not provide padding to prevent false sharing.
  * <p>
- * I believe the design of the Counter object is a bit stale. The problem is
- * that it creates a wrapper object for every field and if there are many fields
- * you want to monitor, it creates a lot of overhead including pressure on the
- * cache, indirection etc. It is better to make some metrics object where in a
+ * The design of the Counter object is stale. The problem is that it creates
+ * a wrapper object for every field and if there are many fields that needs to
+ * be monitored, it creates a lot of overhead including pressure on the cache,
+ * indirection etc. It is better to make some metrics object where in a
  * single object there are multiple primitive fields with some form of progress
  * behavior and use VarHandles for opaque updates. If an object would have 5
  * SwCounter, with the current design it would require 5 SwCounter objects,
  * but with a metrics object, you just need 1 object. The TPC engine already
  * switched to this design.
+ * See {@link com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics}
+ * for an example.
  */
 public final class SwCounter implements Counter {
 
