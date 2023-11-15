@@ -34,6 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -48,7 +49,7 @@ public class ClientTpcBasicTest extends ClientTestSupport {
         Hazelcast.shutdownAll();
     }
 
-    private Config getMemberConfig() {
+    private Config newMemberConfig() {
         Config config = new Config();
         // Jet prints too many logs
         config.getJetConfig().setEnabled(false);
@@ -60,7 +61,7 @@ public class ClientTpcBasicTest extends ClientTestSupport {
         return config;
     }
 
-    private ClientConfig getClientConfig() {
+    private ClientConfig newClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getTpcConfig().setEnabled(true);
         return clientConfig;
@@ -71,16 +72,17 @@ public class ClientTpcBasicTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientConnectsToAllTpcPorts_byDefault() {
-        Config config = getMemberConfig();
-        Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
-
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+    public void testClientConnectsToOneTpcPort_byDefault() {
+        Config config = newMemberConfig();
+        int memberCount = 2;
+        for (int k = 0; k < memberCount; k++) {
+            Hazelcast.newHazelcastInstance(config);
+        }
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(newClientConfig());
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
         assertTrueEventually(() -> {
-            assertEquals(2, connections.size());
+            assertEquals(memberCount, connections.size());
         });
 
         assertTrueEventually(() -> {
@@ -89,7 +91,7 @@ public class ClientTpcBasicTest extends ClientTestSupport {
 
                 Channel[] tpcChannels = clientConnection.getTpcChannels();
                 assertNotNull(tpcChannels);
-                assertEquals(config.getTpcConfig().getEventloopCount(), tpcChannels.length);
+                assertEquals(1, tpcChannels.length);
 
                 for (Channel channel : tpcChannels) {
                     assertNotNull(channel);
