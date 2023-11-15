@@ -449,9 +449,8 @@ public class MasterJobContext {
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
 
-        // Job is not allowed to be suspended of it is not suspendable in config
-        // and termination mode is SUSPEND or RESTART.
-        if (!Util.isJobSuspendable(mc.jobConfig()) && mode.actionAfterTerminate() != CANCEL) {
+        ActionAfterTerminate action = mode.actionAfterTerminate();
+        if ((action == SUSPEND || action == RESTART) && !isJobSuspendable(mc.jobConfig())) {
             // We cancel the job if it is not allowed to be suspended.
             mode = CANCEL_FORCEFUL;
         }
