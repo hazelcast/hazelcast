@@ -189,6 +189,21 @@ There are also nice to have features:
 - Add benchmarks for Kafka connect source
 - Add Soak tests for Kafka connect source
 
+#### Parallelization and scaling
+
+Each node in the cluster creates an instance of `ConnectorWrapper`. 
+Each Jet processor runs one `TaskRunner`, which is a wrapper for Kafka Connect's `SourceTask`s. 
+
+Before the job starts executing we assign `tasks.max` property to total parallelism of the Jet job.
+During the initialization and any reconfiguration requests, a `ConnectorWrapper` asks all associated
+`TaskRunner`s to update their configuration and restart. Each `TaskRunner` gets a configuration
+`conf[processorGlobalIndex]`, where `conf` is a list of configurations returned by Kafka Connect 
+connector. If `conf.size() < processorGlobalIndex`, then such `TaskRunner` becomes a no-op processor.
+
+While the solution is pretty simple, it depends on one assumption - that Kafka Connect connector
+returns stable list, meaning that in given point in time every connector with the same base configuration
+will return exactly the same configuration list for tasks on each member.
+
 #### Fault-Tolerance
 
 The Kafka Connect connectors driven by Jet are participating to store their state snapshots (e.g partition offsets +
@@ -196,6 +211,11 @@ any metadata which they might have to recover/restart) in Jet. This way when the
 their state and continue to consume from where they left off. Since implementations may vary between Kafka Connect
 modules, each will have different behaviors when there is a failure. Please refer to the documentation of Kafka Connect
 connector of your choice for detailed information.
+
+The offsets stored in Jet snapshot will be accompanied by the last time the offset was modified.
+In the `restoreSnapshot()` function we merge states from all nodes, based on last access timestamp.
+In such way we are immune to node crashes or unexpected reconfigurations changing partition assignment.
+This will increase the state size, but also will make us immune to changes in partition assignment.
 
 #### Questions about the change
 
