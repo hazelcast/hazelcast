@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -28,6 +30,10 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -44,50 +50,55 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
         initializeWithClient(3, config, null);
     }
 
+    static void setupCompactTypesForNestedQuery(HazelcastInstance instance) {
+        new SqlType("Office").fields("id BIGINT", "name VARCHAR").create(instance);
+        new SqlType("Organization").fields("id BIGINT", "name VARCHAR", "office Office").create(instance);
+
+        createCompactMapping(instance, "test", "UserCompactType",
+                "id BIGINT", "name VARCHAR", "organization Organization");
+    }
+
+    static void createCompactMapping(HazelcastInstance instance, String name, String valueCompactTypeName,
+                                     String... valueFields) {
+        new SqlMapping(name, IMapSqlConnector.class)
+                .fields("__key BIGINT")
+                .fields(valueFields)
+                .options(OPTION_KEY_FORMAT, "bigint",
+                         OPTION_VALUE_FORMAT, COMPACT_FORMAT,
+                         OPTION_VALUE_COMPACT_TYPE_NAME, valueCompactTypeName)
+                .create(instance);
+    }
+
+    private static void createType(String name, String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .create(client());
+    }
+
+    private static SqlResult execute(String sql) {
+        return client().getSql().execute(sql);
+    }
+
     @Test
     public void test_basicQuerying() {
         setupCompactTypesForNestedQuery(client());
-        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
+        execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
     }
 
     @Test
     public void test_nestedCompactsAreReturnedAsDeserialized() {
-        client().getSql().execute("CREATE TYPE Office ("
-                + "id BIGINT, "
-                + "name VARCHAR "
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
+        createType("Office", "id BIGINT", "name VARCHAR");
+        createType("Organization", "id BIGINT", "name VARCHAR", "office Office");
+        createType("OrganizationAndLong", "id BIGINT", "l BIGINT", "organization Organization");
 
-        client().getSql().execute("CREATE TYPE Organization ("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "office Office"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
-
-        client().getSql().execute("CREATE TYPE OrganizationAndLong ("
-                + "id BIGINT, "
-                + "l BIGINT, "
-                + "organization Organization"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationAndLongCompactType')");
-
-        client().getSql().execute(
-                "CREATE MAPPING test ("
-                        + "__key BIGINT,"
-                        + "id BIGINT, "
-                        + "name VARCHAR, "
-                        + "organizationAndLong OrganizationAndLong"
-                        + ")"
-                        + "TYPE IMap "
-                        + "OPTIONS ("
-                        + "'keyFormat'='bigint',"
-                        + "'valueFormat'='compact',"
-                        + "'valueCompactTypeName'='UserCompactType'"
-                        + ")");
+        createCompactMapping(client(), "test", "UserCompactType",
+                "id BIGINT", "name VARCHAR", "organizationAndLong OrganizationAndLong");
 
 
-        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 1, (1, 'organization1', (1, 'office1'))))");
+        execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 1, (1, 'organization1', (1, 'office1'))))");
 
-        SqlResult result = client().getSql().execute("SELECT (organizationAndLong).organization.office FROM test");
+        SqlResult result = execute("SELECT (organizationAndLong).organization.office FROM test");
         ArrayList<SqlRow> rows = new ArrayList<>();
         for (SqlRow row : result) {
             rows.add(row);
@@ -99,8 +110,8 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_emptyColumnList() {
-        assertThatThrownBy(() -> client().getSql()
-                .execute("CREATE TYPE Office OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')"))
-                .hasMessageContaining("Column list is required to create Compact-based Types");
+        createType("Office");
+        assertThatThrownBy(() -> createCompactMapping(client(), "test", "OfficesCompactType", "office Office"))
+                .hasMessageContaining("Column list is required to create Compact-based types");
     }
 }

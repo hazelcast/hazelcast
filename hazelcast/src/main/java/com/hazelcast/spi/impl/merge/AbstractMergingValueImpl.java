@@ -53,7 +53,7 @@ public abstract class AbstractMergingValueImpl<V, T extends AbstractMergingValue
     }
 
     @Override
-    public V getValue() {
+    public V getDeserializedValue() {
         return serializationService.toObject(value);
     }
 

@@ -44,7 +44,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * could throw a {@link java.lang.ClassNotFoundException}.</li>
  * </ul>
  * If you need the deserialized data you can call
- * {@link MergingValue#getValue()}
+ * {@link MergingValue#getDeserializedValue()}
  * or {@link MergingEntry#getKey()},
  * which will deserialize the data lazily.
  * <p>

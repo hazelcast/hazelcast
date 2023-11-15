@@ -887,6 +887,11 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:atomic-reference-permission>
+                    <hz:cpmap-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:cpmap-permission>
                     <hz:countdown-latch-permission name="*">
                         <hz:actions>
                             <hz:action>all</hz:action>

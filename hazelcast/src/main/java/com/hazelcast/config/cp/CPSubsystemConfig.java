@@ -303,6 +303,8 @@ public class CPSubsystemConfig {
 
     private final ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
+    private Map<String, CPMapConfig> cpMapConfigs = new ConcurrentHashMap<>();
+
     public CPSubsystemConfig() {
     }
 
@@ -323,6 +325,9 @@ public class CPSubsystemConfig {
         }
         for (FencedLockConfig lockConfig : config.lockConfigs.values()) {
             this.lockConfigs.put(lockConfig.getName(), new FencedLockConfig(lockConfig));
+        }
+        for (CPMapConfig cpMapConfig : config.cpMapConfigs.values()) {
+            this.cpMapConfigs.put(cpMapConfig.getName(), new CPMapConfig(cpMapConfig));
         }
     }
 
@@ -696,6 +701,64 @@ public class CPSubsystemConfig {
         return this;
     }
 
+
+    /**
+     * Returns the map of {@link com.hazelcast.cp.CPMap} configurations
+     *
+     * @since 5.4
+     * @return the map of {@link CPMapConfig} configurations
+     */
+    public Map<String, CPMapConfig> getCpMapConfigs() {
+        return cpMapConfigs;
+    }
+
+    /**
+     * Returns the {@link CPMapConfig} configuration for the given name.
+     * <p>
+     * The name is matched by stripping the {@link CPGroup} name from
+     * the given {@code name} if present.
+     * Returns null if there is no config found by the given {@code name}
+     *
+     * @since 5.4
+     * @param name name of the {@link CPMapConfig}
+     * @return the {@link CPMapConfig} configuration
+     */
+    public CPMapConfig findCPMapConfig(String name) {
+        return lookupByPattern(configPatternMatcher, cpMapConfigs, getBaseName(name));
+    }
+
+    /**
+     * Adds the {@link CPMapConfig} configuration. Name of the
+     * {@link CPMapConfig} could optionally contain a {@link CPGroup} name,
+     * like "myMap@group1".
+     *
+     * @since 5.4
+     * @param cpMapConfig the {@link CPMapConfig} configuration
+     * @return this config instance
+     */
+    public CPSubsystemConfig addCPMapConfig(CPMapConfig cpMapConfig) {
+        cpMapConfigs.put(cpMapConfig.getName(), cpMapConfig);
+        return this;
+    }
+
+    /**
+     * Sets the map of {@link CPMapConfig} configurations, mapped by config
+     * name. Names could optionally contain a {@link CPGroup} name, such as
+     * "myLock@group1".
+     *
+     * @since 5.4
+     * @param cpMapConfigs the {@link CPMapConfig} config map to set
+     * @return this config instance
+     */
+    public CPSubsystemConfig setCPMapConfigs(Map<String, CPMapConfig> cpMapConfigs) {
+        this.cpMapConfigs.clear();
+        this.cpMapConfigs.putAll(cpMapConfigs);
+        for (Entry<String, CPMapConfig> entry : this.cpMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
     @Override
     public String toString() {
         return "CPSubsystemConfig{" + "cpMemberCount=" + cpMemberCount + ", groupSize=" + groupSize
@@ -703,7 +766,8 @@ public class CPSubsystemConfig {
                 + sessionHeartbeatIntervalSeconds + ", missingCPMemberAutoRemovalSeconds=" + missingCPMemberAutoRemovalSeconds
                 + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState
                 + ", cpMemberPriority=" + cpMemberPriority + ", raftAlgorithmConfig=" + raftAlgorithmConfig
-                + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs + '}';
+                + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs
+                + ", cpMapConfigs=" + cpMapConfigs + '}';
     }
 
     @Override
@@ -727,13 +791,15 @@ public class CPSubsystemConfig {
                 && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
                 && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
                 && Objects.equals(lockConfigs, that.lockConfigs)
-                && Objects.equals(configPatternMatcher, that.configPatternMatcher);
+                && Objects.equals(configPatternMatcher, that.configPatternMatcher)
+                && Objects.equals(cpMapConfigs, that.cpMapConfigs);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
                 missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, cpMemberPriority,
-                baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher);
+                baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher,
+                cpMapConfigs);
     }
 }

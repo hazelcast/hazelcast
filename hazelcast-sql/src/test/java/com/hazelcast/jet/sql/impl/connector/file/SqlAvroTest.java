@@ -55,7 +55,7 @@ public class SqlAvroTest extends SqlTestSupport {
     }
 
     private static SqlMapping fileMapping(String name, File file) {
-        return new SqlMapping(name, FileSqlConnector.TYPE_NAME).options(
+        return new SqlMapping(name, FileSqlConnector.class).options(
                 OPTION_FORMAT, AVRO_FORMAT,
                 OPTION_PATH, file.getParent(),
                 OPTION_GLOB, file.getName()

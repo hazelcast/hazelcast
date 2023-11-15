@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
+import com.hazelcast.jet.config.JobConfig;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -24,11 +25,13 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
 
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 public class SqlAnalyzeStatement extends SqlCall {
@@ -36,6 +39,7 @@ public class SqlAnalyzeStatement extends SqlCall {
 
     private SqlNode query;
     private final SqlNodeList options;
+    private final JobConfig jobConfig = new JobConfig();
 
     public SqlAnalyzeStatement(SqlParserPos pos, SqlNode query, SqlNodeList options) {
         super(pos);
@@ -51,16 +55,6 @@ public class SqlAnalyzeStatement extends SqlCall {
         this.query = query;
     }
 
-    public Map<String, String> options() {
-        return options.getList().stream()
-                .map(node -> (SqlOption) node)
-                .collect(
-                        LinkedHashMap::new,
-                        (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
-                        Map::putAll
-                );
-    }
-
     @Override
     public SqlOperator getOperator() {
         return OPERATOR;
@@ -71,6 +65,10 @@ public class SqlAnalyzeStatement extends SqlCall {
         return List.of(query);
     }
 
+    public JobConfig getJobConfig() {
+        return jobConfig;
+    }
+
     @Override
     public void unparse(final SqlWriter writer, final int leftPrec, final int rightPrec) {
         writer.keyword("ANALYZE");
@@ -79,5 +77,52 @@ public class SqlAnalyzeStatement extends SqlCall {
         }
 
         query.unparse(writer, leftPrec, rightPrec);
+    }
+
+    public void validate(SqlValidator validator) {
+        Set<String> optionNames = new HashSet<>();
+        jobConfig.setMetricsEnabled(true);
+        jobConfig.setStoreMetricsAfterJobCompletion(true);
+
+        jobConfig.setSplitBrainProtection(false);
+        jobConfig.setAutoScaling(false);
+        jobConfig.setSuspendOnFailure(false);
+
+        for (SqlNode option0 : options) {
+            SqlOption option = (SqlOption) option0;
+            String key = option.keyString();
+            String value = option.valueString();
+
+            if (!optionNames.add(key)) {
+                throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
+            }
+
+            switch (key) {
+                case "processingGuarantee":
+                    jobConfig.setProcessingGuarantee(ParseUtils.parseProcessingGuarantee(validator, option));
+                    break;
+                case "snapshotIntervalMillis":
+                    jobConfig.setSnapshotIntervalMillis(ParseUtils.parseLong(validator, option));
+                    break;
+                case "initialSnapshotName":
+                    jobConfig.setInitialSnapshotName(value);
+                    break;
+                case "maxProcessorAccumulatedRecords":
+                    jobConfig.setMaxProcessorAccumulatedRecords(ParseUtils.parseLong(validator, option));
+                    break;
+                case "metricsEnabled":
+                    jobConfig.setMetricsEnabled(Boolean.parseBoolean(value));
+                    break;
+                case "storeMetricsAfterJobCompletion":
+                    jobConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
+                    break;
+                case "autoScaling":
+                case "splitBrainProtectionEnabled":
+                case "suspendOnFailure":
+                    throw validator.newValidationError(option.key(), RESOURCE.unsupportedAnalyzeJobOption(key));
+                default:
+                    throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
+            }
+        }
     }
 }

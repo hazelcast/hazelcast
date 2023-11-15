@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData.Record;
@@ -35,6 +34,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.reduce;
 
 final class FileUtil {
 
@@ -74,9 +74,8 @@ final class FileUtil {
              .set("object", new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build())
              .build();
 
-    static final Record AVRO_NULLABLE_RECORD =
-            AVRO_RECORD.getSchema().getFields().stream().collect(
-                () -> new GenericRecordBuilder(SchemaBuilder.record("name")
+    static final Record AVRO_NULLABLE_RECORD = reduce(
+            new GenericRecordBuilder(SchemaBuilder.record("name")
                     .fields()
                     .name("string").type().nullable().stringType().noDefault()
                     .name("boolean").type().nullable().booleanType().noDefault()
@@ -94,16 +93,15 @@ final class FileUtil {
                     .name("null").type().nullable().record("nul").fields().endRecord().noDefault()
                     .name("object").type().nullable().record("object").fields().endRecord().noDefault()
                     .endRecord()),
-                (builder, field) -> builder.set(field, AVRO_RECORD.get(field.pos())),
-                ExceptionUtil::combinerUnsupported
-            ).build();
+            AVRO_RECORD.getSchema().getFields().stream(),
+            (record, field) -> record.set(field, AVRO_RECORD.get(field.pos()))
+    ).build();
 
-    static final Record AVRO_NULL_RECORD =
-            AVRO_NULLABLE_RECORD.getSchema().getFields().stream().collect(
-                    () -> new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
-                    (builder, field) -> builder.set(field, null),
-                    ExceptionUtil::combinerUnsupported
-            ).build();
+    static final Record AVRO_NULL_RECORD = reduce(
+            new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
+            AVRO_NULLABLE_RECORD.getSchema().getFields().stream(),
+            (record, field) -> record.set(field, null)
+    ).build();
 
     private static final Record PARQUET_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")

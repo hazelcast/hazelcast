@@ -85,6 +85,9 @@ public interface ParserResource {
     @BaseMessage("Unknown job option: {0}")
     ExInst<SqlValidatorException> unknownJobOption(String key);
 
+    @BaseMessage("Job option is not supported for ANALYZE: {0}")
+    ExInst<SqlValidatorException> unsupportedAnalyzeJobOption(String key);
+
     @BaseMessage("The OR REPLACE option is required for CREATE SNAPSHOT")
     ExInst<SqlValidatorException> createSnapshotWithoutReplace();
 }

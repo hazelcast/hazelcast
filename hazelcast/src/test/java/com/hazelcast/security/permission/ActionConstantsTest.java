@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -169,5 +170,13 @@ public class ActionConstantsTest {
 
         assertNotNull(permission);
         assertTrue(permission instanceof QueuePermission);
+    }
+
+    @Test
+    public void getPermission_CPMap() {
+        Permission permission = ActionConstants.getPermission("foo", CPMapServiceUtil.SERVICE_NAME);
+
+        assertNotNull(permission);
+        assertTrue(permission instanceof CPMapPermission);
     }
 }
