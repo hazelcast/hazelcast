@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
+import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertFalse;
@@ -203,7 +204,8 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(value);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        State state = new State(partitionsToOffset);
+        Map<Map<String, ?>, Long> partitionsToLastOffsetTime = Map.of(lastRecord.sourcePartition(), currentTimeMillis());
+        State state = new State(partitionsToOffset, partitionsToLastOffsetTime);
         return state;
     }
 

@@ -45,9 +45,9 @@ class State implements Serializable {
     /**
      * just for testing
      */
-    State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
+    State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset, Map<Map<String, ?>, Long> partitionsToLastOffsetTime) {
         this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
-        this.partitionsToLastOffsetTime = new ConcurrentHashMap<>();
+        this.partitionsToLastOffsetTime = partitionsToLastOffsetTime;
     }
 
     void commitRecord(SourceRecord rec) {

@@ -45,7 +45,8 @@ public class SourceOffsetStorageReaderTest {
     public void should_return_offset_for_existing_partition() {
         Map<String, String> partition = mapOf("part1", "something");
         Map<Map<String, ?>, Map<String, ?>> partitionToOffset = mapOf(partition, mapOf("part1", 123));
-        State state = new State(partitionToOffset);
+        Map<Map<String, ?>, Long> partitionsToLastOffsetTime = mapOf(partition, System.currentTimeMillis());
+        State state = new State(partitionToOffset, partitionsToLastOffsetTime);
         SourceOffsetStorageReader sut = new SourceOffsetStorageReader(state);
         Map<String, Object> offset = sut.offset(partition);
         assertThat(offset).isEqualTo(mapOf("part1", 123));

@@ -134,23 +134,27 @@ public class TaskRunnerTest {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(2);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        assertThat(snapshot).isEqualTo(new State(partitionsToOffset));
+        Map<Map<String, ?>, Long> partitionsToTime = Map.of(lastRecord.sourcePartition(), System.currentTimeMillis());
+        assertThat(snapshot).isEqualTo(new State(partitionsToOffset, partitionsToTime));
     }
 
     @Test
     public void should_restore_snapshot() {
         State initialSnapshot = taskRunner.createSnapshot();
-        assertThat(initialSnapshot).isEqualTo(new State(new HashMap<>()));
+        assertThat(initialSnapshot).isEqualTo(new State(new HashMap<>(), new HashMap<>()));
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord sourceRecord = dummyRecord(42);
         partitionsToOffset.put(sourceRecord.sourcePartition(), sourceRecord.sourceOffset());
-        State stateToRestore = new State(partitionsToOffset);
+
+        Map<Map<String, ?>, Long> partitionsToTime = new HashMap<>();
+        partitionsToTime.put(sourceRecord.sourcePartition(), System.currentTimeMillis());
+        State stateToRestore = new State(partitionsToOffset, partitionsToTime);
 
         taskRunner.restoreSnapshot(stateToRestore);
 
         State snapshot = taskRunner.createSnapshot();
-        assertThat(snapshot).isEqualTo(new State(partitionsToOffset));
+        assertThat(snapshot).isEqualTo(new State(partitionsToOffset, partitionsToTime));
     }
 
     private void assertPolledRecordsSize(int expected) {
