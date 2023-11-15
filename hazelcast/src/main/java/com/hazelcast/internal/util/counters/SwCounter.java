@@ -28,7 +28,7 @@ import java.lang.invoke.VarHandle;
  * on the X86 is causes that read and all subsequent reads to to stall till the
  * stores in the store buffer has been written to the coherent cache. And this can
  * take some time because it could be that there one or more stores in the store buffer
- * (on Skylake the store buffer can contain 50+ stores) each each of these stores
+ * (on Skylake the store buffer can contain 50+ stores) each of these stores
  * needs to wait for the cache line to be successfully invalidated on the other CPUs.
  * And this can add a lot of latency to those loads and any instruction depending
  * on the loaded values; so you can end up with a core idling because few instructions
