@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 public class ClientTpcBasicTest extends ClientTestSupport {
 
     @After
-    public void cleanup() {
+    public void after() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -53,11 +53,9 @@ public class ClientTpcBasicTest extends ClientTestSupport {
         Config config = new Config();
         // Jet prints too many logs
         config.getJetConfig().setEnabled(false);
-
-        int loopCount = Math.min(Runtime.getRuntime().availableProcessors(), 3);
         config.getTpcConfig()
                 .setEnabled(true)
-                .setEventloopCount(loopCount);
+                .setEventloopCount(3);
         return config;
     }
 
