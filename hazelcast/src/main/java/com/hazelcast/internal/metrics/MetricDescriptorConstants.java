@@ -588,6 +588,7 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_DEVICE_MAX_SPACE = "tstore.device.maxSpace";
     public static final String TSTORE_DEVICE_USAGE = "tstore.device.usage";
     public static final String TSTORE_HLOG_LENGTH = "tstore.hlog.length";
+    public static final String TSTORE_HLOG_AGGREGATED_COUNT = "tstore.hlog.aggregated.count";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";
