@@ -26,8 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.ascii.rest.InternalRestService;
-import com.hazelcast.internal.ascii.rest.MissingRestService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
@@ -135,7 +133,6 @@ public class NodeEngineImpl implements NodeEngine {
     private final Consumer<Packet> packetDispatcher;
     private final SplitBrainProtectionServiceImpl splitBrainProtectionService;
     private final InternalSqlService sqlService;
-    private final InternalRestService restService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
@@ -170,7 +167,6 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = createSqlService();
-            this.restService = createRestService();
             this.dataConnectionService = new DataConnectionServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
@@ -218,23 +214,6 @@ public class NodeEngineImpl implements NodeEngine {
         try {
             Constructor<?> constructor = clz.getConstructor(getClass());
             return (InternalSqlService) constructor.newInstance(this);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException
-                 | ClassCastException e) {
-            // this isn't normal - we found the class, but there's something unexpected
-            throw new RuntimeException(e);
-        }
-    }
-
-    private InternalRestService createRestService() {
-        Class<?> clz;
-        try {
-            clz = Class.forName("com.hazelcast.rest.service.RestServiceImpl");
-        }  catch (ClassNotFoundException e) {
-            return new MissingRestService();
-        }
-        try {
-            Constructor<?> constructor = clz.getConstructor(getClass());
-            return (InternalRestService) constructor.newInstance(this);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException
                  | ClassCastException e) {
             // this isn't normal - we found the class, but there's something unexpected
@@ -311,7 +290,6 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-        restService.start();
         tpcServerBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);

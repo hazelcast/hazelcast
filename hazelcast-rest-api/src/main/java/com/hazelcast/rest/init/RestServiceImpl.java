@@ -13,25 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest.service;
+package com.hazelcast.rest.init;
 
-import com.hazelcast.internal.ascii.rest.InternalRestService;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.rest.HazelcastRestSpringApplication;
 import com.hazelcast.rest.util.NodeEngineImplHolder;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.context.ConfigurableApplicationContext;
 
-public class RestServiceImpl implements InternalRestService {
-    private final NodeEngineImpl nodeEngine;
+import java.util.Properties;
 
-    public RestServiceImpl(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
+public class RestServiceImpl implements ManagedService, RestService {
+
+    /**
+     * rest service name
+     */
+    public static final String SERVICE_NAME = "hz:impl:restServiceImpl";
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        startService(nodeEngine);
     }
 
     @Override
-    public void start() {
+    public void reset() {
+
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+
+    }
+
+    @Override
+    public void startService(NodeEngine nodeEngine) {
         SpringApplication application = new SpringApplication(HazelcastRestSpringApplication.class);
         application.setWebApplicationType(WebApplicationType.SERVLET);
         ConfigurableApplicationContext context = application.run();

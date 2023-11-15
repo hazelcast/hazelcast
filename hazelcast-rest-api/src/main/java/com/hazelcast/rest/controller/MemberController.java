@@ -84,7 +84,6 @@ public class MemberController {
             })
     ResponseEntity<?> getMemberWithUuid(@Parameter(in = ParameterIn.PATH, description = "The member uuid", required = true,
             schema = @Schema()) @PathVariable("member-uuid") UUID uuid) {
-        System.out.println("UUID: " + uuid);
         MemberDetailModel member = memberService.getMemberWithUuid(uuid);
         if (member == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new StatusCodeAndMessage(

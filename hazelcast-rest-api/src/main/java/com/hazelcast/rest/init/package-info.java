@@ -13,20 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest.util;
 
-import com.hazelcast.spi.impl.NodeEngine;
-import org.springframework.stereotype.Component;
-
-@Component
-public class NodeEngineImplHolder {
-    private NodeEngine nodeEngine;
-
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
-    }
-
-    public void setNodeEngine(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
-    }
-}
+/**
+ * Provides Spring interfaces/classes for Hazelcast.
+ */
+package com.hazelcast.rest.init;
