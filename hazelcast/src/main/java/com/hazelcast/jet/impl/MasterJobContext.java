@@ -105,7 +105,6 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
-import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.CANCEL;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
@@ -120,6 +119,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
+import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
@@ -990,7 +990,7 @@ public class MasterJobContext {
 
     @Nonnull
     CompletableFuture<Void> gracefullyTerminateOrCancel() {
-        TerminationMode mode = Util.isJobSuspendable(mc.jobConfig()) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
+        TerminationMode mode = isJobSuspendable(mc.jobConfig()) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
                 () -> requestTermination(mode, false, false).f0());
         return future.thenCompose(Function.identity());
