@@ -34,6 +34,7 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -806,7 +807,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         assertThatThrownBy(job::join)
-                .isInstanceOf(CancellationException.class);
+                .isInstanceOf(CancellationByUserException.class);
     }
 
     @Test
@@ -824,7 +825,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         assertThatThrownBy(job::join)
-                .isInstanceOf(CancellationException.class);
+                .isInstanceOf(CancellationByUserException.class);
     }
 
     @Test

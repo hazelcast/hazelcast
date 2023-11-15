@@ -990,9 +990,8 @@ public class MasterJobContext {
 
     @Nonnull
     CompletableFuture<Void> gracefullyTerminateOrCancel() {
-        TerminationMode mode = isJobSuspendable(mc.jobConfig()) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(mode, false, false).f0());
+                () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
     }
 

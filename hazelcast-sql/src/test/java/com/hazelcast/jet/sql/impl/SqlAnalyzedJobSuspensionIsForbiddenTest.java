@@ -55,7 +55,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     @Test
     public void test_suspendJob() {
         // Given
-        Job job = assertRunQuery();
+        Job job = runQuery();
 
         // When
         job.suspend();
@@ -69,7 +69,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     @Test
     public void test_restartJob() {
         // Given
-        Job job = assertRunQuery();
+        Job job = runQuery();
 
         // When
         job.restart();
@@ -83,7 +83,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
     @Test
     public void test_changeClusterStateToPassive() {
         // When
-        Job job = assertRunQuery();
+        Job job = runQuery();
 
         // Then
         instance.getCluster().changeClusterState(ClusterState.PASSIVE);
@@ -93,7 +93,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
                 .isInstanceOf(CancellationException.class);
     }
 
-    private Job assertRunQuery() {
+    private Job runQuery() {
         // Given
         String query = "SELECT v, v FROM TABLE(generate_stream(1000))";
         instance.getSql().execute("ANALYZE " + query);

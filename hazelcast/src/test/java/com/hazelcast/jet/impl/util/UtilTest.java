@@ -319,5 +319,9 @@ public class UtilTest {
 
         JobConfig suspendableJobConfig = new JobConfig();
         assertTrue(Util.isJobSuspendable(suspendableJobConfig));
+
+        // With 'true', job is suspendable
+        suspendableJobConfig = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, true);
+        assertTrue(Util.isJobSuspendable(nonSuspendableJobConfig));
     }
 }
