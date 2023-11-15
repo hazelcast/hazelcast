@@ -25,7 +25,7 @@ import java.lang.invoke.VarHandle;
  * It makes use of the opaque read/writes to provide a lower overhead than a
  * volatile read/write. Volatile reads/writes can be pretty expensive. If a
  * volatile write is followed by a volatile read to a different variable, then
- * on the X86 is causes that read and all subsequent reads to to stall till the
+ * on the X86 it causes that read and all subsequent reads to stall till the
  * stores in the store buffer has been written to the coherent cache. And this can
  * take some time because it could be that there one or more stores in the store buffer
  * (on Skylake the store buffer can contain 50+ stores) each of these stores
@@ -36,7 +36,8 @@ import java.lang.invoke.VarHandle;
  * on modern Intel processor at most 10 cache lines can be invalidated in parallel.
  * <p/>
  * On platforms with a more relaxed memory model like ARM or RISC-V, volatile
- * imposes additional memory fences that are not needed to update a counter.
+ * imposes additional memory fences that are not needed to update a counter if
+ * you don't care for coherence.
  * <p/>
  * Unlike volatile, opaque doesn't provide any ordering guarantees with respect
  * to other variables. The only thing the counter provides is coherence and
