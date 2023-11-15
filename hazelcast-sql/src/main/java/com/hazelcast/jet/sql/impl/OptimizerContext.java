@@ -103,7 +103,7 @@ public final class OptimizerContext {
     /**
      * Create the optimization context.
      *
-     * @param searchPaths Search paths to support "current schema" feature.
+     * @param searchPaths               Search paths to support "current schema" feature.
      * @return Context.
      */
     public static OptimizerContext create(
@@ -111,12 +111,12 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             IMapResolver iMapResolver,
-            SqlSecurityContext securityContext
-    ) {
+            SqlSecurityContext securityContext,
+            boolean cyclicUserTypesAreAllowed) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, iMapResolver, securityContext);
+        return create(rootSchema, searchPaths, arguments, iMapResolver, securityContext, cyclicUserTypesAreAllowed);
     }
 
     public static OptimizerContext create(
@@ -124,10 +124,12 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             IMapResolver iMapResolver,
-            SqlSecurityContext securityContext
+            SqlSecurityContext securityContext,
+            boolean cyclicUserTypesAreAllowed
     ) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(
+                catalogReader, arguments, iMapResolver, cyclicUserTypesAreAllowed);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, securityContext);

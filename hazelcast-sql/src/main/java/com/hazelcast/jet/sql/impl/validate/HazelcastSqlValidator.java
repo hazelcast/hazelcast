@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.RewriteVisitor;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCastFunction;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
@@ -30,6 +31,7 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -73,6 +75,7 @@ import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -126,17 +129,20 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private final IMapResolver iMapResolver;
 
+    private final boolean cyclicUserTypesAreAllowed;
+
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver
-    ) {
+            IMapResolver iMapResolver,
+            boolean cyclicUserTypesAreAllowed) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
-        this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
+        this.rewriteVisitor = new RewriteVisitor(this);
         this.tableOperatorWrapper = new TableOperatorWrapper();
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
+        this.cyclicUserTypesAreAllowed = cyclicUserTypesAreAllowed;
     }
 
     @Override
@@ -255,6 +261,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             deriveType(scope, offset);
             offset.validate(this, getEmptyScope());
         }
+
+        if (!cyclicUserTypesAreAllowed && doesRowTypeContainCyclicTypes(unwrapFrom(select.getFrom()))) {
+            throw QueryException.error("Experimental feature of using cyclic custom types isn't enabled. "
+                    + "To enable, set " + ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED + " to true");
+        }
     }
 
     @Override
@@ -347,10 +358,18 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         validateUpsertRowType((SqlIdentifier) update.getTargetTable());
     }
 
-    private void validateUpsertRowType(SqlIdentifier table) {
-        final RelDataType rowType = Objects.requireNonNull(getCatalogReader()
-                        .getTable(table.names))
-                .getRowType();
+
+    private void validateUpsertRowType(@Nullable SqlIdentifier table) {
+        if (doesRowTypeContainCyclicTypes(table)) {
+            throw QueryException.error("Upserts are not supported for cyclic data type columns");
+        }
+    }
+
+    private boolean doesRowTypeContainCyclicTypes(@Nullable SqlIdentifier table) {
+        if (table == null) {
+            return false;
+        }
+        final RelDataType rowType = Objects.requireNonNull(getCatalogReader().getTable(table.names)).getRowType();
 
         for (final RelDataTypeField field : rowType.getFieldList()) {
             final RelDataType fieldType = field.getType();
@@ -359,9 +378,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             }
 
             if (containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
-                throw QueryException.error("Upserts are not supported for cyclic data type columns");
+                return true;
             }
         }
+        return false;
     }
 
     @Override
@@ -535,6 +555,22 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return Util.last(names);
+    }
+
+    private SqlIdentifier unwrapFrom(SqlNode from) {
+        if (from instanceof SqlIdentifier) {
+            return (SqlIdentifier) from;
+        }
+
+        if (from instanceof SqlCall) {
+            SqlCall call = (SqlCall) from;
+
+            if (call.getOperator().getKind() == AS) {
+                return unwrapFrom(call.operand(0));
+            }
+        }
+
+        return null;
     }
 
     @Override

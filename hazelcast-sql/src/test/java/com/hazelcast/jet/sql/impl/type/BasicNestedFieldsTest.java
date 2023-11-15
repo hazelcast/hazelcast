@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -52,7 +53,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.createCompactMapping;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
@@ -76,7 +76,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+                .setProperty(ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED.getName(), "true");
         initializeWithClient(3, config, null);
     }
 

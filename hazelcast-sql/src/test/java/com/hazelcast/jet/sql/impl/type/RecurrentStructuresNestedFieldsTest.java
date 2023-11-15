@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,7 +27,6 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.function.Consumer;
 
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -35,7 +35,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+                .setProperty(ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED.getName(), "true");
 
         initializeWithClient(2, config, null);
     }

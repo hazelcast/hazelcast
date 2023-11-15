@@ -350,7 +350,7 @@ public final class OptUtils {
         }
     }
 
-    private static RelDataType convertCustomType(QueryDataType type, RelDataTypeFactory typeFactory) {
+    public static RelDataType convertCustomType(QueryDataType type, RelDataTypeFactory typeFactory) {
         Map<String, HazelcastObjectType> typeMap = new HashMap<>();
         RelDataType converted = convertCustomType(type, typeFactory, typeMap);
         typeMap.values().forEach(HazelcastObjectType::finalizeFields);

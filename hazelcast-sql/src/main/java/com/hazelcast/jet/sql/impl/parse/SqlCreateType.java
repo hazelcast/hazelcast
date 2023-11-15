@@ -82,6 +82,7 @@ public class SqlCreateType extends SqlCreate {
 
     @Override
     public void validate(final SqlValidator validator, final SqlValidatorScope scope) {
+
         if (getReplace() && ifNotExists) {
             throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
         }
