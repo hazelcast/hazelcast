@@ -50,6 +50,16 @@ public class H2DatabaseProvider implements TestDatabaseProvider {
     }
 
     @Override
+    public String user() {
+        return "";
+    }
+
+    @Override
+    public String password() {
+        return "";
+    }
+
+    @Override
     public String getJdbcUrl() {
         return jdbcUrl;
     }

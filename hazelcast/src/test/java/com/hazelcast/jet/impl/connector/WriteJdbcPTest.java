@@ -28,11 +28,13 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -66,7 +68,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
-public abstract class WriteJdbcPTest extends DatabaseProviderTestSupport {
+public class WriteJdbcPTest extends DatabaseProviderTestSupport {
     private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
     private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
     private static final int PERSON_COUNT = 10;
@@ -81,6 +83,11 @@ public abstract class WriteJdbcPTest extends DatabaseProviderTestSupport {
         configureJdbcDataConnection(JDBC_DATA_CONNECTION, getJdbcUrl(), getUsername(), getPassword(), config);
         configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
         initialize(2, config);
+    }
+
+    @BeforeClass
+    public static void beforeClass() throws SQLException {
+        initialize(new H2DatabaseProvider());
     }
 
     @AfterClass
@@ -329,15 +336,17 @@ public abstract class WriteJdbcPTest extends DatabaseProviderTestSupport {
 
     @Test
     public void test_transactional_withRestarts_graceful_exOnce() throws Exception {
-        assumeTestDatabaseProviderIsNotInstanceOf(getDatabaseProvider(), MSSQLDatabaseProvider.class,
-                "XA transactions are not available for MSSQLServerContainer");
+        assumeTestDatabaseProviderIsNotInstanceOf(getDatabaseProvider(),
+                "XA transactions are not available for MSSQLServerContainer",
+                MSSQLDatabaseProvider.class, H2DatabaseProvider.class);
         test_transactional_withRestarts(true, true);
     }
 
     @Test
     public void test_transactional_withRestarts_forceful_exOnce() throws Exception {
-        assumeTestDatabaseProviderIsNotInstanceOf(getDatabaseProvider(), MSSQLDatabaseProvider.class,
-                "XA transactions are not available for MSSQLServerContainer");
+        assumeTestDatabaseProviderIsNotInstanceOf(getDatabaseProvider(),
+                "XA transactions are not available for MSSQLServerContainer",
+                MSSQLDatabaseProvider.class, H2DatabaseProvider.class);
         test_transactional_withRestarts(false, true);
     }
 
