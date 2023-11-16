@@ -88,13 +88,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -138,6 +139,11 @@ public final class Util {
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 
     private Util() {
+    }
+
+    public static boolean isJobSuspendable(JobConfig jobConfig) {
+        Boolean argument = jobConfig.getArgument(KEY_JOB_IS_SUSPENDABLE);
+        return argument == null || argument;
     }
 
     public static <T> Supplier<T> memoize(Supplier<T> onceSupplier) {

@@ -133,9 +133,9 @@ public final class RootResultConsumerSink implements Processor {
     public static ProcessorMetaSupplier rootResultConsumerSink(
             Address initiatorAddress,
             Expression<?> limitExpression,
-            Expression<?> offsetExpression
-    ) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(new Supplier(limitExpression, offsetExpression));
+            Expression<?> offsetExpression) {
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(
+                new Supplier(limitExpression, offsetExpression));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
     }
 
