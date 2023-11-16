@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.avro;
+package com.hazelcast.jet.avro.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
@@ -54,9 +54,6 @@ import java.util.ListIterator;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-/**
- * Hazelcast serializer hooks for the classes in the {@code com.hazelcast.jet.avro} package.
- */
 public final class AvroSerializerHooks {
     private AvroSerializerHooks() { }
 

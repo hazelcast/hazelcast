@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.kafka;
 
-import com.hazelcast.jet.avro.AvroSerializerHooks;
+import com.hazelcast.jet.avro.impl.AvroSerializerHooks;
 import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
