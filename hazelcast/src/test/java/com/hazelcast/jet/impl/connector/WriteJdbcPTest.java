@@ -337,7 +337,7 @@ public class WriteJdbcPTest extends DatabaseProviderTestSupport {
     @Test
     public void test_transactional_withRestarts_graceful_exOnce() throws Exception {
         assumeTestDatabaseProviderIsNotInstanceOf(getDatabaseProvider(),
-                "XA transactions are not available for MSSQLServerContainer",
+                "XA transactions are not available for DatabaseProvider",
                 MSSQLDatabaseProvider.class, H2DatabaseProvider.class);
         test_transactional_withRestarts(true, true);
     }
@@ -345,8 +345,8 @@ public class WriteJdbcPTest extends DatabaseProviderTestSupport {
     @Test
     public void test_transactional_withRestarts_forceful_exOnce() throws Exception {
         assumeTestDatabaseProviderIsNotInstanceOf(getDatabaseProvider(),
-                "XA transactions are not available for MSSQLServerContainer",
-                MSSQLDatabaseProvider.class, H2DatabaseProvider.class);
+                "XA transactions are not available for DatabaseProvider",
+                MSSQLDatabaseProvider.class);
         test_transactional_withRestarts(false, true);
     }
 
