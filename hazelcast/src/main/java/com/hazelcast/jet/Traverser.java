@@ -17,8 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.AppendableTraverser;
-import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
-import com.hazelcast.jet.impl.util.FlatMappingAutoCloseableTraverser;
 import com.hazelcast.jet.impl.util.FlatMappingTraverser;
 
 import javax.annotation.CheckReturnValue;
@@ -105,16 +103,6 @@ public interface Traverser<T> {
     @CheckReturnValue
     default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<R>> flatMapFn) {
         return new FlatMappingTraverser<>(this, flatMapFn);
-    }
-
-    /**
-     * Same as {{@link #flatMap(Function)}}. The returned traverser will close the internal traverser
-     */
-    @Nonnull
-    @CheckReturnValue
-    default <R> AutoCloseableTraverser<R> flatMapAutoCloseable(
-            @Nonnull Function<? super T, ? extends AutoCloseableTraverser<R>> flatMapFn) {
-        return new FlatMappingAutoCloseableTraverser<>(this, flatMapFn);
     }
 
     /**

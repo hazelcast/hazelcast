@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.AutoCloseableTraversers;
+import com.hazelcast.jet.impl.AutoCloseableTraversers;
 import com.hazelcast.jet.Traverser;
 
 import java.util.function.Function;

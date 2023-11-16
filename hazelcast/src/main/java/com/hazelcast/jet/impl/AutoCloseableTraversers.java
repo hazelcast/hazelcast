@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
 
 import javax.annotation.Nonnull;
