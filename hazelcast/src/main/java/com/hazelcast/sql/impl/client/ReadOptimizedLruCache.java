@@ -91,6 +91,12 @@ public class ReadOptimizedLruCache<K, V> {
         }
     }
 
+    /**
+     * Checks the existence of {@code key} and puts {@code mappingFn(key)} if not
+     * exists, in a non-atomic way. It does not block the callers and is free from
+     * deadlocks unlike {@link ConcurrentHashMap#computeIfAbsent}. However, it may
+     * overwrite a just-put entry or skip computing a just-removed key.
+     */
     public V computeIfAbsent(K key, Function<K, V> mappingFn) {
         V value = get(key);
         if (value != null) {
