@@ -105,7 +105,10 @@ public class QueryConverter {
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 
-        // 2. Remove subquery expressions, converting them to Correlate nodes.
+        // 2. Perform unconditional rewrites, such as:
+        // - remove subquery expressions, converting them to Correlate nodes.
+        // - transform distinct UNION to UNION ALL, merging the neighboring UNION relations.
+        // - check, if the relation uses cyclic user types, but if they are allowed - skip this step.
         RelNode relNoSubqueries = performUnconditionalRewrites(root.project(), cyclicUserTypesAreAllowed);
 
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,

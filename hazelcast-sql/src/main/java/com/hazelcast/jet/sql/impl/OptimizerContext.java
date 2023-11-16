@@ -129,8 +129,7 @@ public final class OptimizerContext {
             boolean cyclicUserTypesAreAllowed
     ) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(
-                catalogReader, arguments, iMapResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, securityContext);
