@@ -39,8 +39,9 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Note: We prepared a separate test suite to prevent tests to be flaky
  *  because {@link AnalyzeStatementTest} inherits {@link SimpleTestInClusterSupport},
- *  where cluster members are shared between tests. For tests with streaming queries,
- *  it's unlikely to have them running on the same shared instances.
+ *  where cluster members are shared between tests. Finding job by
+ *  the SQL query is not unique because old/parallel jobs are also visible.
+ *  We do not want to share the cluster between the tests.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
