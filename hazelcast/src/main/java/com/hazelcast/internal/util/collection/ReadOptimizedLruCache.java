@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.client;
+package com.hazelcast.internal.util.collection;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
