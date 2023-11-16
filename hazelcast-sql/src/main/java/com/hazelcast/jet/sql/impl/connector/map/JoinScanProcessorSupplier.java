@@ -88,9 +88,14 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor =
-                    new TransformBatchedP<>(
+                    new TransformBatchedP<JetSqlRow, JetSqlRow>(
                             joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext)
-                    ).setCooperative(false);
+                    ) {
+                        @Override
+                        public boolean isCooperative() {
+                            return false;
+                        }
+                    };
             processors.add(processor);
         }
         return processors;
