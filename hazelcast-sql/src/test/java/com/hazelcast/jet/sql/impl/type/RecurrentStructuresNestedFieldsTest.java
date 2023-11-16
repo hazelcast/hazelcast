@@ -18,6 +18,11 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.A;
+import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.B;
+import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.C;
+import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.SelfRef;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -25,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +54,72 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         new SqlType(name)
                 .fields(fields)
                 .create(client());
+    }
+
+    @Test
+    public void test_selfRefType() {
+        createType("SelfRefType", "id BIGINT", "name VARCHAR", "other SelfRefType");
+
+        final SelfRef first = new SelfRef(1L, "first");
+        final SelfRef second = new SelfRef(2L, "second");
+        final SelfRef third = new SelfRef(3L, "third");
+        final SelfRef fourth = new SelfRef(4L, "fourth");
+
+        first.other = second;
+        second.other = third;
+        third.other = fourth;
+        fourth.other = first;
+
+        createJavaMapping("test", SelfRef.class, "this SelfRefType");
+        client().getMap("test").put(1L, first);
+
+        // Note: this test was moved from BasicNestedFieldsTest.
+        //  The check will cover both client & member behavior.
+        List<Row> expectedRows = rows(5,
+                "first",
+                "second",
+                "third",
+                "fourth",
+                "first"
+        );
+        assertRowsAnyOrder(client(), "SELECT "
+                        + "test.this.name, "
+                        + "test.this.other.name, "
+                        + "test.this.other.other.name, "
+                        + "test.this.other.other.other.name, "
+                        + "test.this.other.other.other.other.name "
+                        + "FROM test",
+                expectedRows);
+
+        assertRowsAnyOrder(instance(), "SELECT "
+                        + "test.this.name, "
+                        + "test.this.other.name, "
+                        + "test.this.other.other.name, "
+                        + "test.this.other.other.other.name, "
+                        + "test.this.other.other.other.other.name "
+                        + "FROM test",
+                expectedRows);
+    }
+
+    @Test
+    public void test_circularlyRecurrentTypes() {
+        createType("AType", "name VARCHAR", "b BType");
+        createType("BType", "name VARCHAR", "c CType");
+        createType("CType", "name VARCHAR", "a AType");
+
+        final A a = new A("a");
+        final B b = new B("b");
+        final C c = new C("c");
+
+        a.b = b;
+        b.c = c;
+        c.a = a;
+
+        createJavaMapping("test", A.class, "this AType");
+        IMap<Long, A> map = client().getMap("test");
+        map.put(1L, a);
+
+        assertRowsAnyOrder(client(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
     }
 
     @Test

@@ -103,7 +103,7 @@ public final class OptimizerContext {
     /**
      * Create the optimization context.
      *
-     * @param searchPaths               Search paths to support "current schema" feature.
+     * @param searchPaths Search paths to support "current schema" feature.
      * @return Context.
      */
     public static OptimizerContext create(
@@ -112,7 +112,8 @@ public final class OptimizerContext {
             List<Object> arguments,
             IMapResolver iMapResolver,
             SqlSecurityContext securityContext,
-            boolean cyclicUserTypesAreAllowed) {
+            boolean cyclicUserTypesAreAllowed
+    ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 

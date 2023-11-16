@@ -27,14 +27,14 @@ import org.junit.Test;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class CyclicUDTAreNotAllowedTest extends SqlTestSupport {
+public class CyclicUDTAreNotAllowedByDefaultTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {
         initializeWithClient(1, null, null);
     }
 
     @Test
-    public void test_failOnCycles() {
+    public void test_defaultBehaviorFailsOnCycles() {
         createType("AType", "name VARCHAR", "b BType");
         createType("BType", "name VARCHAR", "c CType");
         createType("CType", "name VARCHAR", "a AType");
