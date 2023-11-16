@@ -1071,6 +1071,16 @@
                 <lock-acquire-limit>2</lock-acquire-limit>
             </fenced-lock>
         </locks>
+        <maps>
+            <map>
+                <name>map1</name>
+                <max-size-mb>50</max-size-mb>
+            </map>
+            <map>
+                <name>map2</name>
+                <max-size-mb>25</max-size-mb>
+            </map>
+        </maps>
     </cp-subsystem>
 
     <auditlog enabled="false">

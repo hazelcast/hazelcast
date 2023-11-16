@@ -93,6 +93,13 @@
             <artifactId>hibernate-core</artifactId>
             <version>5.0.9.Final</version>
             <scope>test</scope>
+            <exclusions>
+            	<!-- Required for Hibernate <5.3.7 -->
+                <exclusion>
+                    <artifactId>xml-apis</artifactId>
+                    <groupId>xml-apis</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>

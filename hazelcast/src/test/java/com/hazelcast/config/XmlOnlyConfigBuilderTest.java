@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPMapConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -55,6 +57,7 @@ import java.net.URL;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.w3c.dom.TypeInfo.DERIVATION_RESTRICTION;
@@ -211,6 +214,22 @@ public class XmlOnlyConfigBuilderTest {
         assertTrue("No whitespace added", addWhitespaceToNonSpaceStrings(validated));
         String xml = serialize(validated);
         buildConfig(xml);
+    }
+
+    @Test
+    public void testCPMapConfig() {
+        Config config = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
+        assertNotNull(config);
+        CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
+        assertEquals(2, cpSubsystemConfig.getCpMapConfigs().size());
+        CPMapConfig map1Expected = new CPMapConfig("map1", 50);
+        CPMapConfig map1Actual = cpSubsystemConfig.findCPMapConfig(map1Expected.getName());
+        assertNotNull(map1Actual);
+        assertEquals(map1Expected, map1Actual);
+        CPMapConfig map2Expected = new CPMapConfig("map2", 25);
+        CPMapConfig map2Actual = cpSubsystemConfig.findCPMapConfig(map2Expected.getName());
+        assertNotNull(map2Actual);
+        assertEquals(map2Expected, map2Actual);
     }
 
     private static void assertXsdVersion(String buildVersion, String expectedXsdVersion) {
