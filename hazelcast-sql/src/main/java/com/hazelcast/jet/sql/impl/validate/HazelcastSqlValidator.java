@@ -31,9 +31,9 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
@@ -129,20 +129,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private final IMapResolver iMapResolver;
 
-    private final boolean cyclicUserTypesAreAllowed;
-
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver,
-            boolean cyclicUserTypesAreAllowed) {
+            IMapResolver iMapResolver) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new RewriteVisitor(this);
         this.tableOperatorWrapper = new TableOperatorWrapper();
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
-        this.cyclicUserTypesAreAllowed = cyclicUserTypesAreAllowed;
     }
 
     @Override
@@ -230,22 +226,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         throw QueryException.error("Cannot convert ROW to JSON");
     }
 
-    private boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
-        if (!discovered.add(type.getTypeName())) {
-            return true;
-        }
-
-        for (final RelDataTypeField field : type.getFieldList()) {
-            final RelDataType fieldType = field.getType();
-            if (fieldType instanceof HazelcastObjectType
-                    && containsCycles((HazelcastObjectType) fieldType, discovered)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private void validateSelect(SqlSelect select, SqlValidatorScope scope) {
         // Derive the types for offset-fetch expressions, Calcite doesn't do
         // that automatically.
@@ -260,11 +240,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (offset != null) {
             deriveType(scope, offset);
             offset.validate(this, getEmptyScope());
-        }
-
-        if (!cyclicUserTypesAreAllowed && doesRowTypeContainCyclicTypes(unwrapFrom(select.getFrom()))) {
-            throw QueryException.error("Experimental feature of using cyclic custom types isn't enabled. "
-                    + "To enable, set " + ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED + " to true");
         }
     }
 
@@ -377,7 +352,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 continue;
             }
 
-            if (containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
+            if (QueryUtils.containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
                 return true;
             }
         }
@@ -395,9 +370,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             SqlConnector connector = getJetSqlConnector(table);
 
             // We need to feed primary keys to the delete processor so that it can directly delete the records.
-            // Therefore we use the primary key for the select list.
+            // Therefore, we use the primary key for the select list.
             connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
-            if (selectList.size() == 0) {
+            if (selectList.isEmpty()) {
                 throw QueryException.error("Cannot DELETE from " + delete.getTargetTable() + ": it doesn't have a primary key");
             }
         }

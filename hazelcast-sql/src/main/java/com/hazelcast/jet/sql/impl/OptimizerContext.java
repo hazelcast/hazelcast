@@ -130,13 +130,13 @@ public final class OptimizerContext {
     ) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
         HazelcastSqlValidator validator = new HazelcastSqlValidator(
-                catalogReader, arguments, iMapResolver, cyclicUserTypesAreAllowed);
+                catalogReader, arguments, iMapResolver);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, securityContext);
 
         QueryParser parser = new QueryParser(validator);
-        QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
+        QueryConverter converter = new QueryConverter(validator, catalogReader, cluster, cyclicUserTypesAreAllowed);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
         return new OptimizerContext(cluster, parser, converter, planner);

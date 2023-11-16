@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
 import com.hazelcast.jet.sql.impl.opt.ExtractUpdateExpressionsRule;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
+import com.hazelcast.jet.sql.impl.opt.logical.ScanCyclicTypeMustNotExecuteRule;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -26,6 +27,7 @@ import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
@@ -84,11 +86,17 @@ public class QueryConverter {
     private final SqlValidator validator;
     private final Prepare.CatalogReader catalogReader;
     private final RelOptCluster cluster;
+    private final boolean cyclicUserTypesAreAllowed;
 
-    public QueryConverter(SqlValidator validator, Prepare.CatalogReader catalogReader, HazelcastRelOptCluster cluster) {
+    public QueryConverter(
+            SqlValidator validator,
+            CatalogReader catalogReader,
+            HazelcastRelOptCluster cluster,
+            boolean cyclicUserTypesAreAllowed) {
         this.validator = validator;
         this.catalogReader = catalogReader;
         this.cluster = cluster;
+        this.cyclicUserTypesAreAllowed = cyclicUserTypesAreAllowed;
     }
 
     public QueryConvertResult convert(SqlNode node) {
@@ -98,7 +106,7 @@ public class QueryConverter {
         RelRoot root = converter.convertQuery(node, false, true);
 
         // 2. Remove subquery expressions, converting them to Correlate nodes.
-        RelNode relNoSubqueries = performUnconditionalRewrites(root.project());
+        RelNode relNoSubqueries = performUnconditionalRewrites(root.project(), cyclicUserTypesAreAllowed);
 
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
         // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
@@ -147,13 +155,17 @@ public class QueryConverter {
      * <li>
      *  Transformation of distinct UNION to UNION ALL, merging the neighboring UNION relations.
      * </li>
+     * <li>
+     *  Check, if the relation uses cyclic user types, and if they are allowed - skip this step.
+     * </li>
      *
      * </ul>
      *
-     * @param rel Initial relation.
+     * @param rel                       Initial relation.
+     * @param cyclicUserTypesAreAllowed Whether cyclic user types are allowed.
      * @return Resulting relation.
      */
-    private static RelNode performUnconditionalRewrites(RelNode rel) {
+    private static RelNode performUnconditionalRewrites(RelNode rel, boolean cyclicUserTypesAreAllowed) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Correlated subqueries elimination rules
@@ -167,6 +179,11 @@ public class QueryConverter {
 
         // Other rules
         hepProgramBuilder.addRuleInstance(ExtractUpdateExpressionsRule.INSTANCE);
+        // Note: the way to check if cyclic type are allowed in SqlValidator is error-prone,
+        //  and the best way is to check it on pre-optimization phase.
+        if (!cyclicUserTypesAreAllowed) {
+            hepProgramBuilder.addRuleInstance(ScanCyclicTypeMustNotExecuteRule.INSTANCE);
+        }
 
         HepPlanner planner = new HepPlanner(
                 hepProgramBuilder.build(),
