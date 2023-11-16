@@ -95,7 +95,7 @@ public class SqlAnalyzedJobSuspensionIsForbiddenTest extends JetTestSupport {
 
     private Job runQuery() {
         // Given
-        String query = "SELECT v, v FROM TABLE(generate_stream(1000))";
+        String query = "SELECT v, v FROM TABLE(generate_stream(1))";
         instance.getSql().execute("ANALYZE " + query);
 
         // When
