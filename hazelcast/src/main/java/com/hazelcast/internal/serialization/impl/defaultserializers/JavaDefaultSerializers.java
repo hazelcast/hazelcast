@@ -487,7 +487,12 @@ public final class JavaDefaultSerializers {
 
         @Override
         public byte[] write(ByteBuffer buffer) throws IOException {
-            return buffer.array();
+            if (buffer.hasArray() && buffer.arrayOffset() == 0 && buffer.limit() == buffer.capacity()) {
+                return buffer.array();
+            }
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            return bytes;
         }
 
         @Override
