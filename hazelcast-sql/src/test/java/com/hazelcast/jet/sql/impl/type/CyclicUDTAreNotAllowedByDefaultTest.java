@@ -89,7 +89,7 @@ public class CyclicUDTAreNotAllowedByDefaultTest extends SqlTestSupport {
     static class SimpleType {
         String name;
 
-        public SimpleType(String name) {
+        SimpleType(String name) {
             this.name = name;
         }
 
