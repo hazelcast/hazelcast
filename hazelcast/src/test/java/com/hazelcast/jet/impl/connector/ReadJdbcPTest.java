@@ -54,8 +54,6 @@ public class ReadJdbcPTest extends DatabaseProviderTestSupport {
     private static final int ITEM_COUNT = 100;
     private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
     private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
-
-//    private static String dbConnectionUrl;
     private static List<Entry<Integer, String>> tableContents;
 
     public static void initialize(TestDatabaseProvider provider) throws SQLException {
@@ -78,7 +76,6 @@ public class ReadJdbcPTest extends DatabaseProviderTestSupport {
         }
         tableContents = IntStream.range(0, ITEM_COUNT).mapToObj(i -> entry(i, "name-" + i)).collect(toList());
     }
-
 
     @BeforeClass
     public static void beforeClass() throws SQLException {
@@ -171,5 +168,4 @@ public class ReadJdbcPTest extends DatabaseProviderTestSupport {
 
         instance().getJet().newJob(p).join();
     }
-
 }
