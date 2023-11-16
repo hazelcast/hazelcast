@@ -126,7 +126,7 @@
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
         -->
         <protobuf.version>23.2</protobuf.version>
-        <java.protobuf.version>3.25.0</java.protobuf.version>
+        <java.protobuf.version>3.25.1</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
