@@ -833,7 +833,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Given
         DAG streamingDag = new DAG();
         streamingDag.newVertex("v", () -> new MockP().streaming());
-        JobConfig jobConfig = new JobConfig().setName("foo").setArgument(KEY_JOB_IS_SUSPENDABLE, false);
+        JobConfig jobConfig = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
 
         // When
         Job job = instance().getJet().newJob(streamingDag, jobConfig);
