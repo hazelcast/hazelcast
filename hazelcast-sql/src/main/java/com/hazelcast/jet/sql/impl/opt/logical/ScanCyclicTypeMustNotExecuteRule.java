@@ -33,7 +33,7 @@ import org.immutables.value.Value;
 import java.util.HashSet;
 
 /**
- * A rule that replaces any streaming sort attempt with {@link MustNotExecuteLogicalRel}.
+ * A rule that throws if any cyclic type usage attempt is detected.
  */
 @Value.Enclosing
 public final class ScanCyclicTypeMustNotExecuteRule extends RelRule<Config> implements TransformationRule {
