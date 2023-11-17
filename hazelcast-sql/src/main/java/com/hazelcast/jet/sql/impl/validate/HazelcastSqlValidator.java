@@ -75,7 +75,6 @@ import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -204,24 +203,18 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
-    public void validateColumnListParams(
-            final SqlFunction function,
-            final List<RelDataType> argTypes,
-            final List<SqlNode> operands
-    ) {
+    public void validateColumnListParams(final SqlFunction function, final List<RelDataType> argTypes, final List<SqlNode> operands) {
         if (!(function instanceof HazelcastCastFunction)) {
             super.validateColumnListParams(function, argTypes, operands);
         }
 
         if (!argTypes.get(0).getSqlTypeName().equals(SqlTypeName.COLUMN_LIST)) {
-            throw QueryException.error("Cannot convert " + argTypes.get(0).getSqlTypeName()
-                    + " to " + argTypes.get(1).getSqlTypeName());
+            throw QueryException.error("Cannot convert " + argTypes.get(0).getSqlTypeName() + " to " + argTypes.get(1).getSqlTypeName());
         }
 
         final SqlCall call = (SqlCall) operands.get(0);
 
-        assert call.getOperator().getKind().equals(SqlKind.ROW)
-                : "CAST column list argument is not a RowExpression call";
+        assert call.getOperator().getKind().equals(SqlKind.ROW) : "CAST column list argument is not a RowExpression call";
 
         throw QueryException.error("Cannot convert ROW to JSON");
     }
@@ -244,14 +237,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
-    protected void addToSelectList(
-            List<SqlNode> list,
-            Set<String> aliases,
-            List<Map.Entry<String, RelDataType>> fieldList,
-            SqlNode exp,
-            SelectScope scope,
-            boolean includeSystemVars
-    ) {
+    protected void addToSelectList(List<SqlNode> list, Set<String> aliases, List<Map.Entry<String, RelDataType>> fieldList, SqlNode exp, SelectScope scope, boolean includeSystemVars) {
         if (isHiddenColumn(exp, scope)) {
             return;
         }
@@ -299,8 +285,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (update.getAlias() != null) {
             sourceTable = SqlValidatorUtil.addAlias(sourceTable, update.getAlias().getSimple());
         }
-        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
-                update.getCondition(), null, null, null, null, null, null, null);
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable, update.getCondition(), null, null, null, null, null, null, null);
     }
 
     @Override
@@ -334,16 +319,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
 
-    private void validateUpsertRowType(@Nullable SqlIdentifier table) {
-        if (doesRowTypeContainCyclicTypes(table)) {
-            throw QueryException.error("Upserts are not supported for cyclic data type columns");
-        }
-    }
-
-    private boolean doesRowTypeContainCyclicTypes(@Nullable SqlIdentifier table) {
-        if (table == null) {
-            return false;
-        }
+    private void validateUpsertRowType(SqlIdentifier table) {
         final RelDataType rowType = Objects.requireNonNull(getCatalogReader().getTable(table.names)).getRowType();
 
         for (final RelDataTypeField field : rowType.getFieldList()) {
@@ -353,10 +329,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             }
 
             if (QueryUtils.containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
-                return true;
+                throw QueryException.error("Upserts are not supported for cyclic data type columns");
             }
         }
-        return false;
     }
 
     @Override
@@ -381,8 +356,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (delete.getAlias() != null) {
             sourceTable = SqlValidatorUtil.addAlias(sourceTable, delete.getAlias().getSimple());
         }
-        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
-                delete.getCondition(), null, null, null, null, null, null, null);
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable, delete.getCondition(), null, null, null, null, null, null, null);
     }
 
     private Table extractTable(SqlIdentifier identifier) {
@@ -532,22 +506,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return Util.last(names);
     }
 
-    private SqlIdentifier unwrapFrom(SqlNode from) {
-        if (from instanceof SqlIdentifier) {
-            return (SqlIdentifier) from;
-        }
-
-        if (from instanceof SqlCall) {
-            SqlCall call = (SqlCall) from;
-
-            if (call.getOperator().getKind() == AS) {
-                return unwrapFrom(call.operand(0));
-            }
-        }
-
-        return null;
-    }
-
     @Override
     public CalciteContextException newValidationError(SqlNode node, Resources.ExInst<SqlValidatorException> e) {
         assert node != null;
@@ -589,8 +547,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                     call.setOperand(0, wrapTableOperator(call.getOperandList().get(0)));
                     return call;
                 } else if (call.getOperator().getKind() == COLLECTION_TABLE) {
-                    return new SqlSelect(call.getParserPosition(), null, SqlNodeList.SINGLETON_STAR,
-                            super.visit(call), null, null, null, null, null, null, null, null);
+                    return new SqlSelect(call.getParserPosition(), null, SqlNodeList.SINGLETON_STAR, super.visit(call), null, null, null, null, null, null, null, null);
                 }
             }
             return node.accept(this);
