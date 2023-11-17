@@ -103,8 +103,8 @@ class HazelcastServerCommandLineTest {
 
             String string = outputStreamCaptor.toString(StandardCharsets.UTF_8);
             assertThat(string)
-                    .contains("org.apache.logging.log4j.core.config.ConfigurationException: " +
-                              "No type attribute provided for Layout on Appender STDOUT");
+                    .contains("org.apache.logging.log4j.core.config.ConfigurationException: "
+                              + "No type attribute provided for Layout on Appender STDOUT");
         } finally {
             System.setOut(standardErr);
         }
