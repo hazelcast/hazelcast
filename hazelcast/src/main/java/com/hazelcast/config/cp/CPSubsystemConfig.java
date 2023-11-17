@@ -776,6 +776,11 @@ public class CPSubsystemConfig {
         return this;
     }
 
+    /**
+     * Sets the limit of permitted {@link com.hazelcast.cp.CPMap} instances.
+     * @param cpMapLimit limit of {@link com.hazelcast.cp.CPMap} instances
+     * @throws IllegalArgumentException if {@code cpMapLimit < 0}
+     */
     public CPSubsystemConfig setCPMapLimit(int cpMapLimit) {
         checkPositive("cpMapLimit", cpMapLimit);
         this.cpMapLimit = cpMapLimit;

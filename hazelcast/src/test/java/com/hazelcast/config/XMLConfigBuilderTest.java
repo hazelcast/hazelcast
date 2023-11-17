@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -3934,6 +3935,17 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <lock-acquire-limit>2</lock-acquire-limit>\n"
                 + "    </fenced-lock>\n"
                 + "  </locks>\n"
+                 + "  <maps>\n"
+                 + "    <map>\n"
+                 + "      <name>map1</name>\n"
+                 + "      <max-size-mb>1</max-size-mb>\n"
+                 + "    </map>\n"
+                 + "    <map>\n"
+                 + "      <name>map2</name>\n"
+                 + "      <max-size-mb>2</max-size-mb>\n"
+                 + "    </map>\n"
+                 + "  </maps>\n"
+                + "  <map-limit>20</map-limit>\n"
                 + "</cp-subsystem>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
@@ -3970,6 +3982,15 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(lockConfig2);
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
+        assertEquals(20, cpSubsystemConfig.getCPMapLimit());
+        CPMapConfig mapConfig1 = cpSubsystemConfig.findCPMapConfig("map1");
+        CPMapConfig mapConfig2 = cpSubsystemConfig.findCPMapConfig("map2");
+        assertNotNull(mapConfig1);
+        assertNotNull(mapConfig2);
+        assertEquals("map1", mapConfig1.getName());
+        assertEquals(1, mapConfig1.getMaxSizeMb());
+        assertEquals("map2", mapConfig2.getName());
+        assertEquals(2, mapConfig2.getMaxSizeMb());
     }
 
     @Override
