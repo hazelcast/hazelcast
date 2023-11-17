@@ -151,6 +151,16 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (DistributedObject o : objects) {
             o.destroy();
         }
+
+        // Jet keeps some IMap references in JobRepository.
+        // Destroying proxies removes the objects from registry but JobRepository still uses
+        // original instances which are on longer visible.
+        // After we destroy the objects we need to refresh references in JobRepository.
+        for (HazelcastInstance inst : stillActiveInstances) {
+            JetServiceBackend jetServiceBackend = getJetServiceBackend(inst);
+            jetServiceBackend.getJobRepository().reset();
+        }
+
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
                 // Let's wait for all unprocessed operations (like destroying distributed object) to complete

@@ -204,7 +204,6 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                         j.getConfig().getArgument("__sql.queryText"),
                         "ANALYZE " + query
                 ))
-                .filter(j -> !j.getStatus().isTerminal())
                 .findFirst()
                 .orElse(null);
 

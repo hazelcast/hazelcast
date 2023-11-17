@@ -62,4 +62,11 @@ public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
     public T remembered() {
         return remembered;
     }
+
+    /**
+     * Forget remembered value. On next access the supplier will be invoked again.
+     */
+    public void forget() {
+        remembered = null;
+    }
 }
