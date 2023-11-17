@@ -822,7 +822,6 @@ SqlNode SqlExplainStatement() :
 SqlNode SqlAnalyzeStatement() :
 {
     SqlNode stmt;
-    SqlIdentifier name = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
@@ -831,13 +830,8 @@ SqlNode SqlAnalyzeStatement() :
         <WITH> <OPTIONS>
         sqlOptions = SqlOptions()
     ]
-
-    [
-        <AS>
-        name = SimpleIdentifier()
-    ]
     stmt = ExtendedSqlQueryOrDml() {
-        return new SqlAnalyzeStatement(getPos(), stmt, name, sqlOptions);
+        return new SqlAnalyzeStatement(getPos(), stmt, sqlOptions);
     }
 }
 
