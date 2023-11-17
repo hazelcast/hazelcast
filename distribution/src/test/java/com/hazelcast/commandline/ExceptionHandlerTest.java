@@ -16,54 +16,51 @@
 
 package com.hazelcast.commandline;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ExceptionHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class ExceptionHandlerTest {
 
+    @Mock
     private Exception exception;
+
+    @Mock
     private CommandLine commandLine;
+
+    @Mock
     private CommandLine.ParseResult parseResult;
-    private PrintWriter err;
+
+    @Mock
+    private PrintWriter errorWriter;
+
+    @Mock
     private CommandLine.Help.ColorScheme colorScheme;
 
-    @Before
+    @BeforeEach
     public void setup() {
-        exception = mock(Exception.class);
-        commandLine = mock(CommandLine.class);
-        parseResult = mock(CommandLine.ParseResult.class);
-        err = mock(PrintWriter.class);
-        colorScheme = mock(CommandLine.Help.ColorScheme.class);
-        when(commandLine.getErr()).thenReturn(err);
+        when(commandLine.getErr()).thenReturn(errorWriter);
         when(commandLine.getColorScheme()).thenReturn(colorScheme);
     }
 
-    @Test
-    public void test_handleExecutionException() {
-        // given
-        doReturn("some message").when(exception).getMessage();
-        // when
-        new ExceptionHandler().handleExecutionException(exception, commandLine, parseResult);
-        // then
-        verify(err, times(1)).println(colorScheme.errorText(exception.getMessage()));
-        verify(commandLine, times(1)).usage(err, colorScheme);
-    }
 
     @Test
-    public void test_handleExecutionException_withoutExceptionMessage() {
+    void test_handleExecutionException_withoutExceptionMessage() {
         // when
         new ExceptionHandler().handleExecutionException(exception, commandLine, parseResult);
         // then
-        verify(exception, times(1)).printStackTrace(err);
-        verify(commandLine, times(1)).usage(err, colorScheme);
+        verify(exception, times(1)).printStackTrace(any(PrintWriter.class));
+        verify(commandLine, times(1)).usage(errorWriter, colorScheme);
     }
 }

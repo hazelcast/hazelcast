@@ -17,29 +17,36 @@
 package com.hazelcast.commandline;
 
 import com.hazelcast.jet.function.RunnableEx;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import picocli.CommandLine;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
+import static com.hazelcast.commandline.HazelcastServerCommandLine.createPrintWriter;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class HazelcastServerCommandLineTest {
+@ExtendWith(MockitoExtension.class)
+class HazelcastServerCommandLineTest {
     private HazelcastServerCommandLine hazelcastServerCommandLine;
+
+    @Mock
     private RunnableEx start;
 
-    @Before
+    @BeforeEach
     public void setUp() {
-        start = mock(RunnableEx.class);
         hazelcastServerCommandLine = new HazelcastServerCommandLine(start);
     }
 
     @Test
-    public void test_start()
-            throws IOException, InterruptedException {
+    void test_start() {
         //when
         hazelcastServerCommandLine.start(null, null, null);
         //then
@@ -47,8 +54,7 @@ public class HazelcastServerCommandLineTest {
     }
 
     @Test
-    public void test_start_withConfigFile()
-            throws Exception {
+    void test_start_withConfigFile() {
         // given
         String configFile = "path/to/test-hazelcast.xml";
         // when
@@ -58,8 +64,7 @@ public class HazelcastServerCommandLineTest {
     }
 
     @Test
-    public void test_start_withPort()
-            throws Exception {
+    void test_start_withPort() {
         // given
         String port = "9999";
         // when
@@ -69,8 +74,7 @@ public class HazelcastServerCommandLineTest {
     }
 
     @Test
-    public void test_start_withInterface()
-            throws Exception {
+    void test_start_withInterface() {
         // given
         String hzInterface = "1.1.1.1";
         // when
@@ -79,4 +83,30 @@ public class HazelcastServerCommandLineTest {
         assertThat(System.getProperties()).containsEntry("hz.network.interfaces.interfaces.interface1", hzInterface);
     }
 
+    @Test
+    void test_log4j2_exception() {
+        PrintStream standardErr = System.err;
+        try {
+            ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+            PrintStream errorPrintStream = new PrintStream(outputStreamCaptor);
+            System.setErr(errorPrintStream);
+
+            System.setProperty("hazelcast.logging.type", "log4j2");
+            System.setProperty("log4j2.configurationFile", "faulty-log.properties");
+
+            CommandLine cmd = new CommandLine(new HazelcastServerCommandLine())
+                    .setOut(createPrintWriter(System.out))
+                    .setErr(createPrintWriter(errorPrintStream))
+                    .setTrimQuotes(true)
+                    .setExecutionExceptionHandler(new ExceptionHandler());
+            cmd.execute("start");
+
+            String string = outputStreamCaptor.toString(StandardCharsets.UTF_8);
+            assertThat(string)
+                    .contains("org.apache.logging.log4j.core.config.ConfigurationException: " +
+                              "No type attribute provided for Layout on Appender STDOUT");
+        } finally {
+            System.setOut(standardErr);
+        }
+    }
 }
