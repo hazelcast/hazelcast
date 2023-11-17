@@ -301,6 +301,11 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
+
+        if (!Util.isJobSuspendable(job.getConfig())) {
+            throw QueryException.error("The job '" + plan.getJobName() + "' is not suspendable, can't apply ALTER JOB");
+        }
+
         assert plan.getDeltaConfig() != null || plan.getOperation() != null;
         if (plan.getDeltaConfig() != null) {
             try {
@@ -542,7 +547,8 @@ public class PlanExecutor {
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
             Job job = plan.isAnalyzed()
-                    ? jet.newJob(jobId, plan.getDag(), jobConfig, ssc.subject())
+                    // Note: identifier in programming languages cannot be started from digit.
+                    ? jet.newJob(jobId, plan.getDag(), jobConfig.setName("x" + jobId), ssc.subject())
                     : jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
 
             job.getFuture().whenComplete((r, t) -> {

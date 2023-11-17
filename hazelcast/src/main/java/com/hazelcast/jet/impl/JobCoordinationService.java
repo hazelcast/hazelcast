@@ -850,7 +850,13 @@ public class JobCoordinationService implements DynamicMetricsProvider {
      */
     public CompletableFuture<JobConfig> updateJobConfig(long jobId, @Nonnull DeltaJobConfig deltaConfig) {
         return callWithJob(jobId,
-                masterContext -> masterContext.updateJobConfig(deltaConfig),
+                masterContext -> {
+                    if (!Util.isJobSuspendable(masterContext.jobConfig())) {
+                        throw new IllegalStateException("The job '" + masterContext.jobConfig().getName()
+                                + "' is not suspendable, can't perform `updateJobConfig()`");
+                    }
+                    return masterContext.updateJobConfig(deltaConfig);
+                },
                 jobResult -> {
                     throw new IllegalStateException("Job not suspended, but " + jobResult.getJobStatus());
                 },
