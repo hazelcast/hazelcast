@@ -34,6 +34,7 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -794,7 +795,8 @@ public class JobTest extends SimpleTestInClusterSupport {
     @Test
     public void given_suspensionIsForbidden_when_suspendJob_then_jobIsCanceled() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
 
@@ -806,13 +808,14 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         assertThatThrownBy(job::join)
-                .isInstanceOf(CancellationException.class);
+                .isInstanceOf(CancellationByUserException.class);
     }
 
     @Test
     public void given_suspensionIsForbidden_when_restartJob_then_jobIsCanceled() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
 
@@ -824,18 +827,18 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         assertThatThrownBy(job::join)
-                .isInstanceOf(CancellationException.class);
+                .isInstanceOf(CancellationByUserException.class);
     }
 
     @Test
     public void given_suspensionIsForbidden_when_changedClusterStateToPassive_then_jobIsCanceled() {
         // Given
-        DAG streamingDag = new DAG();
-        streamingDag.newVertex("v", () -> new MockP().streaming());
-        JobConfig jobConfig = new JobConfig().setName("foo").setArgument(KEY_JOB_IS_SUSPENDABLE, false);
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
 
         // When
-        Job job = instance().getJet().newJob(streamingDag, jobConfig);
+        Job job = instance().getJet().newJob(dag, jobConfig);
 
         // Then
         assertJobStatusEventually(job, RUNNING);
@@ -963,16 +966,16 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // When
         for (int i = 0; i < 10; i++) {
-            Job job = instance().getJet().newJob(streamingDag, new JobConfig().setName("foobar"));
+            Job job = instance().getJet().newJob(streamingDag, new JobConfig().setName("foo"));
             jobIds.add(0, job.getId());
             job.cancel();
             joinAndExpectCancellation(job);
         }
-        Job activeJob = instance().getJet().newJob(streamingDag, new JobConfig().setName("foobar"));
+        Job activeJob = instance().getJet().newJob(streamingDag, new JobConfig().setName("foo"));
         jobIds.add(0, activeJob.getId());
 
         // Then
-        List<Job> actualJobs = instance().getJet().getJobs("foobar");
+        List<Job> actualJobs = instance().getJet().getJobs("foo");
         assertThat(toList(actualJobs, Job::getId))
                 .containsExactlyElementsOf(jobIds);
     }

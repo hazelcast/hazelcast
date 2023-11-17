@@ -803,5 +803,12 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         // enabled is a required attribute
         Node enabledNode = getNamedItemNode(node, "enabled");
         tpcConfig.setEnabled(getBooleanValue(getTextContent(enabledNode)));
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("connection-count", nodeName)) {
+                tpcConfig.setConnectionCount(Integer.parseInt(getTextContent(child)));
+            }
+        }
     }
 }

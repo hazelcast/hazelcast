@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.google.common.primitives.Ints;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.util.SqlString;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,36 +30,46 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
 
     private final List<Integer> dynamicParams = new ArrayList<>();
 
-    @SuppressWarnings("ExecutableStatementCount")
+
     SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
         super(table, dialect);
 
         StringBuilder sb = new StringBuilder();
+        selectClause(sb, projection);
+        fromClause(sb, predicate);
+
+        query = sb.toString();
+    }
+
+    protected void selectClause(StringBuilder sb, List<RexNode> projection) {
         sb.append("SELECT ");
         if (!projection.isEmpty()) {
             appendProjection(sb, projection);
         } else {
             sb.append("*");
         }
-        sb.append(" FROM ");
-        dialect.quoteIdentifier(sb, table.getExternalNameList());
-        if (predicate != null) {
-            appendPredicate(sb, predicate, dynamicParams);
-        }
-        query = sb.toString();
     }
 
-    private void appendProjection(StringBuilder sb, List<RexNode> projection) {
+    protected void appendProjection(StringBuilder sb, List<RexNode> projection) {
         Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
-            sb.append(context.toSql(null, node).toSqlString(dialect).toString());
+            SqlNode sqlNode = context.toSql(null, node);
+            SqlString sqlString = sqlNode.toSqlString(dialect);
+            sb.append(sqlString.toString());
             if (it.hasNext()) {
                 sb.append(',');
             }
         }
     }
 
+    protected void fromClause(StringBuilder sb, RexNode predicate) {
+        sb.append(" FROM ");
+        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
+        }
+    }
     int[] parameterPositions() {
         return Ints.toArray(dynamicParams);
     }

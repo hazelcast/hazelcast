@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
+package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcJoinTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcRightJoinTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class MSSQLJdbcJoinTest extends JdbcJoinTest {
+public class PostgresJdbcRightJoinTest extends JdbcRightJoinTest {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(new MSSQLDatabaseProvider());
+        initialize(new PostgresDatabaseProvider());
     }
 }

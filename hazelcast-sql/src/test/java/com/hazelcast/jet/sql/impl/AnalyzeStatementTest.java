@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
@@ -151,6 +154,47 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     }
 
     @Test
+    public void test_suspendJob() {
+        // Given
+        Job job = runQuery();
+
+        // When
+        job.suspend();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
+        // Note: this exception doesn't have message.
+    }
+
+    @Test
+    public void test_restartJob() {
+        // Given
+        Job job = runQuery();
+
+        // When
+        job.restart();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
+        // Note: this exception doesn't have message.
+    }
+
+    @Test
+    public void test_changeClusterStateToPassive() {
+        // When
+        Job job = runQuery();
+
+        // Then
+        instance().getCluster().changeClusterState(ClusterState.PASSIVE);
+        instance().getCluster().changeClusterState(ClusterState.ACTIVE);
+
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
+    }
+
+    @Test
     public void when_alterJobWithOptions_then_jobContinues() {
         String query = "SELECT v, v FROM TABLE(generate_stream(1))";
         sqlService.execute("ANALYZE AS j " + query);
@@ -202,6 +246,28 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertJobStatusEventually(job, RUNNING);
 
         job.cancel();
+    }
+
+    private Job runQuery() {
+        // Given
+        String query = "SELECT v, v FROM TABLE(generate_stream(1))";
+        instance().getSql().execute("ANALYZE " + query);
+
+        // When
+        Job job = instance().getJet().getJobs()
+                .stream()
+                .filter(j -> Objects.equals(
+                        j.getConfig().getArgument("__sql.queryText"),
+                        "ANALYZE " + query
+                ))
+                .filter(j -> !j.getStatus().isTerminal())
+                .findFirst()
+                .orElse(null);
+
+        // Then
+        assertNotNull(job);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        return job;
     }
 
     private static void assertJobIsAnalyzed(String query) {

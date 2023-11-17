@@ -22,11 +22,13 @@ import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.DatabaseDialect;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
@@ -151,7 +153,7 @@ public class JdbcSqlConnector implements SqlConnector {
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception exception) {
             throw new HazelcastException("Could not execute readDbFields for table "
-                    + quoteCompoundIdentifier(externalName), exception);
+                                         + quoteCompoundIdentifier(externalName), exception);
         } finally {
             dataConnection.release();
         }
@@ -235,7 +237,7 @@ public class JdbcSqlConnector implements SqlConnector {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                    + " does not match db type " + type.getTypeFamily());
+                                            + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -273,7 +275,7 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
-    private static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
+    static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
         String dataConnectionName = table.getDataConnectionName();
         JdbcDataConnection dataConnection = context
                 .getNodeEngine()
@@ -300,6 +302,28 @@ public class JdbcSqlConnector implements SqlConnector {
             default:
                 return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
         }
+    }
+
+    @Nonnull
+    @Override
+    public VertexWithInputConfig nestedLoopReader(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nonnull JetJoinInfo joinInfo) {
+
+        JdbcTable jdbcTable = context.getTable();
+
+        String namePrefix = "nestedLoopReader(" + jdbcTable.getExternalNameList() + ")";
+        DAG dag = context.getDag();
+        Vertex vertex = dag.newUniqueVertex(
+                namePrefix,
+                JdbcJoiner.createJoinProcessorSupplier(
+                        joinInfo,
+                        context, predicate, projection
+                )
+        );
+        return new VertexWithInputConfig(vertex.localParallelism(1));
     }
 
     @Nonnull
@@ -590,10 +614,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                    "name='" + columnName + '\'' +
-                    ", typeName='" + columnTypeName + '\'' +
-                    ", primaryKey=" + primaryKey +
-                    '}';
+                   "name='" + columnName + '\'' +
+                   ", typeName='" + columnTypeName + '\'' +
+                   ", primaryKey=" + primaryKey +
+                   '}';
         }
     }
 
@@ -619,8 +643,8 @@ public class JdbcSqlConnector implements SqlConnector {
             } else if (externalName.length == 3) {
                 if (isMySQL(databaseMetaData)) {
                     throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                            + ", external name for MySQL must have either 1 or 2 components "
-                            + "(catalog and relation)");
+                                               + ", external name for MySQL must have either 1 or 2 components "
+                                               + "(catalog and relation)");
                 }
                 catalog = externalName[0];
                 schema = externalName[1];
@@ -635,8 +659,8 @@ public class JdbcSqlConnector implements SqlConnector {
             // External name must have at least 1 and at most 3 components
             if (externalName.length == 0 || externalName.length > 3) {
                 throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                        + ", external name for Jdbc must have either 1, 2 or 3 components "
-                        + "(catalog, schema and relation)");
+                                           + ", external name for Jdbc must have either 1, 2 or 3 components "
+                                           + "(catalog, schema and relation)");
             }
         }
     }

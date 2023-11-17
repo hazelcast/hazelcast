@@ -28,7 +28,6 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
@@ -120,6 +119,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
+import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
@@ -438,8 +438,8 @@ public class MasterJobContext {
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
-     * @param userInitiated               if the termination was requested by the user
+     *        SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     * @param userInitiated if the termination was requested by the user
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(
@@ -448,15 +448,17 @@ public class MasterJobContext {
             boolean userInitiated
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
+
+        ActionAfterTerminate action = mode.actionAfterTerminate();
+        if ((action == SUSPEND || action == RESTART) && !isJobSuspendable(mc.jobConfig())) {
+            // We cancel the job if it is not allowed to be suspended.
+            mode = CANCEL_FORCEFUL;
+        }
+
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
         if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
             mode = mode.withoutTerminalSnapshot();
-        }
-
-        if (!Util.checkJobIsAllowedToBeSuspended(mode, mc.jobConfig())) {
-            // We cancel the job if it is not allowed to be suspended.
-            mode = CANCEL_FORCEFUL;
         }
 
         JobStatus localStatus;
@@ -988,10 +990,8 @@ public class MasterJobContext {
 
     @Nonnull
     CompletableFuture<Void> gracefullyTerminateOrCancel() {
-        JobConfig jobConfig = mc.jobConfig();
-        TerminationMode mode = Util.isJobSuspendable(jobConfig) ? RESTART_GRACEFUL : CANCEL_FORCEFUL;
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(mode, false, false).f0());
+                () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
     }
 
