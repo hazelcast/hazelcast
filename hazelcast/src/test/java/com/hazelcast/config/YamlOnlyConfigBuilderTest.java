@@ -138,6 +138,18 @@ public class YamlOnlyConfigBuilderTest {
         assertEquals(map2Expected, map2Actual);
     }
 
+    @Test
+    public void testCPMapLimit() {
+        String yaml = ""
+                              + "hazelcast:\n"
+                              + "  cp-subsystem:\n"
+                              + "    map-limit: 35\n";
+        Config config = buildConfig(yaml);
+        assertNotNull(config);
+        CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
+        assertEquals(35, cpSubsystemConfig.getCPMapLimit());
+    }
+
     private Config buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);
