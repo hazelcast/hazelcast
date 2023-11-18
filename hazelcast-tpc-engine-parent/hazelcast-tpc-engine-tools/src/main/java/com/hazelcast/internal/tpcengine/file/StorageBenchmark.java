@@ -143,7 +143,7 @@ public class StorageBenchmark {
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
         benchmark.spin = false;
-        benchmark.reactorType = ReactorType.IOURING;
+        benchmark.reactorType = ReactorType.NIO;
         benchmark.fsync = 0;
         benchmark.fdatasync = 0;
         benchmark.run();
@@ -774,7 +774,10 @@ public class StorageBenchmark {
         private void printParkTimeNanos(Metrics metrics, Metrics lastMetrics) {
             if (metrics.parkTimeNanos > 0) {
                 long parkCount = metrics.parkCount - lastMetrics.parkCount;
-                double avg = (metrics.parkTimeNanos - lastMetrics.parkTimeNanos) / parkCount;
+                double avg = 0;
+                if (parkCount > 0){
+                    avg = (metrics.parkTimeNanos - lastMetrics.parkTimeNanos) / parkCount;
+                }
                 sb.append("[avg-park ");
                 sb.append(String.format("%.2f", avg));
                 sb.append(" ns]");
