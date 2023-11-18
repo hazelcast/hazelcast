@@ -30,9 +30,9 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;
@@ -71,7 +71,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
 
     private final NioReactor reactor;
     // The queue within the executor is the submission queue.
-    private final Executor executor;
+    private final ExecutorService executor;
     private final SlabAllocator<NioStorageRequest> requestAllocator;
     private final CompletionHandler<Integer, NioStorageRequest> handler = new StorageRequestCompletionHandler();
     // This is where completed requests end up
@@ -95,7 +95,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
      *                     so are either staged or submitted.
      */
     public NioFifoStorageScheduler(NioReactor reactor,
-                                   Executor executor,
+                                   ExecutorService executor,
                                    int submitLimit,
                                    int pendingLimit) {
         this.submitLimit = checkPositive(submitLimit, "submitLimit");
@@ -193,9 +193,9 @@ public class NioFifoStorageScheduler implements StorageScheduler {
             case STR_REQ_OP_OPEN:
                 executor.execute(() -> {
                     try {
-                        req.channel = AsynchronousFileChannel.open(
-                                Path.of(req.file.path()),
-                                flagsToOpenOptions(req.flags));
+                        Path path = Path.of(req.file.path());
+                        Set<OpenOption> options = flagsToOpenOptions(req.flags);
+                        req.channel = AsynchronousFileChannel.open(path, options, executor);
                         req.result = 0;
                     } catch (IOException e) {
                         req.exc = e;
@@ -226,12 +226,12 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     }
 
     // todo: The opts list and array can be pooled to reduce litter.
-    private OpenOption[] flagsToOpenOptions(int flags) {
+    private Set<OpenOption> flagsToOpenOptions(int flags) {
         int p = (flags & 3);
         int supportedOpsExceptRW = (O_CREAT | O_TRUNC | O_DIRECT | O_SYNC);
         int len = Integer.bitCount(flags & supportedOpsExceptRW) + p == O_RDWR ? 2 : 1;
         // can be pooled
-        List<OpenOption> opts = new ArrayList<OpenOption>();
+        Set<OpenOption> opts = new HashSet<>();
 
         if (p == O_RDONLY) {
             opts.add(StandardOpenOption.READ);
@@ -258,7 +258,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
             opts.add(StandardOpenOption.SYNC);
         }
 
-        return opts.toArray(new OpenOption[0]);
+        return opts;
     }
 
     /**
@@ -348,7 +348,6 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     }
 
     private class StorageRequestCompletionHandler implements CompletionHandler<Integer, NioStorageRequest> {
-
         @Override
         public void completed(Integer result, NioStorageRequest req) {
             req.result = result;
@@ -358,6 +357,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
 
         @Override
         public void failed(Throwable exc, NioStorageRequest req) {
+            System.out.println("Failure!!!");
             req.exc = exc;
             completionQueue.add(req);
             reactor.wakeup();

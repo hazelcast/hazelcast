@@ -23,11 +23,11 @@ import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.nio.NioAsyncServerSocket.AcceptRequest;
 
 import java.nio.channels.Selector;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 /**
  * Nio implementation of the {@link Reactor}.
@@ -104,8 +104,8 @@ public final class NioReactor extends Reactor {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Reactor.Builder {
 
-        public static final Executor DEFAULT_STORAGE_EXECUTOR
-                = newCachedThreadPool(new ThreadFactory() {
+        public static final ExecutorService DEFAULT_STORAGE_EXECUTOR
+                = newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             private final AtomicLong counter = new AtomicLong();
 
             @Override
@@ -123,7 +123,7 @@ public final class NioReactor extends Reactor {
          * This executor isn't shut down when the reactor shuts down. So it needs
          * to be managed externally.
          */
-        public Executor storageExecutor;
+        public ExecutorService storageExecutor;
 
         public Builder() {
             super(ReactorType.NIO);

@@ -37,8 +37,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableByteCountSI;
 import static com.hazelcast.internal.tpcengine.Reactor.Builder.newReactorBuilder;
@@ -102,6 +107,9 @@ public class StorageBenchmark {
     // Properties
     // the number of threads.
     public int numJobs;
+    // When running with nio, you don't want to set affinity. The problem is that the storage
+    // I/O threads will run on any core, including the core the TPC thread is bound to. And since
+    // it can't move to a different core, performance will drop.
     public String affinity;
     public boolean spin;
     // the number of concurrent tasks in 1 thread.
@@ -119,7 +127,22 @@ public class StorageBenchmark {
     public int fdatasync;
     public int runtimeSeconds;
     // the executor used to process storage requests when the Nio reactor is used.
-    public Executor nioStorageExecutor = Executors.newCachedThreadPool();
+    public ExecutorService nioStorageExecutor = new ThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors(),
+            Runtime.getRuntime().availableProcessors(),
+            100,
+            TimeUnit.DAYS,
+            new LinkedBlockingQueue<>(), new ThreadFactory() {
+
+        private final AtomicInteger ID = new AtomicInteger();
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("StorageThread-" + ID.getAndIncrement());
+            return thread;
+        }
+    });
 
     //  private final Map<Reactor, List<AsyncFile>> filesMap = new ConcurrentHashMap<>();
     private final Map<Reactor, List<String>> pathsMap = new ConcurrentHashMap<>();
@@ -129,19 +152,19 @@ public class StorageBenchmark {
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.runtimeSeconds = 600;
-        benchmark.affinity = "1";
+        benchmark.runtimeSeconds = 120;
+        //benchmark.affinity = "1";
         benchmark.numJobs = 1;
         benchmark.iodepth = 100;
-        benchmark.fileSize = 4 * 1024 * 1024L;
+        benchmark.fileSize = 1024L * 1024L * 1024L;
         benchmark.bs = 4 * 1024;
-        benchmark.directories.add("/home/pveentjer");
-        //benchmark.directories.add("/mnt/benchdrive1");
+        //benchmark.directories.add("/home/pveentjer");
+        benchmark.directories.add("/mnt/benchdrive1");
         //benchmark.directories.add("/mnt/benchdrive2");
         //benchmark.directories.add("/mnt/benchdrive3");
-        benchmark.readwrite = READWRITE_WRITE;
+        benchmark.readwrite = READWRITE_RANDREAD;
         benchmark.deleteFilesOnExit = true;
-        benchmark.direct = true;
+        benchmark.direct = false;
         benchmark.spin = false;
         benchmark.reactorType = ReactorType.NIO;
         benchmark.fsync = 0;
@@ -471,7 +494,6 @@ public class StorageBenchmark {
         System.out.println("Teardown: done [duration=" + durationMs + " ms]");
     }
 
-
     private class InitFileTask implements Runnable, IntBiConsumer<Throwable> {
         private final long startBlock;
         private final long endBlock;
@@ -775,7 +797,7 @@ public class StorageBenchmark {
             if (metrics.parkTimeNanos > 0) {
                 long parkCount = metrics.parkCount - lastMetrics.parkCount;
                 double avg = 0;
-                if (parkCount > 0){
+                if (parkCount > 0) {
                     avg = (metrics.parkTimeNanos - lastMetrics.parkTimeNanos) / parkCount;
                 }
                 sb.append("[avg-park ");
