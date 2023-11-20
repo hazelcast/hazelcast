@@ -618,6 +618,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
@@ -636,6 +637,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof InsertMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
             return new IMapInsertPlan(
                     planKey,
@@ -649,6 +651,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(
                     planKey,
@@ -661,6 +664,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
             return new IMapUpdatePlan(
                     planKey,
@@ -693,6 +697,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     analyzeJobConfig);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(
                     planKey,
@@ -1028,6 +1033,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         return result;
+    }
+
+    /**
+     * Check should be used during the optimized IMapByKey plan construction.
+     * It throws {@link QueryException} of query is analyzed for optimized IMapByKey plans.
+     * @param isAnalyzed is query analyzed
+     */
+    static void checkIMapByKeyPlanIsAnalyzed(boolean isAnalyzed) {
+        if (isAnalyzed) {
+            throw QueryException.error("This query uses key-based optimized IMap access plan. " +
+                    "ANALYZE is unable to produce meaningful execution statistics for it.");
+        }
     }
 
 

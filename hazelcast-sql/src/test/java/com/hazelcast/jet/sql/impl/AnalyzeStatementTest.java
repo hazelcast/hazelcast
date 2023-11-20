@@ -21,6 +21,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -110,7 +111,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     @Test
     public void test_select() {
         createMapping("test", Long.class, String.class);
-        instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
+        instance().getMap("test").put(1L, "testVal");
         assertRowsAnyOrder("ANALYZE SELECT * FROM test WHERE TRUE", rows(2, 1L, "testVal"));
         final Job job = instance().getJet().getJobs()
                 .stream()
@@ -122,6 +123,11 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .orElse(null);
         assertNotNull(job);
         assertFalse(job.isLightJob());
+
+        // Check optimized plan failure with ANALYZE statement
+        assertThatThrownBy(() -> sqlService.execute("ANALYZE SELECT * FROM test WHERE __key = 1"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
@@ -131,6 +137,25 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         final String insertQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
         assertJobIsAnalyzed(insertQuery);
         assertEquals(2, instance().getMap("test").size());
+
+        // Check optimized plan failure with ANALYZE statement
+        assertThatThrownBy(() -> sqlService.execute("ANALYZE INSERT INTO test VALUES(3, 3)"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
+    }
+
+    @Test
+    public void test_sink() {
+        createMapping("test", Long.class, Long.class);
+
+        final String insertQuery = " SINK INTO test SELECT v, v from table(generate_series(1,2))";
+        assertJobIsAnalyzed(insertQuery);
+        assertEquals(2, instance().getMap("test").size());
+
+        // Check optimized plan failure with ANALYZE statement
+        assertThatThrownBy(() -> sqlService.execute("ANALYZE SINK INTO test VALUES(3, 3)"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
@@ -141,6 +166,11 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         final String updateQuery = "UPDATE test SET this = 3 WHERE this = 1 AND this IS NOT NULL";
         assertJobIsAnalyzed(updateQuery);
         assertEquals(3L, instance().getMap("test").get(1L));
+
+        // Check optimized plan failure with ANALYZE statement
+        assertThatThrownBy(() -> sqlService.execute("ANALYZE UPDATE test SET this = 3 WHERE __key = 1"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
@@ -151,6 +181,10 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         final String deleteQuery = "DELETE FROM test WHERE this = 1 AND this IS NOT NULL";
         assertJobIsAnalyzed(deleteQuery);
         assertTrue(instance().getMap("test").isEmpty());
+
+        assertThatThrownBy(() -> sqlService.execute("ANALYZE DELETE FROM test WHERE __key = 1"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
