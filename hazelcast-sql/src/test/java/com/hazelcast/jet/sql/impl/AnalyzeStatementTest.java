@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -190,6 +192,18 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
+    }
+
+    @Test
+    public void test_updateConfigForAnalyzedQuery() {
+        // When
+        Job job = runQuery();
+
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
+                .hasMessageContaining("is not suspendable, can't perform `updateJobConfig()`");
+
+        // Ensure job is running after the refusal to alter the job
+        assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 1L);
     }
 
     private Job runQuery() {
