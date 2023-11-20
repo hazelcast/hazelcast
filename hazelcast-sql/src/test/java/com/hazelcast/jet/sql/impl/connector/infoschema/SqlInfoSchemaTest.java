@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -32,7 +31,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,9 +51,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
 
     @BeforeClass
     public static void initialize() {
-        Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
-        initialize(1, config);
+        initialize(1, null);
         sqlService = instance().getSql();
     }
 
