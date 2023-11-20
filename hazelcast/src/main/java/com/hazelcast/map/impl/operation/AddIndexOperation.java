@@ -105,7 +105,7 @@ public class AddIndexOperation extends MapOperation
             CachedQueryEntry<?, ?> newEntry =
                     cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(dataKey, value);
             index.putEntry(newEntry, null, queryEntry, Index.OperationSource.USER);
-        }, false, false, false);
+        }, false, false);
 
         index.markPartitionAsIndexed(partitionId);
     }
