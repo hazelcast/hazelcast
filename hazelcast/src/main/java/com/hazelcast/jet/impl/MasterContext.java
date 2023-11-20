@@ -187,8 +187,8 @@ public class MasterContext implements DynamicMetricsProvider {
         lock();
         try {
             if (!Util.isJobSuspendable(jobConfig())) {
-                throw new IllegalStateException("The job '" + jobConfig().getName()
-                        + "' is not suspendable, can't perform `updateJobConfig()`");
+                throw new IllegalStateException("The job " + jobName
+                        + " is not suspendable, can't perform `updateJobConfig()`");
             }
 
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
