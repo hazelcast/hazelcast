@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -185,6 +186,11 @@ public class MasterContext implements DynamicMetricsProvider {
     public JobConfig updateJobConfig(DeltaJobConfig deltaConfig) {
         lock();
         try {
+            if (!Util.isJobSuspendable(jobConfig())) {
+                throw new IllegalStateException("The job '" + jobConfig().getName()
+                        + "' is not suspendable, can't perform `updateJobConfig()`");
+            }
+
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
                 throw new IllegalStateException("Job not suspended, but " + jobStatus);
             }

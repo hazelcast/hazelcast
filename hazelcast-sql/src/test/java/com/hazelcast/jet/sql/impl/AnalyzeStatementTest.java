@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -194,43 +195,12 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     }
 
     @Test
-    public void when_alterJobWithOptions_then_jobContinues() {
+    public void test_updateConfigForAnalyzedQuery() {
         // When
         Job job = runQuery();
 
-        assertThatThrownBy(() -> sqlService.execute(
-                "ALTER JOB " + job.getName() + " OPTIONS ('maxProcessorAccumulatedRecords'='100')"))
-                .hasMessageContaining("is not suspendable, can't apply ALTER JOB");
-
-        // Ensure job is running after the refusal to alter the job
-        assertJobStatusEventually(job, RUNNING);
-
-        job.cancel();
-    }
-
-    @Test
-    public void when_alterJobWithSuspension_then_jobContinues() {
-        // When
-        Job job = runQuery();
-
-        // Then
-        assertThatThrownBy(() -> sqlService.execute(
-                "ALTER JOB " + job.getName() + " SUSPEND"))
-                .hasMessageContaining("is not suspendable, can't apply ALTER JOB");
-
-        // Ensure job is running after the refusal to alter the job
-        assertJobStatusEventually(job, RUNNING);
-
-        assertThatThrownBy(() -> sqlService.execute(
-                "ALTER JOB " + job.getName() + " RESTART"))
-                .hasMessageContaining("is not suspendable, can't apply ALTER JOB");
-
-        // Ensure job is running after the refusal to alter the job
-        assertJobStatusEventually(job, RUNNING);
-
-        assertThatThrownBy(() -> sqlService.execute(
-                "ALTER JOB " + job.getName() + " RESUME"))
-                .hasMessageContaining("is not suspendable, can't apply ALTER JOB");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
+                .hasMessageContaining("is not suspendable, can't perform `updateJobConfig()`");
 
         // Ensure job is running after the refusal to alter the job
         assertJobStatusEventually(job, RUNNING);
