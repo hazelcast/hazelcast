@@ -3982,7 +3982,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(lockConfig2);
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
-        assertEquals(20, cpSubsystemConfig.getCPMapLimit());
         CPMapConfig mapConfig1 = cpSubsystemConfig.findCPMapConfig("map1");
         CPMapConfig mapConfig2 = cpSubsystemConfig.findCPMapConfig("map2");
         assertNotNull(mapConfig1);
@@ -3991,6 +3990,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig1.getMaxSizeMb());
         assertEquals("map2", mapConfig2.getName());
         assertEquals(2, mapConfig2.getMaxSizeMb());
+        assertEquals(20, cpSubsystemConfig.getCPMapLimit());
     }
 
     @Override

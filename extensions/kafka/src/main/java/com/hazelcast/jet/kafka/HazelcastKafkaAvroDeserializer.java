@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.kafka;
 
+import com.hazelcast.jet.avro.impl.AvroSerializerHooks;
 import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.BinaryDecoder;
-import org.apache.avro.io.DecoderFactory;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -37,7 +36,6 @@ import java.util.Map;
  * @since 5.4
  */
 public class HazelcastKafkaAvroDeserializer extends AbstractHazelcastAvroSerde implements Deserializer<GenericRecord> {
-    private final DecoderFactory decoderFactory = DecoderFactory.get();
     private GenericDatumReader<GenericRecord> datumReader;
 
     /** Constructor used by Kafka consumer. */
@@ -51,8 +49,7 @@ public class HazelcastKafkaAvroDeserializer extends AbstractHazelcastAvroSerde i
     @Override
     public GenericRecord deserialize(String topic, byte[] data) {
         try {
-            BinaryDecoder decoder = decoderFactory.binaryDecoder(data, null);
-            return datumReader.read(null, decoder);
+            return AvroSerializerHooks.deserialize(datumReader, data);
         } catch (Exception e) {
             throw new SerializationException("Error deserializing Avro message", e);
         }

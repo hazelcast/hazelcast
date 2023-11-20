@@ -229,8 +229,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 name -> null,
-                NoOpSqlSecurityContext.INSTANCE
-        );
+                NoOpSqlSecurityContext.INSTANCE,
+                false);
     }
 
     private static <E> E last(E[] array) {

@@ -84,7 +84,7 @@
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
-        <owasp.dependency-check.version>8.4.2</owasp.dependency-check.version>
+        <owasp.dependency-check.version>8.4.3</owasp.dependency-check.version>
         <codehause.license.plugin.version>2.3.0</codehause.license.plugin.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
@@ -572,7 +572,6 @@
                                 <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                                 <includedLicense>EPL-1.0</includedLicense>
                                 <includedLicense>EPL-2.0</includedLicense>
-                                <includedLicense>JSON</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                             </includedLicenses>
                             <licenseMerges>
@@ -646,10 +645,6 @@
                                     EPL 2.0 |
                                     Eclipse Public License - Version 2.0 |
                                     Eclipse Public License, Version 2.0
-                                </licenseMerge>
-                                <licenseMerge>
-                                    JSON |
-                                    The JSON License
                                 </licenseMerge>
                             </licenseMerges>
                         </configuration>
@@ -2043,6 +2038,12 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>

@@ -166,6 +166,7 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
@@ -240,6 +241,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final List<QueryPlanListener> queryPlanListeners;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
+    private final boolean cyclicUserTypesAreAllowed;
 
     private final ILogger logger;
 
@@ -266,6 +268,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dataConnectionResolver,
                 resultRegistry
         );
+
+        this.cyclicUserTypesAreAllowed = nodeEngine.getProperties().getBoolean(SQL_CUSTOM_CYCLIC_TYPES_ENABLED);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -316,7 +320,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 iMapResolver,
-                task.getSecurityContext());
+                task.getSecurityContext(),
+                cyclicUserTypesAreAllowed);
 
         try {
             OptimizerContext.setThreadContext(context);

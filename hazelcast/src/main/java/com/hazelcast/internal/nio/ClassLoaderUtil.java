@@ -228,9 +228,10 @@ public final class ClassLoaderUtil {
         return (T) constructor.newInstance();
     }
 
-    public static Class<?> loadClass(final ClassLoader classLoaderHint, final String className) throws ClassNotFoundException {
+    public static <T> Class<T> loadClass(final ClassLoader classLoaderHint, final String className)
+            throws ClassNotFoundException {
         isNotNull(className, "className");
-        final Class<?> primitiveClass = tryPrimitiveClass(className);
+        final Class<T> primitiveClass = tryPrimitiveClass(className);
         if (primitiveClass != null) {
             return primitiveClass;
         }
@@ -264,7 +265,7 @@ public final class ClassLoaderUtil {
         return className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY);
     }
 
-    private static Class<?> tryPrimitiveClass(String className) {
+    private static <T> Class<T> tryPrimitiveClass(String className) {
         if (className.length() <= MAX_PRIM_CLASS_NAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
             final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
             if (primitiveClass != null) {
@@ -283,8 +284,8 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static Class<?> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
-        Class<?> clazz;
+    private static <T> Class<T> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+        Class<T> clazz;
         if (!CLASS_CACHE_DISABLED) {
             clazz = CLASS_CACHE.get(classLoader, className);
             if (clazz != null) {
@@ -293,11 +294,11 @@ public final class ClassLoaderUtil {
         }
 
         if (classLoader == NULL_FALLBACK_CLASSLOADER) {
-            clazz = Class.forName(className);
+            clazz = (Class<T>) Class.forName(className);
         } else if (className.startsWith("[")) {
-            clazz = Class.forName(className, false, classLoader);
+            clazz = (Class<T>) Class.forName(className, false, classLoader);
         } else {
-            clazz = classLoader.loadClass(className);
+            clazz = (Class<T>) classLoader.loadClass(className);
         }
 
         if (!CLASS_CACHE_DISABLED) {

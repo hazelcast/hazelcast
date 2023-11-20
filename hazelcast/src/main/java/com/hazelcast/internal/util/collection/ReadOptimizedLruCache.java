@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.client;
+package com.hazelcast.internal.util.collection;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
 
 /**
  * Implementation of an LRU cache optimized for read-heavy use cases.
@@ -88,6 +89,22 @@ public class ReadOptimizedLruCache<K, V> {
         if (oldValue == null && cache.size() > cleanupThreshold) {
             doCleanup();
         }
+    }
+
+    /**
+     * Checks the existence of {@code key} and puts {@code mappingFn(key)} if not
+     * exists, in a non-atomic way. It does not block the callers and is free from
+     * deadlocks unlike {@link ConcurrentHashMap#computeIfAbsent}. However, it may
+     * overwrite a just-put entry or skip computing a just-removed key.
+     */
+    public V computeIfAbsent(K key, Function<K, V> mappingFn) {
+        V value = get(key);
+        if (value != null) {
+            return value;
+        }
+        value = mappingFn.apply(key);
+        put(key, value);
+        return value;
     }
 
     public void remove(K key) {

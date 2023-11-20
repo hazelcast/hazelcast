@@ -119,6 +119,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
+import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
@@ -435,6 +436,7 @@ public class MasterJobContext {
      * <li> a string with a message why this call did nothing or null, if
      *      this call actually initiated the termination
      * </ol>
+     *
      * @param allowWhileExportingSnapshot if false and jobStatus is
      *        SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
      * @param userInitiated if the termination was requested by the user
@@ -446,6 +448,13 @@ public class MasterJobContext {
             boolean userInitiated
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
+
+        ActionAfterTerminate action = mode.actionAfterTerminate();
+        if ((action == SUSPEND || action == RESTART) && !isJobSuspendable(mc.jobConfig())) {
+            // We cancel the job if it is not allowed to be suspended.
+            mode = CANCEL_FORCEFUL;
+        }
+
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
         if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
@@ -976,11 +985,11 @@ public class MasterJobContext {
      */
     @Nonnull
     CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
-        return hasParticipant(uuid) ? gracefullyTerminate() : completedFuture(null);
+        return hasParticipant(uuid) ? gracefullyTerminateOrCancel() : completedFuture(null);
     }
 
     @Nonnull
-    CompletableFuture<Void> gracefullyTerminate() {
+    CompletableFuture<Void> gracefullyTerminateOrCancel() {
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
                 () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
