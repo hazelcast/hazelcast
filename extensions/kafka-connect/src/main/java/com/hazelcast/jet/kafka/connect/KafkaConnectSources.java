@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.TaskMaxProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
@@ -36,7 +35,6 @@ import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processSupp
 /**
  * Contains factory methods to create a Kafka Connect source.
  */
-@Beta
 public final class KafkaConnectSources {
 
     private KafkaConnectSources() {
@@ -73,7 +71,6 @@ public final class KafkaConnectSources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static <T> StreamSource<T> connect(@Nonnull Properties properties,
                                               @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         Objects.requireNonNull(properties, "properties is required");
@@ -131,7 +128,6 @@ public final class KafkaConnectSources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static StreamSource<SourceRecord> connect(@Nonnull Properties properties) {
         return connect(properties, FunctionEx.identity());
     }
