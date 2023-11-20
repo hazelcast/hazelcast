@@ -25,6 +25,7 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.logging.impl.InternalLoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,6 +81,13 @@ public class ClientLoggingService implements LoggingService {
     public ILogger getLogger(@Nonnull Class clazz) {
         checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+    }
+
+    @Override
+    public void shutdown() {
+        if (loggerFactory instanceof InternalLoggerFactory) {
+            ((InternalLoggerFactory) loggerFactory).shutdown();
+        }
     }
 
     private class DefaultLogger extends AbstractLogger {

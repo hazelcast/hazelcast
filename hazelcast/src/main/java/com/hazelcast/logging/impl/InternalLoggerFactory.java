@@ -41,4 +41,10 @@ public interface InternalLoggerFactory {
      */
     void resetLevel();
 
+    /**
+     * Shutdown the logger factory.
+     */
+    default void shutdown() {
+    }
+
 }

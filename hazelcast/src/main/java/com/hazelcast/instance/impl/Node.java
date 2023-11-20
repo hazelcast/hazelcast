@@ -570,6 +570,7 @@ public class Node {
             if (state != NodeState.SHUT_DOWN) {
                 shuttingDown.compareAndSet(true, false);
             }
+            loggingService.shutdown();
         }
     }
 

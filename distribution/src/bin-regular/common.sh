@@ -57,6 +57,8 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
         JDK_OPTS="$JDK_OPTS --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED"
     fi
 fi
+# Disable the log4j2 shutdown hook, otherwise log lines during node shutdown might be lost
+JDK_OPTS="$JDK_OPTS -Dlog4j.shutdownHookEnabled=false"
 
 # ensure CLASSPATH_DEFAULT is unix style + trimmed
 if [ -n "${CLASSPATH_DEFAULT}" ]; then

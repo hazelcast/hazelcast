@@ -179,6 +179,13 @@ public class LoggingServiceImpl implements LoggingService {
         listeners.remove(new LogListenerRegistration(Level.ALL, logListener));
     }
 
+    @Override
+    public void shutdown() {
+        if (loggerFactory instanceof InternalLoggerFactory) {
+            ((InternalLoggerFactory) loggerFactory).shutdown();
+        }
+    }
+
     void handleLogEvent(LogEvent logEvent) {
         for (LogListenerRegistration logListenerRegistration : listeners) {
             if (logEvent.getLogRecord().getLevel().intValue() >= logListenerRegistration.getLevel().intValue()) {
