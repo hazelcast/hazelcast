@@ -64,7 +64,6 @@ import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.of;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
@@ -554,7 +553,7 @@ public final class Sources {
      * @param <T> type of emitted item
      */
     @Nonnull
-    public static <K, V, T> BatchSource<? extends T> remoteMap(
+    public static <T, K, V> BatchSource<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<K, V> predicate,
@@ -604,7 +603,7 @@ public final class Sources {
      * @since 5.4
      */
     @Nonnull
-    public static <K, V, T> BatchSource<T> remoteMap(
+    public static <T, K, V> BatchSource<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull Predicate<K, V> predicate,
@@ -911,7 +910,7 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig
     ) {
         return batchFromProcessor("remoteCacheSource(" + cacheName + ')',
-                of(readRemoteCacheP(cacheName, clientConfig)));
+                ProcessorMetaSupplier.of(readRemoteCacheP(cacheName, clientConfig)));
     }
 
     /**

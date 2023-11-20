@@ -180,8 +180,7 @@ public final class HazelcastReaders {
     }
 
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
-            ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data,
-                    Data>>>,
+            ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
         private String mapName;
 
@@ -193,8 +192,7 @@ public final class HazelcastReaders {
         }
 
         @Override
-        public ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor,
-                Entry<Data, Data>>
+        public ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>
         applyEx(HazelcastInstance instance, InternalSerializationService serializationService) throws Exception {
             return new LocalMapReader(instance, serializationService, mapName);
         }

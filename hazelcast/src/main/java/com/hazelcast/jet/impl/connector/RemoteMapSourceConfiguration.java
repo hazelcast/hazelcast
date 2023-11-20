@@ -54,10 +54,6 @@ public class RemoteMapSourceConfiguration<K, V, T> implements Serializable {
         this.projection = projection;
     }
 
-    public boolean hasDataSourceConnection() {
-        return dataConnectionName != null;
-    }
-
     public boolean hasPredicate() {
         return predicate != null;
     }
