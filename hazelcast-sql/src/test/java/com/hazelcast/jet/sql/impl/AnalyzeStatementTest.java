@@ -203,7 +203,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .hasMessageContaining("is not suspendable, can't perform `updateJobConfig()`");
 
         // Ensure job is running after the refusal to alter the job
-        assertJobStatusEventually(job, RUNNING);
+        assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 1L);
     }
 
     private Job runQuery() {
