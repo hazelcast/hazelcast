@@ -20,7 +20,8 @@ public enum TypeKind {
     NONE(0),
     JAVA(1),
     PORTABLE(2),
-    COMPACT(3);
+    COMPACT(3),
+    AVRO(4);
 
     private final int value;
 

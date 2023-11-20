@@ -311,7 +311,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         for (int i = 0, j = 100; i < numItems / 2; i++) {
             Path file = directory.resolve("0-" + i);
             assertEquals((j++) + System.lineSeparator() + (j++) + System.lineSeparator(),
-                    new String(Files.readAllBytes(file)));
+                    Files.readString(file));
         }
 
         job.join();

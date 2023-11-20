@@ -23,7 +23,7 @@ import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.User;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -36,17 +36,17 @@ import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.C;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.Office;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.Organization;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
-import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaType;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
-import static java.lang.String.format;
+import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.setupCompactTypesForNestedQuery;
+import static com.hazelcast.jet.sql.impl.type.PortableNestedFieldsTest.setupPortableTypesForNestedQuery;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
+
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+                .setProperty(ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED.getName(), "true");
 
         final SerializationConfig serializationConfig = config.getSerializationConfig();
         final ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)
@@ -73,19 +73,44 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
         initializeWithClient(3, config, null);
     }
 
+    private static void createType(String name, String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .create(client());
+    }
+
+    private static void execute(String sql, Object... args) {
+        client().getSql().execute(sql, args);
+    }
+
+    private void initDefault() {
+        createType("UserType", "id BIGINT", "name VARCHAR", "organization OrganizationType");
+        createType("OrganizationType", "id BIGINT", "name VARCHAR", "office OfficeType");
+        createType("OfficeType", "id BIGINT", "name VARCHAR");
+
+        final IMap<Long, User> testMap = client().getMap("test");
+        createJavaMapping(client(), "test", User.class, "this UserType");
+
+        final Office office = new Office(3L, "office1");
+        final Organization organization = new Organization(2L, "organization1", office);
+        final User user = new User(1L, "user1", organization);
+        testMap.put(1L, user);
+    }
+
     @Test
     public void test_nonCyclic() {
         initDefault();
 
-        assertJsonRowsAnyOrder("SELECT CAST(this AS JSON) FROM test", rows(1, json(
-                "{\"organization\":{\"name\":\"organization1\",\"id\":2,\"office\":{\"name\":\"office1\",\"id\":3}},\"id\":1,\"name\":\"user1\"}")));
+        assertJsonRowsAnyOrder("SELECT CAST(this AS JSON) FROM test", rows(1,
+                json("{\"organization\":{\"name\":\"organization1\",\"id\":2,\"office\":"
+                        + "{\"name\":\"office1\",\"id\":3}},\"id\":1,\"name\":\"user1\"}")));
     }
 
     @Test
     public void test_failOnCycles() {
-        createJavaType(client(), "AType", A.class, "name VARCHAR", "b BType");
-        createJavaType(client(), "BType", B.class, "name VARCHAR", "c CType");
-        createJavaType(client(), "CType", C.class, "name VARCHAR", "a AType");
+        createType("AType", "name VARCHAR", "b BType");
+        createType("BType", "name VARCHAR", "c CType");
+        createType("CType", "name VARCHAR", "a AType");
 
         final A a = new A("a");
         final B b = new B("b");
@@ -99,9 +124,9 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
         IMap<Long, A> map = client().getMap("test");
         map.put(1L, a);
 
-        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT CAST(this AS JSON) FROM test", rows(1, "a")))
+        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT CAST(this AS JSON) FROM test",
+                        rows(1, "a")))
                 .hasMessageEndingWith("Cycle detected in row value")
-                .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.DATA_EXCEPTION);
     }
 
@@ -112,36 +137,34 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
         final User user = new User(2L, "user2", null);
         client().getMap("test").put(2L, user);
 
-        assertRowsAnyOrder("SELECT CAST((this).organization AS JSON) FROM test WHERE __key = 2", rows(1, new Object[] {null}));
+        assertRowsAnyOrder("SELECT CAST((this).organization AS JSON) FROM test WHERE __key = 2",
+                rows(1, new Object[] {null}));
     }
 
     @Test
     public void test_castRowAsJsonShouldFail() {
-        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT CAST(v AS JSON) FROM (SELECT (42, 'foo') v)", rows(1, "")))
+        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT CAST(v AS JSON) FROM (SELECT (42, 'foo') v)",
+                        rows(1, "")))
                 .hasMessageEndingWith("CAST function cannot convert value of type ROW to type JSON")
-                .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.PARSING);
     }
 
     @Test
     public void test_disabledQueries() {
-        assertThatThrownBy(() -> client().getSql().execute("SELECT CAST(? as JSON)", new User()))
-                .isInstanceOf(HazelcastSqlException.class)
+        assertThatThrownBy(() -> execute("SELECT CAST(? as JSON)", new User()))
                 .hasMessageContaining("Cannot convert OBJECT to JSON");
 
-        assertThatThrownBy(() -> client().getSql().execute("SELECT CAST((2, 'user', null) as JSON)"))
-                .isInstanceOf(HazelcastSqlException.class)
+        assertThatThrownBy(() -> execute("SELECT CAST((2, 'user', null) as JSON)"))
                 .hasMessageContaining("Cannot convert ROW to JSON");
 
-        assertThatThrownBy(() -> instance().getSql().execute("SELECT CAST(CAST((2, 'user', null) AS UserType) as JSON)"))
-                .isInstanceOf(HazelcastSqlException.class)
+        assertThatThrownBy(() -> execute("SELECT CAST(CAST((2, 'user', null) AS UserType) as JSON)"))
                 .hasMessageContaining("Complex type specifications are not supported");
     }
 
     @Test
     public void test_compact() {
         setupCompactTypesForNestedQuery(client());
-        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (10, 'organization1', (100, 'office1')))");
+        execute("INSERT INTO test VALUES (1, 1, 'user1', (10, 'organization1', (100, 'office1')))");
 
         assertJsonRowsAnyOrder("SELECT CAST(organization AS JSON) FROM test", rows(1,
                 json("{\"name\":\"organization1\",\"id\":10,\"office\":{\"name\":\"office1\",\"id\":100}}")));
@@ -150,29 +173,9 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
     @Test
     public void test_portable() {
         setupPortableTypesForNestedQuery(client());
-        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (10, 'organization1', (100, 'office1')))");
+        execute("INSERT INTO test VALUES (1, 1, 'user1', (10, 'organization1', (100, 'office1')))");
 
         assertJsonRowsAnyOrder("SELECT CAST(organization AS JSON) FROM test", rows(1,
                 json("{\"name\":\"organization1\",\"id\":10,\"office\":{\"name\":\"office1\",\"id\":100}}")));
-    }
-
-    private void initDefault() {
-        client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
-        client().getSql().execute(format("CREATE TYPE OrganizationType (id BIGINT, name VARCHAR, office OfficeType) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", Organization.class.getName()));
-        client().getSql().execute(format("CREATE TYPE OfficeType (id BIGINT, name VARCHAR) "
-                + "OPTIONS ('format'='java', 'javaClass'='%s')", Office.class.getName()));
-        final IMap<Long, User> testMap = client().getMap("test");
-        client().getSql().execute("CREATE MAPPING test (__key BIGINT, this UserType) "
-                + "TYPE IMap OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='java', "
-                + "'valueJavaClass'='" + User.class.getName() + "')");
-
-        final Office office = new Office(3L, "office1");
-        final Organization organization = new Organization(2L, "organization1", office);
-        final User user = new User(1L, "user1", organization);
-        testMap.put(1L, user);
     }
 }

@@ -24,8 +24,8 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
@@ -41,8 +41,6 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -101,6 +99,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -121,7 +120,6 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
-import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -833,14 +831,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // TODO: Outbound ports for TPC?
             bindSocketToPort(socket);
 
-            // TODO: use the same channel initializer with the legacy connection, when
-            //  we implement TLS support for TPC.
-            HazelcastProperties properties = client.getProperties();
-            SocketOptions socketOptions = client.getClientConfig().getNetworkConfig().getSocketOptions();
-            boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
-            ClientPlainChannelInitializer channelInitializer
-                    = new ClientPlainChannelInitializer(socketOptions, directBuffer);
-
+            ChannelInitializer channelInitializer = clusterDiscoveryService.current().getChannelInitializer();
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
             channel.addCloseListener(new TpcChannelCloseListener(client));
@@ -1267,28 +1258,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                                                            PasswordCredentials credentials,
                                                            byte serializationVersion,
                                                            String clientVersion) {
-        if (isTpcAwareClient) {
-            return ExperimentalAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
-                    credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                    clientVersion, client.getName(), labels);
-        } else {
-            return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
-                    credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                    clientVersion, client.getName(), labels);
-        }
+        return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
+                credentials.getPassword(), clientUuid, connectionType, serializationVersion,
+                clientVersion, client.getName(), labels);
     }
 
     private ClientMessage encodeCustomCredentialsRequest(String clusterName,
                                                          byte[] secretBytes,
                                                          byte serializationVersion,
                                                          String clientVersion) {
-        if (isTpcAwareClient) {
-            return ExperimentalAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                    connectionType, serializationVersion, clientVersion, client.getName(), labels);
-        } else {
-            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                    connectionType, serializationVersion, clientVersion, client.getName(), labels);
-        }
+        return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
+                connectionType, serializationVersion, clientVersion, client.getName(), labels);
     }
 
     protected void checkClientActive() {
@@ -1341,16 +1321,38 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts, byte[] tpcToken) {
-        TpcChannelConnector connector = new TpcChannelConnector(client,
+        List<Integer> targetTpcPorts = getTargetTpcPorts(tpcPorts, client.getClientConfig().getTpcConfig());
+
+        TpcChannelConnector connector = new TpcChannelConnector(
+                client,
                 authenticationTimeout,
                 clientUuid,
                 connection,
-                tpcPorts,
+                targetTpcPorts,
                 tpcToken,
                 executor,
                 this::createTpcChannel,
                 client.getLoggingService());
         connector.initiate();
+    }
+
+    static List<Integer> getTargetTpcPorts(List<Integer> tpcPorts, ClientTpcConfig tpcConfig) {
+        List<Integer> targetTpcPorts;
+        int tpcConnectionCount = tpcConfig.getConnectionCount();
+        if (tpcConnectionCount == 0 || tpcConnectionCount >= tpcPorts.size()) {
+            // zero means connect to all.
+            targetTpcPorts = tpcPorts;
+        } else {
+            // we make a copy of the tpc ports because items are removed.
+            List<Integer> tpcPortsCopy = new LinkedList<>(tpcPorts);
+            targetTpcPorts = new ArrayList<>(tpcConnectionCount);
+            ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
+            for (int k = 0; k < tpcConnectionCount; k++) {
+                int index = threadLocalRandom.nextInt(tpcPortsCopy.size());
+                targetTpcPorts.add(tpcPortsCopy.remove(index));
+            }
+        }
+        return targetTpcPorts;
     }
 
     private class ClientChannelErrorHandler implements ChannelErrorHandler {

@@ -224,6 +224,9 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
         return new SessionResponse(sessionId, sessionTTLMillis, getHeartbeatIntervalMillis());
     }
 
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     private RaftSessionRegistry getOrInitRegistry(CPGroupId groupId) {
         RaftSessionRegistry registry = registries.get(groupId);
         if (registry == null) {

@@ -50,9 +50,13 @@ public final class UnparseUtil {
     }
 
     public static void unparseOptions(SqlWriter writer, SqlNodeList options) {
+        unparseOptions(writer, "OPTIONS", options);
+    }
+
+    public static void unparseOptions(SqlWriter writer, String prefix, SqlNodeList options) {
         if (options != null && options.size() > 0) {
             writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
+            writer.keyword(prefix);
             SqlWriter.Frame withFrame = writer.startList("(", ")");
             for (SqlNode property : options) {
                 printIndent(writer);

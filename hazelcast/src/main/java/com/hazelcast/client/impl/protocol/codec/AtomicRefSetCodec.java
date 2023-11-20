@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value
  */
-@Generated("28938767de8f13a19bfeb24cad039555")
+@SuppressWarnings("unused")
+@Generated("8acdfee3e7d0f010bc483e6eef6d9f43")
 public final class AtomicRefSetCodec {
     //hex: 0x0A0500
     public static final int REQUEST_MESSAGE_TYPE = 656640;

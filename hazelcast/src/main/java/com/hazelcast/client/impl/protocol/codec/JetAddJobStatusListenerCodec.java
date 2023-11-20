@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a JobStatusListener to the specified job.
  */
-@Generated("b54281a30cabeb2b34dfee722257fd03")
+@SuppressWarnings("unused")
+@Generated("3b77b5848aea844137084ef9e324ccd8")
 public final class JetAddJobStatusListenerCodec {
     //hex: 0xFE1300
     public static final int REQUEST_MESSAGE_TYPE = 16651008;

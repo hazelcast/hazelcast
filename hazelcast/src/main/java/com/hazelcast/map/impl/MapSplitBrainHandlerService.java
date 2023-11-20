@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
-import static com.hazelcast.map.impl.MapContainer.GLOBAL_INDEX_NOOP_PARTITION_ID;
+import static com.hazelcast.query.impl.InternalIndex.GLOBAL_INDEX_NOOP_PARTITION_ID;
 
 class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<RecordStore> {
 

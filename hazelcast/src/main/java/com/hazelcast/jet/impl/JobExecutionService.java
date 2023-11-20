@@ -73,14 +73,14 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
@@ -547,7 +547,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public void updateMetrics(@Nonnull Long executionId, RawJobMetrics metrics) {
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext != null) {
-            executionContext.setJobMetrics(metrics);
+            executionContext.setMetrics(metrics);
         }
     }
 

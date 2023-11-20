@@ -130,7 +130,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
                 name -> null,
-                NoOpSqlSecurityContext.INSTANCE
+                NoOpSqlSecurityContext.INSTANCE,
+                false
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)

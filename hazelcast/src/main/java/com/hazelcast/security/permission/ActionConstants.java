@@ -24,6 +24,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
@@ -80,6 +81,7 @@ public final class ActionConstants {
     public static final String LISTENER_MIGRATION = "migration";
 
     // SQL-specific actions
+    public static final String ACTION_VIEW_MAPPING = "view-mapping";
     public static final String ACTION_CREATE_VIEW = "create-view";
     public static final String ACTION_DROP_VIEW = "drop-view";
     public static final String ACTION_CREATE_TYPE = "create-type";
@@ -117,6 +119,7 @@ public final class ActionConstants {
         PERMISSION_FACTORY_MAP.put(JetServiceBackend.SERVICE_NAME, (name, actions) -> new JobPermission(actions));
         PERMISSION_FACTORY_MAP.put(InternalSqlService.SERVICE_NAME, SqlPermission::new);
         PERMISSION_FACTORY_MAP.put(DistributedScheduledExecutorService.SERVICE_NAME, ScheduledExecutorPermission::new);
+        PERMISSION_FACTORY_MAP.put(CPMapServiceUtil.SERVICE_NAME, CPMapPermission::new);
     }
 
     private ActionConstants() {

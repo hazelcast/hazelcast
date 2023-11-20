@@ -21,9 +21,10 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.query.impl.CompositeValue;
-import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
@@ -66,122 +67,30 @@ public class PredicateDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[SQL_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SqlPredicate();
-            }
-        };
-        constructors[AND_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AndPredicate();
-            }
-        };
-        constructors[BETWEEN_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BetweenPredicate();
-            }
-        };
-        constructors[EQUAL_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EqualPredicate();
-            }
-        };
-        constructors[GREATERLESS_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GreaterLessPredicate();
-            }
-        };
-        constructors[LIKE_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LikePredicate();
-            }
-        };
-        constructors[ILIKE_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ILikePredicate();
-            }
-        };
-        constructors[IN_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new InPredicate();
-            }
-        };
-        constructors[INSTANCEOF_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new InstanceOfPredicate();
-            }
-        };
-        constructors[NOTEQUAL_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NotEqualPredicate();
-            }
-        };
-        constructors[NOT_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NotPredicate();
-            }
-        };
-        constructors[OR_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new OrPredicate();
-            }
-        };
-        constructors[REGEX_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RegexPredicate();
-            }
-        };
-        constructors[FALSE_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return FalsePredicate.INSTANCE;
-            }
-        };
-        constructors[TRUE_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return TruePredicate.INSTANCE;
-            }
-        };
-        constructors[PAGING_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PagingPredicateImpl();
-            }
-        };
-        constructors[PARTITION_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionPredicateImpl();
-            }
-        };
-        constructors[NULL_OBJECT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return IndexImpl.NULL;
-            }
-        };
-        constructors[COMPOSITE_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CompositeValue();
-            }
-        };
-        constructors[NEGATIVE_INFINITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return CompositeValue.NEGATIVE_INFINITY;
-            }
-        };
-        constructors[POSITIVE_INFINITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return CompositeValue.POSITIVE_INFINITY;
-            }
-        };
-        constructors[MULTI_PARTITION_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiPartitionPredicateImpl();
-            }
-        };
+        constructors[SQL_PREDICATE] = SqlPredicate::new;
+        constructors[AND_PREDICATE] = AndPredicate::new;
+        constructors[BETWEEN_PREDICATE] = BetweenPredicate::new;
+        constructors[EQUAL_PREDICATE] = EqualPredicate::new;
+        constructors[GREATERLESS_PREDICATE] = GreaterLessPredicate::new;
+        constructors[LIKE_PREDICATE] = LikePredicate::new;
+        constructors[ILIKE_PREDICATE] = ILikePredicate::new;
+        constructors[IN_PREDICATE] = InPredicate::new;
+        constructors[INSTANCEOF_PREDICATE] = InstanceOfPredicate::new;
+        constructors[NOTEQUAL_PREDICATE] = NotEqualPredicate::new;
+        constructors[NOT_PREDICATE] = NotPredicate::new;
+        constructors[OR_PREDICATE] = OrPredicate::new;
+        constructors[REGEX_PREDICATE] = RegexPredicate::new;
+        constructors[FALSE_PREDICATE] = () -> FalsePredicate.INSTANCE;
+        constructors[TRUE_PREDICATE] = () -> TruePredicate.INSTANCE;
+        constructors[PAGING_PREDICATE] = PagingPredicateImpl::new;
+        constructors[PARTITION_PREDICATE] = PartitionPredicateImpl::new;
+        constructors[NULL_OBJECT] = () -> AbstractIndex.NULL;
+        constructors[COMPOSITE_VALUE] = CompositeValue::new;
+        constructors[NEGATIVE_INFINITY] = () -> CompositeValue.NEGATIVE_INFINITY;
+        constructors[POSITIVE_INFINITY] = () -> CompositeValue.POSITIVE_INFINITY;
+        constructors[MULTI_PARTITION_PREDICATE] = MultiPartitionPredicateImpl::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -20,12 +20,7 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -46,6 +41,7 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.wan.MapWanContext;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
@@ -54,10 +50,6 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.wan.impl.DelegatingWanScheme;
-import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -66,20 +58,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.query.impl.InternalIndex.GLOBAL_INDEX_NOOP_PARTITION_ID;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_EVICTION_BATCH_SIZE;
-import static java.lang.Boolean.TRUE;
 import static java.lang.System.getProperty;
 
 /**
@@ -88,7 +77,6 @@ import static java.lang.System.getProperty;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
-    static final int GLOBAL_INDEX_NOOP_PARTITION_ID = -1;
 
     protected final String name;
     protected final String splitBrainProtectionName;
@@ -111,16 +99,14 @@ public class MapContainer {
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
-    protected final AtomicInteger invalidationListenerCounter;
+    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
-    protected volatile SplitBrainMergePolicy wanMergePolicy;
-    protected volatile DelegatingWanScheme wanReplicationDelegate;
 
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
 
-    private volatile boolean persistWanReplicatedData;
+    private final MapWanContext wanContext;
 
     private volatile boolean destroyed;
 
@@ -149,14 +135,13 @@ public class MapContainer {
         this.globalIndexRegistry = shouldUseGlobalIndex()
                 ? createIndexRegistry(true, GLOBAL_INDEX_NOOP_PARTITION_ID) : null;
         this.mapStoreContext = createMapStoreContext(this);
-        this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
-                .getOrCreateCounter(name);
-        initWanReplication();
+        this.wanContext = new MapWanContext(this);
     }
 
     public void init() {
         initEvictor();
         mapStoreContext.start();
+        wanContext.start();
     }
 
     /**
@@ -170,7 +155,7 @@ public class MapContainer {
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
 
         Node node = ((NodeEngineImpl) mapServiceContext.getNodeEngine()).getNode();
-        IndexRegistry newIndexRegistry = IndexRegistry.newBuilder(node, getName(),
+        return IndexRegistry.newBuilder(node, getName(),
                         serializationService, mapServiceContext.getIndexCopyBehavior(),
                         mapConfig.getInMemoryFormat())
                 .global(global)
@@ -182,17 +167,6 @@ public class MapContainer {
                 .partitionId(partitionId)
                 .resultFilterFactory(new IndexResultFilterFactory())
                 .build();
-
-        // if global index, return registry
-        if (partitionId == GLOBAL_INDEX_NOOP_PARTITION_ID) {
-            return newIndexRegistry;
-        } else {
-            // if partitioned index, first register it to
-            // partitionedIndexRegistry then return registry
-            IndexRegistry currentIndexRegistry
-                    = partitionedIndexRegistry.putIfAbsent(partitionId, newIndexRegistry);
-            return currentIndexRegistry == null ? newIndexRegistry : currentIndexRegistry;
-        }
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -201,12 +175,12 @@ public class MapContainer {
     // By using this method in the context of global index an exception will be thrown.
     // -------------------------------------------------------------------------------------------------------------
     IndexRegistry getOrCreatePartitionedIndexRegistry(int partitionId) {
-        if (isGlobalIndexEnabled()) {
+        if (shouldUseGlobalIndex()) {
             throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
         }
 
-        IndexRegistry existing = partitionedIndexRegistry.get(partitionId);
-        return existing != null ? existing : createIndexRegistry(false, partitionId);
+        return partitionedIndexRegistry.computeIfAbsent(partitionId,
+                integer -> createIndexRegistry(false, partitionId));
     }
 
     public AtomicLong getLastInvalidMergePolicyCheckTime() {
@@ -265,7 +239,9 @@ public class MapContainer {
     }
 
     public boolean shouldUseGlobalIndex() {
-        return mapConfig.getInMemoryFormat() != NATIVE || mapServiceContext.globalIndexEnabled();
+        return mapConfig.getInMemoryFormat() != NATIVE
+            || (!mapConfig.getTieredStoreConfig().isEnabled() && mapServiceContext.globalIndexEnabled())
+            || mapServiceContext.isForciblyEnabledGlobalIndex();
     }
 
     protected static MemoryInfoAccessor getMemoryInfoAccessor() {
@@ -284,61 +260,6 @@ public class MapContainer {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    public void initWanReplication() {
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
-        if (wanReplicationRef == null) {
-            return;
-        }
-        String wanReplicationRefName = wanReplicationRef.getName();
-
-        Config config = nodeEngine.getConfig();
-        if (!TRUE.equals(mapConfig.getMerkleTreeConfig().getEnabled())
-                && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
-            throw new InvalidConfigurationException(
-                    "Map " + name + " has disabled merkle trees but the WAN replication scheme "
-                            + wanReplicationRefName + " has publishers that use merkle trees."
-                            + " Please enable merkle trees for the map.");
-        }
-
-        WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
-        wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
-        SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        wanMergePolicy = mergePolicyProvider.getMergePolicy(wanReplicationRef.getMergePolicyClassName());
-        checkMapMergePolicy(mapConfig, wanReplicationRef.getMergePolicyClassName(), mergePolicyProvider);
-
-        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
-        if (wanReplicationConfig != null) {
-            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
-            if (wanConsumerConfig != null) {
-                persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
-            }
-        }
-    }
-
-    /**
-     * Returns {@code true} if at least one of the WAN publishers has
-     * Merkle tree consistency check configured for the given WAN
-     * replication configuration
-     *
-     * @param config                configuration
-     * @param wanReplicationRefName The name of the WAN replication
-     * @return {@code true} if there is at least one publisher has Merkle
-     * tree configured
-     */
-    private boolean hasPublisherWithMerkleTreeSync(Config config, String wanReplicationRefName) {
-        WanReplicationConfig replicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
-        if (replicationConfig == null) {
-            return false;
-        }
-        return replicationConfig.getBatchPublisherConfigs()
-                .stream()
-                .anyMatch(c -> {
-                    WanSyncConfig syncConfig = c.getSyncConfig();
-                    return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
-                });
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
@@ -382,29 +303,6 @@ public class MapContainer {
         return partitionedIndexRegistry;
     }
 
-    @SuppressWarnings("squid:S1751")
-    public void consumeIndexConfigs(Consumer<IndexConfig> consumer) {
-        // 1. Add from global-indexes
-        if (globalIndexRegistry != null) {
-            add(consumer, globalIndexRegistry);
-            return;
-        }
-
-        // 2. Add from partitioned-indexes
-        for (IndexRegistry entry : partitionedIndexRegistry.values()) {
-            add(consumer, entry);
-            break;
-        }
-    }
-
-    private void add(Consumer<IndexConfig> consumer, IndexRegistry indexRegistry) {
-        InternalIndex[] indexes = indexRegistry.getIndexes();
-        for (int i = 0; i < indexes.length; i++) {
-            IndexConfig config = indexes[i].getConfig();
-            consumer.accept(config);
-        }
-    }
-
     // Only used for testing
     public boolean isEmptyIndexRegistry() {
         if (globalIndexRegistry != null) {
@@ -413,25 +311,10 @@ public class MapContainer {
         return partitionedIndexRegistry.isEmpty();
     }
 
-    public boolean isGlobalIndexEnabled() {
-        return globalIndexRegistry != null;
+    public MapWanContext getWanContext() {
+        return wanContext;
     }
 
-    public DelegatingWanScheme getWanReplicationDelegate() {
-        return wanReplicationDelegate;
-    }
-
-    public SplitBrainMergePolicy getWanMergePolicy() {
-        return wanMergePolicy;
-    }
-
-    public boolean isWanReplicationEnabled() {
-        return wanReplicationDelegate != null && wanMergePolicy != null;
-    }
-
-    public boolean isWanRepublishingEnabled() {
-        return isWanReplicationEnabled() && mapConfig.getWanReplicationRef().isRepublishingEnabled();
-    }
 
     public int getTotalBackupCount() {
         return getBackupCount() + getAsyncBackupCount();
@@ -499,11 +382,19 @@ public class MapContainer {
     }
 
     public boolean hasInvalidationListener() {
-        return invalidationListenerCounter.get() > 0;
+        return invalidationListenerCount.get() > 0;
     }
 
     public AtomicInteger getInvalidationListenerCounter() {
-        return invalidationListenerCounter;
+        return invalidationListenerCount;
+    }
+
+    public void increaseInvalidationListenerCount() {
+        invalidationListenerCount.incrementAndGet();
+    }
+
+    public void decreaseInvalidationListenerCount() {
+        invalidationListenerCount.decrementAndGet();
     }
 
     public InterceptorRegistry getInterceptorRegistry() {
@@ -537,7 +428,7 @@ public class MapContainer {
     }
 
     public Map<String, IndexConfig> getIndexDefinitions() {
-        return isGlobalIndexEnabled()
+        return shouldUseGlobalIndex()
                 ? getGlobalIndexDefinitions()
                 : getPartitionedIndexDefinitions();
     }
@@ -566,10 +457,6 @@ public class MapContainer {
             }
         }
         return definitions;
-    }
-
-    public boolean isPersistWanReplicatedData() {
-        return persistWanReplicatedData;
     }
 
     private class ObjectToData implements Function<Object, Data> {

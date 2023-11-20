@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return the all elements of this collection
  */
-@Generated("4e1b98f61b07d3a6598068c504e2b500")
+@SuppressWarnings("unused")
+@Generated("bc80ebc04e7be6c36aa88f7a4e5ea5f3")
 public final class SetGetAllCodec {
     //hex: 0x060A00
     public static final int REQUEST_MESSAGE_TYPE = 395776;

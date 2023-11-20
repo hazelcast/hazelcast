@@ -20,8 +20,8 @@ Breaking changes (list specific methods/types/messages):
 
 Checklist:
 - [ ] Labels (`Team:`, `Type:`, `Source:`, `Module:`) and Milestone set
-- [ ] Label `Add to Release Notes` or `Not Release Notes content` set
+- [ ] Add `Add to Release Notes` label if changes should be mentioned in release notes or `Not Release Notes content` if changes are not relevant for release notes
 - [ ] Request reviewers if possible
-- [ ] Send backports/forwardports if fix needs to be applied to past/future releases
 - [ ] New public APIs have `@Nonnull/@Nullable` annotations
 - [ ] New public APIs have `@since` tags in Javadoc
+- [ ] Send backports/forwardports if fix needs to be applied to past/future releases

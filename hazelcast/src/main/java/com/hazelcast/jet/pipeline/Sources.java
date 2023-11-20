@@ -47,7 +47,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
-import com.hazelcast.spi.annotation.Beta;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Message;
 
@@ -715,7 +714,6 @@ public final class Sources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static <T, K, V> StreamSource<T> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef,
@@ -752,7 +750,6 @@ public final class Sources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static <K, V> StreamSource<Entry<K, V>> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef,
@@ -1406,6 +1403,7 @@ public final class Sources {
      * @param createOutputFn creates output objects from {@link ResultSet}
      * @param <T> type of output objects
      */
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
@@ -1458,7 +1456,7 @@ public final class Sources {
      *
      * @since 5.3
      */
-    @Beta
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull ToResultSetFunction resultSetFn,
@@ -1488,6 +1486,7 @@ public final class Sources {
      *
      * The given function must be stateless.
      */
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
             @Nonnull String query,
@@ -1531,6 +1530,7 @@ public final class Sources {
      *    }</pre>
      *
      */
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
             @Nonnull String query,

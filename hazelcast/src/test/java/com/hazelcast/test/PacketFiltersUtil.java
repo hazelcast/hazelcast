@@ -24,8 +24,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.internal.server.PacketFilter;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.collection.IntHashSet;
+import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,14 +45,19 @@ public final class PacketFiltersUtil {
     private PacketFiltersUtil() {
     }
 
-    public static FirewallingServerConnectionManager getConnectionManager(HazelcastInstance instance) {
+    public static ServerConnectionManager getConnectionManager(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return (FirewallingServerConnectionManager) node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        return node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
     }
 
     public static void resetPacketFiltersFrom(HazelcastInstance instance) {
-        FirewallingServerConnectionManager cm = getConnectionManager(instance);
-        cm.removePacketFilter();
+        ServerConnectionManager cm = getConnectionManager(instance);
+        if (cm instanceof FirewallingServerConnectionManager) {
+            ((FirewallingServerConnectionManager) cm).removePacketFilter();
+        } else {
+            ILogger logger = instance.getLoggingService().getLogger(PacketFiltersUtil.class);
+            logger.warning("Trying to reset packet filters when using real network");
+        }
     }
 
     public static void delayOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes) {

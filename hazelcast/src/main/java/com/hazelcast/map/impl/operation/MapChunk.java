@@ -339,7 +339,7 @@ public class MapChunk extends Operation
         }
 
         MapContainer mapContainer = recordStore.getMapContainer();
-        if (mapContainer.isGlobalIndexEnabled()) {
+        if (mapContainer.shouldUseGlobalIndex()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
                 IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();

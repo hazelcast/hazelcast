@@ -40,7 +40,7 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,6 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static java.nio.file.Files.readAllBytes;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -99,9 +98,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     }
 
     private static String readLocalClusterConfig(String file, String clusterName) throws IOException {
-        byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", file));
-        return new String(bytes, StandardCharsets.UTF_8)
-                .replace("$CLUSTER_NAME$", clusterName);
+        String str = Files.readString(Paths.get("src", "test", "resources", file));
+        return str.replace("$CLUSTER_NAME$", clusterName);
     }
 
     @AfterClass

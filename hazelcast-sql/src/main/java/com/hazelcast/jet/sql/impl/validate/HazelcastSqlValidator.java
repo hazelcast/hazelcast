@@ -18,10 +18,12 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.RewriteVisitor;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCastFunction;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
@@ -31,6 +33,7 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
@@ -81,8 +84,6 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.extractHzObjectType;
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isHzObjectType;
 import static org.apache.calcite.sql.JoinType.FULL;
 import static org.apache.calcite.sql.SqlKind.AS;
 import static org.apache.calcite.sql.SqlKind.COLLECTION_TABLE;
@@ -130,11 +131,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver
-    ) {
+            IMapResolver iMapResolver) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
-        this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
+        this.rewriteVisitor = new RewriteVisitor(this);
         this.tableOperatorWrapper = new TableOperatorWrapper();
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
@@ -175,6 +175,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             return explainStatement;
         }
 
+        if (topNode instanceof SqlAnalyzeStatement) {
+            SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) topNode;
+            analyzeStatement.validate(this);
+            // Note: we're using custom validate method to extract & validate options
+            SqlNode query = analyzeStatement.getQuery();
+            query = super.validate(query);
+            analyzeStatement.setQuery(query);
+            return analyzeStatement;
+        }
+
         return super.validate(topNode);
     }
 
@@ -213,22 +223,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 : "CAST column list argument is not a RowExpression call";
 
         throw QueryException.error("Cannot convert ROW to JSON");
-    }
-
-    private boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
-        if (!discovered.add(type.getTypeName())) {
-            return true;
-        }
-
-        for (final RelDataTypeField field : type.getFieldList()) {
-            final RelDataType fieldType = field.getType();
-            if (isHzObjectType(fieldType)
-                    && containsCycles(extractHzObjectType(fieldType), discovered)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void validateSelect(SqlSelect select, SqlValidatorScope scope) {
@@ -338,18 +332,17 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         validateUpsertRowType((SqlIdentifier) update.getTargetTable());
     }
 
+
     private void validateUpsertRowType(SqlIdentifier table) {
-        final RelDataType rowType = Objects.requireNonNull(getCatalogReader()
-                        .getTable(table.names))
-                .getRowType();
+        final RelDataType rowType = Objects.requireNonNull(getCatalogReader().getTable(table.names)).getRowType();
 
         for (final RelDataTypeField field : rowType.getFieldList()) {
             final RelDataType fieldType = field.getType();
-            if (!isHzObjectType(fieldType)) {
+            if (!(fieldType instanceof HazelcastObjectType)) {
                 continue;
             }
 
-            if (containsCycles(extractHzObjectType(fieldType), new HashSet<>())) {
+            if (QueryUtils.containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
                 throw QueryException.error("Upserts are not supported for cyclic data type columns");
             }
         }
@@ -366,9 +359,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             SqlConnector connector = getJetSqlConnector(table);
 
             // We need to feed primary keys to the delete processor so that it can directly delete the records.
-            // Therefore we use the primary key for the select list.
+            // Therefore, we use the primary key for the select list.
             connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
-            if (selectList.size() == 0) {
+            if (selectList.isEmpty()) {
                 throw QueryException.error("Cannot DELETE from " + delete.getTargetTable() + ": it doesn't have a primary key");
             }
         }

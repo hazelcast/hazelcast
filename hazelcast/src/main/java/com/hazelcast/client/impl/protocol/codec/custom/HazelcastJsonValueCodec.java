@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a587b56c94d3c87c40e2a340e609c6ba")
+@SuppressWarnings("unused")
+@Generated("75a5c20a0782019857502f9120455e5a")
 public final class HazelcastJsonValueCodec {
 
     private HazelcastJsonValueCodec() {

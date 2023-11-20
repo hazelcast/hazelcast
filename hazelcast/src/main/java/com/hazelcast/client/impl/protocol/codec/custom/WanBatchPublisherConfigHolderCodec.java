@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("5772558c1eb37128cf6146f75683b207")
+@SuppressWarnings("unused")
+@Generated("be29e59486f3b47cb4cbfb5d3686313c")
 public final class WanBatchPublisherConfigHolderCodec {
     private static final int SNAPSHOT_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_PUBLISHER_STATE_FIELD_OFFSET = SNAPSHOT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

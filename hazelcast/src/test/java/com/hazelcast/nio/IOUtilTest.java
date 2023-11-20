@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,6 +49,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -83,6 +86,7 @@ import static java.lang.Integer.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -90,8 +94,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -217,97 +223,106 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewOutputStream_shouldWriteWholeByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = newOutputStream(buffer);
-        assertEquals(SIZE, buffer.remaining());
+        try (OutputStream outputStream = newOutputStream(buffer)) {
+            assertEquals(SIZE, buffer.remaining());
 
-        outputStream.write(new byte[SIZE]);
+            outputStream.write(new byte[SIZE]);
 
-        assertEquals(0, buffer.remaining());
+            assertEquals(0, buffer.remaining());
+        }
     }
 
     @Test
     public void testNewOutputStream_shouldWriteSingleByte() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = newOutputStream(buffer);
-        assertEquals(SIZE, buffer.remaining());
+        try (OutputStream outputStream = newOutputStream(buffer)) {
+            assertEquals(SIZE, buffer.remaining());
 
-        outputStream.write(23);
+            outputStream.write(23);
 
-        assertEquals(SIZE - 1, buffer.remaining());
+            assertEquals(SIZE - 1, buffer.remaining());
+        }
     }
 
     @Test
     public void testNewOutputStream_shouldWriteInChunks() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = newOutputStream(buffer);
-        assertEquals(SIZE, buffer.remaining());
+        try (OutputStream outputStream = newOutputStream(buffer)) {
+            assertEquals(SIZE, buffer.remaining());
 
-        outputStream.write(new byte[1], 0, 1);
-        outputStream.write(new byte[SIZE - 1], 0, SIZE - 1);
+            outputStream.write(new byte[1], 0, 1);
+            outputStream.write(new byte[SIZE - 1], 0, SIZE - 1);
 
-        assertEquals(0, buffer.remaining());
+            assertEquals(0, buffer.remaining());
+        }
     }
 
     @Test(expected = BufferOverflowException.class)
     public void testNewOutputStream_shouldThrowWhenTryingToWriteToEmptyByteBuffer() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        OutputStream outputStream = newOutputStream(empty);
+        try (OutputStream outputStream = newOutputStream(empty)) {
 
-        outputStream.write(23);
+            outputStream.write(23);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenEmptyByteBufferProvidedAndReadingOneByte() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        InputStream inputStream = newInputStream(empty);
+        try (InputStream inputStream = newInputStream(empty)) {
 
-        int read = inputStream.read();
+            int read = inputStream.read();
 
-        assertEquals(-1, read);
+            assertEquals(-1, read);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReadWholeByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = newInputStream(buffer);
+        try (InputStream inputStream = newInputStream(buffer)) {
 
-        int read = inputStream.read(new byte[SIZE]);
+            int read = inputStream.read(new byte[SIZE]);
 
-        assertEquals(SIZE, read);
+            assertEquals(SIZE, read);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldAllowReadingByteBufferInChunks() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = newInputStream(buffer);
+        try (InputStream inputStream = newInputStream(buffer)) {
 
-        int firstRead = inputStream.read(new byte[1]);
-        int secondRead = inputStream.read(new byte[SIZE - 1]);
+            int firstRead = inputStream.read(new byte[1]);
+            int secondRead = inputStream.read(new byte[SIZE - 1]);
 
-        assertEquals(1, firstRead);
-        assertEquals(SIZE - 1, secondRead);
+            assertEquals(1, firstRead);
+            assertEquals(SIZE - 1, secondRead);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenNothingRemainingInByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = newInputStream(buffer);
+        try (InputStream inputStream = newInputStream(buffer)) {
 
-        int firstRead = inputStream.read(new byte[SIZE]);
-        int secondRead = inputStream.read();
+            int firstRead = inputStream.read(new byte[SIZE]);
+            int secondRead = inputStream.read();
 
-        assertEquals(SIZE, firstRead);
-        assertEquals(-1, secondRead);
+            assertEquals(SIZE, firstRead);
+            assertEquals(-1, secondRead);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenEmptyByteBufferProvidedAndReadingSeveralBytes() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        InputStream inputStream = newInputStream(empty);
+        try (InputStream inputStream = newInputStream(empty)) {
 
-        int read = inputStream.read(NON_EMPTY_BYTE_ARRAY);
+            int read = inputStream.read(NON_EMPTY_BYTE_ARRAY);
 
-        assertEquals(-1, read);
+            assertEquals(-1, read);
+        }
     }
 
     @Test(expected = EOFException.class)
@@ -779,6 +794,56 @@ public class IOUtilTest extends HazelcastTestSupport {
         Files.delete(src);
         Path target = src.resolveSibling("target.txt");
         Assert.assertThrows(NoSuchFileException.class, () -> IOUtil.move(src, target));
+    }
+
+    @Test
+    public void testFsyncDirNotForcedOnWindows() throws IOException {
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class)) {
+            os.when(OS::isWindows).thenReturn(true);
+
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            fc.verifyNoInteractions();
+        }
+    }
+
+    @Test(expected = NoSuchFileException.class)
+    public void testFsyncDirThrowsNoSuchFileExceptionWindows() throws IOException {
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+             MockedStatic<Files> files = mockStatic(Files.class)) {
+            os.when(OS::isWindows).thenReturn(true);
+            files.when(() -> Files.exists(any(), any())).thenReturn(false);
+
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+        }
+    }
+
+    @Test
+    public void testFsyncDirWhenOSLinux() throws IOException {
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+             MockedStatic<FileChannel> fc = mockStatic(FileChannel.class)) {
+            FileChannel mockFileChannel = mock(FileChannel.class);
+
+            os.when(OS::isLinux).thenReturn(true);
+            fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
+
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            verify(mockFileChannel).force(true);
+        }
+    }
+
+    @Test
+    public void testFsyncDirWhenOSIsMac() throws IOException {
+        try (MockedStatic<OS> os = mockStatic(OS.class);
+             MockedStatic<FileChannel> fc = mockStatic(FileChannel.class)) {
+            FileChannel mockFileChannel = mock(FileChannel.class);
+
+            os.when(OS::isMac).thenReturn(true);
+            fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
+
+            IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+            verify(mockFileChannel).force(true);
+        }
     }
 
     private File newFile(String filename) {

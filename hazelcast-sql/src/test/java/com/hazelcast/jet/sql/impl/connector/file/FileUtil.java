@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.generic.GenericData.Record;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
@@ -32,13 +32,19 @@ import org.apache.parquet.io.OutputFile;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.reduce;
+import static org.apache.avro.generic.GenericData.STRING_PROP;
+import static org.apache.avro.generic.GenericData.StringType.String;
 
 final class FileUtil {
 
-    static final Record AVRO_RECORD =
+    static final GenericRecord AVRO_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")
                      .fields()
                      .name("string").type().stringType().noDefault()
@@ -74,9 +80,8 @@ final class FileUtil {
              .set("object", new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build())
              .build();
 
-    static final Record AVRO_NULLABLE_RECORD =
-            AVRO_RECORD.getSchema().getFields().stream().collect(
-                () -> new GenericRecordBuilder(SchemaBuilder.record("name")
+    static final GenericRecord AVRO_NULLABLE_RECORD = reduce(
+            new GenericRecordBuilder(SchemaBuilder.record("name")
                     .fields()
                     .name("string").type().nullable().stringType().noDefault()
                     .name("boolean").type().nullable().booleanType().noDefault()
@@ -94,18 +99,43 @@ final class FileUtil {
                     .name("null").type().nullable().record("nul").fields().endRecord().noDefault()
                     .name("object").type().nullable().record("object").fields().endRecord().noDefault()
                     .endRecord()),
-                (builder, field) -> builder.set(field, AVRO_RECORD.get(field.pos())),
-                ExceptionUtil::combinerUnsupported
-            ).build();
+            AVRO_RECORD.getSchema().getFields().stream(),
+            (record, field) -> record.set(field, AVRO_RECORD.get(field.pos()))
+    ).build();
 
-    static final Record AVRO_NULL_RECORD =
-            AVRO_NULLABLE_RECORD.getSchema().getFields().stream().collect(
-                    () -> new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
-                    (builder, field) -> builder.set(field, null),
-                    ExceptionUtil::combinerUnsupported
-            ).build();
+    static final GenericRecord AVRO_NULL_RECORD = reduce(
+            new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
+            AVRO_NULLABLE_RECORD.getSchema().getFields().stream(),
+            (record, field) -> record.set(field, null)
+    ).build();
 
-    private static final Record PARQUET_RECORD =
+    static final GenericRecord AVRO_COMPLEX_TYPES;
+    static {
+        Schema mapSchema = SchemaBuilder.map().prop(STRING_PROP, String).values(Schema.create(Schema.Type.INT));
+        Schema recordSchema = SchemaBuilder.record("record").fields().requiredInt("field").endRecord();
+        Schema arraySchema = SchemaBuilder.array().items(Schema.create(Schema.Type.INT));
+        Schema enumSchema = SchemaBuilder.enumeration("enum").symbols("symbol");
+        Schema fixedSchema = SchemaBuilder.fixed("fixed").size(1);
+
+        AVRO_COMPLEX_TYPES = new GenericRecordBuilder(SchemaBuilder.record("complex")
+                .fields()
+                .requiredBytes("bytes")
+                .name("map").type(mapSchema).noDefault()
+                .name("record").type(recordSchema).noDefault()
+                .name("array").type(arraySchema).noDefault()
+                .name("enum").type(enumSchema).noDefault()
+                .name("fixed").type(fixedSchema).noDefault()
+                .endRecord()
+        ).set("bytes", ByteBuffer.wrap(new byte[]{(byte) 19}))
+         .set("map", Map.of("key", 71))
+         .set("record", new GenericRecordBuilder(recordSchema).set("field", 23).build())
+         .set("array", new GenericData.Array<>(arraySchema, List.of(53)))
+         .set("enum", new GenericData.EnumSymbol(enumSchema, "symbol"))
+         .set("fixed", new GenericData.Fixed(fixedSchema, new byte[]{(byte) 74}))
+         .build();
+    }
+
+    private static final GenericRecord PARQUET_RECORD =
             new GenericRecordBuilder(SchemaBuilder.record("name")
                     .fields()
                     .name("string").type().stringType().noDefault()
@@ -143,7 +173,7 @@ final class FileUtil {
      * Creates a temporary directory with prefix 'sql-avro-test', writes the
      * specified Avro record to 'file.avro' in this directory and returns the file.
      */
-    static File createAvroFile(Record avroRecord) {
+    static File createAvroFile(GenericRecord avroRecord) {
         try {
             File directory = Files.createTempDirectory("sql-avro-test").toFile();
             directory.deleteOnExit();

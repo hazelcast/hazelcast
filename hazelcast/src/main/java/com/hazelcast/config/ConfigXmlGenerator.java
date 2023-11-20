@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -80,8 +81,8 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.set
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.XmlUtil.format;
 import static java.util.Arrays.asList;
 
 /**
@@ -204,7 +205,7 @@ public class ConfigXmlGenerator {
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();
-        return formatted ? formatXml(xmlString, INDENT) : xmlString;
+        return formatted ? format(xmlString, INDENT) : xmlString;
     }
 
     private String getOrMaskValue(String value) {
@@ -1018,6 +1019,15 @@ public class ConfigXmlGenerator {
                     .node("name", lockConfig.getName())
                     .node("lock-acquire-limit", lockConfig.getLockAcquireLimit())
                     .close();
+        }
+
+        gen.close().open("maps");
+
+        for (CPMapConfig cpMapConfig : cpSubsystemConfig.getCpMapConfigs().values()) {
+            gen.open("map")
+               .node("name", cpMapConfig.getName())
+               .node("max-size-mb", cpMapConfig.getMaxSizeMb())
+               .close();
         }
 
         gen.close().close();

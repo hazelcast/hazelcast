@@ -201,7 +201,7 @@ public class ReflectionUtilsTest {
     }
 
     private static ClassResource classResource(Class<?> clazz) {
-        URL url = clazz.getClassLoader().getResource(clazz.getName().replace('.', '/') + ".class");
+        URL url = clazz.getClassLoader().getResource(ReflectionUtils.toClassResourceId(clazz));
         return new ClassResource(clazz.getName(), url);
     }
 

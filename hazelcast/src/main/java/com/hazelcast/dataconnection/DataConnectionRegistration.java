@@ -16,14 +16,12 @@
 
 package com.hazelcast.dataconnection;
 
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * Registration for a {@link DataConnection}.
  *
  * @since 5.3
  */
-@Beta
 public interface DataConnectionRegistration {
 
     /**

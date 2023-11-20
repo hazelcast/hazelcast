@@ -35,6 +35,7 @@ import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactoryFactory;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
@@ -44,6 +45,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.IntConsumer;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT;
@@ -98,6 +100,9 @@ public class PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
+    /** For test usage only */
+    private ReplicaUpdateInterceptor replicaUpdateInterceptor;
+
     public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
         this.logger = node.getLogger(getClass());
@@ -117,6 +122,7 @@ public class PartitionStateManager {
                 node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
         snapshotOnRemove = new ConcurrentHashMap<>();
+        this.replicaUpdateInterceptor = NoOpBatchReplicatUpdateInterceptor.INSTANCE;
     }
 
     /**
@@ -192,11 +198,7 @@ public class PartitionStateManager {
                     + "Expected: " + partitionCount + ", Actual: " + newState.length);
         }
 
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            InternalPartitionImpl partition = partitions[partitionId];
-            PartitionReplica[] replicas = newState[partitionId];
-            partition.setReplicas(replicas);
-        }
+        batchUpdateReplicas(newState);
 
         ClusterState clusterState = node.getClusterService().getClusterState();
         if (!clusterState.isMigrationAllowed()) {
@@ -208,6 +210,36 @@ public class PartitionStateManager {
 
         setInitialized();
         return true;
+    }
+
+    void batchUpdateReplicas(PartitionReplica[][] newState) {
+        PartitionIdSet changedOwnersSet = new PartitionIdSet(partitionCount);
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            InternalPartitionImpl partition = partitions[partitionId];
+            PartitionReplica[] replicas = newState[partitionId];
+            if (partition.setReplicas(replicas, false)) {
+                changedOwnersSet.add(partitionId);
+            }
+        }
+        partitionOwnersChanged(changedOwnersSet);
+    }
+
+    /**
+     * Called after a batch of partition replica assignments have been applied. This is an optimization for batch
+     * changes, to avoid repeatedly performing costly computations (like updating partition assignments stamp).
+     * <p><b>
+     * If this logic changes, consider also changing the implementation of
+     * {@link PartitionReplicaInterceptor#replicaChanged(int, int, PartitionReplica, PartitionReplica)}, which should apply
+     * the same logic per partition.
+     * </b></p>
+     *
+     * @param partitionIdSet
+     */
+    void partitionOwnersChanged(PartitionIdSet partitionIdSet) {
+        partitionIdSet.intIterator().forEachRemaining(
+                (IntConsumer) partitionId -> partitionService.getReplicaManager().cancelReplicaSync(partitionId));
+        updateStamp();
+        replicaUpdateInterceptor.onPartitionOwnersChanged();
     }
 
     /**
@@ -247,6 +279,7 @@ public class PartitionStateManager {
         logger.info("Setting cluster partition table...");
         boolean foundReplica = false;
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
+        PartitionIdSet changedOwnerPartitions = new PartitionIdSet(partitionCount);
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
             InternalPartition newPartition = partitionTable.getPartition(partitionId);
@@ -257,10 +290,13 @@ public class PartitionStateManager {
             }
             partition.reset(localReplica);
             if (newPartition != null) {
-                partition.setReplicasAndVersion(newPartition);
+                if (partition.setReplicasAndVersion(newPartition)) {
+                    changedOwnerPartitions.add(partitionId);
+                }
             }
         }
         if (foundReplica) {
+            partitionOwnersChanged(changedOwnerPartitions);
             setInitialized();
         }
     }
@@ -288,12 +324,12 @@ public class PartitionStateManager {
     }
 
     /**
-     * Checks all replicas for all partitions. If the cluster service does not contain the member for any
-     * address in the partition table, it will remove the address from the partition.
+     * Checks all replicas for all partitions. If the cluster service does not contain the member or the member
+     * is a lite member for any address in the partition table, it will remove the address from the partition.
      *
      * @see ClusterService#getMember(Address, UUID)
      */
-    void removeUnknownMembers() {
+    void removeUnknownAndLiteMembers() {
         ClusterServiceImpl clusterService = node.getClusterService();
 
         for (InternalPartitionImpl partition : partitions) {
@@ -303,7 +339,8 @@ public class PartitionStateManager {
                     continue;
                 }
 
-                if (clusterService.getMember(replica.address(), replica.uuid()) == null) {
+                Member member = clusterService.getMember(replica.address(), replica.uuid());
+                if (member == null || member.isLiteMember()) {
                     partition.setReplica(i, null);
                     if (logger.isFinestEnabled()) {
                         logger.finest("PartitionId=" + partition.getPartitionId() + " " + replica
@@ -387,6 +424,7 @@ public class PartitionStateManager {
         if (logger.isFinestEnabled()) {
             logger.finest("New calculated partition state stamp is: " + stateStamp);
         }
+        replicaUpdateInterceptor.onPartitionStampUpdate();
     }
 
     public long getStamp() {
@@ -408,7 +446,8 @@ public class PartitionStateManager {
 
     boolean setInitialized() {
         if (!initialized) {
-            updateStamp();
+            // partition state stamp is already calculated
+            assert stateStamp != 0 : "Partition state stamp should already have been calculated";
             initialized = true;
             node.getNodeExtension().onPartitionStateChange();
             return true;
@@ -470,5 +509,27 @@ public class PartitionStateManager {
 
     void removeSnapshot(UUID memberUuid) {
         snapshotOnRemove.remove(memberUuid);
+    }
+
+    /** For test usage only */
+    void setReplicaUpdateInterceptor(ReplicaUpdateInterceptor interceptor) {
+        this.replicaUpdateInterceptor = interceptor;
+    }
+
+    interface ReplicaUpdateInterceptor {
+        void onPartitionOwnersChanged();
+        void onPartitionStampUpdate();
+    }
+
+    static final class NoOpBatchReplicatUpdateInterceptor implements ReplicaUpdateInterceptor {
+        static final NoOpBatchReplicatUpdateInterceptor INSTANCE = new NoOpBatchReplicatUpdateInterceptor();
+
+        @Override
+        public void onPartitionOwnersChanged() {
+        }
+
+        @Override
+        public void onPartitionStampUpdate() {
+        }
     }
 }

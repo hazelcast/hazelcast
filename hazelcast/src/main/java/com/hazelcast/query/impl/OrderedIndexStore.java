@@ -335,12 +335,8 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
         @Override
         public Object invoke(Comparable value, QueryableEntry entry) {
-            NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
-            if (records == null) {
-                records = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
-                recordMap.put(value, records);
-            }
-            return records.put(entry.getKeyData(), entry);
+            return recordMap.computeIfAbsent(value, x -> new ConcurrentSkipListMap<>(DATA_COMPARATOR)).put(entry.getKeyData(),
+                    entry);
         }
 
     }

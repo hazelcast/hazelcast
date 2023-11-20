@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a data connection configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("fa4cfdcade5bfcd5adcc436e54549c01")
+@SuppressWarnings("unused")
+@Generated("efd225b719b4bfe33f86b20e57206c81")
 public final class DynamicConfigAddDataConnectionConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;

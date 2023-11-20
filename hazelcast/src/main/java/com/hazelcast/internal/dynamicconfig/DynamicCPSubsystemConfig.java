@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
@@ -95,6 +96,11 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
 
     @Override
     public CPSubsystemConfig setLockConfigs(Map<String, FencedLockConfig> lockConfigs) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CPSubsystemConfig setCPMapConfigs(Map<String, CPMapConfig> cpMapConfigs) {
         throw new UnsupportedOperationException();
     }
 

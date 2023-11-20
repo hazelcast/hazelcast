@@ -2572,6 +2572,22 @@
               }
             }
           }
+        },
+        "maps": {
+          "type": "object",
+          "description": "Configurations for CPMap instances. CPMaps can be configured with mappings under keys as their names.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max-size-mb": {
+                "type": "integer",
+                "default": 100,
+                "minimum": 1,
+                "description": "Maximum size in MB that the constituent key-value pairs of the CPMap can total."
+              }
+            }
+          }
         }
       }
     },
@@ -2914,7 +2930,8 @@
               "management",
               "job",
               "connector",
-              "sql"
+              "sql",
+              "cpmap"
             ]
           },
           "properties": {

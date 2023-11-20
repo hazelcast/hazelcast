@@ -104,6 +104,19 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         return (SqlPlanImpl.SelectPlan) plan;
     }
 
+    SqlPlanImpl.DmlPlan assertDmlQueryPlan(String query) {
+        SqlStatement sql = new SqlStatement(query);
+        SqlPlan plan = sqlService.prepare(
+                sql.getSchema(),
+                query,
+                sql.getParameters(),
+                SqlExpectedResultType.UPDATE_COUNT,
+                NoOpSqlSecurityContext.INSTANCE);
+
+        assertInstanceOf(SqlPlanImpl.DmlPlan.class, plan);
+        return (SqlPlanImpl.DmlPlan) plan;
+    }
+
     void assertQueryResult(SqlPlanImpl.SelectPlan selectPlan, Collection<Row> expectedResults, Object... args) {
         List<Object> arguments = Collections.emptyList();
         if (args.length > 0) {

@@ -52,11 +52,6 @@ public class FencedLockSnapshotTest extends AbstractAtomicRegisterSnapshotTest<L
     }
 
     @Override
-    protected Long readValue() {
-        return lock.getFence();
-    }
-
-    @Override
     protected RaftOp getQueryRaftOp() {
         return new GetLockOwnershipStateOp(name);
     }

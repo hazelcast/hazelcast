@@ -44,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCompatibilityTest_2_4 {
@@ -84,6 +85,8 @@ public class ClientCompatibilityTest_2_4 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test
@@ -107,6 +110,8 @@ public class ClientCompatibilityTest_2_4 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test
@@ -6770,10 +6775,11 @@ public class ClientCompatibilityTest_2_4 {
 
     private static class CPSubsystemAddGroupAvailabilityListenerCodecHandler extends CPSubsystemAddGroupAvailabilityListenerCodec.AbstractEventHandler {
         @Override
-        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers) {
+        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers, boolean isIsShutdownExists, boolean isShutdown) {
             assertTrue(isEqual(aRaftGroupId, groupId));
             assertTrue(isEqual(aListOfCpMembers, members));
             assertTrue(isEqual(aListOfCpMembers, unavailableMembers));
+            assertFalse(isIsShutdownExists);
         }
     }
 

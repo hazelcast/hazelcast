@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityL
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.impl.Node;
@@ -50,12 +51,6 @@ public class AddCPGroupAvailabilityListenerMessageTask extends AbstractAsyncMess
         EventService eventService = clientEngine.getEventService();
         CPGroupAvailabilityListener listener = new ClientCPGroupAvailabilityListener(endpoint);
 
-        boolean local = parameters;
-        if (local) {
-            UUID id = eventService.registerLocalListener(getServiceName(), TOPIC, listener).getId();
-            return CompletableFuture.completedFuture(id);
-        }
-
         return eventService.registerListenerAsync(getServiceName(), TOPIC, listener)
                 .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
@@ -72,8 +67,9 @@ public class AddCPGroupAvailabilityListenerMessageTask extends AbstractAsyncMess
             if (!endpoint.isAlive()) {
                 return;
             }
+            boolean isShutdown = ((CPGroupAvailabilityEventImpl) event).isShutdown();
             ClientMessage message = encodeGroupAvailabilityEventEvent((RaftGroupId) event.getGroupId(),
-                    event.getGroupMembers(), event.getUnavailableMembers());
+                    event.getGroupMembers(), event.getUnavailableMembers(), isShutdown);
             sendClientMessage(message);
         }
 
@@ -82,8 +78,9 @@ public class AddCPGroupAvailabilityListenerMessageTask extends AbstractAsyncMess
             if (!endpoint.isAlive()) {
                 return;
             }
+            boolean isShutdown = ((CPGroupAvailabilityEventImpl) event).isShutdown();
             ClientMessage message = encodeGroupAvailabilityEventEvent((RaftGroupId) event.getGroupId(),
-                    event.getGroupMembers(), event.getUnavailableMembers());
+                    event.getGroupMembers(), event.getUnavailableMembers(), isShutdown);
             sendClientMessage(message);
         }
     }

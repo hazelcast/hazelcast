@@ -44,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCompatibilityTest_2_0 {
@@ -84,6 +85,8 @@ public class ClientCompatibilityTest_2_0 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test
@@ -107,6 +110,8 @@ public class ClientCompatibilityTest_2_0 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test

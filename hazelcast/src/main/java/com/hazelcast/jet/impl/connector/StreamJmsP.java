@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.JmsSourceBuilder;
-import com.hazelcast.security.permission.ConnectorPermission;
 import jakarta.jms.Connection;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -41,25 +40,21 @@ import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static jakarta.jms.Session.DUPS_OK_ACKNOWLEDGE;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.IntStream.range;
 
@@ -226,7 +221,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
         }
         // Ignore if not in ex-once mode. The user could cancelAndExportSnapshot() and restart with
         // a lower guarantee.
-        // We could restore multiple collections: each processor saves up to two collections and it's restored to
+        // We could restore multiple collections: each processor saves up to two collections, and it's restored to
         // all processors because we can't control which processor receives which messages.
         if (guarantee == EXACTLY_ONCE) {
             @SuppressWarnings("unchecked")
@@ -252,7 +247,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
      */
     public static final class Supplier<T> implements ProcessorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private final String destination;
         private final SupplierEx<? extends Connection> newConnectionFn;
@@ -307,11 +302,6 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     .mapToObj(i -> new StreamJmsP<>(
                             connection, consumerFn, messageIdFn, projectionFn, eventTimePolicy, sourceGuarantee))
                     .collect(Collectors.toList());
-        }
-
-        @Override
-        public List<Permission> permissions() {
-            return singletonList(ConnectorPermission.jms(destination, ACTION_READ));
         }
     }
 }
