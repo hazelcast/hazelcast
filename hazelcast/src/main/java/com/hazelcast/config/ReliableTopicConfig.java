@@ -31,9 +31,9 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 
 /**
@@ -74,7 +74,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     private int readBatchSize = DEFAULT_READ_BATCH_SIZE;
     private String name;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
-    private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
+    private List<ListenerConfig> listenerConfigs = new LinkedList<>();
     private TopicOverloadPolicy topicOverloadPolicy = DEFAULT_TOPIC_OVERLOAD_POLICY;
 
     public ReliableTopicConfig() {
@@ -111,10 +111,10 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      *
      * @param name the name of the reliable topic
      * @return the updated ReliableTopicConfig
-     * @throws IllegalArgumentException if name is {@code null} or an empty string
+     * @throws IllegalArgumentException if name is {@code null}
      */
     public ReliableTopicConfig setName(String name) {
-        this.name = checkHasText(name, "name must contain text");
+        this.name = isNotNull(name, "name");
         return this;
     }
 
@@ -263,7 +263,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * @return this updated topic configuration
      */
     public ReliableTopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
-        this.listenerConfigs = listenerConfigs != null ? listenerConfigs : new LinkedList<ListenerConfig>();
+        this.listenerConfigs = listenerConfigs != null ? listenerConfigs : new LinkedList<>();
         return this;
     }
 
