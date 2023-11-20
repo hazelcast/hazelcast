@@ -1042,8 +1042,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      */
     static void checkIMapByKeyPlanIsAnalyzed(boolean isAnalyzed) {
         if (isAnalyzed) {
-            throw QueryException.error("ANALYZE statement is not applicable for key-based optimized IMap access plans." +
-                    " Consider to submit the same query without ANALYZE statement.");
+            throw QueryException.error("This query uses key-based optimized IMap access plan. " +
+                    "ANALYZE is unable to produce meaningful execution statistics for it.");
         }
     }
 

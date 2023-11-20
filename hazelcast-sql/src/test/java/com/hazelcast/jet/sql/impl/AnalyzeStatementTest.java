@@ -125,7 +125,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE SELECT * FROM test WHERE __key = 1"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining(" Consider to submit the same query without ANALYZE statement.");
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
@@ -139,7 +139,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE INSERT INTO test VALUES(3, 3)"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining(" Consider to submit the same query without ANALYZE statement.");
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
@@ -154,7 +154,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE UPDATE test SET this = 3 WHERE __key = 1"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining(" Consider to submit the same query without ANALYZE statement.");
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("ANALYZE DELETE FROM test WHERE __key = 1"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining(" Consider to submit the same query without ANALYZE statement.");
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
     }
 
     @Test
