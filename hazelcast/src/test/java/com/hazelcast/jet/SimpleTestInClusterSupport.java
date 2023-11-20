@@ -44,6 +44,12 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.management.ThreadDumpGenerator.dumpAllThreads;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE;
+import static com.hazelcast.jet.impl.JobRepository.JOB_EXECUTION_RECORDS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RECORDS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.RANDOM_ID_GENERATOR_NAME;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -143,7 +149,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         // the same distributed object in more than one test, we are not going to invoke InitializeDistributedObjectOperation
         // in all of them (just in the first one).
         Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
-                : instances()[0].getDistributedObjects();
+                : instance().getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
@@ -153,13 +159,21 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
 
         // Jet keeps some IMap references in JobRepository.
-        // Destroying proxies removes the objects from registry but JobRepository still uses
-        // original instances which are on longer visible.
-        // After we destroy the objects we need to refresh references in JobRepository.
-        for (HazelcastInstance inst : stillActiveInstances) {
-            JetServiceBackend jetServiceBackend = getJetServiceBackend(inst);
-            jetServiceBackend.getJobRepository().reset();
-        }
+        // Destroying proxies removes the objects from proxy registry but JobRepository keeps
+        // the instances. They can still be used but when used it will NOT recreate proxy
+        // so after next test they will not be visible in getDistributedObjects()
+        // and will not be cleared. Because of that we explicitly clean known Jet objects.
+        // __sql.catalog is added just in case but proxy for it is obtained quite often explicitly.
+        //
+        // This behavior affects all objects for which references are kept across test methods,
+        // (both in production code and in tests) but for those there is no generic solution.
+        List<String> jetMaps = List.of(JOB_RECORDS_MAP_NAME, JOB_RESULTS_MAP_NAME,
+                JOB_EXECUTION_RECORDS_MAP_NAME, JOB_EXECUTION_RECORDS_MAP_NAME,
+                EXPORTED_SNAPSHOTS_DETAIL_CACHE,
+                SQL_CATALOG_MAP_NAME);
+        List<String> flakeId = List.of(RANDOM_ID_GENERATOR_NAME);
+        jetMaps.forEach(map -> instance().getMap(map).destroy());
+        flakeId.forEach(id -> instance().getFlakeIdGenerator(id).destroy());
 
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {

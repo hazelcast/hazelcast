@@ -84,6 +84,7 @@ import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.Comparator.comparing;
@@ -177,10 +178,10 @@ public class JobRepository {
 
     private final ConcurrentMemoizingSupplier<IMap<Long, JobRecord>> jobRecords;
     private final ConcurrentMemoizingSupplier<IMap<Long, JobResult>> jobResults;
-    private final ConcurrentMemoizingSupplier<IMap<Long, JobExecutionRecord>> jobExecutionRecords;
-    private final ConcurrentMemoizingSupplier<IMap<Long, List<RawJobMetrics>>> jobMetrics;
-    private final ConcurrentMemoizingSupplier<IMap<String, SnapshotValidationRecord>> exportedSnapshotDetailsCache;
-    private final ConcurrentMemoizingSupplier<FlakeIdGenerator> idGenerator;
+    private final Supplier<IMap<Long, JobExecutionRecord>> jobExecutionRecords;
+    private final Supplier<IMap<Long, List<RawJobMetrics>>> jobMetrics;
+    private final Supplier<IMap<String, SnapshotValidationRecord>> exportedSnapshotDetailsCache;
+    private final Supplier<FlakeIdGenerator> idGenerator;
 
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
@@ -190,19 +191,10 @@ public class JobRepository {
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
         jobResults = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
-        jobExecutionRecords = new ConcurrentMemoizingSupplier<>(() -> safeImap(instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME)));
-        jobMetrics = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_METRICS_MAP_NAME));
-        exportedSnapshotDetailsCache = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
-        idGenerator = new ConcurrentMemoizingSupplier<>(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
-    }
-
-    public void reset() {
-        jobRecords.forget();
-        jobResults.forget();
-        jobExecutionRecords.forget();
-        jobMetrics.forget();
-        exportedSnapshotDetailsCache.forget();
-        idGenerator.forget();
+        jobExecutionRecords = memoizeConcurrent(() -> safeImap(instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME)));
+        jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
+        exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
+        idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
     }
 
     /**

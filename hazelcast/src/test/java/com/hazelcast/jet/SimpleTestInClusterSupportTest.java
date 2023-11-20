@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -62,34 +63,39 @@ public class SimpleTestInClusterSupportTest extends SimpleTestInClusterSupport {
         // these tests check cleanup in SimpleTestInClusterSupport
         // to check that in isolated way we use initialize/initializeWithClient per test method
         // unlike standard invocation per class.
+        supportAfter();
         supportAfterClass();
+    }
+
+    private HazelcastInstance hz() {
+        return useClient ? client() : instance();
     }
 
     @Test
     public void jobShouldNotBeVisibleAfterFirstRestart() {
         // given
-        Job job = instance().getJet().newJob(TestProcessors.streamingDag());
+        Job job = hz().getJet().newJob(TestProcessors.streamingDag());
 
         // when
         supportAfter();
 
         // then
-        assertThat(instance().getJet().getJobs()).isEmpty();
+        assertThat(hz().getJet().getJobs()).isEmpty();
         assertThatThrownBy(() -> job.getStatus()).isInstanceOf(JobNotFoundException.class);
     }
 
     @Test
     public void jobShouldNotBeVisibleAfterSecondRestart() {
         // given
-        Job job = instance().getJet().newJob(TestProcessors.streamingDag());
+        Job job = hz().getJet().newJob(TestProcessors.batchDag());
         supportAfter();
-        Job job2 = instance().getJet().newJob(TestProcessors.streamingDag());
+        Job job2 = hz().getJet().newJob(TestProcessors.batchDag());
 
         // when
         supportAfter();
 
         // then
-        assertThat(instance().getJet().getJobs()).isEmpty();
+        assertThat(hz().getJet().getJobs()).isEmpty();
         assertThatThrownBy(() -> job.getStatus()).isInstanceOf(JobNotFoundException.class);
         assertThatThrownBy(() -> job2.getStatus()).isInstanceOf(JobNotFoundException.class);
     }
