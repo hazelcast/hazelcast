@@ -344,6 +344,7 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-mongodb</artifactId>
             <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
