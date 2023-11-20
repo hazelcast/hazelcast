@@ -204,8 +204,6 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         // Ensure job is running after the refusal to alter the job
         assertJobStatusEventually(job, RUNNING);
-
-        job.cancel();
     }
 
     private Job runQuery() {
