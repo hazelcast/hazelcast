@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.connect.impl.topic;
+package com.hazelcast.jet.kafka.connect.impl.message;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class TaskConfigTopic implements Serializable {
+public class TaskConfigMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private List<Map<String, String>> taskConfigs;

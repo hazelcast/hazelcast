@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.connect.impl.topic;
+package com.hazelcast.jet.kafka.connect.impl.message;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.JobRepository;
@@ -28,8 +28,9 @@ import java.util.UUID;
 public class TaskConfigPublisher {
     private final HazelcastInstance hazelcastInstance;
     private String topicName;
+
     // The reliableTopic is accessed by multiple threads
-    private volatile ITopic<TaskConfigTopic> reliableTopic;
+    private volatile ITopic<TaskConfigMessage> reliableTopic;
     private final List<UUID> listeners = new ArrayList<>();
 
     public TaskConfigPublisher(HazelcastInstance hazelcastInstance) {
@@ -41,7 +42,7 @@ public class TaskConfigPublisher {
         reliableTopic = hazelcastInstance.getReliableTopic(topicName);
     }
 
-    public void addListener(MessageListener<TaskConfigTopic> messageListener) {
+    public void addMessageListener(MessageListener<TaskConfigMessage> messageListener) {
         // Wrap the listener with LateJoiningListener to get only the latest message
         UUID uuid = reliableTopic.addMessageListener(new LateJoiningListener<>(
                 hazelcastInstance,
@@ -50,15 +51,15 @@ public class TaskConfigPublisher {
         listeners.add(uuid);
     }
 
-    public void publish(TaskConfigTopic taskConfigTopic) {
-        reliableTopic.publish(taskConfigTopic);
+    public void publish(TaskConfigMessage taskConfigMessage) {
+        reliableTopic.publish(taskConfigMessage);
     }
 
     public void destroyTopic() {
         reliableTopic.destroy();
     }
 
-    public void removeListeners() {
+    public void removeMessageListeners() {
         for (UUID listener : listeners) {
             reliableTopic.removeMessageListener(listener);
         }

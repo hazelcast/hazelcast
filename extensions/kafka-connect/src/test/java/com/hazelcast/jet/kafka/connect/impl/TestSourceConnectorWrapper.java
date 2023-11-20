@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
-import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
+import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
 
 import java.util.Properties;
 
-// Test ConnectorWrapper that passes topic directly to taskrunners
+// Test ConnectorWrapper that passes topic directly to task runners
 public class TestSourceConnectorWrapper extends SourceConnectorWrapper {
     public TestSourceConnectorWrapper(Properties propertiesFromUser) {
         super(propertiesFromUser);
@@ -28,7 +28,8 @@ public class TestSourceConnectorWrapper extends SourceConnectorWrapper {
     }
 
     @Override
-    protected void publishTopic(TaskConfigTopic taskConfigTopic) {
-        processMessage(taskConfigTopic);
+    protected void publishMessage(TaskConfigMessage taskConfigMessage) {
+        // Instead of publishing the message, pass it directly to processing function
+        processMessage(taskConfigMessage);
     }
 }

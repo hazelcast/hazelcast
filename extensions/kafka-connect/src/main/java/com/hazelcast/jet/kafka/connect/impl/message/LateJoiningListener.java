@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.connect.impl.topic;
+package com.hazelcast.jet.kafka.connect.impl.message;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.Ringbuffer;

@@ -200,8 +200,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(value);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        State state = new State(partitionsToOffset);
-        return state;
+        return new State(partitionsToOffset);
     }
 
     private static void enableSnapshotting(TestProcessorContext testProcessorContext) {

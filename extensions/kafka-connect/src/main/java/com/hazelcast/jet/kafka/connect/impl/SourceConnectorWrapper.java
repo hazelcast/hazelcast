@@ -18,8 +18,8 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigPublisher;
-import com.hazelcast.jet.kafka.connect.impl.topic.TaskConfigTopic;
+import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
+import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.Message;
@@ -59,8 +59,7 @@ public class SourceConnectorWrapper {
     public SourceConnectorWrapper(Properties propertiesFromUser) {
         String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
         this.name = checkRequiredProperty(propertiesFromUser, "name");
-        // If "tasks.max" is not from test data use default value
-        tasksMax = Integer.parseInt(propertiesFromUser.getProperty("tasks.max" , "1"));
+        this.tasksMax = Integer.parseInt(checkRequiredProperty(propertiesFromUser, "tasks.max"));
         this.sourceConnector = newConnectorInstance(connectorClazz);
         logger.fine("Initializing connector '" + name + "'");
         this.sourceConnector.initialize(new JetConnectorContext());
@@ -77,7 +76,6 @@ public class SourceConnectorWrapper {
         this.logger = logger;
     }
 
-
     public void setMasterProcessor(boolean masterProcessor) {
         isMasterProcessor = masterProcessor;
     }
@@ -91,34 +89,34 @@ public class SourceConnectorWrapper {
         taskConfigPublisher.createTopic(executionId);
 
         // All processors must listen the topic
-        taskConfigPublisher.addListener(this::processMessage);
+        taskConfigPublisher.addMessageListener(this::processMessage);
     }
 
     public void destroyTopic() {
-        taskConfigPublisher.removeListeners();
+        taskConfigPublisher.removeMessageListeners();
         if (isMasterProcessor) {
             // Only master processor can destroy the topic
             taskConfigPublisher.destroyTopic();
         }
     }
 
-    protected void publishTopic(TaskConfigTopic taskConfigTopic) {
+    protected void publishMessage(TaskConfigMessage taskConfigMessage) {
         if (taskConfigPublisher != null) {
             logger.info("Publishing TaskConfigTopic");
-            taskConfigPublisher.publish(taskConfigTopic);
+            taskConfigPublisher.publish(taskConfigMessage);
         }
     }
 
-    private void processMessage(Message<TaskConfigTopic> message) {
+    private void processMessage(Message<TaskConfigMessage> message) {
         logger.info("Received TaskConfigTopic topic");
-        TaskConfigTopic taskConfigTopic = message.getMessageObject();
-        processMessage(taskConfigTopic);
+        TaskConfigMessage taskConfigMessage = message.getMessageObject();
+        processMessage(taskConfigMessage);
     }
 
     // Protected so that it can be called from tests to simulate received topic
-    protected void processMessage(TaskConfigTopic taskConfigTopic) {
+    protected void processMessage(TaskConfigMessage taskConfigMessage) {
         // Update state
-        state.setTaskConfigs(taskConfigTopic.getTaskConfigs());
+        state.setTaskConfigs(taskConfigMessage.getTaskConfigs());
 
         // Get my taskConfig
         Map<String, String> taskConfig = state.getTaskConfig(processorOrder);
@@ -215,9 +213,9 @@ public class SourceConnectorWrapper {
                 logger.fine("sourceConnector index " + index + " taskConfig=" + map);
             }
             // Publish taskConfigs
-            TaskConfigTopic taskConfigTopic = new TaskConfigTopic();
-            taskConfigTopic.setTaskConfigs(taskConfigs);
-            publishTopic(taskConfigTopic);
+            TaskConfigMessage taskConfigMessage = new TaskConfigMessage();
+            taskConfigMessage.setTaskConfigs(taskConfigs);
+            publishMessage(taskConfigMessage);
         } finally {
             reconfigurationLock.unlock();
         }

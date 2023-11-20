@@ -97,6 +97,7 @@ public class SourceConnectorWrapperTest {
     public void should_fail_with_connector_class_not_found() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
+        properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
         assertThatThrownBy(() -> new SourceConnectorWrapper(properties))
                 .isInstanceOf(HazelcastException.class)
