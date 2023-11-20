@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -1018,6 +1019,15 @@ public class ConfigXmlGenerator {
                     .node("name", lockConfig.getName())
                     .node("lock-acquire-limit", lockConfig.getLockAcquireLimit())
                     .close();
+        }
+
+        gen.close().open("maps");
+
+        for (CPMapConfig cpMapConfig : cpSubsystemConfig.getCpMapConfigs().values()) {
+            gen.open("map")
+               .node("name", cpMapConfig.getName())
+               .node("max-size-mb", cpMapConfig.getMaxSizeMb())
+               .close();
         }
 
         gen.close().close();

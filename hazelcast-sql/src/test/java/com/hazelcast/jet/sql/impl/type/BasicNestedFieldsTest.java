@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -52,7 +51,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.createCompactMapping;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
@@ -75,9 +73,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
-        initializeWithClient(3, config, null);
+        initializeWithClient(3, null, null);
     }
 
     private HazelcastInstance testInstance() {
@@ -204,60 +200,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         assertRowsAnyOrder(testInstance(),
                 "SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
                 rows(3, 1L, "new-name", oldUser.organization));
-    }
-
-    @Test
-    public void test_selfRefType() {
-        createType("SelfRefType", "id BIGINT", "name VARCHAR", "other SelfRefType");
-
-        final SelfRef first = new SelfRef(1L, "first");
-        final SelfRef second = new SelfRef(2L, "second");
-        final SelfRef third = new SelfRef(3L, "third");
-        final SelfRef fourth = new SelfRef(4L, "fourth");
-
-        first.other = second;
-        second.other = third;
-        third.other = fourth;
-        fourth.other = first;
-
-        createJavaMapping("test", SelfRef.class, "this SelfRefType");
-        testInstance().getMap("test").put(1L, first);
-
-        assertRowsAnyOrder(testInstance(), "SELECT "
-                        + "test.this.name, "
-                        + "test.this.other.name, "
-                        + "test.this.other.other.name, "
-                        + "test.this.other.other.other.name, "
-                        + "test.this.other.other.other.other.name "
-                        + "FROM test",
-                rows(5,
-                        "first",
-                        "second",
-                        "third",
-                        "fourth",
-                        "first"
-                ));
-    }
-
-    @Test
-    public void test_circularlyRecurrentTypes() {
-        createType("AType", "name VARCHAR", "b BType");
-        createType("BType", "name VARCHAR", "c CType");
-        createType("CType", "name VARCHAR", "a AType");
-
-        final A a = new A("a");
-        final B b = new B("b");
-        final C c = new C("c");
-
-        a.b = b;
-        b.c = c;
-        c.a = a;
-
-        createJavaMapping("test", A.class, "this AType");
-        IMap<Long, A> map = testInstance().getMap("test");
-        map.put(1L, a);
-
-        assertRowsAnyOrder(testInstance(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
     }
 
     @Test

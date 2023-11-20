@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
 import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.createCompactMapping;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -43,7 +42,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
+        initialize(2, null);
         storage = sqlServiceImpl(instance()).getOptimizer().relationsStorage();
     }
 

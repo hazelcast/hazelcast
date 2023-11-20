@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.User;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -37,7 +38,6 @@ import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.Organization
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
 import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.setupCompactTypesForNestedQuery;
 import static com.hazelcast.jet.sql.impl.type.PortableNestedFieldsTest.setupPortableTypesForNestedQuery;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -46,7 +46,7 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+                .setProperty(ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED.getName(), "true");
 
         final SerializationConfig serializationConfig = config.getSerializationConfig();
         final ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)

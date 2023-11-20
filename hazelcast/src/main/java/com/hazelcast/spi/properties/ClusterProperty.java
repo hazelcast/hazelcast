@@ -1857,15 +1857,15 @@ public final class ClusterProperty {
             "hazelcast.security.recommendations");
 
     /**
-     * Enable experimental support for accessing nested fields by using custom
-     * types in SQL. The feature is unstable in 5.2, this property will be
+     * Enable experimental support for accessing cyclic nested fields by using custom
+     * types in SQL. The feature is unstable in 5.4, this property will be
      * removed once the feature is stable.
      *
-     * @since 5.2
+     * @since 5.4
      */
     @Beta
-    public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
-            "hazelcast.sql.experimental.custom.types.enabled", false);
+    public static final HazelcastProperty SQL_CUSTOM_CYCLIC_TYPES_ENABLED = new HazelcastProperty(
+            "hazelcast.sql.experimental.custom.cyclic.types.enabled", false);
 
     /**
      * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
