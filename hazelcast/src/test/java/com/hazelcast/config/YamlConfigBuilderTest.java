@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -4207,7 +4208,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      lock1:\n"
                 + "        lock-acquire-limit: 1\n"
                 + "      lock2:\n"
-                + "        lock-acquire-limit: 2\n";
+                + "        lock-acquire-limit: 2\n"
+                + "    maps:\n"
+                + "      map1:\n"
+                + "        max-size-mb: 1\n"
+                + "      map2:\n"
+                + "        max-size-mb: 2\n";
         Config config = buildConfig(yaml);
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
         assertEquals(10, cpSubsystemConfig.getCPMemberCount());
@@ -4242,6 +4248,14 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(lockConfig2);
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
+        CPMapConfig mapConfig1 = cpSubsystemConfig.findCPMapConfig("map1");
+        CPMapConfig mapConfig2 = cpSubsystemConfig.findCPMapConfig("map2");
+        assertNotNull(mapConfig1);
+        assertNotNull(mapConfig2);
+        assertEquals("map1", mapConfig1.getName());
+        assertEquals(1, mapConfig1.getMaxSizeMb());
+        assertEquals("map2", mapConfig2.getName());
+        assertEquals(2, mapConfig2.getMaxSizeMb());
     }
 
     @Override
