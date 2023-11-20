@@ -33,8 +33,6 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
@@ -66,12 +64,12 @@ import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.of;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
@@ -532,59 +530,18 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        // There is no projection. So emitted type is Object
-        RemoteMapSourceParams<Object, K, V> params = RemoteMapSourceParams.<Object, K, V>builder(mapName)
-                .withClientConfig(clientConfig)
+        return remoteMapBuilder(mapName)
+                .clientConfig(clientConfig)
                 .build();
-
-        ProcessorSupplier processorSupplier = readRemoteMapP(params);
-        return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
      * Returns a source that fetches entries from a remote Hazelcast {@code
      * IMap} with the specified name in a remote cluster identified by the
-     * supplied {@code ClientConfig}. By supplying a {@code predicate} and
-     * {@code projection} here instead of in separate {@code map/filter}
-     * transforms you allow the source to apply these functions early, before
-     * generating any output, with the potential of significantly reducing
-     * data traffic. If your data is stored in the IMDG using the <a href=
-     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
-     * portable serialization format</a>, there are additional optimizations
-     * available when using {@link Projections#singleAttribute} and {@link
-     * Projections#multiAttribute}) to create your projection instance and
-     * using the {@link Predicates} factory or
-     * {@link PredicateBuilder PredicateBuilder} to create
-     * the predicate. In this case Jet can test the predicate and apply the
-     * projection without deserializing the whole object.
+     * supplied {@code ClientConfig}.
      * <p>
-     * Due to the current limitations in the way Jet reads the map it can't use
-     * any indexes on the map. It will always scan the map in full.
+     * See {@link RemoteMapSourceBuilder} for details on the remote map source.
      * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * it will re-emit all entries.
-     * <p>
-     * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
-     * <p>
-     * The default local parallelism for this processor is 1.
-     * <p>
-     * <h4>Predicate/projection class requirements</h4>
-     *
-     * The classes implementing {@code predicate} and {@code projection} need
-     * to be available on the remote cluster's classpath or loaded using
-     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * the job classpath in {@link JobConfig}. The same is true for the class
-     * of the objects stored in the map itself. If you cannot meet these
-     * conditions, use {@link #remoteMap(String, ClientConfig)} and add a
-     * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
-     * filter} stage.
-     *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
      *                  projection, use {@link Predicates#alwaysTrue()} as a pass-through
@@ -597,21 +554,17 @@ public final class Sources {
      * @param <T> type of emitted item
      */
     @Nonnull
-    public static <T, K, V> BatchSource<T> remoteMap(
+    public static <K, V, T> BatchSource<? extends T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        RemoteMapSourceParams<T, K, V> params = RemoteMapSourceParams.<T, K, V>builder(mapName)
-                .withClientConfig(clientConfig)
-                .withPredicate(predicate)
-                .withProjection(projection)
+        return Sources.<K, V>remoteMapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .predicate(predicate)
+                .projection(projection)
                 .build();
-
-        ProcessorSupplier processorSupplier = readRemoteMapP(params);
-        return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
@@ -632,14 +585,9 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef
     ) {
-        // There is no projection. So emitted type is Object
-        RemoteMapSourceParams<Object, K, V> params = RemoteMapSourceParams.<Object, K, V>builder(mapName)
-                .withDataConnectionName(dataConnectionRef.getName())
+        return Sources.<K, V>remoteMapBuilder(mapName)
+                .dataConnectionName(dataConnectionRef.getName())
                 .build();
-
-        ProcessorSupplier processorSupplier = readRemoteMapP(params);
-        return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
@@ -656,21 +604,34 @@ public final class Sources {
      * @since 5.4
      */
     @Nonnull
-    public static <T, K, V> BatchSource<T> remoteMap(
+    public static <K, V, T> BatchSource<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        RemoteMapSourceParams<T, K, V> params = RemoteMapSourceParams.<T, K, V>builder(mapName)
-                .withDataConnectionName(dataConnectionRef.getName())
-                .withPredicate(predicate)
-                .withProjection(projection)
+        return Sources.<K, V>remoteMapBuilder(mapName)
+                .dataConnectionName(dataConnectionRef.getName())
+                .predicate(predicate)
+                .projection(projection)
                 .build();
+    }
 
-        ProcessorSupplier processorSupplier = readRemoteMapP(params);
-        return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(processorSupplier));
+    /**
+     * Returns a builder to build a source that fetches entries from a remote
+     * Hazelcast {@code IMap} with the specified name. It provides a fluent API
+     * to build the source using the optional parameters.
+     * <p>
+     * See {@link RemoteMapSourceBuilder} for details on the remote map source.
+     * @param mapName the name of the map
+     * @return builder for remote map source
+     * @param <K> the type of the key in the map
+     * @param <V> the type of the value in the map
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V> RemoteMapSourceBuilder<K, V, Entry<K, V>> remoteMapBuilder(String mapName) {
+        return new RemoteMapSourceBuilder<>(mapName);
     }
 
     /**
@@ -950,7 +911,7 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig
     ) {
         return batchFromProcessor("remoteCacheSource(" + cacheName + ')',
-                ProcessorMetaSupplier.of(readRemoteCacheP(cacheName, clientConfig)));
+                of(readRemoteCacheP(cacheName, clientConfig)));
     }
 
     /**

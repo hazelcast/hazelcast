@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import org.junit.jupiter.api.Test;
@@ -26,56 +27,55 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class RemoteMapSourceParamsTest {
+class RemoteMapSourceBuilderTest {
 
     @Test
     void testHasDataSourceConnectionOrClientConfig_NotNull() {
-        assertThatThrownBy(() -> RemoteMapSourceParams.<Integer, Integer, Integer>builder("mapName")
-                .build())
+        assertThatThrownBy(() -> Sources.remoteMapBuilder("mapName").build())
                 .hasMessage("Either dataConnectionName or clientConfig must be non-null");
     }
 
     @Test
     void testClientConfig_NotNull() {
         ClientConfig clientConfig = new ClientConfig();
-        assertThatCode(() -> RemoteMapSourceParams.<Integer, Integer, Integer>builder("mapName")
-                .withClientConfig(clientConfig)
-                .build())
-                .doesNotThrowAnyException();
+        assertThatCode(() -> Sources.remoteMapBuilder("mapName")
+                .clientConfig(clientConfig)
+                .build()
+        ).doesNotThrowAnyException();
     }
 
     @Test
     void testDataConnectionName_NotNull() {
-        assertThatCode(() -> RemoteMapSourceParams.<Integer, Integer, Integer>builder("mapName")
-                .withDataConnectionName("dataConnectionName")
-                .build())
-                .doesNotThrowAnyException();
+        assertThatCode(() -> Sources.remoteMapBuilder("mapName")
+                .dataConnectionName("dataConnectionName")
+                .build()
+        ).doesNotThrowAnyException();
     }
-
 
     @Test
     void testNotSerializablePredicate() {
         NonSerializablePredicate predicate = new NonSerializablePredicate();
-        RemoteMapSourceParams.Builder<Integer, Integer, Integer> builder =
-                RemoteMapSourceParams.builder("mapName");
 
-        assertThatThrownBy(() -> builder.withPredicate(predicate))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> Sources.<Integer, Integer>remoteMapBuilder("mapName")
+                .predicate(predicate)
+        ).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("\"predicate\" must be serializable");
     }
 
     @Test
     void testNotSerializableProjection() {
         NonSerializableProjection projection = new NonSerializableProjection();
-        RemoteMapSourceParams.Builder<String, Integer, Integer> builder =
-                RemoteMapSourceParams.builder("mapName");
 
-        assertThatThrownBy(() -> builder.withProjection(projection))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> Sources.<Integer, Integer>remoteMapBuilder("mapName")
+                .projection(projection)
+        ).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("\"projection\" must be serializable");
     }
 
-    class NonSerializablePredicate implements Predicate<Integer, Integer> {
+    static class NonSerializablePredicate implements Predicate<Integer, Integer> {
+
+        // make class non-serializable
+        Object o = new Object();
 
         @Override
         public boolean apply(Map.Entry<Integer, Integer> t) {
@@ -83,7 +83,10 @@ class RemoteMapSourceParamsTest {
         }
     }
 
-    class NonSerializableProjection implements Projection<Map.Entry<Integer, Integer>, String> {
+    static class NonSerializableProjection implements Projection<Map.Entry<Integer, Integer>, String> {
+
+        // make class non-serializable
+        Object o = new Object();
 
         @Override
         public String transform(Map.Entry<Integer, Integer> input) {

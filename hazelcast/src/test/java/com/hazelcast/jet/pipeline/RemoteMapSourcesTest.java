@@ -51,7 +51,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category(QuickTest.class)
-public class SourcesRemoteMapTest extends PipelineTestSupport {
+public class RemoteMapSourcesTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;
 
@@ -101,7 +101,7 @@ public class SourcesRemoteMapTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        BatchSource<Entry<Object, Object>> source = Sources.remoteMap(srcName, clientConfig);
+        BatchSource<Entry<String, Integer>> source = Sources.remoteMap(srcName, clientConfig);
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -138,7 +138,7 @@ public class SourcesRemoteMapTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        BatchSource<Object> source = Sources.remoteMap(
+        BatchSource<?> source = Sources.remoteMap(
                 srcName, clientConfig,
                 truePredicate(),
                 singleAttribute("value"));
@@ -156,11 +156,30 @@ public class SourcesRemoteMapTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        BatchSource<Object> source = Sources.remoteMap(
+        BatchSource<?> source = Sources.remoteMap(
                 srcName,
                 dataConnectionRef(HZ_CLIENT_DATA_CONNECTION_NAME),
                 truePredicate(),
                 singleAttribute("value"));
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        assertEquals(toBag(input), sinkToBag());
+    }
+
+    @Test
+    public void remoteMapWithFilterAndProjection_withExternalConfig_usingBuilder() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getMap(srcName), input);
+
+        // When
+        BatchSource<?> source = Sources.remoteMapBuilder(srcName)
+                .dataConnectionName(HZ_CLIENT_DATA_CONNECTION_NAME)
+                .predicate(truePredicate())
+                .projection(singleAttribute("value"))
+                .build();
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -175,7 +194,7 @@ public class SourcesRemoteMapTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        BatchSource<Integer> source = Sources.remoteMap(
+        BatchSource<? extends Integer> source = Sources.remoteMap(
                 srcName, clientConfig, truePredicate(), Entry<String, Integer>::getValue);
 
         // Then

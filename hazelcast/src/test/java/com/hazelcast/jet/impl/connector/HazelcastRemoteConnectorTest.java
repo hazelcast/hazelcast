@@ -34,7 +34,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
@@ -61,9 +60,9 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteMapP;
+import static com.hazelcast.jet.impl.connector.HazelcastReaders.readRemoteMapSupplier;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
@@ -139,14 +138,15 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
 
-        RemoteMapSourceParams<Object, Integer, Integer> params = RemoteMapSourceParams.<Object, Integer, Integer>builder(SOURCE_NAME)
-                .withClientConfig(clientConfig)
-                .withPredicate(Predicates.greaterThan("this", "0"))
-                .withProjection(Projections.singleAttribute("value"))
-                .build();
-
+        var config = new RemoteMapSourceConfiguration<>(
+                SOURCE_NAME,
+                null,
+                clientConfig,
+                Predicates.greaterThan("this", "0"),
+                Projections.singleAttribute("value")
+        );
         Vertex source = dag.newVertex("source",
-                readRemoteMapP(params)
+                readRemoteMapSupplier(config)
         ).localParallelism(4);
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
@@ -164,13 +164,15 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
 
-        RemoteMapSourceParams<Integer, Integer, Integer> params = RemoteMapSourceParams.<Integer, Integer, Integer>builder(SOURCE_NAME)
-                .withClientConfig(clientConfig)
-                .withPredicate(e -> !e.getKey().equals(0))
-                .withProjection(Entry::getValue)
-                .build();
+        var config = new RemoteMapSourceConfiguration<>(
+                SOURCE_NAME,
+                null,
+                clientConfig,
+                e -> !e.getKey().equals(0),
+                Entry::getValue
+        );
 
-        Vertex source = dag.newVertex(SOURCE_NAME, readRemoteMapP(params)).localParallelism(4);
+        Vertex source = dag.newVertex(SOURCE_NAME, readRemoteMapSupplier(config)).localParallelism(4);
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -240,7 +242,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_streamRemoteMap_withPredicateAndProjection() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteMapP(
-                SOURCE_NAME, clientConfig, event -> event.getKey() != 0, EventJournalMapEvent::getKey, START_FROM_OLDEST,
+                SOURCE_NAME, clientConfig, event -> event.getKey() != 0, EventJournalMapEvent::getKey,
+                START_FROM_OLDEST,
                 eventTimePolicy(i -> i, limitingLag(0), 1, 0, 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));

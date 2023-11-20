@@ -30,11 +30,11 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSupplier;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapReader;
@@ -180,7 +180,8 @@ public final class HazelcastReaders {
     }
 
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
-            ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
+            ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data,
+                    Data>>>,
             IdentifiedDataSerializable {
         private String mapName;
 
@@ -192,7 +193,8 @@ public final class HazelcastReaders {
         }
 
         @Override
-        public ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>
+        public ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor,
+                Entry<Data, Data>>
         applyEx(HazelcastInstance instance, InternalSerializationService serializationService) throws Exception {
             return new LocalMapReader(instance, serializationService, mapName);
         }
@@ -329,30 +331,15 @@ public final class HazelcastReaders {
      * Create a ProcessorSupplier for a remote map in another cluster
      */
     @Nonnull
-    public static <T, K, V> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceParams<T, K, V> params) {
-        // Create using a data source
-        if (params.hasDataSourceConnection()) {
-            if (params.hasPredicate()) {
-                var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
-                        params.getMapName(), params.getPredicate(), params.getProjection());
-
-                return new RemoteProcessorSupplier<>(params.getDataConnectionName(), null, readerSupplier);
-            } else {
-                RemoteMapReaderFunction readerSupplier = new RemoteMapReaderFunction(params.getMapName());
-                return new RemoteProcessorSupplier<>(params.getDataConnectionName(), null, readerSupplier);
-            }
+    public static <T, K, V> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceConfiguration<K, V, T> config) {
+        String clientXml = ImdgUtil.asXmlString(config.getClientConfig());
+        if (config.hasPredicate()) {
+            var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
+                    config.getName(), config.getPredicate(), config.getProjection());
+            return new RemoteProcessorSupplier<>(config.getDataConnectionName(), clientXml, readerSupplier);
         } else {
-            // Create using XML
-            String clientXml = ImdgUtil.asXmlString(params.getClientConfig());
-
-            if (params.hasPredicate()) {
-                var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
-                        params.getMapName(), params.getPredicate(), params.getProjection());
-                return new RemoteProcessorSupplier<>(null, clientXml, readerSupplier);
-            } else {
-                RemoteMapReaderFunction readerSupplier = new RemoteMapReaderFunction(params.getMapName());
-                return new RemoteProcessorSupplier<>(null, clientXml, readerSupplier);
-            }
+            var readerSupplier = new RemoteMapReaderFunction(config.getName());
+            return new RemoteProcessorSupplier<>(config.getDataConnectionName(), clientXml, readerSupplier);
         }
     }
 
