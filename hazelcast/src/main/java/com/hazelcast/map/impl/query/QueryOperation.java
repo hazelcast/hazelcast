@@ -333,6 +333,11 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
 
     private static final class QueryLocalPartitionOperation extends QueryPartitionOperation {
 
+        @SuppressWarnings("unused")
+        QueryLocalPartitionOperation() {
+            throw new UnsupportedOperationException("should not be serialized");
+        }
+
         QueryLocalPartitionOperation(Query query) {
             super(query);
         }
