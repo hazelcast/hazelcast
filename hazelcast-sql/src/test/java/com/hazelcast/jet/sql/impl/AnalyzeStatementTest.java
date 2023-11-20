@@ -143,6 +143,20 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     }
 
     @Test
+    public void test_sink() {
+        createMapping("test", Long.class, Long.class);
+
+        final String insertQuery = " SINK INTO test SELECT v, v from table(generate_series(1,2))";
+        assertJobIsAnalyzed(insertQuery);
+        assertEquals(2, instance().getMap("test").size());
+
+        // Check optimized plan failure with ANALYZE statement
+        assertThatThrownBy(() -> sqlService.execute("ANALYZE SINK INTO test VALUES(3, 3)"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("This query uses key-based optimized IMap access plan.");
+    }
+
+    @Test
     public void test_update() {
         createMapping("test", Long.class, Long.class);
         instance().getMap("test").put(1L, 1L);
