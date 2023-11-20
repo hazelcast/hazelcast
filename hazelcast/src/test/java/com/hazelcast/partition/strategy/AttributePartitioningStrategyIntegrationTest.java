@@ -23,10 +23,15 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.impl.compact.FixedSizeFieldsDTOSerializer;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.partition.Partition;
@@ -35,6 +40,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -59,6 +65,15 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         Config config = smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), "3");
         config.getMapConfig("test").getPartitioningAttributeConfigs()
                 .add(new PartitioningAttributeConfig("org"));
+        config.getMapConfig("test2").getPartitioningAttributeConfigs()
+                .add(new PartitioningAttributeConfig("d"));
+
+        config.getSerializationConfig()
+                .getCompactSerializationConfig()
+                .addSerializer(new FixedSizeFieldsDTOSerializer());
+
+        config.getSerializationConfig()
+                .addDataSerializableFactoryClass(1, IDSKeyFactory.class);
 
         initializeWithClient(3, config, null);
     }
@@ -69,6 +84,22 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
 
         for (long i = 0; i < 100; i++) {
             map.put(new JavaKey(i, "key#" + i, PARTITION_ATTRIBUTE_VALUE), i);
+        }
+
+        final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
+        final List<HazelcastInstance> nonOwners = getNonOwners(owner);
+
+        assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
+    }
+
+    @Test
+    public void testIDSObject() {
+        final IMap<IDSKey, Long> map = instance().getMap("test");
+
+        for (long i = 0; i < 100; i++) {
+            map.put(new IDSKey(i, "key#" + i, PARTITION_ATTRIBUTE_VALUE), i);
         }
 
         final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
@@ -226,6 +257,78 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
 
         public void setOrg(final String org) {
             this.org = org;
+        }
+    }
+
+    public static class IDSKey implements IdentifiedDataSerializable {
+        private Long id;
+        private String name;
+        private String org;
+
+        public IDSKey() {
+
+        }
+
+        public IDSKey(final Long id, final String name, final String org) {
+            this.id = id;
+            this.name = name;
+            this.org = org;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public String getOrg() {
+            return org;
+        }
+
+        public void setOrg(final String org) {
+            this.org = org;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(id);
+            out.writeString(name);
+            out.writeString(org);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            id = in.readLong();
+            name = in.readString();
+            org = in.readString();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
+    }
+
+    public static class IDSKeyFactory implements DataSerializableFactory {
+
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            return typeId == 1 ? new IDSKey() : null;
         }
     }
 }
