@@ -57,7 +57,6 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.avro.Schema;
-import org.apache.commons.lang3.stream.Streams;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
@@ -85,6 +84,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -1063,7 +1063,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         @Override
         public String toString() {
             return "Row{[" +
-                    Streams.of(values)
+                    Stream.of(values)
                             .map(v -> v != null ? v + "(class=" + v.getClass().getName() + ")" : null)
                             .collect(joining(", ")) +
                     "]}";
