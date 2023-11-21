@@ -333,6 +333,8 @@ public interface ProcessorMetaSupplier extends Serializable {
     ) {
         Vertex.checkLocalParallelism(preferredLocalParallelism);
         return new ProcessorMetaSupplier() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public int preferredLocalParallelism() {
                 return preferredLocalParallelism;
@@ -481,6 +483,8 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey, @Nullable Permission permission
     ) {
         return new ProcessorMetaSupplier() {
+            private static final long serialVersionUID = 1L;
+
             private transient Address ownerAddress;
 
             @Override

@@ -28,7 +28,6 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
-import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;

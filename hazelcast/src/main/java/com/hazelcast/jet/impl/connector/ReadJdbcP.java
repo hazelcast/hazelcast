@@ -148,6 +148,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 new ProcessorSupplier() {
+                    private static final long serialVersionUID = 1L;
 
                     private transient JdbcDataConnection dataConnection;
 
@@ -180,6 +181,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
+            private static final long serialVersionUID = 1L;
 
             private transient Context context;
 
