@@ -181,7 +181,7 @@ public class FunctionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_composeUnsecuredSupplierExWithSecured_then_noPermissions() {
+    public void when_composeUnsecuredSupplierExWithSecured_then_propagatePermissions() {
         SupplierEx<String> fun = () -> "aaa";
         var permission2 = new MapPermission("someothermap", ACTION_CREATE);
         var fun2 = new SecurableFunction(permission2);
