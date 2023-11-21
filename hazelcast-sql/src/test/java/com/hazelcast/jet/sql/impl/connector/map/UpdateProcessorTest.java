@@ -23,7 +23,11 @@ import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.expression.*;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -156,7 +160,9 @@ public class UpdateProcessorTest extends SqlTestSupport {
         final var evalContextMock = mock(ExpressionEvalContext.class);
         when(evalContextMock.getSerializationService()).thenReturn(mock());
 
-        var queue = new LinkedList<>(){{ add("some unexpected object");}};
+        var queue = new LinkedList<>();
+        queue.add("some unexpected object");
+
         final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> queue.poll());
         final var supplier = UpdatingEntryProcessor.supplier(
                 mock(),
