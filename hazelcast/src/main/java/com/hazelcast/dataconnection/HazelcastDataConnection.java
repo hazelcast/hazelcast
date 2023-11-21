@@ -26,7 +26,6 @@ import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataCo
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigValidator;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -41,7 +40,6 @@ import java.util.stream.Collectors;
  *
  * @since 5.3
  */
-@Beta
 public class HazelcastDataConnection extends DataConnectionBase {
 
     /**

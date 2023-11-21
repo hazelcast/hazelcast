@@ -17,7 +17,6 @@
 package com.hazelcast.dataconnection;
 
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -79,7 +78,6 @@ import java.util.Map;
  *
  * @since 5.3
  */
-@Beta
 public interface DataConnection {
 
     /**

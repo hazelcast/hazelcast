@@ -18,6 +18,7 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -67,7 +68,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = getFirstResourceConfig();
-        assertEquals(toId(this.getClass()), resourceConfig.getId());
+        assertEquals(ReflectionUtils.toClassResourceId(this.getClass()), resourceConfig.getId());
         assertEquals(ResourceType.CLASS, resourceConfig.getResourceType());
     }
 
@@ -81,7 +82,7 @@ public class ResourceConfigTest extends JetTestSupport {
         assertTrue(resourceConfigs
                 .stream()
                 .anyMatch(resourceConfig ->
-                        resourceConfig.getId().equals(toId(this.getClass())) &&
+                        resourceConfig.getId().equals(ReflectionUtils.toClassResourceId(this.getClass())) &&
                                 resourceConfig.getResourceType().equals(ResourceType.CLASS)
                 ));
         assertTrue(resourceConfigs
@@ -1090,9 +1091,5 @@ public class ResourceConfigTest extends JetTestSupport {
         File dirFile = new File(baseDir, path);
         assertTrue("Failed to create directory " + dirFile, dirFile.mkdirs());
         return dirFile;
-    }
-
-    private static String toId(Class<?> clazz) {
-        return clazz.getName().replace('.', '/') + ".class";
     }
 }

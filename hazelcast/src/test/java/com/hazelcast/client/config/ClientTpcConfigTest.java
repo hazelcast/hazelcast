@@ -24,7 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -37,15 +39,17 @@ public class ClientTpcConfigTest {
     @Before
     public void before() {
         System.clearProperty("hazelcast.client.tpc.enabled");
+        System.clearProperty("hazelcast.client.tpc.connectionCount");
     }
 
     @After
     public void after() {
         System.clearProperty("hazelcast.client.tpc.enabled");
+        System.clearProperty("hazelcast.client.tpc.connectionCount");
     }
 
     @Test
-    public void test() {
+    public void test_constructor_enabledDefaultBehavior() {
         ClientTpcConfig config = new ClientTpcConfig();
         assertFalse(config.isEnabled());
 
@@ -56,5 +60,32 @@ public class ClientTpcConfigTest {
         System.setProperty("hazelcast.client.tpc.enabled", "false");
         config = new ClientTpcConfig();
         assertFalse(config.isEnabled());
+    }
+
+    @Test
+    public void test_constructor_connectionCountDefaultBehavior() {
+        ClientTpcConfig config = new ClientTpcConfig();
+        assertEquals(1, config.getConnectionCount());
+
+        System.setProperty("hazelcast.client.tpc.connectionCount", "5");
+        config = new ClientTpcConfig();
+        assertEquals(5, config.getConnectionCount());
+    }
+
+    @Test
+    public void test_setConnectionCount_whenNegative() {
+        ClientTpcConfig config = new ClientTpcConfig();
+        assertThrows(IllegalArgumentException.class, () -> config.setConnectionCount(-1));
+    }
+
+    @Test
+    public void test_setConnectionCount_whenAcceptable() {
+        ClientTpcConfig config = new ClientTpcConfig();
+
+        config.setConnectionCount(0);
+        assertEquals(0, config.getConnectionCount());
+
+        config.setConnectionCount(10);
+        assertEquals(10, config.getConnectionCount());
     }
 }

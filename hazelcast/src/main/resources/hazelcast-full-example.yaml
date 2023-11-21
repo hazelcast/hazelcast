@@ -3564,6 +3564,12 @@ hazelcast:
   #         the lock, it will be able to acquire it once more, but its third lock()
   #         call will not succeed.
   #         If lock-acquire-limit is set to 1, then the lock becomes non-reentrant.
+  # * "maps":
+  #     Configurations for CPMap instances. The CPMaps can be configured
+  #     with mappings under keys as their names. CPMaps have the following
+  #     sub-element:
+  #     * "max-size-mb":
+  #         Maximum size in MB that the key-value pairs can total.
   #
   cp-subsystem:
     cp-member-count: 10
@@ -3596,6 +3602,11 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+    maps:
+      map1:
+        max-size-mb: 50
+      map2:
+        max-size-mb: 25
 
   #
   # ===== HAZELCAST METRICS CONFIGURATION =====

@@ -40,6 +40,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         this.dataConnectionName = requireNonNull(dataConnectionName, "dataConnectionName must not be null");
     }
 
+    @Override
     public void init(@Nonnull Context context) throws Exception {
         dataConnection = context.dataConnectionService()
                                 .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);

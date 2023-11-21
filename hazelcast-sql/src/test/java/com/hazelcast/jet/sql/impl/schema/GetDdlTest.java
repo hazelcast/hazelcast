@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -36,7 +35,7 @@ public class GetDdlTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
+        initialize(1, null);
     }
 
     @Test
