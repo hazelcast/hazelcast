@@ -1064,7 +1064,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         public String toString() {
             return "Row{[" +
                     Streams.of(values)
-                            .map(v -> v + "(class=" + v.getClass().getName() + ")")
+                            .map(v -> v != null ? v + "(class=" + v.getClass().getName() + ")" : null)
                             .collect(joining(", ")) +
                     "]}";
         }
