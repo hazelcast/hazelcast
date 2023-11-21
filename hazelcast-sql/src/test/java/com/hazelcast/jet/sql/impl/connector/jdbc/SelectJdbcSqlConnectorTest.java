@@ -164,6 +164,31 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void selectColumnDifferentTypeInMappingAndTable() throws Exception {
+        tableName = randomTableName();
+        createTable(tableName);
+        insertItems(tableName, ITEM_COUNT);
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id VARCHAR, " // The type in database table is INT, but it's convertible
+                        + " name VARCHAR "
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + tableName,
+                newArrayList(
+                        new Row("0", "name-0"),
+                        new Row("1", "name-1"),
+                        new Row("2", "name-2"),
+                        new Row("3", "name-3"),
+                        new Row("4", "name-4")
+                )
+        );
+    }
+
+    @Test
     public void selectAllFromTableWhereIdIn() {
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName + " WHERE id IN (?, ?, ?) ",
