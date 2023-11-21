@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.List;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE;
@@ -164,7 +164,7 @@ public class ReliableTopicConfigTest {
         ListenerConfig listenerConfig = new ListenerConfig("foobar");
         config.addMessageListenerConfig(listenerConfig);
 
-        assertEquals(List.of(listenerConfig), config.getMessageListenerConfigs());
+        assertEquals(Collections.singletonList(listenerConfig), config.getMessageListenerConfigs());
     }
 
     // ==================== setExecutor =============================
