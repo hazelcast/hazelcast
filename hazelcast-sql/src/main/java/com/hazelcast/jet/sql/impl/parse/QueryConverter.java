@@ -25,6 +25,7 @@ import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
@@ -53,8 +54,11 @@ import javax.annotation.Nullable;
 /**
  * Converts a parse tree into a relational tree.
  */
+@SuppressWarnings("CheckStyle")
 public class QueryConverter {
     public static final SqlToRelConverter.Config CONFIG;
+
+    public static final HepProgram HEP_CALC_REWRITER_PROGRAM;
 
     /**
      * Whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
@@ -81,6 +85,8 @@ public class QueryConverter {
                 .withExpand(EXPAND)
                 .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
                 .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
+
+        HEP_CALC_REWRITER_PROGRAM = prepareCalcRewriterProgram();
     }
 
     private final SqlValidator validator;
@@ -169,6 +175,8 @@ public class QueryConverter {
      * @return Resulting relation.
      */
     private static RelNode performUnconditionalRewrites(RelNode rel, boolean cyclicUserTypesAreAllowed) {
+        // TODO: rework it at the same wat as for HEP_CALC_REWRITER_PROGRAM,
+        //  when limitation for cyclic UDTs will be removed.
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Correlated subqueries elimination rules
@@ -176,12 +184,6 @@ public class QueryConverter {
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
         hepProgramBuilder.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
 
-        // Union optimization rules
-        hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);
-        hepProgramBuilder.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
-
-        // Other rules
-        hepProgramBuilder.addRuleInstance(ExtractUpdateExpressionsRule.INSTANCE);
         // Note: the way to check if cyclic type are allowed in SqlValidator is error-prone,
         //  and the best way is to check it on pre-optimization phase.
         if (!cyclicUserTypesAreAllowed) {
@@ -212,33 +214,9 @@ public class QueryConverter {
      * @return Resulting relation.
      */
     private static RelNode transformProjectAndFilterIntoCalc(RelNode rel) {
-        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
-
-        // Filter rules
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_MERGE);
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_INTO_JOIN);
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_REDUCE_EXPRESSIONS);
-        hepProgramBuilder.addRuleInstance(PruneEmptyRules.FILTER_INSTANCE);
-
-        // Project rules
-        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_MERGE);
-        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_REMOVE);
-        hepProgramBuilder.addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE);
-
-        // Join rules
-        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_REDUCE_EXPRESSIONS);
-        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER);
-
-        // Calc rules
-        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_TO_CALC);
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
-        hepProgramBuilder.addRuleInstance(CalcMergeRule.INSTANCE);
-        hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
-
         // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
         HepPlanner planner = new HepPlanner(
-                hepProgramBuilder.build(),
+                HEP_CALC_REWRITER_PROGRAM,
                 Contexts.empty(),
                 true,
                 null,
@@ -291,5 +269,42 @@ public class QueryConverter {
         }
 
         return new NestedExistsFinder().find();
+    }
+
+    // Note: it must be used only in static class initializer.
+    private static HepProgram prepareCalcRewriterProgram() {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Special rules
+        hepProgramBuilder.addRuleInstance(ExtractUpdateExpressionsRule.INSTANCE);
+
+        // Filter rules
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_MERGE);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_INTO_JOIN);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_REDUCE_EXPRESSIONS);
+        hepProgramBuilder.addRuleInstance(PruneEmptyRules.FILTER_INSTANCE);
+
+        // Project rules
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_MERGE);
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_REMOVE);
+        hepProgramBuilder.addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE);
+
+        // Join rules
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_REDUCE_EXPRESSIONS);
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER);
+
+        // Calc rules
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_TO_CALC);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
+        hepProgramBuilder.addRuleInstance(CalcMergeRule.INSTANCE);
+        hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
+
+        // Union optimization rules
+        hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);
+        hepProgramBuilder.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
+
+
+        return hepProgramBuilder.build();
     }
 }
