@@ -54,7 +54,7 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
     @Nullable
     @Override
     protected ChangeRecord map(SourceRecord record) {
-        if (record == null) {
+        if (record == null || record.topic().startsWith("__debezium")) { // internal Debezium messages
             return null;
         }
 
