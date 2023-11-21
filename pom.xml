@@ -1315,17 +1315,17 @@
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
+                            <groups>
+                                com.hazelcast.test.annotation.NightlyTest,
+                                com.hazelcast.test.annotation.SlowTest
+                            </groups>
                             <includes>
-                                <include>**/**.java</include>
+                                <include>**/**Test.java</include>
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
                             </excludes>
-                            <groups>
-                                com.hazelcast.test.annotation.NightlyTest,
-                                com.hazelcast.test.annotation.SlowTest
-                            </groups>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -1345,6 +1345,9 @@
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
+                            <includes>
+                                <include>**/**IT.java</include>
+                            </includes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
                                 com.hazelcast.test.annotation.SlowTest
