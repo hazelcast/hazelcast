@@ -58,7 +58,7 @@ import javax.annotation.Nullable;
 public class QueryConverter {
     public static final SqlToRelConverter.Config CONFIG;
 
-    public static final HepProgram HEP_CALC_REWRITER_PROGRAM;
+    public static final HepProgram HEP_CALC_UNION_REWRITER_PROGRAM;
 
     /**
      * Whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
@@ -86,7 +86,7 @@ public class QueryConverter {
                 .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
                 .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
 
-        HEP_CALC_REWRITER_PROGRAM = prepareCalcRewriterProgram();
+        HEP_CALC_UNION_REWRITER_PROGRAM = prepareCalcAndUnionRewriterProgram();
     }
 
     private final SqlValidator validator;
@@ -162,9 +162,6 @@ public class QueryConverter {
      *  It is used instead of "expand" flag due to bugs in Calcite (see {@link #EXPAND}).
      * </li>
      * <li>
-     *  Transformation of distinct UNION to UNION ALL, merging the neighboring UNION relations.
-     * </li>
-     * <li>
      *  Check, if the relation uses cyclic user types, and if they are allowed - skip this step.
      * </li>
      *
@@ -206,6 +203,12 @@ public class QueryConverter {
      * Second unconditional query optimization step. It includes
      * <ul>
      * <li>
+     *  Extract unsupported source expressions from an UPDATE stmt into a {@link Calc}.
+     * </li>
+     * <li>
+     *  Transformation of distinct UNION to UNION ALL, merging the neighboring UNION relations.
+     * </li>
+     * <li>
      *  Transformation of {@link Project} and {@link Filter} relations to {@link Calc}
      * </li>
      * </ul>
@@ -216,7 +219,7 @@ public class QueryConverter {
     private static RelNode transformProjectAndFilterIntoCalc(RelNode rel) {
         // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
         HepPlanner planner = new HepPlanner(
-                HEP_CALC_REWRITER_PROGRAM,
+                HEP_CALC_UNION_REWRITER_PROGRAM,
                 Contexts.empty(),
                 true,
                 null,
@@ -272,7 +275,7 @@ public class QueryConverter {
     }
 
     // Note: it must be used only in static class initializer.
-    private static HepProgram prepareCalcRewriterProgram() {
+    private static HepProgram prepareCalcAndUnionRewriterProgram() {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Special rules
