@@ -305,9 +305,9 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
         String schemaName = randomName();
         executeJdbc("CREATE SCHEMA " + schemaName);
-        String fullyQualifiedTable = schemaName + "." + tableName;
-        createTable(fullyQualifiedTable);
-        insertItems(fullyQualifiedTable, ITEM_COUNT);
+        String fullyQualifiedTable = quote(schemaName, tableName);
+        createTableNoQuote(fullyQualifiedTable);
+        insertItemsNoQuote(fullyQualifiedTable, ITEM_COUNT);
         String mappingName = randomTableName();
         createMapping(fullyQualifiedTable, mappingName);
 

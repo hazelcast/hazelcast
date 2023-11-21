@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
@@ -39,11 +39,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
-import static org.assertj.core.util.Lists.newArrayList;
 import static java.util.Arrays.asList;
+import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 

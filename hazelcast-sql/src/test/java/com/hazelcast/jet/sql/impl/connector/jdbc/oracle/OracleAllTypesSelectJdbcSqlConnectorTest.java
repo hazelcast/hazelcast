@@ -42,9 +42,6 @@ public class OracleAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbc
         assumeThat(type).describedAs("BOOLEAN not supported on Oracle")
                 .isNotEqualTo("BOOLEAN");
 
-        //assumeThat(type).describedAs("BIGINT not supported on Oracle")
-        //        .isNotEqualTo("BIGINT");
-
         assumeThat(type).describedAs("TIME not supported on Oracle")
                 .isNotEqualTo("TIME");
 
