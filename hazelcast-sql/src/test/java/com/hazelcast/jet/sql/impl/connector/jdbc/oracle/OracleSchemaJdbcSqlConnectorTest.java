@@ -36,15 +36,10 @@ public class OracleSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        assumeThat(schema).describedAs("Name with double quotes not supported on Oracle")
+        assumeThat(schema)
+                .describedAs("Name with double quotes not supported on Oracle")
                 .isNotEqualTo("schema_with_quote\"");
-        tableFull = quote(schema, table);
-        try {
-            executeJdbc(databaseProvider.createSchemaQuery(schema));
-            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schema));
-        } catch (Exception e) {
-            logger.info("Could not create schema", e);
-        }
-        createTableNoQuote(tableFull);
+
+        super.setUp();
     }
 }

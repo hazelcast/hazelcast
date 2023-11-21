@@ -64,6 +64,7 @@ public class OracleDatabaseProvider implements TestDatabaseProvider {
     }
     @Override
     public String createSchemaQuery(String schemaName) {
-        return "CREATE USER " + quote(schemaName) + " IDENTIFIED BY \"password\"";
+        return "CREATE USER " + quote(schemaName) + " IDENTIFIED BY \"password\"\n\n"
+                + "GRANT UNLIMITED TABLESPACE TO " + quote(schemaName);
     }
 }

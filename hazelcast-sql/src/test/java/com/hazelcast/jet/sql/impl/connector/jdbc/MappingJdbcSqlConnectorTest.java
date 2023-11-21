@@ -87,9 +87,6 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public void createMappingWithExternalSchemaAndTableName() throws Exception {
         String schemaName = "schema1";
         executeJdbc(databaseProvider.createSchemaQuery(schemaName));
-        if (databaseProvider instanceof OracleDatabaseProvider) {
-            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schemaName));
-        }
         createTableNoQuote(quote(schemaName, tableName));
 
         String mappingName = "mapping_" + randomName();

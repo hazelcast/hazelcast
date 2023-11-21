@@ -149,7 +149,10 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute(sql);
+            String[] parts = sql.split("\n\n");
+            for (String part : parts) {
+                stmt.execute(part);
+            }
         }
     }
 
