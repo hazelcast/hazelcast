@@ -629,9 +629,9 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(@Nonnull ObjectDataOutput out) throws IOException {
-        out.writeUTF(getSourceName());
+        out.writeString(getSourceName());
         out.writeInt(getSourceOrdinal());
-        out.writeUTF(getDestName());
+        out.writeString(getDestName());
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
         out.writeObject(getDistributedTo());
@@ -643,9 +643,9 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void readData(@Nonnull ObjectDataInput in) throws IOException {
-        sourceName = in.readUTF();
+        sourceName = in.readString();
         sourceOrdinal = in.readInt();
-        destName = in.readUTF();
+        destName = in.readString();
         destOrdinal = in.readInt();
         priority = in.readInt();
         distributedTo = in.readObject();
