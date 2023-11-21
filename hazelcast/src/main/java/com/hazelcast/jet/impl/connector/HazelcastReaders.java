@@ -76,6 +76,8 @@ public final class HazelcastReaders {
                 InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
                 new LocalCacheReaderFunction(cacheName)
         ) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new CachePermission(cacheName, ACTION_CREATE, ACTION_READ);
@@ -174,6 +176,8 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<>(new LocalMapReaderFunction(mapName)) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
@@ -232,6 +236,8 @@ public final class HazelcastReaders {
         return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
                 new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
         ) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
