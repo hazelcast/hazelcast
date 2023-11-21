@@ -20,10 +20,14 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
@@ -33,13 +37,15 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  *
  * @since 3.5
  */
-public class PredicateConfig implements IdentifiedDataSerializable {
+public class PredicateConfig implements IdentifiedDataSerializable, NamespaceAwareConfig, Versioned {
 
     protected String className;
 
     protected String sql;
 
     protected Predicate implementation;
+
+    protected @Nullable String namespace = DEFAULT_NAMESPACE;
 
     /**
      * Creates a PredicateConfig without className/implementation.
@@ -61,6 +67,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         implementation = config.getImplementation();
         className = config.getClassName();
         sql = config.getSql();
+        namespace = config.getNamespace();
     }
 
     /**
@@ -69,8 +76,9 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      * @param implementation the implementation to use as Predicate
      * @throws IllegalArgumentException if the implementation is {@code null}
      */
-    public PredicateConfig(Predicate implementation) {
+    public PredicateConfig(Predicate implementation, @Nullable String namespace) {
         this.implementation = isNotNull(implementation, "implementation");
+        this.namespace = namespace;
     }
 
     /**
@@ -153,6 +161,17 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /** @since 5.4 **/
+    @Override
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /** @since 5.4 **/
+    public void setNamespace(@Nullable String namespace) {
+        this.namespace = namespace;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
@@ -164,13 +183,16 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         }
 
         PredicateConfig that = (PredicateConfig) o;
-        if (className != null ? !className.equals(that.className) : that.className != null) {
+        if (!Objects.equals(className, that.className)) {
             return false;
         }
-        if (sql != null ? !sql.equals(that.sql) : that.sql != null) {
+        if (!Objects.equals(sql, that.sql)) {
             return false;
         }
-        return !(implementation != null ? !implementation.equals(that.implementation) : that.implementation != null);
+        if (!Objects.equals(namespace, that.namespace)) {
+            return false;
+        }
+        return Objects.equals(implementation, that.implementation);
     }
 
     @Override
@@ -178,6 +200,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         int result = className != null ? className.hashCode() : 0;
         result = 31 * result + (sql != null ? sql.hashCode() : 0);
         result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
         return result;
     }
 
@@ -187,6 +210,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
                 + "className='" + className + '\''
                 + ", sql='" + sql + '\''
                 + ", implementation=" + implementation
+                + ", namespace=" + namespace
                 + '}';
     }
 
@@ -205,6 +229,11 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         out.writeString(className);
         out.writeString(sql);
         out.writeObject(implementation);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(namespace);
+        }
     }
 
     @Override
@@ -212,5 +241,10 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         className = in.readString();
         sql = in.readString();
         implementation = in.readObject();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            namespace = in.readString();
+        }
     }
 }

@@ -18,6 +18,8 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.DurableExecutorConfig;
 
+import javax.annotation.Nullable;
+
 public class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
 
     public DurableExecutorConfigReadOnly(DurableExecutorConfig config) {
@@ -51,6 +53,11 @@ public class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
 
     @Override
     public DurableExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
+    }
+
+    @Override
+    public void setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
     }
 }

@@ -961,6 +961,11 @@
                     <action>all</action>
                 </actions>
             </sql-permission>
+            <namespace-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </namespace-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -1120,5 +1125,33 @@
     <tpc enabled="true">
         <eventloop-count>12</eventloop-count>
     </tpc>
+
+    <namespaces enabled="false">
+        <java-serialization-filter defaults-disabled="true">
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <package>com.acme.app</package>
+                <prefix>com.hazelcast.</prefix>
+            </whitelist>
+        </java-serialization-filter>
+        <namespace name="ns1">
+            <jar id="jarId">
+                <url>file:///path/to/jar</url>
+            </jar>
+            <jars-in-zip id="jarsInZipId">
+                <url>file:///path/to/jarsInZip/jars.zip</url>
+            </jars-in-zip>
+        </namespace>
+        <namespace name="ns2">
+            <jar id="jarId2">
+                <url>file:///path/to/jar2</url>
+            </jar>
+            <jar id="jarId3">
+                <url>file:///path/to/jar3</url>
+            </jar>
+        </namespace>
+    </namespaces>
 
 </hazelcast>

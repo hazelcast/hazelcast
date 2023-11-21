@@ -3920,3 +3920,35 @@ hazelcast:
     enabled: true
     # Configures the number of eventloops. It's equal to available processor count by default.
     eventloop-count: 12
+
+  #    ===== HAZELCAST USER CODE DEPLOYMENT V2 (NAMESPACES) CONFIGURATION =====
+  #
+  #    Hazelcast UCD Namespaces are the next generation of User Code Deployment.
+  #    TODO: Expand documentation
+  namespaces:
+    enabled: false
+    java-serialization-filter:
+      defaults-disabled: false
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - com.hazelcast.
+          - java
+    namespace1:
+      - jar:
+          id: "test"
+          url: "file://home/hazelcast/test.jar"
+      - jar:
+          id: "test2"
+          url: "file://home/hazelcast/test2.jar"
+      - jars-in-zip:
+          id: "test3"
+          url: "file://home/hazelcast/test3.zip"

@@ -148,6 +148,8 @@
     <properties>
         <property name="your-property">Value of the property</property>
     </properties>
+
+
     <!--
         ===== HAZELCAST WAN REPLICATION CONFIGURATION =====
 
@@ -4033,5 +4035,43 @@
         <!-- Configures the number of eventloops. It's equal to available processor count by default. -->
         <eventloop-count>12</eventloop-count>
     </tpc>
+
+    <!--
+    ===== HAZELCAST USER CODE DEPLOYMENT V2 (NAMESPACES) CONFIGURATION =====
+
+    Hazelcast UCD Namespaces are the next generation of User Code Deployment.
+    TODO: Expand documentation
+    -->
+    <namespaces enabled="false">
+        <java-serialization-filter defaults-disabled="true">
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+                <prefix>com.hazelcast.</prefix>
+                <prefix>java</prefix>
+            </whitelist>
+        </java-serialization-filter>
+        <namespace name="ns1">
+            <jar id="jarId">
+                <url>file:///path/to/jar</url>
+            </jar>
+            <jars-in-zip id="jarsInZipId">
+                <url>file:///path/to/jarsInZip/jars.zip</url>
+            </jars-in-zip>
+        </namespace>
+        <namespace name="ns2">
+            <jar id="jarId2">
+                <url>file:///path/to/jar2</url>
+            </jar>
+            <jar id="jarId3">
+                <url>file:///path/to/jar3</url>
+            </jar>
+        </namespace>
+    </namespaces>
 
 </hazelcast>

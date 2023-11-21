@@ -56,11 +56,14 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -93,6 +96,10 @@ import static org.junit.Assert.assertTrue;
 public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGeneratorTest.class);
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
+
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
@@ -1527,6 +1534,33 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEnabled(true);
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
         assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
+    }
+
+    @Test
+    public void testNamespacesConfig() throws IOException {
+        File tempJar = tempFolder.newFile("tempJar.jar");
+        try (FileOutputStream out = new FileOutputStream(tempJar)) {
+            out.write(new byte[]{0x50, 0x4B, 0x03, 0x04});
+        }
+        File tempJarZip = tempFolder.newFile("tempZip.zip");
+
+        Config expectedConfig = new Config();
+        NamespaceConfig namespaceConfig = new NamespaceConfig();
+        namespaceConfig.setName("test-namespace");
+        namespaceConfig.addJar(tempJar.toURI().toURL(), "temp-jar");
+        namespaceConfig.addJarsInZip(tempJarZip.toURI().toURL(), "temp-zip");
+        NamespacesConfig namespacesConfig = new NamespacesConfig();
+        namespacesConfig.addNamespaceConfig(namespaceConfig);
+        namespacesConfig.setEnabled(true);
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        filterConfig.getWhitelist().addClasses("com.foo.bar.MyClass");
+        filterConfig.getBlacklist().addPackages("magic.collection.of.code");
+        namespacesConfig.setJavaSerializationFilterConfig(filterConfig);
+        expectedConfig.setNamespacesConfig(namespacesConfig);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getNamespacesConfig(), actualConfig.getNamespacesConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

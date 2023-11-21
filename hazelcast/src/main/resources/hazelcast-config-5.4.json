@@ -153,6 +153,9 @@
         },
         "tpc": {
           "$ref": "#/definitions/TpcConfig"
+        },
+        "namespaces": {
+          "$ref": "#/definitions/NamespacesConfig"
         }
       }
     },
@@ -1120,7 +1123,6 @@
                 "unit": "KILOBYTES"
               }
             },
-
             "memory-tier": {
               "type": "object",
               "description": "Memory tier.",
@@ -1573,10 +1575,14 @@
                     "description": "Name of the device for a given disk tier."
                   }
                 },
-                "required": ["enabled"]
+                "required": [
+                  "enabled"
+                ]
               }
             },
-            "required": ["enabled"]
+            "required": [
+              "enabled"
+            ]
           },
           "partition-strategy": {
             "type": "string"
@@ -2931,7 +2937,8 @@
               "job",
               "connector",
               "sql",
-              "cpmap"
+              "cpmap",
+              "namespace"
             ]
           },
           "properties": {
@@ -2980,10 +2987,10 @@
           "items": {
             "type": "string"
           },
-        "deny": {
-          "type": "boolean",
-          "default": false,
-          "description": "When true, subtract/deny the permission instead of granting."
+          "deny": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, subtract/deny the permission instead of granting."
           }
         },
         "actions": {
@@ -3199,6 +3206,23 @@
         ]
       }
     },
+    "JavaSerializationFilter": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.",
+      "properties": {
+        "defaults-disabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "whitelist": {
+          "$ref": "#/definitions/ClassFilter"
+        },
+        "blacklist": {
+          "$ref": "#/definitions/ClassFilter"
+        }
+      }
+    },
     "Serialization": {
       "type": "object",
       "additionalProperties": false,
@@ -3295,21 +3319,8 @@
           "description": "If set to true, serialization system will check the class definitions error at the start of serialization process and throw a Serialization Exception with the error definition.s"
         },
         "java-serialization-filter": {
-          "type": "object",
-          "additionalProperties": false,
+          "$ref": "#/definitions/JavaSerializationFilter",
           "description": "Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.",
-          "properties": {
-            "defaults-disabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "whitelist": {
-              "$ref": "#/definitions/ClassFilter"
-            },
-            "blacklist": {
-              "$ref": "#/definitions/ClassFilter"
-            }
-          }
         },
         "allow-override-default-serializers": {
           "type": "boolean",
@@ -5124,6 +5135,64 @@
       "required": [
         "name"
       ]
+    },
+    "NamespacesConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Indicates whether the namespace configuration is enabled or not."
+        },
+        "java-serialization-filter": {
+          "$ref": "#/definitions/JavaSerializationFilter",
+          "description": "Allows to configure blacklisting and whitelisting for deserialized classes from Resource definitions.",
+        }
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/Namespace"
+        },
+        "description": "A list of additional properties where each is a namespace configuration."
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "The configuration object for namespaces."
+    },
+    "Namespace": {
+      "type": "object",
+      "properties": {
+        "jar": {
+          "$ref": "#/definitions/Resource",
+          "description": "The JAR file configuration within a namespace."
+        },
+        "jars-in-zip": {
+          "$ref": "#/definitions/Resource",
+          "description": "The configuration for a ZIP archive that contains JAR files within a namespace."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Defines a namespace which can contain configurations for JAR files and JARs in ZIP archives."
+    },
+    "Resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "An optional unique identifier for the resource."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL must be a valid URI that points to the location of the resource. This is a required property."
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false,
+      "description": "The base definition for a resource, which can either be a single JAR file or a ZIP archive of JAR files."
     }
   }
 }

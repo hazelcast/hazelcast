@@ -23,16 +23,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Contains the configuration for an {@link DurableExecutorService}.
  */
-public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
+public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, NamespaceAwareConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -60,6 +62,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     private String splitBrainProtectionName;
 
     private boolean statisticsEnabled = true;
+    private @Nullable String namespace = DEFAULT_NAMESPACE;
 
     public DurableExecutorConfig() {
     }
@@ -68,23 +71,26 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         this.name = name;
     }
 
-    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity, boolean statisticsEnabled) {
-        this(name, poolSize, durability, capacity, null, statisticsEnabled);
+    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity,
+                                 boolean statisticsEnabled, @Nullable String namespace) {
+        this(name, poolSize, durability, capacity, null, statisticsEnabled, namespace);
     }
 
     public DurableExecutorConfig(String name, int poolSize, int durability, int capacity,
-                                 String splitBrainProtectionName, boolean statisticsEnabled) {
+                                 String splitBrainProtectionName, boolean statisticsEnabled,
+                                 @Nullable String namespace) {
         this.name = name;
         this.poolSize = poolSize;
         this.durability = durability;
         this.capacity = capacity;
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.statisticsEnabled = statisticsEnabled;
+        this.namespace = namespace;
     }
 
     public DurableExecutorConfig(DurableExecutorConfig config) {
         this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity(),
-                config.getSplitBrainProtectionName(), config.isStatisticsEnabled());
+                config.getSplitBrainProtectionName(), config.isStatisticsEnabled(), config.getNamespace());
     }
 
     /**
@@ -208,6 +214,18 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         return this;
     }
 
+    /** @since 5.4 **/
+    @Override
+    @Nullable
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /** @since 5.4 **/
+    public void setNamespace(@Nullable String namespace) {
+        this.namespace = namespace;
+    }
+
     @Override
     public String toString() {
         return "ExecutorConfig{"
@@ -216,6 +234,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
                 + ", capacity=" + capacity
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
+                + ", namespace=" + namespace
                 + '}';
     }
 
@@ -237,6 +256,11 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         out.writeInt(capacity);
         out.writeString(splitBrainProtectionName);
         out.writeBoolean(statisticsEnabled);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(namespace);
+        }
     }
 
     @Override
@@ -247,6 +271,11 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         capacity = in.readInt();
         splitBrainProtectionName = in.readString();
         statisticsEnabled = in.readBoolean();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            namespace = in.readString();
+        }
     }
 
     @Override
@@ -275,6 +304,9 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
+        if (!Objects.equals(namespace, that.namespace)) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -286,6 +318,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         result = 31 * result + capacity;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
         return result;
     }
 }

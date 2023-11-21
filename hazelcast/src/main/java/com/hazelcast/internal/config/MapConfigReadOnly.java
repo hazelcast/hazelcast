@@ -399,6 +399,11 @@ public class MapConfigReadOnly extends MapConfig {
         throw throwReadOnly();
     }
 
+    @Override
+    public MapConfig setNamespace(String namespace) {
+        throw throwReadOnly();
+    }
+
     private UnsupportedOperationException throwReadOnly() {
         throw new UnsupportedOperationException("This config is read-only");
     }

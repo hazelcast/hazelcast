@@ -64,6 +64,9 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -1611,6 +1614,19 @@ public abstract class HazelcastTestSupport {
         Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
         for (DistributedObject object : distributedObjects) {
             object.destroy();
+        }
+    }
+
+    /**
+     * Returns raw byte[] of supplied file.
+     * @param testFile the file to get bytes from.
+     * @return the raw byte contents.
+     */
+    protected static byte[] getTestFileBytes(File testFile) {
+        try (InputStream is = testFile.toURI().toURL().openStream()) {
+            return is.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -45,6 +45,7 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NamespaceConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
@@ -307,6 +308,30 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             String name = mapNode.getNodeName();
             MapConfig mapConfig = ConfigUtils.getByNameOrNew(config.getMapConfigs(), name, MapConfig.class);
             handleMapNode(mapNode, mapConfig);
+        }
+    }
+
+    @Override
+    protected void handleNamespacesNode(Node node) {
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (matches(nodeName, "java-serialization-filter")) {
+                fillJavaSerializationFilter(n, config.getNamespacesConfig());
+            } else if (!matches("enabled", nodeName)) {
+                NamespaceConfig ns = new NamespaceConfig(nodeName);
+                //get list of resources
+                for (Node subChild : childElements(n)) {
+                    Node jar = getNamedItemNode(subChild, "jar");
+                    if (jar != null) {
+                        handleJarNode(jar, ns);
+                    }
+                    Node jarsInZip = getNamedItemNode(subChild, "jars-in-zip");
+                    if (jarsInZip != null) {
+                        handleJarsInZipNode(jarsInZip, ns);
+                    }
+                }
+                config.getNamespacesConfig().addNamespaceConfig(ns);
+            }
         }
     }
 
@@ -898,6 +923,18 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             cpSubsystemConfig.addLockConfig(lockConfig);
         }
     }
+
+//    @Override
+//    void handleNamespace(Node node) {
+//        for (Node child : childElements(node)) {
+//            Node named = getNamedItemNode(child, "name");
+//            NamespaceConfig nsConfig = new NamespaceConfig(named.getNodeValue());
+//            Node resources = getNamedItemNode(child, "resources");
+//            for (Node subC : childElements(resources)) {
+//                handleResources(subC, nsConfig);
+//            }
+//        }
+//    }
 
     @Override
     void handleCPMaps(CPSubsystemConfig cpSubsystemConfig, Node node) {

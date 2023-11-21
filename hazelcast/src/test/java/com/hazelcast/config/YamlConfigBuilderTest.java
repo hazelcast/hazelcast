@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.cp.CPMapConfig;
+import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -32,8 +33,9 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
-import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -49,9 +51,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import wiremock.com.google.common.collect.Sets;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -62,8 +67,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
@@ -87,6 +94,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -3757,20 +3765,16 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testAllPermissionsCovered() {
-        InputStream yamlResource = YamlConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-fullconfig.yaml");
-        Config config;
-        try {
-            config = new YamlConfigBuilder(yamlResource).build();
-        } finally {
-            IOUtil.closeResource(yamlResource);
-        }
-        Set<PermissionConfig.PermissionType> permTypes = new HashSet<>(asList(PermissionConfig.PermissionType.values()));
-        for (PermissionConfig pc : config.getSecurityConfig().getClientPermissionConfigs()) {
-            permTypes.remove(pc.getType());
-        }
-        assertTrue("All permission types should be listed in hazelcast-fullconfig.yaml. Not found ones: " + permTypes,
-                permTypes.isEmpty());
+    public void testAllPermissionsCovered() throws IOException {
+        URL yamlResource = YamlConfigBuilderTest.class.getClassLoader().getResource("hazelcast-fullconfig.yaml");
+        Config config = new YamlConfigBuilder(yamlResource).build();
+        Set<PermissionType> allPermissionTypes = Set.of(PermissionType.values());
+        Set<PermissionType> foundPermissionTypes = config.getSecurityConfig().getClientPermissionConfigs().stream()
+                .map(PermissionConfig::getType).collect(Collectors.toSet());
+        Collection<PermissionType> difference = Sets.difference(allPermissionTypes, foundPermissionTypes);
+
+        assertTrue(String.format("All permission types should be listed in %s. Not found ones: %s", yamlResource, difference),
+                difference.isEmpty());
     }
 
     @Override
@@ -4654,6 +4658,90 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 new PartitioningAttributeConfig("attr1"),
                 new PartitioningAttributeConfig("attr2")
         );
+    }
+
+    @Override
+    public void testNamespaceConfigs() throws IOException {
+
+        File tempJar = tempFolder.newFile("tempJar.jar");
+        try (FileOutputStream out = new FileOutputStream(tempJar)) {
+            out.write(new byte[]{0x50, 0x4B, 0x03, 0x04});
+        }
+        File tempJarZip = tempFolder.newFile("tempZip.zip");
+
+        String yamlTestString = "hazelcast:\n"
+                + "  namespaces:\n"
+                + "    enabled: true\n"
+                + "    java-serialization-filter:\n"
+                + "      defaults-disabled: false\n"
+                + "      blacklist:\n"
+                + "        class:\n"
+                + "          - com.acme.app.BeanComparator\n"
+                + "      whitelist:\n"
+                + "        package:\n"
+                + "          - com.acme.app\n"
+                + "        prefix:\n"
+                + "          - com.hazelcast.\n"
+                + "    ns1:\n"
+                + "      - jar:\n"
+                + "          id: \"jarId\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n"
+                + "      - jars-in-zip:\n"
+                + "          id: \"zipId\"\n"
+                + "          url: " + tempJarZip.toURI().toURL() + "\n"
+                + "    ns2:\n"
+                + "      - jar:\n"
+                + "          id: \"jarId2\"\n"
+                + "          url: " + tempJar.toURI().toURL() + "\n";
+
+        final NamespacesConfig namespacesConfig = buildConfig(yamlTestString).getNamespacesConfig();
+        assertThat(namespacesConfig.isEnabled()).isTrue();
+        assertThat(namespacesConfig.getNamespaceConfigs()).hasSize(2);
+        final NamespaceConfig namespaceConfig = namespacesConfig.getNamespaceConfigs().get("ns1");
+
+        assertNotNull(namespaceConfig);
+
+        assertThat(namespaceConfig.getName()).isEqualTo("ns1");
+        assertThat(namespaceConfig.getResourceConfigs()).hasSize(2);
+
+        //validate NS1 ResourceDefinition contents.
+        Collection<ResourceDefinition> ns1Resources = namespaceConfig.getResourceConfigs();
+        assertThat(ns1Resources).hasSize(2);
+        Optional<ResourceDefinition> jarIdResource = ns1Resources.stream().filter(r -> r.id().equals("jarId")).findFirst();
+        assertThat(jarIdResource).isPresent();
+        assertThat(jarIdResource.get().url()).isEqualTo(tempJar.toURI().toURL().toString());
+        assertEquals(ResourceType.JAR, jarIdResource.get().type());
+        //check the bytes[] are equal
+        assertArrayEquals(getTestFileBytes(tempJar), jarIdResource.get().payload());
+        Optional<ResourceDefinition> zipId = ns1Resources.stream().filter(r -> r.id().equals("zipId")).findFirst();
+        assertThat(zipId).isPresent();
+        assertThat(zipId.get().url()).isEqualTo(tempJarZip.toURI().toURL().toString());
+        assertEquals(ResourceType.JARS_IN_ZIP, zipId.get().type());
+        //check the bytes[] are equal
+        assertArrayEquals(getTestFileBytes(tempJarZip), zipId.get().payload());
+        //validate NS2 ResourceDefinition contents.
+        final NamespaceConfig namespaceConfig2 = namespacesConfig.getNamespaceConfigs().get("ns2");
+        assertNotNull(namespaceConfig2);
+        assertThat(namespaceConfig2.getName()).isEqualTo("ns2");
+        assertThat(namespaceConfig2.getResourceConfigs()).hasSize(1);
+        Collection<ResourceDefinition> ns2Resources = namespaceConfig2.getResourceConfigs();
+        assertThat(ns2Resources).hasSize(1);
+        Optional<ResourceDefinition> jarId2Resource = ns2Resources.stream().filter(r -> r.id().equals("jarId2")).findFirst();
+        assertThat(jarId2Resource).isPresent();
+        assertThat(jarId2Resource.get().url()).isEqualTo(tempJar.toURI().toURL().toString());
+        assertEquals(ResourceType.JAR, jarId2Resource.get().type());
+        //check the bytes[] are equal
+        assertArrayEquals(getTestFileBytes(tempJar), jarId2Resource.get().payload());
+
+        // Validate filtering config
+        assertNotNull(namespacesConfig.getJavaSerializationFilterConfig());
+        JavaSerializationFilterConfig filterConfig = namespacesConfig.getJavaSerializationFilterConfig();
+        assertFalse(filterConfig.isDefaultsDisabled());
+        assertTrue(filterConfig.getWhitelist().isListed("com.acme.app.FakeClass"));
+        assertTrue(filterConfig.getWhitelist().isListed("com.hazelcast.fake.place.MagicClass"));
+        assertFalse(filterConfig.getWhitelist().isListed("not.in.the.whitelist.ClassName"));
+        assertTrue(filterConfig.getBlacklist().isListed("com.acme.app.BeanComparator"));
+        assertFalse(filterConfig.getBlacklist().isListed("not.in.the.blacklist.ClassName"));
     }
 
     @Override
