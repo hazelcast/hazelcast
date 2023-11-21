@@ -17,10 +17,10 @@
 package com.hazelcast.internal.usercodedeployment.impl;
 
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -150,14 +150,11 @@ public final class ClassDataProvider {
     }
 
     private byte[] loadBytecodeFromParent(String className) {
-        String resource = className.replace('.', '/').concat(".class");
-        try (InputStream is = parent.getResourceAsStream(resource)) {
-            if (is != null) {
-                return is.readAllBytes();
-            }
+        try {
+            return ReflectionUtils.getClassContent(className, parent);
         } catch (IOException e) {
             logger.severe(e);
+            return null;
         }
-        return null;
     }
 }

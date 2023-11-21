@@ -16,17 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcJoinTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcFullScanJoinTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class MySQLJdbcJoinTest extends JdbcJoinTest {
+public class MySQLJdbcFullScanJoinTest extends JdbcFullScanJoinTest {
 
     @BeforeClass
     public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
     }
+
 }

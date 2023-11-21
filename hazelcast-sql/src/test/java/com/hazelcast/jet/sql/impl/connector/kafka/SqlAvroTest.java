@@ -76,7 +76,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionTest.NAME_SSN_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optional;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Collections.emptyMap;
@@ -134,7 +133,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     @BeforeClass
     public static void setup() throws Exception {
-        setup(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
+        setup(1, null);
         createSchemaRegistry();
     }
 

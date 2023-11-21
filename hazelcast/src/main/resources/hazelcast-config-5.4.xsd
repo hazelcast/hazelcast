@@ -5298,6 +5298,18 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="maps" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configurations for CPMap instances
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="map" type="cpmap" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 
@@ -5459,6 +5471,25 @@
                         the lock, it will be able to acquire it once more, but its third lock()
                         call will not succeed.
                         If lock-acquire-limit is set to 1, then the lock becomes non-reentrant.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="cpmap">
+        <xs:all>
+            <xs:element name="name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the CPMap
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-size-mb" type="xs:positiveInteger" minOccurs="0" default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size in MB that the constituent key-value pairs of the CPMap can total.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

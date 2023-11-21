@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcJoinTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcInnerEquiJoinTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class PostgresJdbcJoinTest extends JdbcJoinTest {
+public class PostgresJdbcInnerEquiJoinTest extends JdbcInnerEquiJoinTest {
 
     @BeforeClass
     public static void beforeClass() {

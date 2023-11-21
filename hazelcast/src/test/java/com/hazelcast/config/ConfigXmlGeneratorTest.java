@@ -20,6 +20,7 @@ import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.InstanceTrackingConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
@@ -1130,6 +1131,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addLockConfig(new FencedLockConfig("lock1", 1))
                 .addLockConfig(new FencedLockConfig("lock1", 2));
 
+        config.getCPSubsystemConfig()
+              .addCPMapConfig(new CPMapConfig("map1", 50))
+              .addCPMapConfig(new CPMapConfig("map2", 25));
 
         CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getCPSubsystemConfig(),

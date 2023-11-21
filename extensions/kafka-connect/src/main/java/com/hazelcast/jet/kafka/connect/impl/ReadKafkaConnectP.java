@@ -215,7 +215,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     public Map<String, LocalKafkaConnectStats> getStats() {
         Map<String, LocalKafkaConnectStats> connectStats = new HashMap<>();
-        if (sourceConnectorWrapper.hasTaskRunner()) {
+        if (sourceConnectorWrapper != null && (sourceConnectorWrapper.hasTaskRunner())) {
             connectStats.put(sourceConnectorWrapper.getName(), localKafkaConnectStats);
         }
         return connectStats;

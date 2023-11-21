@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -29,6 +30,8 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
@@ -41,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
@@ -163,6 +167,25 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
+    }
+
+    /**
+     * Check if the given type contains cycles.
+     */
+    public static boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
+        if (!discovered.add(type.getTypeName())) {
+            return true;
+        }
+
+        for (final RelDataTypeField field : type.getFieldList()) {
+            final RelDataType fieldType = field.getType();
+            if (fieldType instanceof HazelcastObjectType
+                    && containsCycles((HazelcastObjectType) fieldType, discovered)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -38,7 +38,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertEquals;
 
@@ -47,8 +46,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+        Config config = smallInstanceConfig();
 
         SerializationConfig serializationConfig = config.getSerializationConfig();
 
