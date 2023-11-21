@@ -121,8 +121,8 @@ class FunctionsImpl {
             extends ComposedSecuredFunction<SupplierEx<? extends T>, FunctionEx<? super T, ? extends R>>
             implements SupplierEx<R> {
 
-        ComposedSupplierEx(SupplierEx<? extends T> wrapped, FunctionEx<? super T, ? extends R> wrapperSupplier) {
-            super(wrapped, wrapperSupplier);
+        ComposedSupplierEx(SupplierEx<? extends T> before, FunctionEx<? super T, ? extends R> after) {
+            super(before, after);
         }
 
         @Override
