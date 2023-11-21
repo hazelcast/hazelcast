@@ -48,7 +48,7 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         while (it.hasNext()) {
             String dbFieldName = it.next();
             sb.append(" ? as ");
-            sb.append("\"" + dbFieldName + "\"");
+            dialect.quoteIdentifier(sb, dbFieldName);
 
             if (it.hasNext()) {
                 sb.append(',');
@@ -63,7 +63,7 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
     void appendMatchedClause(StringBuilder sb) {
         sb.append("WHEN MATCHED THEN ");
         sb.append("UPDATE ");
-        sb.append(" SET");
+        sb.append("SET ");
         List<String> pkList = jdbcTable.getPrimaryKeyList();
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
@@ -74,17 +74,16 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
                 continue;
             }
 
-            sb.append(" TARGET.");
-            sb.append("\"" + dbFieldName + "\"");
+            sb.append("TARGET.");
+            dialect.quoteIdentifier(sb, dbFieldName);
             sb.append(" = SOURCE.");
-            sb.append("\"" + dbFieldName + "\"");
+            dialect.quoteIdentifier(sb, dbFieldName);
             if (it.hasNext()) {
-                sb.append(',');
+                sb.append(", ");
             }
         }
         sb.append(" WHEN NOT MATCHED THEN INSERT ");
         appendFieldNames(sb, jdbcTable.dbFieldNames());
-        sb.append(' ');
         sb.append(" VALUES");
         appendSourceFieldNames(sb, jdbcTable.dbFieldNames());
     }
@@ -93,10 +92,10 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         List<String> pkFields = jdbcTable.getPrimaryKeyList();
         for (int i = 0; i < pkFields.size(); i++) {
             String field = pkFields.get(i);
-            sb.append("TARGET.")
-                    .append("\"" + field + "\"")
-                    .append(" = SOURCE.")
-                    .append("\"" + field + "\"");
+            sb.append("TARGET.");
+            dialect.quoteIdentifier(sb, field);
+            sb.append(" = SOURCE.");
+            dialect.quoteIdentifier(sb, field);
             if (i < pkFields.size() - 1) {
                 sb.append(" AND ");
             }
