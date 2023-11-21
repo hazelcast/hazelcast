@@ -57,6 +57,7 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.avro.Schema;
+import org.apache.commons.lang3.stream.Streams;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
@@ -1061,7 +1062,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         @Override
         public String toString() {
-            return "Row{" + Arrays.toString(values) + '}';
+            return "Row{[" +
+                    Streams.of(values)
+                            .map(v -> v + "(class=" + v.getClass().getName() + ")")
+                            .collect(joining(", ")) +
+                    "]}";
         }
 
         @Override

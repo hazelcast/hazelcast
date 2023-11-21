@@ -356,6 +356,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                 table.getDataConnectionName(),
                                 builder.query(),
                                 builder.parameterPositions(),
+                                builder.converters(),
                                 dialect.getClass().getSimpleName()
                         ))
         );

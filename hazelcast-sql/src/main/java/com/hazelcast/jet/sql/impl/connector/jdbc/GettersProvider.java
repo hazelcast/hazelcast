@@ -30,8 +30,8 @@ import java.util.Map;
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 final class GettersProvider {
 
-    private static final Map<String, BiFunctionEx<ResultSet, Integer, Object>> DEFAULT_GETTERS = new HashMap<>();
-    private static final Map<String, Map<String, BiFunctionEx<ResultSet, Integer, Object>>> GETTERS_BY_DATABASE
+    private static final Map<String, BiFunctionEx<ResultSet, Integer, ?>> DEFAULT_GETTERS = new HashMap<>();
+    private static final Map<String, Map<String, BiFunctionEx<ResultSet, Integer, ?>>> GETTERS_BY_DATABASE
             = new HashMap<>();
 
     static {
@@ -72,7 +72,7 @@ final class GettersProvider {
         DEFAULT_GETTERS.put("TIMESTAMP WITH TIME ZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
 
         // Override some getters for MS SQL
-        Map<String, BiFunctionEx<ResultSet, Integer, Object>> msSql = new HashMap<>(DEFAULT_GETTERS);
+        Map<String, BiFunctionEx<ResultSet, Integer, ?>> msSql = new HashMap<>(DEFAULT_GETTERS);
         msSql.put("FLOAT", ResultSet::getDouble);
         msSql.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
         msSql.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
@@ -83,7 +83,7 @@ final class GettersProvider {
     private GettersProvider() {
     }
 
-    public static Map<String, BiFunctionEx<ResultSet, Integer, Object>> getGetters(String dialect) {
+    public static Map<String, BiFunctionEx<ResultSet, Integer, ?>> getGetters(String dialect) {
         return GETTERS_BY_DATABASE.getOrDefault(dialect, DEFAULT_GETTERS);
     }
 }
