@@ -160,10 +160,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
         final var evalContextMock = mock(ExpressionEvalContext.class);
         when(evalContextMock.getSerializationService()).thenReturn(mock());
 
-        var queue = new LinkedList<>();
-        queue.add("some unexpected object");
-
-        final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> queue.poll());
+        final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> "some unexpected object");
         final var supplier = UpdatingEntryProcessor.supplier(
                 mock(),
                 mock(),
