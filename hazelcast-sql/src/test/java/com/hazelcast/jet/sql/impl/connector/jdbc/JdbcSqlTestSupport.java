@@ -105,7 +105,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     /**
-     * Creates a table with id INT, name VARCHAR columns
+     * Creates a table with id VARCHAR, name VARCHAR columns
      * Quotes the given tableName.
      */
     public static void createTable(String tableName) throws SQLException {
@@ -132,7 +132,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
      * Does not quote the given tableName.
      */
     public static void createTableNoQuote(String tableName) throws SQLException {
-        createTableNoQuote(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
+        createTableNoQuote(tableName, quote("id") + " VARCHAR(10) PRIMARY KEY", quote("name") + " VARCHAR(100)");
     }
 
     /**
