@@ -63,6 +63,10 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
         String keyJson = Values.convertToString(record.keySchema(), record.key());
         Struct value = (Struct) record.value();
         Schema valueSchema = record.valueSchema();
+
+        if (valueSchema.name().startsWith("io.debezium.")) {
+            return null; // internal Debezium messages
+        }
         Struct source = (Struct) value.get("source");
 
         Operation operation = value.schema().field("op") != null
