@@ -176,6 +176,8 @@ public final class HazelcastWriters {
     @SuppressWarnings("AnonInnerLength")
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
         return new ProcessorMetaSupplier() {
+            private static final long serialVersionUID = 1L;
+
             @Nonnull
             @Override
             public Map<String, String> getTags() {

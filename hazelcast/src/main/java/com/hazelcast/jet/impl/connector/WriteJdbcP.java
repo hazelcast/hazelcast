@@ -131,6 +131,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         // #connectAndPrepareStatement() instance method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 new ProcessorSupplier() {
+                    private static final long serialVersionUID = 1L;
+
                     private transient CommonDataSource dataSource;
 
                     @Override

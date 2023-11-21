@@ -1153,6 +1153,23 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but FAILED");
     }
 
+    @Test
+    public void given_suspensionIsForbidden_when_tryUpdatingJobConfig_then_updateIsFailed() {
+        // Given
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
+
+
+        // When
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // Then
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
+                .hasMessageContaining("is not suspendable, can't perform `updateJobConfig()`");
+    }
+
     // ### Tests for light jobs
 
     @Test

@@ -154,7 +154,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         dataOutput.writeFloatArray(floats);
         dataOutput.writeIntArray(ints);
         dataOutput.writeLongArray(longs);
-        dataOutput.writeUTFArray(strings);
+        dataOutput.writeStringArray(strings);
 
         dataOutput.writeBooleanArray(booleansNull);
         dataOutput.writeByteArray(bytesNull);
@@ -164,7 +164,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         dataOutput.writeFloatArray(floatsNull);
         dataOutput.writeIntArray(intsNull);
         dataOutput.writeLongArray(longsNull);
-        dataOutput.writeUTFArray(stringsNull);
+        dataOutput.writeStringArray(stringsNull);
 
         byteSize = (byte) bytes.length;
         dataOutput.write(byteSize);

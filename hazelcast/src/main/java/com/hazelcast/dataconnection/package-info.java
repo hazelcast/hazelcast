@@ -19,7 +19,4 @@
  *
  * @since 5.3
  */
-@Beta
 package com.hazelcast.dataconnection;
-
-import com.hazelcast.spi.annotation.Beta;

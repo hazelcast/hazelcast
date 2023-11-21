@@ -300,6 +300,7 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
+
         assert plan.getDeltaConfig() != null || plan.getOperation() != null;
         if (plan.getDeltaConfig() != null) {
             try {
