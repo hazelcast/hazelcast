@@ -54,7 +54,6 @@ import javax.annotation.Nullable;
 /**
  * Converts a parse tree into a relational tree.
  */
-@SuppressWarnings("CheckStyle")
 public class QueryConverter {
     public static final SqlToRelConverter.Config CONFIG;
 
