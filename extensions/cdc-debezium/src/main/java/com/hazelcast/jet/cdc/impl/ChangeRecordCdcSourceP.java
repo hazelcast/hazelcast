@@ -54,7 +54,8 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
     @Nullable
     @Override
     protected ChangeRecord map(SourceRecord record) {
-        if (record == null || record.topic().startsWith("__debezium")) { // internal Debezium messages
+        if (record == null || record.topic().startsWith("__debezium")) {
+            // internal Debezium messages about e.g. Heartbeat uses such topics
             return null;
         }
 
@@ -65,7 +66,9 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
         Schema valueSchema = record.valueSchema();
 
         if (valueSchema.name().startsWith("io.debezium.")) {
-            return null; // internal Debezium messages
+            // internal Debezium messages, e.g. transaction metadata uses topic ${database.server.name}.transaction
+            // so it won't be filtered out earlier
+            return null;
         }
         Struct source = (Struct) value.get("source");
 
