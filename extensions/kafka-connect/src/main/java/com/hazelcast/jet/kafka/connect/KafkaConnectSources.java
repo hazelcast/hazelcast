@@ -17,7 +17,7 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.TaskMaxProcessorMetaSupplier;
+import com.hazelcast.jet.kafka.connect.impl.processorsupplier.TaskMaxProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -30,7 +30,7 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processSupplier;
+import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processorSupplier;
 
 /**
  * Contains factory methods to create a Kafka Connect source.
@@ -96,7 +96,7 @@ public final class KafkaConnectSources {
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
                 eventTimePolicy -> {
-                    metaSupplier.setSupplier(processSupplier(defaultProperties, eventTimePolicy, projectionFn));
+                    metaSupplier.setSupplier(processorSupplier(defaultProperties, eventTimePolicy, projectionFn));
                     return metaSupplier;
                 });
     }

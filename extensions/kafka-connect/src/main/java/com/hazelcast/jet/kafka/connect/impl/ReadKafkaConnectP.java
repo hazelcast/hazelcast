@@ -27,8 +27,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.kafka.connect.impl.processorsupplier.ReadKafkaConnectProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -85,8 +84,6 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         this.sourceConnectorWrapper = sourceConnectorWrapper;
     }
 
-    // Used via reflection
-    @SuppressWarnings("unused")
     public void setProcessorOrder(int processorOrder) {
         this.processorOrder = processorOrder;
     }
@@ -232,13 +229,16 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
-    public static <T> ProcessorSupplier processSupplier(@Nonnull Properties propertiesFromUser,
-                                                        @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-                                                        @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
-        return new ProcessorSupplier() {
+    public static <T> ReadKafkaConnectProcessorSupplier processorSupplier(
+            @Nonnull Properties propertiesFromUser,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+            @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
+        return new ReadKafkaConnectProcessorSupplier() {
+            private static final long serialVersionUID = 1L;
+
             @Nonnull
             @Override
-            public Collection<? extends Processor> get(int localParallelismForMember) {
+            public Collection<ReadKafkaConnectP<?>> get(int localParallelismForMember) {
                 return IntStream.range(0, localParallelismForMember)
                         .mapToObj(i -> {
                             ReadKafkaConnectP<T> processor = new ReadKafkaConnectP<>(eventTimePolicy, projectionFn);
