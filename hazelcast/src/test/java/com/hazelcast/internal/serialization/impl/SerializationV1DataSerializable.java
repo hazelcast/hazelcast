@@ -103,7 +103,7 @@ public class SerializationV1DataSerializable implements DataSerializable {
         out.writeFloatArray(floats);
         out.writeDoubleArray(doubles);
         out.writeString(string);
-        out.writeUTFArray(strings);
+        out.writeStringArray(strings);
 
         this.version = out.getVersion();
     }
