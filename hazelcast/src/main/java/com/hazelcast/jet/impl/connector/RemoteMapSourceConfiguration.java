@@ -32,9 +32,7 @@ import static java.util.Objects.requireNonNull;
  * @param <V> specifies value type
  * @param <T> specifies emitted type
  */
-public class RemoteMapSourceConfiguration<K, V, T> implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class RemoteMapSourceConfiguration<K, V, T> {
 
     private final String name;
     private final String dataConnectionName;

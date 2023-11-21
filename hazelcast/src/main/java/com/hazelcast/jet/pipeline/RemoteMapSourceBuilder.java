@@ -161,7 +161,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
     /**
      * Build the source using the parameters set in this builder.
      *
-     * @return a batch source emmitting items from the remote IMap
+     * @return a batch source emitting items from the remote IMap
      */
     public <N> BatchSource<N> build() {
         if ((dataConnectionName == null) && (clientConfig == null)) {
