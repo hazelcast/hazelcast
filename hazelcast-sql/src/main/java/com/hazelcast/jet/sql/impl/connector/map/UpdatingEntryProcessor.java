@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.services.NodeAware;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -118,7 +119,7 @@ public final class UpdatingEntryProcessor
         out.writeObject(rowProjectorSupplier);
         out.writeObject(valueProjectorSupplier);
         out.writeObject(arguments);
-        out.writeObject(subject);
+        ImdgUtil.writeSubject(out, subject);
     }
 
     @Override
@@ -126,7 +127,7 @@ public final class UpdatingEntryProcessor
         rowProjectorSupplier = in.readObject();
         valueProjectorSupplier = in.readObject();
         arguments = in.readObject();
-        subject = in.readObject();
+        subject = ImdgUtil.readSubject(in);
     }
 
     public static Supplier supplier(
