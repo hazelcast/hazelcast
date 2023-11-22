@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +46,11 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryUtilTest extends SqlTestSupport {
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
+
     @Test
     public void when_leftValueIsNull_then_returnsNull() {
         Predicate<Object, Object> predicate =
@@ -55,7 +61,6 @@ public class QueryUtilTest extends SqlTestSupport {
 
     @Test
     public void when_serializedObject_then_deserializedCorrect() {
-        initialize(1, null);
         AbstractSerializationService service = (AbstractSerializationService) TestUtil.getNode(instance()).getSerializationService();
 
         var evalContextMock = mock(ExpressionEvalContext.class);
