@@ -56,9 +56,9 @@ class RemoteMapSourceBuilderTest {
     void testNotSerializablePredicate() {
         NonSerializablePredicate predicate = new NonSerializablePredicate();
 
-        assertThatThrownBy(() -> Sources.<Integer, Integer>remoteMapBuilder("mapName")
-                .predicate(predicate)
-        ).isInstanceOf(IllegalArgumentException.class)
+        var builder = Sources.<Integer, Integer>remoteMapBuilder("mapName");
+        assertThatThrownBy(() -> builder.predicate(predicate))
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("\"predicate\" must be serializable");
     }
 
@@ -66,9 +66,9 @@ class RemoteMapSourceBuilderTest {
     void testNotSerializableProjection() {
         NonSerializableProjection projection = new NonSerializableProjection();
 
-        assertThatThrownBy(() -> Sources.<Integer, Integer>remoteMapBuilder("mapName")
-                .projection(projection)
-        ).isInstanceOf(IllegalArgumentException.class)
+        var builder = Sources.<Integer, Integer>remoteMapBuilder("mapName");
+        assertThatThrownBy(() -> builder.projection(projection))
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("\"projection\" must be serializable");
     }
 

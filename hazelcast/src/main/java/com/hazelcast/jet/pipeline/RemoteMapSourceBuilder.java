@@ -137,7 +137,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
      */
     public RemoteMapSourceBuilder<K, V, T> predicate(@Nonnull Predicate<K, V> predicate) {
         requireNonNull(predicate, "predicate can not be null");
-        checkSerializable(predicate, "predicate should be serializable");
+        checkSerializable(predicate, "predicate");
         this.predicate = predicate;
         return this;
     }
@@ -153,7 +153,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
             @Nonnull Projection<? super Entry<K, V>, ? extends T_NEW> projection
     ) {
         requireNonNull(projection, "projection can not be null");
-        checkSerializable(requireNonNull(projection), "projection should be serializable");
+        checkSerializable(requireNonNull(projection), "projection");
         @SuppressWarnings("unchecked")
         RemoteMapSourceBuilder<K, V, T_NEW> newThis = (RemoteMapSourceBuilder<K, V, T_NEW>) this;
         newThis.projection = projection;
