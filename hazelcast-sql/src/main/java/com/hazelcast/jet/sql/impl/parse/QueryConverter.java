@@ -57,7 +57,8 @@ import javax.annotation.Nullable;
 public class QueryConverter {
     public static final SqlToRelConverter.Config CONFIG;
 
-    public static final HepProgram HEP_CALC_UNION_REWRITER_PROGRAM;
+    private static HepProgram hepSubqueryRewriterProgram;
+    private static final HepProgram HEP_CALC_UNION_REWRITER_PROGRAM;
 
     /**
      * Whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
@@ -163,34 +164,21 @@ public class QueryConverter {
      * <li>
      *  Check, if the relation uses cyclic user types, and if they are allowed - skip this step.
      * </li>
-     * <li>
-     *  Extract unsupported source expressions from an UPDATE stmt into a {@link Calc}.
-     * </li>
      * </ul>
      *
-     * @implNote we're using Calcite's {@link HepProgramBuilder} to GC the rules we don't need earlier.
      * @param rel                       Initial relation.
      * @param cyclicUserTypesAreAllowed Whether cyclic user types are allowed.
      * @return Resulting relation.
+     * @implNote we're using Calcite's {@link HepProgramBuilder} to GC the rules we don't need earlier.
      */
     private static RelNode performUnconditionalRewrites(RelNode rel, boolean cyclicUserTypesAreAllowed) {
-        // TODO: rework it at the same wat as for HEP_CALC_REWRITER_PROGRAM,
-        //  when limitation for cyclic UDTs will be removed.
-        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
-
-        // Correlated subqueries elimination rules
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE)
-                .addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE)
-                .addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
-
-        // Note: the way to check if cyclic type are allowed in SqlValidator is error-prone,
-        //  and the best way is to check it on pre-optimization phase.
-        if (!cyclicUserTypesAreAllowed) {
-            hepProgramBuilder.addRuleInstance(ScanCyclicTypeMustNotExecuteRule.INSTANCE);
+        // Note: 'cyclicUserTypesAreAllowed' is cluster-wise property, no changes in runtime are expected.
+        if (hepSubqueryRewriterProgram == null) {
+            hepSubqueryRewriterProgram = prepareUnconditionalSubqueryRewriter(cyclicUserTypesAreAllowed);
         }
 
         HepPlanner planner = new HepPlanner(
-                hepProgramBuilder.build(),
+                hepSubqueryRewriterProgram,
                 Contexts.empty(),
                 true,
                 null,
@@ -204,6 +192,9 @@ public class QueryConverter {
     /**
      * Second unconditional query optimization step. It includes
      * <ul>
+     * <li>
+     *  Extract unsupported source expressions from an UPDATE stmt into a {@link Calc}.
+     * </li>
      * <li>
      *  Transformation of distinct UNION to UNION ALL, merging the neighboring UNION relations.
      * </li>
@@ -273,7 +264,23 @@ public class QueryConverter {
         return new NestedExistsFinder().find();
     }
 
-    // Note: it must be used only in static class initializer.
+    private static HepProgram prepareUnconditionalSubqueryRewriter(boolean cyclicUserTypesAreAllowed) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Correlated subqueries elimination rules
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE)
+                .addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE)
+                .addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
+
+        // Note: the way to check if cyclic type are allowed in SqlValidator is error-prone,
+        //  and the best way is to check it on pre-optimization phase.
+        if (!cyclicUserTypesAreAllowed) {
+            hepProgramBuilder.addRuleInstance(ScanCyclicTypeMustNotExecuteRule.INSTANCE);
+        }
+        return hepProgramBuilder.build();
+    }
+
+    // Note: it must be used only once in static class initializer.
     private static HepProgram prepareCalcAndUnionRewriterProgram() {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
