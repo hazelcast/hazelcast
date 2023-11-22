@@ -110,7 +110,7 @@ public interface PagingPredicate<K, V> extends Predicate<K, V> {
      *
      * @return Map.Entry the anchor object which is the last value object on the previous page
      */
-    Map.Entry<K, V> getAnchor(); 
+    Map.Entry<K, V> getAnchor();
 
     /**
      * After each query, an anchor entry is set for that page. The anchor entry is the last entry of the query.
