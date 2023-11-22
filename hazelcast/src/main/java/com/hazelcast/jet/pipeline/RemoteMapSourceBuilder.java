@@ -152,7 +152,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
     public <T_NEW> RemoteMapSourceBuilder<K, V, T_NEW> projection(
             @Nonnull Projection<? super Entry<K, V>, ? extends T_NEW> projection
     ) {
-        requireNonNull(projection, "projection can not ne null");
+        requireNonNull(projection, "projection can not be null");
         checkSerializable(requireNonNull(projection), "projection should be serializable");
         @SuppressWarnings("unchecked")
         RemoteMapSourceBuilder<K, V, T_NEW> newThis = (RemoteMapSourceBuilder<K, V, T_NEW>) this;
