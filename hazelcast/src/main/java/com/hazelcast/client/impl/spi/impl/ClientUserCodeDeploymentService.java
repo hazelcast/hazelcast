@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -66,7 +67,7 @@ public class ClientUserCodeDeploymentService {
 
     private void loadClasses() throws ClassNotFoundException {
         for (String className : clientUserCodeDeploymentConfig.getClassNames()) {
-            String resource = className.replace('.', '/').concat(".class");
+            String resource = ReflectionUtils.toClassResourceId(className);
             try (InputStream is = configClassLoader.getResourceAsStream(resource)) {
                 if (is == null) {
                     throw new ClassNotFoundException(resource);

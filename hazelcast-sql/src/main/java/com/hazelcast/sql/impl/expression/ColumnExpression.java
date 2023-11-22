@@ -51,7 +51,7 @@ public final class ColumnExpression<T> implements Expression<T> {
         // like QueryDataType.VARCHAR_CHARACTER, are canonicalized to values of
         // some other canonical type, like QueryDataType.VARCHAR. That kind of
         // changes the observed type of a column to a canonical one.
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+        if (type.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
             return new ColumnExpression<>(index, type);
         } else {
             Class<?> canonicalClass = type.getConverter().getNormalizedValueClass();
@@ -67,14 +67,13 @@ public final class ColumnExpression<T> implements Expression<T> {
         // if the column expression is the top expression.
         Object res = row.get(index, false);
         if (res instanceof LazyTarget) {
-            assert type.equals(QueryDataType.OBJECT);
+            assert type.getTypeFamily() == QueryDataTypeFamily.OBJECT;
             LazyTarget lazyTarget = (LazyTarget) res;
             res = lazyTarget.getDeserialized() != null ? lazyTarget.getDeserialized() : lazyTarget.getSerialized();
         }
         return res;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
         // Lazy deserialization is disabled by default, and it has to be requested explicitly.
@@ -86,7 +85,7 @@ public final class ColumnExpression<T> implements Expression<T> {
         Object res = row.get(index, useLazyDeserialization);
 
         if (res instanceof LazyTarget) {
-            assert type.equals(QueryDataType.OBJECT);
+            assert type.getTypeFamily() == QueryDataTypeFamily.OBJECT;
             res = ((LazyTarget) res).deserialize(context.getSerializationService());
         }
 

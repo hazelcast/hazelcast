@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * function on that entry until all entries have been processed in the targetted partition
  * or the function throws an exception.
  */
-@Generated("8e2a8a20414f8f3b2436c6d39d3b75e2")
+@SuppressWarnings("unused")
+@Generated("e211da9c4fe9346743b074e89d1cd126")
 public final class MapReplaceAllCodec {
     //hex: 0x014800
     public static final int REQUEST_MESSAGE_TYPE = 83968;

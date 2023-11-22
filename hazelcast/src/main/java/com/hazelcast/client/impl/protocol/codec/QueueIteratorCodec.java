@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns an iterator over the elements in this collection.  There are no guarantees concerning the order in which
  * the elements are returned (unless this collection is an instance of some class that provides a guarantee).
  */
-@Generated("0200310b38dbc65734d517c17fa43f95")
+@SuppressWarnings("unused")
+@Generated("09cb3c49e32580c9f32391458a0af82c")
 public final class QueueIteratorCodec {
     //hex: 0x030800
     public static final int REQUEST_MESSAGE_TYPE = 198656;

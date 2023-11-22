@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Option;
 
+import java.util.concurrent.Executor;
+
 /**
  * Options for the {@link AsyncSocket} and {@link AsyncServerSocket}.
  * <p>
@@ -69,6 +71,10 @@ public interface AsyncSocketOptions {
      * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT}
      */
     Option<Integer> TCP_KEEPCOUNT = new Option<>("TCP_KEEPCOUNT", Integer.class);
+
+    Option<Object> SSL_ENGINE_FACTORY = new Option<>("SSL_ENGINE_FACTORY", Object.class);
+
+    Option<Executor> TLS_EXECUTOR = new Option<>("TLS_EXECUTOR", Executor.class);
 
 
     /**

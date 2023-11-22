@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-@Generated("de7be076ab4248404af6f76bae9f6615")
+@SuppressWarnings("unused")
+@Generated("b060d1a4354b902a4d8ac949ca3e4da7")
 public final class ListIndexOfCodec {
     //hex: 0x051400
     public static final int REQUEST_MESSAGE_TYPE = 332800;

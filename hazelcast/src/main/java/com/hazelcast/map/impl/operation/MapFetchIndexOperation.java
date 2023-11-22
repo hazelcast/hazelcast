@@ -125,7 +125,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     public static InternalIndex getInternalIndex(@Nonnull MapContainer mapContainer,
                                                  @Nonnull String mapName,
                                                  @Nonnull String indexName) {
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
                     + "\" of the IMap \"" + mapName + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED

@@ -16,17 +16,20 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.SerializationService;
+
+import java.util.ServiceLoader;
+
 /**
  * This interface is used to automatically register serializers from external
- * Hazelcast or user modules.<br>
- * Both types of {@link com.hazelcast.nio.serialization.Serializer}s are supported
- * ({@link com.hazelcast.nio.serialization.StreamSerializer} and
- * {@link com.hazelcast.nio.serialization.ByteArraySerializer}).
- * It needs to be registered using a file called "com.hazelcast.SerializerHook"
- * in META-INF/services.
- * Those services files are not registered using the standard Java6+ java.util.ServiceLoader
- * but with a Hazelcast version that is capable of working with multiple class loaders
- * to support JEE and OSGi environments.
+ * Hazelcast or user modules.
+ * <p>
+ * Both types of {@link Serializer}s are supported: {@link StreamSerializer} and
+ * {@link ByteArraySerializer}. The serializers need to be registered using a file
+ * named "com.hazelcast.SerializerHook" in META-INF/services. Those services files
+ * are not registered using the standard Java 6+ {@link ServiceLoader}, but with a
+ * Hazelcast version that is capable of working with multiple class loaders to
+ * support JEE and OSGi environments.
  *
  * @param <T> the type of the serialized object
  */
@@ -34,24 +37,28 @@ public interface SerializerHook<T> {
 
     /**
      * Returns the actual class type of the serialized object
-     *
-     * @return the serialized object type
      */
     Class<T> getSerializationType();
 
     /**
      * Creates a new serializer for the serialization type
-     *
-     * @return a new serializer instance
      */
-    Serializer createSerializer();
+    default Serializer createSerializer() {
+        throw new UnsupportedOperationException();
+    }
 
     /**
-     * Defines if this serializer can be overridden by defining a custom
-     * serializer in the configurations (codebase or configuration file)
+     * Creates a new serializer for the serialization type
      *
-     * @return if the serializer is overwritable
+     * @since 5.4
+     */
+    default Serializer createSerializer(SerializationService serializationService) {
+        return createSerializer();
+    }
+
+    /**
+     * Indicates if this serializer can be overridden by defining a custom
+     * serializer in the configurations (via code or configuration file)
      */
     boolean isOverwritable();
-
 }

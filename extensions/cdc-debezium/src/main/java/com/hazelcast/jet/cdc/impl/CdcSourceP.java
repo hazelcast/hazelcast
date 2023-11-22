@@ -250,7 +250,11 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private SourceTask startNewTask() {
-        logger.info("starting new task with config: " + taskConfig);
+        if (taskConfig.containsKey("name")) {
+            logger.info("starting new task: " + taskConfig.get("name"));
+        } else {
+            logger.info("starting new task");
+        }
         SourceTask task = newInstance(connector.taskClass().getName(), "task");
         task.initialize(new JetSourceTaskContext());
 

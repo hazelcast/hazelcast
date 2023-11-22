@@ -62,7 +62,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     public static void initialize(TestDatabaseProvider provider) {
-        initialize(provider, smallInstanceConfig());
+        Config config = smallInstanceConfig();
+        config.getJetConfig().getDefaultEdgeConfig().setQueueSize(16);
+        initialize(provider, config);
     }
 
     public static void initialize(TestDatabaseProvider provider, Config config) {

@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN consistency check for a specific map
  */
-@Generated("ad29a416bf5676529fbd26ffa38f82e6")
+@SuppressWarnings("unused")
+@Generated("782aced56db4a857b1152b21172b02df")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;

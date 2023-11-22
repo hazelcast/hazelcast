@@ -27,7 +27,7 @@ import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
 
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.version.Version;
 
 import java.io.File;
@@ -116,7 +116,7 @@ public class HazelcastVersionLocator {
         }
 
         private static String getMvn() {
-            return OsHelper.isWindows() ? "mvn.cmd" : "mvn";
+            return OS.isWindows() ? "mvn.cmd" : "mvn";
         }
 
         private void downloadArtifact(final String version) {

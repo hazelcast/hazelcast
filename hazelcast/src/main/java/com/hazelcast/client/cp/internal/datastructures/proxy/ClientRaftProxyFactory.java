@@ -50,10 +50,10 @@ import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
  */
 public class ClientRaftProxyFactory {
 
+    protected ClientContext context;
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, FencedLockProxy> lockProxies
             = new ConcurrentHashMap<String, FencedLockProxy>();
-    private ClientContext context;
 
     public ClientRaftProxyFactory(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -119,7 +119,7 @@ public class ClientRaftProxyFactory {
                 : new SessionAwareSemaphoreProxy(context, groupId, proxyName, objectName);
     }
 
-    private RaftGroupId getGroupId(String proxyName, String objectName) {
+    protected RaftGroupId getGroupId(String proxyName, String objectName) {
         ClientMessage request = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return CPGroupCreateCPGroupCodec.decodeResponse(response);

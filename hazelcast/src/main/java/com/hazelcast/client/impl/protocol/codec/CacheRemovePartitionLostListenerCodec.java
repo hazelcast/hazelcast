@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified cache partition lost listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-@Generated("93ed3013ba03ef9e599461dd796baad6")
+@SuppressWarnings("unused")
+@Generated("c2e4e4ddeb7c7f11ca11df84597b9dc9")
 public final class CacheRemovePartitionLostListenerCodec {
     //hex: 0x131A00
     public static final int REQUEST_MESSAGE_TYPE = 1251840;

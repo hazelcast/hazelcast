@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves the result of the execution with the given sequence
  */
-@Generated("4fe0bedf8827f7b085ad0a54a5adf841")
+@SuppressWarnings("unused")
+@Generated("bc1ba3a4aef5ad99126e5083939b5898")
 public final class DurableExecutorRetrieveResultCodec {
     //hex: 0x180400
     public static final int REQUEST_MESSAGE_TYPE = 1573888;

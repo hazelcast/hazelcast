@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,21 +35,15 @@ import static com.hazelcast.internal.serialization.SerializableByConvention.Reas
 
 @SerializableByConvention(PUBLIC_API)
 public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
-
-    private int factoryId;
-    private int classId;
-    private int version;
+    private PortableId portableId;
     private Map<String, FieldDefinition> fieldDefinitionsMap;
 
     @SuppressWarnings("unused")
-    private ClassDefinitionImpl() {
-    }
+    private ClassDefinitionImpl() { }
 
-    public ClassDefinitionImpl(int factoryId, int classId, int version) {
-        this.factoryId = factoryId;
-        this.classId = classId;
-        this.version = version;
-        this.fieldDefinitionsMap = new LinkedHashMap<>();
+    public ClassDefinitionImpl(PortableId portableId) {
+        this.portableId = portableId;
+        fieldDefinitionsMap = new LinkedHashMap<>();
     }
 
     public void addFieldDef(FieldDefinitionImpl fd) {
@@ -108,38 +103,38 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
 
     @Override
     public final int getFactoryId() {
-        return factoryId;
+        return portableId.getFactoryId();
     }
 
     @Override
     public final int getClassId() {
-        return classId;
+        return portableId.getClassId();
     }
 
     @Override
     public final int getVersion() {
-        return version;
+        return portableId.getVersion();
+    }
+
+    @Override
+    public PortableId getPortableId() {
+        return portableId;
     }
 
     void setVersionIfNotSet(int version) {
-        if (getVersion() < 0) {
-            this.version = version;
-        }
+        portableId.setVersionIfNotSet(version);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(version);
+        portableId.writeData(out);
         out.writeObject(fieldDefinitionsMap);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        factoryId = in.readInt();
-        classId = in.readInt();
-        version = in.readInt();
+        portableId = new PortableId();
+        portableId.readData(in);
         fieldDefinitionsMap = in.readObject();
     }
 
@@ -152,31 +147,21 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
             return false;
         }
         ClassDefinitionImpl that = (ClassDefinitionImpl) o;
-        if (factoryId != that.factoryId) {
-            return false;
-        }
-        if (classId != that.classId) {
-            return false;
-        }
-        if (version != that.version) {
-            return false;
-        }
-        return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
+        return portableId.equals(that.portableId)
+                && fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
     }
 
     @Override
     public int hashCode() {
-        int result = classId;
-        result = 31 * result + version;
-        return result;
+        return portableId.hashCode();
     }
 
     @Override
     public String toString() {
         return "ClassDefinition{"
-                + "factoryId=" + factoryId
-                + ", classId=" + classId
-                + ", version=" + version
+                + "factoryId=" + portableId.getFactoryId()
+                + ", classId=" + portableId.getClassId()
+                + ", version=" + portableId.getVersion()
                 + ", fieldDefinitions=" + fieldDefinitionsMap.values()
                 + '}';
     }

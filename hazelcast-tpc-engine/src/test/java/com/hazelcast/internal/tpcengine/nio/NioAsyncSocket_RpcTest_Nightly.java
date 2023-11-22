@@ -27,6 +27,6 @@ public class NioAsyncSocket_RpcTest_Nightly extends NioAsyncSocket_RpcTest {
 
     public NioAsyncSocket_RpcTest_Nightly() {
         iterations = 20000;
-        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
+        testTimeoutSeconds = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
     }
 }

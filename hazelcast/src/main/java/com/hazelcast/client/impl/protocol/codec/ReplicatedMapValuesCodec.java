@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns a lazy collection view of the values contained in this map.
  */
-@Generated("14b175c8960a07f7da73758fc2946105")
+@SuppressWarnings("unused")
+@Generated("c9cf43b2b26e528b23ae02e41baea78d")
 public final class ReplicatedMapValuesCodec {
     //hex: 0x0D1000
     public static final int REQUEST_MESSAGE_TYPE = 856064;

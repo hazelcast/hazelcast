@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the entry for a key only if currently mapped to a given value. The object to be removed will be removed
  * from only the current transaction context until the transaction is committed.
  */
-@Generated("788d77110fd26e7024c277708aef60bc")
+@SuppressWarnings("unused")
+@Generated("5c53ba8f3af635eb181900d1461eed37")
 public final class TransactionalMapRemoveIfSameCodec {
     //hex: 0x0E0D00
     public static final int REQUEST_MESSAGE_TYPE = 920832;

@@ -534,7 +534,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }
 
-    private SerializerAdapter registerFromSuperType(final Class type, final Class superType) {
+    public SerializerAdapter registerFromSuperType(final Class type, final Class superType) {
         final SerializerAdapter serializer = typeMap.get(superType);
         if (serializer != null) {
             safeRegister(type, serializer);

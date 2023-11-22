@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-@Generated("7fb74bccea8cd0bed563dfb29b78f5cd")
+@SuppressWarnings("unused")
+@Generated("19eaf6006eed6d5384fc91b6a7a49d03")
 public final class MapAddEntryListenerToKeyCodec {
     //hex: 0x011800
     public static final int REQUEST_MESSAGE_TYPE = 71680;

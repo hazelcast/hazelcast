@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Registers a new CP group availability listener.
  */
-@Generated("5c964b7d3214510c49221dbd53995559")
+@SuppressWarnings("unused")
+@Generated("5b74302a83c70389fe1b094eb29246fe")
 public final class CPSubsystemAddGroupAvailabilityListenerCodec {
     //hex: 0x220300
     public static final int REQUEST_MESSAGE_TYPE = 2228992;

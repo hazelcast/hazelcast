@@ -24,6 +24,9 @@ import io.github.classgraph.ScanResult;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -51,7 +54,7 @@ public final class ReflectionUtils {
      * Load a class using the current thread's context class loader as a
      * classLoaderHint. Exceptions are sneakily thrown.
      */
-    public static Class<?> loadClass(String name) {
+    public static <T> Class<T> loadClass(String name) {
         return loadClass(Thread.currentThread().getContextClassLoader(), name);
     }
 
@@ -59,7 +62,7 @@ public final class ReflectionUtils {
      * See {@link ClassLoaderUtil#loadClass(ClassLoader, String)}. Exceptions
      * are sneakily thrown.
      */
-    public static Class<?> loadClass(ClassLoader classLoaderHint, String name) {
+    public static <T> Class<T> loadClass(ClassLoader classLoaderHint, String name) {
         try {
             return ClassLoaderUtil.loadClass(classLoaderHint, name);
         } catch (ClassNotFoundException e) {
@@ -269,6 +272,21 @@ public final class ReflectionUtils {
 
     public static String toClassResourceId(String name) {
         return toPath(name) + ".class";
+    }
+
+    public static String toClassResourceId(Class<?> clazz) {
+        return toClassResourceId(clazz.getName());
+    }
+
+    @Nullable
+    public static byte[] getClassContent(String name, ClassLoader classLoader) throws IOException {
+        try (InputStream is = classLoader.getResourceAsStream(toClassResourceId(name))) {
+            if (is == null) {
+                return null;
+            } else {
+                return is.readAllBytes();
+            }
+        }
     }
 
     public static Object getFieldValue(String fieldName, Object obj) {

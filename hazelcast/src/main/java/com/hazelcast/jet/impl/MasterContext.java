@@ -20,11 +20,20 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -48,13 +57,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
+import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.stream.Collectors.toConcurrentMap;
 
@@ -65,7 +76,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
  *      <li>{@link MasterSnapshotContext}
  * </ul>
  */
-public class MasterContext {
+public class MasterContext implements DynamicMetricsProvider {
 
     private static final Object NULL_OBJECT = new Object() {
         @Override
@@ -85,7 +96,7 @@ public class MasterContext {
     private final JobRepository jobRepository;
     private final JobRecord jobRecord;
     private final JobExecutionRecord jobExecutionRecord;
-    private volatile JobStatus jobStatus = NOT_RUNNING;
+    private volatile JobStatus jobStatus;
     private volatile long executionId;
     private volatile Map<MemberInfo, ExecutionPlan> executionPlanMap;
 
@@ -109,9 +120,8 @@ public class MasterContext {
         this.jobExecutionRecord = jobExecutionRecord;
         this.jobId = jobRecord.getJobId();
         this.jobName = jobRecord.getJobNameOrId();
-        if (jobExecutionRecord.isSuspended()) {
-            jobStatus = SUSPENDED;
-        }
+
+        jobStatus = jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING;
 
         jobContext = new MasterJobContext(this, nodeEngine.getLogger(MasterJobContext.class));
         snapshotContext = createMasterSnapshotContext(nodeEngine);
@@ -157,6 +167,8 @@ public class MasterContext {
     void setJobStatus(JobStatus jobStatus, String description, boolean userRequested) {
         JobStatus oldStatus = this.jobStatus;
         this.jobStatus = jobStatus;
+        // Update metrics before notifying listeners, so that they can see up-to-date metrics.
+        jobContext.setJobMetrics(jobStatus, userRequested);
         jobEventService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
         if (jobStatus.isTerminal()) {
             jobEventService.removeAllEventListeners(jobId);
@@ -174,6 +186,11 @@ public class MasterContext {
     public JobConfig updateJobConfig(DeltaJobConfig deltaConfig) {
         lock();
         try {
+            if (!Util.isJobSuspendable(jobConfig())) {
+                throw new IllegalStateException("The job " + jobName
+                        + " is not suspendable, can't perform `updateJobConfig()`");
+            }
+
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
                 throw new IllegalStateException("Job not suspended, but " + jobStatus);
             }
@@ -202,6 +219,34 @@ public class MasterContext {
         }
     }
 
+    boolean metricsEnabled() {
+        return jobConfig().isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
+    }
+
+    /**
+     * Dynamic metrics are only provided for {@link JmxPublisher}. They are ignored by
+     * {@link JobMetricsPublisher}, which checks execution ID, and so not persistent.
+     * Persistent metrics are generated on demand by {@link MasterJobContext#setJobMetrics}
+     * and {@link MasterJobContext#setFinalExecutionMetrics}.
+     *
+     * @see MasterJobContext#persistentMetrics()
+     */
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        if (!metricsEnabled()) {
+            return;
+        }
+        descriptor.withTag(MetricTags.JOB, idToString(jobId))
+                  .withTag(MetricTags.JOB_NAME, jobName);
+
+        context.collect(descriptor, JOB_STATUS, ProbeLevel.INFO, ProbeUnit.ENUM, jobStatus.getId());
+
+        // We do not provide IS_USER_CANCELLED metric here. When the job is cancelled,
+        // MasterContext is put into FAILED state, and shortly after, it is removed by
+        // JobCoordinationService, so the probability of observing this is very low.
+        // The metric is included in the final metrics stored after job completion.
+    }
+
     public JobRecord jobRecord() {
         return jobRecord;
     }
@@ -210,7 +255,7 @@ public class MasterContext {
         return jobContext;
     }
 
-    public MasterSnapshotContext snapshotContext() {
+    MasterSnapshotContext snapshotContext() {
         return snapshotContext;
     }
 
@@ -285,8 +330,8 @@ public class MasterContext {
     void writeJobExecutionRecord(boolean canCreate) {
         coordinationService.assertOnCoordinatorThread();
         try {
-            coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
-                    canCreate);
+            coordinationService.jobRepository().writeJobExecutionRecord(
+                    jobRecord.getJobId(), jobExecutionRecord, canCreate);
         } catch (RuntimeException e) {
             // We don't bubble up the exceptions, if we can't write the record out, the universe is
             // probably crumbling apart anyway. And we don't depend on it, we only write out for

@@ -93,6 +93,13 @@
             <artifactId>hibernate-core</artifactId>
             <version>5.0.9.Final</version>
             <scope>test</scope>
+            <exclusions>
+            	<!-- Required for Hibernate <5.3.7 -->
+                <exclusion>
+                    <artifactId>xml-apis</artifactId>
+                    <groupId>xml-apis</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -109,7 +116,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <org.springframework.version>5.3.30</org.springframework.version>
+                <org.springframework.version>5.3.31</org.springframework.version>
                 <javax.annotation.version>1.3.2</javax.annotation.version>
             </properties>
             <dependencies>

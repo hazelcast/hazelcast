@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels the task running on the member that owns the partition with the given id.
  */
-@Generated("ef3c9af6302459473e0032a5545fdaeb")
+@SuppressWarnings("unused")
+@Generated("e4aa7a7bf0aa2f3c21777a5b3ac7de2a")
 public final class ExecutorServiceCancelOnPartitionCodec {
     //hex: 0x080300
     public static final int REQUEST_MESSAGE_TYPE = 525056;

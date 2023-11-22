@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -32,6 +37,7 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class KafkaSqlTestSupport extends SqlTestSupport {
@@ -40,9 +46,21 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
 
     @BeforeClass
     public static void setup() throws Exception {
-        initialize(1, null);
-        sqlService = instance().getSql();
+        setup(1, null);
+    }
 
+    protected static void setup(int memberCount, Config config) throws Exception {
+        initialize(memberCount, config);
+        createKafkaCluster();
+    }
+
+    protected static void setupWithClient(int memberCount, Config config, ClientConfig clientConfig) throws Exception {
+        initializeWithClient(memberCount, config, clientConfig);
+        createKafkaCluster();
+    }
+
+    private static void createKafkaCluster() throws Exception {
+        sqlService = instance().getSql();
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
     }
@@ -50,10 +68,10 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
     protected static void createSchemaRegistry() throws Exception {
         Properties properties = new Properties();
         properties.put("listeners", "http://0.0.0.0:0");
-        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG, kafkaTestSupport.getBrokerConnectionString());
-        //When Kafka is under load the schema registry may give
-        //io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Register operation timed out; error code: 50002
-        //Because the default timeout is 500 ms. Use a bigger timeout value to avoid it
+        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG,
+                kafkaTestSupport.getBrokerConnectionString());
+        // We increase the timeout (default is 500 ms) because when Kafka is under load,
+        // the schema registry may give "RestClientException: Register operation timed out".
         properties.put(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         kafkaTestSupport.createSchemaRegistry(config);
@@ -71,6 +89,26 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         String topicName = "t_" + randomString().replace('-', '_');
         kafkaTestSupport.createTopic(topicName, partitionCount);
         return topicName;
+    }
+
+    public static GenericRecord createRecord(Schema schema, Type.Field[] fields, Object[] values) {
+        GenericRecordBuilder record = new GenericRecordBuilder(schema);
+        for (int i = 0; i < fields.length; i++) {
+            Schema.Field field = schema.getField(fields[i].name);
+            if (values[i] == null) {
+                record.set(field, null);
+            } else {
+                Schema fieldSchema = unwrapNullableType(field.schema());
+                record.set(field, fieldSchema.getType() == Schema.Type.RECORD
+                        ? createRecord(fieldSchema, fields[i].type.fields, (Object[]) values[i])
+                        : values[i]);
+            }
+        }
+        return record.build();
+    }
+
+    public static GenericRecord createRecord(Schema schema, Object... values) {
+        return createRecord(schema, new Type(schema).fields, values);
     }
 
     protected static void createSqlKafkaDataConnection(String dlName, boolean isShared, String options) {
@@ -115,25 +153,6 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
                         + "'bootstrap.servers' = '%s', "
                         + "'auto.offset.reset' = 'earliest') ",
                 kafkaTestSupport.getBrokerConnectionString());
-    }
-
-    protected static String constructDataConnectionOptions(
-            Class<?> keySerializerClazz,
-            Class<?> keyDeserializerClazz,
-            Class<?> valueSerializerClazz,
-            Class<?> valueDeserializerClazz) {
-        return String.format("OPTIONS ( " +
-                        "'bootstrap.servers' = '%s', " +
-                        "'key.serializer' = '%s', " +
-                        "'key.deserializer' = '%s', " +
-                        "'value.serializer' = '%s', " +
-                        "'value.deserializer' = '%s', " +
-                        "'auto.offset.reset' = 'earliest') ",
-                kafkaTestSupport.getBrokerConnectionString(),
-                keySerializerClazz.getCanonicalName(),
-                keyDeserializerClazz.getCanonicalName(),
-                valueSerializerClazz.getCanonicalName(),
-                valueDeserializerClazz.getCanonicalName());
     }
 
     protected static String constructMappingOptions(String keyFormat, String valueFormat) {

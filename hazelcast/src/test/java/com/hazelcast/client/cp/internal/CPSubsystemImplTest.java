@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -198,4 +199,18 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         client.getCPSubsystem().getCPSessionManagementService();
     }
 
+    @Test
+    public void testCPMapUnsupported() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        Throwable t = assertThrows(UnsupportedOperationException.class, () -> client.getCPSubsystem().getMap("map"));
+        assertNotNull(t);
+        assertEquals("CPMap is not supported in Open Source", t.getMessage());
+    }
 }

@@ -120,7 +120,12 @@ and `acquireLimit` show the max number of reentrant acquires.
 
 Also if lock is held by an endpoint, there'll be two additional metrics; `ownerSessionId` and `owner`. `ownerSessionId` 
 shows the sessionId of the lock owner. Session details can be observed with session metrics explained below. `owner` 
-metric shows the address of the lock owner with a tag and will always have value `0`.   
+metric shows the address of the lock owner with a tag and will always have value `0`.
+
+Starting with Hazelcast 5.4.0, there are two additional tags provided for `FencedLock` metrics: `sessionId` which holds
+the lock owner's session ID (superceding the `ownerSessionId` standalone metric, although this metric is still maintained
+for backwards compatibility); and `qualifiedSessionId` which provides the same `sessionId` value suffixed with `@groupId`
+to form `qualifiedSessionId=sessionId@groupId`.
 
 Metric prefix will be `cp.lock.`, metric discriminator will be in form of `id=name@groupId`. 
 There will be `name` and `group` tags to show `FencedLock`'s name and CP group's name.

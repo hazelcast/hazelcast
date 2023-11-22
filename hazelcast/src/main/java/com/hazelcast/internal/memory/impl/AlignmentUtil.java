@@ -22,6 +22,8 @@ import java.nio.ByteOrder;
 
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
+import com.hazelcast.internal.tpcengine.util.OS;
+
 @SuppressWarnings("checkstyle:magicnumber")
 public final class AlignmentUtil {
 
@@ -84,7 +86,6 @@ public final class AlignmentUtil {
     }
 
     public static boolean isUnalignedAccessAllowed() {
-        String currentArchitecture = System.getProperty("os.arch");
-        return ArrayUtils.contains(ARCHITECTURES_KNOWN_TO_ALLOW_UNALIGNED_ACCESS, currentArchitecture);
+        return ArrayUtils.contains(ARCHITECTURES_KNOWN_TO_ALLOW_UNALIGNED_ACCESS, OS.osArch());
     }
 }

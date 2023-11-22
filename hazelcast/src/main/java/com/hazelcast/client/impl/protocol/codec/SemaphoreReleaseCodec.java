@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the given number of permits and increases the number of
  * available permits by that amount.
  */
-@Generated("cfd57ecd3c385c1e8e474ad6d2312d1b")
+@SuppressWarnings("unused")
+@Generated("b33a086dc30daf9f15b6b9ed4243bba7")
 public final class SemaphoreReleaseCodec {
     //hex: 0x0C0300
     public static final int REQUEST_MESSAGE_TYPE = 787200;

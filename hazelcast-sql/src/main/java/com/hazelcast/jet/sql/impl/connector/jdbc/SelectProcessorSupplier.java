@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -33,6 +34,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -48,9 +50,10 @@ public class SelectProcessorSupplier
 
     private String query;
     private int[] parameterPositions;
+    private List<FunctionEx<Object, ?>> converters = new ArrayList<>();
 
     private transient ExpressionEvalContext evalContext;
-    private transient volatile BiFunctionEx<ResultSet, Integer, Object>[] valueGetters;
+    private transient volatile BiFunctionEx<ResultSet, Integer, ?>[] valueGetters;
     private String dialectName;
 
     @SuppressWarnings("unused")
@@ -60,10 +63,12 @@ public class SelectProcessorSupplier
     public SelectProcessorSupplier(@Nonnull String dataConnectionName,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions,
+                                   @Nonnull List<FunctionEx<Object, ?>> converters,
                                    @Nonnull String dialectName) {
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
+        this.converters = converters;
         this.dialectName = dialectName;
     }
 
@@ -110,17 +115,18 @@ public class SelectProcessorSupplier
         return singleton(processor);
     }
 
-    private BiFunctionEx<ResultSet, Integer, Object>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException {
+    private BiFunctionEx<ResultSet, Integer, ?>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException {
         ResultSetMetaData metaData = rs.getMetaData();
 
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
-            Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = GettersProvider.getGetters(dialectName);
+            Map<String, BiFunctionEx<ResultSet, Integer, ?>> getters = GettersProvider.getGetters(dialectName);
+            FunctionEx<? super Object, ?> converterFn = converters.get(j);
             valueGetters[j] = getters.getOrDefault(
                     type,
                     (resultSet, n) -> rs.getObject(n)
-            );
+            ).andThen(converterFn);
         }
         return valueGetters;
     }
@@ -131,6 +137,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
+        out.writeObject(converters);
         out.writeString(dialectName);
     }
 
@@ -139,6 +146,7 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
+        converters = in.readObject();
         dialectName = in.readString();
     }
 }

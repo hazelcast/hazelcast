@@ -45,6 +45,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Collections;
@@ -210,9 +211,12 @@ public class DataSerializableConventionsTest {
                     } else {
                         factoryToTypeId.put(factoryId, typeId);
                     }
-                } catch (UnsupportedOperationException e) {
+                } catch (InvocationTargetException e) {
                     // expected from local operation classes not meant for serialization
                     // gather those and print them to system.out for information at end of test
+                    if (!(e.getCause() instanceof UnsupportedOperationException)) {
+                        throw e;
+                    }
                     classesThrowingUnsupportedOperationException.add(klass.getName());
                 } catch (InstantiationException e) {
                     classesWithInstantiationProblems.add(klass.getName() + " failed with " + e.getMessage());
@@ -289,8 +293,11 @@ public class DataSerializableConventionsTest {
                 assertTrue("Factory with ID " + factoryId + " instantiated an object of " + instanceFromFactory.getClass()
                                 + " while expected type was " + instance.getClass(),
                         instanceFromFactory.getClass().equals(instance.getClass()));
-            } catch (UnsupportedOperationException ignored) {
+            } catch (InvocationTargetException e) {
                 // expected from local operation classes not meant for serialization
+                if (!(e.getCause() instanceof UnsupportedOperationException)) {
+                    throw e;
+                }
             }
         }
     }

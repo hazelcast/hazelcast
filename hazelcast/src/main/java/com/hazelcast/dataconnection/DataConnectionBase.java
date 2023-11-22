@@ -18,7 +18,6 @@ package com.hazelcast.dataconnection;
 
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.impl.ReferenceCounter;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 
@@ -29,7 +28,6 @@ import javax.annotation.Nonnull;
  *
  * @since 5.3
  */
-@Beta
 public abstract class DataConnectionBase implements DataConnection {
 
     private final ReferenceCounter refCounter = new ReferenceCounter(this::destroy);

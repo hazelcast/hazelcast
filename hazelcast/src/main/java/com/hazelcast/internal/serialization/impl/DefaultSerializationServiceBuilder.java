@@ -324,7 +324,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
             Object value = entry.getValue();
             Serializer serializer;
             if (value instanceof SerializerHook) {
-                serializer = ((SerializerHook) value).createSerializer();
+                serializer = ((SerializerHook) value).createSerializer(ss);
             } else {
                 serializer = (Serializer) value;
             }

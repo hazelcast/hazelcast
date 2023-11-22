@@ -74,6 +74,7 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<>(new LocalCacheReaderFunction(cacheName)) {
+            private static final long serialVersionUID = 1L;
             @Override
             public Permission getRequiredPermission() {
                 return new CachePermission(cacheName, ACTION_CREATE, ACTION_READ);
@@ -172,6 +173,8 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<>(new LocalMapReaderFunction(mapName)) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
@@ -230,6 +233,8 @@ public final class HazelcastReaders {
         return new LocalProcessorMetaSupplier<>(
                 new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
         ) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
