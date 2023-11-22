@@ -34,7 +34,6 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSupplier;
-import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapReader;
