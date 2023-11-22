@@ -293,14 +293,9 @@ public class PagingPredicateImpl<K, V>
         return anchorEntry == null ? null : anchorEntry.getValue();
     }
 
-    /**
-     * After each query, an anchor entry is set for that page.
-     * The anchor entry is the last entry of the query.
-     *
-     * @param anchor the last entry of the query
-     */
-    public void setAnchor(int page, Map.Entry anchor) {
-        SimpleImmutableEntry anchorEntry = new SimpleImmutableEntry(page, anchor);
+    @Override
+    public void setAnchor(int page, Map.Entry<K, V> anchor) {
+        SimpleImmutableEntry<Integer, Map.Entry<K, V>> anchorEntry = new SimpleImmutableEntry<>(page, anchor);
         int anchorCount = anchorList.size();
         if (page < anchorCount) {
             anchorList.set(page, anchorEntry);
@@ -319,6 +314,7 @@ public class PagingPredicateImpl<K, V>
         return anchorList;
     }
 
+    @Override
     public Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
         int anchorCount = anchorList.size();
         if (page == 0 || anchorCount == 0) {

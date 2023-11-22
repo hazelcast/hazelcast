@@ -223,31 +223,30 @@ public final class SortingUtil {
                                                                              PagingPredicate pagingPredicate,
                                                                              IterationType iterationType) {
         if (list.isEmpty()) {
-            return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(-1, -1);
+            return new AbstractMap.SimpleImmutableEntry<>(-1, -1);
         }
-        PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) pagingPredicate;
-        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicateImpl.getComparator(), iterationType);
+        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), iterationType);
         Collections.sort(list, comparator);
 
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = pagingPredicateImpl.getNearestAnchorEntry();
+        Map.Entry<Integer, Map.Entry<?, ?>> nearestAnchorEntry = pagingPredicate.getNearestAnchorEntry();
         int nearestPage = nearestAnchorEntry.getKey();
-        int page = pagingPredicateImpl.getPage();
-        int pageSize = pagingPredicateImpl.getPageSize();
+        int page = pagingPredicate.getPage();
+        int pageSize = pagingPredicate.getPageSize();
         long begin = pageSize * ((long) page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
-            return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(-1, -1);
+            return new AbstractMap.SimpleImmutableEntry<>(-1, -1);
         }
         long end = begin + pageSize;
         if (end > size) {
             end = size;
         }
-        setAnchor(list, pagingPredicateImpl, nearestPage);
+        setAnchor(list, pagingPredicate, nearestPage);
         // it's safe to cast begin and end back to int here since they are limited by the list size
-        return new AbstractMap.SimpleImmutableEntry<Integer, Integer>((int) begin, (int) end);
+        return new AbstractMap.SimpleImmutableEntry<>((int) begin, (int) end);
     }
 
-    private static void setAnchor(List<? extends Map.Entry> list, PagingPredicateImpl pagingPredicate, int nearestPage) {
+    private static void setAnchor(List<? extends Map.Entry> list, PagingPredicate<?, ?> pagingPredicate, int nearestPage) {
         if (list.isEmpty()) {
             return;
         }

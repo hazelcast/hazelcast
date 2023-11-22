@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * This interface is a special Predicate which helps to get a page-by-page result of a query.
@@ -109,6 +110,14 @@ public interface PagingPredicate<K, V> extends Predicate<K, V> {
      *
      * @return Map.Entry the anchor object which is the last value object on the previous page
      */
-    Map.Entry<K, V> getAnchor();
+    Map.Entry<K, V> getAnchor(); 
 
+    /**
+     * After each query, an anchor entry is set for that page. The anchor entry is the last entry of the query.
+     *
+     * @param anchor the last entry of the query
+     */
+    void setAnchor(int page, Map.Entry<K, V> anchor);
+
+    Entry<Integer, Map.Entry> getNearestAnchorEntry();
 }
