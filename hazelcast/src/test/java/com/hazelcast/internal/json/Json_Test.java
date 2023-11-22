@@ -29,15 +29,12 @@ import java.io.Reader;
 import java.io.StringReader;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
-import com.hazelcast.test.annotation.QuickTest;
 
-@Category(QuickTest.class)
 public class Json_Test {
 
   @Test

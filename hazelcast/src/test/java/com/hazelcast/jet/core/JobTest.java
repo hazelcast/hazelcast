@@ -44,7 +44,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -88,7 +87,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class JobTest extends SimpleTestInClusterSupport {
 
     private static final int NODE_COUNT = 2;

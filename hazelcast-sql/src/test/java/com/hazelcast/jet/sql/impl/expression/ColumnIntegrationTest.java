@@ -28,7 +28,6 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,7 +54,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ColumnIntegrationTest extends ExpressionTestSupport {
     @Before
     public void before() {

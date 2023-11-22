@@ -29,7 +29,6 @@ import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -60,7 +59,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;

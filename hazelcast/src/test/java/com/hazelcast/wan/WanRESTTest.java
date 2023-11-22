@@ -28,13 +28,11 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.impl.WanReplicationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.UUID;
@@ -49,7 +47,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class WanRESTTest extends HazelcastTestSupport {
     private WanReplicationService wanServiceMock;
     private TestHazelcastInstanceFactory factory;

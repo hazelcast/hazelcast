@@ -44,10 +44,9 @@ import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.nio.serialization.compatibility.CustomByteArraySerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SerializationUtilTest {
 
     private final InternalSerializationService mockSs = mock(InternalSerializationService.class);

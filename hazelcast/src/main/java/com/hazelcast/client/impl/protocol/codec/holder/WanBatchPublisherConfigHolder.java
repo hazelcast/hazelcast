@@ -20,7 +20,6 @@ import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
-import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;

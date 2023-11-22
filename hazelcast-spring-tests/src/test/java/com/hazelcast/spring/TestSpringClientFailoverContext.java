@@ -22,10 +22,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -37,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-failover-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestSpringClientFailoverContext {
 
     @Resource

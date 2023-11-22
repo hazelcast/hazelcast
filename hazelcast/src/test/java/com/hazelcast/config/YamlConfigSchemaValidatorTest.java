@@ -21,7 +21,6 @@ import com.hazelcast.internal.config.YamlConfigSchemaValidator;
 import com.hazelcast.internal.yaml.YamlDomBuilder;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

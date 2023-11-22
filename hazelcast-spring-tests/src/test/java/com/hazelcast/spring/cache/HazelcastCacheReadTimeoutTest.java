@@ -18,10 +18,8 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -32,7 +30,6 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"readtimeout-config.xml"})
-@Category(QuickTest.class)
 public class HazelcastCacheReadTimeoutTest extends AbstractHazelcastCacheReadTimeoutTest {
 
     @BeforeClass

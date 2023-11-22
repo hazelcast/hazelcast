@@ -16,11 +16,9 @@
 
 package com.hazelcast.spring.config;
 
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.springframework.util.ResourceUtils;
@@ -41,7 +39,6 @@ import static org.junit.Assert.fail;
  * A unit test which validates the spring.schemas file
  */
 @RunWith(JUnit4.class)
-@Category(QuickTest.class)
 public class SpringSchemasValidityTest {
 
     private Properties prop;

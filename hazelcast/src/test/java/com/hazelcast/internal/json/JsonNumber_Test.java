@@ -30,14 +30,11 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-import com.hazelcast.test.annotation.QuickTest;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
-@Category(QuickTest.class)
 public class JsonNumber_Test {
 
   private StringWriter output;

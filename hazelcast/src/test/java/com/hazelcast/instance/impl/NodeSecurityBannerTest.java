@@ -41,13 +41,12 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Test that security banners are logged on proper levels.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class, ParallelJVMTest.class })
+@Category({ ParallelJVMTest.class })
 public class NodeSecurityBannerTest extends HazelcastTestSupport {
 
     private static final String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";

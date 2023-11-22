@@ -35,7 +35,6 @@ import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Values;
@@ -87,7 +86,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class KafkaConnectIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");

@@ -19,10 +19,8 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.STATIC;
@@ -30,7 +28,6 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     private ConfigPropertiesPlugin plugin;

@@ -18,9 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)

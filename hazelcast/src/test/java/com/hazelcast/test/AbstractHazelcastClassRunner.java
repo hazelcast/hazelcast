@@ -41,6 +41,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -66,6 +67,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
+    protected final Duration EXPECTED_RUNTIME_THRESHOLD_FOR_NOT_SLOW_TEST = Duration.ofMinutes(1);
 
     static {
         initialize();

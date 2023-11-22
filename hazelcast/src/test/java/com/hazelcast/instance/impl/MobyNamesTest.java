@@ -19,10 +19,8 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
@@ -36,7 +34,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class MobyNamesTest extends HazelcastTestSupport {
 
 

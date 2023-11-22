@@ -18,10 +18,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -34,7 +32,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class OperationQueueImplTest extends HazelcastTestSupport {
 
     private OperationQueueImpl operationQueue;

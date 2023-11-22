@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.Before;
@@ -57,7 +56,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
     protected ExpressionEvalContext eec;
 

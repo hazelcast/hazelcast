@@ -52,7 +52,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -110,7 +109,7 @@ import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;

@@ -19,7 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Constructor;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
@@ -169,9 +170,13 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
                 Category classAnnotations = method.getDeclaringClass().getAnnotation(Category.class);
 
-                if (classAnnotations != null && ArrayUtils.contains(classAnnotations.value(), QuickTest.class)) {
-                    QuickTest.logMessageIfTestOverran(method, tookSeconds);
-                }
+                if (classAnnotations != null && !ArrayUtils.contains(classAnnotations.value(), SlowTest.class)) {
+                        if (tookSeconds > EXPECTED_RUNTIME_THRESHOLD_FOR_NOT_SLOW_TEST.getSeconds()) {
+                            System.err.println(MessageFormat.format(
+                                    "{0} is not annotated as a {1}, expected to complete within {2} seconds - but took {3} seconds",
+                                    method.getName(), SlowTest.class.getSimpleName(), EXPECTED_RUNTIME_THRESHOLD_FOR_NOT_SLOW_TEST.getSeconds(), tookSeconds));
+                        }
+                    }
             } finally {
                 removeThreadLocalTestMethodName();
             }

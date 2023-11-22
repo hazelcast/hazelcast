@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.misc;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,7 +29,7 @@ import static java.util.Collections.singletonList;
 /**
  * Tests for the issue reported in https://github.com/hazelcast/hazelcast/issues/17554
  */
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SqlMaterializationBugTest extends SqlTestSupport {
 
     @BeforeClass

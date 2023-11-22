@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
@@ -45,7 +44,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class CalcIntoScanRuleTest extends OptimizerTestSupport {
     private SqlService sqlService;
     private TableResolverImpl resolver;

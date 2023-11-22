@@ -20,7 +20,6 @@ import com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -39,7 +38,7 @@ import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class TaskRunnerTest {
 
     @ClassRule

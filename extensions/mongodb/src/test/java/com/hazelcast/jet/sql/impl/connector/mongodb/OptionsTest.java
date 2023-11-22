@@ -17,7 +17,6 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.bson.BsonTimestamp;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JobAndSqlSummary;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class JetGetJobAndSqlSummaryListMessageTaskExceptionTest extends AbstractJetMultiTargetMessageTaskTest {
     private static final JobAndSqlSummary SUMMARY = new JobAndSqlSummary(true, 0, 0, "", JobStatus.RUNNING, 0, 0, "", null, "", false);
 

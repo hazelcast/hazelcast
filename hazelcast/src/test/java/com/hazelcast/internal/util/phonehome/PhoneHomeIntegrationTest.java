@@ -37,12 +37,10 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.mock.MockUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
@@ -68,7 +66,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     static ContainsPattern containingParam(String paramName, String expectedValue) {

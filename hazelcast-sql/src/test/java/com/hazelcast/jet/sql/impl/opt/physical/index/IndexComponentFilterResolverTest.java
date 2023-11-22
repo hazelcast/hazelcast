@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import junit.framework.TestCase;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -42,7 +41,7 @@ import java.util.List;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class IndexComponentFilterResolverTest extends TestCase {
     private static final RexInputRef REX_INPUT_REF = new RexInputRef(0, HazelcastIntegerType.create(SqlTypeName.INTEGER, false));
     private static final QueryDataType QUERY_DATA_TYPE = QueryDataType.INT;

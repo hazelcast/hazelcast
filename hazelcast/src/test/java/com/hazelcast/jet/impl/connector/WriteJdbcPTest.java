@@ -28,7 +28,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -71,7 +70,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";

@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
 @Generated("75a5c20a0782019857502f9120455e5a")

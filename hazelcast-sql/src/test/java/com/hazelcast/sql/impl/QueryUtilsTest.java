@@ -25,7 +25,6 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
@@ -49,7 +48,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class QueryUtilsTest extends CoreSqlTestSupport {
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);

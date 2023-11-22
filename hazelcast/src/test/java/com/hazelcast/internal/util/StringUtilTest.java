@@ -19,7 +19,6 @@ package com.hazelcast.internal.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 class StringUtilTest extends HazelcastTestSupport {
     @ParameterizedTest
     @ValueSource(strings = {"3.1", "3.1-SNAPSHOT", "3.1-RC", "3.1-RC1-SNAPSHOT", "3.1.1", "3.1.1-RC", "3.1.1-SNAPSHOT",

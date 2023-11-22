@@ -19,10 +19,8 @@ package com.hazelcast.spring.jet;
 import com.hazelcast.config.Config;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -30,7 +28,6 @@ import javax.annotation.Resource;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"instance-config-ignored-hazelcast.xml"})
-@Category(QuickTest.class)
 public class InstanceConfigIgnoredTest extends HazelcastTestSupport {
 
     @Resource(name = "config")

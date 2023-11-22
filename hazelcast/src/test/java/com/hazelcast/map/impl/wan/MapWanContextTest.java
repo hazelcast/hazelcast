@@ -33,7 +33,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 import org.junit.AfterClass;
@@ -60,7 +59,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class MapWanContextTest {
 
     static String wanReplicationRefName = "wanReplicationRefName";

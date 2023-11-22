@@ -28,13 +28,11 @@ import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
@@ -57,7 +55,6 @@ import static org.junit.Assert.assertTrue;
  * Tests if deserialization blacklisting works for MulticastService.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class MulticastDeserializationTest {
 
     private static final int MULTICAST_PORT = 53535;

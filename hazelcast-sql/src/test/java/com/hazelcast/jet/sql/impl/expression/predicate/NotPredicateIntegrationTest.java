@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,7 +40,7 @@ import static org.junit.Assert.assertEquals;
  * Tests for NOT predicate.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class NotPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_column() {

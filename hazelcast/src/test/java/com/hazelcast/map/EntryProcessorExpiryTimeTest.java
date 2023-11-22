@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.MapBackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.Test;
@@ -55,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter

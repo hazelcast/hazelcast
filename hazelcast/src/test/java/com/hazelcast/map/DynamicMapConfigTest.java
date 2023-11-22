@@ -36,7 +36,6 @@ import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,7 +56,7 @@ import static org.junit.Assert.fail;
  * This test verifies that the changes will be reflected to corresponding IMap at runtime.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class DynamicMapConfigTest extends HazelcastTestSupport {
 
     private final ILogger logger = Logger.getLogger(getClass());

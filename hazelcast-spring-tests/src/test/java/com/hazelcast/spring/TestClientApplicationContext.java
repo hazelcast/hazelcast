@@ -71,13 +71,11 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -103,7 +101,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestClientApplicationContext {
 
     @Resource(name = "client")

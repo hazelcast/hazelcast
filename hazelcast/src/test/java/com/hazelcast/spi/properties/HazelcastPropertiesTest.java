@@ -23,9 +23,7 @@ import com.google.common.reflect.ClassPath.ClassInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Modifier;
@@ -51,7 +49,6 @@ import static org.junit.Assert.assertTrue;
 import org.apache.commons.lang3.StringUtils;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class HazelcastPropertiesTest {
 
     private final Config config = new Config();

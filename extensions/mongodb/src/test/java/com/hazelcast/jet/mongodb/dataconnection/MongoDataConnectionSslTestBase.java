@@ -21,7 +21,6 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -46,7 +45,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.testcontainers.containers.BindMode.READ_WRITE;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public abstract class MongoDataConnectionSslTestBase extends SimpleTestInClusterSupport {
 
     protected static final String DATABASE = "MongoDataConnectionSslTest";

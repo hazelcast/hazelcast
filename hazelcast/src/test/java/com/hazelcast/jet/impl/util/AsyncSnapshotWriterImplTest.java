@@ -35,7 +35,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -62,7 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     private static final String ALWAYS_FAILING_MAP = "alwaysFailingMap";

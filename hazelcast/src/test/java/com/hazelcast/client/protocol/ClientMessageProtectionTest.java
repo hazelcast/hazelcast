@@ -29,7 +29,6 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 
 import org.assertj.core.api.Condition;
 import org.junit.After;

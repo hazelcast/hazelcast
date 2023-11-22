@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationOptions;
@@ -55,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class AllTypesInsertMongoSqlConnectorIT extends MongoSqlIT {
     private static final ObjectId EXAMPLE_OBJECT_ID = ObjectId.get();
     @Parameterized.Parameter

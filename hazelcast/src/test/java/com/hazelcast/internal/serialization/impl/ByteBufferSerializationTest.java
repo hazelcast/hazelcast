@@ -20,11 +20,9 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -38,7 +36,6 @@ import static org.junit.Assert.assertArrayEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category(QuickTest.class)
 public class ByteBufferSerializationTest {
     private static final byte[] TEST_BYTES = "Test".getBytes();
 

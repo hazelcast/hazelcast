@@ -18,11 +18,9 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"withoutconfig-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestEmptyApplicationContext {
 
     @Resource(name = "instance")

@@ -29,10 +29,9 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class MultiPartitionPredicateLocalTest extends MultiPartitionPredicateTestSupport {
 
     private HazelcastInstance instance;

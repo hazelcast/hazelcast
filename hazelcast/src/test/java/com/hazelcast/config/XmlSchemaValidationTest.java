@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,7 +30,7 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class XmlSchemaValidationTest {
 
     @Test

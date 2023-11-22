@@ -19,7 +19,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;

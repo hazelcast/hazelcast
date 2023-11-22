@@ -33,10 +33,8 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -56,7 +54,6 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public abstract class AbstractKinesisTest extends JetTestSupport {
 
     public static final String LOCALSTACK_VERSION = "2.1.0";

@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class InsertWatermarksPTest {
 

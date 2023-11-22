@@ -20,7 +20,6 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
@@ -45,7 +44,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class MongoDataConnectionAuthTest extends SimpleTestInClusterSupport {
 
     private static final String USERNAME = "user123";

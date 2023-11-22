@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,7 +35,7 @@ import java.util.List;
  *
  * @see CreateTopLevelDagVisitor#onMapIndexScan
  */
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class MapSortedIndexScanIntegrationTest extends SqlTestSupport {
     private static final int ITEM_COUNT = 10_000;
     private static final String MAP_NAME = "map";

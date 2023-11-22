@@ -41,7 +41,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +69,7 @@ import static org.mockito.Mockito.verify;
  * we start.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SqlLazyDeserializationTest {
     private final SqlLazyDeserializationTestInstanceFactory mockInstanceFactory
             = new SqlLazyDeserializationTestInstanceFactory();

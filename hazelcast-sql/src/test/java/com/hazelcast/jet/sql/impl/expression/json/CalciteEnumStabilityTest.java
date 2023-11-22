@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 import org.junit.Test;
@@ -38,7 +37,7 @@ import static org.junit.Assert.assertEquals;
  * checks for such a change.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class CalciteEnumStabilityTest {
 
     @Test

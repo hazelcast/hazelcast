@@ -22,7 +22,6 @@ import com.hazelcast.splitbrainprotection.set.TransactionalSetSplitBrainProtecti
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,7 +31,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ClientTransactionalSetSplitBrainProtectionReadTest extends TransactionalSetSplitBrainProtectionReadTest {
 
     private static PartitionedClusterClients clients;

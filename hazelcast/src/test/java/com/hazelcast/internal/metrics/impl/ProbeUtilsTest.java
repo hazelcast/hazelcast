@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics.impl;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Multimap;
@@ -25,7 +24,6 @@ import com.google.common.collect.TreeMultimap;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.ReflectionUtils;
 
 import java.lang.reflect.Field;
@@ -34,7 +32,6 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class ProbeUtilsTest extends HazelcastTestSupport {
 
     @Test

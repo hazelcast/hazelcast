@@ -20,9 +20,7 @@ import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -41,7 +39,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class ViridianAddressProviderTest {
 
     private static final Address PRIVATE_MEMBER_ADDRESS = Address.createUnresolvedAddress("10.0.0.1", 30000);

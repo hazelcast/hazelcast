@@ -23,10 +23,8 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -38,7 +36,6 @@ import static com.hazelcast.test.Accessors.getNode;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(QuickTest.class)
 public class ClientCacheCreateUseDestroyTest extends CacheCreateUseDestroyTest {
 
     private TestHazelcastFactory factory;

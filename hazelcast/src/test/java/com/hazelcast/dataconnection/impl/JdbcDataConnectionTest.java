@@ -20,7 +20,6 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariProxyConnection;
 import org.h2.jdbc.JdbcConnection;
@@ -46,7 +45,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class JdbcDataConnectionTest {
 
     private static final String TEST_NAME = JdbcDataConnectionTest.class.getSimpleName();

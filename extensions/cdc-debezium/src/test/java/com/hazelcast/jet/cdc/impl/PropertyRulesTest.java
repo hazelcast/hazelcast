@@ -15,16 +15,13 @@
  */
 package com.hazelcast.jet.cdc.impl;
 
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@Category(QuickTest.class)
 public class PropertyRulesTest {
 
     @Test

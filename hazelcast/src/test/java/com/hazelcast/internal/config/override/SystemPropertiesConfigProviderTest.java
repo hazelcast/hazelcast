@@ -18,9 +18,7 @@ package com.hazelcast.internal.config.override;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Properties;
@@ -29,7 +27,6 @@ import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.ent
 import static com.hazelcast.internal.config.override.SystemPropertiesConfigParser.member;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class SystemPropertiesConfigProviderTest extends HazelcastTestSupport {
 
     @Test

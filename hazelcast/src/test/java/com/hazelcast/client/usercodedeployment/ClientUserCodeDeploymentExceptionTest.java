@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();

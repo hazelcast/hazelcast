@@ -23,9 +23,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -34,7 +32,6 @@ import java.net.URL;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class CacheSplitBrainProtectionConfigTest extends HazelcastTestSupport {
 
     private final URL configUrl = getClass().getClassLoader().getResource("test-hazelcast-jcache-with-split-brain-protection.xml");

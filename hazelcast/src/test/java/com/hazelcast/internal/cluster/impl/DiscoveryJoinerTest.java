@@ -29,11 +29,9 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -55,7 +53,6 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(QuickTest.class)
 public class DiscoveryJoinerTest {
 
     private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =

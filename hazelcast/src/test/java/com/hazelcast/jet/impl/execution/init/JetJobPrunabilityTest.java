@@ -33,13 +33,11 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -60,7 +58,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     private CollectPerProcessorSink consumerPms;
     private int localPartitionId;

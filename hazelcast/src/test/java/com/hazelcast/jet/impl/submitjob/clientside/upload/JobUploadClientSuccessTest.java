@@ -31,7 +31,6 @@ import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.SubmitJobParameters;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;

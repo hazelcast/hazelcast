@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -25,7 +24,7 @@ import org.junit.experimental.categories.Category;
 /**
  * Test for https://github.com/hazelcast/hazelcast/pull/22091
  */
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlViewPlanInvalidationTest extends SqlTestSupport {
     public static final String FIRST_MAP_NAME = "m_one";

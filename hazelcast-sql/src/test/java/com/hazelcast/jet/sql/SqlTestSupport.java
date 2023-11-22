@@ -55,7 +55,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.avro.Schema;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
@@ -111,7 +110,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
 

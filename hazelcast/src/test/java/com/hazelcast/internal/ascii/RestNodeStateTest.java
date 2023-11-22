@@ -37,11 +37,9 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -58,7 +56,6 @@ import static org.junit.Assert.assertEquals;
  * Regression test which checks the {@link NodeState} before the instance becomes {@link NodeState#ACTIVE}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class RestNodeStateTest {
 
     private static final int BASE_PORT = 5600;

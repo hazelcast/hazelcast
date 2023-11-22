@@ -19,7 +19,6 @@ import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.mongodb.AbstractMongoTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.internal.MongoClientImpl;
@@ -38,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class MongoDataConnectionTest extends AbstractMongoTest {
     private MongoDataConnection dataConnection;
     private String connectionString;

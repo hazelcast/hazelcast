@@ -21,7 +21,6 @@ import com.hazelcast.mock.MockUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlNode;
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +36,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class QueryParserTest {
 
     @InjectMocks

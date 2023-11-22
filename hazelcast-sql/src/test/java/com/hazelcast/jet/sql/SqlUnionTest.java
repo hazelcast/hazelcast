@@ -28,7 +28,6 @@ import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -47,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("resource")
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map1;
     private IMap<Integer, Person> map2;

@@ -22,11 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -39,7 +37,6 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestHibernateApplicationContext {
 
     @Resource(name = "instance")

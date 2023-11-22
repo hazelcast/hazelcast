@@ -23,10 +23,8 @@ package com.hazelcast.internal.json;
 
 import com.hazelcast.internal.json.Json.DefaultHandler;
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -39,7 +37,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
 public class JsonParser_Test {
 
   private TestHandler handler;

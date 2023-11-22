@@ -48,7 +48,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * End-to-end test(s) for {@link ConsoleApp}. The tests use real network.

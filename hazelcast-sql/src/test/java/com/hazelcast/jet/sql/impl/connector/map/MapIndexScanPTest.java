@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,7 +66,7 @@ import static java.util.Collections.singletonList;
 
 @SuppressWarnings("rawtypes")
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Parameterized.Parameters(name = "count:{0}")

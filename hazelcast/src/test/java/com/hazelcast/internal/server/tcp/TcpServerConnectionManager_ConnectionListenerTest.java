@@ -20,9 +20,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -31,7 +29,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class TcpServerConnectionManager_ConnectionListenerTest
         extends TcpServerConnection_AbstractTest {
 

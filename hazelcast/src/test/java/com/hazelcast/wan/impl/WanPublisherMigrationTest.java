@@ -36,7 +36,6 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanEvent;
 import com.hazelcast.wan.WanMigrationAwarePublisher;
 import com.hazelcast.wan.WanPublisher;
@@ -70,7 +69,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class WanPublisherMigrationTest extends HazelcastTestSupport {
 
     @Parameter

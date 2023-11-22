@@ -41,7 +41,6 @@ import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtection
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
 import org.junit.Assert;
@@ -111,7 +110,7 @@ import static org.junit.Assert.fail;
  * @see YamlOnlyConfigBuilderTest
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override

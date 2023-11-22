@@ -21,7 +21,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -36,7 +35,7 @@ import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class JobTimeoutTest extends JetTestSupport {
 
     @Test

@@ -24,13 +24,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -50,7 +48,6 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class RESTClientPhoneHomeTest {
 
     protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();

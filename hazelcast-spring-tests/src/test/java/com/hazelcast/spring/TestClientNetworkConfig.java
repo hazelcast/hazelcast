@@ -26,11 +26,9 @@ import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -43,7 +41,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"clientNetworkConfig-applicationContext.xml"})
-@Category(QuickTest.class)
 public class TestClientNetworkConfig {
 
     @Resource(name = "client")

@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +45,7 @@ import static org.junit.Assert.fail;
  * Tests that an exception in the {@link Node} and {@link NodeEngineImpl} constructor leads to properly finished services.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class NodeThreadLeakTest extends HazelcastTestSupport {
 
     private static final HazelcastException HAZELCAST_EXCEPTION

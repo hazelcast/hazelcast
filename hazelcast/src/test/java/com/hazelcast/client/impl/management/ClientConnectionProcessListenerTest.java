@@ -28,10 +28,8 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -51,7 +49,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class ClientConnectionProcessListenerTest extends HazelcastTestSupport {
 
     @After

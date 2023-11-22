@@ -17,9 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
@@ -28,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class StringPartitioningStrategyTest {
 
     @Test

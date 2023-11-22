@@ -36,13 +36,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-import com.hazelcast.test.annotation.QuickTest;
 
 import java.io.IOException;
 
-@Category(QuickTest.class)
 public class JsonLiteral_Test {
 
   @Test

@@ -20,7 +20,6 @@ import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,7 +45,7 @@ import static org.junit.Assert.assertNotNull;
  * @see YamlConfigBuilderTest
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class YamlOnlyConfigBuilderTest {
 
     @Rule

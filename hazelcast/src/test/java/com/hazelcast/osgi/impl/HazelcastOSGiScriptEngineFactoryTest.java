@@ -18,10 +18,8 @@ package com.hazelcast.osgi.impl;
 
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.script.ScriptEngine;
@@ -37,7 +35,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class HazelcastOSGiScriptEngineFactoryTest extends HazelcastOSGiScriptingTest {
 
     @Test

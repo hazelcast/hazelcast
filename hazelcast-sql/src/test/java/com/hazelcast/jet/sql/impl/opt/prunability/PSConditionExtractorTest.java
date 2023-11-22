@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -52,7 +51,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class PSConditionExtractorTest extends OptimizerTestSupport {
     private PartitionStrategyConditionExtractor extractor;
     private HazelcastTypeFactory typeFactory;

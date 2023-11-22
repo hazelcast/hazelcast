@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.assertj.core.api.Assertions;
@@ -36,7 +35,7 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class UnparseTest extends SqlTestSupport {
 
     private OptimizerContext context;

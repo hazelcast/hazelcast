@@ -24,12 +24,10 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -47,7 +45,6 @@ import static org.junit.Assert.fail;
  * </pre>
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class DeserializationProtectionTest extends HazelcastTestSupport {
 
     @Before

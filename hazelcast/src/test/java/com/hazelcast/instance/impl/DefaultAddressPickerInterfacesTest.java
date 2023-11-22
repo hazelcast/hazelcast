@@ -26,7 +26,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,7 +51,7 @@ import static org.junit.Assert.assertNull;
  * The System property {@link DefaultAddressPicker#PREFER_IPV4_STACK} is set to {@code true}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class DefaultAddressPickerInterfacesTest {
 
     private final ILogger logger = Logger.getLogger(AddressPicker.class);

@@ -18,10 +18,8 @@ package com.hazelcast.nio;
 
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
@@ -34,7 +32,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class BitsTest {
 
     private static Random random = new Random();

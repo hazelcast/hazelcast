@@ -18,9 +18,7 @@ package com.hazelcast.internal.eviction.impl.comparator;
 
 import com.hazelcast.spi.eviction.EvictableEntryView;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
@@ -30,7 +28,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class LRUEvictionPolicyComparatorTest {
 
     private static final long NOW = 20;

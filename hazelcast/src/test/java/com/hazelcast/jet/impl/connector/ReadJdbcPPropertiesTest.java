@@ -21,7 +21,6 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -43,7 +42,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({QuickTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({IgnoreInJenkinsOnWindows.class})
 public abstract class ReadJdbcPPropertiesTest extends SimpleTestInClusterSupport {
 
     protected static TestDatabaseProvider databaseProvider;

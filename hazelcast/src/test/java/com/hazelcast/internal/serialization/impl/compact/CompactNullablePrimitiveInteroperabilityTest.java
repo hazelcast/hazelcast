@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import javax.annotation.Nonnull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class CompactNullablePrimitiveInteroperabilityTest {
 
     private static class A {

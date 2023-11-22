@@ -25,10 +25,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.BindException;
@@ -45,7 +43,6 @@ import static org.mockito.Mockito.when;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class MemberAddressProviderTest {
 
     @After

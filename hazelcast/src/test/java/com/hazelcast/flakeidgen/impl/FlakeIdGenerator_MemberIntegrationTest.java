@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import org.junit.After;
 import org.junit.Before;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
+@Category({ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
 
     @Rule

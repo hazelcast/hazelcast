@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import org.bson.BsonTimestamp;

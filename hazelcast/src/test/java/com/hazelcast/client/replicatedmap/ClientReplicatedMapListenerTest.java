@@ -29,10 +29,8 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.replicatedmap.AbstractReplicatedMapListenerTest;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -41,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ClientReplicatedMapListenerTest extends AbstractReplicatedMapListenerTest {
 

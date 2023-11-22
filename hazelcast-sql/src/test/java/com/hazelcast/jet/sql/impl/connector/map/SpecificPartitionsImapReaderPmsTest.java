@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -59,7 +58,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SpecificPartitionsImapReaderPmsTest extends SqlTestSupport {
     private static final int MEMBERS = 5;

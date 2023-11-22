@@ -30,10 +30,8 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.OngoingStubbing;
 
@@ -57,7 +55,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class TpcChannelConnectorTest {
 
     private static final int CHANNEL_COUNT = 5;

@@ -48,7 +48,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Verify that after sending member protocol header bytes (HZC) no more bytes are sent from the connection initiating member.

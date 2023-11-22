@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class JsonArrayFunctionIntegrationTest extends SqlJsonTestSupport {
 
     @BeforeClass

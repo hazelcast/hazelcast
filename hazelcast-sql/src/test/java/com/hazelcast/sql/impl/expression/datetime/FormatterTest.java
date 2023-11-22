@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +44,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:ParenPad")
 public class FormatterTest {
     private static final Locale TR = new Locale("tr", "TR");

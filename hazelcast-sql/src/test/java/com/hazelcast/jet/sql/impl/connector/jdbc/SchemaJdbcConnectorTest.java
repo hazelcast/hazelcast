@@ -18,13 +18,11 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -36,7 +34,6 @@ import java.util.List;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category(QuickTest.class)
 public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
     @Parameter

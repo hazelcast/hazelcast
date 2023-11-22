@@ -32,7 +32,6 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -63,7 +62,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class JobSummaryTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";

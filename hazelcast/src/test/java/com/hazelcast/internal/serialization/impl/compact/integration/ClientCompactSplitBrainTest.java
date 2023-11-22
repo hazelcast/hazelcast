@@ -35,7 +35,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTO;
 import org.junit.After;
 import org.junit.Test;
@@ -56,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ClientCompactSplitBrainTest extends ClientTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();

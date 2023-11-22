@@ -17,9 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.sql.Time;
@@ -34,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class DateHelperTest {
 
     public static final String DATE_FORMAT = DateHelper.DATE_FORMAT;

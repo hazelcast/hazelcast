@@ -25,7 +25,6 @@ import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -51,7 +50,7 @@ import static com.hazelcast.jet.kafka.impl.KafkaTestSupport.KAFKA_MAX_BLOCK_MS;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class KafkaDataConnectionStressTest extends SimpleTestInClusterSupport {
 
     private static final int PARTITION_COUNT = 20;

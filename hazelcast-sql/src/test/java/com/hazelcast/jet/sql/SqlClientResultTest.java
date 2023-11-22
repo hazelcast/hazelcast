@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.client.SqlClientResult;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SqlClientResultTest extends SqlTestSupport {
     private static final String MAP_NAME = "map";
 

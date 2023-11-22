@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;

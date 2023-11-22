@@ -24,11 +24,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
@@ -39,7 +37,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class MemberGroupFactoryTest {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());

@@ -24,11 +24,9 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
@@ -41,7 +39,6 @@ import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class TcpClientConnectionManagerTest extends ClientTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();

@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.expression.datetime;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +38,7 @@ import java.util.Map;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ToCharIntegrationTest extends ExpressionTestSupport {
     private static Map<Class<? extends Temporal>, DateTimeFormatter> literals;
 

@@ -21,10 +21,8 @@ import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
@@ -44,7 +42,6 @@ import static java.util.Arrays.asList;
  * in {@link CreateTopLevelDagVisitor#onSlidingWindowAggregate(SlidingWindowAggregatePhysicalRel)}
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class UnionSlidingWindowAggregationTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {

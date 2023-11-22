@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +37,7 @@ import static com.hazelcast.internal.util.DirectoryLock.lockForDirectory;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class DirectoryLockTest {
 
     private static final ILogger logger = Logger.getLogger(DirectoryLockTest.class);

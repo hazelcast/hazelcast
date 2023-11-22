@@ -19,11 +19,9 @@ package com.hazelcast.client.cache;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.client.cache.jsr.JsrClientTestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
@@ -34,7 +32,6 @@ import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class HazelcastClientCachingProviderTest
         extends org.jsr107.tck.spi.CachingProviderTest {
 

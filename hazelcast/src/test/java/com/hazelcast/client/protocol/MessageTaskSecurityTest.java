@@ -51,7 +51,6 @@ import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import javassist.ClassPool;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.CodeAttribute;

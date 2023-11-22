@@ -24,7 +24,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,7 +45,7 @@ import static org.mockito.Mockito.when;
  * Test whether OnJoinCacheOperation logs warning, fails or succeeds under different JCache API availability
  * in classpath.
  */
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
 
     private static MockedStatic<JCacheDetector> mockedStatic;

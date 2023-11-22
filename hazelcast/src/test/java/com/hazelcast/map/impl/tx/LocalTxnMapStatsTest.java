@@ -26,7 +26,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionalMap;
 import org.junit.Before;
@@ -44,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  * These updates generally will be visible after txn commit step.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class LocalTxnMapStatsTest extends HazelcastTestSupport {
 
     static final int OPERATION_COUNT = 10;

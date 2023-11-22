@@ -24,7 +24,6 @@ import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertTrue;
  * This test runs the MapStore methods directly, but it runs within real Hazelcast instance
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, SerialTest.class})
+@Category({SerialTest.class})
 public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     private GenericMapStore<Integer> mapStore;

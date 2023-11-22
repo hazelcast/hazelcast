@@ -22,9 +22,7 @@
 package com.hazelcast.internal.json;
 
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -34,7 +32,6 @@ import static com.hazelcast.internal.json.TestUtil.assertException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-@Category(QuickTest.class)
 public class JsonValue_Test {
 
   @Test

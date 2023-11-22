@@ -25,7 +25,6 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +43,7 @@ import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SemaphoreInitialPermitsTest extends HazelcastRaftTestSupport {
 
     @Parameters(name = "cpSubsystemEnabled:{0}, jdkCompatible:{1}, initialPermits:{2}")

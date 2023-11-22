@@ -20,12 +20,10 @@ import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.config.DeclarativeConfigUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -38,7 +36,6 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class YamlConfigBuilderConfigResolutionTest {
 
     @Rule

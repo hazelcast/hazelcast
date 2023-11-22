@@ -18,7 +18,6 @@ package com.hazelcast.test.starter.hz3;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

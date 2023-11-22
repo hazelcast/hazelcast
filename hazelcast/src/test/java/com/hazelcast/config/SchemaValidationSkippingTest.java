@@ -21,10 +21,8 @@ import com.hazelcast.client.config.YamlClientConfigBuilderTest;
 import com.hazelcast.client.config.YamlClientFailoverConfigBuilderTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.client.config.XmlClientFailoverConfigBuilderTest.HAZELCAST_CLIENT_FAILOVER_END_TAG;
@@ -35,7 +33,6 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class SchemaValidationSkippingTest {
 
     public static final String INVALID_YAML = "invalid: yes";

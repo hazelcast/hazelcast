@@ -25,7 +25,6 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 
@@ -58,7 +57,7 @@ import static org.junit.Assume.assumeFalse;
  * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, SerialTest.class})
+@Category({SerialTest.class})
 public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     protected String mapName;

@@ -25,7 +25,6 @@ import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.IsolatedLoggingRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;

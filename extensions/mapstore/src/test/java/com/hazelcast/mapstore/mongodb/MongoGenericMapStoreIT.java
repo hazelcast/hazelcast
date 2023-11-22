@@ -29,7 +29,6 @@ import com.hazelcast.jet.mongodb.compact.ObjectIdCompactSerializer;
 import com.hazelcast.map.IMap;
 import com.hazelcast.mapstore.GenericMapStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;

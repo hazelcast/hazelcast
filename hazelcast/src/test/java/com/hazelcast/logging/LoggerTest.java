@@ -22,10 +22,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.IsolatedLoggingRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_JDK;
@@ -41,7 +39,6 @@ import static org.junit.Assert.assertNotEquals;
  * Unit tests for {@link com.hazelcast.logging.Logger} class.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class LoggerTest extends HazelcastTestSupport {
 
     @Rule

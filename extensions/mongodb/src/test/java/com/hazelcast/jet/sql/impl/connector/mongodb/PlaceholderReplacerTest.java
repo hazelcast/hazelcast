@@ -21,7 +21,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.Test;

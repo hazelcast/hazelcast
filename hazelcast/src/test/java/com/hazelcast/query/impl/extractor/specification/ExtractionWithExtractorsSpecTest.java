@@ -30,7 +30,6 @@ import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,7 +60,7 @@ import static java.util.Collections.singletonList;
  * - extraction in collections and arrays
  */
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",

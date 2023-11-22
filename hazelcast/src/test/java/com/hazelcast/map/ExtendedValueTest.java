@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

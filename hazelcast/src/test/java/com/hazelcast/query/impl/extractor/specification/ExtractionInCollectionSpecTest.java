@@ -23,7 +23,6 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -59,7 +58,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
  * - extraction in collections and arrays
  */
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",

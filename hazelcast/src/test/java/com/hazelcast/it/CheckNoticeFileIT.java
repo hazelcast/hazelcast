@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class CheckNoticeFileIT {

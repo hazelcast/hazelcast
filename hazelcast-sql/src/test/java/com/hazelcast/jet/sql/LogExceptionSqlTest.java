@@ -25,7 +25,6 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.ResultLimitReachedException;
 import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,7 +36,7 @@ import java.util.logging.Level;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class LogExceptionSqlTest extends SimpleTestInClusterSupport {
 
     private static ExceptionRecorder recorder;

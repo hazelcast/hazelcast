@@ -17,8 +17,6 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
@@ -39,7 +37,6 @@ import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
 
-@Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
 class HazelcastOSGiIT {
 

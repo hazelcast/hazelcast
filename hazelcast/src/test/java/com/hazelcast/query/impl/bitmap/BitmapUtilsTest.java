@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 import java.util.stream.Stream;
 
@@ -35,7 +34,7 @@ import java.util.stream.Stream;
  * @see <a href="https://github.com/hazelcast/hazelcast/issues/25216">GitHub issue</a>
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class BitmapUtilsTest {
 
     private static int shortToIntMask;

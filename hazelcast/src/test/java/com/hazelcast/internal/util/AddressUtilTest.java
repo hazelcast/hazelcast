@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.AddressUtil.Ip4AddressMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,7 +46,7 @@ import static org.junit.Assert.fail;
  * Unit tests for AddressUtil class.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class AddressUtilTest extends HazelcastTestSupport {
 
     private static final String SOME_NOT_LOCAL_ADDRESS = "2001:db8:85a3:0:0:8a2e:370:7334";

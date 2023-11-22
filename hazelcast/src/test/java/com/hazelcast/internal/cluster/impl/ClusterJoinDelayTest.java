@@ -26,12 +26,10 @@ import static com.hazelcast.spi.properties.ClusterProperty.ASYNC_JOIN_STRATEGY_E
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import java.util.List;
 
@@ -41,7 +39,6 @@ import java.util.List;
  * @author lprimak
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class ClusterJoinDelayTest extends HazelcastTestSupport {
     @Rule
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");

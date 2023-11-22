@@ -28,12 +28,10 @@ import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
@@ -46,7 +44,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * into the proxy creation of split-brain capable data structures.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class MergePolicyValidatorCachingProviderIntegrationTest
         extends AbstractMergePolicyValidatorIntegrationTest {
 

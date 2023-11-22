@@ -21,9 +21,7 @@ import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
@@ -33,7 +31,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class ConfigNodeStateTrackerTest {
 
     @Test

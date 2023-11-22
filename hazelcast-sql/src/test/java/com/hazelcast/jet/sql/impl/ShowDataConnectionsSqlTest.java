@@ -20,7 +20,6 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +38,7 @@ import static java.util.stream.Collectors.toList;
  * to show both sql-created and config-created data connections.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ShowDataConnectionsSqlTest extends SqlJsonTestSupport {
 
     @BeforeClass

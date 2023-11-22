@@ -30,9 +30,7 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -43,7 +41,6 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class AttributePartitioningStrategyTest {
     private final AttributePartitioningStrategy strategy = new AttributePartitioningStrategy("id", "name");
 

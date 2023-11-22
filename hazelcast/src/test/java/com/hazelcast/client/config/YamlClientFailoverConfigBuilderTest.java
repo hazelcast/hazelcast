@@ -19,11 +19,9 @@ package com.hazelcast.client.config;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -34,7 +32,6 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
 
     @Rule

@@ -54,7 +54,6 @@ import static com.hazelcast.test.Accessors.getAddress;
  *
  * <pre>
  * &#64;RunWith(HazelcastParallelClassRunner.class)
- * &#64;Category(QuickTest.class)
  * public class Test {
  *
  *     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();

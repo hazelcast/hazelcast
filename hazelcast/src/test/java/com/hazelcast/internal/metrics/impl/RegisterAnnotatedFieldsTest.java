@@ -23,10 +23,8 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +35,6 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
 
     private MetricsRegistryImpl metricsRegistry;

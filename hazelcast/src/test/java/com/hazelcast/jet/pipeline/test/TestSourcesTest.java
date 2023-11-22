@@ -19,7 +19,6 @@ package com.hazelcast.jet.pipeline.test;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class TestSourcesTest extends PipelineTestSupport {
 
     @Rule

@@ -21,9 +21,7 @@ import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -38,7 +36,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"persistence-encryption-keystore-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestPersistenceEncryptionKeyStoreApplicationContext {
 
     @Resource(name = "theConfig")

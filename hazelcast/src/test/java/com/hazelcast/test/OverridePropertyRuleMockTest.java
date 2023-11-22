@@ -17,7 +17,6 @@
 package com.hazelcast.test;
 
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests the {@link OverridePropertyRule} with multiple instances.
  */
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class OverridePropertyRuleMockTest {
 
     private static MockedStatic<OtherClass> mockedStatic;

@@ -19,10 +19,8 @@ package com.hazelcast.internal.util.scheduler;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
@@ -54,7 +52,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Has timing sensitive tests, do not make a {@link ParallelJVMTest}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 @SuppressWarnings("ConstantConditions")
 public class SecondsBasedEntryTaskSchedulerTest {
 

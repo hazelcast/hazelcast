@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JsonSqlAggregateTest {
 
     @RunWith(HazelcastSerialClassRunner.class)
-    @Category({QuickTest.class, ParallelJVMTest.class})
+    @Category({ParallelJVMTest.class})
     public static class JsonArrayAggregationTest extends SqlJsonTestSupport {
         private static SqlService sqlService;
 
@@ -197,7 +196,7 @@ public class JsonSqlAggregateTest {
     }
 
     @RunWith(HazelcastSerialClassRunner.class)
-    @Category({QuickTest.class, ParallelJVMTest.class})
+    @Category({ParallelJVMTest.class})
     public static class JsonObjectAggregationTest extends SqlJsonTestSupport {
         private static SqlService sqlService;
 

@@ -17,15 +17,12 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class TcpServerConnectionManager_BasicTest
         extends TcpServerConnection_AbstractTest {
 

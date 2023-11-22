@@ -28,10 +28,8 @@ import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
@@ -43,7 +41,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class UnifiedNetworkIntegrationTest {
     @After
     public void tearDown() {

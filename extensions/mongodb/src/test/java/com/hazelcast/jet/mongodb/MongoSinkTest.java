@@ -26,7 +26,6 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;

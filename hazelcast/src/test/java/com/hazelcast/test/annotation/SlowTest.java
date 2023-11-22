@@ -16,12 +16,14 @@
 
 package com.hazelcast.test.annotation;
 
+import com.hazelcast.test.AbstractHazelcastClassRunner;
+
 /**
  * Annotates tests which are too slow for the PR builder.
  * <p>
  * Will be executed in nightly builds and for code coverage measurements.
  *
- * @see {@link QuickTest}
+ * @see {@link AbstractHazelcastClassRunner#EXPECTED_RUNTIME_THRESHOLD_FOR_NOT_SLOW_TEST}
  */
 public final class SlowTest {
 }

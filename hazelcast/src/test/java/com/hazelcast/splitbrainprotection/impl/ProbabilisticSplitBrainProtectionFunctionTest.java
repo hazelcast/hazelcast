@@ -18,7 +18,6 @@ package com.hazelcast.splitbrainprotection.impl;
 
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,7 +68,7 @@ import static org.junit.Assert.assertTrue;
  * Precise checks of the column encoding in the {@link SqlPageCodec}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class SqlPageCodecTest {
 
     private InternalSerializationService serializationService;

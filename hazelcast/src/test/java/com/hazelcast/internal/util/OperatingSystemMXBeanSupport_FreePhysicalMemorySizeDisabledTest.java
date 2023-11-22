@@ -17,10 +17,8 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.util.OperatingSystemMXBeanSupport.COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED;
@@ -28,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 @SuppressWarnings("checkstyle:magicnumber")
 public class OperatingSystemMXBeanSupport_FreePhysicalMemorySizeDisabledTest {
 

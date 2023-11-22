@@ -26,13 +26,11 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -49,7 +47,6 @@ import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
  * Check non-split-brain join for Discovery SPI
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class DiscoverySPIJoinTest extends HazelcastTestSupport {
     @Rule
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");

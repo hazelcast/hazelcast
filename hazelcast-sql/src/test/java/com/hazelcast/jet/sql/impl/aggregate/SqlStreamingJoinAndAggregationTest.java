@@ -19,10 +19,8 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
@@ -30,7 +28,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIM
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {

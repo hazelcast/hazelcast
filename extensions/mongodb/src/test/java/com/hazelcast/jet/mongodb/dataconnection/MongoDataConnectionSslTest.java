@@ -19,7 +19,6 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -27,7 +26,7 @@ import javax.annotation.Nonnull;
 import javax.net.ssl.SSLContext;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class MongoDataConnectionSslTest extends MongoDataConnectionSslTestBase {
 
     @Override

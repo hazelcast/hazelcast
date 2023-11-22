@@ -21,7 +21,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +40,7 @@ import static org.mockito.Mockito.when;
 // with different selector modes.
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class NioNetworkingConfigurationTest {
 
     @Parameterized.Parameters(name = "selectorMode={0},configured={1},expected={2}")

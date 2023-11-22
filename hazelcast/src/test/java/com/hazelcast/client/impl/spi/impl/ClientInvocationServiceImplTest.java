@@ -28,7 +28,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTO;
 import org.junit.After;
 import org.junit.Before;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ClientInvocationServiceImplTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

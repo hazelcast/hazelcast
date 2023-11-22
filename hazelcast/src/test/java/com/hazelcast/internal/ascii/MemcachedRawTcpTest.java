@@ -25,11 +25,9 @@ import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.PrintWriter;
@@ -48,7 +46,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class MemcachedRawTcpTest extends HazelcastTestSupport {
     private final Pattern valueHeaderPattern = Pattern.compile("^VALUE (\\S+) (\\d+) (\\d+)$");
     private static final String CRLF = "\r\n";

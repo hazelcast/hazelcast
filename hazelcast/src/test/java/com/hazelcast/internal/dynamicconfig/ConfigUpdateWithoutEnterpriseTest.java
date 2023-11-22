@@ -19,7 +19,6 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +33,7 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER
 import static com.hazelcast.test.Accessors.getService;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({ParallelJVMTest.class})
 public class ConfigUpdateWithoutEnterpriseTest extends HazelcastTestSupport {
 
     @Rule

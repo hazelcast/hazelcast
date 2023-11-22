@@ -26,7 +26,6 @@ import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import org.junit.After;
 import org.junit.Before;
@@ -84,7 +83,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    @Category({QuickTest.class, ParallelJVMTest.class})
+    @Category({ParallelJVMTest.class})
     public void batchStage_mapUsingPython() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()

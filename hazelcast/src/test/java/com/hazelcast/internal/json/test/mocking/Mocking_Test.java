@@ -24,20 +24,17 @@ package com.hazelcast.internal.json.test.mocking;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.test.annotation.QuickTest;
 
 
 /**
  * Make sure types do not prevent mocking by final or visibility constructs.
  */
-@Category(QuickTest.class)
 public class Mocking_Test {
 
   @Test
