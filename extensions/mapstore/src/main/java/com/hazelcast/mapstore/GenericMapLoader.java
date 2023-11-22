@@ -122,6 +122,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
      * Property key to decide on getting a single column as the value
      */
     public static final String SINGLE_COLUMN_AS_VALUE = "single-column-as-value";
+
     /**
      * Timeout for initialization of GenericMapLoader
      */
@@ -312,7 +313,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
         try (SqlResult queryResult = sqlService.execute(queries.load(), key)) {
             Iterator<SqlRow> it = queryResult.iterator();
 
-            V genericRecord = null;
+            V value = null;
             if (it.hasNext()) {
                 SqlRow sqlRow = it.next();
                 if (it.hasNext()) {
@@ -320,12 +321,13 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
                 }
                 // If there is a single column as the value, return that column as the value
                 if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
-                    return sqlRow.getObject(1);
+                    value = sqlRow.getObject(1);
+                } else {
+                    //else return GenericRecord as the value
+                    value = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
                 }
-                //else return GenericRecord as the value
-                genericRecord = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
             }
-            return genericRecord;
+            return value;
         }
     }
 

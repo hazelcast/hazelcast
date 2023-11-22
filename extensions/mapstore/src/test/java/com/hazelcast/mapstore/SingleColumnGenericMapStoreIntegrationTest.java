@@ -53,7 +53,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class GenericMapStoreIntegrationSingleColumnTest extends JdbcSqlTestSupport {
+public class SingleColumnGenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
 
@@ -76,8 +76,6 @@ public class GenericMapStoreIntegrationSingleColumnTest extends JdbcSqlTestSuppo
 
         // Do not use small config to run with more threads and partitions
         memberConfig = new Config()
-                // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
-                .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataConnectionConfig(
                         new DataConnectionConfig(TEST_DATABASE_REF)
                                 .setType("jdbc")
