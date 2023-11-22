@@ -27,11 +27,16 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.model.TestClass;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,8 +60,17 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Base class for tests that share the cluster for all jobs. The subclass must
- * call {@link #initialize} or {@link #initializeWithClient} method.
+ * Base class for tests that share the cluster for all jobs. In order to use
+ * shared cluster instance the subclass must call {@link #initialize} or {@link
+ * #initializeWithClient} method. If any of them is not called, this class
+ * behaves in the same way as {@link JetTestSupport}.
+ * <p>
+ * It is strongly recommended to use serial runner for tests sharing cluster
+ * instance. In case of parallel execution, cleanup code ({@link
+ * #supportAfter()} can conflict with test execution. But even if the test does
+ * not start any Jet jobs, {@link #supportAfter()} is not safe to run in
+ * parallel due to potential concurrent destruction and usage of some Jet
+ * distributed objects.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class SimpleTestInClusterSupport extends JetTestSupport {
@@ -132,12 +146,33 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             PacketFiltersUtil.resetPacketFiltersFrom(inst);
         }
         // after each test ditch all jobs and objects
-        List<Job> jobs = stillActiveInstances.get(0).getJet().getJobs();
-        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
-                jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
-        for (Job job : jobs) {
-            ditchJob(job, instances());
+        try {
+            List<Job> jobs = stillActiveInstances.get(0).getJet().getJobs();
+            SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
+                    jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
+            for (Job job : jobs) {
+                ditchJob(job, instances());
+            }
+        } catch (RuntimeException maybeDestroyed) {
+            if (maybeDestroyed.getCause() instanceof DistributedObjectDestroyedException && isParallelTestExecution()) {
+                // Race condition between getJobs() and proxy destruction is possible
+                // when supportAfter() is invoked in parallel.
+                // Even if there are any remaining jobs they should be terminated later by cancelAllExecutions.
+                //
+                // Example exception:
+                // com.hazelcast.spi.exception.DistributedObjectDestroyedException:
+                // Proxy [hz:impl:mapService:__jet.records] was destroyed while being created.
+                //  This may result in incomplete cleanup of resources.
+                //  at com.hazelcast.jet.impl.JetInstanceImpl.getJobsInt(JetInstanceImpl.java:116)
+                //  at com.hazelcast.jet.impl.AbstractJetInstance.getJobs(AbstractJetInstance.java:245)
+                SUPPORT_LOGGER.warning("Race condition during job cleanup" +
+                        " in parallel SimpleTestInClusterSupport test with shared instance", maybeDestroyed);
+            } else {
+                // unexpected DistributedObjectDestroyedException in serial execution or other error
+                throw maybeDestroyed;
+            }
         }
+
         // cancel all light jobs by cancelling their executions
         for (HazelcastInstance inst : stillActiveInstances) {
             JetServiceBackend jetServiceBackend = getJetServiceBackend(inst);
@@ -181,6 +216,19 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }
+    }
+
+    private boolean isParallelTestExecution() {
+        TestClass testClass = new TestClass(this.getClass());
+        return Arrays.stream(testClass.getAnnotations()).anyMatch(
+                annotation ->
+                        annotation instanceof RunWith
+                                && HazelcastParallelClassRunner.class.isAssignableFrom(((RunWith) annotation).value())
+                        ||
+                        annotation instanceof Parameterized.UseParametersRunnerFactory
+                                && HazelcastParallelParametersRunnerFactory.class.isAssignableFrom(
+                                        ((Parameterized.UseParametersRunnerFactory) annotation).value())
+        );
     }
 
     private static boolean testIfInstanceIsStillActive(HazelcastInstance instance) {
