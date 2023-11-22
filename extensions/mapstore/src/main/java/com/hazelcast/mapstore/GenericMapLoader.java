@@ -344,19 +344,18 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
             Iterator<SqlRow> it = queryResult.iterator();
 
             Map<K, V> result = new HashMap<>();
-            // If there is a single column as the value, return that column as the value
-            if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
-                SqlRow sqlRow = it.next();
-                K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
-                result.put(id, sqlRow.getObject(1)); //Figure this out it should be either 0 or 1, probably 1 though
-                return result;
-            }
-            //else return GenericRecord as the value
+
             while (it.hasNext()) {
                 SqlRow sqlRow = it.next();
-                K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
-                V record = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
-                result.put(id, record);
+                // If there is a single column as the value, return that column as the value
+                if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
+                    K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
+                    result.put(id, sqlRow.getObject(1));
+                } else { //else return GenericRecord as the value
+                    K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
+                    V record = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
+                    result.put(id, record);
+                }
             }
             return result;
         }
