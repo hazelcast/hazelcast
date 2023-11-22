@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.DatabaseDialect;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -54,6 +55,7 @@ import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -62,9 +64,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.GettersProvider.GETTERS;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Objects.requireNonNull;
 
@@ -145,12 +149,16 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    static TypeResolver typeResolver(Connection connection) throws SQLException {
-        SqlDialect dialect = resolveDialect(connection.getMetaData());
-        if (dialect instanceof TypeResolver) {
-            return (TypeResolver) dialect;
-        } else {
-            return DefaultTypeResolver::resolveType;
+    static TypeResolver typeResolver(Connection connection) {
+        try {
+            SqlDialect dialect = resolveDialect(connection.getMetaData());
+            if (dialect instanceof TypeResolver) {
+                return (TypeResolver) dialect;
+            } else {
+                return DefaultTypeResolver::resolveType;
+            }
+        } catch (SQLException e) {
+            throw new HazelcastSqlException("Could not create type resolver", e);
         }
     }
 
@@ -622,4 +630,27 @@ public class JdbcSqlConnector implements SqlConnector {
             }
         }
     }
+
+    public static BiFunctionEx<ResultSet, Integer, ?>[] prepareValueGettersFromMetadata(
+            TypeResolver typeResolver,
+            ResultSet rs,
+            Function<Integer, FunctionEx<? super Object, ?>> converterFn) throws SQLException {
+
+        ResultSetMetaData metaData = rs.getMetaData();
+
+        BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
+        for (int j = 0; j < metaData.getColumnCount(); j++) {
+            String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
+            int precision = metaData.getPrecision(j + 1);
+            int scale = metaData.getScale(j + 1);
+            QueryDataType resolvedType = typeResolver.resolveType(type, precision, scale);
+
+            valueGetters[j] = GETTERS.getOrDefault(
+                    resolvedType,
+                    (resultSet, n) -> rs.getObject(n)
+            ).andThen(converterFn.apply(j));
+        }
+        return valueGetters;
+    }
+
 }

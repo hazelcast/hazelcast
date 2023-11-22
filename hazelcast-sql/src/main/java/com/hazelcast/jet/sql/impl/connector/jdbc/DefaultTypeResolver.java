@@ -91,6 +91,9 @@ public class DefaultTypeResolver {
             case "TIMESTAMP(6) WITH TIME ZONE":
                 return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
+            case "NULL":
+                return QueryDataType.NULL;
+
             default:
                 throw new IllegalArgumentException("Unsupported column type: " + columnTypeName);
         }

@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnectionTest.isClosed;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -309,7 +310,9 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
         createTableNoQuote(fullyQualifiedTable);
         insertItemsNoQuote(fullyQualifiedTable, ITEM_COUNT);
         String mappingName = randomTableName();
-        createMapping(fullyQualifiedTable, mappingName);
+        // need table quoted in Hazelcast dialect
+        String fullyQualifiedExternalName = quoteCompoundIdentifier(schemaName, tableName);
+        createMapping(fullyQualifiedExternalName, mappingName);
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +

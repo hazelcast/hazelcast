@@ -27,20 +27,16 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.GettersProvider.GETTERS;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 
@@ -93,7 +89,7 @@ public class SelectProcessorSupplier
                     }
                     try {
                         ResultSet rs = statement.executeQuery();
-                        valueGetters = prepareValueGettersFromMetadata(typeResolver, rs);
+                        valueGetters = JdbcSqlConnector.prepareValueGettersFromMetadata(typeResolver, rs, converters::get);
                         return rs;
                     } catch (SQLException e) {
                         statement.close();
@@ -113,27 +109,6 @@ public class SelectProcessorSupplier
         );
 
         return singleton(processor);
-    }
-
-    private BiFunctionEx<ResultSet, Integer, ?>[] prepareValueGettersFromMetadata(
-            TypeResolver typeResolver,
-            ResultSet rs) throws SQLException {
-        ResultSetMetaData metaData = rs.getMetaData();
-
-        BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
-        for (int j = 0; j < metaData.getColumnCount(); j++) {
-            String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
-            int precision = metaData.getPrecision(j + 1);
-            int scale = metaData.getScale(j + 1);
-            QueryDataType resolvedType = typeResolver.resolveType(type, precision, scale);
-
-            FunctionEx<? super Object, ?> converterFn = converters.get(j);
-            valueGetters[j] = GETTERS.getOrDefault(
-                    resolvedType,
-                    (resultSet, n) -> rs.getObject(n)
-            ).andThen(converterFn);
-        }
-        return valueGetters;
     }
 
 
