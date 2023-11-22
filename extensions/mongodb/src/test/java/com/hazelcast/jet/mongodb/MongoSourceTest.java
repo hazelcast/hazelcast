@@ -32,7 +32,6 @@ import com.mongodb.client.MongoCollection;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -60,7 +59,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
 public class MongoSourceTest extends AbstractMongoTest {
 
     private static final int COUNT_IN_BATCH = 10;

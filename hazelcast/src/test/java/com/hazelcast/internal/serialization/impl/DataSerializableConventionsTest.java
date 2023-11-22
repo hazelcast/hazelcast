@@ -39,7 +39,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -76,7 +75,6 @@ import static org.junit.Assert.fail;
  * their `getClassId` method and that F_ID/ID combinations are unique.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class DataSerializableConventionsTest {
 
     private static final String JET_PACKAGE = "com.hazelcast.jet";

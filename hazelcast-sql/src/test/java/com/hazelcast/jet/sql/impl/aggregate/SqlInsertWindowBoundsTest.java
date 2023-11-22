@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.time.LocalDate;
@@ -44,7 +43,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class SqlInsertWindowBoundsTest extends SqlTestSupport {
     private SqlService sqlService;
 

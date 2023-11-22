@@ -65,7 +65,6 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testClientPortConnection() {
         String clusterName1 = randomString();
         Config config1 = new Config();

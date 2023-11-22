@@ -104,8 +104,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         factory.terminateAll();
     }
 
-    @Test
-    @Category(QuickTest.class) //marked quick to form a small subset that also runs in the PR builder
+    @Test //marked quick to form a small subset that also runs in the PR builder
     public void testSingleClient_withSingleMember_whenTheClientIsActive() throws IOException {
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
         client.connectTo(node);
@@ -129,8 +128,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         assertParameters(node1, 1, 1, 0, 100, "4.0.1");
     }
 
-    @Test
-    @Category(QuickTest.class) //marked quick to form a small subset that also runs in the PR builder
+    @Test //marked quick to form a small subset that also runs in the PR builder
     public void testSingleClient_withSingleMember_whenTheClientIsShutdown() throws IOException {
         addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.2-BETA");

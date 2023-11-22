@@ -23,7 +23,6 @@ import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -33,7 +32,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class MongoBatchSqlConnectorDeleteIT extends MongoSqlIT {
 
     @Parameterized.Parameter(0)

@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
 public class StringJsonSchemaCreateTest extends AbstractJsonSchemaCreateTest {
 

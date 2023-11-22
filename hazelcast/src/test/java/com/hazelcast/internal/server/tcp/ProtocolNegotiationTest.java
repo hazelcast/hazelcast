@@ -34,7 +34,6 @@ import javax.net.ssl.SSLSocket;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -55,7 +54,6 @@ import com.hazelcast.test.TestAwareInstanceFactory;
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({ QuickTest.class })
 public class ProtocolNegotiationTest {
 
     private volatile BytesCountingServer bcServer;

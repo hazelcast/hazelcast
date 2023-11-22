@@ -46,7 +46,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.xml.sax.HandlerBase;
 import org.xml.sax.SAXException;
@@ -56,7 +55,6 @@ import com.hazelcast.test.OverridePropertyRule;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
 public class XmlUtilTest {
 
     @Rule

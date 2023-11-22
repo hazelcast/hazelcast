@@ -26,7 +26,6 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -36,7 +35,6 @@ import static com.hazelcast.jet.mongodb.MongoSources.batch;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
 public class MongoSourceVariousIdTypesTest extends AbstractMongoTest {
 
     @Parameter(0)

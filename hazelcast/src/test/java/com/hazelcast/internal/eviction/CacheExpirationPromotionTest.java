@@ -47,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class CacheExpirationPromotionTest extends HazelcastTestSupport {
 
     @Rule

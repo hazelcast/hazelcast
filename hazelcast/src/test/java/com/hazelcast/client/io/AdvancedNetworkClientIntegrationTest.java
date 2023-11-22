@@ -86,7 +86,6 @@ public class AdvancedNetworkClientIntegrationTest {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void clientSmokeTest() {
         client = HazelcastClient.newHazelcastClient(getClientConfig());
         IMap<Integer, Integer> map = client.getMap("test");

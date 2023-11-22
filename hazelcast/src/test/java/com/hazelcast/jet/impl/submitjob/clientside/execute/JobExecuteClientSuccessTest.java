@@ -51,7 +51,6 @@ import static org.junit.Assert.assertTrue;
 
 // Tests to execute existing jar on the member
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class JobExecuteClientSuccessTest extends JetTestSupport {
 
     @After

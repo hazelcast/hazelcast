@@ -27,7 +27,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
@@ -35,7 +34,6 @@ import org.testcontainers.containers.MongoDBContainer;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public abstract class MongoSqlIT extends SqlTestSupport {
     public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.2");
 

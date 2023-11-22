@@ -28,7 +28,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
@@ -42,7 +41,6 @@ import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class QueryEngineImplTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;

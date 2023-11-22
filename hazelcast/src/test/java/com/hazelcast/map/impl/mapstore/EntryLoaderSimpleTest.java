@@ -70,7 +70,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Parameters(name = "inMemoryFormat: {0}")

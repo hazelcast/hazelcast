@@ -54,7 +54,7 @@ import static java.util.Arrays.asList;
  */
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String> {
 
     @Parameter

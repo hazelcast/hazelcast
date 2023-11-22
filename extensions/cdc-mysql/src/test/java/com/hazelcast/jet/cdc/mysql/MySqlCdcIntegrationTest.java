@@ -52,7 +52,6 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
     @Test
-    @Category(QuickTest.class)
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(

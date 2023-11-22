@@ -37,7 +37,6 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void defaultConfig() throws Exception {
         testJoinEventually(new Config());
     }

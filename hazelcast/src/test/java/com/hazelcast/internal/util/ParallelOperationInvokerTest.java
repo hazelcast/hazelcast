@@ -39,7 +39,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
@@ -62,7 +61,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class ParallelOperationInvokerTest extends HazelcastTestSupport {
     @Rule
     public TestName testNameRule = new TestName();

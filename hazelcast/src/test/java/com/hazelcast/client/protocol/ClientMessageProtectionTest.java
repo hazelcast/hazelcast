@@ -33,7 +33,6 @@ import com.hazelcast.test.TestAwareInstanceFactory;
 import org.assertj.core.api.Condition;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.EOFException;
@@ -64,7 +63,6 @@ import static org.junit.Assert.assertTrue;
  * connections.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class ClientMessageProtectionTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();

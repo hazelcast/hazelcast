@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,6 @@ import java.util.List;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({QuickTest.class})
 public class Hazelcast3StarterTest {
 
     private static final String HZ3_MEMBER_CONFIG =

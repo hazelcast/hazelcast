@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -53,7 +52,6 @@ import com.hazelcast.test.TestAwareInstanceFactory;
  * End-to-end test(s) for {@link ConsoleApp}. The tests use real network.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
 public class ConsoleTest {
 
     @Rule

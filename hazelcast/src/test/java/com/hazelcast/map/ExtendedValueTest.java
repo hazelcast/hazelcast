@@ -27,7 +27,7 @@ import static com.hazelcast.map.EntryLoader.MetadataAwareValue.NO_TIME_SET;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class ExtendedValueTest {
 
     @Test(expected = IllegalArgumentException.class)

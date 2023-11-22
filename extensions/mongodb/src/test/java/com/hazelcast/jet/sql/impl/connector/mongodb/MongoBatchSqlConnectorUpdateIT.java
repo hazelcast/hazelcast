@@ -22,7 +22,6 @@ import com.mongodb.client.model.ValidationOptions;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -33,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
 public class MongoBatchSqlConnectorUpdateIT extends MongoSqlIT {
 
     @Parameterized.Parameter(0)

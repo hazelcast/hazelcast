@@ -20,7 +20,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.InternalSqlService;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -34,7 +33,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-@Category({QuickTest.class})
 public class SqlInfoCollectorTest {
 
     SqlInfoCollector sqlInfoCollector;

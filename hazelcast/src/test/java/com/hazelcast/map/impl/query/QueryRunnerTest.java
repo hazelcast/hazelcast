@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
@@ -48,7 +47,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class QueryRunnerTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;

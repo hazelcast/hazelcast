@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
@@ -36,7 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class PlaceholderReplacerTest {
 
     @Test

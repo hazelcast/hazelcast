@@ -89,7 +89,6 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void destroyAllReplicasIncludingBackups() {
         createFillAndDestroyMap();
 

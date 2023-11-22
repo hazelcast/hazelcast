@@ -22,7 +22,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.mongodb.client.MongoClients;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -34,7 +33,6 @@ import static com.hazelcast.jet.mongodb.ResourceChecks.ON_EACH_CONNECT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
 public class MongoSourceResourceExistenceTest extends AbstractMongoTest {
 
     @Parameter(0)

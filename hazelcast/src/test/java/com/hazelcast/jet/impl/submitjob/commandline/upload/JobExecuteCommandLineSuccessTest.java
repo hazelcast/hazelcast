@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import static org.junit.Assert.assertFalse;
 
 // Test for HazelcastCommandLine
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class JobExecuteCommandLineSuccessTest extends JetTestSupport {
 
     @After

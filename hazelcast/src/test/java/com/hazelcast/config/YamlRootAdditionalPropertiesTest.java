@@ -22,7 +22,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -35,7 +34,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class YamlRootAdditionalPropertiesTest {
 
     @Rule

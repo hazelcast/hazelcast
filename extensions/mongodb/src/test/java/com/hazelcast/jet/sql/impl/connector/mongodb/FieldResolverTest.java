@@ -31,7 +31,6 @@ import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
@@ -50,7 +49,6 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class FieldResolverTest {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
     private static final MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);

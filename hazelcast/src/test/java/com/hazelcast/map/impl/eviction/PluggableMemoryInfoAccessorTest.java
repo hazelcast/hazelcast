@@ -27,7 +27,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
@@ -36,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class PluggableMemoryInfoAccessorTest extends HazelcastTestSupport {
 
     private static final String HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL = "hazelcast.memory.info.accessor.impl";

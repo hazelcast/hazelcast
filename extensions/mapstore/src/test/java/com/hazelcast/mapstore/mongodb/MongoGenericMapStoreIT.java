@@ -42,7 +42,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
@@ -55,7 +54,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class MongoGenericMapStoreIT extends SimpleTestInClusterSupport {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 

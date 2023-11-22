@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class MapStoreWithTransactionsTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "offload: {0}")

@@ -27,7 +27,6 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import static org.junit.Assert.assertEquals;
 
 // keep serial runner, test operates on statistics
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class QueryCacheInMemoryFormatTest extends HazelcastTestSupport {
 
     @Test

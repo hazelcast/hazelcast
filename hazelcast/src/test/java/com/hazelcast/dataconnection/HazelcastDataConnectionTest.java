@@ -27,7 +27,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -44,7 +43,6 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class HazelcastDataConnectionTest extends HazelcastTestSupport {
 
     private String clusterName;

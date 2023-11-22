@@ -60,7 +60,6 @@ import static org.junit.Assert.assertTrue;
 
 // Tests to upload jar to member
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @After

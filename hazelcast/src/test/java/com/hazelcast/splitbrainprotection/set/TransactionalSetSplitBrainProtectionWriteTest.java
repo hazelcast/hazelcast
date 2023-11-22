@@ -28,7 +28,6 @@ import com.hazelcast.transaction.TransactionalSet;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -44,7 +43,6 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class})
 public class TransactionalSetSplitBrainProtectionWriteTest extends AbstractSplitBrainProtectionTest {
 
     @Parameters(name = "Executing: {0} {1}")

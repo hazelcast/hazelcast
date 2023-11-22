@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Externalizable;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class CompressionTest {
 
     public static class SampleSerializable implements Serializable {

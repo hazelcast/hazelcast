@@ -36,7 +36,6 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Queue;
@@ -46,7 +45,6 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class WANContextInitializationTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;

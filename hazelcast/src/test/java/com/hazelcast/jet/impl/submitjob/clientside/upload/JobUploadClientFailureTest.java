@@ -35,7 +35,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
@@ -65,7 +64,6 @@ import static org.mockito.Mockito.doAnswer;
  * Tests to upload jar to member
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
 
     /**

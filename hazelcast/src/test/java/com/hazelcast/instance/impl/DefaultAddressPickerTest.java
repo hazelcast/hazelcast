@@ -36,7 +36,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -65,7 +64,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class DefaultAddressPickerTest {
 
     private static final String PUBLIC_HOST = "www.hazelcast.org";

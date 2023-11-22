@@ -46,7 +46,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
 
     protected static final int ENTRY_COUNT = 1000;

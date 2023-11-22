@@ -28,7 +28,6 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,7 +40,6 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class MongoSourcesWindowedTest extends AbstractMongoTest {
 
     @BeforeClass

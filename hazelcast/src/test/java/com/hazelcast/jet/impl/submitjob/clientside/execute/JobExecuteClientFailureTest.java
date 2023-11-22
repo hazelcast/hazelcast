@@ -32,7 +32,6 @@ import com.hazelcast.jet.impl.SubmitJobParameters;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
@@ -52,7 +51,6 @@ import static org.mockito.Mockito.doAnswer;
 
 // Tests to execute existing jar on the member
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class JobExecuteClientFailureTest extends JetTestSupport {
 
     @After

@@ -29,7 +29,6 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -39,7 +38,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class ClientTpcBasicTest extends ClientTestSupport {
 
     @After

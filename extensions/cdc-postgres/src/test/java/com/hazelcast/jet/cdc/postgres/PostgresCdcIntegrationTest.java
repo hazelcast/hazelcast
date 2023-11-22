@@ -62,7 +62,6 @@ import static org.junit.Assert.fail;
 public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     @Test
-    @Category(QuickTest.class)
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
@@ -223,7 +222,6 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     }
 
     @Test
-    @Category(QuickTest.class)
     public void restart_noProcessingGuarantee() throws Exception {
         Pipeline pipeline = customersPipeline(250L);
 

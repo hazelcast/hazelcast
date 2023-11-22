@@ -71,7 +71,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     int secondMemberPort = 8000;
 
     @Test
-    @Category(QuickTest.class)
     public void testCompleteMultisocketConfig() {
         Config config = createCompleteMultiSocketConfig();
         newHazelcastInstance(config);
@@ -90,7 +89,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testTPCPortsWithAdvancedNetwork() {
         Config config = smallInstanceConfig();
         config.getTpcConfig().setEnabled(true).setEventloopCount(4);
@@ -114,7 +112,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testTpcWithAdvancedNetworkAndWithoutClientSocketConfigThrows() {
         Config config = smallInstanceConfig();
         config.getTpcConfig().setEnabled(true);
@@ -123,7 +120,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testTpcWithAdvancedNetworkAndWithNonClientTpcSocketConfigurationThrows() {
         Config config = smallInstanceConfig();
         config.getTpcConfig().setEnabled(true);
@@ -152,7 +148,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testKeepAliveSocketOptions() throws Throwable {
         assumeKeepAlivePerSocketOptionsSupported();
         Config config = createCompleteMultiSocketConfig();
@@ -187,7 +182,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testKeepAliveSocketOptions_whenNotSupported() throws Throwable {
         assumeKeepAlivePerSocketOptionsNotSupported();
         // ensure that even though options are configured and setting them fails, no exceptions are thrown
@@ -205,7 +199,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test(expected = AssertionError.class)
-    @Category(QuickTest.class)
     public void testLocalPortAssertionWorks() {
         assertLocalPortsOpen(MEMBER_PORT);
     }

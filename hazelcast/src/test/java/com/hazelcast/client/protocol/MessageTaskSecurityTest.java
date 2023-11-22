@@ -59,7 +59,6 @@ import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.reflections.Reflections;
 
@@ -77,7 +76,6 @@ import static org.junit.Assert.fail;
  * Verifies the {@code getRequiredPermission()} method doesn't simply return null in client {@link MessageTask} instances.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class })
 public class MessageTaskSecurityTest {
 
     private static final String[] RETURN_NULL_OPS = { "aconst_null", "areturn" };

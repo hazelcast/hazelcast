@@ -25,7 +25,6 @@ import com.hazelcast.test.TestAwareInstanceFactory;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -53,7 +52,6 @@ import static org.junit.Assert.assertTrue;
  * End-to-end test(s) for {@link ClientConsoleApp}. The tests use real network.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
 public class ClientConsoleTest {
 
     @Rule

@@ -22,7 +22,6 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
@@ -34,7 +33,6 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class MongoStreamSqlConnectorIT extends MongoSqlIT {
     private final Random random = new Random();
 

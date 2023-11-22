@@ -19,7 +19,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.bson.BsonTimestamp;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -33,7 +32,6 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class OptionsTest {
 
     @Test

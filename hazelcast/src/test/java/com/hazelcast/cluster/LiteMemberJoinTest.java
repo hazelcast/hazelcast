@@ -64,7 +64,6 @@ public class LiteMemberJoinTest {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void test_liteMemberIsCreated() {
         final Config liteConfig = new Config().setLiteMember(true);
         final HazelcastInstance liteInstance = Hazelcast.newHazelcastInstance(liteConfig);

@@ -52,7 +52,7 @@ import static com.hazelcast.test.Accessors.getSerializationService;
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);

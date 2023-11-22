@@ -32,7 +32,7 @@ import java.io.IOException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.convertToInputStream;
 
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
 public class DataInputJsonSchemaCreateTest extends AbstractJsonSchemaCreateTest {
 

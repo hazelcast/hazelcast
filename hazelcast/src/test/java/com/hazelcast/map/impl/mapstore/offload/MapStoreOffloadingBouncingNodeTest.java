@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -52,7 +51,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class})
 public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "writeBehindEnabled: {0}")

@@ -25,7 +25,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.DataInputStream;
@@ -54,7 +53,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class RestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
     private static final String BODY_REQUEST = "some body request";
