@@ -21,7 +21,7 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.FieldsUtil;
+import com.hazelcast.sql.impl.FieldUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -127,7 +127,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     }
 
     private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> typeClass) {
-        Map<String, Class<?>> classFields = FieldsUtil.resolveClass(typeClass);
+        Map<String, Class<?>> classFields = FieldUtils.resolveClass(typeClass);
         if (classFields.isEmpty()) {
             // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
             String name = isKey ? KEY : VALUE;
@@ -148,7 +148,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> fieldsByPath,
             Class<?> typeClass
     ) {
-        for (Entry<String, Class<?>> classField : FieldsUtil.resolveClass(typeClass).entrySet()) {
+        for (Entry<String, Class<?>> classField : FieldUtils.resolveClass(typeClass).entrySet()) {
             QueryPath path = new QueryPath(classField.getKey(), isKey);
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
 
@@ -217,7 +217,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> fieldsByPath,
             Class<?> typeClass
     ) {
-        Map<String, Class<?>> classFields = FieldsUtil.resolveClass(typeClass);
+        Map<String, Class<?>> classFields = FieldUtils.resolveClass(typeClass);
 
         List<TableField> fields = new ArrayList<>();
         Map<String, String> typeNamesByPaths = new HashMap<>();

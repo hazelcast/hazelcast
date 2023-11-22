@@ -59,7 +59,8 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
 /**
  * Utility methods for SQL data types.
  * <p>
- * Length descriptions are generated using https://github.com/openjdk/jol.
+ * Length descriptions are generated using
+ * <a href="https://github.com/openjdk/jol">Java Object Layout (JOL)</a>.
  */
 public final class QueryDataTypeUtils {
     /**
@@ -196,9 +197,7 @@ public final class QueryDataTypeUtils {
      */
     public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_UP);
 
-    private QueryDataTypeUtils() {
-        // No-op.
-    }
+    private QueryDataTypeUtils() { }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
     public static QueryDataType resolveTypeForClass(Class<?> clazz) {

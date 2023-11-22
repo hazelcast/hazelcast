@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.impl.CoreSqlTestSupport;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.SqlCustomClass;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.type.converter.ByteConverter;
 import com.hazelcast.sql.impl.type.converter.CalendarConverter;
 import com.hazelcast.sql.impl.type.converter.CharacterConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.DateConverter;
 import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
@@ -43,8 +42,11 @@ import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,128 +64,168 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryDataTypeTest extends CoreSqlTestSupport {
-    @Test
-    public void testDefaultTypes() {
-        checkType(QueryDataType.VARCHAR, StringConverter.INSTANCE);
-        checkType(QueryDataType.VARCHAR_CHARACTER, CharacterConverter.INSTANCE);
+public class QueryDataTypeTest extends HazelcastTestSupport {
+    private static InternalSerializationService serializationService;
 
-        checkType(QueryDataType.BOOLEAN, BooleanConverter.INSTANCE);
-        checkType(QueryDataType.TINYINT, ByteConverter.INSTANCE);
-        checkType(QueryDataType.SMALLINT, ShortConverter.INSTANCE);
-        checkType(QueryDataType.INT, IntegerConverter.INSTANCE);
-        checkType(QueryDataType.BIGINT, LongConverter.INSTANCE);
-        checkType(QueryDataType.DECIMAL, BigDecimalConverter.INSTANCE);
-        checkType(QueryDataType.DECIMAL_BIG_INTEGER, BigIntegerConverter.INSTANCE);
-        checkType(QueryDataType.REAL, FloatConverter.INSTANCE);
-        checkType(QueryDataType.DOUBLE, DoubleConverter.INSTANCE);
+    @BeforeClass
+    public static void setup() {
+        serializationService = new DefaultSerializationServiceBuilder().build();
+    }
 
-        checkType(QueryDataType.TIME, LocalTimeConverter.INSTANCE);
-        checkType(QueryDataType.DATE, LocalDateConverter.INSTANCE);
-        checkType(QueryDataType.TIMESTAMP, LocalDateTimeConverter.INSTANCE);
-        checkType(QueryDataType.TIMESTAMP_WITH_TZ_DATE, DateConverter.INSTANCE);
-        checkType(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, CalendarConverter.INSTANCE);
-        checkType(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, InstantConverter.INSTANCE);
-        checkType(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, OffsetDateTimeConverter.INSTANCE);
-        checkType(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTimeConverter.INSTANCE);
-
-        checkType(QueryDataType.OBJECT, ObjectConverter.INSTANCE);
-
-        checkType(QueryDataType.NULL, NullConverter.INSTANCE);
+    @AfterClass
+    public static void tearDown() {
+        serializationService.dispose();
     }
 
     @Test
-    public void testTypeResolutionByClass() {
-        checkResolvedTypeForClass(QueryDataType.VARCHAR, String.class);
-        checkResolvedTypeForClass(QueryDataType.VARCHAR_CHARACTER, char.class, Character.class);
+    public void testResolutionByConverter() {
+        checkConverter(QueryDataType.VARCHAR, StringConverter.INSTANCE);
+        checkConverter(QueryDataType.VARCHAR_CHARACTER, CharacterConverter.INSTANCE);
 
-        checkResolvedTypeForClass(QueryDataType.BOOLEAN, boolean.class, Boolean.class);
-        checkResolvedTypeForClass(QueryDataType.TINYINT, byte.class, Byte.class);
-        checkResolvedTypeForClass(QueryDataType.SMALLINT, short.class, Short.class);
-        checkResolvedTypeForClass(QueryDataType.INT, int.class, Integer.class);
-        checkResolvedTypeForClass(QueryDataType.BIGINT, long.class, Long.class);
-        checkResolvedTypeForClass(QueryDataType.DECIMAL, BigDecimal.class);
-        checkResolvedTypeForClass(QueryDataType.DECIMAL_BIG_INTEGER, BigInteger.class);
-        checkResolvedTypeForClass(QueryDataType.REAL, float.class, Float.class);
-        checkResolvedTypeForClass(QueryDataType.DOUBLE, double.class, Double.class);
+        checkConverter(QueryDataType.BOOLEAN, BooleanConverter.INSTANCE);
 
-        checkResolvedTypeForClass(QueryDataType.TIME, LocalTime.class);
-        checkResolvedTypeForClass(QueryDataType.DATE, LocalDate.class);
-        checkResolvedTypeForClass(QueryDataType.TIMESTAMP, LocalDateTime.class);
-        checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_DATE, Date.class);
-        checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, Calendar.class, GregorianCalendar.class);
-        checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, Instant.class);
-        checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, OffsetDateTime.class);
-        checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTime.class);
+        checkConverter(QueryDataType.TINYINT, ByteConverter.INSTANCE);
+        checkConverter(QueryDataType.SMALLINT, ShortConverter.INSTANCE);
+        checkConverter(QueryDataType.INT, IntegerConverter.INSTANCE);
+        checkConverter(QueryDataType.BIGINT, LongConverter.INSTANCE);
+        checkConverter(QueryDataType.DECIMAL, BigDecimalConverter.INSTANCE);
+        checkConverter(QueryDataType.DECIMAL_BIG_INTEGER, BigIntegerConverter.INSTANCE);
+        checkConverter(QueryDataType.REAL, FloatConverter.INSTANCE);
+        checkConverter(QueryDataType.DOUBLE, DoubleConverter.INSTANCE);
 
-        checkResolvedTypeForClass(QueryDataType.OBJECT, Object.class, SqlCustomClass.class);
+        checkConverter(QueryDataType.TIME, LocalTimeConverter.INSTANCE);
+        checkConverter(QueryDataType.DATE, LocalDateConverter.INSTANCE);
+        checkConverter(QueryDataType.TIMESTAMP, LocalDateTimeConverter.INSTANCE);
+        checkConverter(QueryDataType.TIMESTAMP_WITH_TZ_DATE, DateConverter.INSTANCE);
+        checkConverter(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, CalendarConverter.INSTANCE);
+        checkConverter(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, InstantConverter.INSTANCE);
+        checkConverter(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, OffsetDateTimeConverter.INSTANCE);
+        checkConverter(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTimeConverter.INSTANCE);
 
-        checkResolvedTypeForClass(QueryDataType.NULL, void.class, Void.class);
+        checkConverter(QueryDataType.OBJECT, ObjectConverter.INSTANCE);
+
+        checkConverter(QueryDataType.NULL, NullConverter.INSTANCE);
     }
 
     @Test
-    public void testTypeResolutionByFamily() {
-        checkResolvedTypeForTypeFamily(QueryDataType.VARCHAR, QueryDataTypeFamily.VARCHAR);
+    public void testResolutionByClass() {
+        checkClasses(QueryDataType.VARCHAR, String.class);
+        checkClasses(QueryDataType.VARCHAR_CHARACTER, char.class, Character.class);
 
-        checkResolvedTypeForTypeFamily(QueryDataType.BOOLEAN, QueryDataTypeFamily.BOOLEAN);
-        checkResolvedTypeForTypeFamily(QueryDataType.TINYINT, QueryDataTypeFamily.TINYINT);
-        checkResolvedTypeForTypeFamily(QueryDataType.SMALLINT, QueryDataTypeFamily.SMALLINT);
-        checkResolvedTypeForTypeFamily(QueryDataType.INT, QueryDataTypeFamily.INTEGER);
-        checkResolvedTypeForTypeFamily(QueryDataType.BIGINT, QueryDataTypeFamily.BIGINT);
-        checkResolvedTypeForTypeFamily(QueryDataType.DECIMAL, QueryDataTypeFamily.DECIMAL);
-        checkResolvedTypeForTypeFamily(QueryDataType.REAL, QueryDataTypeFamily.REAL);
-        checkResolvedTypeForTypeFamily(QueryDataType.DOUBLE, QueryDataTypeFamily.DOUBLE);
+        checkClasses(QueryDataType.BOOLEAN, boolean.class, Boolean.class);
 
-        checkResolvedTypeForTypeFamily(QueryDataType.TIME, QueryDataTypeFamily.TIME);
-        checkResolvedTypeForTypeFamily(QueryDataType.DATE, QueryDataTypeFamily.DATE);
-        checkResolvedTypeForTypeFamily(QueryDataType.TIMESTAMP, QueryDataTypeFamily.TIMESTAMP);
-        checkResolvedTypeForTypeFamily(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
-            QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
+        checkClasses(QueryDataType.TINYINT, byte.class, Byte.class);
+        checkClasses(QueryDataType.SMALLINT, short.class, Short.class);
+        checkClasses(QueryDataType.INT, int.class, Integer.class);
+        checkClasses(QueryDataType.BIGINT, long.class, Long.class);
+        checkClasses(QueryDataType.DECIMAL, BigDecimal.class);
+        checkClasses(QueryDataType.DECIMAL_BIG_INTEGER, BigInteger.class);
+        checkClasses(QueryDataType.REAL, float.class, Float.class);
+        checkClasses(QueryDataType.DOUBLE, double.class, Double.class);
 
-        checkResolvedTypeForTypeFamily(QueryDataType.OBJECT, QueryDataTypeFamily.OBJECT);
+        checkClasses(QueryDataType.TIME, LocalTime.class);
+        checkClasses(QueryDataType.DATE, LocalDate.class);
+        checkClasses(QueryDataType.TIMESTAMP, LocalDateTime.class);
+        checkClasses(QueryDataType.TIMESTAMP_WITH_TZ_DATE, Date.class);
+        checkClasses(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, Calendar.class, GregorianCalendar.class);
+        checkClasses(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, Instant.class);
+        checkClasses(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, OffsetDateTime.class);
+        checkClasses(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTime.class);
 
-        checkResolvedTypeForTypeFamily(QueryDataType.NULL, QueryDataTypeFamily.NULL);
-    }
+        checkClasses(QueryDataType.OBJECT, Object.class, SqlCustomClass.class);
 
-    @Test
-    public void testEquals() {
-        checkEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(IntegerConverter.INSTANCE), true);
-        checkEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(LongConverter.INSTANCE), false);
+        checkClasses(QueryDataType.NULL, void.class, Void.class);
     }
 
     @Test
     public void testSerialization() {
-        for (Converter converter : Converters.getConverters()) {
-            QueryDataType original = new QueryDataType(converter);
-            QueryDataType restored = serializeAndCheck(
-                    original,
-                    SqlDataSerializerHook.F_ID,
-                    SqlDataSerializerHook.QUERY_DATA_TYPE
-            );
+        checkSerialization(QueryDataType.VARCHAR);
+        checkSerialization(QueryDataType.VARCHAR_CHARACTER);
 
-            checkEquals(original, restored, true);
-        }
+        checkSerialization(QueryDataType.BOOLEAN);
+
+        checkSerialization(QueryDataType.TINYINT);
+        checkSerialization(QueryDataType.SMALLINT);
+        checkSerialization(QueryDataType.INT);
+        checkSerialization(QueryDataType.BIGINT);
+        checkSerialization(QueryDataType.DECIMAL);
+        checkSerialization(QueryDataType.DECIMAL_BIG_INTEGER);
+        checkSerialization(QueryDataType.REAL);
+        checkSerialization(QueryDataType.DOUBLE);
+
+        checkSerialization(QueryDataType.TIME);
+        checkSerialization(QueryDataType.DATE);
+        checkSerialization(QueryDataType.TIMESTAMP);
+        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_DATE);
+        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR);
+        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT);
+        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME);
+
+        checkSerialization(QueryDataType.OBJECT);
+
+        checkSerialization(QueryDataType.NULL);
+
+        checkSerialization(QueryDataType.INTERVAL_YEAR_MONTH);
+        checkSerialization(QueryDataType.INTERVAL_DAY_SECOND);
+
+        checkSerialization(QueryDataType.MAP);
+        checkSerialization(QueryDataType.JSON);
+        checkSerialization(QueryDataType.ROW);
     }
 
-    private void checkType(QueryDataType type, Converter expectedConverter) {
-        assertEquals(expectedConverter, type.getConverter());
-        assertEquals(expectedConverter.getTypeFamily(), type.getConverter().getTypeFamily());
+    @Test
+    public void testEquals() {
+        assertEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(IntegerConverter.INSTANCE));
+        assertNotEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(LongConverter.INSTANCE));
     }
 
-    private void checkResolvedTypeForClass(QueryDataType expectedType, Class<?>... classes) {
+    // TODO This test will be removed by HZ-3691.
+    @Test
+    public void testResolutionByFamily() {
+        checkFamily(QueryDataType.VARCHAR, QueryDataTypeFamily.VARCHAR);
+
+        checkFamily(QueryDataType.BOOLEAN, QueryDataTypeFamily.BOOLEAN);
+        checkFamily(QueryDataType.TINYINT, QueryDataTypeFamily.TINYINT);
+        checkFamily(QueryDataType.SMALLINT, QueryDataTypeFamily.SMALLINT);
+        checkFamily(QueryDataType.INT, QueryDataTypeFamily.INTEGER);
+        checkFamily(QueryDataType.BIGINT, QueryDataTypeFamily.BIGINT);
+        checkFamily(QueryDataType.DECIMAL, QueryDataTypeFamily.DECIMAL);
+        checkFamily(QueryDataType.REAL, QueryDataTypeFamily.REAL);
+        checkFamily(QueryDataType.DOUBLE, QueryDataTypeFamily.DOUBLE);
+
+        checkFamily(QueryDataType.TIME, QueryDataTypeFamily.TIME);
+        checkFamily(QueryDataType.DATE, QueryDataTypeFamily.DATE);
+        checkFamily(QueryDataType.TIMESTAMP, QueryDataTypeFamily.TIMESTAMP);
+        checkFamily(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
+                QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
+
+        checkFamily(QueryDataType.OBJECT, QueryDataTypeFamily.OBJECT);
+
+        checkFamily(QueryDataType.NULL, QueryDataTypeFamily.NULL);
+    }
+
+    private void checkConverter(QueryDataType type, Converter expectedConverter) {
+        assertSame(expectedConverter, type.getConverter());
+        assertSame(expectedConverter.getTypeFamily(), type.getConverter().getTypeFamily());
+    }
+
+    private void checkClasses(QueryDataType expectedType, Class<?>... classes) {
         for (Class<?> clazz : classes) {
-            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
-
-            assertSame(expectedType, type);
+            assertSame(expectedType, QueryDataTypeUtils.resolveTypeForClass(clazz));
         }
     }
 
-    private void checkResolvedTypeForTypeFamily(QueryDataType expectedType, QueryDataTypeFamily typeFamily) {
+    private void checkSerialization(QueryDataType type) {
+        assertEquals(type, serializationService.toObject(serializationService.toData(type)));
+    }
+
+    private void checkFamily(QueryDataType expectedType, QueryDataTypeFamily typeFamily) {
         assertSame(expectedType, QueryDataTypeUtils.resolveTypeForTypeFamily(typeFamily));
     }
-
 }

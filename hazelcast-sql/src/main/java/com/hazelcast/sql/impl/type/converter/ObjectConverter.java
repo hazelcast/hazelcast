@@ -135,7 +135,6 @@ public final class ObjectConverter extends Converter {
         return valConverter.asObject(val);
     }
 
-
     private Converter resolveConverter(Object val, QueryDataTypeFamily target) {
         Converter converter = Converters.getConverter(val.getClass());
 
@@ -145,5 +144,4 @@ public final class ObjectConverter extends Converter {
 
         return converter;
     }
-
 }

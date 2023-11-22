@@ -32,20 +32,18 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
- * Utilities to extract a list of properties from a
- * {@link Class} object using reflection
- * or from {@link ClassDefinition} of a Portable.
- * or from {@link Schema} of a Compact Serialized Object
+ * Utilities to extract properties from <ol>
+ * <li> Java {@link Class} using reflection,
+ * <li> Portable {@link ClassDefinition}, or
+ * <li> Compact {@link Schema}.
  */
-public final class FieldsUtil {
-
+public final class FieldUtils {
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
 
-    private FieldsUtil() {
-    }
+    private FieldUtils() { }
 
     /**
      * Return a list of fields and their types from a {@link Class}.
@@ -167,7 +165,7 @@ public final class FieldsUtil {
     }
 
     // TODO: maybe move to more generic utilities class?
-    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"ReturnCount", "CyclomaticComplexity"})
     @Nonnull
     public static QueryDataType resolveType(@Nonnull FieldKind kind) {
         switch (kind) {

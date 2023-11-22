@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.PortableId;
-import com.hazelcast.sql.impl.FieldsUtil;
+import com.hazelcast.sql.impl.FieldUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -183,7 +183,7 @@ public final class TypeUtils {
 
         @Override
         protected SortedMap<String, Class<?>> getSchema(Class<?> typeClass) {
-            return FieldsUtil.resolveClass(typeClass);
+            return FieldUtils.resolveClass(typeClass);
         }
 
         @Override

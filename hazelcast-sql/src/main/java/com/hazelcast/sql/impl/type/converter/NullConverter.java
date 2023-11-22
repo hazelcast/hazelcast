@@ -123,5 +123,4 @@ public final class NullConverter extends Converter {
     public Object convertToSelf(Converter converter, Object value) {
         throw new UnsupportedOperationException("must never be called");
     }
-
 }

@@ -30,7 +30,6 @@ import java.util.TreeMap;
 /**
  * Utility methods for converters.
  */
-@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class Converters {
     /** Synthetic maximum number of converters to prevent an accidental bug which will generate too big array. */
     private static final int MAX_CONVERTER_COUNT = 100;
@@ -203,7 +202,7 @@ public final class Converters {
         return res;
     }
 
-    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:ReturnCount"})
+    @SuppressWarnings({"NPathComplexity", "ReturnCount"})
     private static Class<?> getPrimitiveClass(Class<?> targetClass) {
         if (targetClass == Boolean.class) {
             return boolean.class;

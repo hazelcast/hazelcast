@@ -39,7 +39,7 @@ import java.time.OffsetDateTime;
  * <p>
  * Java serialization is needed for Jet.
  */
-@SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ExecutableStatementCount"})
+@SuppressWarnings({"MethodCount", "ExecutableStatementCount"})
 public abstract class Converter implements Serializable {
     protected static final int ID_BOOLEAN = 0;
     protected static final int ID_BYTE = 1;
@@ -279,7 +279,7 @@ public abstract class Converter implements Serializable {
         return convertToRow;
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
+    @SuppressWarnings({"CyclomaticComplexity", "ReturnCount"})
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
             case BOOLEAN:

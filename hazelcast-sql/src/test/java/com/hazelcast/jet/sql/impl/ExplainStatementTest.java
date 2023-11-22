@@ -45,8 +45,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExplainStatementTest extends SqlTestSupport {
+
     @BeforeClass
-    public static void beforeClass() {
+    public static void setup() {
         initialize(1, null);
     }
 
@@ -444,19 +445,10 @@ public class ExplainStatementTest extends SqlTestSupport {
                                 .contains("partitioningKeyValues=["));
     }
 
+    @SuppressWarnings("unused")
     public static class KeyObj implements Serializable {
         public Long comp1;
         public Long comp2;
         public Long comp3;
-
-        public KeyObj() {
-
-        }
-
-        public KeyObj(final Long comp1, final Long comp2, final Long comp3) {
-            this.comp1 = comp1;
-            this.comp2 = comp2;
-            this.comp3 = comp3;
-        }
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.validate.types;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -33,21 +34,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
-import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
-import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
-import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
 import static org.apache.calcite.sql.type.SqlTypeName.ROW;
 import static org.apache.calcite.sql.type.SqlTypeName.UNKNOWN;
 
 /**
- * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
- * QueryDataType}.
+ * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link QueryDataType}.
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class HazelcastTypeUtils {
-
     private static final Map<SqlTypeName, QueryDataType> CALCITE_TO_HZ = new HashMap<>();
     private static final Map<QueryDataTypeFamily, SqlTypeName> HZ_TO_CALCITE = new HashMap<>();
 
@@ -87,24 +83,22 @@ public final class HazelcastTypeUtils {
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
         CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
+        CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.UNKNOWN, QueryDataType.NULL);
 
         // The inverse mapping is not needed, because we map multiple interval type to two internal types.
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, INTERVAL_YEAR_MONTH);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, INTERVAL_DAY_SECOND);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, SqlTypeName.INTERVAL_YEAR_MONTH);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, SqlTypeName.INTERVAL_DAY_SECOND);
 
-        CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, OTHER);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.ROW, ROW);
-        CALCITE_TO_HZ.put(ROW, QueryDataType.ROW);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, SqlTypeName.OTHER);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.ROW, SqlTypeName.ROW);
+        CALCITE_TO_HZ.put(SqlTypeName.ROW, QueryDataType.ROW);
     }
 
-    private HazelcastTypeUtils() {
-        // No-op.
-    }
+    private HazelcastTypeUtils() { }
 
     public static SqlTypeName toCalciteType(QueryDataType type) {
         return toCalciteType(type.getTypeFamily());
@@ -158,7 +152,7 @@ public final class HazelcastTypeUtils {
             } else {
                 fieldType = HazelcastTypeUtils.toHazelcastType(field.getType());
             }
-            current.getObjectFields().add(field.getIndex(), new QueryDataType.QueryDataTypeField(field.getName(), fieldType));
+            current.getObjectFields().add(field.getIndex(), new QueryDataTypeField(field.getName(), fieldType));
         }
     }
 
@@ -203,7 +197,7 @@ public final class HazelcastTypeUtils {
     }
 
     public static boolean isJsonType(RelDataType type) {
-        return SqlTypeName.OTHER.equals(type.getSqlTypeName()) && HazelcastJsonType.FAMILY.equals(type.getFamily());
+        return type.getSqlTypeName() == OTHER && HazelcastJsonType.FAMILY.equals(type.getFamily());
     }
 
     /**
@@ -322,11 +316,11 @@ public final class HazelcastTypeUtils {
     public static boolean isIntervalType(SqlTypeName typeName) {
         SqlTypeFamily typeFamily = typeName.getFamily();
 
-        return typeFamily == INTERVAL_DAY_TIME || typeFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH;
+        return typeFamily == SqlTypeFamily.INTERVAL_DAY_TIME || typeFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH;
     }
 
     public static boolean isNullOrUnknown(SqlTypeName typeName) {
-        return typeName == SqlTypeName.NULL || typeName == SqlTypeName.UNKNOWN;
+        return typeName == NULL || typeName == UNKNOWN;
     }
 
     /**
@@ -369,7 +363,7 @@ public final class HazelcastTypeUtils {
         QueryDataType queryTo = toHazelcastType(targetType);
 
         if (isStruct(sourceType) || isStruct(targetType)) {
-            if (queryFrom.isCustomType() && queryTo.getTypeFamily().equals(QueryDataTypeFamily.JSON)) {
+            if (queryFrom.isCustomType() && queryTo.getTypeFamily() == QueryDataTypeFamily.JSON) {
                 return true;
             }
 
@@ -381,7 +375,7 @@ public final class HazelcastTypeUtils {
             // ROW source can be converted to target type
             // TODO: target type can be ROW in some expressions?
             if ((sourceType.getSqlTypeName() != targetType.getSqlTypeName())
-                    && !(targetType.getSqlTypeName().equals(ROW) || sourceType.getSqlTypeName().equals(ROW))) {
+                    && !(sourceType.getSqlTypeName() == ROW || targetType.getSqlTypeName() == ROW)) {
                 return false;
             }
 

@@ -25,7 +25,7 @@ import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.VersionedPortable;
-import com.hazelcast.sql.impl.FieldsUtil;
+import com.hazelcast.sql.impl.FieldUtils;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 
@@ -109,7 +109,7 @@ final class SampleMetadataResolver {
     }
 
     private static Metadata resolveCompact(Schema schema, boolean key) {
-        List<MappingField> fields = FieldsUtil.resolveCompact(schema).entrySet().stream()
+        List<MappingField> fields = FieldUtils.resolveCompact(schema).entrySet().stream()
                 .map(entry -> new MappingField(entry.getKey(), entry.getValue(), new QueryPath(entry.getKey(), key).toString()))
                 .collect(toList());
         Map<String, String> options = new LinkedHashMap<>();
