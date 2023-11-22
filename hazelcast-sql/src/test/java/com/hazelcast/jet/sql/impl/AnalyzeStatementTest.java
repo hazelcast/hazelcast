@@ -253,7 +253,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         sqlService.execute(sql);
 
         // When
-        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl)client().getJet()).getJobAndSqlSummaryList();
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
 
         // Then
         assertThat(jobSummaries).hasOnlyOneElementSatisfying(
@@ -261,6 +261,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                     assertThat(jobSummary.getSqlSummary()).isNotNull();
                     assertEquals(sql, jobSummary.getSqlSummary().getQuery());
                     assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+                    assertThat(jobSummary.isUserCancelled()).isFalse();
                 });
     }
 
@@ -268,13 +269,13 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     public void test_listFinishedAnalyzedQueryWithSqlSummary() {
         final String query = "SELECT v from table(generate_series(1,2))";
         final String sql = "ANALYZE " + query;
-        try(SqlResult result = sqlService.execute(sql)) {
+        try (SqlResult result = sqlService.execute(sql)) {
             // read fully to finish the query
             result.stream().count();
         }
 
         // When
-        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl)client().getJet()).getJobAndSqlSummaryList();
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
 
         // Then
         assertThat(jobSummaries).hasOnlyOneElementSatisfying(
@@ -282,9 +283,29 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                     assertThat(jobSummary.getSqlSummary()).isNotNull();
                     assertEquals(sql, jobSummary.getSqlSummary().getQuery());
                     assertEquals(Boolean.FALSE, jobSummary.getSqlSummary().isUnbounded());
+                    assertThat(jobSummary.isUserCancelled()).isFalse();
                 });
     }
 
+    @Test
+    public void test_listClosedAnalyzedQueryWithSqlSummary() {
+        final String query = "SELECT v from table(generate_stream(1))";
+        final String sql = "ANALYZE " + query;
+        SqlResult result = sqlService.execute(sql);
+        result.close();
+
+        // When
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+
+        // Then
+        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                jobSummary -> {
+                    assertThat(jobSummary.getSqlSummary()).isNotNull();
+                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                    assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+                    assertThat(jobSummary.isUserCancelled()).isTrue();
+                });
+    }
 
     @Test
     public void test_closeCursor() {

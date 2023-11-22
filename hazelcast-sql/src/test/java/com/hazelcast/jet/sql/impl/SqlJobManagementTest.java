@@ -469,7 +469,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute(sql);
 
         // When
-        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl)client().getJet()).getJobAndSqlSummaryList();
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
 
         // Then
         assertThat(jobSummaries).hasOnlyOneElementSatisfying(
@@ -488,7 +488,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         instance().getJet().getJob("job").join();
 
         // When
-        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl)client().getJet()).getJobAndSqlSummaryList();
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
 
         // Then
         assertThat(jobSummaries).hasOnlyOneElementSatisfying(
