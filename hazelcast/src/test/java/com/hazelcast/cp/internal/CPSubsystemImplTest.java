@@ -186,6 +186,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         Throwable t = assertThrows(UnsupportedOperationException.class, () -> instance.getCPSubsystem().getMap("myMap"));
-        assertEquals("CPMap is not supported in Open Source", t.getMessage());
+        assertEquals("CPMap is not included in your license", t.getMessage());
     }
 }

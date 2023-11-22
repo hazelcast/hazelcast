@@ -150,7 +150,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
-        throw new UnsupportedOperationException("CPMap is not supported in Open Source");
+        throw new UnsupportedOperationException("CPMap is not included in your license");
     }
 
     private static class CPMembershipEventHandler extends CPSubsystemAddMembershipListenerCodec.AbstractEventHandler
