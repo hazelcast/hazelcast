@@ -21,6 +21,8 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +37,7 @@ import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -238,6 +241,22 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
         // Ensure job is running after the refusal to alter the job
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 1L);
+    }
+
+    @Test
+    public void test_closeCursor() {
+        // Given
+        String query = "SELECT v, v FROM TABLE(generate_stream(1))";
+        SqlResult result = instance().getSql().execute("ANALYZE " + query);
+        Job job = awaitSingleRunningJob(instance());
+
+        // when
+        result.stream().findFirst();  // not necessary
+        result.close();
+
+        // then
+        assertThatThrownBy(job::join).isInstanceOf(CancellationByUserException.class);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     private Job runQuery() {
