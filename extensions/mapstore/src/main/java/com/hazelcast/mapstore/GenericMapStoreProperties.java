@@ -23,7 +23,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.mapstore.GenericMapLoader.*;
+import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.SINGLE_COLUMN_AS_VALUE;
 
 /**
  * Holds the properties for GenericMapStore and GenericMapLoader

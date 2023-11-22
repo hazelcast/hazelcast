@@ -41,8 +41,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.mapstore.GenericMapLoader.*;
+import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.MAPPING_PREFIX;
+import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
+import static com.hazelcast.mapstore.GenericMapLoader.SINGLE_COLUMN_AS_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;

@@ -617,7 +617,9 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
     }
 
     @Override
-    protected <K, V> GenericMapStore<K, V> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
+    protected <K, V> GenericMapStore<K, V> createUnitUnderTest(Properties properties,
+                                                               HazelcastInstance instance,
+                                                               boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
