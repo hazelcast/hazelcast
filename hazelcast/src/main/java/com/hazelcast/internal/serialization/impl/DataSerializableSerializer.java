@@ -165,7 +165,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             }
 
             ds.readData(in);
-            return ds;
+            return ds.readReplace();
         } catch (Exception e) {
             e = tryClarifyNoSuchMethodException(in.getClassLoader(), className, e);
             throw rethrowReadException(id, factoryId, className, e);
