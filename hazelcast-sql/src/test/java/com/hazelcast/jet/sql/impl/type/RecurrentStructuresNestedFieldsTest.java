@@ -25,9 +25,9 @@ import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.SelfRef;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import net.jcip.annotations.NotThreadSafe;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@NotThreadSafe
+@Isolated
 @RunWith(HazelcastSerialClassRunner.class)
 public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
