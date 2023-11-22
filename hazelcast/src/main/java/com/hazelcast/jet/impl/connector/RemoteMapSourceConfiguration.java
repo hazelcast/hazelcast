@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;

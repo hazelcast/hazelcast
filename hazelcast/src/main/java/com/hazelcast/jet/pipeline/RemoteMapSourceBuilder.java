@@ -110,7 +110,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
      * @return this builder
      */
     public RemoteMapSourceBuilder<K, V, T> dataConnectionName(@Nonnull String dataConnectionName) {
-        this.dataConnectionName = requireNonNull(dataConnectionName);
+        this.dataConnectionName = requireNonNull(dataConnectionName, "dataConnectionName can not be null");
         return this;
     }
 
@@ -136,7 +136,8 @@ public class RemoteMapSourceBuilder<K, V, T> {
      * @return this builder
      */
     public RemoteMapSourceBuilder<K, V, T> predicate(@Nonnull Predicate<K, V> predicate) {
-        checkSerializable(requireNonNull(predicate), "predicate");
+        requireNonNull(predicate, "predicate can not be null");
+        checkSerializable(predicate, "predicate should be serializable");
         this.predicate = predicate;
         return this;
     }
@@ -151,7 +152,8 @@ public class RemoteMapSourceBuilder<K, V, T> {
     public <T_NEW> RemoteMapSourceBuilder<K, V, T_NEW> projection(
             @Nonnull Projection<? super Entry<K, V>, ? extends T_NEW> projection
     ) {
-        checkSerializable(requireNonNull(projection), "projection");
+        requireNonNull(projection, "projection can not ne null");
+        checkSerializable(requireNonNull(projection), "projection should be serializable");
         @SuppressWarnings("unchecked")
         RemoteMapSourceBuilder<K, V, T_NEW> newThis = (RemoteMapSourceBuilder<K, V, T_NEW>) this;
         newThis.projection = projection;
