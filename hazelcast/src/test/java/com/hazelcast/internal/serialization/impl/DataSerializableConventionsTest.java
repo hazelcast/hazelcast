@@ -208,6 +208,10 @@ public class DataSerializableConventionsTest {
                     } else {
                         factoryToTypeId.put(factoryId, typeId);
                     }
+                } catch (UnsupportedOperationException e) {
+                    // expected from local operation classes not meant for serialization
+                    // gather those and print them to system.out for information at end of test
+                    classesThrowingUnsupportedOperationException.add(klass.getName());
                 } catch (InvocationTargetException e) {
                     // expected from local operation classes not meant for serialization
                     // gather those and print them to system.out for information at end of test
@@ -290,6 +294,8 @@ public class DataSerializableConventionsTest {
                 assertTrue("Factory with ID " + factoryId + " instantiated an object of " + instanceFromFactory.getClass()
                                 + " while expected type was " + instance.getClass(),
                         instanceFromFactory.getClass().equals(instance.getClass()));
+            } catch (UnsupportedOperationException e) {
+                // expected from local operation classes not meant for serialization
             } catch (InvocationTargetException e) {
                 // expected from local operation classes not meant for serialization
                 if (!(e.getCause() instanceof UnsupportedOperationException)) {

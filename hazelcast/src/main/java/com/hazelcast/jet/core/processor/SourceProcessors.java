@@ -142,28 +142,6 @@ public final class SourceProcessors {
         return StreamEventJournalP.streamMapSupplier(mapName, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
-    /**
-     * Returns a supplier of processors for
-     * {@link Sources#remoteMap(String, ClientConfig)}.
-     */
-    @Nonnull
-    public static ProcessorSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sources#remoteMap(String, ClientConfig, Predicate, Projection)}.
-     */
-    @Nonnull
-    public static <T, K, V> ProcessorSupplier readRemoteMapP(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
-    ) {
-        return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig, predicate, projection);
-    }
 
     /**
      * Returns a supplier of processors for
