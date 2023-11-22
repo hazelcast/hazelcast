@@ -26,9 +26,9 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.IsolatedJVMTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.A;
@@ -41,7 +41,7 @@ import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.setupCompa
 import static com.hazelcast.jet.sql.impl.type.PortableNestedFieldsTest.setupPortableTypesForNestedQuery;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Isolated
+@IsolatedJVMTest
 @RunWith(HazelcastSerialClassRunner.class)
 public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
 

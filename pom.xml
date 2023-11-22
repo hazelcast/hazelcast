@@ -886,6 +886,7 @@
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest
+                                        com.hazelcast.test.annotation.IsolatedJVMTest
                                     </excludedGroups>
                                     <systemPropertyVariables>
                                         <multipleJVM>true</multipleJVM>
@@ -922,8 +923,53 @@
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
                                         com.hazelcast.test.annotation.ParallelJVMTest
+                                        com.hazelcast.test.annotation.IsolatedJVMTest
                                     </excludedGroups>
                                 </configuration>
+                            </execution>
+                            <execution>
+                            <id>isolated-jvm-per-class</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration combine.self="override">
+                                <useFile>false</useFile>
+                                <trimStackTrace>false</trimStackTrace>
+                                <!-- 0.5C means half as many forks as cpu cores -->
+                                <forkCount>0.5C</forkCount>
+                                <reuseForks>false</reuseForks>
+                                <argLine>
+                                    ${vmHeapSettings}
+                                    ${javaModuleArgs}
+                                    -ea
+                                    -Dhazelcast.phone.home.enabled=false
+                                    -Dhazelcast.logging.type=none
+                                    -Dhazelcast.test.use.network=false
+                                    -Dhazelcast.test.multiple.jvm=true
+                                    -Dlog4j.configurationFile=log4j2.xml
+                                    -Dlog4j.skipJansi=true
+                                    ${extraVmArgs}
+                                </argLine>
+                                <includes>
+                                    <include>**/**.java</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>**/jsr/**.java</exclude>
+                                    <exclude>**/**IT.java</exclude>
+                                </excludes>
+                                <groups>
+                                    com.hazelcast.test.annotation.IsolatedJVMTest
+                                </groups>
+                                <excludedGroups>
+                                    com.hazelcast.test.annotation.SlowTest
+                                    com.hazelcast.test.annotation.NightlyTest
+                                    com.hazelcast.test.annotation.ParallelJVMTest
+                                </excludedGroups>
+                                <systemPropertyVariables>
+                                    <multipleJVM>true</multipleJVM>
+                                </systemPropertyVariables>
+                            </configuration>
                             </execution>
                         </executions>
                     </plugin>
