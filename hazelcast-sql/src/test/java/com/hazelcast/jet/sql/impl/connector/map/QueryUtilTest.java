@@ -16,39 +16,34 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.stubbing.Answer;
 
 import javax.security.auth.Subject;
-import java.io.IOException;
-import java.security.Principal;
-import java.util.LinkedList;
 
-import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.toPredicate;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryUtilTest {
+public class QueryUtilTest extends SqlTestSupport {
 
     @Test
     public void when_leftValueIsNull_then_returnsNull() {
@@ -59,44 +54,32 @@ public class QueryUtilTest {
     }
 
     @Test
-    public void writeAndReadJoinProjection() throws IOException {
-        final var evalContextWithSubjectMock = mock(ExpressionEvalContext.class);
-        when(evalContextWithSubjectMock.getSerializationService()).thenReturn(mock());
-        when(evalContextWithSubjectMock.getArguments()).thenReturn(singletonList("value"));
-        final var subject = new Subject(true, singleton(mock(Principal.class)), emptySet(), emptySet());
-        when(evalContextWithSubjectMock.subject()).thenReturn(subject);
+    public void when_serializedObject_then_deserializedCorrect() {
+        initialize(1, null);
+        AbstractSerializationService service = (AbstractSerializationService) TestUtil.getNode(instance()).getSerializationService();
 
-        final var evalContextNoSubjectMock = mock(ExpressionEvalContext.class);
-        when(evalContextNoSubjectMock.getSerializationService()).thenReturn(mock());
+        var evalContextMock = mock(ExpressionEvalContext.class);
+        when(evalContextMock.getSerializationService()).thenReturn(mock());
+        var subject = new Subject(true, emptySet(), emptySet(), emptySet());
+        when(evalContextMock.subject()).thenReturn(subject);
 
-        final var queue = new LinkedList<>();
-        final var output = mock(ObjectDataOutput.class, (Answer<Void>) invocation -> {
-            queue.add(invocation.getArguments()[0]);
-            return null;
-        });
-        final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> queue.poll());
+        var supplier = KvRowProjector.supplier(
+                new QueryPath[]{},
+                new QueryDataType[]{},
+                null,
+                null,
+                null,
+                null
+        );
+        DataSerializable projection = (DataSerializable) QueryUtil.toProjection(supplier, evalContextMock);
 
-        DataSerializable writer = (DataSerializable) QueryUtil.toProjection(mock(), evalContextWithSubjectMock);
-        DataSerializable reader = (DataSerializable) QueryUtil.toProjection(mock(), evalContextNoSubjectMock);
+        var data = service.toData(projection);
+        var actual = service.toObject(data);
 
-        writer.writeData(output);
-        reader.readData(input);
-
-        assertThat(reader)
+        assertThat(actual)
                 .usingRecursiveComparison()
                 .comparingOnlyFields("rowProjectorSupplier", "arguments", "subject")
                 .ignoringFields("subject.pubCredentials", "subject.privCredentials")
-                .isEqualTo(writer);
-    }
-
-    @Test
-    public void readDataFailedIfUnexpectedObjectInInput() {
-        final var evalContextMock = mock(ExpressionEvalContext.class);
-        when(evalContextMock.getSerializationService()).thenReturn(mock());
-
-        final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> "some unexpected object");
-
-        DataSerializable reader = (DataSerializable) QueryUtil.toProjection(mock(), evalContextMock);
-        assertThatThrownBy(() -> reader.readData(input)).isInstanceOf(ClassCastException.class);
+                .isEqualTo(projection);
     }
 }

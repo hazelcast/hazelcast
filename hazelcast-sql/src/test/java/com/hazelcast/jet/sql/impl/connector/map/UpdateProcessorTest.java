@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -38,13 +38,9 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.stubbing.Answer;
 
 import javax.security.auth.Subject;
-import java.io.IOException;
-import java.security.Principal;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +54,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -121,53 +116,28 @@ public class UpdateProcessorTest extends SqlTestSupport {
     }
 
     @Test
-    public void writeAndReadTest_success() throws IOException {
-        final var evalContextWithSubjectMock = mock(ExpressionEvalContext.class);
-        when(evalContextWithSubjectMock.getSerializationService()).thenReturn(mock());
-        final var subject = new Subject(true, singleton(mock(Principal.class)), emptySet(), emptySet());
-        when(evalContextWithSubjectMock.subject()).thenReturn(subject);
+    public void when_serializedObject_then_deserializedCorrect() {
+        AbstractSerializationService service = (AbstractSerializationService) TestUtil.getNode(instance()).getSerializationService();
 
-        final var evalContextNoSubjectMock = mock(ExpressionEvalContext.class);
-        when(evalContextNoSubjectMock.getSerializationService()).thenReturn(mock());
+        var evalContextMock = mock(ExpressionEvalContext.class);
+        when(evalContextMock.getSerializationService()).thenReturn(mock());
+        var subject = new Subject(true, emptySet(), emptySet(), emptySet());
+        when(evalContextMock.subject()).thenReturn(subject);
 
-        final var queue = new LinkedList<>();
-        final var output = mock(ObjectDataOutput.class, (Answer<Void>) invocation -> {
-            queue.add(invocation.getArguments()[0]);
-            return null;
-        });
-        final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> queue.poll());
+        var processor = UpdatingEntryProcessor.supplier(
+                partitionedTable(INT),
+                emptyList(),
+                emptyList()
+        ).get(evalContextMock);
 
-        final var supplier = UpdatingEntryProcessor.supplier(
-                mock(),
-                mock(),
-                mock()
-        );
-        final var writer = (UpdatingEntryProcessor) supplier.get(evalContextWithSubjectMock);
-        final var reader = (UpdatingEntryProcessor) supplier.get(evalContextNoSubjectMock);
+        var data = service.toData(processor);
+        var actual = service.toObject(data);
 
-        writer.writeData(output);
-        reader.readData(input);
-
-        assertThat(reader)
+        assertThat(actual)
                 .usingRecursiveComparison()
                 .comparingOnlyFields("rowProjectorSupplier", "valueProjectorSupplier", "arguments", "subject")
                 .ignoringFields("subject.pubCredentials", "subject.privCredentials")
-                .isEqualTo(writer);
-    }
-
-    @Test
-    public void when_unexpectedObjectTypeInInput_then_fail() {
-        final var evalContextMock = mock(ExpressionEvalContext.class);
-        when(evalContextMock.getSerializationService()).thenReturn(mock());
-
-        final var input = mock(ObjectDataInput.class, (Answer<Object>) invocation -> "some unexpected object");
-        final var supplier = UpdatingEntryProcessor.supplier(
-                mock(),
-                mock(),
-                mock()
-        );
-        final var reader = (UpdatingEntryProcessor) supplier.get(evalContextMock);
-        assertThrows(ClassCastException.class, () -> reader.readData(input));
+                .isEqualTo(processor);
     }
 
     private static PartitionedMapTable partitionedTable(QueryDataType valueType) {
