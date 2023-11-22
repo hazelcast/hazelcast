@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,7 +38,6 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -95,7 +95,7 @@ public final class RootResultConsumerSink implements Processor {
             rootResultConsumer.ensureNotDone();
         } catch (QueryException e) {
             if (e.getCode() == CANCELLED_BY_USER) {
-                throw new CancellationException();
+                throw new CancellationByUserException();
             }
             throw e;
         }
@@ -108,7 +108,7 @@ public final class RootResultConsumerSink implements Processor {
             rootResultConsumer.consume(inbox);
         } catch (QueryException e) {
             if (e.getCode() == CANCELLED_BY_USER) {
-                throw new CancellationException();
+                throw new CancellationByUserException();
             }
             throw e;
         }

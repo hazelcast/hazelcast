@@ -698,7 +698,7 @@ public class MasterJobContext {
         if (!otherFailures.isEmpty()) {
             return (Throwable) otherFailures.get(0).getValue();
         } else if (!isJobSuspendable(mc.jobConfig())) {
-            return topologyFailures.get(0).getValue() instanceof CancellationException
+            return topologyFailures.get(0).getValue() instanceof CancellationByUserException
                     ? new CancellationByUserException()
                     : new TopologyChangedException("Causes from members: " + topologyFailures);
         } else {
