@@ -169,10 +169,12 @@ public class QueryConverter {
      * @param rel                       Initial relation.
      * @param cyclicUserTypesAreAllowed Whether cyclic user types are allowed.
      * @return Resulting relation.
-     * @implNote we're using Calcite's {@link HepProgramBuilder} to GC the rules we don't need earlier.
      */
     private static RelNode performUnconditionalRewrites(RelNode rel, boolean cyclicUserTypesAreAllowed) {
         // Note: 'cyclicUserTypesAreAllowed' is cluster-wise property, no changes in runtime are expected.
+        // Note: we do not care about potential multiple concurrent initialisations, but this is fine.
+        //  It is more optimal in a long-term to allow a few multiple concurrent initialisations,
+        //  but have cheap plain reads during afterwards.
         if (hepSubqueryRewriterProgram == null) {
             hepSubqueryRewriterProgram = prepareUnconditionalSubqueryRewriter(cyclicUserTypesAreAllowed);
         }
