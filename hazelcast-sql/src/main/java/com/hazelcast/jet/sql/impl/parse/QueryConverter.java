@@ -306,6 +306,8 @@ public class QueryConverter {
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE)
                 .addRuleInstance(CoreRules.UNION_TO_DISTINCT);
 
+        hepProgramBuilder.freeze();
+
         return hepProgramBuilder;
     }
 }

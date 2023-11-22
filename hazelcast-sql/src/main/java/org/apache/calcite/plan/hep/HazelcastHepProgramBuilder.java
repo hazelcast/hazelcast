@@ -24,9 +24,22 @@ import java.util.List;
 public class HazelcastHepProgramBuilder {
 
     private final List<HepInstruction> instructions = new ArrayList<>();
+    private volatile boolean frozen;
 
     public HazelcastHepProgramBuilder addRuleInstance(RelOptRule rule) {
-        return addInstruction(new HepInstruction.RuleInstance(rule));
+        if (!frozen) {
+            return addInstruction(new HepInstruction.RuleInstance(rule));
+        } else {
+            throw new IllegalStateException("HepProgram instructions are frozen");
+        }
+    }
+
+    /**
+     * Freeze instruction set, making it immutable for public API
+     * and ready to be used in {@link HepPlanner}.
+     */
+    public void freeze() {
+        frozen = true;
     }
 
     private HazelcastHepProgramBuilder addInstruction(HepInstruction instruction) {
@@ -34,6 +47,9 @@ public class HazelcastHepProgramBuilder {
         return this;
     }
 
+    /**
+     * Returns the constructed program, and keep instructions for further use.
+     */
     public HepProgram build() {
         return new HepProgram(instructions);
     }
