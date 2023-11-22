@@ -885,7 +885,7 @@
                                     </groups>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
-                                        com.hazelcast.test.annotation.NightlyTest
+                                        com.hazelcast.test.annotation.NightlyTest,
                                         com.hazelcast.test.annotation.IsolatedJVMTest
                                     </excludedGroups>
                                     <systemPropertyVariables>
@@ -922,7 +922,7 @@
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
-                                        com.hazelcast.test.annotation.ParallelJVMTest
+                                        com.hazelcast.test.annotation.ParallelJVMTest,
                                         com.hazelcast.test.annotation.IsolatedJVMTest
                                     </excludedGroups>
                                 </configuration>
@@ -962,8 +962,8 @@
                                     com.hazelcast.test.annotation.IsolatedJVMTest
                                 </groups>
                                 <excludedGroups>
-                                    com.hazelcast.test.annotation.SlowTest
-                                    com.hazelcast.test.annotation.NightlyTest
+                                    com.hazelcast.test.annotation.SlowTest,
+                                    com.hazelcast.test.annotation.NightlyTest,
                                     com.hazelcast.test.annotation.ParallelJVMTest
                                 </excludedGroups>
                                 <systemPropertyVariables>
