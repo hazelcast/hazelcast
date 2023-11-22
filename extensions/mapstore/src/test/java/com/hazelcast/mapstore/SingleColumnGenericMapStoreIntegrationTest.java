@@ -22,7 +22,6 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -49,7 +48,6 @@ import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERT
 import static com.hazelcast.mapstore.GenericMapStore.SINGLE_COLUMN_AS_VALUE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
