@@ -172,7 +172,7 @@ public class QueryConverter {
      */
     private static RelNode performUnconditionalRewrites(RelNode rel, boolean cyclicUserTypesAreAllowed) {
         // Note: 'cyclicUserTypesAreAllowed' is cluster-wise property, no changes in runtime are expected.
-        // Note: we do not care about potential multiple concurrent initialisations, but this is fine.
+        // Note: we do not care about potential multiple concurrent initialisations, this is fine for us.
         //  It is more optimal in a long-term to allow a few multiple concurrent initialisations,
         //  but have cheap plain reads during afterwards.
         if (hepSubqueryRewriterProgram == null) {
