@@ -860,7 +860,7 @@
                                     <trimStackTrace>false</trimStackTrace>
                                     <!-- 0.5C means half as many forks as cpu cores -->
                                     <forkCount>0.5C</forkCount>
-                                    <reuseForks>true</reuseForks>
+                                    <reuseForks>false</reuseForks>
                                     <argLine>
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
@@ -880,9 +880,9 @@
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
                                     </excludes>
-                                    <groups>
+<!--                                    <groups>
                                         com.hazelcast.test.annotation.ParallelJVMTest
-                                    </groups>
+                                    </groups>-->
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
@@ -893,7 +893,7 @@
                                     </systemPropertyVariables>
                                 </configuration>
                             </execution>
-                            <execution>
+     <!--                       <execution>
                                 <id>singlejvm</id>
                                 <phase>test</phase>
                                 <goals>
@@ -936,7 +936,7 @@
                                 <configuration combine.self="override">
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
-                                    <!-- 0.5C means half as many forks as cpu cores -->
+                                    &lt;!&ndash; 0.5C means half as many forks as cpu cores &ndash;&gt;
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>false</reuseForks>
                                     <argLine>
@@ -969,7 +969,7 @@
                                         <multipleJVM>true</multipleJVM>
                                     </systemPropertyVariables>
                                 </configuration>
-                            </execution>
+                            </execution>-->
                         </executions>
                     </plugin>
                     <plugin>
