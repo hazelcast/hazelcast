@@ -24,8 +24,8 @@ import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
-import org.apache.calcite.plan.hep.HazelcastHepProgramBuilder;
 import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
@@ -57,7 +57,7 @@ import javax.annotation.Nullable;
 public class QueryConverter {
     public static final SqlToRelConverter.Config CONFIG;
 
-    public static final HazelcastHepProgramBuilder HEP_CALC_UNION_REWRITER_PROGRAM_BUILDER;
+    public static final HepProgram HEP_CALC_UNION_REWRITER_PROGRAM;
 
     /**
      * Whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
@@ -85,7 +85,7 @@ public class QueryConverter {
                 .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
                 .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
 
-        HEP_CALC_UNION_REWRITER_PROGRAM_BUILDER = prepareCalcAndUnionRewriterProgram();
+        HEP_CALC_UNION_REWRITER_PROGRAM = prepareCalcAndUnionRewriterProgram();
     }
 
     private final SqlValidator validator;
@@ -218,7 +218,7 @@ public class QueryConverter {
     private static RelNode transformProjectAndFilterIntoCalc(RelNode rel) {
         // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
         HepPlanner planner = new HepPlanner(
-                HEP_CALC_UNION_REWRITER_PROGRAM_BUILDER.build(),
+                HEP_CALC_UNION_REWRITER_PROGRAM,
                 Contexts.empty(),
                 true,
                 null,
@@ -274,8 +274,8 @@ public class QueryConverter {
     }
 
     // Note: it must be used only in static class initializer.
-    private static HazelcastHepProgramBuilder prepareCalcAndUnionRewriterProgram() {
-        HazelcastHepProgramBuilder hepProgramBuilder = new HazelcastHepProgramBuilder();
+    private static HepProgram prepareCalcAndUnionRewriterProgram() {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Special rules
         hepProgramBuilder.addRuleInstance(ExtractUpdateExpressionsRule.INSTANCE);
@@ -306,8 +306,6 @@ public class QueryConverter {
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE)
                 .addRuleInstance(CoreRules.UNION_TO_DISTINCT);
 
-        hepProgramBuilder.freeze();
-
-        return hepProgramBuilder;
+        return hepProgramBuilder.build();
     }
 }
