@@ -25,6 +25,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -1748,7 +1749,15 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getUsernamePasswordIdentityConfig(), c2.getUsernamePasswordIdentityConfig())
                     && isCompatible(c1.getTokenIdentityConfig(), c2.getTokenIdentityConfig())
                     && isCompatible(c1.getKerberosIdentityConfig(), c2.getKerberosIdentityConfig())
+                    && isCompatible(c1.getAccessControlServiceConfig(), c2.getAccessControlServiceConfig())
                     ;
+        }
+
+        private static boolean isCompatible(AccessControlServiceConfig c1,
+                AccessControlServiceConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
 
         private static boolean isCompatible(UsernamePasswordIdentityConfig c1, UsernamePasswordIdentityConfig c2) {

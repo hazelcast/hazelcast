@@ -24,6 +24,7 @@ import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -726,8 +727,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         RealmConfig realmConfig = new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig()
                 .setRoleSeparator(":")
                 .addUser("test", "1234", "monitor", "hazelcast")
-                .addUser("dev", "secret", "root")
-        );
+                .addUser("dev", "secret", "root"))
+            .setAccessControlServiceConfig(new AccessControlServiceConfig()
+                .setFactoryClassName("com.acme.access.ACSFactory").setProperty("decisionFile", "/opt/acl.xml"));
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();

@@ -37,6 +37,7 @@ public class RealmConfig {
 
     private AuthenticationConfig authenticationConfig = DefaultAuthenticationConfig.INSTANCE;
     private IdentityConfig identityConfig;
+    private AccessControlServiceConfig accessControlServiceConfig;
 
     public JaasAuthenticationConfig getJaasAuthenticationConfig() {
         return getIfType(authenticationConfig, JaasAuthenticationConfig.class);
@@ -138,6 +139,15 @@ public class RealmConfig {
         return this;
     }
 
+    public AccessControlServiceConfig getAccessControlServiceConfig() {
+        return accessControlServiceConfig;
+    }
+
+    public RealmConfig setAccessControlServiceConfig(AccessControlServiceConfig accessControlServiceConfig) {
+        this.accessControlServiceConfig = accessControlServiceConfig;
+        return this;
+    }
+
     public boolean isAuthenticationConfigured() {
         return authenticationConfig != null && authenticationConfig != DefaultAuthenticationConfig.INSTANCE;
     }
@@ -159,7 +169,7 @@ public class RealmConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(authenticationConfig, identityConfig);
+        return Objects.hash(authenticationConfig, identityConfig, accessControlServiceConfig);
     }
 
     @Override
@@ -175,14 +185,18 @@ public class RealmConfig {
         }
         RealmConfig other = (RealmConfig) obj;
         return Objects.equals(authenticationConfig, other.authenticationConfig)
-                && Objects.equals(identityConfig, other.identityConfig);
+                && Objects.equals(identityConfig, other.identityConfig)
+                && Objects.equals(accessControlServiceConfig, other.accessControlServiceConfig)
+                ;
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("RealmConfig [authenticationConfig=").append(authenticationConfig).append(", identityConfig=")
-                .append(identityConfig).append("]");
+        builder.append("RealmConfig [authenticationConfig=").append(authenticationConfig)
+                .append(", identityConfig=").append(identityConfig)
+                .append(", accessControlServiceConfig=").append(accessControlServiceConfig)
+                .append("]");
         return builder.toString();
     }
 

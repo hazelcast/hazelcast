@@ -808,6 +808,21 @@
                     </jaas>
                 </authentication>
             </realm>
+            <realm name="restRealm">
+                <authentication>
+                    <simple>
+                        <user username="restuser" password="restsecret">
+                            <role>admin</role>
+                        </user>
+                    </simple>
+                </authentication>
+                <access-control-service>
+                    <factory-class-name>com.acme.access.AccessControlServiceFactory</factory-class-name>
+                    <properties>
+                        <property name="decisionFile">/opt/acl.xml</property>
+                    </properties>
+                </access-control-service>
+            </realm>
         </realms>
         <member-authentication realm="jaasRealm"/>
         <client-authentication realm="simpleRealm"/>

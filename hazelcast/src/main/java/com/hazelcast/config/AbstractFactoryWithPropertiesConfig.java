@@ -16,38 +16,17 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
-
 import java.util.Objects;
-import java.util.Properties;
-
-import javax.annotation.Nonnull;
 
 /**
  * Configuration base for config types with a factory class and its properties.
  *
  * @param <T> final child type
  */
-public abstract class AbstractFactoryWithPropertiesConfig<T extends AbstractFactoryWithPropertiesConfig<T>> {
+public abstract class AbstractFactoryWithPropertiesConfig<T extends AbstractFactoryWithPropertiesConfig<T>>
+        extends AbstractBaseFactoryWithPropertiesConfig<T> {
 
     protected boolean enabled;
-    protected String factoryClassName;
-    protected Properties properties = new Properties();
-
-    /**
-     * Returns the factory class name.
-     */
-    public String getFactoryClassName() {
-        return factoryClassName;
-    }
-
-    /**
-     * Sets the factory class name.
-     */
-    public T setFactoryClassName(@Nonnull String factoryClassName) {
-        this.factoryClassName =  checkHasText(factoryClassName, "The factoryClassName cannot be null!");
-        return self();
-    }
 
     /**
      * Returns if this configuration is enabled.
@@ -68,60 +47,12 @@ public abstract class AbstractFactoryWithPropertiesConfig<T extends AbstractFact
         return self();
     }
 
-    /**
-     * Sets a single property.
-     *
-     * @param name  the name of the property to set
-     * @param value the value of the property to set
-     * @return the updated config object (self)
-     * @throws NullPointerException if name or value is {@code null}
-     */
-    public T setProperty(String name, String value) {
-        properties.put(name, value);
-        return self();
-    }
-
-    /**
-     * Gets a property.
-     *
-     * @param name the name of the property to get
-     * @return the value of the property, null if not found
-     * @throws NullPointerException if name is {@code null}
-     */
-    public String getProperty(String name) {
-        return properties.getProperty(name);
-    }
-
-    /**
-     * Gets all properties.
-     *
-     * @return the properties
-     */
-    public Properties getProperties() {
-        return properties;
-    }
-
-    /**
-     * Sets the properties.
-     *
-     * @param properties the properties to set
-     * @return the updated config object (self)
-     * @throws IllegalArgumentException if properties is {@code null}
-     */
-    public T setProperties(@Nonnull Properties properties) {
-        if (properties == null) {
-            throw new IllegalArgumentException("properties can't be null");
-        }
-        this.properties = properties;
-        return self();
-    }
-
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{"
                 + "factoryClassName='" + factoryClassName + '\''
-                + ", enabled=" + enabled
                 + ", properties=" + properties
+                + ", enabled=" + enabled
                 + '}';
     }
 
@@ -137,15 +68,12 @@ public abstract class AbstractFactoryWithPropertiesConfig<T extends AbstractFact
         AbstractFactoryWithPropertiesConfig<?> otherConfig = (AbstractFactoryWithPropertiesConfig<?>) o;
 
         return Objects.equals(enabled, otherConfig.enabled)
-            && Objects.equals(properties, otherConfig.properties)
-            && Objects.equals(factoryClassName, otherConfig.factoryClassName);
+            && super.equals(otherConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(enabled, factoryClassName, properties);
+        return super.hashCode() + (enabled ? 0 : 13);
     }
-
-    protected abstract T self();
 
 }

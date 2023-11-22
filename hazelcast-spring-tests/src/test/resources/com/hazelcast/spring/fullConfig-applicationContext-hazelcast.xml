@@ -739,6 +739,11 @@
                                 </hz:user>
                             </hz:simple>
                         </hz:authentication>
+                        <hz:access-control-service factory-class-name="com.acme.access.AccessControlServiceFactory">
+                            <hz:properties>
+                                <hz:property name="decisionFile">/opt/acl.xml</hz:property>
+                            </hz:properties>
+                        </hz:access-control-service>
                     </hz:realm>
                     <hz:realm name="kerberosRealm">
                         <hz:authentication>

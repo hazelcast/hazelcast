@@ -24,6 +24,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
@@ -280,6 +281,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          </user>"
                 + "        </simple>"
                 + "      </authentication>"
+                + "      <access-control-service>"
+                + "        <factory-class-name>"
+                + "            com.acme.access.AccessControlServiceFactory"
+                + "        </factory-class-name>"
+                + "        <properties>"
+                + "            <property name='decisionFile'>/opt/acl.xml</property>"
+                + "        </properties>"
+                + "      </access-control-service>"
                 + "    </realm>"
                 + "  </realms>"
                 + "  <member-authentication realm='mr'/>\n"
@@ -381,6 +390,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         expectedRoles.add("hazelcast");
         assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
         assertEquals(Boolean.TRUE, simpleAuthnCfg.getSkipRole());
+        AccessControlServiceConfig acs = simpleRealm.getAccessControlServiceConfig();
+        assertNotNull(acs);
+        assertEquals("com.acme.access.AccessControlServiceFactory", acs.getFactoryClassName());
+        assertEquals("/opt/acl.xml", acs.getProperty("decisionFile"));
 
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();
