@@ -68,6 +68,8 @@ public final class Converters {
         if (res == null) {
             if (Calendar.class.isAssignableFrom(clazz)) {
                 res = CalendarConverter.INSTANCE;
+            } else if (Map.class.isAssignableFrom(clazz)) {
+                res = MapConverter.INSTANCE;
             } else {
                 res = ObjectConverter.INSTANCE;
             }

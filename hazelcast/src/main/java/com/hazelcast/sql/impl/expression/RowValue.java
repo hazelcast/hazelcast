@@ -100,6 +100,6 @@ public class RowValue implements Serializable, IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "[" + values + ']';
+        return values.toString();
     }
 }

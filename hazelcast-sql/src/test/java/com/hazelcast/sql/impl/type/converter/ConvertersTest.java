@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,10 +40,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
@@ -52,9 +56,11 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.MAP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.ROW;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
@@ -100,6 +106,7 @@ public class ConvertersTest {
 
         checkId(NullConverter.INSTANCE, Converter.ID_NULL);
 
+        checkId(MapConverter.INSTANCE, Converter.ID_MAP);
         checkId(JsonConverter.INSTANCE, Converter.ID_JSON);
         checkId(RowConverter.INSTANCE, Converter.ID_ROW);
     }
@@ -133,7 +140,9 @@ public class ConvertersTest {
 
         checkClasses(NullConverter.INSTANCE, void.class, Void.class);
 
+        checkClasses(MapConverter.INSTANCE, Map.class, HashMap.class);
         checkClasses(JsonConverter.INSTANCE, HazelcastJsonValue.class);
+        checkClasses(RowConverter.INSTANCE, RowValue.class);
     }
 
     @Test
@@ -165,7 +174,9 @@ public class ConvertersTest {
 
         checkFamily(NullConverter.INSTANCE, NULL);
 
+        checkFamily(MapConverter.INSTANCE, MAP);
         checkFamily(JsonConverter.INSTANCE, JSON);
+        checkFamily(RowConverter.INSTANCE, ROW);
     }
 
     @Test
@@ -708,7 +719,7 @@ public class ConvertersTest {
         ObjectConverter converter = ObjectConverter.INSTANCE;
 
         checkConverterConversions(converter, VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT,
-                DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, JSON);
+                DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, MAP, JSON, ROW);
 
         // Strings
         assertEquals("c", converter.asVarchar('c'));
@@ -788,6 +799,11 @@ public class ConvertersTest {
         assertEquals(1, converter.asObject(1));
         assertEquals(new SqlCustomClass(1), converter.asObject(new SqlCustomClass(1)));
 
+        // Others
+        assertEquals(Map.of("k", 1), converter.asMap(Map.of("k", 1)));
+        assertEquals(new HazelcastJsonValue("[1,2,3]"), converter.asJson("[1,2,3]"));
+        assertEquals(new RowValue(List.of(1, 2, 3)), converter.asRow(new RowValue(List.of(1, 2, 3))));
+
         checkConverterSelf(converter);
     }
 
@@ -795,8 +811,8 @@ public class ConvertersTest {
     public void testNullConverter() {
         NullConverter converter = NullConverter.INSTANCE;
 
-        checkConverterConversions(converter, VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT,
-                DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL,
+                REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT, MAP, JSON, ROW);
 
         checkUnsupportedException(() -> converter.asVarchar(null));
         checkUnsupportedException(() -> converter.asBoolean(null));
@@ -812,8 +828,22 @@ public class ConvertersTest {
         checkUnsupportedException(() -> converter.asTimestamp(null));
         checkUnsupportedException(() -> converter.asTimestampWithTimezone(null));
         checkUnsupportedException(() -> converter.asObject(null));
+        checkUnsupportedException(() -> converter.asMap(null));
+        checkUnsupportedException(() -> converter.asJson(null));
+        checkUnsupportedException(() -> converter.asRow(null));
 
         checkUnsupportedException(() -> converter.convertToSelf(converter, null));
+    }
+
+    @Test
+    public void testMapConverter() {
+        MapConverter converter = MapConverter.INSTANCE;
+
+        checkConverterConversions(converter, VARCHAR, OBJECT, MAP);
+
+        assertEquals("{k=1}", converter.asVarchar(Map.of("k", 1)));
+
+        checkConverterSelf(converter);
     }
 
     @Test
@@ -825,6 +855,17 @@ public class ConvertersTest {
         assertEquals("[1,2,3]", converter.asVarchar(new HazelcastJsonValue("[1,2,3]")));
 
         assertEquals(new HazelcastJsonValue("[1,2,3]"), converter.asObject(new HazelcastJsonValue("[1,2,3]")));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testRowConverter() {
+        RowConverter converter = RowConverter.INSTANCE;
+
+        checkConverterConversions(converter, VARCHAR, OBJECT, ROW);
+
+        assertEquals("[1, 2, 3]", converter.asVarchar(new RowValue(List.of(1, 2, 3))));
 
         checkConverterSelf(converter);
     }
@@ -945,8 +986,16 @@ public class ConvertersTest {
                 assertEquals(expected, converter.canConvertToObject());
                 break;
 
+            case MAP:
+                assertEquals(expected, converter.canConvertToMap());
+                break;
+
             case JSON:
                 assertEquals(expected, converter.canConvertToJson());
+                break;
+
+            case ROW:
+                assertEquals(expected, converter.canConvertToRow());
                 break;
         }
 
@@ -1014,6 +1063,18 @@ public class ConvertersTest {
 
                 case OBJECT:
                     converter.asObject(val);
+                    break;
+
+                case MAP:
+                    converter.asMap(val);
+                    break;
+
+                case JSON:
+                    converter.asJson(val);
+                    break;
+
+                case ROW:
+                    converter.asRow(val);
                     break;
 
                 default:
@@ -1131,9 +1192,21 @@ public class ConvertersTest {
         }
 
         @Override
+        public Map<?, ?> asMap(Object val) {
+            invoked = MAP;
+            return Collections.emptyMap();
+        }
+
+        @Override
         public HazelcastJsonValue asJson(Object val) {
             invoked = JSON;
             return new HazelcastJsonValue("");
+        }
+
+        @Override
+        public RowValue asRow(Object val) {
+            invoked = ROW;
+            return new RowValue();
         }
 
         @Override

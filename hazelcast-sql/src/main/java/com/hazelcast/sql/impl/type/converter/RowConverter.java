@@ -43,6 +43,11 @@ public class RowConverter extends Converter {
     }
 
     @Override
+    public RowValue asRow(Object val) {
+        return (RowValue) val;
+    }
+
+    @Override
     public Object convertToSelf(Converter converter, Object val) {
         return converter.asRow(val);
     }

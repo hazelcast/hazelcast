@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.Serializable;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Interface to convert an item from one type to another.
@@ -85,6 +87,7 @@ public abstract class Converter implements Serializable {
     private final boolean convertToTimestamp;
     private final boolean convertToTimestampWithTimezone;
     private final boolean convertToObject;
+    private final boolean convertToMap;
     private final boolean convertToJson;
     private final boolean convertToRow;
 
@@ -109,6 +112,7 @@ public abstract class Converter implements Serializable {
             convertToTimestamp = canConvert(clazz.getMethod("asTimestamp", Object.class));
             convertToTimestampWithTimezone = canConvert(clazz.getMethod("asTimestampWithTimezone", Object.class));
             convertToObject = canConvert(clazz.getMethod("asObject", Object.class));
+            convertToMap = canConvert(clazz.getMethod("asMap", Object.class));
             convertToJson = canConvert(clazz.getMethod("asJson", Object.class));
             convertToRow = canConvert(clazz.getMethod("asRow", Object.class));
         } catch (ReflectiveOperationException e) {
@@ -202,12 +206,17 @@ public abstract class Converter implements Serializable {
     }
 
     @NotConvertible
+    public Map<?, ?> asMap(Object val) {
+        throw cannotConvertError(QueryDataTypeFamily.MAP);
+    }
+
+    @NotConvertible
     public HazelcastJsonValue asJson(Object val) {
         throw cannotConvertError(QueryDataTypeFamily.JSON);
     }
 
     @NotConvertible
-    public Object asRow(Object val) {
+    public RowValue asRow(Object val) {
         throw cannotConvertError(QueryDataTypeFamily.ROW);
     }
 
@@ -271,6 +280,10 @@ public abstract class Converter implements Serializable {
         return convertToObject;
     }
 
+    public final boolean canConvertToMap() {
+        return convertToMap;
+    }
+
     public final boolean canConvertToJson() {
         return convertToJson;
     }
@@ -323,6 +336,9 @@ public abstract class Converter implements Serializable {
 
             case OBJECT:
                 return canConvertToObject();
+
+            case MAP:
+                return canConvertToMap();
 
             case JSON:
                 return canConvertToJson();

@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -31,13 +33,17 @@ import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
+import com.hazelcast.sql.impl.type.converter.IntervalConverter;
+import com.hazelcast.sql.impl.type.converter.JsonConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LongConverter;
+import com.hazelcast.sql.impl.type.converter.MapConverter;
 import com.hazelcast.sql.impl.type.converter.NullConverter;
 import com.hazelcast.sql.impl.type.converter.ObjectConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
+import com.hazelcast.sql.impl.type.converter.RowConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
@@ -62,6 +68,8 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -108,8 +116,16 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         checkConverter(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTimeConverter.INSTANCE);
 
         checkConverter(QueryDataType.OBJECT, ObjectConverter.INSTANCE);
+        checkConverter(new QueryDataType("CustomType"), ObjectConverter.INSTANCE);
 
         checkConverter(QueryDataType.NULL, NullConverter.INSTANCE);
+
+        checkConverter(QueryDataType.INTERVAL_YEAR_MONTH, IntervalConverter.YEAR_MONTH);
+        checkConverter(QueryDataType.INTERVAL_DAY_SECOND, IntervalConverter.DAY_SECOND);
+
+        checkConverter(QueryDataType.MAP, MapConverter.INSTANCE);
+        checkConverter(QueryDataType.JSON, JsonConverter.INSTANCE);
+        checkConverter(QueryDataType.ROW, RowConverter.INSTANCE);
     }
 
     @Test
@@ -140,6 +156,13 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         checkClasses(QueryDataType.OBJECT, Object.class, SqlCustomClass.class);
 
         checkClasses(QueryDataType.NULL, void.class, Void.class);
+
+        checkClasses(QueryDataType.INTERVAL_YEAR_MONTH, SqlYearMonthInterval.class);
+        checkClasses(QueryDataType.INTERVAL_DAY_SECOND, SqlDaySecondInterval.class);
+
+        checkClasses(QueryDataType.MAP, Map.class, HashMap.class);
+        checkClasses(QueryDataType.JSON, HazelcastJsonValue.class);
+        checkClasses(QueryDataType.ROW, RowValue.class);
     }
 
     @Test
@@ -168,6 +191,7 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME);
 
         checkSerialization(QueryDataType.OBJECT);
+        checkSerialization(new QueryDataType("CustomType"));
 
         checkSerialization(QueryDataType.NULL);
 
