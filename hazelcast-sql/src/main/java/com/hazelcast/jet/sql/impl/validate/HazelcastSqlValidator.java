@@ -32,6 +32,8 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -563,12 +565,26 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             Object[] arguments = ResourceUtil.args(e);
             String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
             Mapping mapping = identifier != null ? iMapResolver.resolve(identifier) : null;
-            String sql = mapping != null ? SqlCreateMapping.unparse(mapping) : null;
+            String sql = mapping != null && hasMapAccess(identifier) ? SqlCreateMapping.unparse(mapping) : null;
             String message = sql != null ? ValidatorResource.imapNotMapped(e.str(), identifier, sql) : e.str();
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);
         }
         return exception;
     }
+
+    private boolean hasMapAccess(String map) {
+        if (!ssc.isSecurityEnabled()) {
+            return true;
+        }
+        var permission = new MapPermission(map, ActionConstants.ACTION_CREATE, ActionConstants.ACTION_READ);
+        try {
+            ssc.checkPermission(permission);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
 
     /**
      * Wraps TABLE operators in subqueries when they appear as join operands.
