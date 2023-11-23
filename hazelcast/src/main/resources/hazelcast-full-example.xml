@@ -3689,6 +3689,7 @@
             <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
             <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
         </raft-algorithm>
+        <map-limit>5</map-limit>
         <semaphores>
             <semaphore>
                 <name>sem1</name>

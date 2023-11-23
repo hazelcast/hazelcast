@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
@@ -40,7 +40,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -87,7 +87,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         String tableName = randomTableName();
 
         createTable(tableName, "table_column " + type);
-        executeJdbc("INSERT INTO " + tableName + " VALUES(" + value + ")");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(" + value + ")");
 
         String mappingName = "mapping_" + randomName();
         execute("CREATE MAPPING " + mappingName
@@ -106,4 +106,22 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
+    @Test
+    public void resolveMappingType() throws Exception {
+        String tableName = randomTableName();
+
+        createTable(tableName, "table_column " + type);
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(" + value + ")");
+
+        String mappingName = "mapping_" + randomName();
+        execute("CREATE MAPPING " + mappingName
+                + " EXTERNAL NAME " + tableName
+                + " DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        assertRowsAnyOrder("SELECT data_type FROM information_schema.columns WHERE table_name = ?",
+                newArrayList(mappingName),
+                new Row(mappingType)
+        );
+    }
 }

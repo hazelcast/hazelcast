@@ -17,8 +17,12 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.primitives.Ints;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlString;
 
@@ -29,7 +33,7 @@ import java.util.List;
 class SelectQueryBuilder extends AbstractQueryBuilder {
 
     private final List<Integer> dynamicParams = new ArrayList<>();
-
+    private final List<FunctionEx<Object, ?>> converters = new ArrayList<>();
 
     SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
         super(table, dialect);
@@ -54,6 +58,14 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
+            if (node instanceof RexInputRef) {
+                RexInputRef rexInputRef = (RexInputRef) node;
+                SqlIdentifier field = (SqlIdentifier) context.field(rexInputRef.getIndex());
+                QueryDataType fieldType = jdbcTable.getFieldByExternalName(field.getSimple()).getType();
+                converters.add(fieldType::convert);
+            } else {
+                converters.add(FunctionEx.identity());
+            }
             SqlNode sqlNode = context.toSql(null, node);
             SqlString sqlString = sqlNode.toSqlString(dialect);
             sb.append(sqlString.toString());
@@ -70,7 +82,12 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
             appendPredicate(sb, predicate, dynamicParams);
         }
     }
+
     int[] parameterPositions() {
         return Ints.toArray(dynamicParams);
+    }
+
+    public List<FunctionEx<Object, ?>> converters() {
+        return converters;
     }
 }

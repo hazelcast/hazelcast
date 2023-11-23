@@ -133,13 +133,13 @@ public final class OptimizerContext {
             List<Object> arguments,
             IMapResolver iMapResolver,
             HepProgram subqueryRewriterProgram,
-            SqlSecurityContext securityContext
+            SqlSecurityContext ssc
     ) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver, ssc);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, securityContext);
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, ssc);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster, subqueryRewriterProgram);
@@ -163,7 +163,7 @@ public final class OptimizerContext {
      * @return SQL tree.
      */
     public QueryParseResult parse(String sql) {
-        return parser.parse(sql);
+        return parser.parse(sql, cluster.getSecurityContext());
     }
 
     /**

@@ -118,7 +118,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeLong(jobId);
         out.writeLong(creationTime);
         IOUtil.writeData(out, dag);
-        out.writeUTF(dagJson);
+        out.writeString(dagJson);
         out.writeObject(config);
         out.writeObject(ownedObservables);
         ImdgUtil.writeSubject(out, subject);
@@ -130,7 +130,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         jobId = in.readLong();
         creationTime = in.readLong();
         dag = IOUtil.readData(in);
-        dagJson = in.readUTF();
+        dagJson = in.readString();
         config = in.readObject();
         ownedObservables = in.readObject();
         subject = ImdgUtil.readSubject(in);

@@ -2488,6 +2488,11 @@
           "default": 0,
           "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
         },
+        "map-limit": {
+          "type": "integer",
+          "default": 10,
+          "description": "The maximum number of CP Maps that are permitted. The default of 10 is not necessarily applicable for a wide variety of usages. Please note when defining this limit: take into consideration the maps you are to create, their capacities and the number of members their host CP groups entail. The latter is important as you will currently need memory headroom per-map, then a multiple of that map's size required for publishing snapshots, e.g. (group size - 1) * map size, per-map.",
+        },
         "raft-algorithm": {
           "type": "object",
           "additionalProperties": false,
