@@ -91,7 +91,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
-        <aws.sdk.version>1.12.593</aws.sdk.version>
+        <aws.sdk.version>1.12.595</aws.sdk.version>
         <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.165</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -115,6 +115,7 @@
         <mysql.connector.version>8.2.0</mysql.connector.version>
         <netty.version>4.1.101.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
+        <oracle.version>21.11.0.0</oracle.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.5</picocli.version>
@@ -143,7 +144,7 @@
         <bytebuddy.version>1.14.10</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.15.0</commons-io.version>
-        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
         <confluent.version>7.4.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
@@ -152,7 +153,7 @@
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <mockito.version>5.7.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.19.2</testcontainers.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.2.0</archunit.version>
@@ -2038,12 +2039,6 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -42,6 +43,8 @@ abstract class AbstractJoinProcessorSupplier
 
     protected String query;
 
+    protected List<FunctionEx<Object, ?>> converters;
+
     //joinInfo is DataSerializable.
     protected JetJoinInfo joinInfo;
 
@@ -58,10 +61,12 @@ abstract class AbstractJoinProcessorSupplier
     AbstractJoinProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
+            @Nonnull List<FunctionEx<Object, ?>> converters,
             @Nonnull JetJoinInfo joinInfo,
             List<Expression<?>> projections) {
         super(dataConnectionName);
         this.query = query;
+        this.converters = converters;
         this.joinInfo = joinInfo;
         this.projections = projections;
     }
@@ -91,6 +96,7 @@ abstract class AbstractJoinProcessorSupplier
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(dataConnectionName);
         out.writeString(query);
+        out.writeObject(converters);
         out.writeObject(joinInfo);
         out.writeObject(projections);
     }
@@ -99,6 +105,7 @@ abstract class AbstractJoinProcessorSupplier
     public void readData(ObjectDataInput in) throws IOException {
         dataConnectionName = in.readString();
         query = in.readString();
+        converters = in.readObject();
         joinInfo = in.readObject();
         projections = in.readObject();
     }

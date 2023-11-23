@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.assertj.core.util.Lists.newArrayList;
+
 public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private static final String JSON = "{\"value\":42}";
@@ -36,8 +38,8 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         tableName = randomTableName();
 
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "data VARCHAR(100)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -54,6 +56,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = 'updated'");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "updated", 1, JSON)
         );
@@ -64,6 +67,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE age = 0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -74,6 +78,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE age = 0 AND JSON_QUERY(data, '$.value') = '42'");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -84,6 +89,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = ?", "updated");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "updated", 1, JSON)
         );
@@ -94,6 +100,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = ? WHERE age = 0", "updated");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -107,6 +114,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -117,6 +125,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE age = ?", 0);
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -130,6 +139,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -140,6 +150,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = ? WHERE age = ?", "updated", 0);
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -150,6 +161,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = ? WHERE age = cast(? as integer)", "updated", "0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -160,6 +172,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("UPDATE " + tableName + " SET name = ? WHERE cast(age as varchar) in (?, ?)", "updated", "not a number", "0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -173,6 +186,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -186,6 +200,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -199,6 +214,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(0, "updated", 0, JSON),
                 new Row(1, "name-1", 1, JSON)
         );

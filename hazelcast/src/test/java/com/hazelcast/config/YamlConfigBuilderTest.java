@@ -4189,6 +4189,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    base-dir: /mnt/cp-data\n"
                 + "    data-load-timeout-seconds: 30\n"
                 + "    cp-member-priority: -1\n"
+                + "    map-limit: 25\n"
                 + "    raft-algorithm:\n"
                 + "      leader-election-timeout-in-millis: 500\n"
                 + "      leader-heartbeat-period-in-millis: 100\n"
@@ -4256,6 +4257,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig1.getMaxSizeMb());
         assertEquals("map2", mapConfig2.getName());
         assertEquals(2, mapConfig2.getMaxSizeMb());
+        assertEquals(25, cpSubsystemConfig.getCPMapLimit());
     }
 
     @Override
