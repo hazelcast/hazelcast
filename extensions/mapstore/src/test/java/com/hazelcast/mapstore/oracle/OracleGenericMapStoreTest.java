@@ -22,6 +22,8 @@ import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import java.sql.SQLException;
+
 @Category(NightlyTest.class)
 public class OracleGenericMapStoreTest extends GenericMapStoreTest {
 
@@ -30,4 +32,16 @@ public class OracleGenericMapStoreTest extends GenericMapStoreTest {
         initialize(new OracleDatabaseProvider());
     }
 
+    @Override
+    protected void createMapLoaderTable(String tableName) throws SQLException {
+        createTable(tableName, "id NUMBER(8) PRIMARY KEY", "name VARCHAR(100)");
+    }
+
+    @Override
+    protected void createMapLoaderTable(String tableName, String... columns) throws SQLException {
+        for (int i = 0; i < columns.length; i++) {
+            columns[i] = columns[i].replace("INT", "NUMBER(8)");
+        }
+        createTable(tableName, columns);
+    }
 }

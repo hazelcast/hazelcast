@@ -84,8 +84,8 @@ import static java.util.stream.Collectors.toMap;
  * The GenericMapLoader creates a SQL mapping with name "__map-store." + mapName.
  * This mapping is removed when the map is destroyed.
  *
- * @param <K>
- * @param <V>
+ * @param <K> type of the key
+ * @param <V> type of the value
  */
 public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecycleSupport {
 
@@ -306,7 +306,6 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public V load(K key) {
         awaitSuccessfulInit();
 
@@ -323,7 +322,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
                 if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
                     value = sqlRow.getObject(1);
                 } else {
-                    //else return GenericRecord as the value
+                    //noinspection unchecked
                     value = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
                 }
             }
@@ -335,7 +334,6 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
      * Size of the {@code keys} collection is limited by {@link ClusterProperty#MAP_LOAD_CHUNK_SIZE}
      */
     @Override
-    @SuppressWarnings("unchecked")
     public Map<K, V> loadAll(Collection<K> keys) {
         awaitSuccessfulInit();
 
@@ -353,8 +351,9 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
                 if (queryResult.getRowMetadata().getColumnCount() == 2 && genericMapStoreProperties.singleColumnAsValue) {
                     K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
                     result.put(id, sqlRow.getObject(1));
-                } else { //else return GenericRecord as the value
+                } else {
                     K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
+                    //noinspection unchecked
                     V record = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
                     result.put(id, record);
                 }
