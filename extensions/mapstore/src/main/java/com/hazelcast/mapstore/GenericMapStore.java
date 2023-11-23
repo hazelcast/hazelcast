@@ -19,7 +19,6 @@ package com.hazelcast.mapstore;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -58,16 +57,23 @@ import static com.hazelcast.mapstore.JdbcParameters.convert;
  * Note : When GenericMapStore uses GenericRecord as value, even if the GenericRecord contains the primary key as a field,
  * the primary key is still received from @{link {@link com.hazelcast.map.IMap} method call
  *
- * @param <K>
+ * @param <K> type of the key
+ * @param <V> type of the value
  */
-public class GenericMapStore<K> extends GenericMapLoader<K>
-        implements MapStore<K, GenericRecord>, MapLoaderLifecycleSupport {
+public class GenericMapStore<K, V> extends GenericMapLoader<K, V>
+        implements MapStore<K, V>, MapLoaderLifecycleSupport {
 
     @Override
-    public void store(K key, GenericRecord record) {
+    public void store(K key, V value) {
         awaitSuccessfulInit();
 
-        JdbcParameters jdbcParameters = convert(key, record, columnMetadataList, genericMapStoreProperties.idColumn);
+        JdbcParameters jdbcParameters = convert(
+                key,
+                value,
+                columnMetadataList,
+                genericMapStoreProperties.idColumn,
+                genericMapStoreProperties.singleColumnAsValue
+        );
 
         try {
             sqlService.execute(queries.storeSink(), jdbcParameters.getParams()).close();
@@ -87,10 +93,10 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
     }
 
     @Override
-    public void storeAll(Map<K, GenericRecord> map) {
+    public void storeAll(Map<K, V> map) {
         awaitSuccessfulInit();
 
-        for (Entry<K, GenericRecord> entry : map.entrySet()) {
+        for (Entry<K, V> entry : map.entrySet()) {
             store(entry.getKey(), entry.getValue());
         }
     }
