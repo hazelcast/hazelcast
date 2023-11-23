@@ -47,19 +47,137 @@
                     </archive>
                 </configuration>
             </plugin>
+
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>relocate</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.hazelcast.jet:hazelcast-jet-mongodb</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>com.mongodb:*</exclude>
+                                    <exclude>org.apache.calcite:*</exclude>
+                                    <exclude>com.hazelcast:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>jar-with-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration combine.self="append">
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-build-utils</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <goals>
+                    <goal>analyze</goal>
+                </goals>
+                <executions>
+                    <execution>
+                        <id>check-for-transitive-dependencies-usage</id>
+                        <phase>package</phase>
+                        <goals><goal>analyze</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <ignoredUnusedDeclaredDependencies>org.apache:calcite</ignoredUnusedDeclaredDependencies>
+                    <failOnWarning>true</failOnWarning>
+                    <ignoreNonCompile>true</ignoreNonCompile>
+                    <ignoredUsedUndeclaredDependencies>
+                        <ignoredUsedUndeclaredDependency>org.slf4j:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>com.google.code.findbugs:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>com.tngtech.archunit:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>junit:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>com.github.docker-java:*</ignoredUsedUndeclaredDependency>,
+                    </ignoredUsedUndeclaredDependencies>
+                </configuration>
             </plugin>
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.calcite</groupId>
+            <artifactId>calcite-core</artifactId>
+            <version>${calcite.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
             <version>${mongodb.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-core</artifactId>
+            <version>${mongodb.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+            <version>${mongodb.version}</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>

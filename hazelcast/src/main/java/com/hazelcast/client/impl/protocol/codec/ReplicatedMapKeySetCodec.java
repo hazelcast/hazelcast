@@ -41,7 +41,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
-@Generated("21cbee0937a85c33315dbc6d47650d85")
+@SuppressWarnings("unused")
+@Generated("b592fcf4493338ef5214cf998f1f1e7d")
 public final class ReplicatedMapKeySetCodec {
     //hex: 0x0D0F00
     public static final int REQUEST_MESSAGE_TYPE = 855808;

@@ -27,7 +27,11 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
@@ -71,6 +75,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -84,6 +91,10 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
+import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
@@ -128,6 +139,11 @@ public final class Util {
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 
     private Util() {
+    }
+
+    public static boolean isJobSuspendable(JobConfig jobConfig) {
+        Boolean argument = jobConfig.getArgument(KEY_JOB_IS_SUSPENDABLE);
+        return argument == null || argument;
     }
 
     public static <T> Supplier<T> memoize(Supplier<T> onceSupplier) {
@@ -375,6 +391,33 @@ public final class Util {
     }
 
     /**
+     * An alternative to {@link Stream#reduce(Object, BiFunction, BinaryOperator)
+     * Stream.reduce(identity, accumulator, combiner)}, which is not parallelizable.
+     * It eliminates the need for a combiner by processing elements in the order
+     * they appear in the stream.
+     */
+    public static <T, R> T reduce(T identity, Stream<R> elements, BiFunction<T, R, T> accumulator) {
+        T result = identity;
+        for (R element : (Iterable<R>) elements::iterator) {
+            result = accumulator.apply(result, element);
+        }
+        return result;
+    }
+
+    /**
+     * An alternative to {@link Stream#collect(Supplier, BiConsumer, BiConsumer)
+     * Stream.collect(supplier, accumulator, combiner)}, which is not parallelizable.
+     * It eliminates the need for a combiner by processing elements in the order
+     * they appear in the stream.
+     */
+    public static <T, R> T collect(T container, Stream<R> elements, BiConsumer<T, R> accumulator) {
+        for (R element : (Iterable<R>) elements::iterator) {
+            accumulator.accept(container, element);
+        }
+        return container;
+    }
+
+    /**
      * Returns a future which is already completed with the supplied exception.
      */
     // replace with CompletableFuture.failedFuture(e) once we depend on java9+
@@ -493,6 +536,17 @@ public final class Util {
         return value.replace("\"", "\\\"");
     }
 
+    @SuppressWarnings("WeakerAccess")  // used in jet-enterprise
+    public static CompletableFuture<Void> copyMapUsingJob(HazelcastInstance instance, int queueSize,
+                                                          String sourceMap, String targetMap) {
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("readMap(" + sourceMap + ')', readMapP(sourceMap));
+        Vertex sink = dag.newVertex("writeMap(" + targetMap + ')', writeMapP(targetMap));
+        dag.edge(between(source, sink).setConfig(new EdgeConfig().setQueueSize(queueSize)));
+        JobConfig jobConfig = new JobConfig()
+                .setName("copy-" + sourceMap + "-to-" + targetMap);
+        return instance.getJet().newJob(dag, jobConfig).getFuture();
+    }
 
     /**
      * If the name ends with "-N", returns a new name where "-N" is replaced

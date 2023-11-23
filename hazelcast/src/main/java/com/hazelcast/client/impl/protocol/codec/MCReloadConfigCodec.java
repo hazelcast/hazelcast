@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Reloads the configuration on the member from its config file, applies (merges) the new config to the current config
  */
-@Generated("d9dbfbe9f30031b607efc0f9b96ebab9")
+@SuppressWarnings("unused")
+@Generated("7f8ae68f81c63ebfce30bf664e2d4673")
 public final class MCReloadConfigCodec {
     //hex: 0x202200
     public static final int REQUEST_MESSAGE_TYPE = 2105856;

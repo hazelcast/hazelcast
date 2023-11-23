@@ -21,7 +21,7 @@ import org.junit.runner.Description;
 
 import static com.hazelcast.instance.impl.MobyNames.MOBY_NAMING_PREFIX;
 
-class MobyNamingRule extends TestWatcher {
+public class MobyNamingRule extends TestWatcher {
     @Override
     protected void starting(Description description) {
         String className = description.getTestClass().getSimpleName();

@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns number of items in the ringbuffer. If no ttl is set, the size will always be equal to capacity after the
  * head completed the first looparound the ring. This is because no items are getting retired.
  */
-@Generated("3ed61aa879ccb4c95625d488fb84cc44")
+@SuppressWarnings("unused")
+@Generated("9d043720e1d9daf86be8d7dabc4ce4d6")
 public final class RingbufferSizeCodec {
     //hex: 0x170100
     public static final int REQUEST_MESSAGE_TYPE = 1507584;

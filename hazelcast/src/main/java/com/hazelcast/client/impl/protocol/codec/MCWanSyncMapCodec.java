@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN sync for a specific map or all maps
  */
-@Generated("df8d2a6f35b30ddd99707721475b2cef")
+@SuppressWarnings("unused")
+@Generated("3b96895885f95d47a8c4f4efada6db13")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;

@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes the query cache with the given name for a specific map publishable.
  */
-@Generated("3d1a134f56490bd068c43d7a8bc86d24")
+@SuppressWarnings("unused")
+@Generated("0d892452abe8a27316f365f885a63f76")
 public final class ContinuousQueryMadePublishableCodec {
     //hex: 0x160300
     public static final int REQUEST_MESSAGE_TYPE = 1442560;

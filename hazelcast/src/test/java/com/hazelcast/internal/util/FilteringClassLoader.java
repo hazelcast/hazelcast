@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.spi.annotation.PrivateApi;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.Collections.enumeration;
 
@@ -35,11 +34,6 @@ import static java.util.Collections.enumeration;
  */
 @PrivateApi
 public class FilteringClassLoader extends ClassLoader {
-
-    private static final int BUFFER_SIZE = 1024;
-
-    private final byte[] buffer = new byte[BUFFER_SIZE];
-
     private final List<String> excludePackages;
     private final String enforcedSelfLoadingPackage;
     private ClassLoader delegatingClassLoader;
@@ -114,23 +108,11 @@ public class FilteringClassLoader extends ClassLoader {
     }
 
     private Class<?> loadAndDefineClass(String name) throws ClassNotFoundException {
-        InputStream is = null;
-        ByteArrayOutputStream os = null;
         try {
-            is = getResourceAsStream(name.replace('.', '/') + ".class");
-            os = new ByteArrayOutputStream();
-
-            int length;
-            while ((length = is.read(buffer)) != -1) {
-                os.write(buffer, 0, length);
-            }
-
-            return defineClass(name, os.toByteArray(), 0, os.size());
+            byte[] content = ReflectionUtils.getClassContent(name, this);
+            return defineClass(name, content, 0, content.length);
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
-        } finally {
-            closeResource(os);
-            closeResource(is);
         }
     }
 }

@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a listener to be notified for the events fired on the underlying map on all nodes.
  */
-@Generated("f2be1effe9c31b7972582c9a57df7640")
+@SuppressWarnings("unused")
+@Generated("d32d3b41e378dcaeff0093898024fcd3")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;
@@ -170,7 +171,7 @@ public final class ContinuousQueryAddListenerCodec {
         /**
          * @param events List of events in the form of data that holds the details of the event such as key, value, old value,
          *               new value and creation time.
-         * @param source Source that dispathces this batch event.
+         * @param source Source that dispatches this batch event.
          * @param partitionId Id of the partition that holds the keys of the batch event.
          */
         public abstract void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId);

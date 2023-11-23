@@ -106,4 +106,12 @@ interface KubernetesApiProvider {
             return jsonValue.toString();
         }
     }
+
+    static String extractTargetRefName(JsonValue endpointAddressJson) {
+        JsonValue targetRef = endpointAddressJson.asObject().get("targetRef");
+        if (targetRef == null || targetRef.isNull()) {
+            return null;
+        }
+        return targetRef.asObject().get("name").asString();
+    }
 }

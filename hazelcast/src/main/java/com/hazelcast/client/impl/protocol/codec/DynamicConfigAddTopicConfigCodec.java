@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("d70d187b6fe2d58e38e18600a0b83008")
+@SuppressWarnings("unused")
+@Generated("12b1758d1c3f4061454c4a18438de1a7")
 public final class DynamicConfigAddTopicConfigCodec {
     //hex: 0x1B0700
     public static final int REQUEST_MESSAGE_TYPE = 1771264;

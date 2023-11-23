@@ -16,7 +16,7 @@
 
 package com.hazelcast.commandline;
 
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
@@ -24,18 +24,18 @@ import java.io.PrintWriter;
 /**
  * Exception handler for processing the tool & Hazelcast related errors
  */
-class ExceptionHandler
-        implements CommandLine.IExecutionExceptionHandler {
+class ExceptionHandler implements CommandLine.IExecutionExceptionHandler {
     @Override
-    public int handleExecutionException(Exception ex, CommandLine commandLine, CommandLine.ParseResult parseResult) {
-        PrintWriter err = commandLine.getErr();
+    public int handleExecutionException(Exception exception, CommandLine commandLine, CommandLine.ParseResult parseResult) {
+        PrintWriter errorWriter = commandLine.getErr();
         CommandLine.Help.ColorScheme colorScheme = commandLine.getColorScheme();
-        if (!StringUtil.isNullOrEmpty(ex.getMessage())) {
-            err.println(colorScheme.errorText(ex.getMessage()));
-        } else {
-            ex.printStackTrace(err);
-        }
-        commandLine.usage(err, colorScheme);
+
+        // Print exception
+        String stackTrace = ExceptionUtil.toString(exception);
+        errorWriter.println(colorScheme.errorText(stackTrace));
+
+        // Print usage
+        commandLine.usage(errorWriter, colorScheme);
         return 0;
     }
 }

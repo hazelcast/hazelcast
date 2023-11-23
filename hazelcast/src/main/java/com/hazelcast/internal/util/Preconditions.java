@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
@@ -48,19 +49,9 @@ public final class Preconditions {
         return argument;
     }
 
-    /**
-     * Tests if an argument is not null.
-     *
-     * @param argument     the argument tested to see if it is not null.
-     * @param errorMessage the errorMessage
-     * @return the argument that was tested.
-     * @throws java.lang.NullPointerException if argument is null
-     */
+    @Nonnull
     public static <T> T checkNotNull(T argument, String errorMessage) {
-        if (argument == null) {
-            throw new NullPointerException(errorMessage);
-        }
-        return argument;
+        return Objects.requireNonNull(argument, errorMessage);
     }
 
     /**
@@ -77,31 +68,21 @@ public final class Preconditions {
             return argument;
         }
         for (T element : argument) {
-            checkNotNull(element, errorMessage);
+            Objects.requireNonNull(element, errorMessage);
         }
         return argument;
+    }
+
+    @Nonnull
+    public static <T> T checkNotNull(T argument) {
+        return Objects.requireNonNull(argument);
     }
 
     /**
      * Tests if an argument is not null.
      *
      * @param argument the argument tested to see if it is not null.
-     * @return the argument that was tested.
-     * @throws java.lang.NullPointerException if argument is null
-     */
-    @Nonnull
-    public static <T> T checkNotNull(T argument) {
-        if (argument == null) {
-            throw new NullPointerException();
-        }
-        return argument;
-    }
-
-    /**
-     * Tests if a string is not null.
-     *
-     * @param argument the string tested to see if it is not null.
-     * @param argName  the string name (used in message if an error is thrown).
+     * @param argName  the argument name (used in message if an error is thrown).
      * @return the string argument that was tested.
      * @throws java.lang.IllegalArgumentException if the string is null.
      */

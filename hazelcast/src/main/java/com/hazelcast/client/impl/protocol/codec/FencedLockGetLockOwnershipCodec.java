@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns current lock ownership status of the given FencedLock instance.
  */
-@Generated("f680425ebbe5bf1cad4c32cfb2d15dde")
+@SuppressWarnings("unused")
+@Generated("64e748beca2c26b10195b5751d7916d8")
 public final class FencedLockGetLockOwnershipCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;
@@ -98,7 +99,7 @@ public final class FencedLockGetLockOwnershipCodec {
         public long fence;
 
         /**
-         * Reenterant lock count
+         * Reentrant lock count
          */
         public int lockCount;
 

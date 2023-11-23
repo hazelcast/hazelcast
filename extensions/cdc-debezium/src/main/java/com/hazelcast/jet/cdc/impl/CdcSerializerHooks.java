@@ -61,11 +61,11 @@ public class CdcSerializerHooks {
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
                     out.writeString(record.operation().code());
-                    out.writeUTF(record.getKeyJson());
+                    out.writeString(record.getKeyJson());
                     RecordPart oldValue = record.oldValue();
-                    out.writeUTF(oldValue == null ? null : oldValue.toJson());
+                    out.writeString(oldValue == null ? null : oldValue.toJson());
                     RecordPart newValue = record.newValue();
-                    out.writeUTF(newValue == null ? null : newValue.toJson());
+                    out.writeString(newValue == null ? null : newValue.toJson());
                     out.writeString(record.table());
                     out.writeString(record.schema());
                     out.writeString(record.database());

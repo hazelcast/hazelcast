@@ -68,7 +68,7 @@ public final class QueryPath implements IdentifiedDataSerializable {
         return key;
     }
 
-    public boolean isTop() {
+    public boolean isTopLevel() {
         return path == null;
     }
 

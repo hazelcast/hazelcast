@@ -64,6 +64,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
             @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
     ) {
         return new AbstractHazelcastConnectorSupplier(clientXml) {
+            private static final long serialVersionUID = 1L;
 
             @Override
             public void init(@Nonnull Context context) {

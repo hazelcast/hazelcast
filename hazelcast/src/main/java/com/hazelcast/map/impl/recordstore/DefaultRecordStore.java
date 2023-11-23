@@ -320,6 +320,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void forEach(BiConsumer<Data, Record> consumer,
                         boolean backup, boolean includeExpiredRecords) {
+        forEach(consumer, backup, includeExpiredRecords, true);
+    }
+
+    @Override
+    public void forEach(BiConsumer<Data, Record> consumer,
+                        boolean backup, boolean includeExpiredRecords, boolean noCaching) {
 
         long now = getNow();
         Iterator<Map.Entry<Data, Record>> entries = storage.mutationTolerantIterator();
@@ -1128,7 +1134,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
                 //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
                 boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
-                        || valueComparator.isEqual(oldValue, mergingEntry.getValue(), serializationService);
+                        || valueComparator.isEqual(existingEntry.getRawValue(), mergingEntry.getRawValue(), serializationService);
                 if (shouldMergeExpiration && mergeRecordExpiration(key, record, mergingEntry, now)) {
                     return MapMergeResponse.RECORD_EXPIRY_UPDATED;
                 }

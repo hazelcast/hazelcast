@@ -35,7 +35,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("128f1518d536f47000102f1932be5f9f")
+@SuppressWarnings("unused")
+@Generated("91a716b12b009efc41529f38612304b0")
 public final class JetExportSnapshotCodec {
     //hex: 0xFE0A00
     public static final int REQUEST_MESSAGE_TYPE = 16648704;

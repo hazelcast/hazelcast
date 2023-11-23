@@ -150,7 +150,9 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
                 null,
                 false,
                 planExecutor,
-                Collections.emptyList()
+                Collections.emptyList(),
+                false,
+                null
         );
 
         given(hazelcastInstance.getJet()).willReturn(jetInstance);

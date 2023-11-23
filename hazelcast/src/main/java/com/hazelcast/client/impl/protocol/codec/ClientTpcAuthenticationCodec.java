@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to TPC channels.
  */
-@Generated("4eeb26c68d74726d9dc168ad2423da9b")
+@SuppressWarnings("unused")
+@Generated("fc89f3416aeb5972e2c469b8da65e8bf")
 public final class ClientTpcAuthenticationCodec {
     //hex: 0x001600
     public static final int REQUEST_MESSAGE_TYPE = 5632;

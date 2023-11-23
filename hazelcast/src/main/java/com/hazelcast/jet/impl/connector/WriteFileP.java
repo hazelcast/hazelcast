@@ -488,13 +488,13 @@ public final class WriteFileP<T> implements Processor {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            fileName = in.readUTF();
+            fileName = in.readString();
             index = in.readInt();
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(fileName);
+            out.writeString(fileName);
             out.writeInt(index);
         }
     }

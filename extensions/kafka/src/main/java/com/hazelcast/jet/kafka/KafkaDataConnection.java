@@ -24,7 +24,6 @@ import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.kafka.impl.NonClosingKafkaProducer;
-import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -60,7 +59,6 @@ import java.util.stream.Collectors;
  *
  * @since 5.3
  */
-@Beta
 public class KafkaDataConnection extends DataConnectionBase {
 
     private static final Properties EMPTY_PROPERTIES = new Properties();
