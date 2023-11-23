@@ -572,6 +572,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return exception;
     }
 
+
+    /**
+     * Check read and create permission for map.
+     *
+     * @param map name of the map.
+     * @return {@code true} access is allowed, {@code false} otherwise.
+     */
     private boolean hasMapAccess(String map) {
         if (!ssc.isSecurityEnabled()) {
             return true;
