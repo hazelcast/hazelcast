@@ -158,6 +158,11 @@ public class CPSubsystemConfig {
     public static final int DEFAULT_DATA_LOAD_TIMEOUT_SECONDS = 2 * 60;
 
     /**
+     * The default limit number of {@link com.hazelcast.cp.CPMap} that can be created.
+     */
+    public static final int DEFAULT_CP_MAP_LIMIT = 10;
+
+    /**
      * Number of CP members to initialize CP Subsystem. It is 0 by default,
      * meaning that CP Subsystem is disabled. CP Subsystem is enabled when
      * a positive value is set. After CP Subsystem is initialized successfully,
@@ -303,7 +308,18 @@ public class CPSubsystemConfig {
 
     private final ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
+    /**
+     * Configurations for {@link com.hazelcast.cp.CPMap} instances.
+     */
     private Map<String, CPMapConfig> cpMapConfigs = new ConcurrentHashMap<>();
+
+    /**
+     * The limit of {@link com.hazelcast.cp.CPMap} that can be created. If set, it must be
+     * a positive number. Please take into consideration the size of the hosted {@link com.hazelcast.cp.CPMap}
+     * instances and their accumulated memory requirements. Headroom should also be given for snapshotting
+     * which is a multiple of the number of other members in the CP group, as an upper-bound.
+     */
+    private int cpMapLimit = DEFAULT_CP_MAP_LIMIT;
 
     public CPSubsystemConfig() {
     }
@@ -329,6 +345,7 @@ public class CPSubsystemConfig {
         for (CPMapConfig cpMapConfig : config.cpMapConfigs.values()) {
             this.cpMapConfigs.put(cpMapConfig.getName(), new CPMapConfig(cpMapConfig));
         }
+        this.cpMapLimit = config.cpMapLimit;
     }
 
     /**
@@ -759,6 +776,24 @@ public class CPSubsystemConfig {
         return this;
     }
 
+    /**
+     * Sets the limit of permitted {@link com.hazelcast.cp.CPMap} instances.
+     * @param cpMapLimit limit of {@link com.hazelcast.cp.CPMap} instances
+     * @throws IllegalArgumentException if {@code cpMapLimit < 0}
+     */
+    public CPSubsystemConfig setCPMapLimit(int cpMapLimit) {
+        checkPositive("cpMapLimit", cpMapLimit);
+        this.cpMapLimit = cpMapLimit;
+        return this;
+    }
+
+    /**
+     * Gets the limit of {@link com.hazelcast.cp.CPMap} instances that are permitted to be created.
+     */
+    public int getCPMapLimit() {
+        return cpMapLimit;
+    }
+
     @Override
     public String toString() {
         return "CPSubsystemConfig{" + "cpMemberCount=" + cpMemberCount + ", groupSize=" + groupSize
@@ -767,7 +802,7 @@ public class CPSubsystemConfig {
                 + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState
                 + ", cpMemberPriority=" + cpMemberPriority + ", raftAlgorithmConfig=" + raftAlgorithmConfig
                 + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs
-                + ", cpMapConfigs=" + cpMapConfigs + '}';
+                + ", cpMapConfigs=" + cpMapConfigs + ", cpMapLimit=" + cpMapLimit + '}';
     }
 
     @Override
@@ -787,6 +822,7 @@ public class CPSubsystemConfig {
                 && failOnIndeterminateOperationState == that.failOnIndeterminateOperationState
                 && persistenceEnabled == that.persistenceEnabled && dataLoadTimeoutSeconds == that.dataLoadTimeoutSeconds
                 && cpMemberPriority == that.cpMemberPriority
+                && cpMapLimit == that.cpMapLimit
                 && Objects.equals(baseDir, that.baseDir)
                 && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
                 && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
@@ -800,6 +836,6 @@ public class CPSubsystemConfig {
         return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
                 missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, cpMemberPriority,
                 baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher,
-                cpMapConfigs);
+                cpMapConfigs, cpMapLimit);
     }
 }

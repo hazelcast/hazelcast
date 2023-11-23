@@ -3945,6 +3945,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <max-size-mb>2</max-size-mb>\n"
                 + "    </map>\n"
                 + "  </maps>\n"
+                + "  <map-limit>20</map-limit>\n"
                 + "</cp-subsystem>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
@@ -3989,6 +3990,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig1.getMaxSizeMb());
         assertEquals("map2", mapConfig2.getName());
         assertEquals(2, mapConfig2.getMaxSizeMb());
+        assertEquals(20, cpSubsystemConfig.getCPMapLimit());
     }
 
     @Override
