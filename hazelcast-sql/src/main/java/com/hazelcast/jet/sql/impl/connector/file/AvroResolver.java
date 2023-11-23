@@ -16,30 +16,20 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.Schema;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.AVRO_TO_SQL;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static org.apache.avro.Schema.Type.NULL;
 
 public final class AvroResolver {
-    public static final DefaultedMap<Schema.Type, QueryDataType> AVRO_TO_SQL = new DefaultedMap<>(
-            new EnumMap<>(Map.of(
-                    Schema.Type.BOOLEAN, QueryDataType.BOOLEAN,
-                    Schema.Type.INT, QueryDataType.INT,
-                    Schema.Type.LONG, QueryDataType.BIGINT,
-                    Schema.Type.FLOAT, QueryDataType.REAL,
-                    Schema.Type.DOUBLE, QueryDataType.DOUBLE,
-                    Schema.Type.STRING, QueryDataType.VARCHAR
-            )), QueryDataType.OBJECT);
-
     private AvroResolver() { }
 
     // CREATE MAPPING <name> TYPE File OPTIONS ('format'='avro', ...)
@@ -50,7 +40,7 @@ public final class AvroResolver {
             String name = schemaField.name();
             // SQL types are nullable by default and NOT NULL is currently unsupported.
             Schema.Type schemaFieldType = unwrapNullableType(schemaField.schema()).getType();
-            QueryDataType type = AVRO_TO_SQL.getOrDefault(schemaFieldType);
+            QueryDataType type = AVRO_TO_SQL.getOrDefault(schemaFieldType, OBJECT);
 
             MappingField field = new MappingField(name, type);
             fields.putIfAbsent(field.name(), field);

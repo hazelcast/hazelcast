@@ -86,8 +86,8 @@ public class UnparseTest extends SqlTestSupport {
         checkQuery("ANALYZE SELECT JSON_ARRAY()");
         checkQuery("ANALYZE\n"
                 + "WITH OPTIONS (\n"
-                + "  'testOpt1'='testOpt1Val',\n"
-                + "  'testOpt2'='testOpt2Val'\n"
+                + "  'processingGuarantee'='exactlyOnce',\n"
+                + "  'snapshotIntervalMillis'='121'\n"
                 + ") SELECT JSON_ARRAY()");
     }
 
@@ -107,7 +107,7 @@ public class UnparseTest extends SqlTestSupport {
                 emptyList(),
                 emptyList(),
                 name -> null,
-                NoOpSqlSecurityContext.INSTANCE
-        );
+                NoOpSqlSecurityContext.INSTANCE,
+                false);
     }
 }

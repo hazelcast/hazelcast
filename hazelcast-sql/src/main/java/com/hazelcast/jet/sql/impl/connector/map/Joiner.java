@@ -113,7 +113,7 @@ final class Joiner {
         int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
         for (int i = 0; i < rightEquiJoinIndices.length; i++) {
             QueryPath path = rightPaths[rightEquiJoinIndices[i]];
-            if (path.isTop() && path.isKey()) {
+            if (path.isTopLevel() && path.isKey()) {
                 return joinInfo.leftEquiJoinIndices()[i];
             }
         }

@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.UncheckedIOException;
@@ -32,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static junit.framework.TestCase.assertNotNull;
@@ -54,11 +52,6 @@ public abstract class AsyncServerSocketTest {
         Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor.start();
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
     }
 
     @After

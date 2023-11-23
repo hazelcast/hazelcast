@@ -53,7 +53,7 @@ class JsonSerializerHooks {
                 public void write(ObjectDataOutput out, DeferredMap deferredMap) throws IOException {
                     out.writeInt(deferredMap.size());
                     for (Map.Entry<String, Object> entry : deferredMap.entrySet()) {
-                        out.writeUTF(entry.getKey());
+                        out.writeString(entry.getKey());
                         out.writeObject(entry.getValue());
                     }
                 }
@@ -63,7 +63,7 @@ class JsonSerializerHooks {
                     int size = in.readInt();
                     DeferredMap deferredMap = new DeferredMap(false, size);
                     for (int i = 0; i < size; i++) {
-                        deferredMap.put(in.readUTF(), in.readObject());
+                        deferredMap.put(in.readString(), in.readObject());
                     }
                     return deferredMap;
                 }

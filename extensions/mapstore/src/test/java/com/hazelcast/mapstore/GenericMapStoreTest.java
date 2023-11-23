@@ -185,7 +185,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenStore_thenTableContainsRow() throws Exception {
-        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -200,6 +200,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0")
         );
     }
@@ -235,6 +236,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0")
         );
     }
@@ -266,6 +268,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "updated")
         );
     }
@@ -287,7 +290,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenRowAndIdColumn_whenStore_thenRowIsUpdated() throws Exception {
-        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
@@ -303,6 +306,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "updated")
         );
     }
@@ -343,6 +347,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.storeAll(people);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1"),
                 new Row(2, "name-2"),
@@ -391,6 +396,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.delete(0);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(1, "name-1")
         );
     }
@@ -410,7 +416,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenIdColumn_whenDelete_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
@@ -421,6 +427,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.delete(0);
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(1, "name-1")
         );
     }
@@ -451,6 +458,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.deleteAll(newArrayList(0, 1));
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(2, "name-2")
         );
     }
@@ -470,7 +478,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenIdColumn_whenDeleteAll_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
@@ -481,6 +489,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.deleteAll(newArrayList(0));
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(1, "name-1")
         );
     }
@@ -511,6 +520,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         mapStore.deleteAll(newArrayList());
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0")
         );
     }
@@ -585,6 +595,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
 
         assertJdbcRowsAnyOrder(mapName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1")
         );

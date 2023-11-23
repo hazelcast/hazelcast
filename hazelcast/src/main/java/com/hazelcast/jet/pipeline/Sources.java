@@ -47,7 +47,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
-import com.hazelcast.spi.annotation.Beta;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Message;
 
@@ -69,7 +68,6 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
@@ -232,7 +230,7 @@ public final class Sources {
      * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicate} and {@code projection} need
@@ -299,7 +297,7 @@ public final class Sources {
      * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      * <p>
      * The classes implementing {@code predicate} and {@code projection} need
@@ -355,7 +353,7 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -422,7 +420,7 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -433,7 +431,7 @@ public final class Sources {
      * requirements, use {@link #mapJournal(String, JournalInitialPosition)}
      * and add a subsequent {@link GeneralStage#map map} or
      * {@link GeneralStage#filter filter} stage.
-     *
+     * <p>
      * <h4>Issue when "catching up"</h4>
      *
      * This processor does not coalesce watermarks from partitions. It reads
@@ -447,7 +445,7 @@ public final class Sources {
      * burst. In order to not lose any events, the lag should be configured to
      * at least {@code snapshotInterval + timeToRestart + normalEventLag}. The
      * reason for this behavior that the default partition count in the cluster
-     * is pretty high and cannot by changed per object and for low-traffic maps
+     * is pretty high and cannot be changed per object and for low-traffic maps
      * it takes long until all partitions see an event to allow emitting of a
      * coalesced watermark.
      *
@@ -530,53 +528,18 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig)));
+        return remoteMapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .build();
     }
 
     /**
      * Returns a source that fetches entries from a remote Hazelcast {@code
      * IMap} with the specified name in a remote cluster identified by the
-     * supplied {@code ClientConfig}. By supplying a {@code predicate} and
-     * {@code projection} here instead of in separate {@code map/filter}
-     * transforms you allow the source to apply these functions early, before
-     * generating any output, with the potential of significantly reducing
-     * data traffic. If your data is stored in the IMDG using the <a href=
-     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
-     * portable serialization format</a>, there are additional optimizations
-     * available when using {@link Projections#singleAttribute} and {@link
-     * Projections#multiAttribute}) to create your projection instance and
-     * using the {@link Predicates} factory or
-     * {@link PredicateBuilder PredicateBuilder} to create
-     * the predicate. In this case Jet can test the predicate and apply the
-     * projection without deserializing the whole object.
+     * supplied {@code ClientConfig}.
      * <p>
-     * Due to the current limitations in the way Jet reads the map it can't use
-     * any indexes on the map. It will always scan the map in full.
+     * See {@link RemoteMapSourceBuilder} for details on the remote map source.
      * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * it will re-emit all entries.
-     * <p>
-     * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
-     * <p>
-     * The default local parallelism for this processor is 1.
-     *
-     * <h4>Predicate/projection class requirements</h4>
-     *
-     * The classes implementing {@code predicate} and {@code projection} need
-     * to be available on the remote cluster's classpath or loaded using
-     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * the job classpath in {@link JobConfig}. The same is true for the class
-     * of the objects stored in the map itself. If you cannot meet these
-     * conditions, use {@link #remoteMap(String, ClientConfig)} and add a
-     * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
-     * filter} stage.
-     *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
      *                  projection, use {@link Predicates#alwaysTrue()} as a pass-through
@@ -595,8 +558,78 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
+        return Sources.<K, V>remoteMapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .predicate(predicate)
+                .projection(projection)
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @param mapName           the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteMap(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef
+    ) {
+        return Sources.<K, V>remoteMapBuilder(mapName)
+                .dataConnectionName(dataConnectionRef.getName())
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @param mapName           the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> BatchSource<T> remoteMap(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
+    ) {
+        return Sources.<K, V>remoteMapBuilder(mapName)
+                .dataConnectionName(dataConnectionRef.getName())
+                .predicate(predicate)
+                .projection(projection)
+                .build();
+    }
+
+    /**
+     * Returns a builder to build a source that fetches entries from a remote
+     * Hazelcast {@code IMap} with the specified name. It provides a fluent API
+     * to build the source using the optional parameters.
+     * <p>
+     * See {@link RemoteMapSourceBuilder} for details on the remote map source.
+     * @param mapName the name of the map
+     * @return builder for remote map source
+     * @param <K> the type of the key in the map
+     * @param <V> the type of the value in the map
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V> RemoteMapSourceBuilder<K, V, Entry<K, V>> remoteMapBuilder(String mapName) {
+        return new RemoteMapSourceBuilder<>(mapName);
     }
 
     /**
@@ -621,7 +654,7 @@ public final class Sources {
      * {@linkplain Stage#setName name} to this source.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -715,7 +748,6 @@ public final class Sources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static <T, K, V> StreamSource<T> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef,
@@ -752,7 +784,6 @@ public final class Sources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static <K, V> StreamSource<Entry<K, V>> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef,
@@ -806,7 +837,7 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -901,7 +932,7 @@ public final class Sources {
      * {@linkplain Stage#setName name} to this source.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -1082,7 +1113,7 @@ public final class Sources {
      * If files are appended to while being read, the addition might or might
      * not be emitted or part of a line can be emitted. If files are modified
      * in more complex ways, the behavior is undefined.
-     *
+     * <p>
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull
@@ -1154,7 +1185,7 @@ public final class Sources {
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
      * editor. The best way to append is to use {@code echo text >> yourFile}.
-     *
+     * <p>
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull
@@ -1182,7 +1213,7 @@ public final class Sources {
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
      * editor. The best way to append is to use {@code echo text >> yourFile}.
-     *
+     * <p>
      * See {@link #filesBuilder(String)}, {@link #fileWatcher(String)}.
      *
      * @since Jet 4.2
@@ -1406,6 +1437,7 @@ public final class Sources {
      * @param createOutputFn creates output objects from {@link ResultSet}
      * @param <T> type of output objects
      */
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
@@ -1458,7 +1490,7 @@ public final class Sources {
      *
      * @since 5.3
      */
-    @Beta
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull ToResultSetFunction resultSetFn,
@@ -1488,6 +1520,7 @@ public final class Sources {
      *
      * The given function must be stateless.
      */
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
             @Nonnull String query,
@@ -1531,6 +1564,7 @@ public final class Sources {
      *    }</pre>
      *
      */
+    @Nonnull
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
             @Nonnull String query,

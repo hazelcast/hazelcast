@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.util.JVM;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -42,9 +42,7 @@ public class TpcTestSupport {
     public static final int TERMINATION_TIMEOUT_SECONDS = 30;
 
     public static void assumeNotWindows() {
-        String property = System.getProperty("os.name");
-        boolean windowsOS = property.toLowerCase().startsWith("win");
-        assumeFalse("Skipping on Windows", windowsOS);
+        assumeFalse("Skipping on Windows", OS.isWindows());
     }
 
     public static void assertCompletesEventually(final Future future) {
@@ -221,12 +219,5 @@ public class TpcTestSupport {
 
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         assertTrueEventually(null, task, timeoutSeconds);
-    }
-
-    public static void assumeNotIbmJDK8() {
-        String vendor = System.getProperty("java.vendor");
-        boolean isIbmJDK = vendor.toLowerCase().contains("ibm");
-        boolean isIbmJDK8 = isIbmJDK && (JVM.getMajorVersion() == 8);
-        assumeFalse(isIbmJDK8);
     }
 }

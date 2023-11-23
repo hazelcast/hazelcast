@@ -20,18 +20,18 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 public class TypeDefinitionColumn {
     private final String name;
-    private final QueryDataType dataType;
+    private final QueryDataType type;
 
-    public TypeDefinitionColumn(String name, QueryDataType dataType) {
+    public TypeDefinitionColumn(String name, QueryDataType type) {
         this.name = name;
-        this.dataType = dataType;
+        this.type = type;
     }
 
     public String name() {
         return name;
     }
 
-    public QueryDataType dataType() {
-        return dataType;
+    public QueryDataType type() {
+        return type;
     }
 }

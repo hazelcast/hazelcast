@@ -105,7 +105,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
 
-    private HazelcastInstance[] members;
+    protected HazelcastInstance[] members;
 
     @Parameter
     public SerializationMode serializationMode;

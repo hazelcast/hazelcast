@@ -149,6 +149,7 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_SERIALIZABLE = -100;
     public static final int JAVA_DEFAULT_TYPE_EXTERNALIZABLE = -101;
+    public static final int JAVA_DEFAULT_BYTE_BUFFER = -102;
 
     // ------------------------------------------------------------
     // LANGUAGE SPECIFIC SERIALIZERS

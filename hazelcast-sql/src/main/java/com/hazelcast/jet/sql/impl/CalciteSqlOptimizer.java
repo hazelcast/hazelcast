@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -165,8 +166,8 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED;
 import static java.lang.String.format;
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -240,6 +241,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final List<QueryPlanListener> queryPlanListeners;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
+    private final boolean cyclicUserTypesAreAllowed;
 
     private final ILogger logger;
 
@@ -266,6 +268,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dataConnectionResolver,
                 resultRegistry
         );
+
+        this.cyclicUserTypesAreAllowed = nodeEngine.getProperties().getBoolean(SQL_CUSTOM_CYCLIC_TYPES_ENABLED);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -316,7 +320,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 iMapResolver,
-                task.getSecurityContext());
+                task.getSecurityContext(),
+                cyclicUserTypesAreAllowed);
 
         try {
             OptimizerContext.setThreadContext(context);
@@ -378,11 +383,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else {
             // only Select and DML are currently eligible for ANALYZE
             boolean analyze = false;
-            Map<String, String> analyzeOptions = emptyMap();
+            SqlAnalyzeStatement analyzeStatement = null;
             if (node instanceof SqlAnalyzeStatement) {
                 analyze = true;
-                final SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) node;
-                analyzeOptions = analyzeStatement.options();
+                analyzeStatement = (SqlAnalyzeStatement) node;
                 node = analyzeStatement.getQuery();
             }
 
@@ -396,7 +400,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     false,
                     task.getSql(),
                     analyze,
-                    analyzeOptions
+                    analyze ? analyzeStatement.getJobConfig() : null
             );
         }
     }
@@ -489,7 +493,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 true,
                 query,
                 false,
-                emptyMap()
+                null
         );
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
@@ -606,7 +610,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             boolean isCreateJob,
             String query,
             boolean analyze,
-            Map<String, String> analyzeOptions
+            @Nullable JobConfig analyzeJobConfig
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
@@ -614,6 +618,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
@@ -632,6 +637,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof InsertMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
             return new IMapInsertPlan(
                     planKey,
@@ -645,6 +651,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(
                     planKey,
@@ -657,6 +664,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
             return new IMapUpdatePlan(
                     planKey,
@@ -686,9 +694,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions,
                     analyze,
-                    analyzeOptions);
+                    analyzeJobConfig);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(
                     planKey,
@@ -718,7 +727,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions,
                     analyze,
-                    analyzeOptions);
+                    analyzeJobConfig);
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
@@ -737,7 +746,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions,
                     analyze,
-                    analyzeOptions
+                    analyzeJobConfig
             );
         } else {
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
@@ -763,7 +772,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions,
                     partitionStrategyCandidates(physicalRel, parameterMetadata),
                     analyze,
-                    analyzeOptions
+                    analyzeJobConfig
             );
         }
     }
@@ -1024,6 +1033,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         return result;
+    }
+
+    /**
+     * Check should be used during the optimized IMapByKey plan construction.
+     * It throws {@link QueryException} of query is analyzed for optimized IMapByKey plans.
+     * @param isAnalyzed is query analyzed
+     */
+    static void checkIMapByKeyPlanIsAnalyzed(boolean isAnalyzed) {
+        if (isAnalyzed) {
+            throw QueryException.error("This query uses key-based optimized IMap access plan. " +
+                    "ANALYZE is unable to produce meaningful execution statistics for it.");
+        }
     }
 
 

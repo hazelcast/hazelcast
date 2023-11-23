@@ -16,15 +16,13 @@
 
 package com.hazelcast.jet.kafka;
 
+import com.hazelcast.jet.avro.impl.AvroSerializerHooks;
 import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.BinaryEncoder;
-import org.apache.avro.io.EncoderFactory;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serializer;
 
-import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
 /**
@@ -38,7 +36,6 @@ import java.util.Map;
  * @since 5.4
  */
 public class HazelcastKafkaAvroSerializer extends AbstractHazelcastAvroSerde implements Serializer<GenericRecord> {
-    private final EncoderFactory encoderFactory = EncoderFactory.get();
     private GenericDatumWriter<GenericRecord> datumWriter;
 
     /** Constructor used by Kafka producer. */
@@ -51,11 +48,8 @@ public class HazelcastKafkaAvroSerializer extends AbstractHazelcastAvroSerde imp
 
     @Override
     public byte[] serialize(String topic, GenericRecord record) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            BinaryEncoder encoder = encoderFactory.directBinaryEncoder(out, null);
-            datumWriter.write(record, encoder);
-            encoder.flush();
-            return out.toByteArray();
+        try {
+            return AvroSerializerHooks.serialize(datumWriter, record);
         } catch (Exception e) {
             throw new SerializationException("Error serializing Avro message", e);
         }

@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("50b41c8d1afa7ace9b65fcf336d12522")
+@SuppressWarnings("unused")
+@Generated("1c53ae43d72216b937dac021779c1ca7")
 public final class PartitioningAttributeConfigCodec {
 
     private PartitioningAttributeConfigCodec() {

@@ -670,6 +670,8 @@ public final class ClientConfigXmlGenerator {
     }
 
     private static void tpc(XmlGenerator gen, ClientTpcConfig tpcConfig) {
-        gen.open("tpc", "enabled", tpcConfig.isEnabled()).close();
+        gen.open("tpc", "enabled", tpcConfig.isEnabled())
+           .node("connection-count", tpcConfig.getConnectionCount())
+           .close();
     }
 }

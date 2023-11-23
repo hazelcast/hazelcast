@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads all the keys into the CacheRecordStore in batch.
  */
-@Generated("63e5edae8d98c7c4ad3808210497cab5")
+@SuppressWarnings("unused")
+@Generated("6e8d23ca76ee79bfb9b6d9089d356892")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;

@@ -74,6 +74,8 @@ public final class SecuredFunctions {
 
     public static <K, V> FunctionEx<? super Context, IMap<K, V>> iMapFn(String name) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public IMap<K, V> applyEx(Context context) {
                 return context.hazelcastInstance().getMap(name);
@@ -90,6 +92,8 @@ public final class SecuredFunctions {
     public static <K, V> FunctionEx<HazelcastInstance, EventJournalReader<EventJournalMapEvent<K, V>>>
     mapEventJournalReaderFn(String name) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public EventJournalReader<EventJournalMapEvent<K, V>> applyEx(HazelcastInstance instance) {
                 return (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(name);
@@ -106,6 +110,8 @@ public final class SecuredFunctions {
     public static <K, V> FunctionEx<HazelcastInstance, EventJournalReader<EventJournalCacheEvent<K, V>>>
     cacheEventJournalReaderFn(String name) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public EventJournalReader<EventJournalCacheEvent<K, V>> applyEx(HazelcastInstance instance) {
                 return (EventJournalReader<EventJournalCacheEvent<K, V>>) instance.getCacheManager().getCache(name);
@@ -120,6 +126,8 @@ public final class SecuredFunctions {
 
     public static <K, V> FunctionEx<? super Context, ReplicatedMap<K, V>> replicatedMapFn(String name) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public ReplicatedMap<K, V> applyEx(Context context) {
                 return context.hazelcastInstance().getReplicatedMap(name);
@@ -134,6 +142,8 @@ public final class SecuredFunctions {
 
     public static SupplierEx<Processor> readListProcessorFn(String name, String clientXml) {
         return new SupplierEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Processor getEx() {
                 return new ReadIListP(name, clientXml);
@@ -148,6 +158,8 @@ public final class SecuredFunctions {
 
     public static <E> FunctionEx<Processor.Context, ITopic<E>> reliableTopicFn(String name) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public ITopic<E> applyEx(Processor.Context context) {
                 return context.hazelcastInstance().getReliableTopic(name);
@@ -164,6 +176,8 @@ public final class SecuredFunctions {
             FunctionEx<? super Processor.Context, ? extends S> createContextFn
     ) {
         return new BiFunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public S applyEx(Processor.Context context, Void o) throws Exception {
                 return createContextFn.applyEx(context);
@@ -178,6 +192,8 @@ public final class SecuredFunctions {
 
     public static SupplierEx<Processor> streamSocketProcessorFn(String host, int port, String charset) {
         return new SupplierEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Processor getEx() {
                 return new StreamSocketP(host, port, Charset.forName(charset));
@@ -196,6 +212,8 @@ public final class SecuredFunctions {
             BiFunctionEx<? super String, ? super String, ? extends T> mapOutputFn
     ) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Stream<T> applyEx(Path path) throws Exception {
                 String fileName = path.getFileName().toString();
@@ -218,6 +236,8 @@ public final class SecuredFunctions {
             FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
 
         return new SupplierEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Processor getEx() {
                 return new ReadFilesP<>(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn);
@@ -235,6 +255,8 @@ public final class SecuredFunctions {
             Class<T> type
     ) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Stream<T> applyEx(Path path) throws Exception {
                 return JsonUtil.beanSequenceFrom(path, type);
@@ -251,6 +273,8 @@ public final class SecuredFunctions {
             String directory
     ) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Stream<Map<String, Object>> applyEx(Path path) throws Exception {
                 return JsonUtil.mapSequenceFrom(path);
@@ -271,6 +295,8 @@ public final class SecuredFunctions {
             BiFunctionEx<? super String, ? super String, ?> mapOutputFn
     ) {
         return new SupplierEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Processor getEx() {
                 return new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob,
@@ -290,6 +316,8 @@ public final class SecuredFunctions {
             String host, int port, String charsetName
     ) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public BufferedWriter applyEx(Processor.Context context) throws Exception {
                 return new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName));
@@ -312,6 +340,8 @@ public final class SecuredFunctions {
             LongSupplier clock
     ) {
         return new SupplierEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Processor getEx() {
                 return new WriteFileP<>(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, clock);
@@ -331,6 +361,7 @@ public final class SecuredFunctions {
             BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
 
             @Override
             public Processor applyEx(HazelcastInstance instance) {
@@ -352,6 +383,8 @@ public final class SecuredFunctions {
             FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return new FunctionEx<>() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Processor applyEx(HazelcastInstance instance) {
                 return new UpdateMapWithEntryProcessorP<>(instance, maxParallelAsyncOps, name,

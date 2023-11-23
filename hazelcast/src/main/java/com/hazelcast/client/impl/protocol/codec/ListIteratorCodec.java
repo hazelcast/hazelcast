@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-@Generated("d3ebc78e9e1b8edb5e6b9715223a0dc0")
+@SuppressWarnings("unused")
+@Generated("e9ce5be038f4f63ed0390f051c7f048b")
 public final class ListIteratorCodec {
     //hex: 0x051600
     public static final int REQUEST_MESSAGE_TYPE = 333312;

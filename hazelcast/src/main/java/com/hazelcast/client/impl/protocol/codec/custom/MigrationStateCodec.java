@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b56d0350712b153c65fed79779848ede")
+@SuppressWarnings("unused")
+@Generated("3855732b5e3b8ae347f3a13b1a82788a")
 public final class MigrationStateCodec {
     private static final int START_TIME_FIELD_OFFSET = 0;
     private static final int PLANNED_MIGRATIONS_FIELD_OFFSET = START_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

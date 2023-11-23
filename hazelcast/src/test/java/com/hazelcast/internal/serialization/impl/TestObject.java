@@ -71,7 +71,7 @@ public class TestObject implements DataSerializable {
         out.writeLong(l);
         out.writeFloat(f);
         out.writeDouble(d);
-        out.writeUTF(s);
+        out.writeString(s);
 
         out.writeObject(list);
         out.writeObject(set);
@@ -88,7 +88,7 @@ public class TestObject implements DataSerializable {
         l = in.readLong();
         f = in.readFloat();
         d = in.readDouble();
-        s = in.readUTF();
+        s = in.readString();
 
         list = in.readObject();
         set = in.readObject();

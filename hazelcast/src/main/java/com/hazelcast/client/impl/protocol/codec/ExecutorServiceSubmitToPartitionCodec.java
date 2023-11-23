@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to the member that owns the partition with the given id.
  */
-@Generated("8909a573e651c5b90f633399cc943d24")
+@SuppressWarnings("unused")
+@Generated("ea4b88b7ccd1237c486197f02d3cc68d")
 public final class ExecutorServiceSubmitToPartitionCodec {
     //hex: 0x080500
     public static final int REQUEST_MESSAGE_TYPE = 525568;

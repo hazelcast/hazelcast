@@ -808,6 +808,10 @@ hazelcast:
         - name: "*"
           actions:
             - all
+      cpmap:
+        - name: "*"
+          actions:
+            - all
       transaction:
         principal: deployer
         deny: true
@@ -997,6 +1001,11 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+    maps:
+      map1:
+        max-size-mb: 50
+      map2:
+        max-size-mb: 25
 
   auditlog:
     enabled: false

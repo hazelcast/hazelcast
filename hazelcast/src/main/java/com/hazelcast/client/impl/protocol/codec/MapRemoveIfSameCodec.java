@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-@Generated("fcc316f69c2da078b5459462dda2d4ec")
+@SuppressWarnings("unused")
+@Generated("53aa86dfbcca33f0aebb7e4ad06d7b34")
 public final class MapRemoveIfSameCodec {
     //hex: 0x010800
     public static final int REQUEST_MESSAGE_TYPE = 67584;

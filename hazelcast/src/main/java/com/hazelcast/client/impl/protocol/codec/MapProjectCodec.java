@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on all map entries and returns the result
  */
-@Generated("c08e457b48a1923e95b140b5fa98a674")
+@SuppressWarnings("unused")
+@Generated("a57ae0627c5f98569f8ee564dec21d0c")
 public final class MapProjectCodec {
     //hex: 0x013B00
     public static final int REQUEST_MESSAGE_TYPE = 80640;

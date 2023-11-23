@@ -49,8 +49,7 @@ public final class Preconditions {
         return argument;
     }
 
-    /** @deprecated {@link Objects.requireNonNull(T, String) */
-    @Deprecated(since = "5.4")
+    @Nonnull
     public static <T> T checkNotNull(T argument, String errorMessage) {
         return Objects.requireNonNull(argument, errorMessage);
     }
@@ -74,8 +73,6 @@ public final class Preconditions {
         return argument;
     }
 
-    /** @deprecated {@link Objects.requireNonNull(T) */
-    @Deprecated(since = "5.4")
     @Nonnull
     public static <T> T checkNotNull(T argument) {
         return Objects.requireNonNull(argument);

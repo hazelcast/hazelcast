@@ -24,7 +24,6 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -35,7 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
@@ -57,9 +55,10 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     public abstract ReactorBuilder newReactorBuilder();
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
+    protected void customizeClientSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
+    protected void customizeServerSocketBuilder(AsyncSocketBuilder socketBuilder) {
     }
 
     @Before
@@ -232,12 +231,13 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+        AsyncSocketBuilder asyncSocketBuilder = clientReactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new ClientAsyncSocketReader(completionLatch))
-                .build();
+                .setReader(new ClientAsyncSocketReader(completionLatch));
+        customizeClientSocketBuilder(asyncSocketBuilder);
+        AsyncSocket clientSocket = asyncSocketBuilder.build();
 
         clientSocket.start();
         clientSocket.connect(serverAddress).join();
@@ -248,11 +248,13 @@ public abstract class AsyncSocket_LargePayloadTest {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    serverReactor.newAsyncSocketBuilder(acceptRequest)
+                    AsyncSocketBuilder asyncSocketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new ServerAsyncSocketReader())
+                            .setReader(new ServerAsyncSocketReader());
+                    customizeServerSocketBuilder(asyncSocketBuilder);
+                    asyncSocketBuilder
                             .build()
                             .start();
                 })

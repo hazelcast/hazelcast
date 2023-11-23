@@ -28,6 +28,13 @@ import java.util.UUID;
 /**
  * Represents the combined authentication response parameters
  * of the various authentication response messages.
+ * <p/>
+ * If any new additions are made the the AuthenticationResponse, an options map
+ * should be used just like the MemberHandshake. This way a set of key/values
+ * can be passed without needing to modify the AuthenticationResponse if a
+ * key is added or removed. Any option on the AuthenticationResponse is optional
+ * and hence each client needs to deal with the fact that the value might not exist.
+ * See the following JIRA ticket: https://hazelcast.atlassian.net/browse/HZ-3710
  */
 public final class AuthenticationResponse {
     private final byte status;

@@ -80,13 +80,13 @@ public interface TestDatabaseProvider {
     /**
      * Quote individual parts of a compound identifier and concat with `.` delimiter
      */
-    default String quote(String[] parts) {
+    default String quote(String... parts) {
         return Arrays.stream(parts)
                      .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
                      .collect(joining("."));
     };
 
     default String createSchemaQuery(String schemaName) {
-        return "CREATE SCHEMA IF NOT EXISTS " + schemaName;
+        return "CREATE SCHEMA IF NOT EXISTS " + quote(schemaName);
     }
 }

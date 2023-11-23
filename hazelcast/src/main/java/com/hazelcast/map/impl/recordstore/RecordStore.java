@@ -319,6 +319,9 @@ public interface RecordStore<R extends Record> {
 
     void forEach(BiConsumer<Data, Record> consumer, boolean backup, boolean includeExpiredRecords);
 
+    void forEach(BiConsumer<Data, Record> consumer, boolean backup, boolean includeExpiredRecords,
+                 boolean noCaching);
+
     Iterator<Map.Entry<Data, Record>> iterator();
 
     /**

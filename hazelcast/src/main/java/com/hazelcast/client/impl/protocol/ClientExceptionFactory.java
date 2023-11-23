@@ -340,8 +340,7 @@ public class ClientExceptionFactory {
         if (exceptionFactory == null) {
             String className = errorHolder.getClassName();
             try {
-                Class<? extends Throwable> exceptionClass =
-                        (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
+                Class<? extends Throwable> exceptionClass = ClassLoaderUtil.loadClass(classLoader, className);
                 throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, errorHolder.getMessage(),
                         createException(iterator));
             } catch (ClassNotFoundException e) {
