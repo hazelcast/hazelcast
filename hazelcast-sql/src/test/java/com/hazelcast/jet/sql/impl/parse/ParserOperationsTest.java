@@ -211,8 +211,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 name -> null,
-                NoOpSqlSecurityContext.INSTANCE,
-                false);
+                null,
+                NoOpSqlSecurityContext.INSTANCE);
     }
 
     private static TableField field(String name) {

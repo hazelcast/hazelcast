@@ -19,9 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
 import com.hazelcast.jet.sql.impl.opt.ExtractUpdateExpressionsRule;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
-import com.hazelcast.jet.sql.impl.opt.logical.ScanCyclicTypeMustNotExecuteRule;
 import org.apache.calcite.plan.Contexts;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.hep.HepPlanner;
@@ -57,7 +55,6 @@ import javax.annotation.Nullable;
 public class QueryConverter {
     public static final SqlToRelConverter.Config CONFIG;
 
-    private static HepProgram hepSubqueryRewriterProgram;
     private static final HepProgram HEP_CALC_UNION_REWRITER_PROGRAM;
 
     /**
@@ -92,17 +89,21 @@ public class QueryConverter {
     private final SqlValidator validator;
     private final Prepare.CatalogReader catalogReader;
     private final RelOptCluster cluster;
-    private final boolean cyclicUserTypesAreAllowed;
+
+    /**
+     * HEP planner program for unconditional rewrites
+     */
+    private final HepProgram subqueryRewriterProgram;
 
     public QueryConverter(
             SqlValidator validator,
             CatalogReader catalogReader,
-            HazelcastRelOptCluster cluster,
-            boolean cyclicUserTypesAreAllowed) {
+            RelOptCluster cluster,
+            HepProgram subqueryRewriterProgram) {
         this.validator = validator;
         this.catalogReader = catalogReader;
         this.cluster = cluster;
-        this.cyclicUserTypesAreAllowed = cyclicUserTypesAreAllowed;
+        this.subqueryRewriterProgram = subqueryRewriterProgram;
     }
 
     public QueryConvertResult convert(SqlNode node) {
@@ -115,7 +116,7 @@ public class QueryConverter {
         // - remove subquery expressions, converting them to Correlate nodes.
         // - transform distinct UNION to UNION ALL, merging the neighboring UNION relations.
         // - check, if the relation uses cyclic user types, but if they are allowed - skip this step.
-        RelNode relNoSubqueries = performUnconditionalRewrites(root.project(), cyclicUserTypesAreAllowed);
+        RelNode relNoSubqueries = performUnconditionalRewrites(root.project());
 
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
         // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
@@ -166,21 +167,14 @@ public class QueryConverter {
      * </li>
      * </ul>
      *
-     * @param rel                       Initial relation.
-     * @param cyclicUserTypesAreAllowed Whether cyclic user types are allowed.
+     * @param rel Initial relation.
      * @return Resulting relation.
+     * @implNote {@link QueryConverter#subqueryRewriterProgram} is a per-HZ instance program,
+     * and should be movedto the static context after the stabilization of the cyclic UDTs.
      */
-    private static RelNode performUnconditionalRewrites(RelNode rel, boolean cyclicUserTypesAreAllowed) {
-        // Note: 'cyclicUserTypesAreAllowed' is cluster-wise property, no changes in runtime are expected.
-        // Note: we do not care about potential multiple concurrent initialisations, this is fine for us.
-        //  It is more optimal in a long-term to allow a few multiple concurrent initialisations,
-        //  but have cheap plain reads during afterwards.
-        if (hepSubqueryRewriterProgram == null) {
-            hepSubqueryRewriterProgram = prepareUnconditionalSubqueryRewriter(cyclicUserTypesAreAllowed);
-        }
-
+    private RelNode performUnconditionalRewrites(RelNode rel) {
         HepPlanner planner = new HepPlanner(
-                hepSubqueryRewriterProgram,
+                subqueryRewriterProgram,
                 Contexts.empty(),
                 true,
                 null,
@@ -208,7 +202,7 @@ public class QueryConverter {
      * @param rel Initial relation.
      * @return Resulting relation.
      */
-    private static RelNode transformProjectAndFilterIntoCalc(RelNode rel) {
+    private RelNode transformProjectAndFilterIntoCalc(RelNode rel) {
         // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
         HepPlanner planner = new HepPlanner(
                 HEP_CALC_UNION_REWRITER_PROGRAM,
@@ -266,21 +260,6 @@ public class QueryConverter {
         return new NestedExistsFinder().find();
     }
 
-    private static HepProgram prepareUnconditionalSubqueryRewriter(boolean cyclicUserTypesAreAllowed) {
-        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
-
-        // Correlated subqueries elimination rules
-        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE)
-                .addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE)
-                .addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
-
-        // Note: the way to check if cyclic type are allowed in SqlValidator is error-prone,
-        //  and the best way is to check it on pre-optimization phase.
-        if (!cyclicUserTypesAreAllowed) {
-            hepProgramBuilder.addRuleInstance(ScanCyclicTypeMustNotExecuteRule.INSTANCE);
-        }
-        return hepProgramBuilder.build();
-    }
 
     // Note: it must be used only once in static class initializer.
     private static HepProgram prepareCalcAndUnionRewriterProgram() {
