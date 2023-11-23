@@ -21,13 +21,11 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -44,11 +42,6 @@ public abstract class AsyncSocketBuilderTest {
         Reactor reactor = builder.build();
         reactors.add(reactor);
         return reactor.start();
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
     }
 
     @After

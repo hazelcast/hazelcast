@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -28,7 +27,6 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -40,11 +38,6 @@ public abstract class AsyncServerSocketBuilderTest {
     private final List<Reactor> reactors = new ArrayList<>();
 
     public abstract ReactorBuilder newReactorBuilder();
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
-    }
 
     @After
     public void after() throws InterruptedException {
