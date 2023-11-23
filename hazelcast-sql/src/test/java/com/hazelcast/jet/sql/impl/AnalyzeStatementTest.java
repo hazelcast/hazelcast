@@ -273,6 +273,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
             // read fully to finish the query
             result.stream().count();
         }
+        Job job = awaitSingleRunningJob(instance());
+        assertJobStatusEventually(job, JobStatus.COMPLETED);
 
         // When
         List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
@@ -289,10 +291,14 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
 
     @Test
     public void test_listClosedAnalyzedQueryWithSqlSummary() {
+        // Given
         final String query = "SELECT v from table(generate_stream(1))";
         final String sql = "ANALYZE " + query;
         SqlResult result = sqlService.execute(sql);
+        Job job = awaitSingleRunningJob(instance());
         result.close();
+
+        assertJobStatusEventually(job, JobStatus.FAILED);
 
         // When
         List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();

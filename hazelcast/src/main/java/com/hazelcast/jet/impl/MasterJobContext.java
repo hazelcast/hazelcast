@@ -687,9 +687,10 @@ public class MasterJobContext {
         }
 
         // If all exceptions are of certain type, treat it as TopologyChangedException
+        @SuppressWarnings("checkstyle:LineLength")
         Map<Boolean, List<Entry<Address, Object>>> splitFailures = failures.stream()
                 .collect(partitioningBy(
-                        e -> e.getValue() instanceof CancellationException
+                        e -> (e.getValue() instanceof CancellationException && !(e.getValue() instanceof CancellationByUserException))
                                 || e.getValue() instanceof TerminatedWithSnapshotException
                                 || isTopologyException((Throwable) e.getValue())));
         List<Entry<Address, Object>> topologyFailures = splitFailures.getOrDefault(true, emptyList());
@@ -697,10 +698,6 @@ public class MasterJobContext {
 
         if (!otherFailures.isEmpty()) {
             return (Throwable) otherFailures.get(0).getValue();
-        } else if (!isJobSuspendable(mc.jobConfig())) {
-            return topologyFailures.get(0).getValue() instanceof CancellationByUserException
-                    ? new CancellationByUserException()
-                    : new TopologyChangedException("Causes from members: " + topologyFailures);
         } else {
             return new TopologyChangedException("Causes from members: " + topologyFailures);
         }
@@ -794,6 +791,12 @@ public class MasterJobContext {
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
+
+                // TODO: workaround for cancelling non-suspendable jobs,
+                //  remove it after SqlResult will be able to cancel the Jet job.
+                if (failure instanceof CancellationByUserException && terminationRequest == null) {
+                    terminationRequest = new TerminationRequest(CANCEL_FORCEFUL, true);
+                }
 
                 String description = requestedTerminationMode()
                         .map(mode -> mode.actionAfterTerminate().description())

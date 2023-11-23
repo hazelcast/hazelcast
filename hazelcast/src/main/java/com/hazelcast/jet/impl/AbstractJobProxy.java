@@ -56,7 +56,6 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -228,7 +227,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     @Override
     public final boolean isUserCancelled() {
-        if (isLightJob() || !isJobSuspendable(getConfig())) {
+        if (isLightJob()) {
             CompletableFuture<Void> f = getFuture();
             if (!f.isDone()) {
                 throw new IllegalStateException("Job not finished");
