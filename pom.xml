@@ -144,7 +144,7 @@
         <bytebuddy.version>1.14.10</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.15.0</commons-io.version>
-        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
         <confluent.version>7.4.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
