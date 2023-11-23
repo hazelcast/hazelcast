@@ -67,11 +67,6 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier, Ident
     }
 
     @Override
-    public boolean checkNumberOfProcessors() {
-        return wrapped.checkNumberOfProcessors();
-    }
-
-    @Override
     public boolean closeIsCooperative() {
         return wrapped.closeIsCooperative();
     }

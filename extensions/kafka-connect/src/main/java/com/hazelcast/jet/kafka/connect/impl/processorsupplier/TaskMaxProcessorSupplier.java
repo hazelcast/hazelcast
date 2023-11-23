@@ -62,11 +62,6 @@ class TaskMaxProcessorSupplier implements ProcessorSupplier {
         supplier.close(error);
     }
 
-    @Override
-    public boolean checkNumberOfProcessors() {
-        return false;
-    }
-
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int ignored) {

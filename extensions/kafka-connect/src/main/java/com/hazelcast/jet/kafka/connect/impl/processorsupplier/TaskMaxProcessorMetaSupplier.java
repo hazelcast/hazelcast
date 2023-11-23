@@ -52,6 +52,7 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
 
     @Override
     public void init(@Nonnull Context context) {
+        // Determine whether the execution plan can accommodate the tasksMax during the planning phase
         int totalParallelism = context.totalParallelism();
         if (totalParallelism < tasksMax) {
             throw new IllegalArgumentException("The requested parallelism of " + tasksMax + " is greater than " +
