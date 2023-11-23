@@ -768,6 +768,19 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oracle-xe</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${oracle.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <!--
         HDFS (via hadoop-minicluster) and kafka-schema-registry depend on different versions of jetty.
         Listing hadoop-common here brings it further up the dependency tree (it is a transitive dependency of

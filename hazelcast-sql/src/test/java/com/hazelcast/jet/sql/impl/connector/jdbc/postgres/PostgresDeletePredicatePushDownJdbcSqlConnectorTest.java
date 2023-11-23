@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.DeletePredicatePushDownJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
@@ -27,7 +27,7 @@ public class PostgresDeletePredicatePushDownJdbcSqlConnectorTest extends DeleteP
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(new MySQLDatabaseProvider());
+        initialize(new PostgresDatabaseProvider());
     }
 
 }

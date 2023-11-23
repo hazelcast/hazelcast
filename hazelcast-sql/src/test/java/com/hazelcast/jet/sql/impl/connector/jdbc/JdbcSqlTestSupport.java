@@ -38,9 +38,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -95,18 +97,49 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         return "table_" + randomName();
     }
 
-    protected String quote(String... parts) {
+    /**
+     * Quotes given compound identifier using the {@link #databaseProvider}
+     */
+    protected static String quote(String... parts) {
         return databaseProvider.quote(parts);
     }
 
     /**
-     * Creates table with id INT, name VARCHAR columns
+     * Creates a table with id VARCHAR, name VARCHAR columns
+     * Quotes the given tableName.
      */
     public static void createTable(String tableName) throws SQLException {
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)");
+        createTableNoQuote(quote(tableName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
     }
 
+    /**
+     * Creates table with given column definitions
+     * Quotes given table name and column names - first token from each column definition
+     */
     public static void createTable(String tableName, String... columns) throws SQLException {
+        executeJdbc("CREATE TABLE " + quote(tableName) + " ("
+                + Stream.of(columns)
+                        .map(s -> {
+                            int spaceIndex = s.indexOf(' ');
+                            return quote(s.substring(0, spaceIndex)) + s.substring(spaceIndex);
+                        }).collect(joining(", "))
+                + ")"
+        );
+    }
+
+    /**
+     * Creates table with id INT, name VARCHAR columns
+     * Does not quote the given tableName.
+     */
+    public static void createTableNoQuote(String tableName) throws SQLException {
+        createTableNoQuote(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
+    }
+
+    /**
+     * Creates table with given column definitions
+     * Does not quote the given tableName nor the column names.
+     */
+    public static void createTableNoQuote(String tableName, String... columns) throws SQLException {
         executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
     }
 
@@ -116,7 +149,29 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute(sql);
+            String[] parts = sql.split("\n\n");
+            for (String part : parts) {
+                stmt.execute(part);
+            }
+        }
+    }
+
+    public static void executeJdbcWithQuotes(String sql, String tableName) throws SQLException {
+        requireNonNull(dbConnectionUrl, "dbConnectionUrl must be set");
+        //Put the table name in quotations
+        String[] substrings = sql.split(" ");
+        String finalSql = "";
+        for (String str : substrings) {
+            if (str.equals(tableName)) {
+                finalSql += (quote(str) + " ") ;
+            } else {
+                finalSql += (str + " ");
+            }
+        }
+        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute(finalSql);
         }
     }
 
@@ -139,6 +194,10 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     public static void insertItems(String tableName, int count) throws SQLException {
+        insertItems(quote(tableName), 0, count);
+    }
+
+    public static void insertItemsNoQuote(String tableName, int count) throws SQLException {
         insertItems(tableName, 0, count);
     }
 
@@ -187,8 +246,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
-    protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnType, Row... rows) {
-        List<Row> actualRows = jdbcRowsTable(tableName, columnType);
+    protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnTypes, Row... rows) {
+        List<Row> actualRows = jdbcRowsTable(tableName, columnTypes);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
@@ -197,11 +256,25 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static void assertJdbcQueryRowsAnyOrder(String query, List<Class<?>> columnTypes, Row... rows) {
+        List<Row> actualRows = jdbcRows(query, columnTypes);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
     protected static List<Row> jdbcRowsTable(String tableName) {
-        return jdbcRows("SELECT * FROM " + tableName);
+        return jdbcRows("SELECT * FROM " + quote(tableName));
     }
 
     protected static List<Row> jdbcRowsTable(String tableName, List<Class<?>> columnType) {
+        return jdbcRows("SELECT * FROM " + quote(tableName), columnType);
+    }
+
+    protected static void assertJdbcRowsAnyOrderNoQuote(String tableName, List<Class<?>> columnTypes, Row... rows) {
+        List<Row> actualRows = jdbcRowsTableNoQuote(tableName, columnTypes);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
+    protected static List<Row> jdbcRowsTableNoQuote(String tableName, List<Class<?>> columnType) {
         return jdbcRows("SELECT * FROM " + tableName, columnType);
     }
 
@@ -218,7 +291,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         return jdbcRows(query, connectionUrl, null);
     }
 
-    public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
+    public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnTypes) {
         List<Row> rows = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(connectionUrl);
              Statement statement = connection.createStatement();
@@ -226,10 +299,10 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
                 for (int i = 0; i < values.length; i++) {
-                    if (columnType == null) {
+                    if (columnTypes == null) {
                         values[i] = resultSet.getObject(i + 1);
                     } else {
-                        values[i] = resultSet.getObject(i + 1, columnType.get(i));
+                        values[i] = resultSet.getObject(i + 1, columnTypes.get(i));
                     }
                 }
                 rows.add(new Row(values));

@@ -16,9 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.jdbc.TypeResolver;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -33,18 +37,26 @@ public class FullScanRowMapper implements Function<ResultSet, JetSqlRow> {
 
     private final ExpressionEvalContext expressionEvalContext;
 
+    private final TypeResolver typeResolver;
+    private final List<FunctionEx<Object, ?>> converters;
+
     private final JetJoinInfo joinInfo;
 
     private final List<Expression<?>> projections;
     private final JetSqlRow leftRow;
 
     private Object[] values;
+    private BiFunctionEx<ResultSet, Integer, ?>[] valueGetters;
 
     public FullScanRowMapper(ExpressionEvalContext expressionEvalContext,
+                             TypeResolver typeResolver,
+                             List<FunctionEx<Object, ?>> converters,
                              List<Expression<?>> projections,
                              JetJoinInfo joinInfo,
                              JetSqlRow leftRow) {
         this.expressionEvalContext = expressionEvalContext;
+        this.typeResolver = typeResolver;
+        this.converters = converters;
         this.projections = projections;
         this.joinInfo = joinInfo;
         this.leftRow = leftRow;
@@ -90,10 +102,13 @@ public class FullScanRowMapper implements Function<ResultSet, JetSqlRow> {
         return new Object[columnCount];
     }
 
-    protected static void fillValueArray(ResultSet resultSet, Object[] values) throws SQLException {
+    protected void fillValueArray(ResultSet resultSet, Object[] values) throws SQLException {
+        if (valueGetters == null) {
+            valueGetters = JdbcSqlConnector.prepareValueGettersFromMetadata(typeResolver, resultSet, converters::get);
+        }
+
         for (int index = 0; index < values.length; index++) {
-            // TODO we need to use mechanism similar (or maybe the same) to valueGetters in SelectProcessorSupplier
-            values[index] = resultSet.getObject(index + 1);
+            values[index] = valueGetters[index].apply(resultSet, index + 1);
         }
     }
     protected JetSqlRow createExtendedRow(JetSqlRow leftRow) {

@@ -16,9 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.jdbc.TypeResolver;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -39,6 +43,9 @@ public class JoinPredicateScanRowMapper implements Function<ResultSet, JetSqlRow
 
     private final ExpressionEvalContext expressionEvalContext;
 
+    private TypeResolver typeResolver;
+    private List<FunctionEx<Object, ?>> converters;
+
     private final JetJoinInfo joinInfo;
 
     private final List<Expression<?>> projections;
@@ -57,11 +64,17 @@ public class JoinPredicateScanRowMapper implements Function<ResultSet, JetSqlRow
 
     private final Set<Integer> processedQueryNumbers = new HashSet<>();
 
+    private BiFunctionEx<ResultSet, Integer, ?>[] valueGetters;
+
     public JoinPredicateScanRowMapper(ExpressionEvalContext expressionEvalContext,
+                                      TypeResolver typeResolver,
+                                      List<FunctionEx<Object, ?>> converters,
                                       List<Expression<?>> projections,
                                       JetJoinInfo joinInfo,
                                       List<JetSqlRow> leftRowsList) {
         this.expressionEvalContext = expressionEvalContext;
+        this.typeResolver = typeResolver;
+        this.converters = converters;
         this.projections = projections;
         this.joinInfo = joinInfo;
         this.leftRowsList = leftRowsList;
@@ -147,9 +160,12 @@ public class JoinPredicateScanRowMapper implements Function<ResultSet, JetSqlRow
     }
 
     protected void fillValueArray(ResultSet resultSet) throws SQLException {
+        if (valueGetters == null) {
+            valueGetters = JdbcSqlConnector.prepareValueGettersFromMetadata(typeResolver, resultSet, converters::get);
+        }
+
         for (int index = 0; index < values.length; index++) {
-            // TODO we need to use mechanism similar (or maybe the same) to valueGetters in SelectProcessorSupplier
-            values[index] = resultSet.getObject(index + 1);
+            values[index] = valueGetters[index].apply(resultSet, index + 1);
         }
     }
 
