@@ -131,7 +131,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         Vertex src = dag.newVertex("src", () -> new TestProcessors.ListSource(items))
                 .localParallelism(1);
 
-        MapSinkParams<Object, Object, Object> params = new MapSinkParams<>(sinkName);
+        MapSinkConfiguration<Object, Object, Object> params = new MapSinkConfiguration<>(sinkName);
         params.setToKeyFn(i -> i);
         params.setToValueFn(i -> i);
 

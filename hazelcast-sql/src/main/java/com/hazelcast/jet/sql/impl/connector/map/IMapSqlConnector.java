@@ -35,7 +35,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.connector.MapSinkUpdateParams;
+import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
@@ -442,7 +442,7 @@ public class IMapSqlConnector implements SqlConnector {
         PartitionedMapTable table = context.getTable();
 
         // TODO do a simpler, specialized deleting-only processor
-        MapSinkUpdateParams<JetSqlRow, Object, Object> params = new MapSinkUpdateParams<>(table.getMapName());
+        MapSinkConfiguration<JetSqlRow, Object, Object> params = new MapSinkConfiguration<>(table.getMapName());
         params.setToKeyFn((FunctionEx<JetSqlRow, Object>) row -> {
             assert row.getFieldCount() == 1;
             return row.get(0);

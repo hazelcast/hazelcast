@@ -125,7 +125,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
      * @return this builder
      */
     public RemoteMapSourceBuilder<K, V, T> clientConfig(@Nonnull ClientConfig clientConfig) {
-        this.clientConfig = requireNonNull(clientConfig);
+        this.clientConfig = requireNonNull(clientConfig, "clientConfig can not be null");
         return this;
     }
 
@@ -153,7 +153,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
             @Nonnull Projection<? super Entry<K, V>, ? extends T_NEW> projection
     ) {
         requireNonNull(projection, "projection can not be null");
-        checkSerializable(requireNonNull(projection), "projection");
+        checkSerializable(projection, "projection");
         @SuppressWarnings("unchecked")
         RemoteMapSourceBuilder<K, V, T_NEW> newThis = (RemoteMapSourceBuilder<K, V, T_NEW>) this;
         newThis.projection = projection;

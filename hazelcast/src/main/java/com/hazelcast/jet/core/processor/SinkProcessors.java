@@ -26,10 +26,8 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
+import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
-import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
-import com.hazelcast.jet.impl.connector.MapSinkParams;
-import com.hazelcast.jet.impl.connector.MapSinkUpdateParams;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
@@ -74,7 +72,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier writeMapP(@Nonnull String mapName) {
-        MapSinkParams<Map.Entry<K, V>, K, V> params = new MapSinkParams<>(mapName);
+        MapSinkConfiguration<Map.Entry<K, V>, K, V> params = new MapSinkConfiguration<>(mapName);
         params.setToKeyFn(Map.Entry::getKey);
         params.setToValueFn(Map.Entry::getValue);
         return writeMapP(params);
@@ -84,18 +82,13 @@ public final class SinkProcessors {
      * Returns a supplier of processors
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeMapP(MapSinkParams<T, K, V> params) {
-        return HazelcastWriters.writeMapSupplier(params);
+    public static <T, K, V> ProcessorMetaSupplier writeMapP(MapSinkConfiguration<T, K, V> configuration) {
+        return HazelcastWriters.writeMapSupplier(configuration);
     }
 
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier mergeMapP(MapSinkMergeParams<T, K, V> params) {
-        return HazelcastWriters.mergeMapSupplier(params);
-    }
-
-    @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier updateMapP(MapSinkUpdateParams<T, K, V> params) {
-        return HazelcastWriters.updateMapSupplier(params);
+    public static <T, K, V> ProcessorMetaSupplier updateMapP(MapSinkConfiguration<T, K, V> configuration) {
+        return HazelcastWriters.updateMapSupplier(configuration);
     }
 
     @Nonnull

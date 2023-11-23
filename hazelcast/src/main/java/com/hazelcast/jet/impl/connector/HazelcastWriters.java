@@ -83,7 +83,7 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        MapSinkParams<T, K, V> params = new MapSinkParams<>(name);
+        MapSinkConfiguration<T, K, V> params = new MapSinkConfiguration<>(name);
         params.setClientConfig(clientConfig);
         params.setToKeyFn(toKeyFn);
         params.setToValueFn(toValueFn);
@@ -98,7 +98,7 @@ public final class HazelcastWriters {
      * Update map with key and value functions
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkParams<T, K, V> params) {
+    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkConfiguration<T, K, V> params) {
         if (params.hasDataSourceConnection()) {
             WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
 
@@ -123,7 +123,7 @@ public final class HazelcastWriters {
      * Update map with a merge function
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(MapSinkMergeParams<T, K, V> params) {
+    public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(MapSinkConfiguration<T, K, V> params) {
         // Get reference to functions because MapSinkMergeParams is not serializable
         FunctionEx<? super T, ? extends K> toKeyFn = params.getToKeyFn();
         FunctionEx<? super T, ? extends V> toValueFn = params.getToValueFn();
@@ -205,7 +205,7 @@ public final class HazelcastWriters {
      * Update map with an update function
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(MapSinkUpdateParams<T, K, V> params) {
+    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(MapSinkConfiguration<T, K, V> params) {
         checkSerializable(params.getToKeyFn(), "toKeyFn");
         checkSerializable(params.getUpdateFn(), "updateFn");
 

@@ -17,12 +17,14 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
 
 /**
  * Parameters for using a map as a sink
  */
-public class MapSinkParams<T, K, V> {
+public class MapSinkConfiguration<T, K, V> {
 
     private final String mapName;
 
@@ -34,9 +36,13 @@ public class MapSinkParams<T, K, V> {
 
     private FunctionEx<? super T, ? extends V> toValueFn;
 
+    private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
+
+    private BinaryOperatorEx<V> mergeFn;
+
     private String clientXml;
 
-    public MapSinkParams(String mapName) {
+    public MapSinkConfiguration(String mapName) {
         this.mapName = mapName;
     }
 
@@ -82,6 +88,22 @@ public class MapSinkParams<T, K, V> {
 
     public void setToValueFn(FunctionEx<? super T, ? extends V> toValueFn) {
         this.toValueFn = toValueFn;
+    }
+
+    public BiFunctionEx<? super V, ? super T, ? extends V> getUpdateFn() {
+        return updateFn;
+    }
+
+    public void setUpdateFn(BiFunctionEx<? super V, ? super T, ? extends V> updateFn) {
+        this.updateFn = updateFn;
+    }
+
+    public BinaryOperatorEx<V> getMergeFn() {
+        return mergeFn;
+    }
+
+    public void setMergeFn(BinaryOperatorEx<V> mergeFn) {
+        this.mergeFn = mergeFn;
     }
 
     public String getClientXml() {

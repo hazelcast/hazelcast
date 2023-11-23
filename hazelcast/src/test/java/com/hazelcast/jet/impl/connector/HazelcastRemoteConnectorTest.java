@@ -191,7 +191,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex producer = dag.newVertex(SOURCE_NAME, readMapP(SOURCE_NAME));
 
-        MapSinkParams<Integer, Integer, Integer> params = new MapSinkParams<>(SINK_NAME);
+        MapSinkConfiguration<Integer, Integer, Integer> params = new MapSinkConfiguration<>(SINK_NAME);
         params.setClientConfig(clientConfig);
         params.setToKeyFn(identity());
         params.setToValueFn(identity());

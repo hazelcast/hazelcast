@@ -32,14 +32,14 @@ import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
-import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
+import com.hazelcast.jet.impl.connector.HazelcastWriters;
+import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.EntryProcessor;
@@ -388,11 +388,11 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void mapWithMerging_when_multipleValuesForSingleKeyInABatch() throws Exception {
-        MapSinkMergeParams<Entry<String, Integer>, String, Integer> params = new MapSinkMergeParams<>(sinkName);
-        params.setToKeyFn(Entry::getKey);
-        params.setToValueFn(Entry::getValue);
-        params.setMergeFn(Integer::sum);
-        ProcessorMetaSupplier processorMetaSupplier = SinkProcessors.mergeMapP(params);
+        MapSinkConfiguration<Entry<String, Integer>, String, Integer> configuration = new MapSinkConfiguration<>(sinkName);
+        configuration.setToKeyFn(Entry::getKey);
+        configuration.setToValueFn(Entry::getValue);
+        configuration.setMergeFn(Integer::sum);
+        ProcessorMetaSupplier processorMetaSupplier = HazelcastWriters.mergeMapSupplier(configuration);
 
         ProcessorMetaSupplier metaSupplier = adaptSupplier(processorMetaSupplier);
 
