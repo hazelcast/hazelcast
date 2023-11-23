@@ -406,9 +406,7 @@ public class SinksTest extends PipelineTestSupport {
         inbox.add(entry("k", 2));
         p.process(0, inbox);
         assertTrue("inbox.isEmpty()", inbox.isEmpty());
-        assertTrueEventually(() -> {
-            assertTrue("p.complete()", p.complete());
-        }, 10);
+        assertTrueEventually(() -> assertTrue("p.complete()", p.complete()), 10);
         p.close();
 
         // assert the output map contents
@@ -591,6 +589,29 @@ public class SinksTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i + 10))
                                                      .collect(toList());
+        Set<Entry<String, Integer>> actual = hz().<String, Integer>getMap(srcName).entrySet();
+        assertEquals(expected.size(), actual.size());
+        expected.forEach(entry -> assertTrue(actual.contains(entry)));
+    }
+
+    @Test
+    public void mapWithEntryProcessor_byName_and_parallelism() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        Sink<Entry<String, Integer>> sink = Sinks.mapWithEntryProcessor(2,
+                srcName,
+                Entry::getKey,
+                entry -> new IncrementEntryProcessor<>(10));
+
+        // Then
+        p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
+        execute();
+        List<Entry<String, Integer>> expected = input.stream()
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = hz().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -828,7 +849,7 @@ public class SinksTest extends PipelineTestSupport {
 
     private static class IncrementEntryProcessor<K> implements EntryProcessor<K, Integer, Void> {
 
-        private Integer value;
+        private final Integer value;
 
         IncrementEntryProcessor(Integer value) {
             this.value = value;
