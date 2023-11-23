@@ -1320,7 +1320,7 @@
                                 com.hazelcast.test.annotation.SlowTest
                             </groups>
                             <includes>
-                                <include>**/**.java</include>
+                                <include>**/**Test.java</include>
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
