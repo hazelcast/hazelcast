@@ -31,7 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.cp.internal.CPSubsystemImpl.CPMAP_LICENSE_MESASGE;
+import static com.hazelcast.cp.internal.CPSubsystemImpl.CPMAP_LICENSE_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -212,6 +212,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
 
         Throwable t = assertThrows(UnsupportedOperationException.class, () -> client.getCPSubsystem().getMap("map"));
         assertNotNull(t);
-        assertEquals(CPMAP_LICENSE_MESASGE, t.getMessage());
+        assertEquals(CPMAP_LICENSE_MESSAGE, t.getMessage());
     }
 }
