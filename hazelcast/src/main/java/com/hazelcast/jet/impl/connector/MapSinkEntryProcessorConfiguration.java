@@ -25,7 +25,7 @@ import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLE
 /**
  * Parameters for using a map as a sink with an EntryProcessor:
  */
-public class MapSinkEntryProcessorParams<E, K, V, R> {
+public class MapSinkEntryProcessorConfiguration<E, K, V, R> {
 
     private final String mapName;
 
@@ -39,7 +39,7 @@ public class MapSinkEntryProcessorParams<E, K, V, R> {
 
     private int maxParallelAsyncOps = MAX_PARALLEL_ASYNC_OPS_DEFAULT;
 
-    public MapSinkEntryProcessorParams(String mapName) {
+    public MapSinkEntryProcessorConfiguration(String mapName) {
         this.mapName = mapName;
     }
 

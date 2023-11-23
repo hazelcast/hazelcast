@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
-import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
@@ -89,11 +88,6 @@ public final class SinkProcessors {
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateMapP(MapSinkConfiguration<T, K, V> configuration) {
         return HazelcastWriters.updateMapSupplier(configuration);
-    }
-
-    @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateMapP(MapSinkEntryProcessorParams<T, K, V, R> params) {
-        return HazelcastWriters.updateMapSupplier(params);
     }
 
     /**

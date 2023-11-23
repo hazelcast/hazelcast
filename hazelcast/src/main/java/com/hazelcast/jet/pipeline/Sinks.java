@@ -30,7 +30,6 @@ import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
@@ -56,7 +55,6 @@ import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
@@ -187,7 +185,7 @@ public final class Sinks {
 
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .mapWrite()
+                .mapWriteOperation()
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
                 .build();
@@ -284,7 +282,7 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapWrite()
+                .remoteMapWriteOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
@@ -312,7 +310,7 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapWrite()
+                .remoteMapWriteOperation()
                 .dataConnectionName(dataConnectionRef.getName())
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
@@ -322,6 +320,11 @@ public final class Sinks {
     @Nonnull
     public static <T, K, V> MapSinkBuilder<T, K, V> mapBuilder(String mapName) {
         return new MapSinkBuilder<>(mapName);
+    }
+
+    @Nonnull
+    public static <E, K, V, R> MapSinkEntryProcessorBuilder<E, K, V, R> mapEntryProcessorBuilder(String mapName) {
+        return new MapSinkEntryProcessorBuilder<>(mapName);
     }
 
     /**
@@ -377,7 +380,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .mapMerge()
+                .mapMergeOperation()
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
                 .mergeFn(mergeFn)
@@ -492,7 +495,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapMerge()
+                .remoteMapMergeOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
@@ -520,7 +523,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapMerge()
+                .remoteMapMergeOperation()
                 .dataConnectionName(dataConnectionRef.getName())
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
@@ -600,7 +603,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .mapUpdate()
+                .mapUpdateOperation()
                 .toKeyFn(toKeyFn)
                 .updateFn(updateFn)
                 .build();
@@ -674,7 +677,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapUpdate()
+                .remoteMapUpdateOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .updateFn(updateFn)
@@ -700,7 +703,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapUpdate()
+                .remoteMapUpdateOperation()
                 .dataConnectionName(dataConnectionRef.getName())
                 .toKeyFn(toKeyFn)
                 .updateFn(updateFn)
@@ -742,7 +745,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
         return Sinks.<E, K, V>mapBuilder(mapName)
-                .remoteMapUpdate()
+                .remoteMapUpdateOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(Entry::getKey)
                 .updateFn(updateFn)
@@ -767,7 +770,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
         return Sinks.<E, K, V>mapBuilder(mapName)
-                .remoteMapUpdate()
+                .remoteMapUpdateOperation()
                 .dataConnectionName(dataConnectionRef.getName())
                 .toKeyFn(Entry::getKey)
                 .updateFn(updateFn)
@@ -784,14 +787,11 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        MapSinkEntryProcessorParams<E, K, V, R> params = new MapSinkEntryProcessorParams<>(mapName);
-        params.setToKeyFn(toKeyFn);
-        params.setToEntryProcessorFn(toEntryProcessorFn);
-
-        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
-        return fromProcessor("mapWithEntryProcessorSink(" + mapName + ')',
-                processorMetaSupplier,
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .mapOperation()
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**
@@ -844,15 +844,12 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        MapSinkEntryProcessorParams<E, K, V, R> params = new MapSinkEntryProcessorParams<>(mapName);
-        params.setMaxParallelAsyncOps(maxParallelAsyncOps);
-        params.setToKeyFn(toKeyFn);
-        params.setToEntryProcessorFn(toEntryProcessorFn);
-
-        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
-        return fromProcessor("mapWithEntryProcessorSink(" + mapName + ')',
-                processorMetaSupplier,
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .mapOperation()
+                .maxParallelAsyncOps(maxParallelAsyncOps)
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**
@@ -921,15 +918,12 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        MapSinkEntryProcessorParams<E, K, V, R> params = new MapSinkEntryProcessorParams<>(mapName);
-        params.setClientConfig(clientConfig);
-        params.setToKeyFn(toKeyFn);
-        params.setToEntryProcessorFn(toEntryProcessorFn);
-
-        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
-        return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
-                processorMetaSupplier,
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .remoteMapOperation()
+                .clientConfig(clientConfig)
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**
@@ -949,15 +943,12 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        MapSinkEntryProcessorParams<E, K, V, R> params = new MapSinkEntryProcessorParams<>(mapName);
-        params.setDataConnectionName(dataConnectionRef.getName());
-        params.setToKeyFn(toKeyFn);
-        params.setToEntryProcessorFn(toEntryProcessorFn);
-
-        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
-        return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
-                processorMetaSupplier,
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .remoteMapOperation()
+                .dataConnectionName(dataConnectionRef.getName())
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**

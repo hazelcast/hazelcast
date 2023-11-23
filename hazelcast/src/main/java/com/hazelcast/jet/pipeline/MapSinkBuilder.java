@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class MapSinkBuilder<T, K, V> {
 
-    enum EnumMapOperation {
+    private enum EnumMapOperation {
         MAP_WRITE("mapSink", false),
         MAP_UPDATE("mapWithUpdatingSink", false),
         MAP_MERGE("mapWithMergingSink", false),
@@ -84,32 +84,32 @@ public class MapSinkBuilder<T, K, V> {
         this.mapName = mapName;
     }
 
-    public MapSinkBuilder<T, K, V> mapWrite() {
+    public MapSinkBuilder<T, K, V> mapWriteOperation() {
         this.enumMapOperation = EnumMapOperation.MAP_WRITE;
         return this;
     }
 
-    public MapSinkBuilder<T, K, V> remoteMapWrite() {
+    public MapSinkBuilder<T, K, V> remoteMapWriteOperation() {
         this.enumMapOperation = EnumMapOperation.REMOTE_MAP_WRITE;
         return this;
     }
 
-    public MapSinkBuilder<T, K, V> mapUpdate() {
+    public MapSinkBuilder<T, K, V> mapUpdateOperation() {
         this.enumMapOperation = EnumMapOperation.MAP_UPDATE;
         return this;
     }
 
-    public MapSinkBuilder<T, K, V> remoteMapUpdate() {
+    public MapSinkBuilder<T, K, V> remoteMapUpdateOperation() {
         this.enumMapOperation = EnumMapOperation.REMOTE_MAP_UPDATE;
         return this;
     }
 
-    public MapSinkBuilder<T, K, V> mapMerge() {
+    public MapSinkBuilder<T, K, V> mapMergeOperation() {
         this.enumMapOperation = EnumMapOperation.MAP_MERGE;
         return this;
     }
 
-    public MapSinkBuilder<T, K, V> remoteMapMerge() {
+    public MapSinkBuilder<T, K, V> remoteMapMergeOperation() {
         this.enumMapOperation = EnumMapOperation.REMOTE_MAP_MERGE;
         return this;
     }
