@@ -19,6 +19,8 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 
+import javax.annotation.Nullable;
+
 public class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
 
     public ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
@@ -57,6 +59,11 @@ public class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
 
     @Override
     public ScheduledExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
+    }
+
+    @Override
+    public ScheduledExecutorConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
     }
 }

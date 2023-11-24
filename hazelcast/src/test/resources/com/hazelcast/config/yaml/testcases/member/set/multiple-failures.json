@@ -10,7 +10,8 @@
           "async-backup-count": "2",
           "split-brain-protection-ref": [],
           "merge-policy": {},
-          "statistics-enabled": "Off"
+          "statistics-enabled": "Off",
+          "namespace": []
         }
       }
     }
@@ -67,8 +68,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Set/additionalProperties/properties/namespace",
+        "pointerToViolation": "#/hazelcast/set/my-set/namespace",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
       }
     ],
-    "message": "7 schema violations found"
+    "message": "8 schema violations found"
   }
 }

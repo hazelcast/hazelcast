@@ -24,6 +24,7 @@ import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferStoreWrapper;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -64,7 +66,8 @@ public class RingbufferStoreConfigTest {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         RingbufferStore<Data> store = RingbufferStoreWrapper.create(
                 RingbufferService.getRingbufferNamespace("name"),
-                config, OBJECT, serializationService, null);
+                config, OBJECT, serializationService, null,
+                mock(NodeEngine.class), null);
 
         config.setStoreImplementation(store);
 

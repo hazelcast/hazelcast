@@ -18,7 +18,8 @@
           "merge-policy": {
             "batch-size": "100",
             "class-name": "INVALID"
-          }
+          },
+          "namespace": []
         }
       }
     }
@@ -96,8 +97,15 @@
         "causingExceptions": [],
         "keyword": "minimum",
         "message": "-1 is not greater or equal to 0"
+      },
+      {
+        "schemaLocation": "#/definitions/List/additionalProperties/properties/namespace",
+        "pointerToViolation": "#/hazelcast/list/default/namespace",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
       }
     ],
-    "message": "8 schema violations found"
+    "message": "9 schema violations found"
   }
 }

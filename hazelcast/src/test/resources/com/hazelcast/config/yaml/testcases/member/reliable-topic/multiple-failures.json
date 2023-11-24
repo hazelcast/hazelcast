@@ -7,7 +7,8 @@
           "unknown-property": "unknown",
           "topic-overload-policy": "INVALID",
           "read-batch-size": "20",
-          "message-listeners": null
+          "message-listeners": null,
+          "namespace": []
         },
         "other": {
           "read-batch-size": 0,
@@ -81,11 +82,18 @@
             "causingExceptions": [],
             "keyword": "enum",
             "message": "INVALID is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/namespace",
+            "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic/namespace",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: JSONArray"
           }
         ],
-        "message": "5 schema violations found"
+        "message": "6 schema violations found"
       }
     ],
-    "message": "7 schema violations found"
+    "message": "8 schema violations found"
   }
 }

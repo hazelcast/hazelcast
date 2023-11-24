@@ -19,6 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -69,6 +70,11 @@ public class TopicConfigReadOnly extends TopicConfig {
 
     @Override
     public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+    }
+
+    @Override
+    public TopicConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 }

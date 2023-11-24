@@ -835,17 +835,20 @@ hazelcast:
   # can specify the name of your executor service. Its default value is "default".
   # It has the following sub-elements:
   # * "statistics-enabled":
-  # When you enable it, you can retrieve executor service statistics such as pending operations count,
-  # started operations count, completed operations count, and cancelled operations count. Its default
-  # value is true.
+  #     When you enable it, you can retrieve executor service statistics such as pending operations count,
+  #     started operations count, completed operations count, and cancelled operations count. Its default
+  #     value is true.
   # * "pool-size":
-  # The number of executor threads per member for the executor. Its default value is 8.
+  #     The number of executor threads per member for the executor. Its default value is 8.
   # * "queue-capacity":
-  # Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
+  #     Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
   # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value
-  # as the "split-brain-protection"'s name.
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  #     "split-brain-protection-ref"'s value
+  #     as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this executor with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this executor will run with the context of that Namespace.
   #
   executor-service:
     default:
@@ -853,6 +856,7 @@ hazelcast:
       pool-size: 16
       queue-capacity: 0
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST DURABLE EXECUTOR SERVICE CONFIGURATION =====
@@ -861,15 +865,18 @@ hazelcast:
   # can specify the name of your durable executor service. Its default value is "default".
   # It has the following sub-elements:
   # * "pool-size":
-  # The number of executor threads per member for the executor. Its default value is 16.
+  #     The number of executor threads per member for the executor. Its default value is 16.
   # * "durability":
   #     Durability of the executor. The default value is 1.
   # * "capacity":
-  # Capacity of the executor task per partition. The default value is 100.
+  #     Capacity of the executor task per partition. The default value is 100.
   # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
-  # the "split-brain-protection-ref"'s value
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
+  #     the "split-brain-protection-ref"'s value
   #     as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this executor with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this executor will run with the context of that Namespace.
   #
   durable-executor-service:
     default:
@@ -877,6 +884,7 @@ hazelcast:
       durability: 1
       capacity: 100
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST SCHEDULED EXECUTOR SERVICE CONFIGURATION =====
@@ -900,6 +908,9 @@ hazelcast:
   # * "merge-policy":
   #     The default policy is PutIfAbsentMergePolicy with a batch size of 100.
   #     This is the policy used when merging entries from sub-clusters (after split-brain recovery).
+  # * "namespace":
+  #     Associates this executor with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this executor will run with the context of that Namespace.
   #
   scheduled-executor-service:
     default:
@@ -911,6 +922,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST CARDINALITY ESTIMATOR SERVICE CONFIGURATION =====
@@ -948,45 +960,45 @@ hazelcast:
   # Configuration element's name is "queue".
   # It has following optional attributes:
   # * "name"
-  # with which you can specify the name of your queue. Its default value is "default".
+  #     with which you can specify the name of your queue. Its default value is "default".
   # It has the following elements:
   # * "statistics-enabled":
-  # When you enable it, you can retrieve queue statistics. Its default value is true.
+  #     When you enable it, you can retrieve queue statistics. Its default value is true.
   # * "max-size":
-  # Maximum size of the queue. When a JVM's local queue size reaches the maximum, all put/offer operations
-  # will be blocked until the queue size of the JVM goes below this maximum. Its default value is 0,
-  # meaning Integer.MAX_VALUE.
+  #     Maximum size of the queue. When a JVM's local queue size reaches the maximum, all put/offer operations
+  #     will be blocked until the queue size of the JVM goes below this maximum. Its default value is 0,
+  #     meaning Integer.MAX_VALUE.
   # * "backup-count":
-  # Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue
-  # resides in one partition. When this parameter is '1', it means there will be 1 backup of that Queue in
-  # another member in the cluster. When it is '2', 2 members will have the backup. 0 means there will be no
-  # backups. Its default value is 1.
+  #     Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue
+  #     resides in one partition. When this parameter is '1', it means there will be 1 backup of that Queue in
+  #     another member in the cluster. When it is '2', 2 members will have the backup. 0 means there will be no
+  #     backups. Its default value is 1.
   # * "async-backup-count":
-  # Number of asynchronous backups. Its default value is 0.
+  #     Number of asynchronous backups. Its default value is 0.
   # * "empty-queue-ttl":
-  # Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then
-  # your queue will be destroyed if it stays empty or unused for that time.
+  #     Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then
+  #     your queue will be destroyed if it stays empty or unused for that time.
   # * "item-listeners":
-  # Adds listeners (listener classes) for the queue items using its sub-element "item-listener". You can
-  # also set its attribute "include-value" to true if you want the item event to contain the item values,
-  # and you can set its attribute "local" to true if you want to listen to the items on the local member.
+  #     Adds listeners (listener classes) for the queue items using its sub-element "item-listener". You can
+  #     also set its attribute "include-value" to true if you want the item event to contain the item values,
+  #     and you can set its attribute "local" to true if you want to listen to the items on the local member.
   # * "queue-store":
-  # Includes configuration elements and attributes for your queue store implementation. When you want to
-  # load/store the distributed queue items from/to a persistent datastore, first implement Hazelcast's
-  # QueueStore interface and then configure it using this element. It includes your implemented class name
-  # and the following property configurations:
-  # - binary:
-  #     If you do not reach the queue store from an external application, you might prefer to insert the items
-  #     in binary form. To do so, set this property to true and skip the deserialization step, which is a
-  #     performance optimization. Its default value is false.
-  # - memory-limit:
-  #     Number of items after which Hazelcast will store items only to datastore. For example,
-  #     if the memory limit is 1000, then the 1001st item will be put only to datastore.
-  #     This feature is useful when you want to avoid out-of-memory conditions. If you want to
-  #     always use memory, you can set it to Integer.MAX_VALUE. Its default value is 1000.
-  # - bulk-load:
-  #     Size of the bulks loaded from QueueStore when the queue is initialized. Its default
-  #     value is 250.
+  #     Includes configuration elements and attributes for your queue store implementation. When you want to
+  #     load/store the distributed queue items from/to a persistent datastore, first implement Hazelcast's
+  #     QueueStore interface and then configure it using this element. It includes your implemented class name
+  #     and the following property configurations:
+  #     - binary:
+  #         If you do not reach the queue store from an external application, you might prefer to insert the items
+  #         in binary form. To do so, set this property to true and skip the deserialization step, which is a
+  #         performance optimization. Its default value is false.
+  #     - memory-limit:
+  #         Number of items after which Hazelcast will store items only to datastore. For example,
+  #         if the memory limit is 1000, then the 1001st item will be put only to datastore.
+  #         This feature is useful when you want to avoid out-of-memory conditions. If you want to
+  #         always use memory, you can set it to Integer.MAX_VALUE. Its default value is 1000.
+  #     - bulk-load:
+  #         Size of the bulks loaded from QueueStore when the queue is initialized. Its default
+  #         value is 250.
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
   #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
@@ -996,6 +1008,9 @@ hazelcast:
   #
   #     If this value is non-null, then Hazelcast will ignore the queue store
   #     "memory-limit" configuration value.
+  # * "namespace":
+  #     Associates this queue with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this queue will run with the context of that Namespace.
   #
   queue:
     default:
@@ -1018,6 +1033,7 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
       priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST MAP CONFIGURATION =====
@@ -1187,49 +1203,49 @@ hazelcast:
   # 	events never expire but they can be overwritten when the capacity of the journal is exceeed.
   # 	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
   # * "map-store":
-  # Configuration options when you want to load/store the map entries from/to a persistent data store such as a
-  # relational database. Before configuring "map-store", you need to implement Hazelcast's MapStore or MapLoader
-  # interfaces.
-  # It has the following attributes:
-  # - enabled:
-  #     Set to true to enable the map store functionality for your map. Its default value is true.
-  # - initial-mode:
-  #     Sets the initial entry loading mode. Available values are as follows:
-  #      - LAZY: The loading is asynchronous. It is the default mode.
-  #      - EAGER: The loading is blocked until all partitions are loaded.
+  #    Configuration options when you want to load/store the map entries from/to a persistent data store such as a
+  #    relational database. Before configuring "map-store", you need to implement Hazelcast's MapStore or MapLoader
+  #    interfaces.
+  #    It has the following attributes:
+  #    - enabled:
+  #        Set to true to enable the map store functionality for your map. Its default value is true.
+  #    - initial-mode:
+  #       Sets the initial entry loading mode. Available values are as follows:
+  #       - LAZY: The loading is asynchronous. It is the default mode.
+  #       - EAGER: The loading is blocked until all partitions are loaded.
   #
-  # It has the following sub-elements:
-  # - "class-name":
-  #     The name of your class implementing MapLoader and/or MapStore interface.
-  # - "<offload>":
-  #     Default value is true.
-  #     MapStore or MapLoader implementations are executed by
-  #     partition threads, by setting offload to true, Hazelcast
-  #     makes these threads available for other cluster operations
-  #     and offloads MapStore or MapLoader interacting parts of
-  #     executions to a different thread pool, upon interaction finish,
-  #     operations continue to work in the partition thread from
-  #     the point they are offloaded.
-  # - "write-delay-seconds":
-  #     Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
-  #     Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
-  # - "write-batch-size":
-  #     Used to create batches when writing to map store. In default mode, all map entries will try
-  #     to be written in one go. To create batches, the minimum meaningful value is 2. For values smaller than 2,
-  #     it works as in default mode. Its default value is 1.
-  # - "write-coalescing":
-  #     It is meaningful if you are using write behind in MapStore. When it is set to true,
-  #     only the latest store operation on a key during the write-delay-seconds will be
-  #     reflected to MapStore. Its default value is true.
-  # - "properties":
-  #     While you are implementing MapStore or MapLoader you can define specific properties to be configured.
-  #     It can be your store's URL, credentials, etc. Please see the example map configuration snippet below.
+  #    It has the following sub-elements:
+  #    - "class-name":
+  #         The name of your class implementing MapLoader and/or MapStore interface.
+  #    - "<offload>":
+  #        Default value is true.
+  #        MapStore or MapLoader implementations are executed by
+  #        partition threads, by setting offload to true, Hazelcast
+  #        makes these threads available for other cluster operations
+  #        and offloads MapStore or MapLoader interacting parts of
+  #        executions to a different thread pool, upon interaction finish,
+  #        operations continue to work in the partition thread from
+  #         the point they are offloaded.
+  #     - "write-delay-seconds":
+  #        Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
+  #         Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
+  #     - "write-batch-size":
+  #        Used to create batches when writing to map store. In default mode, all map entries will try
+  #         to be written in one go. To create batches, the minimum meaningful value is 2. For values smaller than 2,
+  #        it works as in default mode. Its default value is 1.
+  #     - "write-coalescing":
+  #         It is meaningful if you are using write behind in MapStore. When it is set to true,
+  #         only the latest store operation on a key during the write-delay-seconds will be
+  #         reflected to MapStore. Its default value is true.
+  #     - "properties":
+  #         While you are implementing MapStore or MapLoader you can define specific properties to be configured.
+  #         It can be your store's URL, credentials, etc. Please see the example map configuration snippet below.
   # * "near-cache":
-  # Configuration options when you want to use a Near Cache for your map.
-  # It has the following attributes:
-  # - name: You can give a name for your Near Cache. It is optional and its default value is "default".
+  #     Configuration options when you want to use a Near Cache for your map.
+  #     It has the following attributes:
+  #     - name: You can give a name for your Near Cache. It is optional and its default value is "default".
   #
-  # It has the following sub-elements:
+  #     It has the following sub-elements:
   #     - "time-to-live-seconds":
   #         Maximum number of seconds for each entry to stay in the Near Cache. Entries that are older than this
   #         period are automatically evicted from the Near Cache. Any integer between 0 and Integer.MAX_VALUE.
@@ -1313,12 +1329,12 @@ hazelcast:
   #
   #         The default policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
   # * "indexes":
-  # You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
-  # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
+  #     You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
+  #     optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
   # * "attributes":
-  # You can define attributes that may be referenced in predicates, queries and indexes using this element's
-  # "attribute" sub-elements. Each "attribute" has only the "extractor-class-name" attribute which you should define
-  # beforehand by implementing Hazelcast's ValueExtractor class.
+  #     You can define attributes that may be referenced in predicates, queries and indexes using this element's
+  #     "attribute" sub-elements. Each "attribute" has only the "extractor-class-name" attribute which you should define
+  #     beforehand by implementing Hazelcast's ValueExtractor class.
   # * "entry-listeners":
   #     Adds listeners (listener classes) for the map entries using the "entry-listener" sub-elements. You can also set its
   #     attribute "include-value" to true if you want the entry event to contain the item values, and you can set its attribute
@@ -1326,8 +1342,11 @@ hazelcast:
   # * "partition-lost-listeners":
   #     Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
   # * "split-brain-protection-ref":
-  # Adds the split brain protection for this map which you configure using the "split-brain-protection" element.
-  # You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  #     Adds the split brain protection for this map which you configure using the "split-brain-protection" element.
+  #     You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this map with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this map will run with the context of that Namespace.
   #
   map:
     default:
@@ -1505,6 +1524,7 @@ hazelcast:
       partition-attributes:
         - name: "attributeName1"
         - name: "attributeName2"
+      namespace: "ns1"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -1516,8 +1536,11 @@ hazelcast:
   # You can set the element "binary" to false, then, the OBJECT in-memory format is used.
   # It has also the following sub-elements:
   # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this multimap with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this multimap will run with the context of that Namespace.
   #
   multimap:
     default:
@@ -1533,6 +1556,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST REPLICATED MAP CONFIGURATION =====
@@ -1541,27 +1565,30 @@ hazelcast:
   # can specify the name of your replicated map.
   # It has the following sub-elements:
   # * "in-memory-format":
-  # Specifies in which format data will be stored in your replicated map.
-  # Available values are as follows:
-  # - BINARY:
-  #     Data will be stored in serialized binary format. It is the default option.
-  # - OBJECT:
-  #     Data will be stored in deserialized form.
+  #     Specifies in which format data will be stored in your replicated map.
+  #     Available values are as follows:
+  #     - BINARY:
+  #         Data will be stored in serialized binary format. It is the default option.
+  #     - OBJECT:
+  #         Data will be stored in deserialized form.
   # * "async-fillup":
   #     Specifies whether the replicated map is available for reads before the initial
-  # replication is completed. Its default value is true. If false, no Exception will be
-  # thrown when the replicated map is not yet ready, but call is blocked until the initial
-  # replication is completed.
+  #     replication is completed. Its default value is true. If false, no Exception will be
+  #     thrown when the replicated map is not yet ready, but call is blocked until the initial
+  #     replication is completed.
   # * "statistics-enabled":
-  # When you enable it, you can retrieve replicated map entry statistics such as creation time,
-  # expiration time, number of hits, key, value, etc. Its default value is true.
+  #     When you enable it, you can retrieve replicated map entry statistics such as creation time,
+  #     expiration time, number of hits, key, value, etc. Its default value is true.
   # * "entry-listeners":
   #     Adds listeners (listener classes) for the replicated map entries.
   #     You can also set its attribute "include-value" to true if you want the entry event to contain the item values,
   #     and you can set its attribute "local" to true if you want to listen to the entries on the local member.
   # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this replicated map with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this replicated map will run with the context of that Namespace.
   #
   replicatedmap:
     replicatedMap1:
@@ -1576,6 +1603,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: LatestAccessMergePolicy
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST CACHE CONFIGURATION =====
@@ -1737,12 +1765,15 @@ hazelcast:
   # 	Time to live is the time the event journal retains items before removing them from the journal.
   # 	The events are removed on journal read and write actions, not while the journal is idle.
   # 	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
-  # 	events never expire but they can be overwritten when the capacity of the journal is exceeed.
+  # 	events never expire but they can be overwritten when the capacity of the journal is exceeded.
   # 	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
   # * "disable-per-entry-invalidation-events":
-  # Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
-  # Full-flush invalidation means the invalidation of events for all entries when clear is called.
-  # The default value is false.
+  #     Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
+  #     Full-flush invalidation means the invalidation of events for all entries when clear is called.
+  #     The default value is false.
+  # * "namespace":
+  #     Associates this cache with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this cache will run with the context of that Namespace.
   #
   cache:
     default:
@@ -1797,6 +1828,7 @@ hazelcast:
         enabled: false
         depth: 10
       disable-per-entry-invalidation-events: true
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST LIST CONFIGURATION =====
@@ -1805,21 +1837,24 @@ hazelcast:
   # can specify the name of your list. This attribute's default value is "default".
   # It has the following sub-elements:
   # * "statistics-enabled":
-  # When you enable it, you can retrieve list statistics. Its default value is true.
+  #     When you enable it, you can retrieve list statistics. Its default value is true.
   # * "max-size":
-  # Maximum size of the list (item count). Its default value is 0, meaning Integer.MAX_VALUE.
+  #     Maximum size of the list (item count). Its default value is 0, meaning Integer.MAX_VALUE.
   # * "backup-count":
-  # Number of synchronous backups. List is a non-partitioned data structure, so all entries of a
-  # List reside in one partition. If it is set to 1, there will be 1 backup of that List in another
-  # member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
+  #     Number of synchronous backups. List is a non-partitioned data structure, so all entries of a
+  #     List reside in one partition. If it is set to 1, there will be 1 backup of that List in another
+  #     member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
   # * "async-backup-count":
-  # Number of asynchronous backups. Its default value is 0.
+  #     Number of asynchronous backups. Its default value is 0.
   # * "item-listeners":
-  # Adds listeners (listener classes) for the List items using its sub-element "item-listener". You can
-  # also set its attribute "include-value" to true if you want the item event to contain the item values.
+  #     Adds listeners (listener classes) for the List items using its sub-element "item-listener". You can
+  #     also set its attribute "include-value" to true if you want the item event to contain the item values.
   # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this list with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this list will run with the context of that Namespace.
   #
   list:
     default:
@@ -1834,6 +1869,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST SET CONFIGURATION =====
@@ -1842,21 +1878,24 @@ hazelcast:
   # can specify the name of your set. This attribute's default value is "default".
   # It has the following sub-elements:
   # * "statistics-enabled":
-  # When you enable it, you can retrieve set statistics. Its default value is true.
+  #     When you enable it, you can retrieve set statistics. Its default value is true.
   # * "max-size":
-  # Maximum size of the set (item count). Its default value is 0, meaning Integer.MAX_VALUE.
+  #     Maximum size of the set (item count). Its default value is 0, meaning Integer.MAX_VALUE.
   # * "backup-count":
-  # Number of synchronous backups. Set is a non-partitioned data structure, so all entries of a
-  # Set reside in one partition. If it is set to 1, there will be 1 backup of that Set in another
-  # member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
+  #     Number of synchronous backups. Set is a non-partitioned data structure, so all entries of a
+  #     Set reside in one partition. If it is set to 1, there will be 1 backup of that Set in another
+  #     member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
   # * "async-backup-count":
-  # Number of asynchronous backups. Its default value is 0.
+  #     Number of asynchronous backups. Its default value is 0.
   # * "item-listeners":
-  # Adds listeners (listener classes) for the Set items. You can
-  # also set its attribute "include-value" to true if you want the item event to contain the item values.
+  #     Adds listeners (listener classes) for the Set items. You can
+  #     also set its attribute "include-value" to true if you want the item event to contain the item values.
   # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this set with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this set will run with the context of that Namespace.
   #
   set:
     default:
@@ -1870,6 +1909,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST TOPIC CONFIGURATION =====
@@ -1878,17 +1918,20 @@ hazelcast:
   # can specify the name of your topic. This attribute's default value is "default".
   # It has the following sub-elements:
   # * "global-ordering-enabled":
-  # When it is set to true, all cluster members that listen to a topic will receive the messages in the
-  # same order they were published by all members. This way, Hazelcast guarantees that all members will
-  # see the in the same order. Its default value is false.
+  #     When it is set to true, all cluster members that listen to a topic will receive the messages in the
+  #     same order they were published by all members. This way, Hazelcast guarantees that all members will
+  #     see the in the same order. Its default value is false.
   # * "statistics-enabled":
-  # When you enable it, you can retrieve topic statistics such as total number of published and
-  # received messages. Its default value is true.
+  #     When you enable it, you can retrieve topic statistics such as total number of published and
+  #     received messages. Its default value is true.
   # * "message-listeners":
-  # Adds listeners (listener classes) for the Topic messages using its sub-element "message-listener".
+  #     Adds listeners (listener classes) for the Topic messages using its sub-element "message-listener".
   # * "multi-threading-enabled":
-  # Default is `false`, meaning only one dedicated thread will handle topic messages.
+  #     Default is `false`, meaning only one dedicated thread will handle topic messages.
   #     When multi-threading is enabled (true), all threads from event thread pool can be used for message handling.
+  # * "namespace":
+  #     Associates this topic with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this topic will run with the context of that Namespace.
   #
   topic:
     default:
@@ -1896,6 +1939,7 @@ hazelcast:
       statistics-enabled: true
       message-listeners:
         - com.hazelcast.examples.MessageListener
+      namespace: "ns1"
   #
   # ===== HAZELCAST RELIABLE TOPIC CONFIGURATION =====
   #
@@ -1969,6 +2013,9 @@ hazelcast:
   #         The publish call fails immediately.
   # * "message-listeners":
   #     Adds listeners (listener classes) for the Reliable Topic messages.
+  # * "namespace":
+  #     Associates this reliable topic with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this reliable topic will run with the context of that Namespace.
   #
   reliable-topic:
     default:
@@ -1977,6 +2024,7 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST RINGBUFFER CONFIGURATION =====
@@ -2024,6 +2072,9 @@ hazelcast:
   #     Adds the Split Brain Protection for this data-structure which you configure
   #     using the "split-brain-protection" element. You should set the "split-brain-protection-ref"'s value as
   #     the "split-brain-protection"'s name.
+  # * "namespace":
+  #     Associates this ringbuffer with the specified Namespace Name, as defined in the "namespaces" config section.
+  #     This means all executions related to this ringbuffer will run with the context of that Namespace.
   #
   ringbuffer:
     default:
@@ -2040,6 +2091,7 @@ hazelcast:
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         class-name: PutIfAbsentMergePolicy
+      namespace: "ns1"
 
   #
   # ===== HAZELCAST FLAKE ID GENERATOR CONFIGURATION =====
@@ -3921,3 +3973,105 @@ hazelcast:
     enabled: true
     # Configures the number of eventloops. It's equal to available processor count by default.
     eventloop-count: 12
+
+  #    ===== HAZELCAST NAMESPACES CONFIGURATION =====
+  #
+  #  Configuration element's name is "namespaces".
+  #
+  # It has the following attributes:
+  #  - "enabled":
+  #      The master-switch for the namespaces to be enabled. If this is set
+  #      to false hazelcast operations will not be namespace aware and such User Code will
+  #      not be executed.
+  #      In addition, there will be no attempt to load individual namespace resources (Jar/JarsInZip)
+  #      on member startup.
+  #      It will not be possible to add or remove namespaces at runtime.
+  #      Its default value is false.
+  # It has the following sub-elements:
+  #  * "java-serialization-filter":
+  #      Allows to configure blacklisting and whitelisting by class, package or prefix.
+  #      If a filtered class has been blacklisted, a SecurityException will be thrown.
+  #      If whitelisting is enabled, either by explicit declaration under <whitelist>
+  #      or setting defaults-disabled="false", a SecurityException will be thrown if a filtered
+  #      class has not been whitelisted.
+  #      It has the following attributes:
+  #      - "defaults-disabled":
+  #          If set to true, the default whitelist will not be used.
+  #          If set to false, the default whitelist will be used. In such cases that a class name
+  #          does not match any of the whitelisted classes, packages or prefixes, a SecurityException
+  #          will be thrown.
+  #          It has the following elements:
+  #          * "blacklist":
+  #              Defines a blacklist of classes, packages or prefixes.
+  #                It has the following sub-elements:
+  #              * "class":
+  #                  Defines a class to be blacklisted.
+  #              * "package":
+  #                  Defines a package to be blacklisted.
+  #              * "prefix":
+  #                  Defines a prefix to be blacklisted.
+  #          * "whitelist":
+  #              Defines a whitelist of classes, packages or prefixes.
+  #                It has the following sub-elements:
+  #              * "class":
+  #                  Defines a class to be whitelisted.
+  #              * "package":
+  #                  Defines a package to be whitelisted.
+  #              * "prefix":
+  #                  Defines a prefix to be whitelisted.
+  #  * "namespace":
+  #      Defines a namespace with a name.
+  #      It has the following attributes:
+  #      * "id":
+  #         Id of the namespace, must be unique.
+  #      * "resource-type":
+  #          Defines a resource type to be loaded for the namespace.
+  #          It has the following options:
+  #          * "JAR":
+  #              Defines a Jar resource to be loaded for the namespace.
+  #          * "JARS_IN_ZIP":
+  #              Defines Jars in a zip file to be loaded for the namespace.
+  #      * "url":
+  #          Defines the URL of the resource.
+  namespaces:
+    # Sub attribute of namespaces, enables or disables namespaces.
+    enabled: true
+    # Sub attribute of namespaces, allows to configure blacklisting and whitelisting by class, package or prefix.
+    java-serialization-filter:
+      # Sub-Attribute of java-serialization-filter, If set to true, the default whitelist will not be used.
+      defaults-disabled: true
+      # Sub-Attribute of java-serialization-filter, defines a blacklist of classes, packages or prefixes.
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      # Sub-Attribute of java-serialization-filter, defines a whitelist of classes, packages or prefixes.
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - com.hazelcast.
+          - java
+    # Sub-Attribute of namespaces, an object which defines a namespace.
+    ns1:
+      # Sub-Attribute of namespace Object, defines the id of the namespace, must be unique.
+      - id: jarId
+        # Sub-Attribute of a namespace object, Defines a Jar resource to be loaded for the namespace.
+        resource-type: JAR
+        # Sub-Attribute of a namespace object, Defines the URL of the Jar resource.
+        url: "file:./src/test/class/usercodedeployment/ShadedClasses.jar"
+      - id: jarsInZipId
+        # Sub-Attribute of a namespace object, Defines Jars in a zip file to be loaded for the namespace.
+        resource-type: JARS_IN_ZIP
+        # Sub-Attribute of a namespace object, Defines the URL of the zip resource.
+        url: "file:./src/test/class/usercodedeployment/ShadedClasses.jar"
+    ns2:
+      - id: jarId2
+        resource-type: JAR
+        url: "file:./src/test/class/usercodedeployment/ChildParent.jar"
+      - id: jarId3
+        resource-type: JAR
+        url: "file:./src/test/class/usercodedeployment/ShadedClasses.jar"

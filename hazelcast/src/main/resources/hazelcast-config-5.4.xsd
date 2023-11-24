@@ -80,6 +80,7 @@
                 <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="data-connection" type="data-connection" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="tpc" type="tpc" minOccurs="0"/>
+                <xs:element name="namespaces" type="namespaces-type" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -313,6 +314,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -570,6 +572,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
 
         <xs:attribute name="name" use="required">
@@ -682,6 +685,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" default="default">
             <xs:annotation>
@@ -751,6 +755,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" default="default">
             <xs:annotation>
@@ -820,6 +825,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" default="default">
             <xs:annotation>
@@ -909,6 +915,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -980,6 +987,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1028,6 +1036,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" default="default">
             <xs:annotation>
@@ -1131,6 +1140,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" default="default">
             <xs:annotation>
@@ -1230,6 +1240,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1650,6 +1661,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="default">
             <xs:annotation>
@@ -1698,6 +1710,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="default">
             <xs:annotation>
@@ -1766,6 +1779,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+            <xs:element name="namespace" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="default">
             <xs:annotation>
@@ -2789,6 +2803,7 @@
             <xs:element name="job-permission" type="job-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="connector-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="sql-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="namespace-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
         <xs:attribute name="priority-grant" type="xs:boolean" default="false">
@@ -6223,4 +6238,114 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
+
+    <xs:complexType name="resource">
+        <xs:annotation>
+            <xs:documentation>
+                Defines an object that uniquely identifies a namespace resource.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="url" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        The URL must be a valid URI that points to the location of the resource. This is a required property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    An optional identifier for the resource. It must be unique within the namespace. If a value is not set, the URL is used as the identifier.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="jar-resource">
+        <xs:complexContent>
+            <xs:extension base="resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures a Jar type resource specifically pointing to a JAR files.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="jars-in-zip-resource">
+        <xs:complexContent>
+            <xs:extension base="resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures ZIP archives that contain multiple JAR files.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+
+    <xs:complexType name="namespace-type">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="jar" type="jar-resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a single JAR file within a namespace.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="jars-in-zip" type="jars-in-zip-resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a ZIP archive containing multiple JAR files within a namespace.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name for the namespace. This is a required attribute.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="namespaces-type">
+        <xs:annotation>
+            <xs:documentation>
+                Encapsulates multiple namespace configurations. The 'enabled' attribute toggles the namespaces on or off.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="java-serialization-filter" type="java-serialization-filter" minOccurs="0">
+            <xs:annotation>
+                <xs:documentation>
+                    Allows to configure blacklisting and whitelisting by class, package or prefix.
+                    If a filtered class has been blacklisted, a SecurityException will be thrown.
+                    If whitelisting is enabled, either by explicit declaration under whitelist or setting defaults-disabled=false,
+                    a SecurityException will be thrown if a filtered class has not been whitelisted.
+
+                    If defaults-disabled is set to true, the default whitelist will not be used.
+                    If set to false, the default whitelist will be used. In such cases that a class name
+                    does not match any of the whitelisted classes, packages or prefixes, a SecurityException
+                    will be thrown.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:element>
+            <xs:element name="namespace" type="namespace-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:element name="namespaces" type="namespaces-type">
+        <xs:annotation>
+            <xs:documentation>
+                Configures namespaces for user code deployment.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
 </xs:schema>

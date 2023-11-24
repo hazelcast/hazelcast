@@ -20,9 +20,12 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -33,7 +36,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  *
  * @since 3.5
  */
-public class PredicateConfig implements IdentifiedDataSerializable {
+public class PredicateConfig implements IdentifiedDataSerializable, NamespaceAwareConfig, Versioned {
 
     protected String className;
 
@@ -69,7 +72,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      * @param implementation the implementation to use as Predicate
      * @throws IllegalArgumentException if the implementation is {@code null}
      */
-    public PredicateConfig(Predicate implementation) {
+    public PredicateConfig(Predicate implementation, @Nullable String namespace) {
         this.implementation = isNotNull(implementation, "implementation");
     }
 
@@ -164,13 +167,13 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         }
 
         PredicateConfig that = (PredicateConfig) o;
-        if (className != null ? !className.equals(that.className) : that.className != null) {
+        if (!Objects.equals(className, that.className)) {
             return false;
         }
-        if (sql != null ? !sql.equals(that.sql) : that.sql != null) {
+        if (!Objects.equals(sql, that.sql)) {
             return false;
         }
-        return !(implementation != null ? !implementation.equals(that.implementation) : that.implementation != null);
+        return Objects.equals(implementation, that.implementation);
     }
 
     @Override

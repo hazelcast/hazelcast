@@ -112,6 +112,8 @@ public class Config {
      */
     public static final String DEFAULT_CLUSTER_NAME = "dev";
 
+    protected NamespacesConfig namespacesConfig = new NamespacesConfig();
+
     private URL configurationUrl;
 
     private File configurationFile;
@@ -3230,6 +3232,24 @@ public class Config {
     }
 
     /**
+     * @return the namespaces configuration object
+     * @since 5.4.0
+     */
+    public NamespacesConfig getNamespacesConfig() {
+        return namespacesConfig;
+    }
+
+    /**
+     * Sets the namespaces configuration .
+     *
+     * @since 5.4.0
+     */
+    public @Nonnull Config setNamespacesConfig(@Nonnull NamespacesConfig namespacesConfig) {
+        this.namespacesConfig = checkNotNull(namespacesConfig);
+        return this;
+    }
+
+    /**
      * Gets the TpcConfig. Can't return null.
      *
      * @return the TpcConfig.
@@ -3295,6 +3315,7 @@ public class Config {
                 + ", cardinalityEstimatorConfigs=" + cardinalityEstimatorConfigs
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", pnCounterConfigs=" + pnCounterConfigs
+                + ", namespacesConfig=" + namespacesConfig
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
                 + ", servicesConfig=" + servicesConfig
                 + ", securityConfig=" + securityConfig
@@ -3320,6 +3341,7 @@ public class Config {
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + ", dataConnectionConfigs=" + dataConnectionConfigs
                 + ", tpcConfig=" + tpcConfig
+                + ", namespacesConfig=" + namespacesConfig
                 + '}';
     }
 }

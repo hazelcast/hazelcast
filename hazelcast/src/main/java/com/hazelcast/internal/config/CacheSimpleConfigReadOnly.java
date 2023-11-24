@@ -25,6 +25,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.WanReplicationRef;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -176,6 +177,11 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
 
     @Override
     public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 }

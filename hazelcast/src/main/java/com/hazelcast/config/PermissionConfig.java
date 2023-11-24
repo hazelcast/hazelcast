@@ -41,6 +41,7 @@ import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.security.permission.PNCounterPermission;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.security.permission.ReliableTopicPermission;
@@ -220,7 +221,11 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
         /**
          * CP Map permissions
          */
-        CPMAP("cpmap-permission", CPMapPermission.class);
+        CPMAP("cpmap-permission", CPMapPermission.class),
+        /**
+         * Namespace permissions
+         */
+        NAMESPACE("namespace-permission", NamespacePermission.class);
 
         private final String nodeName;
         private final String className;

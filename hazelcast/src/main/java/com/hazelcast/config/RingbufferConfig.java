@@ -20,11 +20,14 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
@@ -40,7 +43,8 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * content will be fully stored on a single member in the cluster and its
  * backup in another member in the cluster.
  */
-public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig {
+public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                         NamespaceAwareConfig {
 
     /**
      * Default value of capacity of the RingBuffer.
@@ -72,6 +76,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private @Nullable String namespace = DEFAULT_NAMESPACE;
 
     public RingbufferConfig() {
     }
@@ -105,6 +110,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         }
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.splitBrainProtectionName = config.splitBrainProtectionName;
+        this.namespace = config.namespace;
     }
 
     /**
@@ -379,6 +385,30 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param namespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link RingbufferConfig} instance
+     * @since 5.4
+     */
+    public RingbufferConfig setNamespace(@Nullable String namespace) {
+        this.namespace = namespace;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "RingbufferConfig{"
@@ -391,6 +421,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
                 + ", ringbufferStoreConfig=" + ringbufferStoreConfig
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", namespace=" + namespace
                 + '}';
     }
 
@@ -415,6 +446,11 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         out.writeObject(ringbufferStoreConfig);
         out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(namespace);
+        }
     }
 
     @Override
@@ -428,6 +464,11 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         ringbufferStoreConfig = in.readObject();
         splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            namespace = in.readString();
+        }
     }
 
     @Override
@@ -448,12 +489,13 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
                 && inMemoryFormat == that.inMemoryFormat
                 && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
                 && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
-                && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
+                && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
+                && Objects.equals(namespace, that.namespace);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, capacity, backupCount, asyncBackupCount, timeToLiveSeconds, inMemoryFormat,
-                ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig);
+                ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig, namespace);
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
@@ -61,6 +62,11 @@ public class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
 
     @Override
     public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public ReplicatedMapConfig setNamespace(@Nullable String namespace) {
         throw throwReadOnly();
     }
 

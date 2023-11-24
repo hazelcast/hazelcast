@@ -307,9 +307,10 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    @SuppressWarnings("rawtypes")
-    public JobConfig addClass(@Nonnull Class... classes) {
-        ReflectionUtils.nestedClassesOf(classes).forEach(this::addClass);
+    public JobConfig addClass(@Nonnull Class<?>... classes) {
+        throwIfLocked();
+        checkNotNull(classes, "Classes cannot be null");
+        ResourceConfig.fromClass(classes).forEach(cfg -> resourceConfigs.put(cfg.getId(), cfg));
         return this;
     }
 
@@ -365,7 +366,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     public JobConfig addJar(@Nonnull URL url) {
         throwIfLocked();
-        return add(url, filenamePart(url), ResourceType.JAR);
+        return add(url, null, ResourceType.JAR);
     }
 
     /**
@@ -444,7 +445,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull URL url) {
-        return add(url, filenamePart(url), ResourceType.JARS_IN_ZIP);
+        return add(url, null, ResourceType.JARS_IN_ZIP);
     }
 
     /**
@@ -524,7 +525,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull URL url) {
-        return addClasspathResource(url, filenamePart(url));
+        return add(url, null, ResourceType.CLASSPATH_RESOURCE);
     }
 
     /**
@@ -590,6 +591,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull File file, @Nonnull String id) {
         ensureIsFile(file);
+        Preconditions.checkHasText(id, "id cannot be null or empty");
         return add(fileToUrl(file), id, ResourceType.CLASSPATH_RESOURCE);
     }
 
@@ -709,7 +711,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull URL url) {
-        return attachFile(url, filenamePart(url));
+        return add(url, null, ResourceType.FILE);
     }
 
     /**
@@ -738,6 +740,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     public JobConfig attachFile(@Nonnull URL url, @Nonnull String id) {
         ensureHasPath(url);
+        Preconditions.checkHasText(id, "id cannot be null or empty");
         return add(url, id, ResourceType.FILE);
     }
 
@@ -911,8 +914,10 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull URL url, @Nonnull String id) {
+        throwIfLocked();
         ensureHasPath(url);
         ensureIsDirectory(urlToFile(url));
+        Preconditions.checkHasText(id, "id cannot be null or empty");
         return add(url, id, ResourceType.DIRECTORY);
     }
 
@@ -1068,13 +1073,6 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
-    @Nonnull
-    private static String filenamePart(@Nonnull URL url) {
-        String filename = new File(url.getPath()).getName();
-        Preconditions.checkHasText(filename, "URL has no path: " + url);
-        return filename;
-    }
-
     private static void ensureHasPath(@Nonnull URL url) {
         if (url.getPath().isEmpty()) {
             throw new IllegalArgumentException("URL has no path part: " + url.toExternalForm());
@@ -1169,15 +1167,8 @@ public class JobConfig implements IdentifiedDataSerializable {
         return serializerConfigs;
     }
 
-    private void addClass(@Nonnull Class<?> clazz) {
+    private JobConfig add(@Nonnull URL url, @Nullable String id, @Nonnull ResourceType resourceType) {
         throwIfLocked();
-        ResourceConfig cfg = new ResourceConfig(clazz);
-        resourceConfigs.put(cfg.getId(), cfg);
-    }
-
-    private JobConfig add(@Nonnull URL url, @Nonnull String id, @Nonnull ResourceType resourceType) {
-        throwIfLocked();
-        Preconditions.checkHasText(id, "Resource ID is blank");
         ResourceConfig cfg = new ResourceConfig(url, id, resourceType);
         if (resourceConfigs.putIfAbsent(id, cfg) != null) {
             throw new IllegalArgumentException("Resource with id:" + id + " already exists");
