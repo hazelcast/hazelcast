@@ -18,6 +18,7 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
 import com.hazelcast.logging.ILogger;
@@ -43,20 +44,19 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
  * This class wraps a Kafka Connector and TaskRunner
  */
 public class SourceConnectorWrapper {
-    // The logger is accessed by multiple threads
-    private volatile ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
+    private final ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
     private final SourceConnector sourceConnector;
     private final int tasksMax;
     private TaskRunner taskRunner;
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
     private final State state = new State();
     private final String name;
-    private boolean isMasterProcessor;
+    private final boolean isMasterProcessor;
+    private final int processorOrder;
     private TaskConfigPublisher taskConfigPublisher;
-    private int processorOrder;
     private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
 
-    public SourceConnectorWrapper(Properties propertiesFromUser) {
+    public SourceConnectorWrapper(Properties propertiesFromUser, int processorOrder, Context context) {
         String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
         this.name = checkRequiredProperty(propertiesFromUser, "name");
         this.tasksMax = Integer.parseInt(checkRequiredProperty(propertiesFromUser, "tasks.max"));
@@ -66,25 +66,22 @@ public class SourceConnectorWrapper {
         logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
         Map<String, String> map = toMap(propertiesFromUser);
         this.sourceConnector.start(map);
+
+
+        this.processorOrder = processorOrder;
+        isMasterProcessor = processorOrder == 0;
+
+        // Any processor can create the topic
+        createTopic(context.hazelcastInstance(), context.executionId());
+
+        createTaskRunner();
     }
 
     public boolean hasTaskConfiguration() {
         return receivedTaskConfiguration.get();
     }
 
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
-    }
-
-    public void setMasterProcessor(boolean masterProcessor) {
-        isMasterProcessor = masterProcessor;
-    }
-
-    public void setProcessorOrder(int processorOrder) {
-        this.processorOrder = processorOrder;
-    }
-
-    public void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
+    private void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
         taskConfigPublisher = new TaskConfigPublisher(hazelcastInstance);
         taskConfigPublisher.createTopic(executionId);
 
@@ -92,7 +89,7 @@ public class SourceConnectorWrapper {
         taskConfigPublisher.addMessageListener(this::processMessage);
     }
 
-    public void destroyTopic() {
+    private void destroyTopic() {
         taskConfigPublisher.removeMessageListeners();
         if (isMasterProcessor) {
             // Only master processor can destroy the topic
@@ -131,7 +128,13 @@ public class SourceConnectorWrapper {
     }
 
     public List<SourceRecord> poll() {
+        try {
         return taskRunner.poll();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw rethrow(e);
+        }
     }
 
     public void commitRecord(SourceRecord sourceRecord) {
@@ -154,10 +157,6 @@ public class SourceConnectorWrapper {
         return taskRunner.getName();
     }
 
-    public void taskRunnerStop() {
-        taskRunner.stop();
-    }
-
     @SuppressWarnings({"ConstantConditions", "java:S1193"})
     private static SourceConnector newConnectorInstance(String connectorClazz) {
         try {
@@ -171,9 +170,11 @@ public class SourceConnectorWrapper {
         }
     }
 
-    public void stop() {
+    public void close() {
         logger.fine("Stopping connector '" + name + "'");
+        taskRunner.stop();
         sourceConnector.stop();
+        destroyTopic();
         logger.fine("Connector '" + name + "' stopped");
     }
 

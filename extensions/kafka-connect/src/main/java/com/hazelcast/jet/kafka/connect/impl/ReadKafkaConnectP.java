@@ -65,6 +65,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private int localProcessorIndex;
     private int processorOrder;
     private final AtomicInteger counter = new AtomicInteger();
+    private boolean active;
 
     public ReadKafkaConnectP(@Nonnull EventTimePolicy<? super T> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
@@ -88,6 +89,10 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         this.processorOrder = processorOrder;
     }
 
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     @Override
     protected void init(@Nonnull Context context) {
         globalProcessorIndex = context.globalProcessorIndex();
@@ -96,23 +101,11 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
                          processorOrder + " localProcessorIndex= " + localProcessorIndex);
 
         if (sourceConnectorWrapper == null) {
-            sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser);
+            sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser, processorOrder, context);
         }
-        sourceConnectorWrapper.setLogger(getLogger());
-        sourceConnectorWrapper.setProcessorOrder(processorOrder);
-        sourceConnectorWrapper.setMasterProcessor(isMasterProcessor());
-
-        // Any processor can create the topic
-        sourceConnectorWrapper.createTopic(context.hazelcastInstance(), context.executionId());
-
-        sourceConnectorWrapper.createTaskRunner();
         snapshotsEnabled = context.snapshottingEnabled();
         NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
-    }
-
-    private boolean isMasterProcessor() {
-        return processorOrder == 0;
     }
 
     @Override
@@ -122,6 +115,9 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public boolean complete() {
+        if (!active) {
+            return false;
+        }
         // The taskConfig has not been received yet. We can not complete the processor
         if (!sourceConnectorWrapper.hasTaskConfiguration()) {
             return false;
@@ -206,10 +202,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public void close() {
-        sourceConnectorWrapper.taskRunnerStop();
-        sourceConnectorWrapper.stop();
-        sourceConnectorWrapper.destroyTopic();
-
+        sourceConnectorWrapper.close();
         getLogger().info("Closed ReadKafkaConnectP");
     }
 

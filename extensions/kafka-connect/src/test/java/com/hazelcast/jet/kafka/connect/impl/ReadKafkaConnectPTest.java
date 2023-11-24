@@ -102,19 +102,19 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_require_eventTimePolicy() {
-        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties());
+        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, new TestProcessorContext());
         assertThatThrownBy(() -> new ReadKafkaConnectP<>(null,
                 rec -> (Integer) rec.value())
-                .setSourceConnectorWrapper(sourceConnectorWrapper))
+                .setSourceConnectorWrapper(wrapper))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("eventTimePolicy is required");
     }
 
     @Test
     public void should_require_projectionFn() {
-        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties());
+        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, new TestProcessorContext());
         assertThatThrownBy(() -> new ReadKafkaConnectP<>(noEventTime(), null)
-                .setSourceConnectorWrapper(sourceConnectorWrapper))
+                .setSourceConnectorWrapper(wrapper))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("projectionFn is required");
     }

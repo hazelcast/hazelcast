@@ -64,10 +64,13 @@ class TaskMaxProcessorSupplier implements ProcessorSupplier {
 
     @Nonnull
     @Override
-    public Collection<? extends Processor> get(int ignored) {
-        Collection<ReadKafkaConnectP<?>> processors = supplier.get(localParallelismForMember);
+    public Collection<? extends Processor> get(int count) {
+        Collection<ReadKafkaConnectP<?>> processors = supplier.get(count);
+        int index = 1;
         for (ReadKafkaConnectP<?> processor : processors) {
+            processor.setActive(index <= localParallelismForMember);
             processor.setProcessorOrder(processorOrder++);
+            index++;
         }
         return processors;
     }

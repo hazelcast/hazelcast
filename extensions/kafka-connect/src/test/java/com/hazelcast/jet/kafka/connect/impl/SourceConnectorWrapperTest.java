@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class SourceConnectorWrapperTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new SourceConnectorWrapper(minimalProperties());
+        new SourceConnectorWrapper(minimalProperties(), 0, new TestProcessorContext());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -99,7 +100,7 @@ public class SourceConnectorWrapperTest {
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        assertThatThrownBy(() -> new SourceConnectorWrapper(properties))
+        assertThatThrownBy(() -> new SourceConnectorWrapper(properties, 0, new TestProcessorContext()))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
@@ -109,10 +110,10 @@ public class SourceConnectorWrapperTest {
     public void should_cleanup_on_destroy() {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(properties);
+        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(properties, 0, new TestProcessorContext());
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
-        sourceConnectorWrapper.stop();
+        sourceConnectorWrapper.close();
 
         assertThat(sourceConnectorInstance().isStarted()).isFalse();
     }
