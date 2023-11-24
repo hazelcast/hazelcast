@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -63,6 +64,7 @@ public class StepRunner extends Offload
     private final Set<MapOperation> offloadedOperations;
     private final OperationExecutor operationExecutor;
     private final ExecutionService executionService;
+    private final @Nullable String namespace;
 
     private volatile StepSupplier stepSupplier;
 
@@ -79,6 +81,7 @@ public class StepRunner extends Offload
         this.executionService = nodeEngine.getExecutionService();
         this.maxRunNanos = mapOperation.getMapContainer()
                 .getMapServiceContext().getMaxSuccessiveOffloadedOpRunNanos();
+        this.namespace = mapOperation.getMapContainer().getMapConfig().getNamespace();
     }
 
     @Override
@@ -169,7 +172,7 @@ public class StepRunner extends Offload
                 }
 
                 // Try to run this step in this thread, otherwise
-                // offload the step to relevant executor(it
+                // offload the step to relevant executor (it
                 // is operation or general-purpose executor)
                 if (!runDirect(step)) {
                     offloadRun(step, this);
@@ -217,7 +220,7 @@ public class StepRunner extends Offload
             if (isRunningOnPartitionThread()) {
                 try {
                     CURRENTLY_EXECUTING_ON_PARTITION_THREAD.set(true);
-                    step.run();
+                    NamespaceUtil.runWithNamespace(nodeEngine, namespace, step);
                 } finally {
                     CURRENTLY_EXECUTING_ON_PARTITION_THREAD.set(false);
                 }
@@ -228,7 +231,7 @@ public class StepRunner extends Offload
             if (!isRunningOnPartitionThread()
                     && (currentExecutorName == null
                     || ((Offloadable) step).getExecutorName().equals(currentExecutorName))) {
-                step.run();
+                NamespaceUtil.runWithNamespace(nodeEngine, namespace, step);
                 return true;
             }
         }

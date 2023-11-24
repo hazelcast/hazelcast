@@ -229,7 +229,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
                         new QueryCacheConfig(cacheName)
                                 .setIncludeValue(true)
                                 .setPredicateConfig(// use map attribute in a predicate
-                                        new PredicateConfig(Predicates.equal(ATTRIBUTE_NAME, true))
+                                        new PredicateConfig(Predicates.equal(ATTRIBUTE_NAME, true), null)
                                 ))
                 .addAttributeConfig(
                         new AttributeConfig()

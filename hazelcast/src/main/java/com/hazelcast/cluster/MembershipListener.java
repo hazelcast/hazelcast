@@ -16,6 +16,8 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.EventListener;
 
 /**
@@ -27,6 +29,7 @@ import java.util.EventListener;
  * @see InitialMembershipListener
  * @see Cluster#addMembershipListener(MembershipListener)
  */
+@NamespacesSupported
 public interface MembershipListener extends EventListener {
 
     /**

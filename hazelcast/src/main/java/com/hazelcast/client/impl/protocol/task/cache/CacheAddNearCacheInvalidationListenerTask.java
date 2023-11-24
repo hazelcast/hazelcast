@@ -124,4 +124,8 @@ public class CacheAddNearCacheInvalidationListenerTask
         return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    protected String getNamespace() {
+        return CacheService.lookupNamespace(nodeEngine, parameters.name);
+    }
 }

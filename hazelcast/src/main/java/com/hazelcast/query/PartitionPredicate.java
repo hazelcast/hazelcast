@@ -17,6 +17,8 @@
 package com.hazelcast.query;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.Collection;
 import java.util.Collections;
 
@@ -31,6 +33,7 @@ import java.util.Collections;
  * @param <V> type of the entry value
  * @see Predicates#partitionPredicate(Object, Predicate)
  */
+@NamespacesSupported
 @BinaryInterface
 public interface PartitionPredicate<K, V> extends Predicate<K, V> {
 

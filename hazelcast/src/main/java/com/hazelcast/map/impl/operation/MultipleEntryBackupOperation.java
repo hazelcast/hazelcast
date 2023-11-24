@@ -53,7 +53,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        backupProcessor = in.readObject();
+        backupProcessor = callWithNamespaceAwareness(in::readObject);
         int size = in.readInt();
         keys = createLinkedHashSet(size);
         for (int i = 0; i < size; i++) {

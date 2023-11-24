@@ -43,16 +43,18 @@ public class CacheEntryProcessorMessageTask
 
     public CacheEntryProcessorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
     protected Operation prepareOperation() {
         CacheService service = getService(getServiceName());
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        EntryProcessor entryProcessor = (EntryProcessor) service.toObject(parameters.entryProcessor);
+        String namespace = CacheService.lookupNamespace(nodeEngine, parameters.name);
+        EntryProcessor entryProcessor = (EntryProcessor) service.toObject(parameters.entryProcessor, namespace);
         ArrayList argumentsList = new ArrayList(parameters.arguments.size());
         for (Data data : parameters.arguments) {
-            argumentsList.add(service.toObject(data));
+            argumentsList.add(service.toObject(data, namespace));
         }
         return operationProvider
                 .createEntryProcessorOperation(parameters.key, parameters.completionId, entryProcessor

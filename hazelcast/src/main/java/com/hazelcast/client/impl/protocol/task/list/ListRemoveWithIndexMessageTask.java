@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListRemoveWithIndexCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListRemoveOperation;
 import com.hazelcast.instance.impl.Node;
@@ -36,7 +35,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_REMOVEWITHINDEX}
  */
 public class ListRemoveWithIndexMessageTask
-        extends AbstractPartitionMessageTask<ListRemoveWithIndexCodec.RequestParameters> {
+        extends AbstractListMessageTask<ListRemoveWithIndexCodec.RequestParameters> {
 
     public ListRemoveWithIndexMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

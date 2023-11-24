@@ -191,7 +191,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         String qcName = randomString();
         final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(qcName)
-                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE, null))
                 .addEntryListenerConfig(
                         new EntryListenerConfig(listener, true, true));
         ClientConfig config = new ClientConfig().addQueryCacheConfig(mapName, queryCacheConfig);

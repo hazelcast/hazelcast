@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -46,23 +47,28 @@ public class CacheReplicationOperationTest extends HazelcastTestSupport {
 
         // add config to cache service
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(createHazelcastInstance());
-        CacheService cacheService = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
-        cacheService.putCacheConfigIfAbsent(config);
+        NodeEngineThreadLocalContext.declareNodeEngineReference(nodeEngineImpl);
+        try {
+            CacheService cacheService = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
+            cacheService.putCacheConfigIfAbsent(config);
 
-        CachePartitionSegment segment = new CachePartitionSegment(cacheService, 0);
-        segment.getOrCreateRecordStore(config.getNameWithPrefix());
-        Collection<ServiceNamespace> namespaces = segment.getAllNamespaces(0);
-        assertEquals(1, namespaces.size());
+            CachePartitionSegment segment = new CachePartitionSegment(cacheService, 0);
+            segment.getOrCreateRecordStore(config.getNameWithPrefix());
+            Collection<ServiceNamespace> namespaces = segment.getAllNamespaces(0);
+            assertEquals(1, namespaces.size());
 
-        // create operation
-        CacheReplicationOperation operation = new CacheReplicationOperation();
-        operation.prepare(segment, namespaces, 0);
+            // create operation
+            CacheReplicationOperation operation = new CacheReplicationOperation();
+            operation.prepare(segment, namespaces, 0);
 
-        // serialize & deserialize operation
-        Data data = nodeEngineImpl.toData(operation);
-        CacheReplicationOperation cacheReplicationOperation = (CacheReplicationOperation) nodeEngineImpl.toObject(data);
+            // serialize & deserialize operation
+            Data data = nodeEngineImpl.toData(operation);
+            CacheReplicationOperation cacheReplicationOperation = (CacheReplicationOperation) nodeEngineImpl.toObject(data);
 
-        // new operation instance should have previously added config.
-        assertContains(cacheReplicationOperation.getConfigs(), config);
+            // new operation instance should have previously added config.
+            assertContains(cacheReplicationOperation.getConfigs(), config);
+        } finally {
+            NodeEngineThreadLocalContext.destroyNodeEngineReference();
+        }
     }
 }

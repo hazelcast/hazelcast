@@ -18,11 +18,9 @@ package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
@@ -36,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec#REQUEST_MESSAGE_TYPE}
  */
 public class RingbufferReadOneMessageTask
-        extends AbstractPartitionMessageTask<RingbufferReadOneCodec.RequestParameters> {
+        extends AbstractRingbufferMessageTask<RingbufferReadOneCodec.RequestParameters> {
 
     public RingbufferReadOneMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,11 +68,6 @@ public class RingbufferReadOneMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.READ_ONE;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RingbufferService.SERVICE_NAME;
     }
 
     @Override

@@ -16,6 +16,6 @@
 
 package com.hazelcast.test.annotation;
 
-// TODO NS: Remove before production - test category marker for faster Namespace-related test runs
+// TODO NS: Remove before GA - test category marker for faster Namespace-related test runs
 public final class NamespaceTest {
 }

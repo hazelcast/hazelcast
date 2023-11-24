@@ -119,6 +119,8 @@
     <suppress checks="ExecutableStatementCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheConfig"/>
     <suppress checks="ExecutableStatementCount"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]holder[\\/]CacheConfigHolder"/>
+    <suppress checks="MethodLength"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]DynamicConfigAddMapConfigCodec"/>
     <suppress checks="ParameterNumber"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]task[\\/]dynamicconfig[\\/]QueryCacheConfigHolder"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheSimpleConfig"/>
@@ -190,7 +192,7 @@
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptionFactory.java"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientMessage"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
-    <suppress checks="UnusedImport|DeclarationOrder" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
+    <suppress checks="UnusedImport|DeclarationOrder|MethodLength" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="UnusedImport|DeclarationOrder"
               files="com[\\/]hazelcast[\\/]internal[\\/]longregister[\\/]client[\\/]codec[\\/]"/>
 

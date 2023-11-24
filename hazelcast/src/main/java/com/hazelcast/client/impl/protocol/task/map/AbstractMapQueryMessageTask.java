@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
@@ -44,6 +45,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import java.security.Permission;
@@ -73,6 +75,10 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_READ);
     }
 
+    protected String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
+
     protected abstract Predicate getPredicate();
 
     protected abstract Aggregator<?, ?> getAggregator();
@@ -86,9 +92,16 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     protected abstract IterationType getIterationType();
 
     @Override
+    public Permission getNamespacePermission() {
+        String namespace = getNamespace();
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected final Object call() throws Exception {
         Collection<AccumulatedResults> result = new LinkedList<AccumulatedResults>();
         try {
+            NamespaceUtil.setupNamespace(nodeEngine, getNamespace());
             Predicate predicate = getPredicate();
             if (predicate instanceof PartitionPredicate) {
                 QueryResult queryResult = invokeOnPartitions((PartitionPredicate) predicate);
@@ -99,10 +112,12 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
             PartitionIdSet finishedPartitions = invokeOnMembers(result, predicate, partitionCount);
             invokeOnMissingPartitions(result, predicate, finishedPartitions);
+            return reduce(result);
         } catch (Throwable t) {
             throw rethrow(t);
+        } finally {
+            NamespaceUtil.cleanupNamespace(nodeEngine, getNamespace());
         }
-        return reduce(result);
     }
 
     private QueryResult invokeOnPartitions(PartitionPredicate predicate) {

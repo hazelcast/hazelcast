@@ -57,6 +57,7 @@ public class MapEventJournalReadTask<K, V, T>
 
     public MapEventJournalReadTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override

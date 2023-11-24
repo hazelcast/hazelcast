@@ -79,7 +79,7 @@ public class ClientQueryCacheClientContextTest extends HazelcastTestSupport {
 
     private QueryCacheConfig newQueryCacheConfig(String cacheName) {
         return new QueryCacheConfig(cacheName)
-                .setPredicateConfig(new PredicateConfig(predicate));
+                .setPredicateConfig(new PredicateConfig(predicate, null));
     }
 
     @Test

@@ -24,14 +24,18 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
+import java.util.Objects;
+
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 /**
  * Default implementation of {@link QueryCacheEventData} which is sent to subscriber.
  */
 @BinaryInterface
-public class DefaultQueryCacheEventData implements QueryCacheEventData {
+public class DefaultQueryCacheEventData implements QueryCacheEventData, Versioned {
 
     private Object key;
     private Object value;
@@ -43,6 +47,7 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
     private final long creationTime;
     private int eventType;
     private int partitionId;
+    private String mapName;
 
     public DefaultQueryCacheEventData() {
         creationTime = Clock.currentTimeMillis();
@@ -59,6 +64,7 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         this.creationTime = other.creationTime;
         this.eventType = other.eventType;
         this.partitionId = other.partitionId;
+        this.mapName = other.mapName;
     }
 
     @Override
@@ -145,6 +151,10 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         this.partitionId = partitionId;
     }
 
+    public void setMapName(String mapName) {
+        this.mapName = mapName;
+    }
+
     @Override
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -157,7 +167,7 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
 
     @Override
     public String getMapName() {
-        throw new UnsupportedOperationException();
+        return mapName;
     }
 
     @Override
@@ -172,6 +182,11 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         IOUtil.writeData(out, dataNewValue);
         out.writeInt(eventType);
         out.writeInt(partitionId);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(mapName);
+        }
     }
 
     @Override
@@ -181,15 +196,21 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         this.dataNewValue = IOUtil.readData(in);
         this.eventType = in.readInt();
         this.partitionId = in.readInt();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            this.mapName = in.readString();
+        }
     }
 
     @Override
     public String toString() {
-        return "DefaultSingleEventData{"
+        return "DefaultQueryCacheEventData{"
                 + "creationTime=" + creationTime
                 + ", eventType=" + eventType
                 + ", sequence=" + sequence
                 + ", partitionId=" + partitionId
+                + ", mapName=" + mapName
                 + '}';
     }
 
@@ -213,23 +234,25 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         if (partitionId != that.partitionId) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        if (value != null ? !value.equals(that.value) : that.value != null) {
+        if (!Objects.equals(value, that.value)) {
             return false;
         }
-        if (dataKey != null ? !dataKey.equals(that.dataKey) : that.dataKey != null) {
+        if (!Objects.equals(dataKey, that.dataKey)) {
             return false;
         }
-        if (dataNewValue != null ? !dataNewValue.equals(that.dataNewValue) : that.dataNewValue != null) {
+        if (!Objects.equals(dataNewValue, that.dataNewValue)) {
             return false;
         }
-        if (dataOldValue != null ? !dataOldValue.equals(that.dataOldValue) : that.dataOldValue != null) {
+        if (!Objects.equals(dataOldValue, that.dataOldValue)) {
             return false;
         }
-        return serializationService != null ? serializationService.equals(that.serializationService)
-                : that.serializationService == null;
+        if (!Objects.equals(mapName, that.mapName)) {
+            return false;
+        }
+        return Objects.equals(serializationService, that.serializationService);
     }
 
     @Override
@@ -243,6 +266,7 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         result = 31 * result + (serializationService != null ? serializationService.hashCode() : 0);
         result = 31 * result + eventType;
         result = 31 * result + partitionId;
+        result = 31 * result + (mapName != null ? mapName.hashCode() : 0);
         return result;
     }
 }

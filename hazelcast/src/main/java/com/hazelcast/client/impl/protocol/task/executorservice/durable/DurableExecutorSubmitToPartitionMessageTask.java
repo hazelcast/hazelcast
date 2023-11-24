@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.executorservice.durable;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -40,6 +41,7 @@ public class DurableExecutorSubmitToPartitionMessageTask
 
     public DurableExecutorSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
@@ -94,5 +96,11 @@ public class DurableExecutorSubmitToPartitionMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    protected String getNamespace() {
+        DurableExecutorConfig config = nodeEngine.getConfig().findDurableExecutorConfig(parameters.name);
+        return config == null ? null : config.getNamespace();
     }
 }

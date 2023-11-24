@@ -18,10 +18,8 @@ package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferHeadSequenceCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
@@ -31,7 +29,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.security.Permission;
 
 public class RingbufferHeadSequenceMessageTask
-        extends AbstractPartitionMessageTask<String> {
+        extends AbstractRingbufferMessageTask<String> {
 
     public RingbufferHeadSequenceMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,11 +48,6 @@ public class RingbufferHeadSequenceMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return RingbufferHeadSequenceCodec.encodeResponse((Long) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return RingbufferService.SERVICE_NAME;
     }
 
     public Object[] getParameters() {

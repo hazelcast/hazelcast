@@ -40,6 +40,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
@@ -54,6 +56,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     protected transient ICacheService cacheService;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
+    protected transient @Nullable String namespace;
 
     protected CacheOperation() {
     }
@@ -90,7 +93,18 @@ public abstract class CacheOperation extends AbstractNamedOperation
             cacheService.doPrepublicationChecks(name);
         }
 
+        // Setup Namespace awareness
+        CacheConfig config = cacheService.getCacheConfig(name);
+        namespace = config == null ? null : config.getNamespace();
+        getNodeEngine().getNamespaceService().setupNamespace(namespace);
+
         beforeRunInternal();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        // Cleanup Namespace awareness
+        getNodeEngine().getNamespaceService().setupNamespace(namespace);
     }
 
     /**

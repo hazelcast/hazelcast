@@ -26,14 +26,13 @@ import java.io.IOException;
 
 public class PartitionWideEntryOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private EntryProcessor entryProcessor;
 
     public PartitionWideEntryOperationFactory() {
     }
 
     public PartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor) {
-        this.name = name;
+        super(name);
         this.entryProcessor = entryProcessor;
     }
 
@@ -51,7 +50,7 @@ public class PartitionWideEntryOperationFactory extends AbstractMapOperationFact
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        entryProcessor = in.readObject();
+        entryProcessor = callWithNamespaceAwareness(in::readObject);
     }
 
     @Override

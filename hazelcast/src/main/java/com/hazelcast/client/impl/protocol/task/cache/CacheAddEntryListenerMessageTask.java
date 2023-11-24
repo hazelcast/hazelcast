@@ -179,4 +179,8 @@ public class CacheAddEntryListenerMessageTask
         return SecurityInterceptorConstants.ADD_ENTRY_LISTENER;
     }
 
+    @Override
+    protected String getNamespace() {
+        return CacheService.lookupNamespace(nodeEngine, parameters.name);
+    }
 }

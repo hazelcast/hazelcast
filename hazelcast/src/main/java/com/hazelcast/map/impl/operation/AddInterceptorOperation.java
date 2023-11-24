@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -23,6 +25,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
@@ -70,7 +73,8 @@ public class AddInterceptorOperation extends AbstractNamedOperation
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         id = in.readString();
-        mapInterceptor = in.readObject();
+        NodeEngine engine = NodeEngineThreadLocalContext.getNamespaceThreadLocalContext();
+        mapInterceptor = NamespaceUtil.callWithNamespace(engine, MapService.lookupNamespace(engine, name), in::readObject);
     }
 
     @Override

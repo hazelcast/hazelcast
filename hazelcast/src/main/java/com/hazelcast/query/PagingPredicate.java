@@ -17,6 +17,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -59,6 +60,7 @@ import java.util.Map;
  * @param <V> type of the entry value
  * @see Predicates#pagingPredicate(int)
  */
+@NamespacesSupported
 @BinaryInterface
 public interface PagingPredicate<K, V> extends Predicate<K, V> {
 

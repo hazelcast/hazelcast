@@ -206,7 +206,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         MapConfig mapConfig = new MapConfig(mapName);
         final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
-                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE, null))
                 .addEntryListenerConfig(
                         new EntryListenerConfig(listener, true, true));
         mapConfig.addQueryCacheConfig(queryCacheConfig);
@@ -228,7 +228,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
         MapConfig mapConfig = new MapConfig(mapName);
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
-                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE, null))
                 .addEntryListenerConfig(
                         new EntryListenerConfig((EntryAddedListener<Integer, Employee>) event -> {
                             eventObject.set(event);

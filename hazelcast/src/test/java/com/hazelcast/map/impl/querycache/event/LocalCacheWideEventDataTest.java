@@ -35,7 +35,7 @@ public class LocalCacheWideEventDataTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        localCacheWideEventData = new LocalCacheWideEventData("source", 23, 42);
+        localCacheWideEventData = new LocalCacheWideEventData("source", 23, 42, "mapName");
     }
 
     @Test
@@ -48,9 +48,9 @@ public class LocalCacheWideEventDataTest extends HazelcastTestSupport {
         assertEquals("source", localCacheWideEventData.getSource());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testGetMapName() {
-        localCacheWideEventData.getMapName();
+        assertEquals("mapName", localCacheWideEventData.getMapName());
     }
 
     @Test(expected = UnsupportedOperationException.class)

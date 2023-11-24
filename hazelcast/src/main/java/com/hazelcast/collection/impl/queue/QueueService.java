@@ -32,6 +32,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.MigrationAwareService;
@@ -172,13 +173,19 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             return container;
         }
 
-        container = new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
+        QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(name);
+        container = new QueueContainer(name, queueConfig, nodeEngine, this);
         QueueContainer existing = containerMap.putIfAbsent(name, container);
         if (existing != null) {
             container = existing;
         } else {
-            container.init(fromBackup);
-            container.getStore().instrument(nodeEngine);
+            NamespaceUtil.setupNamespace(nodeEngine, queueConfig.getNamespace());
+            try {
+                container.init(fromBackup);
+                container.getStore().instrument(nodeEngine);
+            } finally {
+                NamespaceUtil.cleanupNamespace(nodeEngine, queueConfig.getNamespace());
+            }
         }
         return container;
     }
@@ -266,11 +273,13 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             return;
         }
 
-        if (event.eventType.equals(ItemEventType.ADDED)) {
-            listener.itemAdded(itemEvent);
-        } else {
-            listener.itemRemoved(itemEvent);
-        }
+        NamespaceUtil.runWithNamespace(nodeEngine, lookupNamespace(event.getName()), () -> {
+            if (event.eventType.equals(ItemEventType.ADDED)) {
+                listener.itemAdded(itemEvent);
+            } else {
+                listener.itemRemoved(itemEvent);
+            }
+        });
         getLocalQueueStatsImpl(event.name).incrementReceivedEvents();
     }
 
@@ -443,6 +452,37 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         if (queueContainer != null) {
             queueContainer.resetAgeStats();
         }
+    }
+
+    /**
+     * Looks up the UCD Namespace Name associated with the specified queue name. This starts
+     * by looking for an existing {@link QueueContainer} and checking its defined
+     * {@link QueueConfig}. If the {@link QueueContainer} does not exist (containers are
+     * created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param nodeEngine {@link NodeEngine} implementation of this member for service and config lookups
+     * @param queueName  The name of the {@link com.hazelcast.collection.IQueue} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine nodeEngine, String queueName) {
+        if (nodeEngine.getNamespaceService().isEnabled()) {
+            QueueService service = nodeEngine.getService(SERVICE_NAME);
+            return service.lookupNamespace(queueName);
+        }
+        return null;
+    }
+
+    // For faster access within the service
+    private String lookupNamespace(String queueName) {
+        QueueContainer container = getExistingContainerOrNull(queueName);
+        if (container != null) {
+            return container.getConfig().getNamespace();
+        }
+        QueueConfig config = nodeEngine.getConfig().getQueueConfig(queueName);
+        if (config != null) {
+            return config.getNamespace();
+        }
+        return null;
     }
 
     private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes<Object>> {

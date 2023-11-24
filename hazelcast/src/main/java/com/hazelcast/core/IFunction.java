@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.io.Serializable;
 
@@ -34,6 +35,7 @@ import java.io.Serializable;
  */
 @BinaryInterface
 @FunctionalInterface
+@NamespacesSupported
 public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);

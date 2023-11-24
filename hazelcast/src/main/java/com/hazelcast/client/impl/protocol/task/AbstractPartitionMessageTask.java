@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -31,8 +32,26 @@ public abstract class AbstractPartitionMessageTask<P>
         extends AbstractAsyncMessageTask<P, Object>
         implements PartitionSpecificRunnable {
 
+    private boolean namespaceAware;
     protected AbstractPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    /**
+     * Used to mark the inheriting task as Namespace-aware
+     */
+    protected final void setNamespaceAware() {
+        this.namespaceAware = true;
+    }
+
+    @Override
+    protected void processMessage() {
+        // Providing Namespace awareness here covers calls in #beforeProcess() as well as #processInternal()
+        if (namespaceAware) {
+            NamespaceUtil.runWithNamespace(nodeEngine, getNamespace(), super::processMessage);
+        } else {
+            super.processMessage();
+        }
     }
 
     @Override
@@ -54,4 +73,5 @@ public abstract class AbstractPartitionMessageTask<P>
 
     protected abstract Operation prepareOperation();
 
+    protected abstract String getNamespace();
 }

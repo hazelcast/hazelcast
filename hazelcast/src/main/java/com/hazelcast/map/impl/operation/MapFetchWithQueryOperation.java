@@ -79,6 +79,7 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
         for (int i = 0; i < pointersCount; i++) {
             pointers[i] = new IterationPointer(in.readInt(), in.readInt());
         }
+        // Namespace awareness handled within Query object
         query = in.readObject();
     }
 

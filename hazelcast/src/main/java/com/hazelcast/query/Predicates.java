@@ -37,6 +37,8 @@ import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
 import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.query.impl.predicates.TruePredicate;
+
+import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
@@ -546,8 +548,9 @@ public final class Predicates {
      * @param <V>        the type of values the predicate operates on.
      * @throws IllegalArgumentException if pageSize is not greater than 0
      */
-    public static <K, V> PagingPredicate<K, V> pagingPredicate(Comparator<Map.Entry<K, V>> comparator, int pageSize) {
-        return new PagingPredicateImpl<>(comparator, pageSize);
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Comparator<Map.Entry<K, V>> comparator, int pageSize,
+                                                               @Nullable String namespace) {
+        return new PagingPredicateImpl<>(comparator, pageSize, namespace);
     }
 
     /**
@@ -563,8 +566,8 @@ public final class Predicates {
      * @throws IllegalArgumentException if inner predicate is also a {@link PagingPredicate}
      */
     public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate<K, V> predicate, Comparator<Map.Entry<K, V>> comparator,
-                                                               int pageSize) {
-        return new PagingPredicateImpl<>(predicate, comparator, pageSize);
+                                                               int pageSize, @Nullable String namespace) {
+        return new PagingPredicateImpl<>(predicate, comparator, pageSize, namespace);
     }
 
     /**

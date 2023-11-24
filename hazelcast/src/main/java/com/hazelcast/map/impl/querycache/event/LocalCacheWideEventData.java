@@ -38,11 +38,13 @@ public class LocalCacheWideEventData implements EventData {
     private final String source;
     private final int eventType;
     private final int numberOfEntriesAffected;
+    private final String mapName;
 
-    public LocalCacheWideEventData(String source, int eventType, int numberOfEntriesAffected) {
+    public LocalCacheWideEventData(String source, int eventType, int numberOfEntriesAffected, String mapName) {
         this.source = source;
         this.eventType = eventType;
         this.numberOfEntriesAffected = numberOfEntriesAffected;
+        this.mapName = mapName;
     }
 
     public int getNumberOfEntriesAffected() {
@@ -56,7 +58,7 @@ public class LocalCacheWideEventData implements EventData {
 
     @Override
     public String getMapName() {
-        throw new UnsupportedOperationException();
+        return mapName;
     }
 
     @Override
@@ -85,6 +87,7 @@ public class LocalCacheWideEventData implements EventData {
                 + "eventType=" + eventType
                 + ", source='" + source + '\''
                 + ", numberOfEntriesAffected=" + numberOfEntriesAffected
+                + ", mapName=" + mapName
                 + '}';
     }
 }

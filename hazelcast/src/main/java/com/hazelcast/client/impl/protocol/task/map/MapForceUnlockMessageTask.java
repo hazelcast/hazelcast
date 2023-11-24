@@ -41,7 +41,7 @@ public class MapForceUnlockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new UnlockOperation(getNamespace(), parameters.key, -1, true, parameters.referenceId);
+        return new UnlockOperation(getObjectNamespace(), parameters.key, -1, true, parameters.referenceId);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class MapForceUnlockMessageTask
         return parameters.name;
     }
 
-    private ObjectNamespace getNamespace() {
+    private ObjectNamespace getObjectNamespace() {
         return MapService.getObjectNamespace(parameters.name);
     }
 
@@ -86,6 +86,12 @@ public class MapForceUnlockMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.key};
+    }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
     }
 }
 

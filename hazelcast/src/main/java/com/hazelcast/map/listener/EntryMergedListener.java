@@ -17,6 +17,7 @@
 package com.hazelcast.map.listener;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked after WAN replicated entry is merged.
@@ -26,6 +27,7 @@ import com.hazelcast.core.EntryEvent;
  * @since 3.5
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface EntryMergedListener<K, V> extends MapListener {
 
     /**

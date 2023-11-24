@@ -24,10 +24,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.SecurityInterceptorConstants;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
-
-import java.security.Permission;
 
 public class MapAggregateWithPredicateMessageTask
         extends DefaultMapAggregateMessageTask<MapAggregateWithPredicateCodec.RequestParameters> {
@@ -55,10 +51,6 @@ public class MapAggregateWithPredicateMessageTask
     protected ClientMessage encodeResponse(Object response) {
         Data data = nodeEngine.getSerializationService().toData(response);
         return MapAggregateWithPredicateCodec.encodeResponse(data);
-    }
-
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_AGGREGATE);
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.EventListener;
 
 /**
@@ -23,6 +25,7 @@ import java.util.EventListener;
  *
  * @param <E> item
  */
+@NamespacesSupported
 public interface ItemListener<E> extends EventListener {
 
     /**

@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.impl.Node;
@@ -34,7 +33,7 @@ import java.security.Permission;
  * SetRemoveMessageTask
  */
 public class SetRemoveMessageTask
-        extends AbstractPartitionMessageTask<SetRemoveCodec.RequestParameters> {
+        extends AbstractSetMessageTask<SetRemoveCodec.RequestParameters> {
 
     public SetRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

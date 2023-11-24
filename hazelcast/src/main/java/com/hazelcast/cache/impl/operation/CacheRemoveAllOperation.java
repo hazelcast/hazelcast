@@ -41,7 +41,8 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheComplete
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
- * TODO add a proper JavaDoc
+ * Removes all the specified keys from the cache (partition bound).
+ * <p>{@link com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory} creates this operation.</p>
  */
 public class CacheRemoveAllOperation
         extends PartitionWideCacheOperation

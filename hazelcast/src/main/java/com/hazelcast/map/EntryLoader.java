@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
@@ -28,6 +30,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * @param <K> type of the EntryLoader key
  * @param <V> type of the EnyryLoader value
  */
+@NamespacesSupported
 public interface EntryLoader<K, V> extends MapLoader<K, EntryLoader.MetadataAwareValue<V>> {
 
     /**

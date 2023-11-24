@@ -16,6 +16,8 @@
 
 package com.hazelcast.ringbuffer;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.Properties;
 
 /**
@@ -24,6 +26,7 @@ import java.util.Properties;
  * @param <T> type of the ringbuffer items
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface RingbufferStoreFactory<T> {
 
     RingbufferStore<T> newRingbufferStore(String name, Properties properties);

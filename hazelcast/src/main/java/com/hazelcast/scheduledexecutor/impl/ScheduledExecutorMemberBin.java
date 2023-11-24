@@ -41,7 +41,7 @@ public class ScheduledExecutorMemberBin
 
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
             return new ScheduledExecutorMemberOwnedContainer(name, newPermitFor(name, service, config),
-                    nodeEngine, config.isStatisticsEnabled());
+                    nodeEngine, config.isStatisticsEnabled(), config.getNamespace());
         };
     }
 

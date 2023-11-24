@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -70,7 +71,13 @@ public class MapRemoveEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

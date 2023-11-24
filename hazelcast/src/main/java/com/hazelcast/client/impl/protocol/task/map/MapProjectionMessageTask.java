@@ -24,10 +24,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.security.SecurityInterceptorConstants;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
-
-import java.security.Permission;
 import java.util.List;
 
 public class MapProjectionMessageTask
@@ -50,10 +46,6 @@ public class MapProjectionMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MapProjectWithPredicateCodec.encodeResponse((List<Data>) response);
-    }
-
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_PROJECTION);
     }
 
     @Override

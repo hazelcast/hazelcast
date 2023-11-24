@@ -17,6 +17,7 @@
 package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.durableexecutor.impl.operations.PutResultOperation;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExecutorStats;
@@ -25,6 +26,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
@@ -43,9 +45,11 @@ public class DurableExecutorContainer {
     private final NodeEngineImpl nodeEngine;
     private final ExecutorStats executorStats;
     private final ExecutionService executionService;
+    private final @Nullable String namespace;
 
     public DurableExecutorContainer(NodeEngineImpl nodeEngine, String name, int partitionId,
-                                    int durability, boolean statisticsEnabled, TaskRingBuffer ringBuffer) {
+                                    int durability, boolean statisticsEnabled, TaskRingBuffer ringBuffer,
+                                    @Nullable String namespace) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.executionService = nodeEngine.getExecutionService();
@@ -55,6 +59,7 @@ public class DurableExecutorContainer {
         this.ringBuffer = ringBuffer;
         this.statisticsEnabled = statisticsEnabled;
         this.executorStats = ((DistributedDurableExecutorService) nodeEngine.getService(SERVICE_NAME)).getExecutorStats();
+        this.namespace = namespace;
     }
 
     public int execute(Callable callable) {
@@ -129,6 +134,11 @@ public class DurableExecutorContainer {
         return name;
     }
 
+    @Nullable
+    public String getNamespace() {
+        return namespace;
+    }
+
     public final class TaskProcessor extends FutureTask implements Runnable {
 
         private final int sequence;
@@ -155,6 +165,7 @@ public class DurableExecutorContainer {
 
             Object response = null;
             try {
+                NamespaceUtil.setupNamespace(nodeEngine, namespace);
                 super.run();
                 if (!isCancelled()) {
                     response = get();
@@ -169,6 +180,7 @@ public class DurableExecutorContainer {
                         executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
                     }
                 }
+                NamespaceUtil.cleanupNamespace(nodeEngine, namespace);
             }
         }
 

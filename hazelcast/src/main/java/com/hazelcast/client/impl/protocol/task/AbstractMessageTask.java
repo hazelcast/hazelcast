@@ -44,6 +44,8 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
+import javax.annotation.Nullable;
+
 import java.lang.reflect.Field;
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -243,6 +245,10 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             if (permission != null) {
                 securityContext.checkPermission(endpoint.getSubject(), permission);
             }
+            Permission namespacePermission = getNamespacePermission();
+            if (namespacePermission != null) {
+                securityContext.checkPermission(endpoint.getSubject(), namespacePermission);
+            }
         }
     }
 
@@ -305,10 +311,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                         + asyncSocket, null);
             }
         }
-        //TODO framing not implemented yet, should be split into frames before writing to connection
-        // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
-        // not allow any interleaving with operations. It will only slow down the system. Framing should be done inside
-        // the io system; not outside.
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {
@@ -334,14 +336,18 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return getServiceName();
     }
 
-    @Override
-    public abstract String getDistributedObjectName();
+    protected static Collection<Permission> extendPermissions(@Nullable Collection<Permission> parentPermissions,
+            Permission permission) {
+        Collection<Permission> permissions = new HashSet<>();
 
-    @Override
-    public abstract String getMethodName();
+        if (parentPermissions != null) {
+            permissions.addAll(parentPermissions);
+        }
 
-    @Override
-    public abstract Object[] getParameters();
+        permissions.add(permission);
+
+        return permissions;
+    }
 
     protected final BuildInfo getMemberBuildInfo() {
         return node.getBuildInfo();

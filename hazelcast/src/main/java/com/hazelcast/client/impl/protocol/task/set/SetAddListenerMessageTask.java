@@ -133,4 +133,8 @@ public class SetAddListenerMessageTask
         return parameters.name;
     }
 
+    @Override
+    protected String getNamespace() {
+        return SetService.lookupNamespace(nodeEngine, parameters.name);
+    }
 }

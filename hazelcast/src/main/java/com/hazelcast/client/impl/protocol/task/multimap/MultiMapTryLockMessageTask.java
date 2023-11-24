@@ -91,4 +91,10 @@ public class MultiMapTryLockMessageTask
     public String getDistributedObjectName() {
         return parameters.name;
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

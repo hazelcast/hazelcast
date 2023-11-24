@@ -39,6 +39,7 @@ public class ExecutorServiceSubmitToPartitionMessageTask
 
     public ExecutorServiceSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
@@ -94,5 +95,10 @@ public class ExecutorServiceSubmitToPartitionMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    protected String getNamespace() {
+        return DistributedExecutorService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

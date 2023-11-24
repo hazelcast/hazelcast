@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache.impl.event;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.EventListener;
 
 /**
@@ -23,6 +25,7 @@ import java.util.EventListener;
  * @see CachePartitionLostEvent
  * @since 3.6
  */
+@NamespacesSupported
 public interface CachePartitionLostListener extends EventListener {
 
     /**

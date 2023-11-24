@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
@@ -53,7 +54,9 @@ public class ExecutorServiceSubmitToAddressMessageTask
         Data callableData = parameters.callable;
         if (securityContext != null) {
             Subject subject = endpoint.getSubject();
-            Object taskObject = serializationService.toObject(parameters.callable);
+            Object taskObject = NamespaceUtil.callWithNamespace(nodeEngine,
+                    DistributedExecutorService.lookupNamespace(nodeEngine, parameters.name),
+                    () -> serializationService.toObject(parameters.callable));
             Callable callable;
             if (taskObject instanceof Runnable) {
                 callable = securityContext.createSecureCallable(subject, (Runnable) taskObject);

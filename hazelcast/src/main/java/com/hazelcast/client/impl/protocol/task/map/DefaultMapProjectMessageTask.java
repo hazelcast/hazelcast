@@ -25,8 +25,12 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.security.permission.NamespacePermission;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,4 +92,14 @@ public abstract class DefaultMapProjectMessageTask<P>
         return serialized;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_PROJECTION);
+    }
+
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = getNamespace();
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
 }

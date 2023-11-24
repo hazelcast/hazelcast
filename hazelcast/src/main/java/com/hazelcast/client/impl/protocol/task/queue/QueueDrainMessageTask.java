@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueDrainToCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.DrainOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -38,7 +36,7 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_DRAINTO}
  */
 public class QueueDrainMessageTask
-        extends AbstractPartitionMessageTask<String> {
+        extends AbstractQueueMessageTask<String> {
 
     public QueueDrainMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -74,11 +72,6 @@ public class QueueDrainMessageTask
         SerializableList serializableList = (SerializableList) response;
         List<Data> coll = serializableList.getCollection();
         return QueueDrainToCodec.encodeResponse(coll);
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

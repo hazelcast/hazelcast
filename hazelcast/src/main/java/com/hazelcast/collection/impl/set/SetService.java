@@ -164,4 +164,35 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
     public LocalSetStatsImpl getLocalCollectionStats(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localCollectionStatsConstructorFunction);
     }
+
+    /**
+     * Looks up the UCD Namespace Name associated with the specified set name. This starts
+     * by looking for an existing {@link SetContainer} and checking its defined
+     * {@link SetConfig}. If the {@link SetContainer} does not exist (containers are
+     * created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param setName The name of the {@link com.hazelcast.collection.ISet} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine engine, String setName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            SetService service = engine.getService(SERVICE_NAME);
+            return service.lookupNamespace(setName);
+        }
+        return null;
+    }
+
+    @Override
+    protected String lookupNamespace(String setName) {
+        SetContainer container = containerMap.get(setName);
+        if (container != null) {
+            return container.getConfig().getNamespace();
+        }
+        SetConfig config = nodeEngine.getConfig().findSetConfig(setName);
+        if (config != null) {
+            return config.getNamespace();
+        }
+        return null;
+    }
 }

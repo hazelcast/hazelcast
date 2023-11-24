@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
@@ -83,7 +84,8 @@ public final class Extractors {
             try {
                 // For CompactGetter and PortableGetter metadata is a boolean
                 // indicating whether lazy deserialization should be used or not.
-                return getter.getValue(targetObject, attributeName, metadata);
+                return NamespaceUtil.callWithOwnClassLoader(getter,
+                        () -> getter.getValue(targetObject, attributeName, metadata));
             } catch (Exception ex) {
                 throw new QueryException(ex);
             }

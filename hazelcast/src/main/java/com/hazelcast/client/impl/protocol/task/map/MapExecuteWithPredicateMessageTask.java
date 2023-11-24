@@ -140,4 +140,9 @@ public class MapExecuteWithPredicateMessageTask
     public Object[] getParameters() {
         return new Object[]{parameters.entryProcessor, parameters.predicate};
     }
+
+    @Override
+    protected String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

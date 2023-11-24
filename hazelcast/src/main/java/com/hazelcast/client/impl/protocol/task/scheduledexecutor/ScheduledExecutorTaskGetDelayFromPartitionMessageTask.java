@@ -82,4 +82,10 @@ public class ScheduledExecutorTaskGetDelayFromPartitionMessageTask
     public Object[] getParameters() {
         return new Object[] { TimeUnit.NANOSECONDS };
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

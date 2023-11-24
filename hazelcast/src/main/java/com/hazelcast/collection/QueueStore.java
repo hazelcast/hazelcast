@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +27,7 @@ import java.util.Set;
  *
  * @param <T> queue item type
  */
+@NamespacesSupported
 public interface QueueStore<T> {
     /**
      * Stores the key-value pair.
