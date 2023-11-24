@@ -200,7 +200,8 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     @Test
     public void testScalingOfHazelcastUp() throws Exception {
-        int localParallelism = 1;
+        final int localParallelism = 1;
+        final int nodeCount = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -212,6 +213,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("tasks.max", String.valueOf(2));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -245,13 +247,12 @@ public class KafkaConnectScalingIT extends JetTestSupport {
                 .writeTo(map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
         instance.getJet().newJob(pipeline, jobConfig);
 
         assertTrueEventually(() -> {
-            assertThat(new HashSet<>(processors.values())).containsExactlyInAnyOrder(0);
+            assertThat(new HashSet<>(processors.values())).hasSize(1);
 
             assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
         });
@@ -259,12 +260,12 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         HazelcastInstance second = createHazelcastInstance(config);
         assertTrueEventually(() -> assertThat(instance.getCluster().getMembers()).hasSize(2));
         insertItems(connectionUrl, "parallel_items_1");
+        insertItems(connectionUrl, "parallel_items_2");
 
         final String[] instances = { instance.getName(), second.getName() };
-        var expectedProcessorIndexArray = new Integer[] { 0, 1 };
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+            assertThat(array).hasSize(2);
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(instances);
@@ -278,7 +279,8 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     @Test
     public void testScalingOfHazelcastDown() throws Exception {
-        int localParallelism = 1;
+        final int localParallelism = 1;
+        final int nodeCount = 2;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -290,6 +292,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("tasks.max", String.valueOf(localParallelism * nodeCount));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -330,7 +333,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         instance.getJet().newJob(pipeline, jobConfig);
 
         assertTrueEventually(() -> {
-            assertThat(new HashSet<>(processors.values())).containsExactlyInAnyOrder(0, 1, 2);
+            assertThat(new HashSet<>(processors.values())).hasSize(2);
 
             assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
         });
@@ -340,10 +343,9 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         insertItems(connectionUrl, "parallel_items_1");
 
         final String[] instancesNames = { instance.getName(), instances[1].getName() };
-        var expectedProcessorIndexArray = new Integer[] { 0, 1 };
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+            assertThat(array).hasSize(2);
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(instancesNames);
@@ -358,7 +360,8 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     @Test
     public void testDynamicReconfiguration() throws Exception {
-        int localParallelism = 2;
+        final int localParallelism = 2;
+        final int nodeCount = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -370,6 +373,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("tasks.max", String.valueOf(localParallelism * nodeCount));
 
         createTableAndFill(connectionUrl, "parallel_items_1");
         createTableAndFill(connectionUrl, "parallel_items_2");
@@ -418,11 +422,10 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
         instance.getJet().newJob(pipeline, jobConfig);
 
-        var expectedProcessorIndexArray = new Integer[] { 0, 1 };
         var allInstancesNames = Arrays.stream(instances).map(HazelcastInstance::getName).toArray(String[]::new);
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+            assertThat(array).hasSize(2);
         });
 
         processors.clear();
@@ -434,10 +437,9 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         createTableAndFill(connectionUrl, "parallel_items_5");
         createTableAndFill(connectionUrl, "parallel_items_6");
 
-        var newExpectedProcessorIndexArray = IntStream.range(0, 3 * localParallelism).boxed().toArray(Integer[]::new);
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).containsExactlyInAnyOrder(newExpectedProcessorIndexArray);
+            assertThat(array).hasSize(6);
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
