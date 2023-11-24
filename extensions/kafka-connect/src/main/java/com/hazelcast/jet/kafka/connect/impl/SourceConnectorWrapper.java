@@ -125,7 +125,7 @@ public class SourceConnectorWrapper {
         // Get my taskConfig
         Map<String, String> taskConfig = state.getTaskConfig(processorOrder);
 
-        final boolean active = taskConfig == null;
+        final boolean active = taskConfig != null;
         activeStatusSetter.accept(active);
 
         if (taskConfig != null) {
