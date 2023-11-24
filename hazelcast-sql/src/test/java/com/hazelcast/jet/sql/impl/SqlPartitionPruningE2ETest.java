@@ -389,46 +389,14 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
         }
     }
 
-
-    @SuppressWarnings({"SameParameterValue", "DanglingJavadoc"})
-    /**
-     * Calculates expected partitions and members to participate in the query execution.
-     *
-     * @param shouldUseCoordinator           whether coordinator should be included in the expected members
-     * @param arity                          number of fields in partitioning attribute key
-     *                                       (e.g. 2 for f0, f1)
-     * @param partitionedPredicateConstants  constants used in the predicate in query
-     */
     private Tuple2<Set<Address>, Set<Integer>> calculateExpectedPartitions(
             boolean shouldUseCoordinator, int arity, int... partitionedPredicateConstants) {
-        PartitionService partitionService = instance().getPartitionService();
-        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance());
-        Map<Integer, Address> reversedPartitionAssignment = new HashMap<>();
-        for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
-            for (int partitionId : entry.getValue()) {
-                reversedPartitionAssignment.put(partitionId, entry.getKey());
-            }
-        }
-
-        Set<Integer> expectedPartitionsToParticipate = new HashSet<>();
-        Set<Address> expectedMembersToParticipate = new HashSet<>();
-        for (int equalityConstants : partitionedPredicateConstants) {
-            Object[] constants = new Object[arity];
-            Arrays.fill(constants, equalityConstants);
-            Data keyData = nodeEngine.getSerializationService().toData(constructAttributeBasedKey(constants), v -> v);
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
-            assertTrue(reversedPartitionAssignment.containsKey(partitionId));
-
-            expectedPartitionsToParticipate.add(partitionId);
-            expectedMembersToParticipate.add(reversedPartitionAssignment.get(partitionId));
-        }
-
-        if (shouldUseCoordinator) {
-            expectedMembersToParticipate.add(instance().getCluster().getLocalMember().getAddress());
-            expectedPartitionsToParticipate.add(partitionService.getPartition("").getPartitionId());
-        }
-
-        return Tuple2.tuple2(expectedMembersToParticipate, expectedPartitionsToParticipate);
+        return calculateExpectedPartitions(
+                nodeEngine,
+                getPartitionAssignment(instance()),
+                shouldUseCoordinator,
+                arity,
+                partitionedPredicateConstants);
     }
 
     private Tuple2<Set<Address>, Set<Integer>> calculateExpectedPartitions(int arity, int... partitionedPredicateConstants) {
