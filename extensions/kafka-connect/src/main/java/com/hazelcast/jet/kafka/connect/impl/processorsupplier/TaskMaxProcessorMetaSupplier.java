@@ -61,7 +61,7 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
             partitionedAddresses = true;
             partitionTasks(addresses);
         }
-        int localParallelism = preferredLocalParallelism() + 1;
+        int localParallelism = getLocalParallelism(addresses);
         return memberAddress -> {
             int indexOf = memberAddressList.indexOf(memberAddress);
             if (indexOf != -1) {
@@ -83,7 +83,7 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
     }
 
     private void partitionTasks(List<Address> addresses) {
-        int localParallelism = calculateAverageLocalParallelism(addresses);
+        int localParallelism = getLocalParallelism(addresses);
         List<Address> shuffledAddresses = new ArrayList<>(addresses);
         Collections.shuffle(shuffledAddresses);
 
@@ -102,12 +102,12 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
         }
     }
 
-    private int calculateAverageLocalParallelism(List<Address> addresses) {
-        int averageLocalParallelism = tasksMax / addresses.size();
-        if (averageLocalParallelism == 0) {
-            averageLocalParallelism = 1;
+    private int getLocalParallelism(List<Address> addresses) {
+        int localParallelism = preferredLocalParallelism();
+        if (localParallelism == -1) {
+            localParallelism = tasksMax / addresses.size();
         }
-        return averageLocalParallelism;
+        return localParallelism;
     }
 
     @Override
