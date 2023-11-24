@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.namespace.NamespaceService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -101,6 +102,13 @@ public interface NodeEngine {
     TransactionManagerService getTransactionManagerService();
 
     /**
+     * Gets the NamespaceService.
+     *
+     * @return the NamespaceService
+     */
+    NamespaceService getNamespaceService();
+
+    /**
      * Gets the address of the master member.
      * <p>
      * This value can be null if no master is elected yet.
@@ -142,12 +150,18 @@ public interface NodeEngine {
     Config getConfig();
 
     /**
-     * Returns the Config ClassLoader. This class loader will be used for instantiation of all classes defined by the
-     * configuration (e.g. listeners, policies, stores, partitioning strategies, split brain protection functions, ...).
+     * Returns the Config ClassLoader. This class loader will be used for the instantiation of all classes defined
+     * by the configuration (e.g. listeners, policies, stores, partitioning strategies, split brain protection
+     * functions, etc.).
      * <p>
-     * TODO: add more documentation what the purpose is of the config classloader
+     * When the {@link NamespaceService} is enabled, this will return an instance of the
+     * {@link com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader}, which delegates to child loaders
+     * depending on the Namespace context of the class loading.
+     * <p>
+     * When the {@link NamespaceService} is disabled, this will return either the legacy User Code Deployment
+     * class loader if enabled, or else the {@link Config#getClassLoader()} will be returned.
      *
-     * @return the config ClassLoader.
+     * @return the config ClassLoader as defined above.
      */
     ClassLoader getConfigClassLoader();
 

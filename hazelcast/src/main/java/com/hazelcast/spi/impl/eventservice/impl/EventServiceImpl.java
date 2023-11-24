@@ -602,8 +602,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         Registration reg = (Registration) registration;
         try {
             if (reg.getListener() != null) {
-                eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
-                        , orderKey, eventQueueTimeoutMs));
+                eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener(),
+                        orderKey, eventQueueTimeoutMs));
             } else {
                 logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
             }

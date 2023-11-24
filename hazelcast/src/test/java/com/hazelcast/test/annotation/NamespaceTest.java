@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.deployment;
+package com.hazelcast.test.annotation;
 
-public class JetDelegatingClassLoader extends ClassLoader {
-
-    public JetDelegatingClassLoader(ClassLoader parent) {
-        super(parent == null ? JetDelegatingClassLoader.class.getClassLoader() : parent);
-    }
-
-    public JetDelegatingClassLoader(String name, ClassLoader parent) {
-        super(name, parent == null ? JetDelegatingClassLoader.class.getClassLoader() : parent);
-    }
-
-    public void shutdown() {
-    }
+// TODO NS: Remove before production - test category marker for faster Namespace-related test runs
+public final class NamespaceTest {
 }

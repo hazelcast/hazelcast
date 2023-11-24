@@ -78,6 +78,7 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -706,5 +707,17 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig) {
         throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+    }
+
+    @Override
+    public void onThreadStart(Thread thread) {
+        // Setup NodeEngine context for User Code Deployment Namespacing in operations
+        NodeEngineThreadLocalContext.declareNodeEngineReference(node.getNodeEngine());
+    }
+
+    @Override
+    public void onThreadStop(Thread thread) {
+        // Destroy NodeEngine context from User Code Deployment Namespacing
+        NodeEngineThreadLocalContext.destroyNodeEngineReference();
     }
 }
