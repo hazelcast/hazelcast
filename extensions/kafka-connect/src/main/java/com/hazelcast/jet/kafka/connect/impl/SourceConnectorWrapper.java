@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
@@ -55,6 +56,8 @@ public class SourceConnectorWrapper {
     private final int processorOrder;
     private TaskConfigPublisher taskConfigPublisher;
     private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
+    // this should be refactored later
+    private Consumer<Boolean> activeStatusSetter = ignored -> {};
 
     public SourceConnectorWrapper(Properties propertiesFromUser, int processorOrder, Context context) {
         String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
@@ -75,6 +78,10 @@ public class SourceConnectorWrapper {
         createTopic(context.hazelcastInstance(), context.executionId());
 
         createTaskRunner();
+    }
+
+     void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
+        this.activeStatusSetter = activeStatusSetter;
     }
 
     public boolean hasTaskConfiguration() {
@@ -118,12 +125,17 @@ public class SourceConnectorWrapper {
         // Get my taskConfig
         Map<String, String> taskConfig = state.getTaskConfig(processorOrder);
 
-        // Pass my taskConfig to taskRunner
-        logger.info("Updating taskRunner with processorOrder = " + processorOrder
-                    + " with taskConfig=" + taskConfig);
+        final boolean active = taskConfig == null;
+        activeStatusSetter.accept(active);
 
-        taskRunner.updateTaskConfig(taskConfig);
+        if (taskConfig != null) {
+            // Pass my taskConfig to taskRunner
+            logger.info("Updating taskRunner with processorOrder = " + processorOrder
+                        + " with taskConfig=" + taskConfig);
 
+            taskRunner.updateTaskConfig(taskConfig);
+
+        }
         receivedTaskConfiguration.set(true);
     }
 

@@ -53,11 +53,11 @@ public class State implements Serializable {
         this.taskConfigs = taskConfigs;
     }
 
-    public Map<String, String> getTaskConfig(int globalProcessorIndex) {
-        if (globalProcessorIndex < taskConfigs.size()) {
-            return taskConfigs.get(globalProcessorIndex);
+    public Map<String, String> getTaskConfig(int order) {
+        if (order < taskConfigs.size()) {
+            return taskConfigs.get(order);
         } else {
-            return Collections.emptyMap();
+            return null;
         }
     }
 

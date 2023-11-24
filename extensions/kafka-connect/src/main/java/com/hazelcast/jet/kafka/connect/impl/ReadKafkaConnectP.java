@@ -102,6 +102,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
         if (sourceConnectorWrapper == null) {
             sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser, processorOrder, context);
+            sourceConnectorWrapper.setActiveStatusSetter(this::setActive);
         }
         snapshotsEnabled = context.snapshottingEnabled();
         NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
