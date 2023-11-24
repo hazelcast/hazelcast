@@ -19,10 +19,12 @@ package com.hazelcast.jet.kafka.connect.impl.processorsupplier;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -64,11 +66,21 @@ class TaskMaxProcessorSupplier implements ProcessorSupplier {
 
     @Nonnull
     @Override
-    public Collection<? extends Processor> get(int ignored) {
-        Collection<ReadKafkaConnectP<?>> processors = supplier.get(localParallelismForMember);
-        for (ReadKafkaConnectP<?> processor : processors) {
+    public Collection<? extends Processor> get(int localParallelism) {
+        Collection<ReadKafkaConnectP<?>> kafkaConnectProcessorList = getReadKafkaConnectProcessors();
+
+        Collection<Processor> resultList = new ArrayList<>(kafkaConnectProcessorList);
+        for (int index = kafkaConnectProcessorList.size(); index < localParallelism; index++) {
+            resultList.add(new ExpectNothingP());
+        }
+        return resultList;
+    }
+
+    private Collection<ReadKafkaConnectP<?>> getReadKafkaConnectProcessors() {
+        Collection<ReadKafkaConnectP<?>> kafkaProcessors = supplier.get(localParallelismForMember);
+        for (ReadKafkaConnectP<?> processor : kafkaProcessors) {
             processor.setProcessorOrder(processorOrder++);
         }
-        return processors;
+        return kafkaProcessors;
     }
 }
