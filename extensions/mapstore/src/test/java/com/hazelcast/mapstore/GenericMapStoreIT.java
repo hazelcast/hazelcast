@@ -65,7 +65,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
+public class GenericMapStoreIT extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
 

@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.mssql;
+package com.hazelcast.mapstore.postgres;
 
-import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.mapstore.GenericMapStoreTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
-@Ignore
-@Category({NightlyTest.class})
-public class MSSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
+@Category(NightlyTest.class)
+public class PostgresGenericMapStoreSimpleIT extends GenericMapStoreTest {
 
-    public MSSQLGenericMapStoreIntegrationTest() {
-        setPrefix("mssql_");
-    }
-
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
-    public static void beforeClass() {
-        initializeBeforeClass(new MSSQLDatabaseProvider());
+    public static void beforeClass()  {
+        initialize(new PostgresDatabaseProvider());
     }
+
 }

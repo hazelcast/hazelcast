@@ -45,6 +45,7 @@
                             <Automatic-Module-Name>com.hazelcast.jet.mongodb</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
+                    <forceCreation>true</forceCreation>
                 </configuration>
             </plugin>
 
