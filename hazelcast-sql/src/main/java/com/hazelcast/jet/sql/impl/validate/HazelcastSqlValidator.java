@@ -574,7 +574,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
 
     /**
-     * Check read and create permission for the map.
+     * Check read permission for the map.
      * This method does not throw an exception, but rather provides the results of a permission check.
      * Use in scenarios where it is needed to check permissions without interrupting the process.
      *
