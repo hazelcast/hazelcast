@@ -25,13 +25,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class TaskRunner {
-    private ILogger logger = Logger.getLogger(TaskRunner.class);
+    private final ILogger logger;
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final State state;
@@ -39,16 +38,13 @@ public class TaskRunner {
     private volatile boolean running;
     private volatile boolean reconfigurationNeeded;
     private SourceTask task;
-    private final AtomicReference<Map<String, String>> taskConfigReference = new AtomicReference<>();
+    private volatile Map<String, String> taskConfigReference = null;
 
     TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
         this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
-    }
-
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
+        this.logger = Logger.getLogger(getClass().getName() + " " + name);
     }
 
     public List<SourceRecord> poll() {
@@ -99,9 +95,9 @@ public class TaskRunner {
     public void updateTaskConfig(Map<String, String> taskConfig) {
         try {
             taskLifecycleLock.lock();
-            if (!Objects.equals(this.taskConfigReference.get(), taskConfig)) {
+            if (!Objects.equals(this.taskConfigReference, taskConfig)) {
                 logger.info("Updating task '" + name + "' configuration");
-                taskConfigReference.set(taskConfig);
+                taskConfigReference = taskConfig;
                 reconfigurationNeeded = true;
             }
         } finally {
@@ -113,12 +109,13 @@ public class TaskRunner {
         try {
             taskLifecycleLock.lock();
             if (!running) {
-                if (taskConfigReference.get() != null) {
+                Map<String, String> taskConfig = taskConfigReference;
+                if (taskConfig != null) {
                     SourceTask taskLocal = sourceTaskFactory.create();
                     logger.info("Initializing task '" + name + "'");
-                    taskLocal.initialize(new JetSourceTaskContext(taskConfigReference.get(), state));
+                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
                     logger.info("Starting task '" + name + "'");
-                    taskLocal.start(taskConfigReference.get());
+                    taskLocal.start(taskConfig);
                     this.task = taskLocal;
                     running = true;
                 } else {

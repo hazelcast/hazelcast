@@ -194,7 +194,6 @@ public class SourceConnectorWrapper {
     public TaskRunner createTaskRunner() {
         String taskName = name + "-task-" + processorOrder;
         taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
-        taskRunner.setLogger(logger);
         requestTaskReconfiguration();
         return taskRunner;
     }
