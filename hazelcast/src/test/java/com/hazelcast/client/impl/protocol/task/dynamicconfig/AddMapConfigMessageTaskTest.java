@@ -65,7 +65,8 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest {
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
-                null
+                null,
+                mapConfig.getNamespace()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
@@ -116,7 +117,8 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest {
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
-                null
+                null,
+                mapConfig.getNamespace()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
@@ -163,7 +165,8 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest {
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
-                mapConfig.getPartitioningAttributeConfigs()
+                mapConfig.getPartitioningAttributeConfigs(),
+                mapConfig.getNamespace()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();

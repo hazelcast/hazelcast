@@ -27,11 +27,14 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
-@SuppressWarnings("checkstyle:npathcomplexity")
+@SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
 public class AddCacheConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddCacheConfigCodec.RequestParameters> {
 
@@ -85,7 +88,7 @@ public class AddCacheConfigMessageTask
         config.setName(parameters.name);
         if (parameters.partitionLostListenerConfigs != null && !parameters.partitionLostListenerConfigs.isEmpty()) {
             List<CachePartitionLostListenerConfig> listenerConfigs = (List<CachePartitionLostListenerConfig>)
-                    adaptListenerConfigs(parameters.partitionLostListenerConfigs);
+                    adaptListenerConfigs(parameters.partitionLostListenerConfigs, parameters.namespace);
             config.setPartitionLostListenerConfigs(listenerConfigs);
         } else {
             config.setPartitionLostListenerConfigs(new ArrayList<>());
@@ -102,6 +105,9 @@ public class AddCacheConfigMessageTask
         if (parameters.isDataPersistenceConfigExists) {
             config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
         }
+        if (parameters.isNamespaceExists) {
+            config.setNamespace(parameters.namespace);
+        }
         return config;
     }
 
@@ -111,10 +117,15 @@ public class AddCacheConfigMessageTask
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         CacheSimpleConfig cacheConfig = (CacheSimpleConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getCacheConfigs(),
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getCacheConfigs(),
                 cacheConfig.getName(), cacheConfig);
     }
 }

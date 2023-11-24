@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("ca45aa21147e8c936089f498af2d7f51")
+@Generated("d5bb0a4e0ed9638946c3c74d782b527c")
 public final class DynamicConfigAddListConfigCodec {
     //hex: 0x1B0400
     public static final int REQUEST_MESSAGE_TYPE = 1770496;
@@ -106,9 +106,20 @@ public final class DynamicConfigAddListConfigCodec {
          * Number of entries to be sent in a merge operation.
          */
         public int mergeBatchSize;
+
+        /**
+         * Name of the namespace applied to this instance.
+         */
+        public @Nullable java.lang.String namespace;
+
+        /**
+         * True if the namespace is received from the client, false otherwise.
+         * If this is false, namespace has the default value for its type.
+         */
+        public boolean isNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String namespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -126,6 +137,7 @@ public final class DynamicConfigAddListConfigCodec {
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
+        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -142,6 +154,12 @@ public final class DynamicConfigAddListConfigCodec {
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isNamespaceExists = true;
+        } else {
+            request.isNamespaceExists = false;
+        }
         return request;
     }
 

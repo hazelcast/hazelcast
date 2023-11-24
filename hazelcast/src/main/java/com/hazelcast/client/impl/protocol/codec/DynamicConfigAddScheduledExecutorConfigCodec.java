@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("b6c285c241a273be06907aea830d5d40")
+@Generated("f447c996610211d14e11bee355d71b86")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -110,6 +110,11 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         public byte capacityPolicy;
 
         /**
+         * Name of the namespace applied to this instance.
+         */
+        public @Nullable java.lang.String namespace;
+
+        /**
          * True if the statisticsEnabled is received from the client, false otherwise.
          * If this is false, statisticsEnabled has the default value for its type.
          */
@@ -120,9 +125,15 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
          * If this is false, capacityPolicy has the default value for its type.
          */
         public boolean isCapacityPolicyExists;
+
+        /**
+         * True if the namespace is received from the client, false otherwise.
+         * If this is false, namespace has the default value for its type.
+         */
+        public boolean isNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, boolean statisticsEnabled, byte capacityPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, boolean statisticsEnabled, byte capacityPolicy, @Nullable java.lang.String namespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddScheduledExecutorConfig");
@@ -139,6 +150,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
+        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -165,6 +177,12 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         request.name = StringCodec.decode(iterator);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isNamespaceExists = true;
+        } else {
+            request.isNamespaceExists = false;
+        }
         return request;
     }
 

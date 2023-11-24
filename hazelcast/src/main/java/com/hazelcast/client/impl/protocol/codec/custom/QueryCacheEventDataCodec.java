@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("b670359d6b17730a95025e619770df51")
+@Generated("47f07c851d323b4da804d5b72e8aa95b")
 public final class QueryCacheEventDataCodec {
     private static final int SEQUENCE_FIELD_OFFSET = 0;
     private static final int EVENT_TYPE_FIELD_OFFSET = SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -46,6 +46,7 @@ public final class QueryCacheEventDataCodec {
 
         CodecUtil.encodeNullable(clientMessage, queryCacheEventData.getDataKey(), DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, queryCacheEventData.getDataNewValue(), DataCodec::encode);
+        StringCodec.encode(clientMessage, queryCacheEventData.getMapName());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -61,9 +62,15 @@ public final class QueryCacheEventDataCodec {
 
         com.hazelcast.internal.serialization.Data dataKey = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.internal.serialization.Data dataNewValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        boolean isMapNameExists = false;
+        java.lang.String mapName = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            mapName = StringCodec.decode(iterator);
+            isMapNameExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createQueryCacheEventData(dataKey, dataNewValue, sequence, eventType, partitionId);
+        return CustomTypeFactory.createQueryCacheEventData(dataKey, dataNewValue, sequence, eventType, partitionId, isMapNameExists, mapName);
     }
 }

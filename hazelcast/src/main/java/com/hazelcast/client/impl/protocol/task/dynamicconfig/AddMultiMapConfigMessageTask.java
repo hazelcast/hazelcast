@@ -26,6 +26,10 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
+
+import java.security.Permission;
 
 public class AddMultiMapConfigMessageTask extends
         AbstractAddConfigMessageTask<DynamicConfigAddMultiMapConfigCodec.RequestParameters> {
@@ -55,12 +59,16 @@ public class AddMultiMapConfigMessageTask extends
         multiMapConfig.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             for (ListenerConfigHolder configHolder : parameters.listenerConfigs) {
-                EntryListenerConfig entryListenerConfig = configHolder.asListenerConfig(serializationService);
+                EntryListenerConfig entryListenerConfig =
+                        configHolder.asListenerConfig(serializationService, parameters.namespace);
                 multiMapConfig.addEntryListenerConfig(entryListenerConfig);
             }
         }
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
+        if (parameters.isNamespaceExists) {
+            multiMapConfig.setNamespace(parameters.namespace);
+        }
         return multiMapConfig;
     }
 
@@ -70,10 +78,15 @@ public class AddMultiMapConfigMessageTask extends
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         MultiMapConfig multiMapConfig = (MultiMapConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getMultiMapConfigs(),
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getMultiMapConfigs(),
                 multiMapConfig.getName(), multiMapConfig);
     }
 }

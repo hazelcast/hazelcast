@@ -23,10 +23,10 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -58,11 +58,15 @@ public interface ConfigurationService {
      * Registers a dynamic configurations to all cluster members.
      *
      * @param config configuration to register
-     * @throws InvalidConfigurationException when static configuration already
-     *                                       contains the same config with the
-     *                                       same name
      */
     void broadcastConfig(IdentifiedDataSerializable config);
+
+    /**
+     * Deregisters a dynamic configurations to all cluster members.
+     *
+     * @param config configuration to derigster
+     */
+    void unbroadcastConfig(IdentifiedDataSerializable config);
 
     /**
      * Update the license for the cluster.
@@ -389,4 +393,19 @@ public interface ConfigurationService {
      * @return registered WAN replication configurations keyed by configuration name
      */
     Map<String, WanReplicationConfig> getWanReplicationConfigs();
+
+    /**
+     * Finds existing namespace configuration by name.
+     *
+     * @param name name of the configuration
+     * @return Namespace configuration or {@code null} when the requested configuration does not exist
+     */
+    NamespaceConfig findNamespaceConfig(String name);
+
+    /**
+     * Returns all registered namespace configurations keyed by configuration name.
+     *
+     * @return Namespace configurations keyed by configuration name
+     */
+    Map<String, NamespaceConfig> getNamespaceConfigs();
 }

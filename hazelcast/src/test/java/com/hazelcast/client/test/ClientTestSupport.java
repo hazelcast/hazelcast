@@ -87,6 +87,11 @@ public class ClientTestSupport extends HazelcastTestSupport {
         return clientProxy.client;
     }
 
+    public static void forceDisconnectFromServer(final HazelcastInstance client, UUID memberUUID) {
+        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+        connectionManager.getConnection(memberUUID).close("close", null);
+    }
+
     public static void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {
         assertTrueEventually(() -> {
             ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();

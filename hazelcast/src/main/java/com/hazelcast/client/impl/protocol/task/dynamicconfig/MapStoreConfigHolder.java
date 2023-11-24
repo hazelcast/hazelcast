@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.StringUtil;
@@ -153,7 +154,7 @@ public class MapStoreConfigHolder {
         this.initialLoadMode = initialLoadMode;
     }
 
-    public MapStoreConfig asMapStoreConfig(SerializationService serializationService) {
+    public MapStoreConfig asMapStoreConfig(SerializationService serializationService, String namespace) {
         MapStoreConfig config = new MapStoreConfig();
         if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
             config.setClassName(className);
@@ -169,7 +170,8 @@ public class MapStoreConfigHolder {
         config.setWriteBatchSize(writeBatchSize);
         config.setWriteCoalescing(writeCoalescing);
         config.setWriteDelaySeconds(writeDelaySeconds);
-        Object implementation = serializationService.toObject(this.implementation);
+        Object implementation = NamespaceUtil.callWithNamespace(namespace,
+                () -> serializationService.toObject(this.implementation));
         if (implementation != null) {
             config.setImplementation(implementation);
         }

@@ -26,6 +26,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -230,8 +231,23 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
+    public NamespaceConfig findNamespaceConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public Map<String, NamespaceConfig> getNamespaceConfigs() {
+        return emptyMap();
+    }
+
+    @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
-        throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
+        throw new IllegalStateException("Cannot modify configuration while Hazelcast is starting.");
+    }
+
+    @Override
+    public void unbroadcastConfig(IdentifiedDataSerializable config) {
+        throw new IllegalStateException("Cannot modify configuration while Hazelcast is starting.");
     }
 
     @Override
