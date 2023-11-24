@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class SourceConnectorWrapperTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new SourceConnectorWrapper(minimalProperties(), 0, new TestProcessorContext());
+        new TestSourceConnectorWrapper(minimalProperties());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -110,7 +110,7 @@ public class SourceConnectorWrapperTest {
     public void should_cleanup_on_destroy() {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        var wrapper = new SourceConnectorWrapper(properties, 0, new TestProcessorContext());
+        var wrapper = new TestSourceConnectorWrapper(properties);
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
         wrapper.close();

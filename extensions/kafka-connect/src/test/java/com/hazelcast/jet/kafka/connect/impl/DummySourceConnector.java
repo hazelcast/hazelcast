@@ -163,6 +163,7 @@ public final class DummySourceConnector extends SourceConnector {
             for (int i = 0; i < size; i++) {
                 sourceRecords.add(dummyRecord(counter.getAndIncrement()));
             }
+            System.out.println("Returning " + size + " items");
             return sourceRecords;
         }
 

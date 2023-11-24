@@ -27,9 +27,9 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,7 +52,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class})
 public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     private ReadKafkaConnectP<Integer> readKafkaConnectP;
@@ -62,27 +62,37 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        SourceConnectorWrapper sourceConnectorWrapper = new TestSourceConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> (Integer) rec.value());
-        readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
+        hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
         outbox = new TestOutbox(new int[]{10}, 10);
         context = new TestProcessorContext();
-        hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
         context.setHazelcastInstance(hazelcastInstance);
+        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
+        readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> (Integer) rec.value());
+        readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
+        readKafkaConnectP.setActive(true);
+    }
+
+    @After
+    public void cleanup() {
+        if (readKafkaConnectP != null) {
+            readKafkaConnectP.close();
+        }
+        hazelcastInstance.shutdown();
     }
 
     @Test
     public void should_run_task() throws Exception {
         readKafkaConnectP.init(outbox, context);
-        boolean complete = readKafkaConnectP.complete();
 
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        boolean complete = readKafkaConnectP.complete();
         assertFalse(complete);
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
     }
 
     @Test
     public void should_filter_items() throws Exception {
-        SourceConnectorWrapper sourceConnectorWrapper = new TestSourceConnectorWrapper(minimalProperties());
+        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
         readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> {
             Integer value = (Integer) rec.value();
             if (value % 2 == 0) {
@@ -91,6 +101,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
                 return value;
             }
         });
+        readKafkaConnectP.setActive(true);
         readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
 
         readKafkaConnectP.init(outbox, context);
@@ -102,7 +113,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_require_eventTimePolicy() {
-        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, new TestProcessorContext());
+        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
         assertThatThrownBy(() -> new ReadKafkaConnectP<>(null,
                 rec -> (Integer) rec.value())
                 .setSourceConnectorWrapper(wrapper))
@@ -112,7 +123,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_require_projectionFn() {
-        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, new TestProcessorContext());
+        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
         assertThatThrownBy(() -> new ReadKafkaConnectP<>(noEventTime(), null)
                 .setSourceConnectorWrapper(wrapper))
                 .isInstanceOf(NullPointerException.class)
@@ -151,13 +162,16 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_close_task_runner() throws Exception {
+        readKafkaConnectP.setSourceConnectorWrapper(null);
+        readKafkaConnectP.setPropertiesFromUser(minimalProperties());
         readKafkaConnectP.init(outbox, context);
 
         readKafkaConnectP.complete();
 
-        assertThat(DummySourceConnector.DummyTask.INSTANCE.isStarted()).isTrue();
+        assertTrueEventually(() -> assertThat(DummySourceConnector.DummyTask.INSTANCE.isStarted()).isTrue());
         readKafkaConnectP.close();
         assertThat(DummySourceConnector.DummyTask.INSTANCE.isStopped()).isTrue();
+        readKafkaConnectP = null;
 
     }
 

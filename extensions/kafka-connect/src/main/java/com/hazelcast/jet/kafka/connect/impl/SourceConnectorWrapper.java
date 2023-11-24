@@ -71,7 +71,6 @@ public class SourceConnectorWrapper {
         Map<String, String> map = toMap(propertiesFromUser);
         this.sourceConnector.start(map);
 
-
         this.processorOrder = processorOrder;
         isMasterProcessor = processorOrder == 0;
 
@@ -89,7 +88,7 @@ public class SourceConnectorWrapper {
         return receivedTaskConfiguration.get();
     }
 
-    private void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
+    void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
         taskConfigPublisher = new TaskConfigPublisher(hazelcastInstance);
         taskConfigPublisher.createTopic(executionId);
 
@@ -97,7 +96,7 @@ public class SourceConnectorWrapper {
         taskConfigPublisher.addMessageListener(this::processMessage);
     }
 
-    private void destroyTopic() {
+    void destroyTopic() {
         taskConfigPublisher.removeMessageListeners();
         if (isMasterProcessor) {
             // Only master processor can destroy the topic

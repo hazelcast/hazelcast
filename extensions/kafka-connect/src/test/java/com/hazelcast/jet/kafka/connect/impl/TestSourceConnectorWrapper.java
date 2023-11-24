@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
 
 import java.util.Properties;
@@ -23,12 +25,20 @@ import java.util.Properties;
 // Test ConnectorWrapper that passes topic directly to task runners
 public class TestSourceConnectorWrapper extends SourceConnectorWrapper {
     public TestSourceConnectorWrapper(Properties propertiesFromUser) {
-        super(propertiesFromUser, 0, null);
+        super(propertiesFromUser, 0, new TestProcessorContext());
     }
 
     @Override
     protected void publishMessage(TaskConfigMessage taskConfigMessage) {
         // Instead of publishing the message, pass it directly to processing function
         processMessage(taskConfigMessage);
+    }
+
+    @Override
+    void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
+    }
+
+    @Override
+    void destroyTopic() {
     }
 }

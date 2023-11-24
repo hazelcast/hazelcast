@@ -88,12 +88,12 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KafkaConnectIntegrationTest extends JetTestSupport {
+public class KafkaConnectIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIT.class);
 
     @Test
     public void test_reading_without_timestamps() throws URISyntaxException {
@@ -335,7 +335,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     @Nonnull
     private static Map<String, List<Order>> groupByTaskId(List<Order> list) {
         return list.stream()
-                .collect(Collectors.groupingBy(KafkaConnectIntegrationTest::getTaskId,
+                .collect(Collectors.groupingBy(KafkaConnectIT::getTaskId,
                         Collectors.mapping(Function.identity(), toList())));
     }
 
