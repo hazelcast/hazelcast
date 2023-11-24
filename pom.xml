@@ -1346,7 +1346,7 @@
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
                             <includes>
-                                <include>**/**IT.java</include>
+                                <include>**/*IT.java</include>
                             </includes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
