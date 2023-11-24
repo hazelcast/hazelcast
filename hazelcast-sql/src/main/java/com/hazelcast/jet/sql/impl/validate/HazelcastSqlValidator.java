@@ -564,7 +564,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHIN.equals(ResourceUtil.key(e))) {
             Object[] arguments = ResourceUtil.args(e);
             String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
-            Mapping mapping = identifier != null && hasMapAccess(identifier)? iMapResolver.resolve(identifier) : null;
+            Mapping mapping = identifier != null && hasMapAccess(identifier) ? iMapResolver.resolve(identifier) : null;
             String sql = mapping != null ? SqlCreateMapping.unparse(mapping) : null;
             String message = sql != null ? ValidatorResource.imapNotMapped(e.str(), identifier, sql) : e.str();
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);
