@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 public class State implements Serializable {
 
@@ -94,8 +97,17 @@ public class State implements Serializable {
     @Override
     public String toString() {
         return "State{" +
-               "taskConfigs=" + taskConfigs +
+               "taskConfigs names=" + extractNames(taskConfigs) +
                ", partitionsToOffset=" + partitionsToOffset +
                '}';
+    }
+
+    private String extractNames(List<Map<String, String>> taskConfigs) {
+        if (taskConfigs == null) {
+            return "null";
+        }
+        return taskConfigs.stream()
+                .map(c -> c.getOrDefault("name", "<unnamed>"))
+                .collect(joining(",", "[", "]"));
     }
 }
