@@ -597,7 +597,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return value;
     }
 
-    private void removeKeyFromExpirySystem(Data key) {
+    protected void removeKeyFromExpirySystem(Data key) {
         expirySystem.removeKeyFromExpirySystem(key);
     }
 
@@ -1281,6 +1281,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         storage.removeRecord(key, record);
     }
 
+    public Record removeByKey(Data key, boolean backup) {
+        Record record = getRecord(key);
+        mutationObserver.onRemoveRecord(key, record, backup);
+        removeKeyFromExpirySystem(key);
+        storage.removeRecord(key, record);
+        return record;
+    }
+
     @Override
     public Record getRecordOrNull(Data key, boolean backup) {
         long now = getNow();
@@ -1288,6 +1296,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     public Record getRecordOrNull(Data key, long now, boolean backup) {
+        return getRecordOrNull(key, now, backup, false);
+    }
+
+    public Record getRecordOrNull(Data key, boolean backup, boolean noCaching) {
+        long now = getNow();
+        return getRecordOrNull(key, now, backup, noCaching);
+    }
+
+    public Record getRecordOrNull(Data key, long now, boolean backup, boolean noCaching) {
+        // TODO maybe it is better not to override but to introduce storage.get(key, noCaching)
         Record record = storage.get(key);
         if (record != null) {
             return evictIfExpired(key, now, backup) ? null : record;
