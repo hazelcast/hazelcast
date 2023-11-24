@@ -1305,7 +1305,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     public Record getRecordOrNull(Data key, long now, boolean backup, boolean noCaching) {
-        // TODO maybe it is better not to override but to introduce storage.get(key, noCaching)
         Record record = storage.get(key);
         if (record != null) {
             return evictIfExpired(key, now, backup) ? null : record;
