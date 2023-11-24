@@ -38,7 +38,7 @@ public class TaskRunner {
     private volatile boolean running;
     private volatile boolean reconfigurationNeeded;
     private SourceTask task;
-    private volatile Map<String, String> taskConfigReference = null;
+    private volatile Map<String, String> taskConfigReference;
 
     TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
