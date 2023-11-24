@@ -19,12 +19,10 @@ package com.hazelcast.jet.kafka.connect.impl.processorsupplier;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**

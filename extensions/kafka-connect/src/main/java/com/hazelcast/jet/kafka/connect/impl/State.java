@@ -19,7 +19,6 @@ package com.hazelcast.jet.kafka.connect.impl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

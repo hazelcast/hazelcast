@@ -110,10 +110,10 @@ public class SourceConnectorWrapperTest {
     public void should_cleanup_on_destroy() {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(properties, 0, new TestProcessorContext());
+        var wrapper = new SourceConnectorWrapper(properties, 0, new TestProcessorContext());
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
-        sourceConnectorWrapper.close();
+        wrapper.close();
 
         assertThat(sourceConnectorInstance().isStarted()).isFalse();
     }

@@ -57,7 +57,8 @@ public class SourceConnectorWrapper {
     private TaskConfigPublisher taskConfigPublisher;
     private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
     // this should be refactored later
-    private Consumer<Boolean> activeStatusSetter = ignored -> {};
+    private Consumer<Boolean> activeStatusSetter = ignored -> {
+    };
 
     public SourceConnectorWrapper(Properties propertiesFromUser, int processorOrder, Context context) {
         String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
