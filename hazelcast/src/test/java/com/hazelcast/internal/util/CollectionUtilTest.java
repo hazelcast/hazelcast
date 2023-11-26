@@ -23,15 +23,18 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
@@ -224,5 +227,22 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     public void testNullToEmpty_whenNotNull() {
         List<Integer> result = asList(1, 2, 3, 4, 5);
         assertEquals(result, nullToEmpty(result));
+    }
+
+    @Test
+    public void testHasNonEmptyIntersection() {
+        testHasNonEmptyIntersection(false, Collections.emptySet(), Collections.emptySet());
+        testHasNonEmptyIntersection(false, Set.of(1), Collections.emptySet());
+
+        testHasNonEmptyIntersection(true, Set.of(1), Set.of(1));
+        testHasNonEmptyIntersection(true, Set.of(1, 2), Set.of(1));
+
+        testHasNonEmptyIntersection(false, Set.of(1), Set.of(3));
+        testHasNonEmptyIntersection(false, Set.of(1, 2), Set.of(3));
+    }
+
+    public <T> void testHasNonEmptyIntersection(boolean expected, Collection<T> a, Collection<T> b) {
+        assertEquals(expected, CollectionUtil.hasNonEmptyIntersection(a, b));
+        assertEquals(expected, CollectionUtil.hasNonEmptyIntersection(b, a));
     }
 }

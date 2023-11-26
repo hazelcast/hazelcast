@@ -156,14 +156,9 @@ public final class CollectionUtil {
     }
 
     /**
-     * Returns true, if the two collections contain any common item.
+     * @return {@code true}, if the two collections contain any common item.
      */
     public static <T> boolean hasNonEmptyIntersection(@Nonnull Collection<T> a, @Nonnull Collection<T> b) {
-        for (T t : a) {
-            if (b.contains(t)) {
-                return true;
-            }
-        }
-        return false;
+        return !Collections.disjoint(a, b);
     }
 }
