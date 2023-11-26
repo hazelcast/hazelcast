@@ -48,7 +48,6 @@ import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
@@ -83,7 +82,7 @@ public class UnifiedProtocolDecoder
 
     @Override
     public HandlerStatus onRead() throws Exception {
-        upcast(src).flip();
+        src.flip();
 
         try {
             if (src.remaining() < PROTOCOL_LENGTH) {
