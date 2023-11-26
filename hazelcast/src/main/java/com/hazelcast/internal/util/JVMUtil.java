@@ -70,25 +70,11 @@ public final class JVMUtil {
     }
 
     /**
-     * Returns the process ID. The algorithm does not guarantee it will be able
-     * to get the correct process ID, in which case it returns {@code -1}.
+     * @return the process ID
+     * @see ProcessHandle#pid()
      */
     public static long getPid() {
-        String name = ManagementFactory.getRuntimeMXBean().getName();
-
-        if (name == null) {
-            return -1;
-        }
-        int separatorIndex = name.indexOf("@");
-        if (separatorIndex < 0) {
-            return -1;
-        }
-        String potentialPid = name.substring(0, separatorIndex);
-        try {
-            return Long.parseLong(potentialPid);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
+        return ProcessHandle.current().pid();
     }
 
     /**
