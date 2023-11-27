@@ -50,6 +50,14 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
         this.supplier = supplier;
     }
 
+    public boolean isPartitionedAddresses() {
+        return partitionedAddresses;
+    }
+
+    public List<Integer> getMemberLocalParallelismList() {
+        return memberLocalParallelismList;
+    }
+
     @Override
     public void init(@Nonnull Context context) {
     }
