@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.query.AlwaysTruePagingPredicate;
 import com.hazelcast.map.listener.NoopMapListener;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PagingPredicate;
@@ -55,6 +56,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -540,6 +542,16 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             predicate.nextPage();
         }
     }
+
+    /**
+     * @see <a href="https://github.com/hazelcast/hazelcast/issues/26036">non-`PagingPredicateImpl` `PagingPredicate` throws
+     *      `ClassCastException`</a>
+     */
+    @Test
+    public void testIssue123() {
+        assertFalse(map.values(new AlwaysTruePagingPredicate<>()).isEmpty());
+    }
+
 
     // Paging predicate validation tests
     @Test(expected = IllegalArgumentException.class)
