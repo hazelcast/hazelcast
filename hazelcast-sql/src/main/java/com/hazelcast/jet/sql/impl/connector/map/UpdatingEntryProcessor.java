@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -75,13 +76,13 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            ExpressionEvalContext evalContext) {
+            UntrustedExpressionEvalContext evalContext) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
         this.evalContext = evalContext;
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         this.arguments = evalContext.getArguments();
-        this.subject = evalContext.subject();
+        //   this.subject = evalContext.subject();
     }
 
     @Override
@@ -197,7 +198,7 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(ExpressionEvalContext eec) {
+        public EntryProcessor<Object, Object, Long> get(UntrustedExpressionEvalContext eec) {
             return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
 
