@@ -23,9 +23,8 @@ import com.hazelcast.test.annotation.QuickTest;
 
 import java.lang.management.ManagementFactory;
 
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -73,7 +72,7 @@ public class JVMUtilTest extends HazelcastTestSupport {
     public void testGetPid() {
        long legacyPidResult = getPidLegacy();
 
-       assumeThat(legacyPidResult, not(-1L));
+       assumeThat(legacyPidResult).isNotEqualTo(-1);
        assertEquals(legacyPidResult, JVMUtil.getPid());
     }
 
