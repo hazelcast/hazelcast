@@ -28,7 +28,6 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
@@ -301,11 +300,7 @@ abstract class MapProxySupport<K, V>
 
     private <T extends EventListener> T initializeListener(ListenerConfig listenerConfig) {
         T listener = getListenerImplOrNull(listenerConfig);
-
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-        }
-
+        handleHazelcastInstanceAwareParams(listener);
         return listener;
     }
 
@@ -1447,14 +1442,6 @@ abstract class MapProxySupport<K, V>
                 .projection(projection)
                 .build();
         return queryEngine.execute(query, target);
-    }
-
-    protected void handleHazelcastInstanceAwareParams(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-            }
-        }
     }
 
     private class IncrementStatsExecutionCallback<T> implements BiConsumer<T, Throwable> {
