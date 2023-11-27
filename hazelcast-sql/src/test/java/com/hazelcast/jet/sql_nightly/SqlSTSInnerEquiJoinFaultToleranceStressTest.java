@@ -31,7 +31,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -65,8 +65,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(QuickTest.class)
-//@Category(NightlyTest.class)
+@Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport {
     @ClassRule
     public static Timeout globalTimeout = Timeout.seconds(60 * 60);
