@@ -52,6 +52,16 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
 
     @Override
     public void init(@Nonnull Context context) {
+        // Determine whether the execution plan can accommodate the tasksMax during the planning phase
+        int totalParallelism = context.totalParallelism();
+        if (totalParallelism < tasksMax) {
+            throw new IllegalArgumentException("The requested parallelism of " + tasksMax + " is greater than " +
+                                               "the available parallelism of " + totalParallelism +
+                                               " for Kafka Connect vertices. " +
+                                               "Please call setLocalParallelism(" + tasksMax + ") " +
+                                               "for Kafka Connect Source"
+            );
+        }
     }
 
     @Nonnull
@@ -61,17 +71,15 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
             partitionedAddresses = true;
             partitionTasks(addresses);
         }
-        int localParallelism = getLocalParallelism(addresses);
         return memberAddress -> {
             int indexOf = memberAddressList.indexOf(memberAddress);
             if (indexOf != -1) {
                 memberAddressList.remove(indexOf);
                 Integer localParallelismForMember = memberLocalParallelismList.remove(indexOf);
                 return new TaskMaxProcessorSupplier(localParallelismForMember, supplier,
-                        getAndIncrementProcessorOrder(localParallelism));
+                        getAndIncrementProcessorOrder(localParallelismForMember));
             } else {
-                return new TaskMaxProcessorSupplier(0, supplier,
-                        getAndIncrementProcessorOrder(localParallelism));
+                return new ExpectNothingProcessorSupplier();
             }
         };
     }
