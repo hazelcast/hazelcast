@@ -442,13 +442,13 @@ public class IMapSqlConnector implements SqlConnector {
         PartitionedMapTable table = context.getTable();
 
         // TODO do a simpler, specialized deleting-only processor
-        MapSinkConfiguration<JetSqlRow, Object, Object> params = new MapSinkConfiguration<>(table.getMapName());
-        params.setToKeyFn((FunctionEx<JetSqlRow, Object>) row -> {
+        MapSinkConfiguration<JetSqlRow, Object, Object> sinkConfig = new MapSinkConfiguration<>(table.getMapName());
+        sinkConfig.setToKeyFn((FunctionEx<JetSqlRow, Object>) row -> {
             assert row.getFieldCount() == 1;
             return row.get(0);
         });
-        params.setUpdateFn((v, t) -> null);
-        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
+        sinkConfig.setUpdateFn((v, t) -> null);
+        ProcessorMetaSupplier processorMetaSupplier = updateMapP(sinkConfig);
 
         return context.getDag().newUniqueVertex(
                 toString(table),

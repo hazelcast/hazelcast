@@ -34,6 +34,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -161,11 +162,18 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         private FunctionEx<? super T, ? extends V> toValueFn;
         private int maxParallelAsyncOps;
 
+        Supplier(@Nullable String dataConnectionName,
+                 @Nullable String clientXml
+        ) {
+            super(dataConnectionName, clientXml);
+        }
+
         public static <T, K, V> Supplier<T, K, V> createNew(MapSinkConfiguration<T, K, V> params) {
-            Supplier<T, K, V> supplier = new Supplier<>();
+            Supplier<T, K, V> supplier = new Supplier<>(
+                    params.getDataConnectionName(),
+                    params.getClientXml()
+            );
             supplier.mapName = params.getMapName();
-            supplier.dataConnectionName = params.getDataConnectionName();
-            supplier.clientXml = params.getClientXml();
             supplier.toKeyFn = params.getToKeyFn();
             supplier.toValueFn = params.getToValueFn();
             return supplier;

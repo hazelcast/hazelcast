@@ -17,74 +17,35 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorConfiguration;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.EntryProcessor;
 
 import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLEL_ASYNC_OPS_DEFAULT;
 import static com.hazelcast.jet.pipeline.Sinks.fromProcessor;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Parameters for using a map as a sink with an EntryProcessor:
  */
 public class MapSinkEntryProcessorBuilder<E, K, V, R> {
 
-    private enum EnumMapOperation {
-        MAP_ENTRY_PROCESSOR("mapWithEntryProcessorSink", false),
-        REMOTE_MAP_ENTRY_PROCESSOR("remoteMapWithEntryProcessorSink", true);
-
-        private final String mapSinkPrefix;
-
-        private final boolean isRemoteOperation;
-
-        EnumMapOperation(String mapSinkPrefix, boolean isRemoteOperation) {
-            this.mapSinkPrefix = mapSinkPrefix;
-            this.isRemoteOperation = isRemoteOperation;
-        }
-
-        public String getMapSinkPrefix() {
-            return mapSinkPrefix;
-        }
-
-        public boolean isRemoteOperation() {
-            return isRemoteOperation;
-        }
-    }
-
     private final String mapName;
-
-    private EnumMapOperation enumMapOperation;
-
-    private String dataConnectionName;
-
+    private DataConnectionRef dataConnectionRef;
     private ClientConfig clientConfig;
 
     private FunctionEx<? super E, ? extends K> toKeyFn;
-
     private FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn;
-
     private int maxParallelAsyncOps = MAX_PARALLEL_ASYNC_OPS_DEFAULT;
 
     public MapSinkEntryProcessorBuilder(String mapName) {
         this.mapName = mapName;
     }
 
-    public MapSinkEntryProcessorBuilder<E, K, V, R> mapOperation() {
-        this.enumMapOperation = EnumMapOperation.MAP_ENTRY_PROCESSOR;
-        return this;
-    }
-
-    public MapSinkEntryProcessorBuilder<E, K, V, R> remoteMapOperation() {
-        this.enumMapOperation = EnumMapOperation.REMOTE_MAP_ENTRY_PROCESSOR;
-        return this;
-    }
-
-    public MapSinkEntryProcessorBuilder<E, K, V, R> dataConnectionName(String dataConnectionName) {
-        this.dataConnectionName = dataConnectionName;
+    public MapSinkEntryProcessorBuilder<E, K, V, R> dataConnectionName(DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = dataConnectionRef;
         return this;
     }
 
@@ -98,7 +59,6 @@ public class MapSinkEntryProcessorBuilder<E, K, V, R> {
         return this;
     }
 
-
     public MapSinkEntryProcessorBuilder<E, K, V, R> toEntryProcessorFn(
             FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn) {
         this.toEntryProcessorFn = toEntryProcessorFn;
@@ -111,31 +71,31 @@ public class MapSinkEntryProcessorBuilder<E, K, V, R> {
     }
 
     public Sink<E> build() {
-        requireNonNull(enumMapOperation, "MapOperation enumeration can not be null");
-
-        validateIfRemoteOperation();
-
-        MapSinkEntryProcessorConfiguration<E, K, V, R> configuration = new MapSinkEntryProcessorConfiguration<>(mapName);
-        configuration.setDataConnectionName(dataConnectionName);
-        configuration.setClientConfig(clientConfig);
+        MapSinkEntryProcessorConfiguration<E, K, V, R> configuration =
+                new MapSinkEntryProcessorConfiguration<>(mapName);
+        configuration.setDataConnectionRef(dataConnectionRef);
+        configuration.setClientXml(ImdgUtil.asXmlString(clientConfig));
         configuration.setToKeyFn(toKeyFn);
         configuration.setToEntryProcessorFn(toEntryProcessorFn);
         configuration.setMaxParallelAsyncOps(maxParallelAsyncOps);
 
         ProcessorMetaSupplier processorMetaSupplier = HazelcastWriters.updateMapSupplier(configuration);
-        return fromProcessor(geSinkName(),
+        return fromProcessor(
+                geSinkName(),
                 processorMetaSupplier,
-                toKeyFn);
-
-    }
-
-    private void validateIfRemoteOperation() {
-        if (enumMapOperation.isRemoteOperation() && ((dataConnectionName == null) && (clientConfig == null))) {
-            throw new HazelcastException("Either dataConnectionName or clientConfig must be non-null");
-        }
+                toKeyFn
+        );
     }
 
     private String geSinkName() {
-        return enumMapOperation.getMapSinkPrefix() + "(" + mapName + ')';
+        if (isRemote()) {
+            return "remoteMapWithEntryProcessorSink(" + mapName + ')';
+        } else {
+            return "mapWithEntryProcessorSink(" + mapName + ')';
+        }
+    }
+
+    private boolean isRemote() {
+        return dataConnectionRef != null || clientConfig != null;
     }
 }

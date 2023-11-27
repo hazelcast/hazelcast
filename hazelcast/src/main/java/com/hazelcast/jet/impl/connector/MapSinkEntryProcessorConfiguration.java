@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.map.EntryProcessor;
 
 import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLEL_ASYNC_OPS_DEFAULT;
@@ -28,10 +28,8 @@ import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLE
 public class MapSinkEntryProcessorConfiguration<E, K, V, R> {
 
     private final String mapName;
-
-    private String dataConnectionName;
-
-    private ClientConfig clientConfig;
+    private DataConnectionRef dataConnectionRef;
+    private String clientXml;
 
     private FunctionEx<? super E, ? extends K> toKeyFn;
 
@@ -43,32 +41,28 @@ public class MapSinkEntryProcessorConfiguration<E, K, V, R> {
         this.mapName = mapName;
     }
 
-    public boolean hasDataSourceConnection() {
-        return dataConnectionName != null;
-    }
-
-    public boolean hasClientConfig() {
-        return clientConfig != null;
-    }
-
     public String getMapName() {
         return mapName;
     }
 
+    public DataConnectionRef getDataConnectionRef() {
+        return dataConnectionRef;
+    }
+
     public String getDataConnectionName() {
-        return dataConnectionName;
+        return dataConnectionRef == null ? null : dataConnectionRef.getName();
     }
 
-    public void setDataConnectionName(String dataConnectionName) {
-        this.dataConnectionName = dataConnectionName;
+    public void setDataConnectionRef(DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = dataConnectionRef;
     }
 
-    public ClientConfig getClientConfig() {
-        return clientConfig;
+    public String getClientXml() {
+        return clientXml;
     }
 
-    public void setClientConfig(ClientConfig clientConfig) {
-        this.clientConfig = clientConfig;
+    public void setClientXml(String clientXml) {
+        this.clientXml = clientXml;
     }
 
     public FunctionEx<? super E, ? extends K> getToKeyFn() {
@@ -93,5 +87,9 @@ public class MapSinkEntryProcessorConfiguration<E, K, V, R> {
 
     public void setMaxParallelAsyncOps(int maxParallelAsyncOps) {
         this.maxParallelAsyncOps = maxParallelAsyncOps;
+    }
+
+    public boolean isRemote() {
+        return dataConnectionRef != null || clientXml != null;
     }
 }

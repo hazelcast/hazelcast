@@ -35,6 +35,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
@@ -191,12 +192,12 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex producer = dag.newVertex(SOURCE_NAME, readMapP(SOURCE_NAME));
 
-        MapSinkConfiguration<Integer, Integer, Integer> params = new MapSinkConfiguration<>(SINK_NAME);
-        params.setClientConfig(clientConfig);
-        params.setToKeyFn(identity());
-        params.setToValueFn(identity());
+        MapSinkConfiguration<Integer, Integer, Integer> sinkConfig = new MapSinkConfiguration<>(SINK_NAME);
+        sinkConfig.setClientXml(ImdgUtil.asXmlString(clientConfig));
+        sinkConfig.setToKeyFn(identity());
+        sinkConfig.setToValueFn(identity());
 
-        Vertex consumer = dag.newVertex(SINK_NAME, writeMapP(params));
+        Vertex consumer = dag.newVertex(SINK_NAME, writeMapP(sinkConfig));
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);

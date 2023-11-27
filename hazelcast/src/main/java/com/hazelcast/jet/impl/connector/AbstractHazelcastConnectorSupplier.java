@@ -37,25 +37,22 @@ import static java.util.stream.Collectors.toList;
 
 public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSupplier {
 
-    protected String clientXml;
-
-    protected String dataConnectionName;
+    protected final String dataConnectionName;
+    protected final String clientXml;
 
     private transient HazelcastInstance instance;
     private transient SerializationService serializationService;
 
-    AbstractHazelcastConnectorSupplier() {
+    public AbstractHazelcastConnectorSupplier() {
+        dataConnectionName = null;
+        clientXml = null;
     }
 
-    AbstractHazelcastConnectorSupplier(@Nullable String clientXml) {
+    AbstractHazelcastConnectorSupplier(
+            @Nullable String dataConnectionName,
+            @Nullable String clientXml
+    ) {
         this.clientXml = clientXml;
-    }
-
-    public void setClientXml(String clientXml) {
-        this.clientXml = clientXml;
-    }
-
-    public void setDataConnectionName(String dataConnectionName) {
         this.dataConnectionName = dataConnectionName;
     }
 
@@ -63,7 +60,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
             @Nullable String clientXml,
             @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
     ) {
-        return new AbstractHazelcastConnectorSupplier(clientXml) {
+        return new AbstractHazelcastConnectorSupplier(null, clientXml) {
             private static final long serialVersionUID = 1L;
 
             @Override

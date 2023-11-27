@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 
 /**
  * Parameters for using a map as a sink
@@ -28,50 +28,44 @@ public class MapSinkConfiguration<T, K, V> {
 
     private final String mapName;
 
-    private String dataConnectionName;
-
-    private ClientConfig clientConfig;
+    private DataConnectionRef dataConnectionRef;
+    private String clientXml;
 
     private FunctionEx<? super T, ? extends K> toKeyFn;
-
     private FunctionEx<? super T, ? extends V> toValueFn;
-
     private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
-
     private BinaryOperatorEx<V> mergeFn;
-
-    private String clientXml;
 
     public MapSinkConfiguration(String mapName) {
         this.mapName = mapName;
-    }
-
-    public boolean hasDataSourceConnection() {
-        return dataConnectionName != null;
-    }
-
-    public boolean hasClientConfig() {
-        return clientConfig != null;
     }
 
     public String getMapName() {
         return mapName;
     }
 
+    public DataConnectionRef getDataConnectionRef() {
+        return dataConnectionRef;
+    }
+
     public String getDataConnectionName() {
-        return dataConnectionName;
+        return dataConnectionRef == null ? null : dataConnectionRef.getName();
     }
 
-    public void setDataConnectionName(String dataConnectionName) {
-        this.dataConnectionName = dataConnectionName;
+    public void setDataConnectionRef(DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = dataConnectionRef;
     }
 
-    public ClientConfig getClientConfig() {
-        return clientConfig;
+    public String getClientXml() {
+        return clientXml;
     }
 
-    public void setClientConfig(ClientConfig clientConfig) {
-        this.clientConfig = clientConfig;
+    public void setClientXml(String clientXml) {
+        this.clientXml = clientXml;
+    }
+
+    public boolean isRemote() {
+        return dataConnectionRef != null || clientXml != null;
     }
 
     public FunctionEx<? super T, ? extends K> getToKeyFn() {
@@ -106,11 +100,4 @@ public class MapSinkConfiguration<T, K, V> {
         this.mergeFn = mergeFn;
     }
 
-    public String getClientXml() {
-        return clientXml;
-    }
-
-    public void setClientXml(String clientXml) {
-        this.clientXml = clientXml;
-    }
 }

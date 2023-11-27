@@ -33,7 +33,12 @@ class ProcessorFunctionConnectorSupplier extends AbstractHazelcastConnectorSuppl
 
     private final FunctionEx<HazelcastInstance, Processor> processorFunction;
 
-    ProcessorFunctionConnectorSupplier(FunctionEx<HazelcastInstance, Processor> processorFunction) {
+    ProcessorFunctionConnectorSupplier(
+            String dataConnectionName,
+            String clientXml,
+            FunctionEx<HazelcastInstance, Processor> processorFunction
+    ) {
+        super(dataConnectionName, clientXml);
         this.processorFunction = processorFunction;
     }
 

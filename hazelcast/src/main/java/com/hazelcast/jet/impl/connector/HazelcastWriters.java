@@ -35,6 +35,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.RingBufferPermission;
@@ -84,7 +85,7 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
         MapSinkConfiguration<T, K, V> params = new MapSinkConfiguration<>(name);
-        params.setClientConfig(clientConfig);
+        params.setClientXml(ImdgUtil.asXmlString(clientConfig));
         params.setToKeyFn(toKeyFn);
         params.setToValueFn(toValueFn);
 
@@ -98,23 +99,12 @@ public final class HazelcastWriters {
      * Update map with key and value functions
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkConfiguration<T, K, V> params) {
-        if (params.hasDataSourceConnection()) {
-            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
-
-            return preferLocalParallelismOne(supplier);
-        } else if (params.hasClientConfig()) {
-            //Set clientXml
-            String clientXml = asXmlString(params.getClientConfig());
-            params.setClientXml(clientXml);
-
-            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
-
+    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkConfiguration<T, K, V> sinkConfig) {
+        WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(sinkConfig);
+        if (sinkConfig.isRemote()) {
             return preferLocalParallelismOne(supplier);
         } else {
-            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
-
-            Permission permission = mapPutPermission(null, params.getMapName());
+            Permission permission = mapPutPermission(null, sinkConfig.getMapName());
             return preferLocalParallelismOne(permission, supplier);
         }
     }
@@ -123,67 +113,39 @@ public final class HazelcastWriters {
      * Update map with a merge function
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(MapSinkConfiguration<T, K, V> params) {
+    public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(MapSinkConfiguration<T, K, V> sinkConfig) {
         // Get reference to functions because MapSinkMergeParams is not serializable
-        FunctionEx<? super T, ? extends K> toKeyFn = params.getToKeyFn();
-        FunctionEx<? super T, ? extends V> toValueFn = params.getToValueFn();
-        BinaryOperatorEx<V> mergeFn = params.getMergeFn();
+        FunctionEx<? super T, ? extends K> toKeyFn = sinkConfig.getToKeyFn();
+        FunctionEx<? super T, ? extends V> toValueFn = sinkConfig.getToValueFn();
+        BinaryOperatorEx<V> mergeFn = sinkConfig.getMergeFn();
 
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toValueFn, "toValueFn");
         checkSerializable(mergeFn, "mergeFn");
 
-        if (params.hasDataSourceConnection()) {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
-                    params.getMapName(),
-                    "",
-                    toKeyFn,
-                    (V oldValue, T item) -> {
-                        V newValue = toValueFn.apply(item);
-                        if (oldValue == null) {
-                            return newValue;
-                        }
-                        return mergeFn.apply(oldValue, newValue);
-                    });
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            processorSupplier.setDataConnectionName(params.getDataConnectionName());
+        FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
+                sinkConfig.getMapName(),
+                "",
+                toKeyFn,
+                (V oldValue, T item) -> {
+                    V newValue = toValueFn.apply(item);
+                    if (oldValue == null) {
+                        return newValue;
+                    }
+                    return mergeFn.apply(oldValue, newValue);
+                });
 
+        ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(
+                sinkConfig.getDataConnectionName(),
+                sinkConfig.getClientXml(),
+                processorFunction
+        );
+
+        if (sinkConfig.isRemote()) {
             // Uses default local parallelism
             return ProcessorMetaSupplier.of(processorSupplier);
-
-        } else if (params.hasClientConfig()) {
-            String clientXml = asXmlString(params.getClientConfig());
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
-                    params.getMapName(),
-                    "",
-                    toKeyFn,
-                    (V oldValue, T item) -> {
-                        V newValue = toValueFn.apply(item);
-                        if (oldValue == null) {
-                            return newValue;
-                        }
-                        return mergeFn.apply(oldValue, newValue);
-                    });
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            processorSupplier.setClientXml(clientXml);
-
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(processorSupplier);
-
         } else {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
-                    params.getMapName(),
-                    null,
-                    toKeyFn,
-                    (V oldValue, T item) -> {
-                        V newValue = toValueFn.apply(item);
-                        if (oldValue == null) {
-                            return newValue;
-                        }
-                        return mergeFn.apply(oldValue, newValue);
-                    });
-            Permission permission = mapUpdatePermission(null, params.getMapName());
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
+            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
 
             // Uses default local parallelism
             return ProcessorMetaSupplier.of(permission, processorSupplier);
@@ -211,44 +173,27 @@ public final class HazelcastWriters {
      * Update map with an update function
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(MapSinkConfiguration<T, K, V> params) {
-        checkSerializable(params.getToKeyFn(), "toKeyFn");
-        checkSerializable(params.getUpdateFn(), "updateFn");
+    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(MapSinkConfiguration<T, K, V> sinkConfig) {
+        checkSerializable(sinkConfig.getToKeyFn(), "toKeyFn");
+        checkSerializable(sinkConfig.getUpdateFn(), "updateFn");
 
-        if (params.hasDataSourceConnection()) {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
-                    params.getMapName(),
-                    "",
-                    params.getToKeyFn(),
-                    params.getUpdateFn());
+        FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
+                sinkConfig.getMapName(),
+                "",
+                sinkConfig.getToKeyFn(),
+                sinkConfig.getUpdateFn());
 
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            processorSupplier.setDataConnectionName(params.getDataConnectionName());
+        ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(
+                sinkConfig.getDataConnectionName(),
+                sinkConfig.getClientXml(),
+                processorFunction
+        );
 
-            return ProcessorMetaSupplier.of(processorSupplier);
-
-        }  else if (params.hasClientConfig()) {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
-                    params.getMapName(),
-                    "",
-                    params.getToKeyFn(),
-                    params.getUpdateFn());
-
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            String clientXml = asXmlString(params.getClientConfig());
-            processorSupplier.setClientXml(clientXml);
-
+        if (sinkConfig.isRemote()) {
             // Uses default local parallelism
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
-                    params.getMapName(),
-                    null,
-                    params.getToKeyFn(),
-                    params.getUpdateFn());
-
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            Permission permission = mapUpdatePermission(null, params.getMapName());
+            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
 
             // Uses default local parallelism
             return ProcessorMetaSupplier.of(permission, processorSupplier);
@@ -276,45 +221,29 @@ public final class HazelcastWriters {
      * Update map with an EntryProcessor
      */
     @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(MapSinkEntryProcessorConfiguration<T, K, V, R> params) {
-        checkSerializable(params.getToKeyFn(), "toKeyFn");
-        checkSerializable(params.getToEntryProcessorFn(), "toEntryProcessorFn");
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
+            MapSinkEntryProcessorConfiguration<T, K, V, R> sinkConfig
+    ) {
+        checkSerializable(sinkConfig.getToKeyFn(), "toKeyFn");
+        checkSerializable(sinkConfig.getToEntryProcessorFn(), "toEntryProcessorFn");
 
-        if (params.hasDataSourceConnection()) {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                    params.getMaxParallelAsyncOps(),
-                    params.getMapName(),
-                    "",
-                    params.getToKeyFn(),
-                    params.getToEntryProcessorFn());
+        FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
+                sinkConfig.getMaxParallelAsyncOps(),
+                sinkConfig.getMapName(),
+                "",
+                sinkConfig.getToKeyFn(),
+                sinkConfig.getToEntryProcessorFn());
 
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            processorSupplier.setDataConnectionName(params.getDataConnectionName());
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(processorSupplier);
-        } else if (params.hasClientConfig()) {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                    params.getMaxParallelAsyncOps(),
-                    params.getMapName(),
-                    "",
-                    params.getToKeyFn(),
-                    params.getToEntryProcessorFn());
-
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            String clientXml = asXmlString(params.getClientConfig());
-            processorSupplier.setClientXml(clientXml);
+        ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(
+                sinkConfig.getDataConnectionName(),
+                sinkConfig.getClientXml(),
+                processorFunction
+        );
+        if (sinkConfig.isRemote()) {
             // Uses default local parallelism
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                    params.getMaxParallelAsyncOps(),
-                    params.getMapName(),
-                    null,
-                    params.getToKeyFn(),
-                    params.getToEntryProcessorFn());
-
-            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-            Permission permission = mapUpdatePermission(null, params.getMapName());
+            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
             // Uses default local parallelism
             return ProcessorMetaSupplier.of(permission, processorSupplier);
         }
@@ -390,7 +319,7 @@ public final class HazelcastWriters {
         private final String name;
 
         WriteCachePSupplier(@Nullable String clientXml, @Nonnull String name) {
-            super(clientXml);
+            super(null, clientXml);
             this.name = name;
         }
 
@@ -429,7 +358,7 @@ public final class HazelcastWriters {
         private final String name;
 
         WriteListPSupplier(@Nullable String clientXml, @Nonnull String name) {
-            super(clientXml);
+            super(null, clientXml);
             this.name = name;
         }
 

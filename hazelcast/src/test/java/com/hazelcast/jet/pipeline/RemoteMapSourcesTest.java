@@ -176,7 +176,7 @@ public class RemoteMapSourcesTest extends PipelineTestSupport {
 
         // When
         BatchSource<?> source = Sources.remoteMapBuilder(srcName)
-                .dataConnectionName(HZ_CLIENT_DATA_CONNECTION_NAME)
+                .dataConnectionRef(dataConnectionRef(HZ_CLIENT_DATA_CONNECTION_NAME))
                 .predicate(truePredicate())
                 .projection(singleAttribute("value"))
                 .build();

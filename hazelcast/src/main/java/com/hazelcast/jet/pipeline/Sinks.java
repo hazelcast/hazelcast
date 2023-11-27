@@ -185,7 +185,6 @@ public final class Sinks {
 
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .mapWriteOperation()
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
                 .build();
@@ -282,7 +281,6 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapWriteOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
@@ -310,8 +308,7 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapWriteOperation()
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionRef(dataConnectionRef)
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
                 .build();
@@ -380,7 +377,6 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .mapMergeOperation()
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
                 .mergeFn(mergeFn)
@@ -495,7 +491,6 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapMergeOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
@@ -523,8 +518,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapMergeOperation()
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionRef(dataConnectionRef)
                 .toKeyFn(toKeyFn)
                 .toValueFn(toValueFn)
                 .mergeFn(mergeFn)
@@ -603,7 +597,6 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .mapUpdateOperation()
                 .toKeyFn(toKeyFn)
                 .updateFn(updateFn)
                 .build();
@@ -677,7 +670,6 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapUpdateOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .updateFn(updateFn)
@@ -703,8 +695,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return Sinks.<T, K, V>mapBuilder(mapName)
-                .remoteMapUpdateOperation()
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionRef(dataConnectionRef)
                 .toKeyFn(toKeyFn)
                 .updateFn(updateFn)
                 .build();
@@ -745,7 +736,6 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
         return Sinks.<E, K, V>mapBuilder(mapName)
-                .remoteMapUpdateOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(Entry::getKey)
                 .updateFn(updateFn)
@@ -770,8 +760,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
         return Sinks.<E, K, V>mapBuilder(mapName)
-                .remoteMapUpdateOperation()
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionRef(dataConnectionRef)
                 .toKeyFn(Entry::getKey)
                 .updateFn(updateFn)
                 .build();
@@ -788,7 +777,6 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
-                .mapOperation()
                 .toKeyFn(toKeyFn)
                 .toEntryProcessorFn(toEntryProcessorFn)
                 .build();
@@ -845,7 +833,6 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
-                .mapOperation()
                 .maxParallelAsyncOps(maxParallelAsyncOps)
                 .toKeyFn(toKeyFn)
                 .toEntryProcessorFn(toEntryProcessorFn)
@@ -919,7 +906,6 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
-                .remoteMapOperation()
                 .clientConfig(clientConfig)
                 .toKeyFn(toKeyFn)
                 .toEntryProcessorFn(toEntryProcessorFn)
@@ -944,8 +930,7 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
-                .remoteMapOperation()
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionName(dataConnectionRef)
                 .toKeyFn(toKeyFn)
                 .toEntryProcessorFn(toEntryProcessorFn)
                 .build();

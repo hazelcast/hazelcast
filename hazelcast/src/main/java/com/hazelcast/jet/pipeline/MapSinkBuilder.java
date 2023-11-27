@@ -17,13 +17,15 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
+import com.hazelcast.jet.impl.util.ImdgUtil;
+
+import java.util.Locale;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.pipeline.Sinks.fromProcessor;
@@ -38,84 +40,22 @@ import static java.util.Objects.requireNonNull;
  */
 public class MapSinkBuilder<T, K, V> {
 
-    private enum EnumMapOperation {
-        MAP_WRITE("mapSink", false),
-        MAP_UPDATE("mapWithUpdatingSink", false),
-        MAP_MERGE("mapWithMergingSink", false),
-        REMOTE_MAP_WRITE("remoteMapSink", true),
-        REMOTE_MAP_UPDATE("remoteMapWithUpdatingSink", true),
-        REMOTE_MAP_MERGE("remoteMapWithMergingSink", true);
-
-        private final String mapSinkPrefix;
-
-        private final boolean isRemoteOperation;
-
-        EnumMapOperation(String mapSinkPrefix, boolean isRemoteOperation) {
-            this.mapSinkPrefix = mapSinkPrefix;
-            this.isRemoteOperation = isRemoteOperation;
-        }
-
-        public String getMapSinkPrefix() {
-            return mapSinkPrefix;
-        }
-
-        public boolean isRemoteOperation() {
-            return isRemoteOperation;
-        }
-    }
-
     private final String mapName;
-
-    private EnumMapOperation enumMapOperation;
-
-    private String dataConnectionName;
-
+    private DataConnectionRef dataConnectionRef;
     private ClientConfig clientConfig;
 
     private FunctionEx<? super T, ? extends K> toKeyFn;
 
     private FunctionEx<? super T, ? extends V> toValueFn;
-
     private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
-
     private BinaryOperatorEx<V> mergeFn;
 
     public MapSinkBuilder(String mapName) {
         this.mapName = mapName;
     }
 
-    public MapSinkBuilder<T, K, V> mapWriteOperation() {
-        this.enumMapOperation = EnumMapOperation.MAP_WRITE;
-        return this;
-    }
-
-    public MapSinkBuilder<T, K, V> remoteMapWriteOperation() {
-        this.enumMapOperation = EnumMapOperation.REMOTE_MAP_WRITE;
-        return this;
-    }
-
-    public MapSinkBuilder<T, K, V> mapUpdateOperation() {
-        this.enumMapOperation = EnumMapOperation.MAP_UPDATE;
-        return this;
-    }
-
-    public MapSinkBuilder<T, K, V> remoteMapUpdateOperation() {
-        this.enumMapOperation = EnumMapOperation.REMOTE_MAP_UPDATE;
-        return this;
-    }
-
-    public MapSinkBuilder<T, K, V> mapMergeOperation() {
-        this.enumMapOperation = EnumMapOperation.MAP_MERGE;
-        return this;
-    }
-
-    public MapSinkBuilder<T, K, V> remoteMapMergeOperation() {
-        this.enumMapOperation = EnumMapOperation.REMOTE_MAP_MERGE;
-        return this;
-    }
-
-    public MapSinkBuilder<T, K, V> dataConnectionName(String dataConnectionName) {
-        this.dataConnectionName = requireNonNull(dataConnectionName, "dataConnectionName can not be null");
+    public MapSinkBuilder<T, K, V> dataConnectionRef(DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = requireNonNull(dataConnectionRef, "dataConnectionRef can not be null");
         return this;
     }
 
@@ -150,72 +90,69 @@ public class MapSinkBuilder<T, K, V> {
     }
 
     public Sink<T> build() {
-        requireNonNull(enumMapOperation, "MapOperation enumeration can not be null");
-
-        if (enumMapOperation == EnumMapOperation.REMOTE_MAP_WRITE || enumMapOperation == EnumMapOperation.MAP_WRITE) {
-            return buildWrite();
-        } else if (enumMapOperation == EnumMapOperation.REMOTE_MAP_UPDATE || enumMapOperation == EnumMapOperation.MAP_UPDATE) {
-            return buildUpdate();
-        } else if (enumMapOperation == EnumMapOperation.REMOTE_MAP_MERGE || enumMapOperation == EnumMapOperation.MAP_MERGE) {
-            return buildMerge();
-        }
-        throw new IllegalStateException("Unknown MapOperation enumeration : " + enumMapOperation);
-    }
-
-    private Sink<T> buildWrite() {
-        validateIfRemoteOperation();
+        validateOperation();
 
         MapSinkConfiguration<T, K, V> configuration = new MapSinkConfiguration<>(mapName);
-        configuration.setDataConnectionName(dataConnectionName);
-        configuration.setClientConfig(clientConfig);
+        configuration.setDataConnectionRef(dataConnectionRef);
+        configuration.setClientXml(ImdgUtil.asXmlString(clientConfig));
         configuration.setToKeyFn(toKeyFn);
         configuration.setToValueFn(toValueFn);
-
-        ProcessorMetaSupplier processorMetaSupplier = HazelcastWriters.writeMapSupplier(configuration);
-        return fromProcessor(geSinkName(),
-                processorMetaSupplier,
-                toKeyFn);
-    }
-
-    private Sink<T> buildUpdate() {
-        validateIfRemoteOperation();
-
-        MapSinkConfiguration<T, K, V> configuration = new MapSinkConfiguration<>(mapName);
-        configuration.setDataConnectionName(dataConnectionName);
-        configuration.setClientConfig(clientConfig);
-        configuration.setToKeyFn(toKeyFn);
         configuration.setUpdateFn(updateFn);
-
-        ProcessorMetaSupplier processorMetaSupplier = HazelcastWriters.updateMapSupplier(configuration);
-        return fromProcessor(geSinkName(),
-                processorMetaSupplier,
-                toKeyFn);
-    }
-
-    private Sink<T> buildMerge() {
-        validateIfRemoteOperation();
-
-        MapSinkConfiguration<T, K, V> configuration = new MapSinkConfiguration<>(mapName);
-        configuration.setDataConnectionName(dataConnectionName);
-        configuration.setClientConfig(clientConfig);
-        configuration.setToKeyFn(toKeyFn);
-        configuration.setToValueFn(toValueFn);
         configuration.setMergeFn(mergeFn);
 
-        ProcessorMetaSupplier processorMetaSupplier = HazelcastWriters.mergeMapSupplier(configuration);
-        return fromProcessor(geSinkName(),
+        ProcessorMetaSupplier processorMetaSupplier = buildProcessorMetaSupplier(configuration);
+
+        return fromProcessor(
+                getSinkName(),
                 processorMetaSupplier,
-                toKeyFn);
+                toKeyFn
+        );
     }
 
-    private void validateIfRemoteOperation() {
-        if (enumMapOperation.isRemoteOperation() && ((dataConnectionName == null) && (clientConfig == null))) {
-            throw new HazelcastException("Either dataConnectionName or clientConfig must be non-null");
+    private void validateOperation() {
+        boolean hasToValueFn = toValueFn != null;
+        boolean hasUpdateFn = updateFn != null;
+        boolean hasMergeFn = mergeFn != null;
+
+        if ((hasToValueFn && hasUpdateFn) ||
+                (hasUpdateFn && hasMergeFn)) {
+            throw new IllegalArgumentException("You must set exactly one combination of " +
+                    "toValueFn, updateFn or updateFn and mergeFn parameters");
         }
     }
 
-    private String geSinkName() {
-        return enumMapOperation.getMapSinkPrefix() + "(" + mapName + ')';
+    private ProcessorMetaSupplier buildProcessorMetaSupplier(MapSinkConfiguration<T, K, V> configuration) {
+        if (updateFn != null) {
+            return HazelcastWriters.updateMapSupplier(configuration);
+        } else if (mergeFn != null) {
+            return HazelcastWriters.mergeMapSupplier(configuration);
+        } else { // toValueFn != null
+            return HazelcastWriters.writeMapSupplier(configuration);
+        }
+    }
+
+    private String getSinkName() {
+        StringBuilder sb = new StringBuilder();
+        if (isRemote()) {
+            sb.append("remote");
+        }
+        if (updateFn != null) {
+            sb.append("MapWithUpdatingSink");
+        } else if (mergeFn != null) {
+            sb.append("MapWithMergingSink");
+        } else { // toValueFn != null
+            sb.append("MapSink");
+        }
+        sb.append('(')
+                .append(mapName)
+                .append(')');
+        sb.replace(0, 1, sb.substring(0, 1).toLowerCase(Locale.ROOT));
+        return sb.toString();
+    }
+
+
+    private boolean isRemote() {
+        return dataConnectionRef != null || clientConfig != null;
     }
 }
 

@@ -131,11 +131,11 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         Vertex src = dag.newVertex("src", () -> new TestProcessors.ListSource(items))
                 .localParallelism(1);
 
-        MapSinkConfiguration<Object, Object, Object> params = new MapSinkConfiguration<>(sinkName);
-        params.setToKeyFn(i -> i);
-        params.setToValueFn(i -> i);
+        MapSinkConfiguration<Object, Object, Object> sinkConfig = new MapSinkConfiguration<>(sinkName);
+        sinkConfig.setToKeyFn(i -> i);
+        sinkConfig.setToValueFn(i -> i);
 
-        Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP(params));
+        Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP(sinkConfig));
         dag.edge(between(src, sink));
 
         instance().getJet().newJob(dag).join();
