@@ -63,6 +63,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     @Override
     public UUID addMessageListener(@Nonnull MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        handleHazelcastInstanceAwareParams(listener);
         return addMessageListenerInternal(listener);
     }
 
