@@ -19,7 +19,6 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
@@ -78,14 +77,15 @@ public class MultiMapProxyImpl<K, V>
                         impl + " should be an instance of EntryListener");
             } else if (listenerConfig.getClassName() != null) {
                 try {
-                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
-                    listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
 
             if (listener != null) {
+                handleHazelcastInstanceAwareParams(listener);
+
                 if (listenerConfig.isLocal()) {
                     addLocalEntryListener(listener);
                 } else {
@@ -279,6 +279,7 @@ public class MultiMapProxyImpl<K, V>
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        handleHazelcastInstanceAwareParams(listener);
         return getService().addListener(name, listener, null, includeValue);
     }
 
