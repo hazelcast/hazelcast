@@ -107,6 +107,7 @@ class SqlResultImpl extends AbstractSqlResult {
 
     @Override
     public void close(@Nullable QueryException exception) {
+        // TODO: [sasha] use Job.cancel() here instead of injecting exception
         if (exception == null) {
             exception = QueryException.cancelledByUser();
         }

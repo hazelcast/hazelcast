@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -26,6 +28,7 @@ import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -48,7 +51,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initializeWithClient(1, null, null);
         sqlService = instance().getSql();
     }
 
@@ -457,6 +460,43 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
         sqlService.execute("DROP MAPPING target");
         assertThat(planCache(instance()).size()).isZero();
+    }
+
+    @Test
+    public void test_listRunningJobWithSqlSummary() {
+        createMapping("dest", Long.class, Long.class);
+        final String sql = "CREATE JOB job as SINK INTO dest SELECT v, v from table(generate_stream(1))";
+        sqlService.execute(sql);
+
+        // When
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+
+        // Then
+        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                jobSummary -> {
+                    assertThat(jobSummary.getSqlSummary()).isNotNull();
+                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                    assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+                });
+    }
+
+    @Test
+    public void test_listFinishedJobWithSqlSummary() {
+        createMapping("dest", Long.class, Long.class);
+        final String sql = "CREATE JOB job as SINK INTO dest SELECT v, v from table(generate_series(1, 2))";
+        sqlService.execute(sql);
+        instance().getJet().getJob("job").join();
+
+        // When
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+
+        // Then
+        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                jobSummary -> {
+                    assertThat(jobSummary.getSqlSummary()).isNotNull();
+                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                    assertEquals(Boolean.FALSE, jobSummary.getSqlSummary().isUnbounded());
+                });
     }
 
     private void createCompletedJob() {
