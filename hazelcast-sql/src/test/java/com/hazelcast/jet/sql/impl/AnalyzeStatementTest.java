@@ -21,6 +21,10 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,11 +34,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initializeWithClient(1, null, null);
     }
 
     @Test
@@ -240,6 +246,95 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 1L);
     }
 
+    @Test
+    public void test_listRunningAnalyzedQueryWithSqlSummary() {
+        final String query = "SELECT v from table(generate_stream(1))";
+        final String sql = "ANALYZE " + query;
+        sqlService.execute(sql);
+
+        // When
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+
+        // Then
+        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                jobSummary -> {
+                    assertThat(jobSummary.getSqlSummary()).isNotNull();
+                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                    assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+                    assertThat(jobSummary.isUserCancelled()).isFalse();
+                });
+    }
+
+    @Test
+    public void test_listFinishedAnalyzedQueryWithSqlSummary() {
+        final String query = "SELECT v from table(generate_series(1,2))";
+        final String sql = "ANALYZE " + query;
+        try (SqlResult result = sqlService.execute(sql)) {
+            // read fully to finish the query
+            result.stream().count();
+        }
+        Job job = awaitSingleRunningJob(instance());
+        assertJobStatusEventually(job, JobStatus.COMPLETED);
+
+        // When
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+
+        // Then
+        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                jobSummary -> {
+                    assertThat(jobSummary.getSqlSummary()).isNotNull();
+                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                    assertEquals(Boolean.FALSE, jobSummary.getSqlSummary().isUnbounded());
+                    assertThat(jobSummary.isUserCancelled()).isFalse();
+                });
+    }
+
+    @Test
+    public void test_listClosedAnalyzedQueryWithSqlSummary() {
+        // Given
+        final String query = "SELECT v from table(generate_stream(1))";
+        final String sql = "ANALYZE " + query;
+        SqlResult result = sqlService.execute(sql);
+        Job job = awaitSingleRunningJob(instance());
+        result.close();
+
+        assertJobStatusEventually(job, JobStatus.FAILED);
+
+        // When
+        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+
+        // Then
+        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                jobSummary -> {
+                    assertThat(jobSummary.getSqlSummary()).isNotNull();
+                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                    assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+                    assertThat(jobSummary.isUserCancelled()).isTrue();
+                });
+    }
+
+    @Test
+    public void test_closeCursor() {
+        // Given
+        String query = "SELECT v, v FROM TABLE(generate_stream(1))";
+        SqlResult result = instance().getSql().execute("ANALYZE " + query);
+        Job job = awaitSingleRunningJob(instance());
+        Job jobByIdBeforeTermination = instance().getJet().getJob(job.getId());
+
+        // when
+        result.stream().findFirst();  // not necessary
+        result.close();
+
+        // then
+        // original job
+        joinAndExpectUserCancellation(job);
+        joinAndExpectUserCancellation(jobByIdBeforeTermination);
+
+        // job obtained by id
+        Job jobById = instance().getJet().getJob(job.getId());
+        joinAndExpectUserCancellation(jobById);
+    }
+
     private Job runQuery() {
         // Given
         String query = "SELECT v, v FROM TABLE(generate_stream(1))";
@@ -252,7 +347,6 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                         j.getConfig().getArgument("__sql.queryText"),
                         "ANALYZE " + query
                 ))
-                .filter(j -> !j.getStatus().isTerminal())
                 .findFirst()
                 .orElse(null);
 
@@ -274,5 +368,10 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .orElse(null);
         assertNotNull(job);
         assertFalse(job.isLightJob());
+    }
+
+    private static void joinAndExpectUserCancellation(Job job) {
+        assertThatThrownBy(job::join).isInstanceOf(CancellationByUserException.class);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 }

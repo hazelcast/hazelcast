@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.impl.AutoCloseableTraversers;
 import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -28,6 +29,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
+import java.sql.Connection;
 import java.util.List;
 
 /**
@@ -48,12 +50,10 @@ public class JdbcJoinFullScanProcessorSupplier
     public JdbcJoinFullScanProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
+            @Nonnull List<FunctionEx<Object, ?>> converters,
             @Nonnull JetJoinInfo joinInfo,
             List<Expression<?>> projections) {
-        super(dataConnectionName, query, joinInfo, projections);
-        this.query = query;
-        this.joinInfo = joinInfo;
-        this.projections = projections;
+        super(dataConnectionName, query, converters, joinInfo, projections);
     }
 
     protected AutoCloseableTraverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
@@ -63,10 +63,12 @@ public class JdbcJoinFullScanProcessorSupplier
 
     private FullScanResultSetIterator<JetSqlRow> joinRow(JetSqlRow leftRow) {
         // Full scan : Select * from the table and iterate over the ResulSet
+        Connection connection = dataConnection.getConnection();
+        TypeResolver typeResolver = JdbcSqlConnector.typeResolver(connection);
         return new FullScanResultSetIterator<>(
-                dataConnection.getConnection(),
+                connection,
                 query,
-                new FullScanRowMapper(expressionEvalContext, projections, joinInfo, leftRow),
+                new FullScanRowMapper(expressionEvalContext, typeResolver, converters, projections, joinInfo, leftRow),
                 new FullScanEmptyResultSetMapper(projections, joinInfo, leftRow)
         );
     }

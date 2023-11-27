@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.mssql;
+package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
-import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcRightJoinTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
-@Ignore
-@Category({NightlyTest.class})
-public class MSSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
+@Category(NightlyTest.class)
+public class OracleJdbcRightJoinTest extends JdbcRightJoinTest {
 
-    public MSSQLGenericMapStoreIntegrationTest() {
-        setPrefix("mssql_");
-    }
-
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        initializeBeforeClass(new MSSQLDatabaseProvider());
+        initialize(new OracleDatabaseProvider());
     }
 }

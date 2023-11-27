@@ -99,8 +99,8 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT name FROM people WHERE COALESCE(nullable_column, nullable_column_reverse) = 'not null reverse'",
 
                 // Conversions
-                "SELECT name FROM people WHERE CAST(age AS VARCHAR) = '30'",
-                "SELECT name FROM people WHERE CAST(age AS VARCHAR) = 'not a number' or age = 30",
+                "SELECT name FROM people WHERE CAST(age AS VARCHAR(100)) = '30'",
+                "SELECT name FROM people WHERE CAST(age AS VARCHAR(100)) = 'not a number' or age = 30",
 
                 // String functions
                 "SELECT name FROM people WHERE 'Hello '||name = 'Hello John Doe'",
@@ -135,9 +135,9 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "nullable_column_reverse VARCHAR(100)"
         );
 
-        executeJdbc("INSERT INTO " + tableName + " VALUES (1, 'John Doe', 30, '{\"value\":42}', 1, 1, 0, " +
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES (1, 'John Doe', 30, '{\"value\":42}', 1, 1, 0, " +
                 "1, null, 'not null reverse')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES (2, 'Jane Doe', 35, '{\"value\":0}', 0, 0, 1, " +
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES (2, 'Jane Doe', 35, '{\"value\":0}', 0, 0, 1, " +
                 "1, 'not null', null)");
     }
 

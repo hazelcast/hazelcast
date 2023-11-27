@@ -23,7 +23,9 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.apache.calcite.sql.dialect.MssqlSqlDialect;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
+import org.apache.calcite.sql.dialect.OracleSqlDialect;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
+
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -44,6 +46,7 @@ final class SupportedDatabases {
         SUPPORTED_DATABASE_NAMES.add("POSTGRESQL");
         SUPPORTED_DATABASE_NAMES.add("H2");
         SUPPORTED_DATABASE_NAMES.add("MICROSOFT SQL SERVER");
+        SUPPORTED_DATABASE_NAMES.add("ORACLE");
     }
 
     private SupportedDatabases() {
@@ -75,6 +78,7 @@ final class SupportedDatabases {
         return dialect instanceof H2SqlDialect ||
                dialect instanceof MssqlSqlDialect ||
                dialect instanceof MysqlSqlDialect ||
+               dialect instanceof OracleSqlDialect ||
                dialect instanceof PostgresqlSqlDialect;
     }
 }

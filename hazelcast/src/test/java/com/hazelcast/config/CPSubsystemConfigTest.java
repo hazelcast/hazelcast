@@ -74,4 +74,25 @@ public class CPSubsystemConfigTest extends HazelcastTestSupport {
         config.setCPMapConfigs(mapConfigs);
         assertEquals(mapConfigs, config.getCpMapConfigs());
     }
+
+    @Test
+    public void testCPMapLimit_Default() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        assertEquals(CPSubsystemConfig.DEFAULT_CP_MAP_LIMIT, config.getCPMapLimit());
+    }
+
+    @Test
+    public void testCPMapLimit_NonPositive() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        Throwable t = assertThrows(IllegalArgumentException.class, () -> config.setCPMapLimit(0));
+        assertEquals("cpMapLimit is 0 but must be > 0", t.getMessage());
+    }
+
+    @Test
+    public void testCPMapLimit_Positive() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        int expected = 100;
+        config.setCPMapLimit(100);
+        assertEquals(expected, config.getCPMapLimit());
+    }
 }

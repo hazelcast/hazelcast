@@ -84,7 +84,6 @@ import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.String.format;
 import static java.nio.channels.FileChannel.open;
 import static java.nio.file.FileVisitResult.CONTINUE;
@@ -125,7 +124,7 @@ public final class IOUtil {
         if (bb.hasRemaining()) {
             bb.compact();
         } else {
-            upcast(bb).clear();
+            bb.clear();
         }
     }
 
@@ -374,7 +373,7 @@ public final class IOUtil {
         int n = Math.min(src.remaining(), dst.remaining());
         int srcPosition = src.position();
         dst.put(src.array(), srcPosition, n);
-        upcast(src).position(srcPosition + n);
+        src.position(srcPosition + n);
         return n;
     }
 
@@ -398,7 +397,7 @@ public final class IOUtil {
         int n = Math.min(src.remaining(), dst.remaining());
         int dstPosition = dst.position();
         src.get(dst.array(), dstPosition, n);
-        upcast(dst).position(dstPosition + n);
+        dst.position(dstPosition + n);
         return n;
     }
 

@@ -84,8 +84,9 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalSchemaAndTableName() throws Exception {
-        executeJdbc("CREATE SCHEMA schema1");
-        createTable("schema1." + tableName);
+        String schemaName = "schema1";
+        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
+        createTableNoQuote(quote(schemaName, tableName));
 
         String mappingName = "mapping_" + randomName();
         createMapping("\"schema1\".\"" + tableName + '\"', mappingName);
@@ -108,7 +109,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalTableNameTooManyComponents() throws Exception {
-        createTable(tableName);
+        createTable(tableName); // TODO this line can be removed?
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -125,7 +126,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalTableNameTooManyComponentsNoQuotes() throws Exception {
-        createTable(tableName);
+        createTable(tableName); // TODO this line can be removed?
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -236,7 +237,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("CREATE TABLE " + tableName + " (id INT PRIMARY KEY, name VARCHAR(10))");
+            stmt.execute("CREATE TABLE " + quote(tableName) + " (" + quote("id") + " INT PRIMARY KEY, " + quote("name") + " VARCHAR(10))");
         }
 
         assertThatThrownBy(() ->
@@ -268,7 +269,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
+                // Oracle converts INT to DECIMAL, doesn't really matter, it is still not convertible
+                .hasMessageMatching("Type BOOLEAN of field id does not match db type (INTEGER|DECIMAL)");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -277,8 +279,9 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void when_createMappingWithImplicitFieldTypesDefinition_then_orderIsPreserved() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTable(tableName, "id VARCHAR(10) PRIMARY KEY", "name VARCHAR(100)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES('0', 'name-0')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES('1', 'name-1')");
 
         execute("CREATE MAPPING " + tableName
                 + " DATA CONNECTION " + TEST_DATABASE_REF
@@ -287,7 +290,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // If you change LinkedHashMap -> HashMap at JdbcSqlConnector:159, it will fail.
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName,
-                asList(new Row(0, "name-0"), new Row(1, "name-1"))
+                asList(new Row("0", "name-0"), new Row("1", "name-1"))
         );
     }
 

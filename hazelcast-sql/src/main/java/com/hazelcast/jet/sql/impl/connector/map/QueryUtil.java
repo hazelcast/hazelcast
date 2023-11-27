@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.services.NodeAware;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -282,14 +283,14 @@ public final class QueryUtil {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
             out.writeObject(arguments);
-            out.writeObject(subject);
+            ImdgUtil.writeSubject(out, subject);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
             arguments = in.readObject();
-            subject = in.readObject();
+            subject = ImdgUtil.readSubject(in);
         }
     }
 }

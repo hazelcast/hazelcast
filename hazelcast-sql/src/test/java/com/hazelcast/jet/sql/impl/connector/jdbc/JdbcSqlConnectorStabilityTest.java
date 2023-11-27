@@ -28,7 +28,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
-    private static String tableName;
+    protected static String tableName;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
