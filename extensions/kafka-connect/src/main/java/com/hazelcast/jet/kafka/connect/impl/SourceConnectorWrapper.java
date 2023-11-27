@@ -144,7 +144,6 @@ public class SourceConnectorWrapper {
         return taskRunner.poll();
 
         } catch (Exception e) {
-            e.printStackTrace();
             throw rethrow(e);
         }
     }
