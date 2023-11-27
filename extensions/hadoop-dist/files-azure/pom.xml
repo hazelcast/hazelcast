@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-hadoop-dist</artifactId>
-        <version>5.3.5-DM-SNAPSHOT</version>
+        <version>5.3.6-DM-SNAPSHOT</version>
     </parent>
 
     <build>

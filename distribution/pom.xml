@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.3.5-DM-SNAPSHOT</version>
+        <version>5.3.6-DM-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
