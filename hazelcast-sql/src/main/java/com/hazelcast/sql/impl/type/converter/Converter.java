@@ -72,25 +72,25 @@ public abstract class Converter implements Serializable {
     protected static final int ID_ROW = 25;
 
     private final int id;
-    private final QueryDataTypeFamily typeFamily;
+    private final transient QueryDataTypeFamily typeFamily;
 
-    private final boolean convertToBoolean;
-    private final boolean convertToTinyint;
-    private final boolean convertToSmallint;
-    private final boolean convertToInt;
-    private final boolean convertToBigint;
-    private final boolean convertToDecimal;
-    private final boolean convertToReal;
-    private final boolean convertToDouble;
-    private final boolean convertToVarchar;
-    private final boolean convertToDate;
-    private final boolean convertToTime;
-    private final boolean convertToTimestamp;
-    private final boolean convertToTimestampWithTimezone;
-    private final boolean convertToObject;
-    private final boolean convertToMap;
-    private final boolean convertToJson;
-    private final boolean convertToRow;
+    private final transient boolean convertToBoolean;
+    private final transient boolean convertToTinyint;
+    private final transient boolean convertToSmallint;
+    private final transient boolean convertToInt;
+    private final transient boolean convertToBigint;
+    private final transient boolean convertToDecimal;
+    private final transient boolean convertToReal;
+    private final transient boolean convertToDouble;
+    private final transient boolean convertToVarchar;
+    private final transient boolean convertToDate;
+    private final transient boolean convertToTime;
+    private final transient boolean convertToTimestamp;
+    private final transient boolean convertToTimestampWithTimezone;
+    private final transient boolean convertToObject;
+    private final transient boolean convertToMap;
+    private final transient boolean convertToJson;
+    private final transient boolean convertToRow;
 
     protected Converter(int id, QueryDataTypeFamily typeFamily) {
         this.id = id;
