@@ -548,7 +548,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
      *      `ClassCastException`</a>
      */
     @Test
-    public void testIssue123() {
+    public void testIssue26036() {
         assertFalse(map.values(new AlwaysTruePagingPredicate<>()).isEmpty());
     }
 
