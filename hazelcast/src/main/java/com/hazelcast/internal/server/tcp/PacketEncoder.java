@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 /**
  * A {@link OutboundHandler} that for member to member communication.
@@ -74,7 +73,7 @@ public class PacketEncoder extends OutboundHandler<Supplier<Packet>, ByteBuffer>
                 }
             }
         } finally {
-            upcast(dst).flip();
+            dst.flip();
         }
     }
 }
