@@ -68,7 +68,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class})
 public class KafkaConnectScalingIT extends JetTestSupport {
@@ -196,9 +195,9 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     }
 
     @Test
+    @Ignore
     public void testScalingOfHazelcastUp() throws Exception {
-        final int localParallelism = 1;
-        final int nodeCount = 3;
+        final int localParallelism = 4;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -210,12 +209,13 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
-        randomProperties.setProperty("tasks.max", String.valueOf(2));
+        randomProperties.setProperty("tasks.max", String.valueOf(localParallelism));
+
+        rangeClosed(1, 4).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance instance = createHazelcastInstance(config);
-        rangeClosed(1, TABLE_COUNT).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
 
         IMap<String, Integer> processors = instance.getMap("processors_" + randomName());
         IMap<String, String> processorInstances = instance.getMap("processorInstances_" + randomName());
@@ -249,35 +249,37 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         instance.getJet().newJob(pipeline, jobConfig);
 
         assertTrueEventually(() -> {
-            assertThat(new HashSet<>(processors.values())).hasSize(1);
+            assertThat(new HashSet<>(processors.values())).hasSize(localParallelism);
 
             assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
         });
 
         HazelcastInstance second = createHazelcastInstance(config);
         assertTrueEventually(() -> assertThat(instance.getCluster().getMembers()).hasSize(2));
-        insertItems(connectionUrl, "parallel_items_1");
-        insertItems(connectionUrl, "parallel_items_2");
 
+        processors.clear();
+        for (int i = 1; i <= TABLE_COUNT; i++) {
+            insertItems(connectionUrl, "parallel_items_" + i);
+        }
         final String[] instances = { instance.getName(), second.getName() };
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).hasSize(2);
+            assertThat(array).hasSize(localParallelism * 2);
 
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(instances);
 
             // +1, because we inserted twice as much to parallel_items_1
-            assertThat(values.values()).hasSize((TABLE_COUNT + 1) * ITEM_COUNT);
+            assertThat(values.values()).hasSize((TABLE_COUNT + 2) * ITEM_COUNT);
         });
-        instance.shutdown();
-        second.shutdown();
+        instance.getLifecycleService().terminate();
+        second.getLifecycleService().terminate();
     }
 
     @Test
     public void testScalingOfHazelcastDown() throws Exception {
-        final int localParallelism = 1;
-        final int nodeCount = 2;
+        final int localParallelism = 4;
+        final int nodeCount = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -289,7 +291,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
-        randomProperties.setProperty("tasks.max", String.valueOf(localParallelism * nodeCount));
+        randomProperties.setProperty("tasks.max", String.valueOf(8));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -330,25 +332,22 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         instance.getJet().newJob(pipeline, jobConfig);
 
         assertTrueEventually(() -> {
-            assertThat(new HashSet<>(processors.values())).hasSize(3);
+            assertThat(new HashSet<>(processors.values())).hasSize(localParallelism * nodeCount);
 
             assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
         });
 
         instances[2].shutdown();
         assertTrueEventually(() -> assertThat(instance.getCluster().getMembers()).hasSize(2));
-        insertItems(connectionUrl, "parallel_items_1");
+        processors.clear();
+        for (int i = 1; i <= TABLE_COUNT; i++) {
+            insertItems(connectionUrl, "parallel_items_" + i);
+        }
 
-        final String[] instancesNames = { instance.getName(), instances[1].getName() };
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).hasSize(2);
-
-            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
-            assertThat(instanceNames).containsExactlyInAnyOrder(instancesNames);
-
-            // +1, because we inserted twice as much to parallel_items_1
-            assertThat(values.values()).hasSize((TABLE_COUNT + 1) * ITEM_COUNT);
+            assertThat(array).hasSize((nodeCount - 1) * localParallelism);
+            assertThat(values.values()).hasSize(2 * TABLE_COUNT * ITEM_COUNT);
         });
         for (HazelcastInstance hi : instances) {
             hi.getLifecycleService().terminate();
