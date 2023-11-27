@@ -31,13 +31,15 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -63,8 +65,12 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(NightlyTest.class)
+@Category(QuickTest.class)
+//@Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport {
+    @ClassRule
+    public static Timeout globalTimeout = Timeout.seconds(60 * 60);
+
     protected static final int INSTANCE_COUNT = 5;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
     protected static final String JOB_NAME = "s2s_join";
@@ -197,8 +203,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
-//    @Ignore
-    @Test(timeout = 1_200_000L)
+    @Test
     public void stressTest() throws Exception {
         // https://hazelcast.atlassian.net/browse/HZ-3187
         if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
@@ -307,7 +312,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 assertEquals(itemsSank, eventsPerSink * sink);
                 sqlService.execute(queryBuilder.toString());
                 logger.info("Items sank " + itemsSank);
-                Thread.sleep(500L);
+                sleepMillis(500);
             }
         } catch (Throwable e) {
             logger.warning(null, e);
