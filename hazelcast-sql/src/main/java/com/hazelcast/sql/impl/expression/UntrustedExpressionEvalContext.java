@@ -40,7 +40,7 @@ public class UntrustedExpressionEvalContext
     private final transient InternalSerializationService serializationService;
     private final transient NodeEngine nodeEngine;
 
-    private UntrustedExpressionEvalContext(
+    public UntrustedExpressionEvalContext(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine) {
