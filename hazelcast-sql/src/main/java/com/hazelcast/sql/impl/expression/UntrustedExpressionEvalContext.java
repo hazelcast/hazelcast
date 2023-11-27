@@ -91,7 +91,7 @@ public class UntrustedExpressionEvalContext
 
     @Override
     public void checkPermission(Permission permission) {
-        if(nodeEngine.getConfig().getSecurityConfig().isEnabled()) {
+        if (nodeEngine.getConfig().getSecurityConfig().isEnabled()) {
             throw new SecurityException("Unable to employ sensitive functions in untrusted invocations.");
         }
     }
