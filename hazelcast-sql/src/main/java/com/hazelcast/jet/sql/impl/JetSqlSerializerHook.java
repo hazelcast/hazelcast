@@ -109,8 +109,8 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.Type.TypeField;
 import com.hazelcast.sql.impl.schema.view.View;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeSerializer;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
@@ -357,7 +357,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         ArrayDataSerializableFactory mapDataFactory = (ArrayDataSerializableFactory) factories.get(SqlDataSerializerHook.F_ID);
 
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[SqlDataSerializerHook.LEN];
-        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = QueryDataType::new;
+        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = () -> QueryDataTypeSerializer.INSTANCE;
         // SqlDataSerializerHook.QUERY_ID
         constructors[SqlDataSerializerHook.MAPPING] = Mapping::new;
         constructors[SqlDataSerializerHook.MAPPING_FIELD] = MappingField::new;

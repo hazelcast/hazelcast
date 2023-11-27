@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 /**
  * DataSerializable is a serialization method alternative to standard Java
@@ -58,22 +57,4 @@ public interface DataSerializable {
      *                     input stream has been closed.
      */
     void readData(ObjectDataInput in) throws IOException;
-
-    /**
-     * Replaces the object read from the stream before it is returned to the caller.
-     * It can be used to maintain the uniqueness of an object across serialization.
-     * For serializable singletons, however, there is a better way to achieve this:
-     * implement {@link IdentifiedDataSerializable} and in the corresponding {@link
-     * DataSerializableFactory}, return {@code MySingleton.getInstance()}.
-     * <p>
-     * This method is the {@code DataSerializable} equivalent of the Java {@link
-     * Serializable}'s {@code readResolve()} method. {@code DataSerializable} lacks
-     * an equivalent {@code writeReplace()} method since it has a simple workaround:
-     * call {@code targetObject.writeData(out)} in {@link #writeData}.
-     *
-     * @since 5.4
-     */
-    default DataSerializable readReplace() {
-        return this;
-    }
 }

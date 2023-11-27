@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
@@ -164,8 +165,12 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                 in.readByte();
             }
 
-            ds.readData(in);
-            return ds.readReplace();
+            if (ds instanceof IdentifiedDataSerializer) {
+                return ((IdentifiedDataSerializer<?>) ds).read(in);
+            } else {
+                ds.readData(in);
+                return ds;
+            }
         } catch (Exception e) {
             e = tryClarifyNoSuchMethodException(in.getClassLoader(), className, e);
             throw rethrowReadException(id, factoryId, className, e);
