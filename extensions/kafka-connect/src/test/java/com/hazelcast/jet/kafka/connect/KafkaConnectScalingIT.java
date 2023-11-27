@@ -32,7 +32,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -83,10 +83,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectScalingIT.class);
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
-    @SuppressWarnings("resource")
-    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
-            .withUsername(USERNAME).withPassword(PASSWORD)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
+    private static MySQLContainer<?> mysql;
 
     private static final int ITEM_COUNT = 1_000;
 
@@ -96,16 +93,14 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     @BeforeClass
     public static void setUpDocker() {
         assumeDockerEnabled();
+    }
+    @Before
+    public void setUpContainer() {
+        mysql = new MySQLContainer<>("mysql:8.0.33")
+                .withUsername(USERNAME).withPassword(PASSWORD)
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
         mysql.start();
     }
-
-    @AfterClass
-    public static void afterAll() {
-        if (mysql != null) {
-            mysql.stop();
-        }
-    }
-
     @After
     public void removeTables() {
         for (int i = 1; i <= TABLE_COUNT; i++) {
@@ -118,6 +113,15 @@ public class KafkaConnectScalingIT extends JetTestSupport {
             }
         }
     }
+
+    @After
+    public void after() {
+        if (mysql != null) {
+            mysql.stop();
+            mysql = null;
+        }
+    }
+
 
     @Test
     public void testScaling() throws Exception {
@@ -195,7 +199,6 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     }
 
     @Test
-    @Ignore
     public void testScalingOfHazelcastUp() throws Exception {
         final int localParallelism = 4;
         Properties randomProperties = new Properties();
@@ -211,7 +214,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("table.poll.interval.ms", "5000");
         randomProperties.setProperty("tasks.max", String.valueOf(localParallelism));
 
-        rangeClosed(1, 4).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
+        rangeClosed(1, TABLE_COUNT).forEach(i -> createTableAndFill(connectionUrl, "parallel_items_" + i));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -246,7 +249,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
-        instance.getJet().newJob(pipeline, jobConfig);
+        var job = instance.getJet().newJob(pipeline, jobConfig);
 
         assertTrueEventually(() -> {
             assertThat(new HashSet<>(processors.values())).hasSize(localParallelism);
@@ -272,6 +275,11 @@ public class KafkaConnectScalingIT extends JetTestSupport {
             // +1, because we inserted twice as much to parallel_items_1
             assertThat(values.values()).hasSize((TABLE_COUNT + 2) * ITEM_COUNT);
         });
+        try {
+            job.cancel();
+        } catch (Exception ignored) {
+        }
+        assertTrueEventually(() -> assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED));
         instance.getLifecycleService().terminate();
         second.getLifecycleService().terminate();
     }
@@ -291,7 +299,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", TESTED_TABLES);
         randomProperties.setProperty("table.poll.interval.ms", "5000");
-        randomProperties.setProperty("tasks.max", String.valueOf(8));
+        randomProperties.setProperty("tasks.max", String.valueOf(localParallelism));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -329,7 +337,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
-        instance.getJet().newJob(pipeline, jobConfig);
+        var job = instance.getJet().newJob(pipeline, jobConfig);
 
         assertTrueEventually(() -> {
             assertThat(new HashSet<>(processors.values())).hasSize(localParallelism * nodeCount);
@@ -349,6 +357,11 @@ public class KafkaConnectScalingIT extends JetTestSupport {
             assertThat(array).hasSize((nodeCount - 1) * localParallelism);
             assertThat(values.values()).hasSize(2 * TABLE_COUNT * ITEM_COUNT);
         });
+        try {
+            job.cancel();
+        } catch (Exception ignored) {
+        }
+        assertTrueEventually(() -> assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED));
         for (HazelcastInstance hi : instances) {
             hi.getLifecycleService().terminate();
         }
