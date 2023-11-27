@@ -55,7 +55,7 @@ public class SqlPrunedMemberLeftTest extends JetTestSupport {
     private static final int CONSTANT = 2;
     private static final String MAP_NAME = "map";
 
-    private HazelcastInstance hz[];
+    private HazelcastInstance[] hz;
     private HazelcastInstance client;
     private NodeEngine masterNodeEngine;
     private Map<Address, HazelcastInstance> addrToInstanceMap;
