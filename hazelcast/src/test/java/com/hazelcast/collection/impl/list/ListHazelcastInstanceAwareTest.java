@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ListHazelcastInstanceAwareTest extends HazelcastTestSupport {
-    CompletableFuture<HazelcastInstance> hazelcastInstanceFuture;
+    private CompletableFuture<HazelcastInstance> hazelcastInstanceFuture;
 
     @Before
     public void setUp() {

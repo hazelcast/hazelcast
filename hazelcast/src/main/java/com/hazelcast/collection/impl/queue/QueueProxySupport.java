@@ -33,7 +33,6 @@ import com.hazelcast.collection.impl.queue.operations.RemoveOperation;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
