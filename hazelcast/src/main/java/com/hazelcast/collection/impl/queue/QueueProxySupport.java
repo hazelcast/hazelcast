@@ -34,7 +34,6 @@ import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
@@ -71,21 +70,18 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
-        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
             if (listener == null && itemListenerConfig.getClassName() != null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(classLoader,
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
                             itemListenerConfig.getClassName());
                 } catch (Exception e) {
                     throw rethrow(e);
                 }
             }
             if (listener != null) {
-                if (listener instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-                }
+                handleHazelcastInstanceAwareParams(listener);
                 addItemListener(listener, itemListenerConfig.isIncludeValue());
             }
         }
@@ -216,9 +212,7 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     UUID addItemListener(@Nonnull ItemListener<E> listener,
                            boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-        }
+        handleHazelcastInstanceAwareParams(listener);
         return getService().addItemListener(name, listener, includeValue);
     }
 
