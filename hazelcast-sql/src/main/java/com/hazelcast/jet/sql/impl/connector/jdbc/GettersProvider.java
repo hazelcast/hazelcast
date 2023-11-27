@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.sql.ResultSet;
 import java.time.LocalDate;
@@ -27,61 +27,46 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
+import static com.hazelcast.sql.impl.type.QueryDataType.DATE;
+import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+import static com.hazelcast.sql.impl.type.QueryDataType.TINYINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 final class GettersProvider {
 
-    private static final Map<String, BiFunctionEx<ResultSet, Integer, ?>> DEFAULT_GETTERS = new HashMap<>();
-    private static final Map<String, Map<String, BiFunctionEx<ResultSet, Integer, ?>>> GETTERS_BY_DATABASE
-            = new HashMap<>();
+    public static final Map<QueryDataType, BiFunctionEx<ResultSet, Integer, ?>> GETTERS = new HashMap<>();
 
     static {
-        DEFAULT_GETTERS.put("BOOLEAN", ResultSet::getBoolean);
-        DEFAULT_GETTERS.put("BOOL", ResultSet::getBoolean);
+        GETTERS.put(BOOLEAN, ResultSet::getBoolean);
+        GETTERS.put(TINYINT, ResultSet::getByte);
+        GETTERS.put(SMALLINT, ResultSet::getShort);
+        GETTERS.put(INT, ResultSet::getInt);
+        GETTERS.put(BIGINT, ResultSet::getLong);
 
-        DEFAULT_GETTERS.put("TINYINT", ResultSet::getByte);
+        GETTERS.put(VARCHAR, ResultSet::getString);
 
-        DEFAULT_GETTERS.put("SMALLINT", ResultSet::getShort);
-        DEFAULT_GETTERS.put("INT2", ResultSet::getShort);
+        GETTERS.put(REAL, ResultSet::getFloat);
+        GETTERS.put(DOUBLE, ResultSet::getDouble);
+        GETTERS.put(DECIMAL, ResultSet::getBigDecimal);
 
-        DEFAULT_GETTERS.put("INT", ResultSet::getInt);
-        DEFAULT_GETTERS.put("INT4", ResultSet::getInt);
-        DEFAULT_GETTERS.put("INTEGER", ResultSet::getInt);
-
-        DEFAULT_GETTERS.put("INT8", ResultSet::getLong);
-        DEFAULT_GETTERS.put("BIGINT", ResultSet::getLong);
-
-        DEFAULT_GETTERS.put("VARCHAR", ResultSet::getString);
-        DEFAULT_GETTERS.put("CHARACTER VARYING", ResultSet::getString);
-        DEFAULT_GETTERS.put("TEXT", ResultSet::getString);
-
-        DEFAULT_GETTERS.put("REAL", ResultSet::getFloat);
-        DEFAULT_GETTERS.put("FLOAT", ResultSet::getFloat);
-        DEFAULT_GETTERS.put("FLOAT4", ResultSet::getFloat);
-
-        DEFAULT_GETTERS.put("DOUBLE", ResultSet::getDouble);
-        DEFAULT_GETTERS.put("DOUBLE PRECISION", ResultSet::getDouble);
-
-        DEFAULT_GETTERS.put("DECIMAL", ResultSet::getBigDecimal);
-        DEFAULT_GETTERS.put("NUMERIC", ResultSet::getBigDecimal);
-
-        DEFAULT_GETTERS.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
-        DEFAULT_GETTERS.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
-        DEFAULT_GETTERS.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        DEFAULT_GETTERS.put("TIMESTAMP_WITH_TIMEZONE",
+        GETTERS.put(DATE, (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
+        GETTERS.put(TIME, (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
+        GETTERS.put(TIMESTAMP, (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
+        GETTERS.put(TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
                 (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-
-        // Override some getters for MS SQL
-        Map<String, BiFunctionEx<ResultSet, Integer, ?>> msSql = new HashMap<>(DEFAULT_GETTERS);
-        msSql.put("FLOAT", ResultSet::getDouble);
-        msSql.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        msSql.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-        GETTERS_BY_DATABASE.put(HazelcastMSSQLDialect.class.getSimpleName(), msSql);
     }
 
     private GettersProvider() {
     }
 
-    public static Map<String, BiFunctionEx<ResultSet, Integer, ?>> getGetters(String dialect) {
-        return GETTERS_BY_DATABASE.getOrDefault(dialect, DEFAULT_GETTERS);
-    }
 }

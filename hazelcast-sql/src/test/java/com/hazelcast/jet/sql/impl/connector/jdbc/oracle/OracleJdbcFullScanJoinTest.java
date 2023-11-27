@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.mariadb;
+package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
-import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcFullScanJoinTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MariaDBDatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-@Category({NightlyTest.class})
-public class MariaDBGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
+@Category(NightlyTest.class)
+public class OracleJdbcFullScanJoinTest extends JdbcFullScanJoinTest {
 
-    public MariaDBGenericMapStoreIntegrationTest() {
-        setPrefix("maria_");
-    }
-
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        initializeBeforeClass(new MariaDBDatabaseProvider());
+        initialize(new OracleDatabaseProvider());
     }
 }

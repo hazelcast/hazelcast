@@ -70,7 +70,7 @@ public class JdbcParametersTest {
                                                           .build();
 
         Integer key = 10;
-        JdbcParameters jdbcParameters = JdbcParameters.convert(key, genericRecord, columnMetadata, "id");
+        JdbcParameters jdbcParameters = JdbcParameters.convert(key, genericRecord, columnMetadata, "id", false);
 
         Object[] expected = {10, "name_value", "address_value"};
         assertThat(jdbcParameters.getParams()).isEqualTo(expected);

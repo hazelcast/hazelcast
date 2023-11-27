@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.postgres;
+package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.mapstore.GenericMapStoreTest;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
-import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
-@Category(NightlyTest.class)
-public class PostgresGenericMapStoreTest extends GenericMapStoreTest {
+public interface TypeResolver {
 
-    @BeforeClass
-    public static void beforeClass()  {
-        initialize(new PostgresDatabaseProvider());
-    }
+    QueryDataType resolveType(String columnTypeName, int precision, int scale);
 
 }

@@ -942,8 +942,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     private Multiset<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
         SqlStatement query = new SqlStatement(sql);
-        // with some bugs the queries could hang, prevent long waiting in such cases
-        query.setTimeoutMillis(10_000);
+        // with some bugs the queries could hang, however the CI tests sometimes are very slow
+        query.setTimeoutMillis(60_000);
         query.setParameters(params);
 
         Multiset<Integer> keys = HashMultiset.create();
