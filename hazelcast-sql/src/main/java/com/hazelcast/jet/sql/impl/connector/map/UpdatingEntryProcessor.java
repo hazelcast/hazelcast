@@ -215,7 +215,12 @@ public final class UpdatingEntryProcessor
         if (securityContext != null) {
             this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.getNodeEngine());
         } else {
-            this.evalContext = ExpressionEvalContext.createContext(arguments, node.getNodeEngine(), iss, NoOpSqlSecurityContext.INSTANCE);
+            this.evalContext = ExpressionEvalContext.createContext(
+                    arguments,
+                    node.getNodeEngine(),
+                    iss,
+                    NoOpSqlSecurityContext.INSTANCE
+            );
         }
         this.extractors = Extractors.newBuilder(iss).build();
     }
