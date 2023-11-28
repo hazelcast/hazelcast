@@ -1283,9 +1283,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     public Record removeByKey(Data key, boolean backup) {
         Record record = getRecord(key);
-        mutationObserver.onRemoveRecord(key, record, backup);
-        removeKeyFromExpirySystem(key);
-        storage.removeRecord(key, record);
+        removeRecord0(key, record, backup);
         return record;
     }
 
