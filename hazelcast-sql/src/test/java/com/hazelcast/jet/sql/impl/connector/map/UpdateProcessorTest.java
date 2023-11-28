@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
+import com.hazelcast.sql.impl.expression.service.GetDdlFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -43,6 +44,7 @@ import javax.security.auth.Subject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
@@ -51,6 +53,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -67,7 +70,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initializeWithClient(2, null, null);
     }
 
     @Before
@@ -138,6 +141,50 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 .comparingOnlyFields("rowProjectorSupplier", "valueProjectorSupplier", "arguments", "subject")
                 .ignoringFields("subject.pubCredentials", "subject.privCredentials")
                 .isEqualTo(processor);
+    }
+
+    @Test
+    public void when_manualUpdatingEntryProcessorWithGetDdlExpression_then_success() throws ExecutionException, InterruptedException {
+        var subject = new Subject(
+                false,
+                emptySet(),
+                emptySet(),
+                emptySet()
+        );
+
+        var fakeEvalExpression = mock(UntrustedExpressionEvalContext.class);
+        when(fakeEvalExpression.subject()).thenReturn(subject);
+        when(fakeEvalExpression.getSerializationService()).thenReturn(mock());
+
+        var table = partitionedTable(VARCHAR);
+        var processor = UpdatingEntryProcessor.supplier(
+                table,
+                List.of(VALUE),
+                singletonList(
+                        GetDdlFunction.create(
+                                ConstantExpression.create("relation", VARCHAR),
+                                ConstantExpression.create(MAP_NAME, VARCHAR),
+                                null
+                        )
+                )
+        ).get(fakeEvalExpression);
+
+        createMapping(MAP_NAME, Integer.class, String.class);
+        map.put(1, "data");
+        client().getMap(MAP_NAME).submitToKey(1, processor).toCompletableFuture().get();
+
+        assertThat(map).containsExactly(entry(1, "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"map\" EXTERNAL NAME \"map\" (\n"
+                + "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n"
+                + "  \"this\" VARCHAR EXTERNAL NAME \"this\"\n"
+                + ")\n"
+                + "TYPE \"IMap\"\n"
+                + "OBJECT TYPE \"IMap\"\n"
+                + "OPTIONS (\n"
+                + "  'keyFormat'='java',\n"
+                + "  'keyJavaClass'='java.lang.Integer',\n"
+                + "  'valueFormat'='java',\n"
+                + "  'valueJavaClass'='java.lang.String'\n"
+                + ")"));
     }
 
     private static PartitionedMapTable partitionedTable(QueryDataType valueType) {
