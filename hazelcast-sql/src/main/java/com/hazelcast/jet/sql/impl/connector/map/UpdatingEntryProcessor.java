@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -39,7 +38,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -211,17 +209,8 @@ public final class UpdatingEntryProcessor
             // already created. setSerializationService might be invoked multiple times.
             return;
         }
-        SecurityContext securityContext = node.securityContext;
-        if (securityContext != null) {
-            this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.getNodeEngine());
-        } else {
-            this.evalContext = ExpressionEvalContext.createContext(
-                    arguments,
-                    node.getNodeEngine(),
-                    iss,
-                    NoOpSqlSecurityContext.INSTANCE
-            );
-        }
+
+        this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.getNodeEngine());
         this.extractors = Extractors.newBuilder(iss).build();
     }
 }
