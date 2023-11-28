@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.config.JobConfig;
@@ -202,7 +203,8 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
             boolean shouldUseCoordinator,
             int arity,
             int... partitionedPredicateConstants) {
-        PartitionService partitionService = nodeEngine.getHazelcastInstance().getPartitionService();
+        HazelcastInstance hz = nodeEngine.getHazelcastInstance();
+        PartitionService partitionService = hz.getPartitionService();
         Map<Integer, Address> reversedPartitionAssignment = new HashMap<>();
         for (Map.Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
             for (int partitionId : entry.getValue()) {
@@ -224,7 +226,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         }
 
         if (shouldUseCoordinator) {
-            expectedMembersToParticipate.add(instance().getCluster().getLocalMember().getAddress());
+            expectedMembersToParticipate.add(hz.getCluster().getLocalMember().getAddress());
             expectedPartitionsToParticipate.add(partitionService.getPartition("").getPartitionId());
         }
 

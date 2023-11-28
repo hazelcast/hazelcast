@@ -56,7 +56,6 @@ public class SqlPrunedMemberLeftTest extends JetTestSupport {
     private static final String MAP_NAME = "map";
 
     private HazelcastInstance[] hz;
-    private HazelcastInstance client;
     private NodeEngine masterNodeEngine;
     private Map<Address, HazelcastInstance> addrToInstanceMap;
 
@@ -68,45 +67,45 @@ public class SqlPrunedMemberLeftTest extends JetTestSupport {
             hz[i] = createHazelcastInstance(regularInstanceConfig());
             addrToInstanceMap.put(hz[i].getCluster().getLocalMember().getAddress(), hz[i]);
         }
-        client = createHazelcastClient();
         masterNodeEngine = getNodeEngineImpl(hz[0]);
 
         prepareMap();
-        createMapping(client, MAP_NAME, Pojo.class, Integer.class);
+        createMapping(hz[0], MAP_NAME, Pojo.class, Integer.class);
     }
 
     @Test
     // https://hazelcast.atlassian.net/browse/HZ-2992
-    public void test() {
+    public void test_queryDoesNotTerminateWhenPrunedMemberLeavesCluster() {
         // Given
-        String query = "SELECT this FROM " + MAP_NAME + " WHERE f0 = " + CONSTANT;
-
-        HazelcastInstance prunedInstanceToTerminate = findPrunedInstance();
-
+        String query = "SELECT * FROM " + MAP_NAME + " WHERE f0 = " + CONSTANT;
+        HazelcastInstance prunedInstanceToTerminate = findPrunedAndNonPrunedInstance().f0();
+        HazelcastInstance nonPrunedInstance = findPrunedAndNonPrunedInstance().f1();
         int cnt = 0;
 
-        for (SqlRow row : client.getSql().execute(query)) {
-            // Shutdown chosen member before we read anything.
+        for (SqlRow row : nonPrunedInstance.getSql().execute(query)) {
+            // Shutdown chosen member after we read 1st entry.
             if (cnt == 0) {
-                prunedInstanceToTerminate.shutdown();
+                // When
+                prunedInstanceToTerminate.getLifecycleService().terminate();
             }
             ++cnt;
         }
+        // Then
         assertEquals(MAP_ENTRIES, cnt);
     }
 
-    private HazelcastInstance findPrunedInstance() {
+    private Tuple2<HazelcastInstance, HazelcastInstance> findPrunedAndNonPrunedInstance() {
         Tuple2<Set<Address>, Set<Integer>> expectedPartitionsAndParticipants =
-                calculateExpectedPartitions(masterNodeEngine, getPartitionAssignment(hz[0]), false, 1, CONSTANT);
-
-        assertNotNull(expectedPartitionsAndParticipants.f0());
-        assertEquals(1, expectedPartitionsAndParticipants.f0().size());
+                calculateExpectedPartitions(masterNodeEngine, getPartitionAssignment(hz[0]), true, 1, CONSTANT);
 
         Set<Address> addresses = new HashSet<>(addrToInstanceMap.keySet());
+        assertNotNull(expectedPartitionsAndParticipants.f0());
         assertTrue(addresses.removeAll(expectedPartitionsAndParticipants.f0()));
-        assertEquals(CLUSTER_SIZE - 1, addresses.size());
-
-        return addrToInstanceMap.get(addresses.iterator().next());
+        Address toRemove = addresses.iterator().next();
+        return Tuple2.tuple2(
+                addrToInstanceMap.get(toRemove),
+                addrToInstanceMap.get(expectedPartitionsAndParticipants.f0().iterator().next())
+        );
     }
 
     private void prepareMap() {
