@@ -658,7 +658,10 @@ class RaftGroupMembershipManager {
             CPGroupId groupId = null;
             int min = maxLeaderships;
             for (CPGroupSummary group : groups) {
-                for (CPMember member : group.members()) {
+                List<CPMember> groupMembers = new ArrayList<>(group.members());
+                // If the destination member is unavailable minimise the probability of using it next time
+                Collections.shuffle(groupMembers);
+                for (CPMember member : groupMembers) {
                     Collection<CPGroupId> g = leaderships.get(member);
                     if (g == null) {
                         continue;
