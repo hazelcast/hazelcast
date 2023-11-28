@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.internal.serialization.impl.compact.FixedSizeFieldsDTOSerializer;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -65,12 +64,6 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         Config config = smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), "3");
         config.getMapConfig("test").getPartitioningAttributeConfigs()
                 .add(new PartitioningAttributeConfig("org"));
-        config.getMapConfig("test2").getPartitioningAttributeConfigs()
-                .add(new PartitioningAttributeConfig("d"));
-
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .addSerializer(new FixedSizeFieldsDTOSerializer());
 
         config.getSerializationConfig()
                 .addDataSerializableFactoryClass(1, IDSKeyFactory.class);
