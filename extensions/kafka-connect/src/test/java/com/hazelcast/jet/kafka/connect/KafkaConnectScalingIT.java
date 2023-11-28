@@ -64,6 +64,7 @@ import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static com.hazelcast.test.jdbc.MySQLDatabaseProvider.TEST_MYSQL_VERSION;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,22 +97,14 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     }
     @Before
     public void setUpContainer() {
-        mysql = new MySQLContainer<>("mysql:8.0.33")
+        mysql = new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
                 .withUsername(USERNAME).withPassword(PASSWORD)
-                .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"))
+                .withTmpFs(Map.of(
+                        "/var/lib/mysql/", "rw",
+                        "/tmp/", "rw"
+                ));
         mysql.start();
-    }
-    @After
-    public void removeTables() {
-        for (int i = 1; i <= TABLE_COUNT; i++) {
-            try (Connection conn = DriverManager.getConnection(mysql.getJdbcUrl(), USERNAME, PASSWORD);
-                 Statement stmt = conn.createStatement()
-            ) {
-                stmt.execute("DROP TABLE IF EXISTS parallel_items_" + i);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @After
@@ -272,8 +265,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
             Set<String> instanceNames = new TreeSet<>(processorInstances.values());
             assertThat(instanceNames).containsExactlyInAnyOrder(instances);
 
-            // +1, because we inserted twice as much to parallel_items_1
-            assertThat(values.values()).hasSize((TABLE_COUNT + 2) * ITEM_COUNT);
+            assertThat(values.values()).hasSize((TABLE_COUNT * 2) * ITEM_COUNT);
         });
         try {
             job.cancel();
