@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class SourceConnectorWrapperTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new TestSourceConnectorWrapper(minimalProperties());
+        new TestSourceConnectorWrapper(dummySourceConnectorProperties());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -48,7 +48,8 @@ public class SourceConnectorWrapperTest {
 
     @Test
     public void should_create_task_runners() {
-        SourceConnectorWrapper sourceConnectorWrapper = new TestSourceConnectorWrapper(minimalProperties());
+        TestSourceConnectorWrapper sourceConnectorWrapper =
+                new TestSourceConnectorWrapper(dummySourceConnectorProperties());
 
         TaskRunner taskRunner1 = sourceConnectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
@@ -63,7 +64,8 @@ public class SourceConnectorWrapperTest {
 
     @Test
     public void should_reconfigure_task_runners() {
-        SourceConnectorWrapper sourceConnectorWrapper = new TestSourceConnectorWrapper(minimalProperties());
+        TestSourceConnectorWrapper sourceConnectorWrapper =
+                new TestSourceConnectorWrapper(dummySourceConnectorProperties());
 
         TaskRunner taskRunner1 = sourceConnectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
@@ -100,7 +102,8 @@ public class SourceConnectorWrapperTest {
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        assertThatThrownBy(() -> new SourceConnectorWrapper(properties, 0, new TestProcessorContext()))
+        TestProcessorContext testProcessorContext = new TestProcessorContext();
+        assertThatThrownBy(() -> new SourceConnectorWrapper(properties, 0, testProcessorContext))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
@@ -108,7 +111,7 @@ public class SourceConnectorWrapperTest {
 
     @Test
     public void should_cleanup_on_destroy() {
-        Properties properties = minimalProperties();
+        Properties properties = dummySourceConnectorProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
         var wrapper = new TestSourceConnectorWrapper(properties);
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -119,7 +122,7 @@ public class SourceConnectorWrapperTest {
     }
 
     @Nonnull
-    private static Properties minimalProperties() {
+    private static Properties dummySourceConnectorProperties() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");

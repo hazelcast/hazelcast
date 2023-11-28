@@ -47,6 +47,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -95,6 +96,8 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     public static void setUpDocker() {
         assumeDockerEnabled();
     }
+
+    @SuppressWarnings("resource")
     @Before
     public void setUpContainer() {
         mysql = new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
@@ -458,11 +461,25 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
     private static void insertItems(String connectionUrl, String tableName) {
         try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
-             Statement stmt = conn.createStatement()
-        ) {
+             PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO " + tableName + " VALUES(?, ?)")) {
+
+            int batchCount = 0;
+
             for (int i = 0; i < ITEM_COUNT; i++) {
-                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')",
-                        COUNTER.incrementAndGet(), i));
+                preparedStatement.setInt(1, COUNTER.incrementAndGet());
+                preparedStatement.setString(2, tableName + "-" + i);
+                preparedStatement.addBatch();
+
+                batchCount++;
+
+                if (batchCount % 100 == 0) {
+                    preparedStatement.executeBatch();
+                    batchCount = 0;
+                }
+            }
+            // Flush any remaining items
+            if (batchCount > 0) {
+                preparedStatement.executeBatch();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

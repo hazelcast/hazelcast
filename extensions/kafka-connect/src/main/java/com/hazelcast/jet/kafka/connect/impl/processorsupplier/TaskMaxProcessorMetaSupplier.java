@@ -33,14 +33,15 @@ import java.util.function.Function;
 
 /**
  * This class distributes specified number of processors evenly among cluster members
+ * Client or member sends this class to job coordinator in serialized form
  */
 public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
     private int tasksMax;
     private ReadKafkaConnectProcessorSupplier supplier;
-    private boolean partitionedAddresses;
-    private final List<Address> memberAddressList = new ArrayList<>();
-    private final List<Integer> memberLocalParallelismList = new ArrayList<>();
-    private int processorOrder;
+    private transient boolean partitionedAddresses;
+    private final transient List<Address> memberAddressList = new ArrayList<>();
+    private final transient List<Integer> memberLocalParallelismList = new ArrayList<>();
+    private transient int processorOrder;
 
     public void setTasksMax(int tasksMax) {
         this.tasksMax = tasksMax;

@@ -25,6 +25,7 @@ import java.util.Properties;
 // Test ConnectorWrapper that passes topic directly to task runners
 public class TestSourceConnectorWrapper extends SourceConnectorWrapper {
     public TestSourceConnectorWrapper(Properties propertiesFromUser) {
+        // int processorOrder is 0 to make it master processor
         super(propertiesFromUser, 0, new TestProcessorContext());
     }
 

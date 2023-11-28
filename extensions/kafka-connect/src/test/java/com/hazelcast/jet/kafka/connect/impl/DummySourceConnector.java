@@ -122,7 +122,7 @@ public final class DummySourceConnector extends SourceConnector {
             SOURCE_PARTITION.put("sourcePartition", 1);
         }
 
-        private List<SourceRecord> committedRecords = new ArrayList<>();
+        private final List<SourceRecord> committedRecords = new ArrayList<>();
 
         public DummyTask() {
             super();

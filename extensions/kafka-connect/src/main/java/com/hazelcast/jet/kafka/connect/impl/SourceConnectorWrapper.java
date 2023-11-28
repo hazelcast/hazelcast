@@ -46,12 +46,13 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
  */
 public class SourceConnectorWrapper {
     private final ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
-    private final SourceConnector sourceConnector;
-    private final int tasksMax;
+    private SourceConnector sourceConnector;
+    private int tasksMax;
     private TaskRunner taskRunner;
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
     private final State state = new State();
-    private final String name;
+    // Name is specified by user properties
+    private String name;
     private final boolean isMasterProcessor;
     private final int processorOrder;
     private TaskConfigPublisher taskConfigPublisher;
@@ -61,23 +62,48 @@ public class SourceConnectorWrapper {
     };
 
     public SourceConnectorWrapper(Properties propertiesFromUser, int processorOrder, Context context) {
-        String connectorClazz = checkRequiredProperty(propertiesFromUser, "connector.class");
-        this.name = checkRequiredProperty(propertiesFromUser, "name");
-        this.tasksMax = Integer.parseInt(checkRequiredProperty(propertiesFromUser, "tasks.max"));
-        this.sourceConnector = newConnectorInstance(connectorClazz);
-        logger.fine("Initializing connector '" + name + "'");
-        this.sourceConnector.initialize(new JetConnectorContext());
-        logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
-        Map<String, String> map = toMap(propertiesFromUser);
-        this.sourceConnector.start(map);
+        validatePropertiesFromUser(propertiesFromUser);
 
         this.processorOrder = processorOrder;
-        isMasterProcessor = processorOrder == 0;
+        this.isMasterProcessor = processorOrder == 0;
 
-        // Any processor can create the topic
+        // Order of resource creation is important.
+        // First create the topic. Any processor can create the topic
         createTopic(context.hazelcastInstance(), context.executionId());
 
+        // Then create the source connector. Now source connector can use the topic
+        createSourceConnector(propertiesFromUser);
+    }
+
+    void validatePropertiesFromUser(Properties propertiesFromUser) {
+        checkRequiredProperty(propertiesFromUser, "connector.class");
+        name = checkRequiredProperty(propertiesFromUser, "name");
+
+        String propertyValue = checkRequiredProperty(propertiesFromUser, "tasks.max");
+        tasksMax = Integer.parseInt(propertyValue);
+    }
+
+    void createSourceConnector(Properties propertiesFromUser) {
+        String connectorClazz = propertiesFromUser.getProperty("connector.class");
+        sourceConnector = newConnectorInstance(connectorClazz);
+
+        logger.fine("Initializing connector '" + name + "'");
+        sourceConnector.initialize(new JetConnectorContext());
+
+        logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
+        Map<String, String> map = toMap(propertiesFromUser);
+        sourceConnector.start(map);
+
+        logger.fine("Creating task runner '" + name + "'");
         createTaskRunner();
+    }
+
+    // Package private for testing
+    TaskRunner createTaskRunner() {
+        String taskName = name + "-task-" + processorOrder;
+        taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
+        requestTaskReconfiguration();
+        return taskRunner;
     }
 
      void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
@@ -89,11 +115,13 @@ public class SourceConnectorWrapper {
     }
 
     void createTopic(HazelcastInstance hazelcastInstance, long executionId) {
-        taskConfigPublisher = new TaskConfigPublisher(hazelcastInstance);
-        taskConfigPublisher.createTopic(executionId);
+        if (hazelcastInstance != null) {
+            taskConfigPublisher = new TaskConfigPublisher(hazelcastInstance);
+            taskConfigPublisher.createTopic(executionId);
 
-        // All processors must listen the topic
-        taskConfigPublisher.addMessageListener(this::processMessage);
+            // All processors must listen the topic
+            taskConfigPublisher.addMessageListener(this::processMessage);
+        }
     }
 
     void destroyTopic() {
@@ -142,7 +170,6 @@ public class SourceConnectorWrapper {
     public List<SourceRecord> poll() {
         try {
         return taskRunner.poll();
-
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -164,7 +191,7 @@ public class SourceConnectorWrapper {
         taskRunner.commit();
     }
 
-    public String getName() {
+    public String getTaskRunnerName() {
         return taskRunner.getName();
     }
 
@@ -189,12 +216,6 @@ public class SourceConnectorWrapper {
         logger.fine("Connector '" + name + "' stopped");
     }
 
-    public TaskRunner createTaskRunner() {
-        String taskName = name + "-task-" + processorOrder;
-        taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
-        requestTaskReconfiguration();
-        return taskRunner;
-    }
 
     private SourceTask createSourceTask() {
         Class<? extends SourceTask> taskClass = sourceConnector.taskClass().asSubclass(SourceTask.class);
