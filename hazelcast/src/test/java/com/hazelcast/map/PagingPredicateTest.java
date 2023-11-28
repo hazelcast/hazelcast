@@ -552,7 +552,6 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         assertFalse(map.values(new AlwaysTruePagingPredicate<>()).isEmpty());
     }
 
-
     // Paging predicate validation tests
     @Test(expected = IllegalArgumentException.class)
     public void testAddLocalEntryListenerThrowsWithPagingPredicate() {
