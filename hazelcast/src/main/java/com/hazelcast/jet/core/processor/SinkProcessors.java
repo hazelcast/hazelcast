@@ -19,6 +19,7 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -27,12 +28,15 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
+import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorConfiguration;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
@@ -48,6 +52,7 @@ import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.util.Map;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -75,6 +80,160 @@ public final class SinkProcessors {
         params.setToKeyFn(Map.Entry::getKey);
         params.setToValueFn(Map.Entry::getValue);
         return writeMapP(params);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#map(String, FunctionEx, FunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier writeMapP(
+            @Nonnull String mapName,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
+    ) {
+        return HazelcastWriters.writeMapSupplier(mapName, null, toKeyFn, toValueFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#remoteMap(String, ClientConfig)}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeRemoteMapP(
+            @Nonnull String mapName, @Nonnull ClientConfig clientConfig
+    ) {
+        return writeRemoteMapP(mapName, clientConfig, identity(), identity());
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#remoteMap(String, ClientConfig, FunctionEx, FunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier writeRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
+    ) {
+        return HazelcastWriters.writeMapSupplier(mapName, clientConfig, toKeyFn, toValueFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#mapWithMerging(String, FunctionEx, FunctionEx,
+     * BinaryOperatorEx)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier mergeMapP(
+            @Nonnull String mapName,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        MapSinkConfiguration<T, K, V> config = new MapSinkConfiguration<>(mapName);
+        config.setToKeyFn(toKeyFn);
+        config.setToValueFn(toValueFn);
+        config.setMergeFn(mergeFn);
+        return HazelcastWriters.mergeMapSupplier(config);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#remoteMapWithMerging(String, ClientConfig, FunctionEx,
+     * FunctionEx, BinaryOperatorEx)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier mergeRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        MapSinkConfiguration<T, K, V> config = new MapSinkConfiguration<T, K, V>(mapName);
+        config.setClientXml(ImdgUtil.asXmlString(clientConfig));
+        config.setToKeyFn(toKeyFn);
+        config.setToValueFn(toValueFn);
+        config.setMergeFn(mergeFn);
+        return HazelcastWriters.mergeMapSupplier(config);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#mapWithEntryProcessor(String, FunctionEx, FunctionEx)} .
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier updateMapP(
+            @Nonnull String mapName,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+    ) {
+        return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, updateFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#remoteMapWithUpdating(String, ClientConfig, FunctionEx
+     *, BiFunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+    ) {
+        return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, updateFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#mapWithEntryProcessor(String, FunctionEx, FunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapP(
+            @Nonnull String mapName,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+
+    ) {
+        return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, toEntryProcessorFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#mapWithEntryProcessor(int, String, FunctionEx, FunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapP(
+            int maxParallelAsyncOps,
+            @Nonnull String mapName,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+
+    ) {
+        MapSinkEntryProcessorConfiguration<T, K, V, R> config = new MapSinkEntryProcessorConfiguration<>(mapName);
+        config.setMaxParallelAsyncOps(maxParallelAsyncOps);
+        config.setToKeyFn(toKeyFn);
+        config.setToEntryProcessorFn(toEntryProcessorFn);
+        return HazelcastWriters.updateMapSupplier(config);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sinks#remoteMapWithEntryProcessor(String, ClientConfig, FunctionEx,
+     * FunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, toEntryProcessorFn);
     }
 
     /**

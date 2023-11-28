@@ -91,6 +91,7 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
         private final String observableName;
 
         public Supplier(String observableName) {
+            super(null, null);
             this.observableName = observableName;
         }
 

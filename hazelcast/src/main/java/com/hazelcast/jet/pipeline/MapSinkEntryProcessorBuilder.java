@@ -29,6 +29,8 @@ import static com.hazelcast.jet.pipeline.Sinks.fromProcessor;
 
 /**
  * Parameters for using a map as a sink with an EntryProcessor:
+ *
+ * TODO review if this can be merged with MapSinkEntryProcessorBuilder, add full javadoc if not
  */
 public class MapSinkEntryProcessorBuilder<E, K, V, R> {
 
