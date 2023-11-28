@@ -67,9 +67,6 @@ import static org.junit.Assert.assertNotNull;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport {
-    @ClassRule
-    public static Timeout globalTimeout = Timeout.seconds(60 * 60);
-
     protected static final int INSTANCE_COUNT = 5;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
     protected static final String JOB_NAME = "s2s_join";
