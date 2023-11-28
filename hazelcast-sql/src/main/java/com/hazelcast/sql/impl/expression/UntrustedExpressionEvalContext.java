@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  * indicating that the context lacks trust.
  * This class is utilized in scenarios where obtaining a trusted security context is unfeasible.
  */
-public class UntrustedExpressionEvalContext
+public final class UntrustedExpressionEvalContext
         implements ExpressionEvalContext {
     private final List<Object> arguments;
     private final transient InternalSerializationService serializationService;
@@ -91,9 +91,8 @@ public class UntrustedExpressionEvalContext
 
     @Override
     public void checkPermission(Permission permission) {
-        if (nodeEngine.getConfig().getSecurityConfig().isEnabled()) {
-            throw new SecurityException("Unable to employ sensitive functions in untrusted invocations.");
-        }
+        throw new SecurityException("Unable to employ sensitive functions in untrusted invocations.");
+
     }
 
     @Override
