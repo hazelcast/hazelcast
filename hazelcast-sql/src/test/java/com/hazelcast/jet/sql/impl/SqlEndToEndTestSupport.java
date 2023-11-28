@@ -176,6 +176,14 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         public JobConfig jobConfig;
 
         @Override
+        public void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig) {
+            this.jobId = jobId;
+            this.members = members;
+            this.dag = dag;
+            this.jobConfig = jobConfig;
+        }
+
+        @Override
         public void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig) {
             this.jobId = jobId;
             this.members = members;

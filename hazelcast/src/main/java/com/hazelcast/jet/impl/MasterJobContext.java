@@ -116,6 +116,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
@@ -313,7 +314,7 @@ public class MasterJobContext {
 
                   createExecutionPlans(dag, membersView)
                           .thenCompose(plans -> coordinator.submitToCoordinatorThread(
-                                  () -> initExecution(membersView, plans)
+                                  () -> initExecution(membersView, plans, dag)
                           ))
                           .whenComplete((r, e) -> {
                               if (e != null) {
@@ -339,11 +340,13 @@ public class MasterJobContext {
                 false, mc.jobRecord().getSubject());
     }
 
-    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap, DAG dag) {
         mc.setExecutionPlanMap(executionPlanMap);
         logger.fine("Built execution plans for " + mc.jobIdString());
         Set<MemberInfo> participants = mc.executionPlanMap().keySet();
         Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        mc.coordinationService().jobInvocationObservers.forEach(obs ->
+                obs.onLightJobInvocation(mc.jobId(), participants, dag, mc.jobConfig()));
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
                         participants, mc.nodeEngine().getSerializationService().toData(plan), false);

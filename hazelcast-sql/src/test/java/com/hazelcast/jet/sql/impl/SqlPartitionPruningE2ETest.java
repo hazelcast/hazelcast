@@ -84,6 +84,23 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
     }
 
     @Test
+    public void when_analyzeScanWithSimplePruningKey_then_prunable() {
+        // Given
+        final int c = 2; // constant
+        final String query = "ANALYZE SELECT * FROM " + mapName + " WHERE f0 = " + c;
+
+        preparePrunableMap(singletonList("f0"), mapName, c);
+
+        // When
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
+        assertQueryResult(selectPlan, singletonList(new Row(c, c, c, "" + c)));
+
+        // Then
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
+        assertPrunability(1, partitionsToUse);
+    }
+
+    @Test
     public void when_scanWithoutDefinedStrategy_then_nonPrunable() {
         // Given
         final int c = 2; // constant
