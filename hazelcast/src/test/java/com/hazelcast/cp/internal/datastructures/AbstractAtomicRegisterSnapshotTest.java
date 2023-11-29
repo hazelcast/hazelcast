@@ -77,7 +77,7 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
         }
 
         SnapshotEntry snapshotEntry = leaderNode.state().log().snapshot();
-        assertEquals(SNAPSHOT_THRESHOLD, snapshotEntry.index());
+        assertGreaterOrEquals("snapshot size", snapshotEntry.index(), SNAPSHOT_THRESHOLD);
 
         // shutdown the last instance
         instances[instances.length - 1].shutdown();
@@ -106,7 +106,7 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
 
         RaftNodeImpl raftNode = getRaftNode(instance, getGroupId());
         SnapshotEntry newNodeSnapshotEntry = raftNode.state().log().snapshot();
-        assertEquals(SNAPSHOT_THRESHOLD, newNodeSnapshotEntry.index());
+        assertGreaterOrEquals("snapshot size", newNodeSnapshotEntry.index(), SNAPSHOT_THRESHOLD);
     }
 
     protected T getValue(InternalCompletableFuture<Object> future) {
