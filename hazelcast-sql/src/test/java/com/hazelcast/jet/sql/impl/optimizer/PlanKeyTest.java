@@ -16,13 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.optimizer;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.checkEquals;
 import static java.util.Collections.singletonList;
 
-public class PlanKeyTest extends SqlTestSupport {
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class PlanKeyTest {
 
     @Test
     public void testEquals() {
