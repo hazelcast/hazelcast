@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.query.AlwaysTruePagingPredicate;
 import com.hazelcast.map.listener.NoopMapListener;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PagingPredicate;
@@ -641,6 +642,15 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteOnEntriesThrowsWithPredicateIncludingPagingPredicate() {
         map.executeOnEntries(entry -> 1, PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+    
+    /**
+     * @see <a href="https://github.com/hazelcast/hazelcast/issues/26036">non-`PagingPredicateImpl` `PagingPredicate` throws
+     *      `ClassCastException`</a>
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testIssue26036() {
+        map.values(new AlwaysTruePagingPredicate<>());
     }
 
     private IMap<Integer, Employee> makeEmployeeMap(int maxEmployees) {

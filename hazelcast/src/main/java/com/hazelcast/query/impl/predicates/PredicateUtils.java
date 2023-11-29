@@ -80,22 +80,36 @@ public final class PredicateUtils {
     }
 
     /**
-     * This method is used for checking a predicate that it is not/does not contain a {@link com.hazelcast.query.PagingPredicate}
+     * This method is used for checking a predicate that it is not/does not contain a {@link PagingPredicate}
      *
-     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
-     *                                  {@link com.hazelcast.query.PagingPredicate}
+     * @throws IllegalArgumentException if the predicate is a {@link PagingPredicate} or is a {@link PartitionPredicate} that
+     *         includes a {@link PagingPredicate}
      */
-    public static void checkDoesNotContainPagingPredicate(Predicate predicate, String methodName)
+    public static void checkDoesNotContainPagingPredicate(Predicate<?, ?> predicate, String methodName)
             throws IllegalArgumentException {
-        if (PredicateUtils.containsPagingPredicate(predicate)) {
+        if (containsPagingPredicate(predicate)) {
             throw new IllegalArgumentException("Paging predicate is not supported in " + methodName + " method");
         }
     }
 
     /**
-     * Returns true if the predicate passed is a {@link com.hazelcast.query.PagingPredicate}
-     * or is a {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     * Safely casts {@code predicate} to a {@link PagingPredicateImpl}
+     * 
+     * @throws IllegalArgumentException if the predicate is not a {@link PagingPredicateImpl}
+     */
+    public static <K, V> PagingPredicateImpl<K, V> convertToPagingPredicateImpl(Predicate<K, V> predicate, String methodName)
+            throws IllegalArgumentException {
+        if (predicate instanceof PagingPredicateImpl) {
+            return (PagingPredicateImpl<K, V>) predicate;
+        } else {
+            throw new IllegalArgumentException(
+                    "Only " + PagingPredicateImpl.class.getSimpleName() + " is supported in " + methodName + " method");
+        }
+    }
+
+    /**
+     * @return {@code true} if the predicate passed is a {@link PagingPredicate} or is a {@link PartitionPredicate} that
+     *         includes a {@link PagingPredicate}
      */
     public static boolean containsPagingPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicateImpl) {
