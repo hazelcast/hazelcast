@@ -1466,7 +1466,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
             permissions.forEach(context::checkPermission);
         }
 
