@@ -50,6 +50,14 @@ public class DataConnectionRef implements Serializable {
         return new DataConnectionRef(name);
     }
 
+    /**
+     * If the name parameter is null, this method returns null.
+     * Otherwise, it behaves identically to {@link #dataConnectionRef(String)}.
+     */
+    public static DataConnectionRef nullableDataConnectionRef(String name) {
+        return name == null ? null : dataConnectionRef(name);
+    }
+
     public String getName() {
         return name;
     }
