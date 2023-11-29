@@ -94,7 +94,7 @@ public final class PredicateUtils {
 
     /**
      * Safely casts {@code predicate} to a {@link PagingPredicateImpl}
-     * 
+     *
      * @throws IllegalArgumentException if the predicate is not a {@link PagingPredicateImpl}
      */
     public static <K, V> PagingPredicateImpl<K, V> convertToPagingPredicateImpl(Predicate<K, V> predicate, String methodName)

@@ -135,7 +135,8 @@ public final class SortingUtil {
         if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }
-        PagingPredicateImpl pagingPredicateImpl = PredicateUtils.convertToPagingPredicateImpl(pagingPredicate, "getSortedSubList");
+        PagingPredicateImpl pagingPredicateImpl =
+                PredicateUtils.convertToPagingPredicateImpl(pagingPredicate, "getSortedSubList");
         Comparator<QueryableEntry> comparator = newComparator(pagingPredicateImpl);
         Collections.sort(list, comparator);
         int nearestPage = nearestAnchorEntry.getKey();
@@ -165,7 +166,8 @@ public final class SortingUtil {
         if (anchor == null) {
             return true;
         }
-        PagingPredicateImpl pagingPredicateImpl = PredicateUtils.convertToPagingPredicateImpl(pagingPredicate, "getSortedSubList");
+        PagingPredicateImpl pagingPredicateImpl =
+                PredicateUtils.convertToPagingPredicateImpl(pagingPredicate, "getSortedSubList");
         Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
         IterationType iterationType = pagingPredicateImpl.getIterationType();
         return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
@@ -226,7 +228,8 @@ public final class SortingUtil {
         if (list.isEmpty()) {
             return new AbstractMap.SimpleImmutableEntry<>(-1, -1);
         }
-        PagingPredicateImpl pagingPredicateImpl = PredicateUtils.convertToPagingPredicateImpl(pagingPredicate, "getPageIndexesAndUpdateAnchor");
+        PagingPredicateImpl pagingPredicateImpl =
+                PredicateUtils.convertToPagingPredicateImpl(pagingPredicate, "getPageIndexesAndUpdateAnchor");
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicateImpl.getComparator(), iterationType);
         Collections.sort(list, comparator);
 

@@ -643,7 +643,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     public void testExecuteOnEntriesThrowsWithPredicateIncludingPagingPredicate() {
         map.executeOnEntries(entry -> 1, PREDICATE_INCLUDING_PAGING_PREDICATE);
     }
-    
+
     /**
      * @see <a href="https://github.com/hazelcast/hazelcast/issues/26036">non-`PagingPredicateImpl` `PagingPredicate` throws
      *      `ClassCastException`</a>
