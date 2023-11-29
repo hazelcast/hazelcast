@@ -306,6 +306,7 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
             // is done exclusively for this feature support.
             return;
         }
+        
         boolean owner = partitionService.isPartitionOwner(partitionId);
         recordStore.beforeOperation();
         try {
