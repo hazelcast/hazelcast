@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -88,9 +90,6 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     private static MySQLContainer<?> mysql;
 
     private static final int ITEM_COUNT = 1_000;
-
-    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
-            + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
     @BeforeClass
     public static void setUpDocker() {
@@ -170,7 +169,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         Job job = instance.getJet().newJob(pipeline, jobConfig);
 
@@ -243,7 +242,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
                 .writeTo(map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         var job = instance.getJet().newJob(pipeline, jobConfig);
 
@@ -330,7 +329,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         var job = instance.getJet().newJob(pipeline, jobConfig);
 
@@ -423,7 +422,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
                 .writeTo(map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         instance.getJet().newJob(pipeline, jobConfig);
 
@@ -494,6 +493,15 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private URL getJdbcConnectorURL() throws URISyntaxException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
+        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
+        assert resource != null;
+        assertThat(new File(resource.toURI())).exists();
+        return resource;
     }
 
 }
