@@ -300,6 +300,7 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         int partitionId = partitionService.getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
+
         if (recordStore.isTieredStorageEnabled()) {
             // We don't support expiry feature and the getRecordOrNull
             // is done exclusively for this feature support.
