@@ -155,16 +155,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             }
         } catch (RuntimeException maybeDestroyed) {
             if (maybeDestroyed.getCause() instanceof DistributedObjectDestroyedException && isParallelTestExecution()) {
-                // Race condition between getJobs() and proxy destruction is possible
-                // when supportAfter() is invoked in parallel.
-                // Even if there are any remaining jobs they should be terminated later by cancelAllExecutions.
-                //
-                // Example exception:
-                // com.hazelcast.spi.exception.DistributedObjectDestroyedException:
-                // Proxy [hz:impl:mapService:__jet.records] was destroyed while being created.
-                //  This may result in incomplete cleanup of resources.
-                //  at com.hazelcast.jet.impl.JetInstanceImpl.getJobsInt(JetInstanceImpl.java:116)
-                //  at com.hazelcast.jet.impl.AbstractJetInstance.getJobs(AbstractJetInstance.java:245)
+                // See comment in safeDestroy
                 SUPPORT_LOGGER.warning("Race condition during job cleanup" +
                         " in parallel SimpleTestInClusterSupport test with shared instance", maybeDestroyed);
             } else {
@@ -207,14 +198,38 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                 EXPORTED_SNAPSHOTS_DETAIL_CACHE,
                 SQL_CATALOG_MAP_NAME);
         List<String> flakeId = List.of(RANDOM_ID_GENERATOR_NAME);
-        jetMaps.forEach(map -> instance().getMap(map).destroy());
-        flakeId.forEach(id -> instance().getFlakeIdGenerator(id).destroy());
+        jetMaps.forEach(map -> safeDestroy(() -> instance().getMap(map)));
+        flakeId.forEach(id -> safeDestroy(() -> instance().getFlakeIdGenerator(id)));
 
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
                 // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
+        }
+    }
+
+    private <T extends DistributedObject> void safeDestroy(Supplier<T> objectToDestroy) {
+        try {
+            objectToDestroy.get().destroy();
+        } catch (RuntimeException maybeDestroyed) {
+            if (maybeDestroyed.getCause() instanceof DistributedObjectDestroyedException && isParallelTestExecution()) {
+                // Race condition between getJobs() and proxy destruction is possible
+                // when supportAfter() is invoked in parallel.
+                // Even if there are any remaining jobs they should be terminated later by cancelAllExecutions.
+                //
+                // Example exception:
+                // com.hazelcast.spi.exception.DistributedObjectDestroyedException:
+                // Proxy [hz:impl:mapService:__jet.records] was destroyed while being created.
+                //  This may result in incomplete cleanup of resources.
+                //  at com.hazelcast.jet.impl.JetInstanceImpl.getJobsInt(JetInstanceImpl.java:116)
+                //  at com.hazelcast.jet.impl.AbstractJetInstance.getJobs(AbstractJetInstance.java:245)
+                SUPPORT_LOGGER.warning("Race condition during objects cleanup" +
+                        " in parallel SimpleTestInClusterSupport test with shared instance", maybeDestroyed);
+            } else {
+                // unexpected DistributedObjectDestroyedException in serial execution or other error
+                throw maybeDestroyed;
+            }
         }
     }
 
