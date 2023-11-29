@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 /**
  * A {@link OutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
@@ -65,7 +64,7 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
                 }
             }
         } finally {
-            upcast(dst).flip();
+            dst.flip();
         }
     }
 }

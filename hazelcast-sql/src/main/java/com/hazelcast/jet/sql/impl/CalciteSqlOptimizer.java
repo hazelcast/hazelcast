@@ -50,6 +50,7 @@ import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.logical.ScanCyclicTypeMustNotExecuteRule;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
@@ -128,6 +129,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
@@ -136,6 +138,7 @@ import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexLiteral;
@@ -241,7 +244,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final List<QueryPlanListener> queryPlanListeners;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
-    private final boolean cyclicUserTypesAreAllowed;
+
+    private final HepProgram subqueryRewriterProgram;
 
     private final ILogger logger;
 
@@ -269,7 +273,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 resultRegistry
         );
 
-        this.cyclicUserTypesAreAllowed = nodeEngine.getProperties().getBoolean(SQL_CUSTOM_CYCLIC_TYPES_ENABLED);
+        boolean cyclicUserTypesAreAllowed = nodeEngine.getProperties().getBoolean(SQL_CUSTOM_CYCLIC_TYPES_ENABLED);
+
+        this.subqueryRewriterProgram = prepareUnconditionalSubqueryRewriter(cyclicUserTypesAreAllowed);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -314,14 +320,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Override
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
-
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
                 iMapResolver,
-                task.getSecurityContext(),
-                cyclicUserTypesAreAllowed);
+                subqueryRewriterProgram,
+                task.getSecurityContext());
 
         try {
             OptimizerContext.setThreadContext(context);
@@ -618,6 +623,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
@@ -636,6 +642,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof InsertMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
             return new IMapInsertPlan(
                     planKey,
@@ -649,6 +656,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(
                     planKey,
@@ -661,6 +669,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
             return new IMapUpdatePlan(
                     planKey,
@@ -693,6 +702,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     analyzeJobConfig);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
+            checkIMapByKeyPlanIsAnalyzed(analyze);
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(
                     planKey,
@@ -916,6 +926,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return (PhysicalRel) planner.findBestExp();
     }
 
+    public HepProgram getSubqueryRewriterProgram() {
+        return subqueryRewriterProgram;
+    }
 
     private SqlRowMetadata createRowMetadata(
             List<String> columnNames,
@@ -1030,6 +1043,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return result;
     }
 
+    /**
+     * Check should be used during the optimized IMapByKey plan construction.
+     * It throws {@link QueryException} of query is analyzed for optimized IMapByKey plans.
+     *
+     * @param isAnalyzed is query analyzed
+     */
+    static void checkIMapByKeyPlanIsAnalyzed(boolean isAnalyzed) {
+        if (isAnalyzed) {
+            throw QueryException.error("This query uses key-based optimized IMap access plan. " +
+                    "ANALYZE is unable to produce meaningful execution statistics for it.");
+        }
+    }
+
 
     /**
      * Tries to find {@link ShouldNotExecuteRel} or {@link MustNotExecutePhysicalRel}
@@ -1056,5 +1082,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             go(rootRel);
             return message;
         }
+    }
+
+    private static HepProgram prepareUnconditionalSubqueryRewriter(boolean cyclicUserTypesAreAllowed) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Correlated subqueries elimination rules
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE)
+                .addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE)
+                .addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
+
+        // Note: the way to check if cyclic type are allowed in SqlValidator is error-prone,
+        //  and the best way is to check it on pre-optimization phase.
+        if (!cyclicUserTypesAreAllowed) {
+            hepProgramBuilder.addRuleInstance(ScanCyclicTypeMustNotExecuteRule.INSTANCE);
+        }
+        return hepProgramBuilder.build();
     }
 }

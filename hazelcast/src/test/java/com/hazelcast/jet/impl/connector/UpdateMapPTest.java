@@ -51,7 +51,7 @@ public class UpdateMapPTest extends JetTestSupport {
 
     private static final int COUNT_PER_KEY = 16;
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter
     public int asyncLimit;
 
     @Parameterized.Parameter(1)

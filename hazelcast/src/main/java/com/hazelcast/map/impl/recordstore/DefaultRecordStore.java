@@ -320,6 +320,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void forEach(BiConsumer<Data, Record> consumer,
                         boolean backup, boolean includeExpiredRecords) {
+        forEach(consumer, backup, includeExpiredRecords, true);
+    }
+
+    @Override
+    public void forEach(BiConsumer<Data, Record> consumer,
+                        boolean backup, boolean includeExpiredRecords, boolean noCaching) {
 
         long now = getNow();
         Iterator<Map.Entry<Data, Record>> entries = storage.mutationTolerantIterator();

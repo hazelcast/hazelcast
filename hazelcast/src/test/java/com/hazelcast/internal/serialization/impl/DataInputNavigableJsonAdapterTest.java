@@ -34,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder.DEFAULT_BYTE_ORDER;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -175,8 +174,8 @@ public class DataInputNavigableJsonAdapterTest {
             buffer.append((char) next);
             next = reader.read();
         }
-        upcast(buffer).limit(buffer.position());
-        upcast(buffer).rewind();
+        buffer.limit(buffer.position());
+        buffer.rewind();
         String actual = buffer.toString();
         assertEquals(expected, actual);
     }

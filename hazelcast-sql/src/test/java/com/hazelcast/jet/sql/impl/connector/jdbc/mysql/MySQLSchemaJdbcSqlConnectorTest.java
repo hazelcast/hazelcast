@@ -23,9 +23,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
-
-import static java.util.stream.Collectors.joining;
 import static org.junit.Assume.assumeFalse;
 
 @Category(NightlyTest.class)
@@ -48,10 +45,4 @@ public class MySQLSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
                 && table.equals("table.with.dot"));
     }
 
-    @Override
-    protected String quote(String... parts) {
-        return Arrays.stream(parts)
-                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                     .collect(joining("."));
-    }
 }

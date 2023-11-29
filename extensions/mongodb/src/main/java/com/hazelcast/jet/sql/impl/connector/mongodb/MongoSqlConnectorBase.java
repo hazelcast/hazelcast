@@ -53,7 +53,7 @@ import java.util.Set;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
-import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.nullableDataConnectionRef;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
@@ -229,7 +229,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 .withDatabaseName(table.databaseName)
                 .withCollectionName(table.collectionName)
                 .withClientSupplier(clientSupplier)
-                .withDataConnectionRef(dataConnectionRef(table.dataConnectionName))
+                .withDataConnectionRef(nullableDataConnectionRef(table.dataConnectionName))
                 .withProcessorSupplier(supplier)
                 .withForceTotalParallelismOne(forceParallelismOne)
                 .build();

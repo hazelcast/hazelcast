@@ -34,6 +34,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -145,6 +146,9 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         buffer = new ArrayMap<>(EdgeConfig.DEFAULT_QUEUE_SIZE);
     }
 
+    /**
+     * A ProcessorSupplier that transforms the key and value of a stream and writes the transformed data to a map sink.
+     */
     public static class Supplier<T, K, V> extends AbstractHazelcastConnectorSupplier {
 
         private static final long serialVersionUID = 1L;
@@ -153,20 +157,26 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         // the cluster with putAll operations
         private static final int MAX_PARALLELISM = 16;
 
-        private final String mapName;
-        private final FunctionEx<? super T, ? extends K> toKeyFn;
-        private final FunctionEx<? super T, ? extends V> toValueFn;
+        private String mapName;
+        private FunctionEx<? super T, ? extends K> toKeyFn;
+        private FunctionEx<? super T, ? extends V> toValueFn;
         private int maxParallelAsyncOps;
 
-        public Supplier(
-                String clientXml, String mapName,
-                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-                @Nonnull FunctionEx<? super T, ? extends V> toValueFn
+        Supplier(@Nullable String dataConnectionName,
+                 @Nullable String clientXml
         ) {
-            super(clientXml);
-            this.mapName = mapName;
-            this.toKeyFn = toKeyFn;
-            this.toValueFn = toValueFn;
+            super(dataConnectionName, clientXml);
+        }
+
+        public static <T, K, V> Supplier<T, K, V> createNew(MapSinkConfiguration<T, K, V> params) {
+            Supplier<T, K, V> supplier = new Supplier<>(
+                    params.getDataConnectionName(),
+                    params.getClientXml()
+            );
+            supplier.mapName = params.getMapName();
+            supplier.toKeyFn = params.getToKeyFn();
+            supplier.toValueFn = params.getToValueFn();
+            return supplier;
         }
 
         @Override

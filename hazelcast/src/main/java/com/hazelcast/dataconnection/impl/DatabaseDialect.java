@@ -30,6 +30,8 @@ public enum DatabaseDialect {
 
     MICROSOFT_SQL_SERVER,
 
+    ORACLE,
+
     OTHER;
 
     public static DatabaseDialect resolveDialect(DatabaseMetaData databaseMetaData) throws SQLException {
@@ -49,6 +51,9 @@ public enum DatabaseDialect {
 
             case "MICROSOFT SQL SERVER":
                 return MICROSOFT_SQL_SERVER;
+
+            case "ORACLE":
+                return ORACLE;
 
             default:
                 return OTHER;

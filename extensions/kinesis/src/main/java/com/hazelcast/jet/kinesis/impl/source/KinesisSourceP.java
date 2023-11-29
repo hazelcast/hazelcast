@@ -396,19 +396,19 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(shardId);
+            out.writeString(shardId);
             out.writeObject(startingHashKey);
             out.writeBoolean(closed);
-            out.writeUTF(lastSeenSeqNo);
+            out.writeString(lastSeenSeqNo);
             out.writeObject(watermark);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            shardId = in.readUTF();
+            shardId = in.readString();
             startingHashKey = in.readObject();
             closed = in.readBoolean();
-            lastSeenSeqNo = in.readUTF();
+            lastSeenSeqNo = in.readString();
             watermark = in.readObject();
         }
 

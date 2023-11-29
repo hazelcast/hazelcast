@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
+import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.RewriteVisitor;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
@@ -31,6 +32,8 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -38,12 +41,14 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -56,6 +61,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
@@ -75,6 +81,7 @@ import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -127,17 +134,21 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private final List<Object> arguments;
 
     private final IMapResolver iMapResolver;
+    private final SqlSecurityContext ssc;
 
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver) {
+            IMapResolver iMapResolver,
+            SqlSecurityContext ssc
+    ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new RewriteVisitor(this);
         this.tableOperatorWrapper = new TableOperatorWrapper();
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
+        this.ssc = ssc;
     }
 
     @Override
@@ -416,6 +427,26 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
+    protected void validateTableFunction(SqlCall node, SqlValidatorScope scope, RelDataType targetRowType) {
+        if (ssc.isSecurityEnabled() && node instanceof SqlBasicCall && !node.getOperandList().isEmpty()) {
+            SqlNode sqlNode = node.getOperandList().get(0);
+            if (sqlNode instanceof SqlBasicCall) {
+                SqlBasicCall call = (SqlBasicCall) sqlNode;
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof HazelcastDynamicTableFunction) {
+                    HazelcastDynamicTableFunction f = (HazelcastDynamicTableFunction) operator;
+                    for (Permission permission : f.permissions(call, this)) {
+                        ssc.checkPermission(permission);
+                    }
+                }
+            }
+        }
+
+        super.validateTableFunction(node, scope, targetRowType);
+    }
+
+
+    @Override
     protected SqlNode performUnconditionalRewrites(SqlNode node, boolean underFrom) {
         SqlNode rewritten = super.performUnconditionalRewrites(node, underFrom);
 
@@ -452,6 +483,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         ParameterConverter parameterConverter = parameterConverterMap.get(index);
         Object argument = arguments.get(index);
         return parameterConverter.convert(argument);
+    }
+
+    public Object getRawArgumentAt(int index) {
+        return arguments.get(index);
     }
 
     public ParameterConverter[] getParameterConverters(SqlNode node) {
@@ -529,7 +564,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHIN.equals(ResourceUtil.key(e))) {
             Object[] arguments = ResourceUtil.args(e);
             String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
-            Mapping mapping = identifier != null ? iMapResolver.resolve(identifier) : null;
+            Mapping mapping = identifier != null && hasMapAccess(identifier) ? iMapResolver.resolve(identifier) : null;
             String sql = mapping != null ? SqlCreateMapping.unparse(mapping) : null;
             String message = sql != null ? ValidatorResource.imapNotMapped(e.str(), identifier, sql) : e.str();
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);
@@ -537,13 +572,36 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return exception;
     }
 
+
+    /**
+     * Check read permission for the map.
+     * This method does not throw an exception, but rather provides the results of a permission check.
+     * Use in scenarios where it is needed to check permissions without interrupting the process.
+     *
+     * @param map name of the map.
+     * @return {@code true} access is allowed, {@code false} otherwise.
+     */
+    private boolean hasMapAccess(String map) {
+        if (!ssc.isSecurityEnabled()) {
+            return true;
+        }
+        var permission = new MapPermission(map, ActionConstants.ACTION_READ);
+        try {
+            ssc.checkPermission(permission);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
+
     /**
      * Wraps TABLE operators in subqueries when they appear as join operands.
      * <p>
      * {@code FROM TABLE(...) JOIN TABLE(...)} → <br>
      * {@code FROM (SELECT * FROM TABLE(...)) JOIN (SELECT * FROM TABLE(...))}
      */
-    private static class TableOperatorWrapper extends SqlShuttle {
+    private static final class TableOperatorWrapper extends SqlShuttle {
         @Override
         public SqlNode visit(@Nonnull SqlCall call) {
             if (call instanceof SqlJoin) {

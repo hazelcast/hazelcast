@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class ClientMessageWriter {
 
@@ -58,14 +57,14 @@ public class ClientMessageWriter {
         if (writeOffset == -1) {
             if (bytesWritable >= SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
                 Bits.writeIntL(dst, dst.position(), frameContentLength + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-                upcast(dst).position(dst.position() + Bits.INT_SIZE_IN_BYTES);
+                dst.position(dst.position() + Bits.INT_SIZE_IN_BYTES);
 
                 if (isLastFrame) {
                     Bits.writeShortL(dst, dst.position(), (short) (frame.flags | IS_FINAL_FLAG));
                 } else {
                     Bits.writeShortL(dst, dst.position(), (short) frame.flags);
                 }
-                upcast(dst).position(dst.position() + Bits.SHORT_SIZE_IN_BYTES);
+                dst.position(dst.position() + Bits.SHORT_SIZE_IN_BYTES);
                 writeOffset = 0;
             } else {
                 return false;

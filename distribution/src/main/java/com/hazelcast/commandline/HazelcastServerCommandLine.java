@@ -69,7 +69,7 @@ public class HazelcastServerCommandLine {
         }
     }
 
-    private static PrintWriter createPrintWriter(PrintStream printStream) {
+    static PrintWriter createPrintWriter(PrintStream printStream) {
         return new PrintWriter(new OutputStreamWriter(printStream, StandardCharsets.UTF_8));
     }
 

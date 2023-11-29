@@ -1135,6 +1135,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
               .addCPMapConfig(new CPMapConfig("map1", 50))
               .addCPMapConfig(new CPMapConfig("map2", 25));
 
+        config.getCPSubsystemConfig().setCPMapLimit(30);
+
         CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getCPSubsystemConfig(),
                 new CPSubsystemConfigChecker().check(config.getCPSubsystemConfig(), generatedConfig));

@@ -5267,6 +5267,17 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="map-limit" type="xs:positiveInteger" minOccurs="0" default="10">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum number of CP Maps that are permitted. The default of 10 is not necessarily applicable
+                        for a wide variety of usages. Please note when defining this limit: take into consideration the maps
+                        you are to create, their capacities and the number of members their host CP groups entail. The latter
+                        is important as you will currently need memory headroom per-map, then a multiple of that map's size
+                        required for publishing snapshots, e.g. (group size - 1) * map size, per-map.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="raft-algorithm" type="raft-algorithm" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

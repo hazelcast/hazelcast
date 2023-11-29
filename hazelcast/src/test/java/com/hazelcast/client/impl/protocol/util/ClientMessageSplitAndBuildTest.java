@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
 import static groovy.util.GroovyTestCase.assertEquals;
 
@@ -88,7 +87,7 @@ public class ClientMessageSplitAndBuildTest {
         encoder.src(outputQueue::poll);
 
         ByteBuffer buffer = ByteBuffer.allocate(100000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -99,7 +98,7 @@ public class ClientMessageSplitAndBuildTest {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -137,7 +136,7 @@ public class ClientMessageSplitAndBuildTest {
         encoder.src(outputQueue::poll);
 
         ByteBuffer buffer = ByteBuffer.allocate(100000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -148,7 +147,7 @@ public class ClientMessageSplitAndBuildTest {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, inputQueue::offer, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -173,7 +172,7 @@ public class ClientMessageSplitAndBuildTest {
         encoder.src(outputQueue::poll);
 
         ByteBuffer buffer = ByteBuffer.allocate(100000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -184,7 +183,7 @@ public class ClientMessageSplitAndBuildTest {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();

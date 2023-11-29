@@ -67,7 +67,7 @@ public class DataConnectionConsistencyCheckerTest extends HazelcastTestSupport {
         linkService = (DataConnectionServiceImpl) getNodeEngineImpl(instance()).getDataConnectionService();
         dataConnectionConsistencyChecker = new DataConnectionConsistencyChecker(instance(), Util.getNodeEngine(instance()));
         if (getTestMethodName().contains("NoPartitionAssignment")) {
-            // do not proceed with actions that may trigger initial parttion assignment
+            // do not proceed with actions that may trigger initial partition assignment
             return;
         }
         sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);

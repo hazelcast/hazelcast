@@ -421,6 +421,8 @@
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sources.java"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sinks.java"/>
 
     <!-- Class name checks for client messages -->
     <suppress checks="TypeName"

@@ -28,7 +28,6 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
@@ -83,7 +82,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
             // destination buffer). We can now throw exception in the pipeline to close the channel.
             throw new ProtocolException(exceptionMessage);
         } finally {
-            upcast(dst).flip();
+            dst.flip();
         }
     }
 

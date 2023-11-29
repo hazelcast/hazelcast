@@ -59,7 +59,7 @@ public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
 
     private static String getInsertSQL(String tableName, int id, String workerName) {
         return String.format("INSERT INTO %s VALUES(%d, '%s')",
-                tableName,
+                quote(tableName),
                 id,
                 workerName
         );
