@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
@@ -104,7 +103,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             assert row.getFieldCount() == 1;
             keys.add(row.get(0));
         }
-        return map.submitToKeys(keys, updaterSupplier.get(UntrustedExpressionEvalContext.from(evalContext)))
+        return map.submitToKeys(keys, updaterSupplier.get(evalContext))
                 .toCompletableFuture()
                 .thenApply(m -> Traversers.empty());
     }

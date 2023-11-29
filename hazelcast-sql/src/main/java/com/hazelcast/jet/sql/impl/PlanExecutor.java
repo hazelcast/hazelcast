@@ -88,7 +88,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
@@ -684,7 +683,7 @@ public class PlanExecutor {
 
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
-                .submitToKey(key, plan.updaterSupplier().get(UntrustedExpressionEvalContext.from(evalContext)))
+                .submitToKey(key, plan.updaterSupplier().get(evalContext))
                 .toCompletableFuture();
         await(future, timeout);
         directIMapQueriesExecuted.getAndIncrement();

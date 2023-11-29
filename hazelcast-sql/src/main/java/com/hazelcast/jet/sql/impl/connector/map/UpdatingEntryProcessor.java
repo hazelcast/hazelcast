@@ -68,7 +68,7 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            UntrustedExpressionEvalContext evalContext) {
+            ExpressionEvalContext evalContext) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
         this.evalContext = evalContext;
@@ -118,6 +118,7 @@ public final class UpdatingEntryProcessor
         rowProjectorSupplier = in.readObject();
         valueProjectorSupplier = in.readObject();
         arguments = in.readObject();
+        evalContext = null;
     }
 
     public static Supplier supplier(
@@ -187,7 +188,7 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(UntrustedExpressionEvalContext eec) {
+        public EntryProcessor<Object, Object, Long> get(ExpressionEvalContext eec) {
             return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
 
