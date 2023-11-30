@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static com.hazelcast.jet.sql.impl.SqlEndToEndTestSupport.calculateExpectedPartitions;
@@ -120,6 +122,8 @@ public class SqlPrunedMemberLeftTest extends JetTestSupport {
                 } else {
                     prunedInstanceToTerminate.getLifecycleService().terminate();
                 }
+                assertClusterSizeEventually(CLUSTER_SIZE - 1,
+                        Arrays.stream(hz).filter(i -> i != prunedInstanceToTerminate).collect(Collectors.toList()));
 
                 // Then
                 assertThat(nonPrunedInstance.getJet().getJobs())
