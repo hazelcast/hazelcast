@@ -57,7 +57,7 @@ class JdbcParameters {
             V value,
             List<SqlColumnMetadata> columnMetadataList,
             String idColumn,
-            boolean singleColumnAsValue
+            boolean singleColumnAsValue,
             List<String> columns
     ) {
 
