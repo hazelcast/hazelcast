@@ -71,9 +71,19 @@ public final class PermissionsUtil {
                 new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ));
     }
 
+    @Nonnull
+    public static Permission mapUpdatePermission(@Nonnull String name) {
+        return new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ);
+    }
+
     @Nullable
     public static Permission mapPutPermission(boolean isRemote, @Nonnull String name) {
         return checkRemote(isRemote, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
+    }
+
+    @Nonnull
+    public static Permission mapPutPermission(@Nonnull String name) {
+        return new MapPermission(name, ACTION_CREATE, ACTION_PUT);
     }
 
     @Nullable
