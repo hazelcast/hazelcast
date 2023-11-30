@@ -44,6 +44,7 @@ import static java.util.Objects.requireNonNull;
 public class HazelcastSchema implements Schema {
 
     private final Map<String, Schema> subSchemaMap;
+    //TODO: Change this to something else.
     private final Map<String, Table> tableMap;
 
     public HazelcastSchema(Map<String, Table> tableMap) {
@@ -77,25 +78,17 @@ public class HazelcastSchema implements Schema {
         return Schemas.subSchemaExpression(parentSchema, name, getClass());
     }
 
+    //TODO:
     @Override public final Set<String> getTableNames() {
         //noinspection RedundantCast
         return (Set<String>) getTableMap().keySet();
     }
 
+    //TODO:
     @Override public final @Nullable Table getTable(String name) {
         return getTableMap().get(name);
     }
 
-    /**
-     * Returns a map of types in this schema by name.
-     *
-     * <p>The implementations of {@link #getTypeNames()}
-     * and {@link #getType(String)} depend on this map.
-     * The default implementation of this method returns the empty map.
-     * Override this method to change their behavior.
-     *
-     * @return Map of types in this schema by name
-     */
     protected Map<String, RelProtoDataType> getTypeMap() {
         return ImmutableMap.of();
     }
@@ -109,19 +102,6 @@ public class HazelcastSchema implements Schema {
         return (Set<String>) getTypeMap().keySet();
     }
 
-    /**
-     * Returns a multi-map of functions in this schema by name.
-     * It is a multi-map because functions are overloaded; there may be more than
-     * one function in a schema with a given name (as long as they have different
-     * parameter lists).
-     *
-     * <p>The implementations of {@link #getFunctionNames()}
-     * and {@link Schema#getFunctions(String)} depend on this map.
-     * The default implementation of this method returns the empty multi-map.
-     * Override this method to change their behavior.
-     *
-     * @return Multi-map of functions in this schema by name
-     */
     protected Multimap<String, Function> getFunctionMultimap() {
         return ImmutableMultimap.of();
     }
@@ -143,8 +123,6 @@ public class HazelcastSchema implements Schema {
         return getSubSchemaMap().get(name);
     }
 
-    /** Schema factory that creates an
-     * {@link org.apache.calcite.schema.impl.AbstractSchema}. */
     public static class Factory implements SchemaFactory {
         public static final Factory INSTANCE = new Factory();
 

@@ -56,6 +56,7 @@ public final class HazelcastSchemaUtils {
      *
      * @return Top-level schema.
      */
+    //TODO: I need to change this method too.
     public static HazelcastSchema createRootSchema(SqlCatalog catalog) {
         // Create schemas.
         Map<String, Schema> schemaMap = new HashMap<>();
