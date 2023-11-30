@@ -27,7 +27,8 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -54,10 +55,10 @@ import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CAC
 import static com.hazelcast.jet.impl.JobRepository.JOB_EXECUTION_RECORDS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RECORDS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
-import static com.hazelcast.jet.impl.JobRepository.RANDOM_ID_GENERATOR_NAME;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Base class for tests that share the cluster for all jobs. In order to use
@@ -81,6 +82,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static Config config;
     private static HazelcastInstance[] instances;
     private static HazelcastInstance client;
+    private final Supplier<Boolean> parallelExecution = com.hazelcast.jet.impl.util.Util.memoize(() -> isParallelTestExecution());
 
     protected static void initialize(int memberCount, @Nullable Config config) {
         assertNoRunningInstances();
@@ -146,22 +148,12 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             PacketFiltersUtil.resetPacketFiltersFrom(inst);
         }
         // after each test ditch all jobs and objects
-        try {
-            List<Job> jobs = stillActiveInstances.get(0).getJet().getJobs();
-            SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
-                    jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
-            for (Job job : jobs) {
-                ditchJob(job, instances());
-            }
-        } catch (RuntimeException maybeDestroyed) {
-            if (maybeDestroyed.getCause() instanceof DistributedObjectDestroyedException && isParallelTestExecution()) {
-                // See comment in safeDestroy
-                SUPPORT_LOGGER.warning("Race condition during job cleanup" +
-                        " in parallel SimpleTestInClusterSupport test with shared instance", maybeDestroyed);
-            } else {
-                // unexpected DistributedObjectDestroyedException in serial execution or other error
-                throw maybeDestroyed;
-            }
+        List<Job> jobs = stillActiveInstances.get(0).getJet().getJobs();
+        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
+                jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
+        for (Job job : jobs) {
+            failIfParallel();
+            ditchJob(job, instances());
         }
 
         // cancel all light jobs by cancelling their executions
@@ -180,16 +172,12 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
                 .collect(Collectors.joining(", ", "[", "]")));
-        for (DistributedObject o : objects) {
-            o.destroy();
-        }
-
         // Jet keeps some IMap references in JobRepository.
         // Destroying proxies removes the objects from proxy registry but JobRepository keeps
         // the instances. They can still be used but when used it will NOT recreate proxy
         // so after next test they will not be visible in getDistributedObjects()
-        // and will not be cleared. Because of that we explicitly clean known Jet objects.
-        // __sql.catalog is added just in case but proxy for it is obtained quite often explicitly.
+        // and will not be cleared. Because of that we do not destroy proxies for known Jet and SQL objects
+        // (but snapshots IMaps and job resources will be destroyed) but only clear the IMaps.
         //
         // This behavior affects all objects for which references are kept across test methods,
         // (both in production code and in tests) but for those there is no generic solution.
@@ -197,9 +185,23 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                 JOB_EXECUTION_RECORDS_MAP_NAME, JOB_EXECUTION_RECORDS_MAP_NAME,
                 EXPORTED_SNAPSHOTS_DETAIL_CACHE,
                 SQL_CATALOG_MAP_NAME);
-        List<String> flakeId = List.of(RANDOM_ID_GENERATOR_NAME);
-        jetMaps.forEach(map -> safeDestroy(() -> instance().getMap(map)));
-        flakeId.forEach(id -> safeDestroy(() -> instance().getFlakeIdGenerator(id)));
+        for (DistributedObject o : objects) {
+            if (o.getServiceName().equals(MapService.SERVICE_NAME) && jetMaps.contains(o.getName())) {
+                IMap map = (IMap) o;
+                if (!map.isEmpty()) {
+                    // SQL might create catalog IMap during optimization tests, but it is fine
+                    // in parallel execution as long as it is empty (so no actual SQL objects are created).
+                    //
+                    // This check is slightly racy - it may be not reported in all test methods of given class
+                    // but should be reported in at least one of them.
+                    failIfParallel();
+                    map.clear();
+                }
+            } else {
+                failIfParallel();
+                o.destroy();
+            }
+        }
 
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
@@ -209,27 +211,10 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
     }
 
-    private <T extends DistributedObject> void safeDestroy(Supplier<T> objectToDestroy) {
-        try {
-            objectToDestroy.get().destroy();
-        } catch (RuntimeException maybeDestroyed) {
-            if (maybeDestroyed.getCause() instanceof DistributedObjectDestroyedException && isParallelTestExecution()) {
-                // Race condition between getJobs() and proxy destruction is possible
-                // when supportAfter() is invoked in parallel.
-                // Even if there are any remaining jobs they should be terminated later by cancelAllExecutions.
-                //
-                // Example exception:
-                // com.hazelcast.spi.exception.DistributedObjectDestroyedException:
-                // Proxy [hz:impl:mapService:__jet.records] was destroyed while being created.
-                //  This may result in incomplete cleanup of resources.
-                //  at com.hazelcast.jet.impl.JetInstanceImpl.getJobsInt(JetInstanceImpl.java:116)
-                //  at com.hazelcast.jet.impl.AbstractJetInstance.getJobs(AbstractJetInstance.java:245)
-                SUPPORT_LOGGER.warning("Race condition during objects cleanup" +
-                        " in parallel SimpleTestInClusterSupport test with shared instance", maybeDestroyed);
-            } else {
-                // unexpected DistributedObjectDestroyedException in serial execution or other error
-                throw maybeDestroyed;
-            }
+    private void failIfParallel() {
+        if (parallelExecution.get()) {
+            fail("Parallel execution for SimpleTestInClusterSupport with shared instances in not supported " +
+                    "if any object or job is created");
         }
     }
 
