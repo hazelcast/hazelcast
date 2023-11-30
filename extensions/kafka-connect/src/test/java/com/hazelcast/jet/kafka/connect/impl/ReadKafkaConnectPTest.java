@@ -27,9 +27,9 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,7 +52,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class})
 public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     private ReadKafkaConnectP<Integer> readKafkaConnectP;
@@ -62,28 +62,38 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> (Integer) rec.value());
+        hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
         outbox = new TestOutbox(new int[]{10}, 10);
         context = new TestProcessorContext();
-        hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
         context.setHazelcastInstance(hazelcastInstance);
+        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
+        readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> (Integer) rec.value());
+        readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
+        readKafkaConnectP.setActive(true);
+    }
+
+    @After
+    public void cleanup() {
+        if (readKafkaConnectP != null) {
+            readKafkaConnectP.close();
+        }
+        hazelcastInstance.shutdown();
     }
 
     @Test
     public void should_run_task() throws Exception {
-
         readKafkaConnectP.init(outbox, context);
-        boolean complete = readKafkaConnectP.complete();
 
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
+        boolean complete = readKafkaConnectP.complete();
         assertFalse(complete);
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
     }
 
     @Test
     public void should_filter_items() throws Exception {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> {
+        SourceConnectorWrapper sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
+        readKafkaConnectP = new ReadKafkaConnectP<>(noEventTime(), rec -> {
             Integer value = (Integer) rec.value();
             if (value % 2 == 0) {
                 return null;
@@ -91,33 +101,32 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
                 return value;
             }
         });
+        readKafkaConnectP.setActive(true);
+        readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
 
         readKafkaConnectP.init(outbox, context);
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
         boolean complete = readKafkaConnectP.complete();
 
         assertFalse(complete);
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(1, 3);
     }
 
-
-    @Test
-    public void should_require_connectorWrapper() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(null, noEventTime(), rec -> (Integer) rec.value()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("connectorWrapper is required");
-    }
-
     @Test
     public void should_require_eventTimePolicy() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null,
-                rec -> (Integer) rec.value()))
+        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(null,
+                rec -> (Integer) rec.value())
+                .setSourceConnectorWrapper(wrapper))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("eventTimePolicy is required");
     }
 
     @Test
     public void should_require_projectionFn() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), noEventTime(), null))
+        var wrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(noEventTime(), null)
+                .setSourceConnectorWrapper(wrapper))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("projectionFn is required");
     }
@@ -125,6 +134,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
     @Test
     public void should_register_metrics() throws Exception {
         readKafkaConnectP.init(outbox, context);
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
         MetricsRegistry metricsRegistry = Util.getNodeEngine(hazelcastInstance).getMetricsRegistry();
         CapturingCollector collector = new CapturingCollector();
         metricsRegistry.collect(collector);
@@ -139,6 +149,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
     public void should_not_emit_when_snapshotting_but_after() throws Exception {
         enableSnapshotting(context);
         readKafkaConnectP.init(outbox, context);
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
         readKafkaConnectP.saveToSnapshot();
         readKafkaConnectP.complete();
 
@@ -154,13 +165,17 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_close_task_runner() throws Exception {
+        readKafkaConnectP.setSourceConnectorWrapper(null);
+        readKafkaConnectP.setPropertiesFromUser(minimalProperties());
         readKafkaConnectP.init(outbox, context);
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
 
         readKafkaConnectP.complete();
 
-        assertThat(DummySourceConnector.DummyTask.INSTANCE.isStarted()).isTrue();
+        assertTrueEventually(() -> assertThat(DummySourceConnector.DummyTask.INSTANCE.isStarted()).isTrue());
         readKafkaConnectP.close();
         assertThat(DummySourceConnector.DummyTask.INSTANCE.isStopped()).isTrue();
+        readKafkaConnectP = null;
 
     }
 
@@ -171,6 +186,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         testProcessorContext.setTotalParallelism(2);
         testProcessorContext.setGlobalProcessorIndex(1);
         readKafkaConnectP.init(outbox, testProcessorContext);
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
 
         readKafkaConnectP.complete();
 
@@ -186,6 +202,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         TestProcessorContext testProcessorContext = context;
         enableSnapshotting(testProcessorContext);
         readKafkaConnectP.init(outbox, testProcessorContext);
+        assertTrueEventually(() -> assertTrue(readKafkaConnectP.configurationReceived()));
         Map.Entry<Object, Object> lastSnapshot = outbox.snapshotQueue().peek();
         assertThat(lastSnapshot).isNull();
 
@@ -203,8 +220,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(value);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        State state = new State(partitionsToOffset);
-        return state;
+        return new State(partitionsToOffset);
     }
 
     private static void enableSnapshotting(TestProcessorContext testProcessorContext) {

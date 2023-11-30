@@ -504,10 +504,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private static Collection<? extends Processor> createProcessors(VertexDef vertexDef, int parallelism) {
-        final Collection<? extends Processor> processors = vertexDef.processorSupplier().get(parallelism);
+        ProcessorSupplier processorSupplier = vertexDef.processorSupplier();
+        final Collection<? extends Processor> processors = processorSupplier.get(parallelism);
         if (processors.size() != parallelism) {
             throw new JetException("ProcessorSupplier failed to return the requested number of processors." +
-                    " Requested: " + parallelism + ", returned: " + processors.size());
+                                   " Requested: " + parallelism + ", returned: " + processors.size());
         }
         return processors;
     }

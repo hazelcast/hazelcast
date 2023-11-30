@@ -17,25 +17,24 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.kafka.connect.impl.processorsupplier.TaskMaxProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
 import java.net.URL;
+import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processSupplier;
+import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processorSupplier;
 
 /**
  * Contains factory methods to create a Kafka Connect source.
  */
-@Beta
 public final class KafkaConnectSources {
 
     private KafkaConnectSources() {
@@ -72,25 +71,34 @@ public final class KafkaConnectSources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static <T> StreamSource<T> connect(@Nonnull Properties properties,
                                               @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
-        checkRequiredProperty(properties, "name");
-        checkNotNull(projectionFn, "projectionFn is required");
-
-        String name = "kafkaConnectSource(" + properties.getProperty("name") + ")";
+        Objects.requireNonNull(properties, "properties is required");
+        Objects.requireNonNull(projectionFn, "projectionFn is required");
 
         //fail fast, required by lazy-initialized KafkaConnectSource
+        checkRequiredProperty(properties, "name");
         checkRequiredProperty(properties, "connector.class");
 
-        if (properties.containsKey("tasks.max")) {
-            throw new IllegalArgumentException("Property 'tasks.max' not allowed. Use setLocalParallelism("
-                    + properties.getProperty("tasks.max") + ") in the pipeline instead");
-        }
+        // Populate by default values
+        Properties defaultProperties = getDefaultProperties(properties);
+
+        // Check tasks.max is positive
+        String strTasksMax = defaultProperties.getProperty("tasks.max");
+        int tasksMax = Integer.parseInt(strTasksMax);
+        checkPositive(tasksMax, "tasks.max must be positive");
+
+        TaskMaxProcessorMetaSupplier metaSupplier = new TaskMaxProcessorMetaSupplier();
+        metaSupplier.setTasksMax(tasksMax);
+
+        // Create source name
+        String name = "kafkaConnectSource(" + defaultProperties.getProperty("name") + ")";
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
-                eventTimePolicy -> ProcessorMetaSupplier.randomMember(processSupplier(properties, eventTimePolicy,
-                        projectionFn)));
+                eventTimePolicy -> {
+                    metaSupplier.setSupplier(processorSupplier(defaultProperties, eventTimePolicy, projectionFn));
+                    return metaSupplier;
+                });
     }
 
     /**
@@ -120,9 +128,18 @@ public final class KafkaConnectSources {
      * @since 5.3
      */
     @Nonnull
-    @Beta
     public static StreamSource<SourceRecord> connect(@Nonnull Properties properties) {
         return connect(properties, FunctionEx.identity());
     }
 
+    private static Properties getDefaultProperties(Properties properties) {
+        // Make new copy
+        Properties defaultProperties = new Properties();
+        defaultProperties.putAll(properties);
+
+        // Populate tasks.max property if necessary
+        defaultProperties.putIfAbsent("tasks.max", "1");
+
+        return defaultProperties;
+    }
 }

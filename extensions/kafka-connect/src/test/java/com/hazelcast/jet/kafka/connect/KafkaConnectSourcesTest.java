@@ -43,6 +43,7 @@ public class KafkaConnectSourcesTest {
                 .hasMessage("Property 'name' is required");
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
     public void should_fail_when_no_projectionFn() {
         Properties properties = new Properties();
@@ -51,18 +52,6 @@ public class KafkaConnectSourcesTest {
         assertThatThrownBy(() -> connect(properties, null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("projectionFn is required");
-    }
-
-
-    @Test
-    public void should_fail_when_tasks_max_property_set() {
-        Properties properties = new Properties();
-        properties.setProperty("name", "some-name");
-        properties.setProperty("connector.class", "some-name");
-        properties.setProperty("tasks.max", "1");
-        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Property 'tasks.max' not allowed. Use setLocalParallelism(1) in the pipeline instead");
     }
 
     @Test
