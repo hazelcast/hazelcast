@@ -20,11 +20,11 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 
 class Queries {
 
@@ -37,14 +37,29 @@ class Queries {
 
     private final String loadAllKeys;
 
-    private final String storeSink;
+    private String storeSink;
     private final String storeUpdate;
     private final String delete;
 
     private final Function<Integer, String> deleteAllFactory;
     private final Map<Integer, String> deleteAllQueries = new ConcurrentHashMap<>();
 
+    private int columnSize = 0;
+    private Set<String> allColumns;
+
+    private String idColumn;
+
+    private String mapping;
+
+    private List<SqlColumnMetadata> columnMetadata;
+
     Queries(String mapping, String idColumn, List<SqlColumnMetadata> columnMetadata) {
+        this.columnMetadata = columnMetadata;
+
+        this.mapping = mapping;
+
+        this.idColumn = idColumn;
+
         loadQuery = buildLoadQuery(mapping, idColumn);
 
         loadAllFactory = n -> buildLoadAllQuery(mapping, idColumn, n);
@@ -96,15 +111,22 @@ class Queries {
         sb.append("SINK INTO ");
         DIALECT.quoteIdentifier(sb, mapping);
         sb.append(" (");
-        for (Iterator<SqlColumnMetadata> iterator = columnMetadata.iterator(); iterator.hasNext(); ) {
-            SqlColumnMetadata column = iterator.next();
-            DIALECT.quoteIdentifier(sb, column.getName());
-            if (iterator.hasNext()) {
-                sb.append(", ");
+        int defaultCount = 0;
+        if (columnSize != 0) {
+            defaultCount = columnMetadata.size() - allColumns.size();
+            setColumnsWithDefaultValues(sb, columnMetadata);
+        } else {
+            for (Iterator<SqlColumnMetadata> iterator = columnMetadata.iterator(); iterator.hasNext(); ) {
+                SqlColumnMetadata column = iterator.next();
+                DIALECT.quoteIdentifier(sb, column.getName());
+                if (iterator.hasNext()) {
+                    sb.append(", ");
+                }
             }
         }
+
         sb.append(") VALUES (");
-        appendQueryParams(sb, columnMetadata.size());
+        appendQueryParams(sb, columnMetadata.size() - defaultCount);
         sb.append(')');
         return sb.toString();
     }
@@ -162,6 +184,20 @@ class Queries {
         return sb.toString();
     }
 
+    private void setColumnsWithDefaultValues(StringBuilder sb, List<SqlColumnMetadata> columnMetadataList) {
+        boolean firstColumn = true;
+        for (Iterator<SqlColumnMetadata> iterator = columnMetadataList.iterator(); iterator.hasNext();) {
+            SqlColumnMetadata column = iterator.next();
+            if (allColumns.contains(column.getName())) {
+                if (iterator.hasNext() && !firstColumn) {
+                    sb.append(", ");
+                }
+                DIALECT.quoteIdentifier(sb, column.getName());
+                firstColumn = false;
+            }
+        }
+    }
+
     String load() {
         return loadQuery;
     }
@@ -190,4 +226,11 @@ class Queries {
     String deleteAll(int n) {
         return deleteAllQueries.computeIfAbsent(n, deleteAllFactory);
     }
+
+    public void recreateStoreSink(Set<String> allColumns, int size) {
+        this.allColumns = allColumns;
+        columnSize = size;
+        storeSink = buildStoreSinkQuery(mapping, columnMetadata);
+    }
+
 }
