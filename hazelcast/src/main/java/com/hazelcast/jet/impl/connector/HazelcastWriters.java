@@ -100,12 +100,17 @@ public final class HazelcastWriters {
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkConfiguration<T, K, V> sinkConfig) {
+        // Create ProcessorSupplier
         WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(sinkConfig);
         if (sinkConfig.isRemote()) {
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return preferLocalParallelismOne(supplier);
         } else {
-            Permission permission = mapPutPermission(null, sinkConfig.getMapName());
-            return preferLocalParallelismOne(permission, supplier);
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapPutPermission(sinkConfig.isRemote(), sinkConfig.getMapName());
+
+            // ProcessorMetaSupplier uses default local parallelism
+            return preferLocalParallelismOne(processorMetaSupplierPermission, supplier);
         }
     }
 
@@ -125,7 +130,7 @@ public final class HazelcastWriters {
 
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
                 sinkConfig.getMapName(),
-                "",
+                sinkConfig.isRemote(),
                 toKeyFn,
                 (V oldValue, T item) -> {
                     V newValue = toValueFn.apply(item);
@@ -142,13 +147,14 @@ public final class HazelcastWriters {
         );
 
         if (sinkConfig.isRemote()) {
-            // Uses default local parallelism
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapUpdatePermission(sinkConfig.isRemote(), sinkConfig.getMapName());
 
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            // ProcessorMetaSupplier uses default local parallelism
+            return ProcessorMetaSupplier.of(processorMetaSupplierPermission, processorSupplier);
         }
     }
 
@@ -164,9 +170,9 @@ public final class HazelcastWriters {
         checkSerializable(updateFn, "updateFn");
 
         String clientXml = asXmlString(clientConfig);
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+        return ProcessorMetaSupplier.of(mapUpdatePermission(false, name),
                 AbstractHazelcastConnectorSupplier.ofMap(clientXml,
-                        SecuredFunctions.updateMapProcessorFn(name, clientXml, toKeyFn, updateFn)));
+                        SecuredFunctions.updateMapProcessorFn(name, false, toKeyFn, updateFn)));
     }
 
     /**
@@ -179,7 +185,7 @@ public final class HazelcastWriters {
 
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
                 sinkConfig.getMapName(),
-                "",
+                sinkConfig.isRemote(),
                 sinkConfig.getToKeyFn(),
                 sinkConfig.getUpdateFn());
 
@@ -190,13 +196,14 @@ public final class HazelcastWriters {
         );
 
         if (sinkConfig.isRemote()) {
-            // Uses default local parallelism
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapUpdatePermission(sinkConfig.isRemote(), sinkConfig.getMapName());
 
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            // ProcessorMetaSupplier uses default local parallelism
+            return ProcessorMetaSupplier.of(processorMetaSupplierPermission, processorSupplier);
         }
     }
 
@@ -230,7 +237,7 @@ public final class HazelcastWriters {
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
                 sinkConfig.getMaxParallelAsyncOps(),
                 sinkConfig.getMapName(),
-                "",
+                sinkConfig.isRemote(),
                 sinkConfig.getToKeyFn(),
                 sinkConfig.getToEntryProcessorFn());
 
@@ -240,12 +247,13 @@ public final class HazelcastWriters {
                 processorFunction
         );
         if (sinkConfig.isRemote()) {
-            // Uses default local parallelism
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapUpdatePermission(sinkConfig.isRemote(), sinkConfig.getMapName());
+            // ProcessorMetaSupplier uses default local parallelism
+            return ProcessorMetaSupplier.of(processorMetaSupplierPermission, processorSupplier);
         }
     }
 
