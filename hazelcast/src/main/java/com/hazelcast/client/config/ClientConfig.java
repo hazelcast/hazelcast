@@ -201,10 +201,14 @@ public class ClientConfig {
      * @return ClientConfig created from a file when exists, otherwise default.
      */
     public static ClientConfig load() {
-        return new ExternalConfigurationOverride().overwriteClientConfig(loadFromFile());
+        return applyEnvAndSystemVariableOverrides(loadFromFile(System.getProperties()));
     }
 
-    private static ClientConfig loadFromFile() {
+    private static ClientConfig applyEnvAndSystemVariableOverrides(ClientConfig cfg) {
+        return new ExternalConfigurationOverride().overwriteClientConfig(cfg);
+    }
+
+    private static ClientConfig loadFromFile(Properties properties) {
         validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
 
         XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
@@ -212,21 +216,41 @@ public class ClientConfig {
 
         if (xmlConfigLocator.locateFromSystemProperty()) {
             // 1. Try loading XML config from the configuration provided in system property
-            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+            return new XmlClientConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         } else if (yamlConfigLocator.locateFromSystemProperty()) {
             // 2. Try loading YAML config from the configuration provided in system property
-            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+            return new YamlClientConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
-            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+            return new XmlClientConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 4. Try loading YAML config from the working directory or from the classpath
-            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+            return new YamlClientConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         } else {
             // 5. Loading the default XML configuration file
             xmlConfigLocator.locateDefault();
-            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+            return new XmlClientConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         }
+    }
+
+    /**
+     * Same as {@link #load() load()}, i.e., loads ClientConfig using the default lookup mechanism
+     *
+     * @return ClientConfig created from a file when exists, otherwise default.
+     */
+    public static ClientConfig loadDefault() {
+        return load();
+    }
+
+    /**
+     * Loads ClientConfig using the default {@link #load() lookup mechanism} to locate the configuration file
+     * and applies variable resolution from the provided properties.
+     *
+     * @param properties properties to resolve variables in the XML or YAML
+     * @return ClientConfig created from a file when exists, otherwise default.
+     */
+    public static ClientConfig loadDefault(Properties properties) {
+        return applyEnvAndSystemVariableOverrides(loadFromFile(properties));
     }
 
     /**
