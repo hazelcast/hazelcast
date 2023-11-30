@@ -44,7 +44,7 @@ public final class PermissionsUtil {
     }
 
     @Nullable
-    public static Permission checkRemote(@Nullable String clientXml, @Nonnull Permission permission) {
+    private static Permission checkRemote(@Nullable String clientXml, @Nonnull Permission permission) {
         if (clientXml == null) {
             return permission;
         }
@@ -52,7 +52,7 @@ public final class PermissionsUtil {
     }
 
     @Nullable
-    public static Permission checkRemote(boolean isRemote, @Nonnull Permission permission) {
+    private static Permission checkRemote(boolean isRemote, @Nonnull Permission permission) {
         if (isRemote) {
             return null;
         }
