@@ -33,7 +33,7 @@ public enum DeleteOpSteps implements IMapOpStep {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
-            Record record = recordStore.getRecordOrNull(state.getKey(), false);
+            Record record = recordStore.getRecordOrNull(state.getKey(), false, true);
             state.setOldValue(record == null ? null : record.getValue());
             state.setRecordExistsInMemory(record != null);
 
@@ -78,8 +78,7 @@ public enum DeleteOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-            Record record = recordStore.getRecord(state.getKey());
-            recordStore.removeRecord0(state.getKey(), record, false);
+            Record record = recordStore.removeByKey(state.getKey(), false);
             recordStore.onStore(record);
         }
 
