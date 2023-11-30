@@ -216,6 +216,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             fail("Parallel execution for SimpleTestInClusterSupport with shared instances in not supported " +
                     "if any object or job is created");
         }
+        assertThatIsNotMultithreadedTest();
     }
 
     private boolean isParallelTestExecution() {
