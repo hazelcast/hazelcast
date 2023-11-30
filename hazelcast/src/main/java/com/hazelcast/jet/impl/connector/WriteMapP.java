@@ -192,7 +192,9 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
 
         @Override
         public List<Permission> permissions() {
-            return singletonList(mapPutPermission(clientXml, mapName));
+            // Return permissions for this ProcessorSupplier
+            Permission permission = mapPutPermission(isRemote(), mapName);
+            return singletonList(permission);
         }
     }
 }

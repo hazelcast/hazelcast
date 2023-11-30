@@ -76,7 +76,9 @@ public final class HazelcastWriters {
     private HazelcastWriters() {
     }
 
-    // Dummy function to make the EE SecuredFunctionTest.java pass.
+    /**
+     * Update map with key and value functions
+     */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(
             @Nonnull String name,
@@ -100,12 +102,17 @@ public final class HazelcastWriters {
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkConfiguration<T, K, V> sinkConfig) {
+        // Create ProcessorSupplier
         WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(sinkConfig);
         if (sinkConfig.isRemote()) {
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return preferLocalParallelismOne(supplier);
         } else {
-            Permission permission = mapPutPermission(null, sinkConfig.getMapName());
-            return preferLocalParallelismOne(permission, supplier);
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapPutPermission(sinkConfig.getMapName());
+
+            // ProcessorMetaSupplier uses default local parallelism
+            return preferLocalParallelismOne(processorMetaSupplierPermission, supplier);
         }
     }
 
@@ -123,9 +130,10 @@ public final class HazelcastWriters {
         checkSerializable(toValueFn, "toValueFn");
         checkSerializable(mergeFn, "mergeFn");
 
+        boolean isRemote = sinkConfig.isRemote();
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
                 sinkConfig.getMapName(),
-                "",
+                isRemote,
                 toKeyFn,
                 (V oldValue, T item) -> {
                     V newValue = toValueFn.apply(item);
@@ -141,18 +149,21 @@ public final class HazelcastWriters {
                 processorFunction
         );
 
-        if (sinkConfig.isRemote()) {
-            // Uses default local parallelism
+        if (isRemote) {
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapUpdatePermission(sinkConfig.getMapName());
 
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            // ProcessorMetaSupplier uses default local parallelism
+            return ProcessorMetaSupplier.of(processorMetaSupplierPermission, processorSupplier);
         }
     }
 
-    // Dummy function to make the EE SecuredFunctionTest.java pass.
+    /**
+     * Update map with an update function
+     */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
@@ -163,10 +174,12 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
 
-        String clientXml = asXmlString(clientConfig);
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
-                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
-                        SecuredFunctions.updateMapProcessorFn(name, clientXml, toKeyFn, updateFn)));
+        MapSinkConfiguration<T, K, V> sinkConfig = new MapSinkConfiguration<>(name);
+        sinkConfig.setClientXml(ImdgUtil.asXmlString(clientConfig));
+        sinkConfig.setToKeyFn(toKeyFn);
+        sinkConfig.setUpdateFn(updateFn);
+
+        return updateMapSupplier(sinkConfig);
     }
 
     /**
@@ -177,9 +190,10 @@ public final class HazelcastWriters {
         checkSerializable(sinkConfig.getToKeyFn(), "toKeyFn");
         checkSerializable(sinkConfig.getUpdateFn(), "updateFn");
 
+        boolean isRemote = sinkConfig.isRemote();
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
                 sinkConfig.getMapName(),
-                "",
+                isRemote,
                 sinkConfig.getToKeyFn(),
                 sinkConfig.getUpdateFn());
 
@@ -189,18 +203,21 @@ public final class HazelcastWriters {
                 processorFunction
         );
 
-        if (sinkConfig.isRemote()) {
-            // Uses default local parallelism
+        if (isRemote) {
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapUpdatePermission(sinkConfig.getMapName());
 
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            // ProcessorMetaSupplier uses default local parallelism
+            return ProcessorMetaSupplier.of(processorMetaSupplierPermission, processorSupplier);
         }
     }
 
-    // Dummy function to make the EE SecuredFunctionTest.java pass.
+    /**
+     * Update map with an EntryProcessor
+     */
     @Nonnull
     public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
@@ -208,12 +225,13 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        MapSinkEntryProcessorConfiguration<T, K, V, R> params = new MapSinkEntryProcessorConfiguration<>(name);
-        params.setMaxParallelAsyncOps(MAX_PARALLEL_ASYNC_OPS_DEFAULT);
-        params.setToKeyFn(toKeyFn);
-        params.setToEntryProcessorFn(toEntryProcessorFn);
+        MapSinkEntryProcessorConfiguration<T, K, V, R> sinkConfig = new MapSinkEntryProcessorConfiguration<>(name);
+        sinkConfig.setClientXml(ImdgUtil.asXmlString(clientConfig));
+        sinkConfig.setMaxParallelAsyncOps(MAX_PARALLEL_ASYNC_OPS_DEFAULT);
+        sinkConfig.setToKeyFn(toKeyFn);
+        sinkConfig.setToEntryProcessorFn(toEntryProcessorFn);
 
-        return updateMapSupplier(params);
+        return updateMapSupplier(sinkConfig);
 
     }
 
@@ -227,10 +245,11 @@ public final class HazelcastWriters {
         checkSerializable(sinkConfig.getToKeyFn(), "toKeyFn");
         checkSerializable(sinkConfig.getToEntryProcessorFn(), "toEntryProcessorFn");
 
+        boolean isRemote = sinkConfig.isRemote();
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
                 sinkConfig.getMaxParallelAsyncOps(),
                 sinkConfig.getMapName(),
-                "",
+                isRemote,
                 sinkConfig.getToKeyFn(),
                 sinkConfig.getToEntryProcessorFn());
 
@@ -239,13 +258,14 @@ public final class HazelcastWriters {
                 sinkConfig.getClientXml(),
                 processorFunction
         );
-        if (sinkConfig.isRemote()) {
-            // Uses default local parallelism
+        if (isRemote) {
+            // ProcessorMetaSupplier uses default local parallelism and no permission
             return ProcessorMetaSupplier.of(processorSupplier);
         } else {
-            Permission permission = mapUpdatePermission(null, sinkConfig.getMapName());
-            // Uses default local parallelism
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            // Create permission for ProcessorMetaSupplier
+            Permission processorMetaSupplierPermission = mapUpdatePermission(sinkConfig.getMapName());
+            // ProcessorMetaSupplier uses default local parallelism
+            return ProcessorMetaSupplier.of(processorMetaSupplierPermission, processorSupplier);
         }
     }
 
