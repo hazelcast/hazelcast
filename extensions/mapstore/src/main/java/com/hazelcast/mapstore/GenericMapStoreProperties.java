@@ -92,4 +92,7 @@ class GenericMapStoreProperties {
         return allColumns;
     }
 
+    public List<String> getColumns() {
+        return columns;
+    }
 }

@@ -17,10 +17,14 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.SqlColumnMetadata;
 
+import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
+
 import java.util.List;
+import java.util.Set;
 
 class JdbcParameters {
     private int idPos;
@@ -54,14 +58,28 @@ class JdbcParameters {
             List<SqlColumnMetadata> columnMetadataList,
             String idColumn,
             boolean singleColumnAsValue
+            List<String> columns
     ) {
 
         JdbcParameters jdbcParameters = new JdbcParameters();
 
+
         int idPos = -1;
-        Object[] params = new Object[columnMetadataList.size()];
+        Object[] params;
+        if ( columns != null && columns.size() != 0) {
+            if (columns.contains(idColumn)) {
+                params = new Object[columns.size()];
+            } else {
+                params = new Object[columns.size() + 1];
+            }
+        } else {
+            // it means COLUMNS_PROPERTY is not set, hence no default values
+            params = new Object[columnMetadataList.size()];
+        }
+
 
         // Iterate over columns
+        int index = 0;
         for (int i = 0; i < columnMetadataList.size(); i++) {
             SqlColumnMetadata columnMetadata = columnMetadataList.get(i);
 
@@ -70,8 +88,9 @@ class JdbcParameters {
 
             // If column name is primary key, use the key value
             if (columnName.equals(idColumn)) {
-                idPos = i;
-                params[i] = key;
+                idPos = index;
+                params[index] = key;
+                index++;
                 continue;
             }
             if (columnMetadataList.size() == 2 && singleColumnAsValue) {
@@ -80,65 +99,68 @@ class JdbcParameters {
             } else {
                 // Get all other values from GenericRecord
                 GenericRecord genericRecord = (GenericRecord) value;
-                switch (columnMetadata.getType()) {
-                    case VARCHAR:
-                        params[i] = genericRecord.getString(columnName);
+                // if the column was not initialized in genericRecord skip it (it might have a default value in the table)
+            if (genericRecord.getFieldKind(columnName).equals(FieldKind.NOT_AVAILABLE)) {
+                continue;
+            }
+            switch (columnMetadata.getType()) {
+                case VARCHAR:
+                    params[index] = genericRecord.getString(columnName);
                         break;
 
                     case BOOLEAN:
-                        params[i] = genericRecord.getBoolean(columnName);
+                        params[index] = genericRecord.getBoolean(columnName);
                         break;
 
                     case TINYINT:
-                        params[i] = genericRecord.getInt8(columnName);
+                        params[index] = genericRecord.getInt8(columnName);
                         break;
 
                     case SMALLINT:
-                        params[i] = genericRecord.getInt16(columnName);
+                        params[index] = genericRecord.getInt16(columnName);
                         break;
 
                     case INTEGER:
-                        params[i] = genericRecord.getInt32(columnName);
+                        params[index] = genericRecord.getInt32(columnName);
                         break;
 
                     case BIGINT:
-                        params[i] = genericRecord.getInt64(columnName);
+                        params[index] = genericRecord.getInt64(columnName);
                         break;
 
                     case REAL:
-                        params[i] = genericRecord.getFloat32(columnName);
+                        params[index] = genericRecord.getFloat32(columnName);
                         break;
 
                     case DOUBLE:
-                        params[i] = genericRecord.getFloat64(columnName);
+                        params[index] = genericRecord.getFloat64(columnName);
                         break;
 
                     case DATE:
-                        params[i] = genericRecord.getDate(columnName);
+                        params[index] = genericRecord.getDate(columnName);
                         break;
 
                     case TIME:
-                        params[i] = genericRecord.getTime(columnName);
+                        params[index] = genericRecord.getTime(columnName);
                         break;
 
                     case TIMESTAMP:
-                        params[i] = genericRecord.getTimestamp(columnName);
+                        params[index] = genericRecord.getTimestamp(columnName);
                         break;
 
                     case TIMESTAMP_WITH_TIME_ZONE:
-                        params[i] = genericRecord.getTimestampWithTimezone(columnName);
+                        params[index] = genericRecord.getTimestampWithTimezone(columnName);
                         break;
 
                     case DECIMAL:
-                        params[i] = genericRecord.getDecimal(columnName);
+                        params[index] = genericRecord.getDecimal(columnName);
                         break;
 
-                    default:
-                        throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
-                    }
-                }
+                default:
+                    throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
             }
-
+            index++;
+        }}
 
         jdbcParameters.setParams(params);
         jdbcParameters.setIdPos(idPos);

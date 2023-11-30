@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.SINGLE_COLUMN_AS_VALUE;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_NAME_PROPERTY;
@@ -582,7 +583,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/22527")
+    //@Ignore("https://github.com/hazelcast/hazelcast/issues/22527")
     public void givenColumnPropSubset_whenStore_thenTableContainsRow() throws SQLException {
         createMapLoaderTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
@@ -594,7 +595,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
-        properties.setProperty("columns", "id,name");
+        properties.setProperty(COLUMNS_PROPERTY, "id,name");
         mapStore = createMapStore(properties, hz);
 
         GenericRecord person = GenericRecordBuilder.compact(mapName)
@@ -606,8 +607,8 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
         assertJdbcRowsAnyOrder(mapName,
                 newArrayList(Integer.class, String.class),
-                new Row(0, "name-0"),
-                new Row(1, "name-1")
+                new Row(0, "name-0","def"),
+                new Row(1, "name-1","def")
         );
     }
 
