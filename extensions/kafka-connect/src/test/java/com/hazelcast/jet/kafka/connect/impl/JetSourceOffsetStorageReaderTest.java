@@ -31,12 +31,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SourceOffsetStorageReaderTest {
+public class JetSourceOffsetStorageReaderTest {
     @Test
     public void should_return_null_offset_for_non_existing_partition() {
         Map<String, String> partition = mapOf("part1", "something");
         State state = new State();
-        SourceOffsetStorageReader sut = new SourceOffsetStorageReader(state);
+        JetSourceOffsetStorageReader sut = new JetSourceOffsetStorageReader(state);
         Map<String, Object> offset = sut.offset(partition);
         assertThat(offset).isNull();
     }
@@ -46,7 +46,7 @@ public class SourceOffsetStorageReaderTest {
         Map<String, String> partition = mapOf("part1", "something");
         Map<Map<String, ?>, Map<String, ?>> partitionToOffset = mapOf(partition, mapOf("part1", 123));
         State state = new State(partitionToOffset);
-        SourceOffsetStorageReader sut = new SourceOffsetStorageReader(state);
+        JetSourceOffsetStorageReader sut = new JetSourceOffsetStorageReader(state);
         Map<String, Object> offset = sut.offset(partition);
         assertThat(offset).isEqualTo(mapOf("part1", 123));
     }

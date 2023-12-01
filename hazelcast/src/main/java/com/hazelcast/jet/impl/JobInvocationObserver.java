@@ -26,18 +26,16 @@ import java.util.Set;
 
 /**
  * Jet job metadata observer used primarily for testing.
- * It is invoked exactly before {@link InitExecutionOperation} for light jobs
- * in {@link com.hazelcast.jet.impl.LightMasterContext#createContext}.
+ * It is invoked exactly before {@link InitExecutionOperation}.
  * <p>
  * The internal state of the observer supposed to be mutable.
- * {@link JobInvocationObserver#onLightJobInvocation} implementations must not use blocking code.
- * <p>
- * Important note: right now it executes *only* for light jobs.
+ * {@link #onLightJobInvocation} and {@link #onJobInvocation} implementations must not use blocking code.
  *
  * @since 5.4
  */
 @Beta
 public interface JobInvocationObserver {
 
+    void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
     void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
 }

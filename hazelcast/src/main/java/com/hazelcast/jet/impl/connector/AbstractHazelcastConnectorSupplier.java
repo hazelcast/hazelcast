@@ -107,8 +107,18 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
 
     protected abstract Processor createProcessor(HazelcastInstance instance, SerializationService serializationService);
 
+    /**
+     * Return if ProcessorSupplier is for local cluster or not
+     */
     boolean isLocal() {
         return (clientXml == null) && (dataConnectionName == null);
+    }
+
+    /**
+     * Return if ProcessorSupplier is for remote cluster or not
+     */
+    boolean isRemote() {
+        return !isLocal();
     }
 
     @Override

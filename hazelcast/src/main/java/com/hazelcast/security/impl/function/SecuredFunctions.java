@@ -356,7 +356,7 @@ public final class SecuredFunctions {
 
     public static <T, K, V> FunctionEx<HazelcastInstance, Processor> updateMapProcessorFn(
             String name,
-            String clientXml,
+            boolean isRemote,
             FunctionEx<? super T, ? extends K> toKeyFn,
             BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
@@ -370,7 +370,8 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(mapUpdatePermission(clientXml, name));
+                Permission permission = mapUpdatePermission(isRemote, name);
+                return singletonList(permission);
             }
         };
     }
@@ -378,7 +379,7 @@ public final class SecuredFunctions {
     public static <T, R, K, V> FunctionEx<HazelcastInstance, Processor> updateWithEntryProcessorFn(
             int maxParallelAsyncOps,
             String name,
-            String clientXml,
+            boolean isRemote,
             FunctionEx<? super T, ? extends K> toKeyFn,
             FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
@@ -393,7 +394,8 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(mapUpdatePermission(clientXml, name));
+                Permission permission = mapUpdatePermission(isRemote, name);
+                return singletonList(permission);
             }
         };
     }

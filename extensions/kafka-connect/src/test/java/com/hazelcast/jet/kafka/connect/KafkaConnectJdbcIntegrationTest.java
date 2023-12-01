@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -71,6 +72,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static final String PASSWORD = "mysql";
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
 
+    @SuppressWarnings("resource")
     private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
             .withUsername(USERNAME).withPassword(PASSWORD)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
@@ -140,9 +142,9 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
     @Test
     public void testScaling() throws Exception {
-        int localParallelism = 2;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("tasks.max", "2");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
         randomProperties.setProperty("mode", "incrementing");
         String connectionUrl = mysql.getJdbcUrl();
@@ -160,8 +162,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
                         SourceRecordUtil::convertToString))
-                .withoutTimestamps()
-                .setLocalParallelism(localParallelism);
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -182,6 +183,63 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
         }
+    }
+
+    @Test
+    public void testScaling_with_new_member() throws Exception {
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("tasks.max", "2");
+        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
+        randomProperties.setProperty("mode", "incrementing");
+        String connectionUrl = mysql.getJdbcUrl();
+        randomProperties.setProperty("connection.url", connectionUrl);
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
+        randomProperties.setProperty("incrementing.column.name", "id");
+        randomProperties.setProperty("table.whitelist", "newmember_parallel_items_1,newmember_parallel_items_2");
+        randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("batch.max.rows", "1");
+
+        createTableAndFill(connectionUrl, "newmember_parallel_items_1");
+        createTableAndFill(connectionUrl, "newmember_parallel_items_2");
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance hazelcastInstance1 = createHazelcastInstances(config, 1) [0];
+
+        String listName = "destinationList";
+        IList<Object> sinkList = hazelcastInstance1.getList(listName);
+
+        // Create job
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps();
+        streamStage.writeTo(Sinks.logger());
+        streamStage.writeTo(Sinks.list(sinkList));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Job job = hazelcastInstance1.getJet().newJob(pipeline, jobConfig);
+
+        // There are some items in the list. The job is running
+        assertTrueEventually(() -> assertTrue(sinkList.size() > 10));
+
+        // Add one more member to  cluster
+        HazelcastInstance hazelcastInstance2 = createHazelcastInstances(config, 1)[0];
+        assertClusterSizeEventually(2, hazelcastInstance1, hazelcastInstance2);
+
+        // Restarting the job will distribute the processors
+        job.restart();
+        // Do not call job.join(). It blocks forever for some reason
+
+        // We should see more items in the list
+        assertTrueEventually(() -> {
+            assertTrue(sinkList.size() >= 2 * ITEM_COUNT);
+        });
     }
 
     @Test
