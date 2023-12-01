@@ -46,6 +46,8 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.steps.ClearOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
@@ -113,6 +115,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final Collection<Future<?>> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
+     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
+     * if set to true then eviction operations by this RecordStore will be WAN replicated
+     */
+    protected boolean wanReplicateEvictions;
+
+    /**
      * A reference to the Json Metadata store. It is initialized lazily only if the
      * store is needed.
      */
@@ -131,11 +139,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
-    /**
-     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
-     * if set to true then eviction operations by this RecordStore will be WAN replicated
-     */
-    private boolean wanReplicateEvictions;
 
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
@@ -1641,5 +1644,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean isTieredStorageEnabled() {
         return mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
+    }
+
+    public Step getClearOpStartingStep() {
+        return ClearOpSteps.CLEAR_MEMORY;
     }
 }
