@@ -313,7 +313,7 @@ public class MasterJobContext {
 
                   createExecutionPlans(dag, membersView)
                           .thenCompose(plans -> coordinator.submitToCoordinatorThread(
-                                  () -> initExecution(membersView, plans)
+                                  () -> initExecution(membersView, plans, dag)
                           ))
                           .whenComplete((r, e) -> {
                               if (e != null) {
@@ -339,11 +339,13 @@ public class MasterJobContext {
                 false, mc.jobRecord().getSubject());
     }
 
-    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap, DAG dag) {
         mc.setExecutionPlanMap(executionPlanMap);
         logger.fine("Built execution plans for " + mc.jobIdString());
         Set<MemberInfo> participants = mc.executionPlanMap().keySet();
         Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        mc.coordinationService().jobInvocationObservers.forEach(obs ->
+                obs.onLightJobInvocation(mc.jobId(), participants, dag, mc.jobConfig()));
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
                         participants, mc.nodeEngine().getSerializationService().toData(plan), false);

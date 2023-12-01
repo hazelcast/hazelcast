@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -47,7 +48,7 @@ class RemoteMapSourceBuilderTest {
     @Test
     void testDataConnectionName_NotNull() {
         assertThatCode(() -> Sources.remoteMapBuilder("mapName")
-                .dataConnectionName("dataConnectionName")
+                .dataConnectionRef(dataConnectionRef("dataConnectionName"))
                 .build()
         ).doesNotThrowAnyException();
     }

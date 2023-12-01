@@ -19,11 +19,16 @@ package com.hazelcast.jet.kafka.connect.impl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-class State implements Serializable {
+import static java.util.stream.Collectors.joining;
+
+public class State implements Serializable {
+
+    private List<Map<String, String>> taskConfigs;
 
     /**
      * Key represents the partition which the record originated from. Value
@@ -43,6 +48,18 @@ class State implements Serializable {
      */
     State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
         this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
+    }
+
+    public void setTaskConfigs(List<Map<String, String>> taskConfigs) {
+        this.taskConfigs = taskConfigs;
+    }
+
+    public Map<String, String> getTaskConfig(int order) {
+        if (order < taskConfigs.size()) {
+            return taskConfigs.get(order);
+        } else {
+            return null;
+        }
     }
 
     void commitRecord(SourceRecord rec) {
@@ -67,18 +84,29 @@ class State implements Serializable {
         }
 
         State state = (State) o;
-        return partitionsToOffset.equals(state.partitionsToOffset);
+        return Objects.equals(taskConfigs, state.taskConfigs) &&
+               Objects.equals(partitionsToOffset, state.partitionsToOffset);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(partitionsToOffset);
+        return Objects.hash(taskConfigs, partitionsToOffset);
     }
 
     @Override
     public String toString() {
         return "State{" +
-                "partitionsToOffset=" + partitionsToOffset +
-                '}';
+               "taskConfigs names=" + extractNames(taskConfigs) +
+               ", partitionsToOffset=" + partitionsToOffset +
+               '}';
+    }
+
+    private String extractNames(List<Map<String, String>> taskConfigs) {
+        if (taskConfigs == null) {
+            return "null";
+        }
+        return taskConfigs.stream()
+                .map(c -> c.getOrDefault("name", "<unnamed>"))
+                .collect(joining(",", "[", "]"));
     }
 }

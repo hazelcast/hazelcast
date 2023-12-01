@@ -133,7 +133,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {
+    protected void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {
         MapServiceContext context = getMapServiceContext(instance);
         int partitionCount = getPartitionCount(instance);
 

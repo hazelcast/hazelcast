@@ -27,18 +27,15 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.Assert.assertEquals;
 
@@ -94,14 +91,6 @@ public final class TestUtil {
     @Nonnull
     public static ProcessorMetaSupplier throttle(@Nonnull ProcessorMetaSupplier wrapped, long itemsPerSecond) {
         return new WrappingProcessorMetaSupplier(wrapped, p -> new ThrottleWrappedP(p, itemsPerSecond));
-    }
-
-    /**
-     * Create {@code HashSet} from a list of items.
-     */
-    @Nonnull
-    public static <T> Set<T> set(T ... foo) {
-        return new HashSet<>(asList(foo));
     }
 
     /**

@@ -88,12 +88,12 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KafkaConnectIntegrationTest extends JetTestSupport {
+public class KafkaConnectIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIT.class);
 
     @Test
     public void test_reading_without_timestamps() throws URISyntaxException {
@@ -291,7 +291,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                             Map<String, List<Order>> ordersByTaskId = groupByTaskId(list);
                             LOGGER.info("ordersByTaskId = " + countOrdersByTaskId(ordersByTaskId));
                             assertThat(ordersByTaskId).allSatisfy((taskId, records) ->
-                                    assertThat(records.size()).isGreaterThan(ITEM_COUNT)
+                                    assertThat(records).hasSizeGreaterThan(ITEM_COUNT)
                             );
                         }));
 
@@ -335,7 +335,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     @Nonnull
     private static Map<String, List<Order>> groupByTaskId(List<Order> list) {
         return list.stream()
-                .collect(Collectors.groupingBy(KafkaConnectIntegrationTest::getTaskId,
+                .collect(Collectors.groupingBy(KafkaConnectIT::getTaskId,
                         Collectors.mapping(Function.identity(), toList())));
     }
 
@@ -361,6 +361,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("tasks.max", "3");
         randomProperties.setProperty("kafka.topic", "not-used");
         randomProperties.setProperty("quickstart", "orders");
 
@@ -422,6 +423,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         ClassLoader classLoader = getClass().getClassLoader();
         final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-datagen-0.6.0.zip";
         URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
+        assert resource != null;
         assertThat(new File(resource.toURI())).exists();
         return resource;
     }
