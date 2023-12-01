@@ -189,8 +189,7 @@ public final class UpdatingEntryProcessor
 
 
         /*
-        Verifying context post-deserialization during the backup process
-        is unfeasible as it deserialize UpdatingEntryProcessor.
+        No context is initialized during post-deserialization in the backup process.
         To ensure consistency with the backup procedure, an untrusted context is utilized in this situation as well.
         */
         public EntryProcessor<Object, Object, Long> get(UntrustedExpressionEvalContext eec) {
