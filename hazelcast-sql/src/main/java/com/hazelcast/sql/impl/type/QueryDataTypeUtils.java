@@ -186,7 +186,7 @@ public final class QueryDataTypeUtils {
 
     public static QueryDataType resolveTypeForClass(Class<?> clazz) {
         Converter converter = Converters.getConverter(clazz);
-        QueryDataType type = QueryDataType.TYPES_BY_CONVERTER.get(converter);
+        QueryDataType type = QueryDataType.resolveForConverter(converter);
         if (type == null) {
             throw new IllegalArgumentException("Unexpected class: " + clazz);
         }

@@ -242,7 +242,7 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
     private void checkConverter(QueryDataType type, Converter converter) {
         assertSame(converter, type.getConverter());
         if (!type.isCustomType()) {
-            assertSame(type, QueryDataType.TYPES_BY_CONVERTER.get(converter));
+            assertSame(type, QueryDataType.resolveForConverter(converter));
         }
     }
 

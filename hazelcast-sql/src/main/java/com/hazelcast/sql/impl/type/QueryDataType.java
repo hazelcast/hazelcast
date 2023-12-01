@@ -112,7 +112,7 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
     private static final Map<String, QueryDataType> TYPES = getEnumConstants(QueryDataType.class);
     private static final Map<QueryDataType, String> NAMES =
             TYPES.entrySet().stream().collect(toMap(Entry::getValue, Entry::getKey));
-    static final Map<Converter, QueryDataType> TYPES_BY_CONVERTER =
+    private static final Map<Converter, QueryDataType> TYPES_BY_CONVERTER =
             TYPES.values().stream().collect(toMap(type -> type.converter, identity()));
 
     private final Converter converter;
@@ -290,7 +290,7 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
         public QueryDataType read(ObjectDataInput in) throws IOException {
             Converter converter = Converters.getConverter(in.readInt());
             if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
-                return TYPES_BY_CONVERTER.get(converter);
+                return resolveForConverter(converter);
             }
 
             ObjectTypeMetadata metadata = readObjectTypeMetadata(in);
@@ -327,7 +327,7 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
                                                     Map<String, QueryDataType> typeMap) throws IOException {
             ObjectTypeMetadata metadata = readObjectTypeMetadata(in);
             return metadata == null
-                    ? TYPES_BY_CONVERTER.get(converter)
+                    ? resolveForConverter(converter)
                     : typeMap.computeIfAbsent(metadata.name,
                             k -> new QueryDataType(metadata.name, metadata.kind, metadata.metadata));
         }
@@ -386,8 +386,12 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
         return type;
     }
 
+    public static QueryDataType resolveForConverter(Converter converter) {
+        return TYPES_BY_CONVERTER.get(converter);
+    }
+
     private Object readResolve() throws ObjectStreamException {
-        return isCustomType() ? this : TYPES_BY_CONVERTER.get(converter);
+        return isCustomType() ? this : resolveForConverter(converter);
     }
 
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {
