@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -251,6 +253,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         final String query = "SELECT v from table(generate_stream(1))";
         final String sql = "ANALYZE " + query;
         sqlService.execute(sql);
+        awaitSingleRunningJob(instance());
 
         // When
         List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
@@ -258,6 +261,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         // Then
         assertThat(jobSummaries).hasOnlyOneElementSatisfying(
                 jobSummary -> {
+                    assertThat(jobSummary.getStatus()).isEqualTo(RUNNING);
                     assertThat(jobSummary.getSqlSummary()).isNotNull();
                     assertEquals(sql, jobSummary.getSqlSummary().getQuery());
                     assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
@@ -273,20 +277,21 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
             // read fully to finish the query
             result.stream().count();
         }
-        Job job = awaitSingleRunningJob(instance());
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
 
-        // When
-        List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
+        assertTrueEventually(() -> {
+            // When
+            List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList();
 
-        // Then
-        assertThat(jobSummaries).hasOnlyOneElementSatisfying(
-                jobSummary -> {
-                    assertThat(jobSummary.getSqlSummary()).isNotNull();
-                    assertEquals(sql, jobSummary.getSqlSummary().getQuery());
-                    assertEquals(Boolean.FALSE, jobSummary.getSqlSummary().isUnbounded());
-                    assertThat(jobSummary.isUserCancelled()).isFalse();
-                });
+            // Then
+            assertThat(jobSummaries).hasOnlyOneElementSatisfying(
+                    jobSummary -> {
+                        assertThat(jobSummary.getStatus()).isEqualTo(COMPLETED);
+                        assertThat(jobSummary.getSqlSummary()).isNotNull();
+                        assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+                        assertEquals(Boolean.FALSE, jobSummary.getSqlSummary().isUnbounded());
+                        assertThat(jobSummary.isUserCancelled()).isFalse();
+                    });
+        });
     }
 
     @Test
@@ -306,6 +311,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         // Then
         assertThat(jobSummaries).hasOnlyOneElementSatisfying(
                 jobSummary -> {
+                    assertThat(jobSummary.getStatus()).isEqualTo(FAILED);
                     assertThat(jobSummary.getSqlSummary()).isNotNull();
                     assertEquals(sql, jobSummary.getSqlSummary().getQuery());
                     assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());

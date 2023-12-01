@@ -122,7 +122,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         client = factory.newHazelcastClient(clientConfig);
     }
 
-    protected void assertNoLightJobsLeftEventually(HazelcastInstance instance) {
+    protected static void assertNoLightJobsLeftEventually(HazelcastInstance instance) {
         assertTrueEventually(() -> {
             List<Job> runningJobs = instance.getJet().getJobs().stream()
                     .filter(Job::isLightJob)
