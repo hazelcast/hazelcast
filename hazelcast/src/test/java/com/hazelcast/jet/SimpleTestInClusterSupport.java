@@ -58,7 +58,7 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Base class for tests that share the cluster for all jobs. In order to use
@@ -212,10 +212,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     private void failIfParallel() {
-        if (parallelExecution.get()) {
-            fail("Parallel execution for SimpleTestInClusterSupport with shared instances in not supported " +
-                    "if any object or job is created");
-        }
+        assertFalse("Parallel execution for SimpleTestInClusterSupport with shared instances in not supported " +
+                    "if any object or job is created", parallelExecution.get());
         assertThatIsNotMultithreadedTest();
     }
 

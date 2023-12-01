@@ -19,13 +19,10 @@ package com.hazelcast.jet.sql_slow;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.connector.map.index.SqlIndexResolutionTest;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
@@ -33,11 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
-
 @SuppressWarnings("FieldCanBeLocal")
-@RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlSlowIndexResolutionTest extends SqlIndexResolutionTest {
 
