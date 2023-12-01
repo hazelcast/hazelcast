@@ -63,7 +63,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
-import static java.util.function.Function.identity;
+import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -109,11 +109,11 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
     public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
 
-    private static final Map<String, QueryDataType> TYPES = getEnumConstants(QueryDataType.class);
+    private static final Map<String, QueryDataType> TYPES_BY_NAME = getEnumConstants(QueryDataType.class);
     private static final Map<QueryDataType, String> NAMES =
-            TYPES.entrySet().stream().collect(toMap(Entry::getValue, Entry::getKey));
-    private static final Map<Converter, QueryDataType> TYPES_BY_CONVERTER =
-            TYPES.values().stream().collect(toMap(type -> type.converter, identity()));
+            TYPES_BY_NAME.entrySet().stream().collect(toMap(Entry::getValue, Entry::getKey));
+    private static final QueryDataType[] TYPES =
+            TYPES_BY_NAME.values().stream().sorted(comparingInt(type -> type.converter.getId())).toArray(QueryDataType[]::new);
 
     private final Converter converter;
     // nonnull for custom types (nested types)
@@ -379,7 +379,7 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
     }
 
     public static QueryDataType valueOf(String name) {
-        QueryDataType type = TYPES.get(name);
+        QueryDataType type = TYPES_BY_NAME.get(name);
         if (type == null) {
             throw new IllegalArgumentException("No predefined QueryDataType with name " + name);
         }
@@ -387,7 +387,11 @@ public class QueryDataType implements HasSerializer<QueryDataType>, Serializable
     }
 
     public static QueryDataType resolveForConverter(Converter converter) {
-        return TYPES_BY_CONVERTER.get(converter);
+        return TYPES[converter.getId()];
+    }
+
+    public static QueryDataType[] values() {
+        return TYPES.clone();
     }
 
     private Object readResolve() throws ObjectStreamException {

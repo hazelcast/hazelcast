@@ -73,7 +73,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -208,7 +207,7 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialization() {
-        for (QueryDataType type : getEnumConstants(QueryDataType.class).values()) {
+        for (QueryDataType type : QueryDataType.values()) {
             checkSerialization(type);
         }
         checkSerialization(new QueryDataType("CustomType"));
