@@ -72,12 +72,9 @@ public final class ReflectionsHelper {
      * Removes abstract and anonymous classes and interfaces from the given set.
      */
     public static void filterNonConcreteClasses(Set<? extends Class> classes) {
-        classes.removeIf(ReflectionsHelper::isNotConcrete);
-    }
-
-    /** Indicates whether the specified class is abstract or anonymous class, or an interface. */
-    public static boolean isNotConcrete(Class<?> clazz) {
-        return clazz.isAnonymousClass() || clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers());
+        classes.removeIf(klass -> klass.isAnonymousClass()
+                || klass.isInterface() || Modifier.isAbstract(klass.getModifiers())
+        );
     }
 
     /**

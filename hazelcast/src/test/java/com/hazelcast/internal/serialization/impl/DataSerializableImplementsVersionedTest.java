@@ -25,8 +25,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializer;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializer.HasSerializer;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,12 +38,10 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
-import static com.hazelcast.test.ReflectionsHelper.isNotConcrete;
+import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -62,30 +58,18 @@ import static org.mockito.Mockito.withSettings;
 @SuppressWarnings("WeakerAccess")
 public class DataSerializableImplementsVersionedTest {
 
-    private InternalSerializationService serializationService;
+    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private Set<Class<? extends IdentifiedDataSerializable>> idsClasses;
     private Set<Class<? extends DataSerializable>> dsClasses;
 
     @Before
-    @SuppressWarnings("unchecked")
-    public void setup() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
+    public void setUp() {
+        idsClasses = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
+        filterNonConcreteClasses(idsClasses);
 
         dsClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
-        idsClasses = new HashSet<>();
-
-        for (Iterator<Class<? extends DataSerializable>> it = dsClasses.iterator(); it.hasNext();) {
-            Class<?> clazz = it.next();
-            if (isNotConcrete(clazz)) {
-                it.remove();
-            } else if (IdentifiedDataSerializable.class.isAssignableFrom(clazz)) {
-                it.remove();
-                if (!HasSerializer.class.isAssignableFrom(clazz)
-                        && !IdentifiedDataSerializer.class.isAssignableFrom(clazz)) {
-                    idsClasses.add((Class<? extends IdentifiedDataSerializable>) clazz);
-                }
-            }
-        }
+        filterNonConcreteClasses(dsClasses);
+        dsClasses.removeAll(idsClasses);
     }
 
     @Test

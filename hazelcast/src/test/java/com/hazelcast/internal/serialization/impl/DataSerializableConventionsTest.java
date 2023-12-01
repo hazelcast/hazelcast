@@ -29,7 +29,6 @@ import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializer.HasSerializer;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
@@ -326,7 +325,6 @@ public class DataSerializableConventionsTest {
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
         filterNonConcreteClasses(identifiedDataSerializables);
         identifiedDataSerializables.removeAll(classWhiteList);
-        identifiedDataSerializables.removeIf(HasSerializer.class::isAssignableFrom);
         return identifiedDataSerializables;
     }
 
