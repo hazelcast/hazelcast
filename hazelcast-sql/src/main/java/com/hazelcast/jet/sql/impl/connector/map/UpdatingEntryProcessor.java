@@ -187,6 +187,12 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
+
+        /*
+        Verifying context post-deserialization during the backup process
+        is unfeasible as it deserialize UpdatingEntryProcessor.
+        To ensure consistency with the backup procedure, an untrusted context is utilized in this situation as well.
+        */
         public EntryProcessor<Object, Object, Long> get(UntrustedExpressionEvalContext eec) {
             return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
