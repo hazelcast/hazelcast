@@ -942,6 +942,10 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         this.jobInvocationObservers.add(observer);
     }
 
+    public void unregisterInvocationObserver(JobInvocationObserver observer) {
+        this.jobInvocationObservers.remove(observer);
+    }
+
     JetServiceBackend getJetServiceBackend() {
         return jetServiceBackend;
     }

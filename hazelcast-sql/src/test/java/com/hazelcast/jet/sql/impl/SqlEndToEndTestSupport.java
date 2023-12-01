@@ -17,13 +17,15 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.JobInvocationObserver;
 import com.hazelcast.jet.impl.util.Util;
@@ -45,6 +47,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.ObjectAssert;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,10 +63,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.PartitioningStrategyUtil.constructAttributeBasedKey;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -86,9 +91,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         jobInvocationObserver = new JobInvocationObserverImpl();
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
-        jobCoordinationService = ((JetServiceBackend) nodeEngine
-                .getService(JetServiceBackend.SERVICE_NAME))
-                .getJobCoordinationService();
+        jobCoordinationService = getJetServiceBackend(instance()).getJobCoordinationService();
 
         planExecutor.registerJobInvocationObserver(sqlJobInvocationObserver);
         jobCoordinationService.registerInvocationObserver(jobInvocationObserver);
@@ -99,6 +102,11 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
                 Util.getSerializationService(instance()),
                 null
         );
+    }
+
+    @After
+    public void teardown() {
+        jobCoordinationService.unregisterInvocationObserver(jobInvocationObserver);
     }
 
     SqlPlanImpl.SelectPlan assertQueryPlan(String query) {
@@ -156,6 +164,22 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
     @Nonnull
     protected ObjectAssert<DAG> assertThatDag() {
         return Assertions.<DAG>assertThat(sqlJobInvocationObserver.dag);
+    }
+
+    protected void assertInvokedOnlyOnMembers(HazelcastInstance... members) {
+        Set<Address> expectedMembers = Arrays.stream(members)
+                .map(JetTestSupport::getAddress)
+                .collect(Collectors.toSet());
+        assertEquals(expectedMembers, jobInvocationObserver.getMembers());
+    }
+
+    protected void configureMapWithAttributes(String mapName, String... attributes) {
+        MapConfig mc = new MapConfig(mapName);
+        for (String attribute : attributes) {
+            mc.getPartitioningAttributeConfigs()
+                    .add(new PartitioningAttributeConfig(attribute));
+        }
+        instance().getConfig().addMapConfig(mc);
     }
 
     protected static class SqlJobInvocationObserverImpl implements SqlJobInvocationObserver {
