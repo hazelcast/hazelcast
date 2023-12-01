@@ -33,17 +33,15 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.security.auth.Subject;
@@ -226,7 +224,6 @@ public final class QueryUtil {
         private transient Node node;
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
-        private transient SqlSecurityContext ssc;
 
         private Subject subject;
 
@@ -267,15 +264,7 @@ public final class QueryUtil {
                 return;
             }
 
-            SecurityContext securityContext = node.securityContext;
-            if (securityContext != null) {
-                assert subject != null : "Missing subject when security context exists";
-                this.ssc = securityContext.createSqlContext(subject);
-            } else {
-                this.ssc = NoOpSqlSecurityContext.INSTANCE;
-            }
-
-            this.evalContext = ExpressionEvalContext.createContext(arguments, node.getNodeEngine(), iss, ssc);
+            this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.nodeEngine);
             this.extractors = Extractors.newBuilder(iss).build();
         }
 
