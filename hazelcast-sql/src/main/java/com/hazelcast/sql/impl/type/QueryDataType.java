@@ -55,10 +55,13 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
@@ -124,6 +127,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     private TypeKind objectTypeKind = TypeKind.NONE;
     private String objectTypeMetadata;
     private List<QueryDataTypeField> objectFields;
+    private volatile String digest;
 
     public QueryDataType() { }
 
@@ -181,6 +185,15 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
         if (objectFields instanceof NonTraversableList) {
             objectFields = ((NonTraversableList<QueryDataTypeField>) objectFields).toReadonlyList();
         }
+    }
+
+    private String getDigest() {
+        if (digest == null) {
+            StringBuilder sb = new StringBuilder();
+            computeDigest(sb, new HashSet<>());
+            digest = sb.toString();
+        }
+        return digest;
     }
 
     /**
@@ -357,9 +370,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
 
     @Override
     public int hashCode() {
-        return !isCustomType()
-                ? converter.getId()
-                : Objects.hash(objectTypeName, objectTypeKind, objectTypeMetadata);
+        return !isCustomType() ? converter.getId() : getDigest().hashCode();
     }
 
     @Override
@@ -371,12 +382,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
             return false;
         }
         QueryDataType that = (QueryDataType) o;
-        return !isCustomType()
-                ? converter == that.converter
-                : objectTypeName.equals(that.objectTypeName)
-                        && objectTypeKind == that.objectTypeKind
-                        && Objects.equals(objectTypeMetadata, that.objectTypeMetadata)
-                        && getObjectFields().equals(that.getObjectFields());
+        return !isCustomType() ? converter == that.converter : getDigest().equals(that.getDigest());
     }
 
     @Override
@@ -398,6 +404,28 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
 
     public static QueryDataType[] values() {
         return TYPES.clone();
+    }
+
+    private void computeDigest(StringBuilder sb, Set<String> seen) {
+        sb.append(objectTypeName);
+        if (seen.contains(objectTypeName)) {
+            return;
+        }
+        seen.add(objectTypeName);
+        sb.append('[').append(objectTypeKind).append(" -> ").append(objectTypeMetadata).append("](");
+        for (Iterator<QueryDataTypeField> it = getObjectFields().iterator(); it.hasNext();) {
+            QueryDataTypeField field = it.next();
+            sb.append(field.getName()).append(':');
+            if (field.getType().isCustomType()) {
+                field.getType().computeDigest(sb, seen);
+            } else {
+                sb.append(field.getType());
+            }
+            if (it.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
     }
 
     private Object readResolve() throws ObjectStreamException {

@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -210,7 +211,21 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         for (QueryDataType type : QueryDataType.values()) {
             checkSerialization(type);
         }
-        checkSerialization(new QueryDataType("CustomType"));
+
+        QueryDataType person = new QueryDataType("Person", TypeKind.COMPACT, "PersonType");
+        QueryDataType company = new QueryDataType("Company");
+
+        person.addField("name", QueryDataType.VARCHAR);
+        person.addField("employer", company);
+        person.addField("friend", person);
+
+        company.addField("id", QueryDataType.BIGINT);
+        company.addField("employee", person);
+        company.addField("competitor", company);
+
+        person.finalizeFields();
+        company.finalizeFields();
+        checkSerialization(person);
     }
 
     // TODO This test will be removed by HZ-3691.
