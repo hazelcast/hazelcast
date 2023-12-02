@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.internal.util.collection.NonTraversableList;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -53,7 +54,6 @@ import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +62,7 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
+import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toMap;
 
@@ -69,6 +70,9 @@ import static java.util.stream.Collectors.toMap;
  * Data type represents a type of concrete expression which is based on some basic data type.
  * <p>
  * Java serialization is needed for Jet.
+ * <p>
+ * Thread-safe if {@linkplain #addField no field will ever be added},
+ * or after {@linkplain #finalizeFields the fields are finalized}.
  */
 public class QueryDataType implements IdentifiedDataSerializable, Versioned, Serializable {
     public static final int MAX_DECIMAL_PRECISION = 76;
@@ -119,7 +123,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     private String objectTypeName;
     private TypeKind objectTypeKind = TypeKind.NONE;
     private String objectTypeMetadata;
-    private final List<QueryDataTypeField> objectFields = new ArrayList<>();
+    private List<QueryDataTypeField> objectFields;
 
     public QueryDataType() { }
 
@@ -142,7 +146,11 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
         return objectTypeName;
     }
 
+    /** @return read-only list of fields */
     public List<QueryDataTypeField> getObjectFields() {
+        if (objectFields == null) {
+            objectFields = emptyList();
+        }
         return objectFields;
     }
 
@@ -160,6 +168,19 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
 
     public TypeKind getObjectTypeKind() {
         return objectTypeKind;
+    }
+
+    public void addField(String name, QueryDataType type) {
+        if (objectFields == null) {
+            objectFields = new NonTraversableList<>("Type fields must be finalized");
+        }
+        objectFields.add(new QueryDataTypeField(name, type));
+    }
+
+    public void finalizeFields() {
+        if (objectFields instanceof NonTraversableList) {
+            objectFields = ((NonTraversableList<QueryDataTypeField>) objectFields).toReadonlyList();
+        }
     }
 
     /**
@@ -272,7 +293,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     private void collectCustomTypes(QueryDataType type, Map<String, QueryDataType> typeMap) {
         typeMap.put(type.objectTypeName, type);
 
-        for (QueryDataTypeField field : type.objectFields) {
+        for (QueryDataTypeField field : type.getObjectFields()) {
             if (field.getType().isCustomType()) {
                 if (!typeMap.containsKey(field.type.objectTypeName)) {
                     collectCustomTypes(field.type, typeMap);
@@ -308,8 +329,9 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
                 String fieldName = in.readString();
                 Converter converter = Converters.getConverter(in.readInt());
                 QueryDataType nestedType = readNestedType(converter, in, typeMap);
-                type.getObjectFields().add(new QueryDataTypeField(fieldName, nestedType));
+                type.addField(fieldName, nestedType);
             }
+            type.finalizeFields();
         }
     }
 
@@ -354,7 +376,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
                 : objectTypeName.equals(that.objectTypeName)
                         && objectTypeKind == that.objectTypeKind
                         && Objects.equals(objectTypeMetadata, that.objectTypeMetadata)
-                        && objectFields.equals(that.objectFields);
+                        && getObjectFields().equals(that.getObjectFields());
     }
 
     @Override

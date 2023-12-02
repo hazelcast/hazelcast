@@ -31,7 +31,6 @@ import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.Type.TypeField;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.avro.Schema;
 
@@ -292,17 +291,19 @@ public final class TypeUtils {
 
         public void enrich(MappingField field, Map<String, String> mappingOptions, boolean isKey) {
             String typeName = field.type().getObjectTypeName();
+            Map<String, QueryDataType> typeMap = new HashMap<>();
             field.setType(createFieldType(
                     field.name().equals(isKey ? QueryPath.KEY : QueryPath.VALUE)
                             ? () -> getSchemaId(mappingOptions, isKey)
                             : () -> getFieldSchemaId(getSchema(getSchemaId(mappingOptions, isKey)),
                                     plainExternalName(field), typeName),
-                    typeName, new HashMap<>()));
+                    typeName, typeMap));
+            typeMap.values().forEach(QueryDataType::finalizeFields);
         }
 
         protected QueryDataType createFieldType(Supplier<ID> schemaIdSupplier, String typeName,
-                                                Map<String, QueryDataType> seen) {
-            QueryDataType convertedType = seen.get(typeName);
+                                                Map<String, QueryDataType> typeMap) {
+            QueryDataType convertedType = typeMap.get(typeName);
             if (convertedType != null) {
                 return convertedType;
             }
@@ -324,7 +325,7 @@ public final class TypeUtils {
             }
 
             convertedType = new QueryDataType(typeName, typeKind, getTypeMetadata(schemaId));
-            seen.put(typeName, convertedType);
+            typeMap.put(typeName, convertedType);
 
             for (TypeField field : type.getFields()) {
                 QueryDataType fieldType = field.getType();
@@ -332,9 +333,9 @@ public final class TypeUtils {
 
                 if (fieldType.isCustomType()) {
                     fieldType = createFieldType(() -> getFieldSchemaId(schema, field.getName(), fieldTypeName),
-                            fieldTypeName, seen);
+                            fieldTypeName, typeMap);
                 }
-                convertedType.getObjectFields().add(new QueryDataTypeField(field.getName(), fieldType));
+                convertedType.addField(field.getName(), fieldType);
             }
 
             return convertedType;

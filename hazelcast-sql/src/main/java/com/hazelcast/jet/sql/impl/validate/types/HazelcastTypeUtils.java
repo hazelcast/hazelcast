@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.validate.types;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -120,10 +119,17 @@ public final class HazelcastTypeUtils {
         }
 
         if (typeFamily instanceof HazelcastObjectType) {
-            return convertHazelcastObjectType((HazelcastObjectType) relDataType, new HashMap<>());
+            return convertHazelcastObjectType(relDataType);
         }
 
         throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
+    }
+
+    private static QueryDataType convertHazelcastObjectType(RelDataType type) {
+        Map<String, QueryDataType> typeMap = new HashMap<>();
+        QueryDataType converted = convertHazelcastObjectType((HazelcastObjectType) type, typeMap);
+        typeMap.values().forEach(QueryDataType::finalizeFields);
+        return converted;
     }
 
     private static QueryDataType convertHazelcastObjectType(HazelcastObjectType type,
@@ -140,7 +146,7 @@ public final class HazelcastTypeUtils {
                     ? convertHazelcastObjectType((HazelcastObjectType) field.getType(), typeMap)
                     : HazelcastTypeUtils.toHazelcastType(field.getType());
 
-            converted.getObjectFields().add(new QueryDataTypeField(field.getName(), fieldType));
+            converted.addField(field.getName(), fieldType);
         }
         return converted;
     }

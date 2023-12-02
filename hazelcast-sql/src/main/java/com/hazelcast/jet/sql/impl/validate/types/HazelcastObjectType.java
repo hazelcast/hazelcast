@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate.types;
 
+import com.hazelcast.internal.util.collection.NonTraversableList;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -24,10 +25,10 @@ import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -36,16 +37,16 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     private final String name;
     private final boolean nullable;
     /** Modifiable list of fields to support cyclic types. */
-    private List<Field> fields = new ArrayList<>();
+    private List<Field> fields = new NonTraversableList<>("Type fields must be finalized");
     /** Cached list of field names. */
     private List<String> fieldNames;
 
-    /** Not usable until {@link #finalizeFields()} is called. */
+    /** Not usable until {@link #finalizeFields} is called. */
     public HazelcastObjectType(String name) {
         this(name, true);
     }
 
-    /** Not usable until {@link #finalizeFields()} is called. */
+    /** Not usable until {@link #finalizeFields} is called. */
     public HazelcastObjectType(String name, boolean nullable) {
         super(null);
         this.name = name;
@@ -113,9 +114,9 @@ public class HazelcastObjectType extends RelDataTypeImpl {
         fields.add(field);
     }
 
-    public void finalizeFields() {
-        fields = List.of(fields.toArray(Field[]::new));
-        super.computeDigest();
+    public void finalizeFields(Map<String, HazelcastObjectType> typeMap) {
+        typeMap.values().forEach(type -> type.fields = ((NonTraversableList<Field>) type.fields).toReadonlyList());
+        typeMap.values().forEach(type -> type.computeDigest());
     }
 
     /**
