@@ -128,7 +128,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     }
 
     public QueryDataType(String objectTypeName, TypeKind typeKind, String typeMetadata) {
-        converter = ObjectConverter.INSTANCE;
+        converter = OBJECT.getConverter();
         this.objectTypeName = objectTypeName;
         objectTypeKind = typeKind;
         objectTypeMetadata = typeMetadata;
@@ -239,7 +239,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
         }
 
         out.writeInt(converter.getId());
-        if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
+        if (converter != OBJECT.getConverter()) {
             return;
         }
 
@@ -288,7 +288,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
         }
 
         converter = Converters.getConverter(in.readInt());
-        if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
+        if (converter != OBJECT.getConverter()) {
             return;
         }
 
@@ -330,7 +330,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     }
 
     public boolean isCustomType() {
-        return converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && objectTypeName != null;
+        return converter == OBJECT.getConverter() && objectTypeName != null;
     }
 
     @Override
@@ -350,7 +350,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
         }
         QueryDataType that = (QueryDataType) o;
         return !isCustomType()
-                ? converter.getId() == that.converter.getId()
+                ? converter == that.converter
                 : objectTypeName.equals(that.objectTypeName)
                         && objectTypeKind == that.objectTypeKind
                         && Objects.equals(objectTypeMetadata, that.objectTypeMetadata)

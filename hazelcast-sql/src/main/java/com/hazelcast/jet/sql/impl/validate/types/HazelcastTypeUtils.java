@@ -120,41 +120,29 @@ public final class HazelcastTypeUtils {
         }
 
         if (typeFamily instanceof HazelcastObjectType) {
-            return convertHazelcastObjectType(relDataType);
+            return convertHazelcastObjectType((HazelcastObjectType) relDataType, new HashMap<>());
         }
 
         throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
     }
 
-    private static QueryDataType convertHazelcastObjectType(final RelDataType relDataType) {
-        final HazelcastObjectType hazelcastObjectType = (HazelcastObjectType) relDataType;
-
-        final Map<String, QueryDataType> typeMap = new HashMap<>();
-        traverseHzObjectType(hazelcastObjectType, typeMap);
-
-        return typeMap.get(hazelcastObjectType.getTypeName());
-    }
-
-    private static void traverseHzObjectType(final HazelcastObjectType source, Map<String, QueryDataType> discovered) {
-        if (discovered.containsKey(source.getTypeName())) {
-            return;
+    private static QueryDataType convertHazelcastObjectType(HazelcastObjectType type,
+                                                            Map<String, QueryDataType> typeMap) {
+        QueryDataType converted = typeMap.get(type.getTypeName());
+        if (converted != null) {
+            return converted;
         }
-        final QueryDataType current = new QueryDataType(source.getTypeName());
-        discovered.put(current.getObjectTypeName(), current);
+        converted = new QueryDataType(type.getTypeName());
+        typeMap.put(converted.getObjectTypeName(), converted);
 
-        for (final RelDataTypeField field : source.getFieldList()) {
-            final QueryDataType fieldType;
-            if (field.getType() instanceof HazelcastObjectType) {
-                final HazelcastObjectType fieldRelDataType = (HazelcastObjectType) field.getType();
-                if (!discovered.containsKey(fieldRelDataType.getTypeName())) {
-                    traverseHzObjectType(fieldRelDataType, discovered);
-                }
-                fieldType = discovered.get(fieldRelDataType.getTypeName());
-            } else {
-                fieldType = HazelcastTypeUtils.toHazelcastType(field.getType());
-            }
-            current.getObjectFields().add(field.getIndex(), new QueryDataTypeField(field.getName(), fieldType));
+        for (RelDataTypeField field : type.getFieldList()) {
+            QueryDataType fieldType = field.getType() instanceof HazelcastObjectType
+                    ? convertHazelcastObjectType((HazelcastObjectType) field.getType(), typeMap)
+                    : HazelcastTypeUtils.toHazelcastType(field.getType());
+
+            converted.getObjectFields().add(new QueryDataTypeField(field.getName(), fieldType));
         }
+        return converted;
     }
 
     public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {

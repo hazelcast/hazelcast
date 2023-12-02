@@ -81,24 +81,24 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
         if (withDetail) {
-            generateFullTypeString(this, sb, new HashSet<>());
+            generateFullTypeString(sb, new HashSet<>());
         } else {
             sb.append(name);
         }
     }
 
-    private static void generateFullTypeString(HazelcastObjectType type, StringBuilder sb, Set<String> seen) {
-        sb.append(type.name);
-        if (seen.contains(type.name)) {
+    private void generateFullTypeString(StringBuilder sb, Set<String> seen) {
+        sb.append(name);
+        if (seen.contains(name)) {
             return;
         }
-        seen.add(type.name);
+        seen.add(name);
         sb.append('(');
-        for (Iterator<Field> it = type.fields.iterator(); it.hasNext();) {
+        for (Iterator<Field> it = fields.iterator(); it.hasNext();) {
             RelDataTypeField field = it.next();
             sb.append(field.getName()).append(':');
             if (field.getType() instanceof HazelcastObjectType) {
-                generateFullTypeString((HazelcastObjectType) field.getType(), sb, seen);
+                ((HazelcastObjectType) field.getType()).generateFullTypeString(sb, seen);
             } else {
                 sb.append(field.getType().getFullTypeString());
             }
