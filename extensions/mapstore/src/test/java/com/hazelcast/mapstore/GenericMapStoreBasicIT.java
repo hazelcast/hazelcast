@@ -55,7 +55,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, SerialTest.class})
-public class GenericMapStoreTest extends GenericMapLoaderTest {
+public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
 
     private GenericMapStore<Integer, GenericRecord> mapStore;
     private GenericMapStore<Integer, String> mapStoreSingleColAsValue;
