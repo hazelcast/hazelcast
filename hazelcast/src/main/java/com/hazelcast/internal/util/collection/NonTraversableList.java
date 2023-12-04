@@ -27,11 +27,11 @@ import java.util.function.IntFunction;
 
 /**
  * Prevents any "sane" traversal, such as classical for loop with indices,
- * enhanced for loop with implicit iterator, usage of explicit iterators, or
- * copy constructors. It can be used by in-place builders with inherent locking
- * mechanism, in which locking can be done via {@link #toReadonlyList()}.
- * Such builders are required to support cyclic structures, such as
- * {@code QueryDataType} and {@code HazelcastObjectType}.
+ * enhanced for loop with implicit iterator, usage of explicit iterators,
+ * cloning or copy constructors. It can be used by in-place builders with
+ * inherent locking mechanism, in which locking can be done via {@link
+ * #toReadonlyList()}. Such builders are required to support cyclic
+ * structures, such as {@code QueryDataType} and {@code HazelcastObjectType}.
  */
 @SerializableByConvention
 public class NonTraversableList<T> extends ArrayList<T> {
@@ -77,6 +77,12 @@ public class NonTraversableList<T> extends ArrayList<T> {
 
     @Override
     public <T1> T1[] toArray(IntFunction<T1[]> generator) {
+        throw ise();
+    }
+
+    @Override
+    @SuppressWarnings("SuperClone")
+    public Object clone() {
         throw ise();
     }
 }
