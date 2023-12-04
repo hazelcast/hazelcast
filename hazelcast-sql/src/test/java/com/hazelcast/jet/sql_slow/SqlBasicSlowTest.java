@@ -18,13 +18,17 @@ package com.hazelcast.jet.sql_slow;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.jet.sql.SqlBasicTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
+import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class SqlBasicSlowTest extends SqlBasicTest {
+@Category({SlowTest.class, ParallelJVMTest.class})
+class SqlBasicSlowTest extends SqlBasicTest {
 
     private static final int[] PAGE_SIZES = {1, 16, 256, 4096};
     private static final int[] DATA_SET_SIZES = {1, 256, 4096};
