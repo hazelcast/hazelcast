@@ -32,14 +32,13 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
-import java.util.Map;
 
 public class CompositeMessageTaskFactory implements MessageTaskFactory {
     private static final String FACTORY_ID = "com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider";
 
     private final Node node;
     private final NodeEngine nodeEngine;
-    private final Map<Integer, MessageTaskFactory> factories;
+    private final Int2ObjectHashMap<MessageTaskFactory> factories;
 
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
