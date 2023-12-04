@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.services.NodeAware;
-import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -29,21 +28,18 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -64,9 +60,6 @@ public final class UpdatingEntryProcessor
     private transient Node node;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
-    private transient SqlSecurityContext ssc;
-
-    private Subject subject;
 
     @SuppressWarnings("unused")
     private UpdatingEntryProcessor() {
@@ -75,13 +68,12 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            ExpressionEvalContext evalContext) {
+            UntrustedExpressionEvalContext evalContext) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
         this.evalContext = evalContext;
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         this.arguments = evalContext.getArguments();
-        this.subject = evalContext.subject();
     }
 
     @Override
@@ -119,7 +111,6 @@ public final class UpdatingEntryProcessor
         out.writeObject(rowProjectorSupplier);
         out.writeObject(valueProjectorSupplier);
         out.writeObject(arguments);
-        ImdgUtil.writeSubject(out, subject);
     }
 
     @Override
@@ -127,7 +118,6 @@ public final class UpdatingEntryProcessor
         rowProjectorSupplier = in.readObject();
         valueProjectorSupplier = in.readObject();
         arguments = in.readObject();
-        subject = ImdgUtil.readSubject(in);
     }
 
     public static Supplier supplier(
@@ -197,7 +187,12 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(ExpressionEvalContext eec) {
+
+        /*
+        No context is initialized during post-deserialization in the backup process.
+        To ensure consistency with the backup procedure, an untrusted context is utilized in this situation as well.
+        */
+        public EntryProcessor<Object, Object, Long> get(UntrustedExpressionEvalContext eec) {
             return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
 
@@ -220,15 +215,7 @@ public final class UpdatingEntryProcessor
             return;
         }
 
-        SecurityContext securityContext = node.securityContext;
-        if (securityContext != null) {
-            assert subject != null : "Missing subject when security context exists";
-            this.ssc = securityContext.createSqlContext(subject);
-        } else {
-            this.ssc = NoOpSqlSecurityContext.INSTANCE;
-        }
-
-        this.evalContext = ExpressionEvalContext.createContext(arguments, node.getNodeEngine(), iss, ssc);
+        this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.getNodeEngine());
         this.extractors = Extractors.newBuilder(iss).build();
     }
 }

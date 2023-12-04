@@ -26,8 +26,8 @@ import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -67,7 +67,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initializeWithClient(2, null, null);
     }
 
     @Before
@@ -119,7 +119,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
     public void when_serializedObject_then_deserializedCorrect() {
         AbstractSerializationService service = (AbstractSerializationService) TestUtil.getNode(instance()).getSerializationService();
 
-        var evalContextMock = mock(ExpressionEvalContext.class);
+        var evalContextMock = mock(UntrustedExpressionEvalContext.class);
         when(evalContextMock.getSerializationService()).thenReturn(mock());
         var subject = new Subject(true, emptySet(), emptySet(), emptySet());
         when(evalContextMock.subject()).thenReturn(subject);

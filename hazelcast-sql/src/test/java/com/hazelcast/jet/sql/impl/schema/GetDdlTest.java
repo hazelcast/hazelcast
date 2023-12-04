@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -35,7 +36,7 @@ public class GetDdlTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(1, null);
+        initializeWithClient(1, null, null);
     }
 
     @Test
@@ -217,5 +218,18 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertEqualsEventually(map::size, 1);
         assertEquals(map.values().iterator().next(), createDataConnectionQuery);
+    }
+
+    @Test
+    public void when_updateWithGetDdl_then_success() {
+        createMapping("main", Integer.class, String.class);
+        createMapping("target", Integer.class, String.class);
+        var sql = client().getSql();
+        sql.execute("INSERT INTO main VALUES(1, 'initial')");
+
+        sql.execute("UPDATE main SET this = GET_DDL('relation', 'target') WHERE __key < 2");
+
+        String ddl = sql.execute("SELECT * FROM main WHERE __key = 1").stream().findFirst().orElseThrow().getObject("this");
+        assertThat(ddl).startsWith("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"target\" EXTERNAL NAME \"target\"");
     }
 }
