@@ -23,8 +23,6 @@ import com.hazelcast.security.impl.function.SecuredFunction;
 import java.io.Serializable;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-
 /**
  * {@code Serializable} variant of {@link Function java.util.function.Function}
  * which declares checked exception.
@@ -69,8 +67,7 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredF
      *           composed function
      */
     default <V> FunctionEx<V, R> compose(FunctionEx<? super V, ? extends T> before) {
-        checkNotNull(before, "before");
-        return v -> apply(before.apply(v));
+        return new FunctionsImpl.ComposedFunctionEx<>(before, this);
     }
 
     /**
@@ -80,7 +77,6 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredF
      *           composed function
      */
     default <V> FunctionEx<T, V> andThen(FunctionEx<? super R, ? extends V> after) {
-        checkNotNull(after, "after");
-        return t -> after.apply(apply(t));
+        return new FunctionsImpl.ComposedFunctionEx<>(this, after);
     }
 }

@@ -34,10 +34,13 @@ public interface SecuredFunction {
 
     /**
      * @return the list of permissions required to run this function
+     *
+     * @implNote If used, permissions should be hardcoded based on function arguments/context.
+     * It is not secure to keep {@code List<Permission>} in the function itself because
+     * it could be tampered with if the function is serialized and passed from untrusted caller.
      */
     @Nullable
     default List<Permission> permissions() {
         return null;
     }
-
 }
