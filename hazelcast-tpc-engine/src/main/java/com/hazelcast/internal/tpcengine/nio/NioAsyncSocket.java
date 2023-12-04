@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -361,9 +362,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.rcvBuffer = builder.directBuffers
-                    ? ByteBuffer.allocateDirect(receiveBufferSize)
-                    : ByteBuffer.allocate(receiveBufferSize);
+            this.rcvBuffer = BufferUtil.allocate(builder.directBuffers, receiveBufferSize);
         }
 
         @Override

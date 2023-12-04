@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.iobuffer;
 
 
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -100,7 +101,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
             for (int k = count; k < pool.bufs.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
-                ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
+                ByteBuffer buffer = BufferUtil.allocate(direct, minSize);
                 IOBuffer buf = new IOBuffer(buffer);
                 buf.concurrent = true;
                 buf.allocator = this;
