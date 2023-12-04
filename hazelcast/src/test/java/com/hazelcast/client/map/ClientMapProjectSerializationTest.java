@@ -18,11 +18,11 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.AbstractMapQueryIterableTest.GetValueProjection;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,10 +34,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -57,16 +55,6 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-
-    public static class ValuesProjection
-            implements Projection<Map.Entry<Integer, OnlyDeserializedTwiceObject>, OnlyDeserializedTwiceObject>, Serializable {
-
-        @Override
-        public OnlyDeserializedTwiceObject transform(Map.Entry<Integer, OnlyDeserializedTwiceObject> input) {
-            return input.getValue();
-        }
-    }
-
     @Test
     public void testProjectObjectShouldDeserializedOnlyTwice() {
         // One deserialization on server when object is accessed from transform
@@ -77,7 +65,7 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
         IMap<Integer, OnlyDeserializedTwiceObject> map = client.getMap("test");
         OnlyDeserializedTwiceObject value = new OnlyDeserializedTwiceObject("test");
         map.put(1, value);
-        Collection<OnlyDeserializedTwiceObject> result = map.project(new ValuesProjection());
+        Collection<OnlyDeserializedTwiceObject> result = map.project(new GetValueProjection<>());
 
         assertEquals(Collections.singletonList(value), result);
     }

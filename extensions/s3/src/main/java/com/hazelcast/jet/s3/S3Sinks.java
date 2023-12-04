@@ -33,8 +33,6 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.hazelcast.internal.util.JVMUtil.upcast;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -200,7 +198,7 @@ public final class S3Sinks {
             int newCapacity = (int) (minimumLength * BUFFER_SCALE);
             ByteBuffer newBuffer = ByteBuffer.allocateDirect(newCapacity);
             if (buffer != null) {
-                upcast(buffer).flip();
+                buffer.flip();
                 newBuffer.put(buffer);
             }
             buffer = newBuffer;
@@ -226,7 +224,7 @@ public final class S3Sinks {
 
         private void flushBuffer(boolean isLastPart) {
             if (buffer.position() > 0) {
-                upcast(buffer).flip();
+                buffer.flip();
                 UploadPartRequest req = UploadPartRequest
                         .builder()
                         .bucket(bucketName)
@@ -238,7 +236,7 @@ public final class S3Sinks {
                 String eTag = s3Client.uploadPart(req, RequestBody.fromByteBuffer(buffer)).eTag();
                 completedParts.add(CompletedPart.builder().partNumber(partNumber).eTag(eTag).build());
                 partNumber++;
-                upcast(buffer).clear();
+                buffer.clear();
             }
 
             if (isLastPart) {

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -30,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.function.ConsumerEx.noop;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +68,30 @@ public class SqlMappingTest extends SqlTestSupport {
                 .hasFieldOrPropertyWithValue("suggestion", null)
                 .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
                         "MAPPING?");
+    }
+
+    @Test
+    public void when_mapExistsButMappingIsNotCreated_then_suggestDdl() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        var expectedDdl = "Object 'map' not found%s, did you forget to CREATE MAPPING? If you want to use the IMap named 'map', "
+                + "execute this command first: CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"map\" EXTERNAL NAME \"map\"\n"
+                + "TYPE \"IMap\"\n"
+                + "OPTIONS (\n"
+                + "  'keyFormat'='java',\n"
+                + "  'keyJavaClass'='java.lang.Integer',\n"
+                + "  'valueFormat'='java',\n"
+                + "  'valueJavaClass'='java.lang.Integer'\n"
+                + ")";
+
+        var message = assertThrows(HazelcastSqlException.class, () -> client().getSql().execute("SELECT * FROM map")).getMessage();
+        assertThat(message).isEqualToNormalizingNewlines(format(expectedDdl, ""));
+
+        message = assertThrows(HazelcastSqlException.class, () -> client().getSql().execute("SELECT * FROM public.map")).getMessage();
+        assertThat(message).isEqualToNormalizingNewlines(format(expectedDdl, " within 'hazelcast.public'"));
+
+        message = assertThrows(HazelcastSqlException.class, () -> client().getSql().execute("SELECT * FROM hazelcast.public.map")).getMessage();
+        assertThat(message).isEqualToNormalizingNewlines(format(expectedDdl, " within 'hazelcast.public'"));
     }
 
     @Test

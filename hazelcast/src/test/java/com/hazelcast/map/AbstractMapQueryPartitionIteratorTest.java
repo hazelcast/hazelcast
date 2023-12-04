@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.AbstractMapQueryIterableTest.GetValueProjection;
+import com.hazelcast.map.AbstractMapQueryIterableTest.TestProjection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
@@ -237,20 +239,6 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         @Override
         public boolean apply(Entry<String, Integer> mapEntry) {
             return mapEntry.getValue() % 2 == 0;
-        }
-    }
-
-    private static class TestProjection implements Projection<Entry<String, String>, String> {
-        @Override
-        public String transform(Entry<String, String> input) {
-            return "dummy" + input.getValue();
-        }
-    }
-
-    private static class GetValueProjection<T> implements Projection<Entry<String, T>, T> {
-        @Override
-        public T transform(Entry<String, T> input) {
-            return input.getValue();
         }
     }
 }

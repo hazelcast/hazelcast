@@ -818,7 +818,12 @@ public final class Util {
         public static final Identity INSTANCE = new Identity<>();
 
         @Override
-        public T applyEx(T t) throws Exception {
+        public T apply(T t) {
+            return t;
+        }
+
+        @Override
+        public T applyEx(T t) {
             return t;
         }
 

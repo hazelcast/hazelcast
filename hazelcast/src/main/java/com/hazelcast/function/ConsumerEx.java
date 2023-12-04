@@ -56,10 +56,7 @@ public interface ConsumerEx<T> extends Consumer<T>, Serializable, SecuredFunctio
      */
     default ConsumerEx<T> andThen(ConsumerEx<? super T> after) {
         checkNotNull(after, "after");
-        return t -> {
-            accept(t);
-            after.accept(t);
-        };
+        return new FunctionsImpl.ComposedConsumerEx<>(this, after);
     }
 
     /**

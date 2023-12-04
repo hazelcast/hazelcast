@@ -21,8 +21,6 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ascii.MemcacheTextDecoder;
 import com.hazelcast.internal.nio.ascii.RestApiTextDecoder;
 
-import static com.hazelcast.internal.util.JVMUtil.upcast;
-
 import java.nio.ByteBuffer;
 
 public class TextHandshakeDecoder
@@ -60,7 +58,7 @@ public class TextHandshakeDecoder
         // we need to restore whatever is read
         ByteBuffer src = this.src;
         ByteBuffer dst = (ByteBuffer) inboundHandlers[0].src();
-        upcast(src).flip();
+        src.flip();
         dst.put(src);
     }
 }

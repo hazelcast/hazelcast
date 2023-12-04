@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public final class ClientMessageReader {
 
@@ -90,9 +89,9 @@ public final class ClientMessageReader {
                 sumUntrustedMessageLength += frameLength;
             }
 
-            upcast(src).position(src.position() + Bits.INT_SIZE_IN_BYTES);
+            src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
             int flags = Bits.readShortL(src, src.position()) & INT_MASK;
-            upcast(src).position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
+            src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
             int size = frameLength - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
             byte[] bytes = new byte[size];

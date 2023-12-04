@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -46,5 +47,16 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable, SecuredFunctio
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
+    }
+
+    /**
+     * {@code Serializable} analogue of {@link Function#andThen(Function)
+     * java.util.function.Function#andThen(Function)}.
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
+     * @since 5.4
+     */
+    default <V> SupplierEx<V> andThen(FunctionEx<? super T, ? extends V> after) {
+        return new FunctionsImpl.ComposedSupplierEx(this, after);
     }
 }

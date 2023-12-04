@@ -313,7 +313,7 @@ public class MasterJobContext {
 
                   createExecutionPlans(dag, membersView)
                           .thenCompose(plans -> coordinator.submitToCoordinatorThread(
-                                  () -> initExecution(membersView, plans)
+                                  () -> initExecution(membersView, plans, dag)
                           ))
                           .whenComplete((r, e) -> {
                               if (e != null) {
@@ -339,11 +339,13 @@ public class MasterJobContext {
                 false, mc.jobRecord().getSubject());
     }
 
-    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap, DAG dag) {
         mc.setExecutionPlanMap(executionPlanMap);
         logger.fine("Built execution plans for " + mc.jobIdString());
         Set<MemberInfo> participants = mc.executionPlanMap().keySet();
         Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        mc.coordinationService().jobInvocationObservers.forEach(obs ->
+                obs.onLightJobInvocation(mc.jobId(), participants, dag, mc.jobConfig()));
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
                         participants, mc.nodeEngine().getSerializationService().toData(plan), false);
@@ -687,9 +689,10 @@ public class MasterJobContext {
         }
 
         // If all exceptions are of certain type, treat it as TopologyChangedException
+        @SuppressWarnings("checkstyle:LineLength")
         Map<Boolean, List<Entry<Address, Object>>> splitFailures = failures.stream()
                 .collect(partitioningBy(
-                        e -> e.getValue() instanceof CancellationException
+                        e -> (e.getValue() instanceof CancellationException && !(e.getValue() instanceof CancellationByUserException))
                                 || e.getValue() instanceof TerminatedWithSnapshotException
                                 || isTopologyException((Throwable) e.getValue())));
         List<Entry<Address, Object>> topologyFailures = splitFailures.getOrDefault(true, emptyList());
@@ -790,6 +793,12 @@ public class MasterJobContext {
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
+
+                // TODO: workaround for cancelling non-suspendable jobs,
+                //  remove it after SqlResult will be able to cancel the Jet job.
+                if (failure instanceof CancellationByUserException && terminationRequest == null) {
+                    terminationRequest = new TerminationRequest(CANCEL_FORCEFUL, true);
+                }
 
                 String description = requestedTerminationMode()
                         .map(mode -> mode.actionAfterTerminate().description())

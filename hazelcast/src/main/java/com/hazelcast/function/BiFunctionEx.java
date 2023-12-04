@@ -22,8 +22,6 @@ import com.hazelcast.security.impl.function.SecuredFunction;
 import java.io.Serializable;
 import java.util.function.BiFunction;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-
 /**
  * {@code Serializable} variant of {@link BiFunction
  * java.util.function.BiFunction} which declares checked exception.
@@ -60,7 +58,6 @@ public interface BiFunctionEx<T, U, R> extends BiFunction<T, U, R>, Serializable
      *           composed function
      */
     default <V> BiFunctionEx<T, U, V> andThen(FunctionEx<? super R, ? extends V> after) {
-        checkNotNull(after, "after");
-        return (t, u) -> after.apply(apply(t, u));
+        return new FunctionsImpl.ComposedBiFunctionEx<>(this, after);
     }
 }

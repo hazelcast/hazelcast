@@ -32,13 +32,14 @@ import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.impl.connector.HazelcastWriters;
+import com.hazelcast.jet.impl.connector.MapSinkConfiguration;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.EntryProcessor;
@@ -257,26 +258,6 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
-    public void remoteMap() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMap(sinkName, clientConfig);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(sinkName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
-
-    @Test
     public void mapWithMerging_byName() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -407,8 +388,13 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void mapWithMerging_when_multipleValuesForSingleKeyInABatch() throws Exception {
-        ProcessorMetaSupplier metaSupplier = adaptSupplier(SinkProcessors.<Entry<String, Integer>, String,
-                Integer>mergeMapP(sinkName, Entry::getKey, Entry::getValue, Integer::sum));
+        MapSinkConfiguration<Entry<String, Integer>, String, Integer> configuration = new MapSinkConfiguration<>(sinkName);
+        configuration.setToKeyFn(Entry::getKey);
+        configuration.setToValueFn(Entry::getValue);
+        configuration.setMergeFn(Integer::sum);
+        ProcessorMetaSupplier processorMetaSupplier = HazelcastWriters.mergeMapSupplier(configuration);
+
+        ProcessorMetaSupplier metaSupplier = adaptSupplier(processorMetaSupplier);
 
         TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setHazelcastInstance(member);
         Processor p = TestSupport.supplierFrom(metaSupplier, psContext).get();
@@ -420,9 +406,7 @@ public class SinksTest extends PipelineTestSupport {
         inbox.add(entry("k", 2));
         p.process(0, inbox);
         assertTrue("inbox.isEmpty()", inbox.isEmpty());
-        assertTrueEventually(() -> {
-            assertTrue("p.complete()", p.complete());
-        }, 10);
+        assertTrueEventually(() -> assertTrue("p.complete()", p.complete()), 10);
         p.close();
 
         // assert the output map contents
@@ -459,49 +443,6 @@ public class SinksTest extends PipelineTestSupport {
         assertEquals(expected, actual);
     }
 
-    @Test
-    public void remoteMapWithMerging() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithMerging(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                Entry::getValue,
-                // intentionally not a method reference - https://bugs.openjdk.java.net/browse/JDK-8154236
-                (oldValue, newValue) -> oldValue + newValue);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
-
-    @Test
-    public void remoteMapWithMerging_when_functionReturnsNull_then_keyIsRemoved() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-        BatchSource<Entry<String, Integer>> source = Sources.remoteMap(srcName, clientConfig);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithMerging(
-                srcName, clientConfig, (oldValue, newValue) -> null);
-
-        // Then
-        p.readFrom(source).writeTo(sink);
-        execute();
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(0, actual.size());
-    }
 
     @Test
     public void mapWithUpdating_byName() {
@@ -631,70 +572,6 @@ public class SinksTest extends PipelineTestSupport {
         assertEquals(2, srcMap.get("key").intValue());
     }
 
-    @Test
-    public void remoteMapWithUpdating() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithUpdating(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                (Integer value, Entry<String, Integer> item) -> value + 10);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
-
-    @Test
-    public void remoteMapWithUpdating_when_functionReturnsNull_then_keyIsRemoved() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithUpdating(srcName, clientConfig, (value, item) -> null);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
-        assertEquals(0, actual.size());
-    }
-
-    @Test
-    public void remoteMapWithUpdating_when_itemDataSerializable() {
-        // Given
-        IMap<String, DataSerializableObject> sourceMap = remoteHz.getMap(srcName);
-        List<Integer> input = sequence(itemCount);
-        input.forEach(i -> sourceMap.put(String.valueOf(i), new DataSerializableObject(i)));
-
-        // When
-        Sink<Entry<String, DataSerializableObject>> sink = Sinks.remoteMapWithUpdating(
-                srcName,
-                clientConfig,
-                (value, item) -> new DataSerializableObject(value.value + item.getValue().value));
-
-        // Then
-        p.readFrom(Sources.<String, DataSerializableObject>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, DataSerializableObject>> expected = input
-                .stream()
-                .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
-                .collect(toList());
-        Set<Entry<String, DataSerializableObject>> actual = sourceMap.entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
 
     @Test
     public void mapWithEntryProcessor_byName() {
@@ -712,6 +589,29 @@ public class SinksTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i + 10))
                                                      .collect(toList());
+        Set<Entry<String, Integer>> actual = hz().<String, Integer>getMap(srcName).entrySet();
+        assertEquals(expected.size(), actual.size());
+        expected.forEach(entry -> assertTrue(actual.contains(entry)));
+    }
+
+    @Test
+    public void mapWithEntryProcessor_byName_and_parallelism() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        Sink<Entry<String, Integer>> sink = Sinks.mapWithEntryProcessor(2,
+                srcName,
+                Entry::getKey,
+                entry -> new IncrementEntryProcessor<>(10));
+
+        // Then
+        p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
+        execute();
+        List<Entry<String, Integer>> expected = input.stream()
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = hz().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -739,29 +639,6 @@ public class SinksTest extends PipelineTestSupport {
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
 
-    @Test
-    public void remoteMapWithEntryProcessor() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithEntryProcessor(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                entry -> new IncrementEntryProcessor<>(10));
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
 
     @Test
     public void mapWithEntryProcessor_when_entryIsLocked_then_entryIsNotUpdated() {
@@ -972,7 +849,7 @@ public class SinksTest extends PipelineTestSupport {
 
     private static class IncrementEntryProcessor<K> implements EntryProcessor<K, Integer, Void> {
 
-        private Integer value;
+        private final Integer value;
 
         IncrementEntryProcessor(Integer value) {
             this.value = value;

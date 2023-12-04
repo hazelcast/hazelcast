@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.mocknetwork.MockServer.isTargetLeft;
 import static org.junit.Assert.assertNotNull;
 
@@ -157,12 +156,12 @@ public class MockServerConnection implements ServerConnection {
         boolean writeDone;
         do {
             writeDone = packetWriter.writeTo(packet, buffer);
-            upcast(buffer).flip();
+            buffer.flip();
             newPacket = packetReader.readFrom(buffer);
             if (buffer.hasRemaining()) {
                 throw new IllegalStateException("Buffer should be empty! " + buffer);
             }
-            upcast(buffer).clear();
+            buffer.clear();
         } while (!writeDone);
 
         assertNotNull(newPacket);

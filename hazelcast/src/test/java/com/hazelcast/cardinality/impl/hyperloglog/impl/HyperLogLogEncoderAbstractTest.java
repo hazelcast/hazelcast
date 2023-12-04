@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -84,7 +83,7 @@ public abstract class HyperLogLogEncoderAbstractTest {
             int toCount = random.nextInt();
             actualCount.add(toCount);
 
-            upcast(bb).clear();
+            bb.clear();
             bb.putInt(toCount);
             encoder.add(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
 

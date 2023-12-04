@@ -87,7 +87,7 @@ import static java.util.Objects.requireNonNull;
 public class RemoteMapSourceBuilder<K, V, T> {
 
     private final String mapName;
-    private String dataConnectionName;
+    private DataConnectionRef dataConnectionRef;
     private ClientConfig clientConfig;
     private Predicate<K, V> predicate;
     private Projection<? super Entry<K, V>, ? extends T> projection;
@@ -102,22 +102,22 @@ public class RemoteMapSourceBuilder<K, V, T> {
      * The data connection must be of
      * {@link com.hazelcast.dataconnection.HazelcastDataConnection} type.
      * <p>
-     * One of {@link #dataConnectionName} or {@link #clientConfig} is required
+     * One of {@link #dataConnectionRef} or {@link #clientConfig} is required
      * to build the source. If both are provided the data connection takes
      * precedence.
      *
-     * @param dataConnectionName name of the data connection
+     * @param dataConnectionRef name of the data connection
      * @return this builder
      */
-    public RemoteMapSourceBuilder<K, V, T> dataConnectionName(@Nonnull String dataConnectionName) {
-        this.dataConnectionName = requireNonNull(dataConnectionName, "dataConnectionName can not be null");
+    public RemoteMapSourceBuilder<K, V, T> dataConnectionRef(@Nonnull DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = requireNonNull(dataConnectionRef, "dataConnectionRef can not be null");
         return this;
     }
 
     /**
      * Set the client configuration to use to connect to the remote cluster.
      * <p>
-     * One of {@link #dataConnectionName} or {@link #clientConfig} is required
+     * One of {@link #dataConnectionRef} or {@link #clientConfig} is required
      * to build the source. If both are provided the data connection takes
      * precedence.
      *
@@ -125,7 +125,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
      * @return this builder
      */
     public RemoteMapSourceBuilder<K, V, T> clientConfig(@Nonnull ClientConfig clientConfig) {
-        this.clientConfig = requireNonNull(clientConfig);
+        this.clientConfig = requireNonNull(clientConfig, "clientConfig can not be null");
         return this;
     }
 
@@ -153,7 +153,7 @@ public class RemoteMapSourceBuilder<K, V, T> {
             @Nonnull Projection<? super Entry<K, V>, ? extends T_NEW> projection
     ) {
         requireNonNull(projection, "projection can not be null");
-        checkSerializable(requireNonNull(projection), "projection");
+        checkSerializable(projection, "projection");
         @SuppressWarnings("unchecked")
         RemoteMapSourceBuilder<K, V, T_NEW> newThis = (RemoteMapSourceBuilder<K, V, T_NEW>) this;
         newThis.projection = projection;
@@ -166,11 +166,11 @@ public class RemoteMapSourceBuilder<K, V, T> {
      * @return a batch source emitting items from the remote IMap
      */
     public <N> BatchSource<N> build() {
-        if ((dataConnectionName == null) && (clientConfig == null)) {
+        if ((dataConnectionRef == null) && (clientConfig == null)) {
             throw new HazelcastException("Either dataConnectionName or clientConfig must be non-null");
         }
         RemoteMapSourceConfiguration<K, V, T> configuration = new RemoteMapSourceConfiguration<>(
-                mapName, dataConnectionName, clientConfig, predicate, projection
+                mapName, dataConnectionRef, clientConfig, predicate, projection
         );
 
         return batchFromProcessor("remoteMapSource(" + mapName + ')', of(HazelcastReaders.readRemoteMapSupplier(configuration)));

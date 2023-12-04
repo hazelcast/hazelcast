@@ -115,8 +115,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         public void runStep(State state) {
             if (state.isRecordExistsInMemory()) {
                 DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-                Record record = recordStore.getRecord(state.getKey());
-                recordStore.removeRecord0(state.getKey(), record, false);
+                Record record = recordStore.removeByKey(state.getKey(), false);
                 recordStore.onStore(record);
                 recordStore.updateStatsOnRemove(state.getNow());
             }

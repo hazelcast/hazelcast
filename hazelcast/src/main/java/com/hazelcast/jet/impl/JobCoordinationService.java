@@ -790,7 +790,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                             JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(r.getJobId());
                             return new JobAndSqlSummary(
                                     false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                    r.getCompletionTime(), r.getFailureText(), null,
+                                    r.getCompletionTime(), r.getFailureText(), getSqlSummary(r.getJobConfig()),
                                     executionRecord == null || executionRecord.getSuspensionCause() == null ? null :
                                             executionRecord.getSuspensionCause().description(),
                                     r.isUserCancelled());
@@ -810,10 +810,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     }
 
     private JobAndSqlSummary getJobAndSqlSummary(LightMasterContext lmc) {
-        String query = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_QUERY_TEXT);
-        Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
-        SqlSummary sqlSummary = query != null && unbounded != null ?
-                new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+        SqlSummary sqlSummary = getSqlSummary(lmc.getJobConfig());
 
         // For simplicity, we assume here that light job is running iff LightMasterContext exists:
         // running jobs are not cancelled and others are not visible.
@@ -842,6 +839,15 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
                 RUNNING, lmc.getStartTime(), 0, null, sqlSummary, null,
                 false);
+    }
+
+    @Nullable
+    private static SqlSummary getSqlSummary(JobConfig jobConfig) {
+        String query = jobConfig.getArgument(JobConfigArguments.KEY_SQL_QUERY_TEXT);
+        Object unbounded = jobConfig.getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
+        SqlSummary sqlSummary = query != null && unbounded != null ?
+                new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+        return sqlSummary;
     }
 
     /**
@@ -934,6 +940,10 @@ public class JobCoordinationService implements DynamicMetricsProvider {
 
     public void registerInvocationObserver(JobInvocationObserver observer) {
         this.jobInvocationObservers.add(observer);
+    }
+
+    public void unregisterInvocationObserver(JobInvocationObserver observer) {
+        this.jobInvocationObservers.remove(observer);
     }
 
     JetServiceBackend getJetServiceBackend() {
@@ -1386,7 +1396,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                     maybeTerminationRequest.map(TerminationRequest::isUserInitiated).orElse(false);
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null, suspensionCause,
+                record.getCreationTime(), 0, null, getSqlSummary(record.getConfig()), suspensionCause,
                 userCancelled);
     }
 

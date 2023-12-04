@@ -59,7 +59,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Streams.mapWithIndex;
-import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
@@ -144,7 +143,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         // no key must be on both sides
-        if (hasNonEmptyIntersection(leftTimeExtractors.keySet(), rightTimeExtractors.keySet())) {
+        if (!Collections.disjoint(leftTimeExtractors.keySet(), rightTimeExtractors.keySet())) {
             throw new IllegalArgumentException("Some watermark key is found on both inputs. Left="
                     + leftTimeExtractors.keySet() + ", right=" + rightTimeExtractors.keySet());
         }
