@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.collection.NonTraversableList;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.nio.serialization.impl.VersionedIdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
@@ -50,6 +50,7 @@ import com.hazelcast.sql.impl.type.converter.RowConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -77,7 +78,7 @@ import static java.util.stream.Collectors.toMap;
  * Thread-safe if {@linkplain #addField no field will ever be added},
  * or after {@linkplain #finalizeFields the fields are finalized}.
  */
-public class QueryDataType implements IdentifiedDataSerializable, Versioned, Serializable {
+public class QueryDataType implements VersionedIdentifiedDataSerializable, Serializable {
     public static final int MAX_DECIMAL_PRECISION = 76;
     public static final int MAX_DECIMAL_SCALE = 38;
 
@@ -251,10 +252,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     }
 
     @Override
-    public int getClassId() {
-        return isCustomType()
-                ? SqlDataSerializerHook.QUERY_DATA_TYPE
-                : SqlDataSerializerHook.PREDEFINED_QUERY_DATA_TYPE_BASE + converter.getId();
+    public int getClassId(Version clusterVersion) {
+        return !isCustomType() && clusterVersion.isGreaterOrEqual(V5_4)
+                ? SqlDataSerializerHook.PREDEFINED_QUERY_DATA_TYPE_BASE + converter.getId()
+                : SqlDataSerializerHook.QUERY_DATA_TYPE;
     }
 
     /**

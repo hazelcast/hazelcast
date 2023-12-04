@@ -83,11 +83,11 @@ public class DataSerializableConventionsTest {
 
     /**
      * Subclasses of classes in the white list are not taken into account for
-     * conventions tests because they <ol>
-     * <li> inherit Serializable from a parent class and cannot implement
-     *      IdentifiedDataSerializable due to the unavailability of default
-     *      constructor, or
-     * <li> purposefully break conventions to fix a known issue.
+     * conventions tests because <ol>
+     * <li> they inherit Serializable from a parent class and cannot implement
+     *      IdentifiedDataSerializable due to the unavailability of default constructor,
+     * <li> they purposefully break conventions to fix a known issue, or
+     * <li> their factory/class ID depend on the underlying data, such as QueryDataType.
      */
     private final Set<Class> classWhiteList;
     private final Set<String> packageWhiteList;
