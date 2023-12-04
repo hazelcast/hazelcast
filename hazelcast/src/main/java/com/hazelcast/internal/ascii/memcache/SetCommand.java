@@ -20,7 +20,6 @@ import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 import java.nio.ByteBuffer;
 
@@ -51,7 +50,7 @@ public class SetCommand extends AbstractTextCommand {
             while (src.hasRemaining()) {
                 char c = (char) src.get();
                 if (c == '\n') {
-                    upcast(bbValue).flip();
+                    bbValue.flip();
                     return true;
                 }
             }

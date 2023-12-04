@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
@@ -34,18 +35,18 @@ import static java.util.Objects.requireNonNull;
 public class RemoteMapSourceConfiguration<K, V, T> {
 
     private final String name;
-    private final String dataConnectionName;
+    private final DataConnectionRef dataConnectionRef;
     private final ClientConfig clientConfig;
     private final Predicate<K, V> predicate;
     private final Projection<? super Map.Entry<K, V>, ? extends T> projection;
 
     public RemoteMapSourceConfiguration(String name,
-                                        String dataConnectionName,
+                                        DataConnectionRef dataConnectionRef,
                                         ClientConfig clientConfig,
                                         Predicate<K, V> predicate,
                                         Projection<? super Map.Entry<K, V>, ? extends T> projection) {
         this.name = requireNonNull(name);
-        this.dataConnectionName = dataConnectionName;
+        this.dataConnectionRef = dataConnectionRef;
         this.clientConfig = clientConfig;
         this.predicate = predicate;
         this.projection = projection;
@@ -59,9 +60,14 @@ public class RemoteMapSourceConfiguration<K, V, T> {
         return name;
     }
 
-    public String getDataConnectionName() {
-        return dataConnectionName;
+    public DataConnectionRef getDataConnectionRef() {
+        return dataConnectionRef;
     }
+
+    public String getDataConnectionName() {
+        return dataConnectionRef == null ? null : dataConnectionRef.getName();
+    }
+
 
     public ClientConfig getClientConfig() {
         return clientConfig;

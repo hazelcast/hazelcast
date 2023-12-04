@@ -264,6 +264,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .setProperty("database.password", "postgres")
                     .setProperty("database.dbname", "postgres")
                     .setProperty("table.whitelist", "inventory.customers")
+                    .setProperty("heartbeat.interval.ms", "1000") // this will add Heartbeat messages to the stream
                     .build();
 
             Pipeline pipeline = Pipeline.create();

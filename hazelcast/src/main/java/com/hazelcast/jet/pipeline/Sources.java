@@ -584,7 +584,7 @@ public final class Sources {
             @Nonnull DataConnectionRef dataConnectionRef
     ) {
         return Sources.<K, V>remoteMapBuilder(mapName)
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionRef(dataConnectionRef)
                 .build();
     }
 
@@ -609,7 +609,7 @@ public final class Sources {
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return Sources.<K, V>remoteMapBuilder(mapName)
-                .dataConnectionName(dataConnectionRef.getName())
+                .dataConnectionRef(dataConnectionRef)
                 .predicate(predicate)
                 .projection(projection)
                 .build();

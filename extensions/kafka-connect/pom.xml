@@ -67,12 +67,23 @@
                 <version>1.6.8</version>
                 <executions>
                     <execution>
-                        <id>download-zip-file</id>
+                        <id>download-datagen-zip-file</id>
                         <goals>
                             <goal>wget</goal>
                         </goals>
                         <configuration>
                             <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-jdbc-zip-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip</url>
                             <unpack>false</unpack>
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
                         </configuration>
@@ -119,7 +130,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.4.11</version>
+            <version>3.5.0</version>
             <scope>test</scope>
         </dependency>
          <dependency>

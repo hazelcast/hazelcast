@@ -24,8 +24,6 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationThread;
 
-import static com.hazelcast.internal.util.JVMUtil.upcast;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
@@ -107,7 +105,7 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
         UTF8Reader(BufferObjectDataInput input) {
             byte[] data = obtainBytes(input);
             inputBuffer = ByteBuffer.wrap(data);
-            upcast(inputBuffer).position(input.position());
+            inputBuffer.position(input.position());
             decoder = Thread.currentThread() instanceof OperationThread
                     ? DECODER_THREAD_LOCAL.get()
                     : StandardCharsets.UTF_8.newDecoder();

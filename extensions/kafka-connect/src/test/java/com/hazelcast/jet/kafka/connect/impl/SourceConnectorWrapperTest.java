@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,10 +37,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConnectorWrapperTest {
+public class SourceConnectorWrapperTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new ConnectorWrapper(minimalProperties());
+        new TestSourceConnectorWrapper(dummySourceConnectorProperties());
 
         assertThat(sourceConnectorInstance().isInitialized()).isTrue();
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
@@ -47,32 +48,26 @@ public class ConnectorWrapperTest {
 
     @Test
     public void should_create_task_runners() {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        TestSourceConnectorWrapper sourceConnectorWrapper =
+                new TestSourceConnectorWrapper(dummySourceConnectorProperties());
 
-        TaskRunner taskRunner1 = connectorWrapper.createTaskRunner();
+        TaskRunner taskRunner1 = sourceConnectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
         taskRunner1.poll();
         Map<String, String> expectedTaskProperties = new HashMap<>();
         expectedTaskProperties.put("name", "some-name");
         expectedTaskProperties.put("connector.class", DummySourceConnector.class.getName());
         expectedTaskProperties.put("task.id", "0");
-        assertThat(lastTaskInstance().getProperties()).containsAllEntriesOf(expectedTaskProperties);
-
-        TaskRunner taskRunner2 = connectorWrapper.createTaskRunner();
-        taskRunner2.poll();
-        assertThat(taskRunner2.getName()).isEqualTo("some-name-task-1");
-        expectedTaskProperties = new HashMap<>();
-        expectedTaskProperties.put("name", "some-name");
-        expectedTaskProperties.put("connector.class", DummySourceConnector.class.getName());
-        expectedTaskProperties.put("task.id", "1");
-        assertThat(lastTaskInstance().getProperties()).containsAllEntriesOf(expectedTaskProperties);
+        DummySourceConnector.DummyTask dummyTask = lastTaskInstance();
+        assertThat(dummyTask.getProperties()).containsAllEntriesOf(expectedTaskProperties);
     }
 
     @Test
     public void should_reconfigure_task_runners() {
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        TestSourceConnectorWrapper sourceConnectorWrapper =
+                new TestSourceConnectorWrapper(dummySourceConnectorProperties());
 
-        TaskRunner taskRunner1 = connectorWrapper.createTaskRunner();
+        TaskRunner taskRunner1 = sourceConnectorWrapper.createTaskRunner();
         assertThat(taskRunner1.getName()).isEqualTo("some-name-task-0");
         taskRunner1.poll();
         Map<String, String> expectedTaskProperties = new HashMap<>();
@@ -105,8 +100,10 @@ public class ConnectorWrapperTest {
     public void should_fail_with_connector_class_not_found() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
+        properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        assertThatThrownBy(() -> new ConnectorWrapper(properties))
+        TestProcessorContext testProcessorContext = new TestProcessorContext();
+        assertThatThrownBy(() -> new SourceConnectorWrapper(properties, 0, testProcessorContext))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
@@ -114,18 +111,18 @@ public class ConnectorWrapperTest {
 
     @Test
     public void should_cleanup_on_destroy() {
-        Properties properties = minimalProperties();
+        Properties properties = dummySourceConnectorProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
-        ConnectorWrapper connectorWrapper = new ConnectorWrapper(properties);
+        var wrapper = new TestSourceConnectorWrapper(properties);
         assertThat(sourceConnectorInstance().isStarted()).isTrue();
 
-        connectorWrapper.stop();
+        wrapper.close();
 
         assertThat(sourceConnectorInstance().isStarted()).isFalse();
     }
 
     @Nonnull
-    private static Properties minimalProperties() {
+    private static Properties dummySourceConnectorProperties() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");

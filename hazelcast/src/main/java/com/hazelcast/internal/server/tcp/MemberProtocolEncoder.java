@@ -30,7 +30,6 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
@@ -70,7 +69,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
             return DIRTY;
         } finally {
-            upcast(dst).flip();
+            dst.flip();
         }
     }
 

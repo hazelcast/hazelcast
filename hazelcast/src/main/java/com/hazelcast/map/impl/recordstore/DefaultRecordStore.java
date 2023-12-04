@@ -597,7 +597,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return value;
     }
 
-    private void removeKeyFromExpirySystem(Data key) {
+    protected void removeKeyFromExpirySystem(Data key) {
         expirySystem.removeKeyFromExpirySystem(key);
     }
 
@@ -1281,6 +1281,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         storage.removeRecord(key, record);
     }
 
+    public Record removeByKey(Data key, boolean backup) {
+        Record record = getRecord(key);
+        removeRecord0(key, record, backup);
+        return record;
+    }
+
     @Override
     public Record getRecordOrNull(Data key, boolean backup) {
         long now = getNow();
@@ -1288,6 +1294,29 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     public Record getRecordOrNull(Data key, long now, boolean backup) {
+        return getRecordOrNull(key, now, backup, false);
+    }
+
+    public Record getRecordOrNull(Data key, boolean backup, boolean noCaching) {
+        long now = getNow();
+        return getRecordOrNull(key, now, backup, noCaching);
+    }
+
+    /**
+     * Returns live record or null if record is already expired. Does not load missing keys from a map store.
+     *
+     * @param key   key to be accessed
+     * @param now   the now timestamp
+     * @param backup true if partition is a backup-partition otherwise set false
+     * @param noCaching true if the record should be returned as it is in the record store.
+     *                  Applies to the tiered storage if a record read from device and then there is no
+     *                  copying (caching) it in-memory region. For other types of record store
+     *                  the flag is ignored.
+     *
+     * @return live record or null
+     * @see #get
+     */
+    public Record getRecordOrNull(Data key, long now, boolean backup, boolean noCaching) {
         Record record = storage.get(key);
         if (record != null) {
             return evictIfExpired(key, now, backup) ? null : record;
