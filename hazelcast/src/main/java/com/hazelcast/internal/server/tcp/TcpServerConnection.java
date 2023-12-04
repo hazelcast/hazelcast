@@ -242,7 +242,9 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public int hashCode() {
-        return Objects.hash(acceptorSide, connectionId);
+        int result = acceptorSide ? 1231 : 1237;
+        result = 31 * result + connectionId;
+        return result;
     }
 
     @Override
