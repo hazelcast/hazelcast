@@ -32,7 +32,6 @@ import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
@@ -153,9 +152,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 logger.finest("Processing pointer: " + pointer);
             }
 
-            Comparator<Data> comparator = pointer.isDescending()
-                    ? OrderedIndexStore.DATA_COMPARATOR_REVERSED
-                    : OrderedIndexStore.DATA_COMPARATOR;
+            Comparator<Data> comparator = index.getComparator(pointer.isDescending());
+            assert comparator != null : "Comparator should be present for sorted index";
 
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
             while (entryIterator.hasNext()) {

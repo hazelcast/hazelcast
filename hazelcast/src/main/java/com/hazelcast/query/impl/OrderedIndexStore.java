@@ -325,6 +325,11 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         }
     }
 
+    @Override
+    public Comparator getComparator(boolean isDescending) {
+        return isDescending ? DATA_COMPARATOR_REVERSED : DATA_COMPARATOR;
+    }
+
     /**
      * Adds entry to the given index map without copying it.
      * Needs to be invoked in a thread-safe way.

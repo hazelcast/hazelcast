@@ -31,6 +31,7 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -300,6 +301,11 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public PerIndexStats getPerIndexStats() {
         return stats;
+    }
+
+    @Override
+    public Comparator getComparator(boolean isDescending) {
+        return indexStore.getComparator(isDescending);
     }
 
     @Override

@@ -20,6 +20,9 @@ import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
+import javax.annotation.Nullable;
+import java.util.Comparator;
+
 /**
  * Provides the private index API.
  */
@@ -118,10 +121,19 @@ public interface InternalIndex extends Index {
 
     /**
      * @return Step-aware storage that backs the Index.
-     * By default returns {@code null} that indicates there is no
-     * Step-aware backed storage.
+     * By default, returns {@code null} that indicates
+     * there is no step-aware backed storage.
      */
     default StepAwareStorage getStepAwareStorage() {
+        return null;
+    }
+
+    /**
+     * @param isDescending whether the index is used in descending order.
+     * @return corresponding comparator for this index.
+     */
+    @Nullable
+    default Comparator getComparator(boolean isDescending) {
         return null;
     }
 }

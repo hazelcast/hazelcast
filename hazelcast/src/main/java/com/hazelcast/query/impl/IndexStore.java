@@ -21,6 +21,8 @@ import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -300,4 +302,13 @@ public interface IndexStore {
      * @see Index#getRecords(Comparable, boolean, Comparable, boolean)
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
+    /**
+     * @param isDescending is the index used in descending order.
+     * @return corresponding comparator for this index.
+     */
+    @Nullable
+    default Comparator getComparator(boolean isDescending) {
+        return null;
+    }
 }

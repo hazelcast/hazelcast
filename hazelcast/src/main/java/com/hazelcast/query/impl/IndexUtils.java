@@ -22,6 +22,7 @@ import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.memory.Capacity;
@@ -30,6 +31,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -369,6 +371,26 @@ public final class IndexUtils {
         }
 
         return res;
+    }
+
+    public static Comparator heapDataComparator(boolean isDescending) {
+        Comparator comparator = (Comparator<HeapData>) (left, right) -> {
+            int leftTotalSize = left.totalSize();
+            int rightTotalSize = right.totalSize();
+            if (leftTotalSize != rightTotalSize) {
+                return leftTotalSize < rightTotalSize ? -1 : 1;
+            }
+
+            byte[] lba = left.toByteArray();
+            byte[] rba = right.toByteArray();
+            for (int i = 0; i < leftTotalSize; i++) {
+                if (lba[i] != rba[i]) {
+                    return lba[i] < rba[i] ? -1 : 1;
+                }
+            }
+            return 0;
+        };
+        return isDescending ? comparator.reversed() : comparator;
     }
 
     private static Capacity getCapacity(Node node, boolean domLevel3) {
