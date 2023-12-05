@@ -55,6 +55,14 @@ public final class CodecUtil {
         return nextFrameIsNullEndFrame(iterator) ? null : decode.apply(iterator);
     }
 
+    public static <T> T decodeNullable(ClientMessage.Frame frame, Function<ClientMessage.Frame, T> decode) {
+        if (frame.next.isEndFrame()) {
+            return null;
+        } else {
+            return decode.apply(frame);
+        }
+    }
+
     public static boolean nextFrameIsDataStructureEndFrame(ClientMessage.ForwardFrameIterator iterator) {
         return iterator.peekNext().isEndFrame();
     }

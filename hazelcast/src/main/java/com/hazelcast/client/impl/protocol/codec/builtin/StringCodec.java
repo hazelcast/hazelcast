@@ -32,4 +32,8 @@ public final class StringCodec {
     public static String decode(ClientMessage.ForwardFrameIterator iterator) {
         return new String(iterator.next().content, StandardCharsets.UTF_8);
     }
+
+    public static String decode(ClientMessage.Frame frame) {
+        return new String(frame.content, StandardCharsets.UTF_8);
+    }
 }
