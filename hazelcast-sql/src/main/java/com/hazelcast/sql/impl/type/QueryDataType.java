@@ -118,8 +118,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Versioned, Ser
     private static final Map<String, QueryDataType> TYPES_BY_NAME = getEnumConstants(QueryDataType.class);
     private static final Map<QueryDataType, String> NAMES =
             TYPES_BY_NAME.entrySet().stream().collect(toMap(Entry::getValue, Entry::getKey));
-    private static final QueryDataType[] TYPES =
-            TYPES_BY_NAME.values().stream().sorted(comparingInt(type -> type.converter.getId())).toArray(QueryDataType[]::new);
+    private static final QueryDataType[] TYPES = TYPES_BY_NAME.values().stream()
+            .sorted(comparingInt(type -> type.converter.getId())).toArray(QueryDataType[]::new);
 
     private Converter converter;
     // nonnull for custom types (nested types)
