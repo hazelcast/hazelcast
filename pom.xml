@@ -1994,7 +1994,7 @@
             <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
-                <version>2.2.0</version>
+                <version>1.32.2</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
