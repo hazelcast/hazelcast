@@ -54,6 +54,26 @@ public final class IndexUtils {
     /** Pattern to stripe away "this." prefix. */
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
 
+    /**
+     * Comparator for deserialized HD index entries.
+     */
+    private static final Comparator<HeapData> DESERIALIZED_OFFHEAP_DATA_COMPARATOR = (left, right) -> {
+        int leftTotalSize = left.totalSize();
+        int rightTotalSize = right.totalSize();
+        if (leftTotalSize != rightTotalSize) {
+            return leftTotalSize < rightTotalSize ? -1 : 1;
+        }
+
+        byte[] lba = left.toByteArray();
+        byte[] rba = right.toByteArray();
+        for (int i = 0; i < leftTotalSize; i++) {
+            if (lba[i] != rba[i]) {
+                return lba[i] < rba[i] ? -1 : 1;
+            }
+        }
+        return 0;
+    };
+
     private IndexUtils() {
         // No-op.
     }
@@ -373,24 +393,9 @@ public final class IndexUtils {
         return res;
     }
 
+    @SuppressWarnings("unused")
     public static Comparator heapDataComparator(boolean isDescending) {
-        Comparator comparator = (Comparator<HeapData>) (left, right) -> {
-            int leftTotalSize = left.totalSize();
-            int rightTotalSize = right.totalSize();
-            if (leftTotalSize != rightTotalSize) {
-                return leftTotalSize < rightTotalSize ? -1 : 1;
-            }
-
-            byte[] lba = left.toByteArray();
-            byte[] rba = right.toByteArray();
-            for (int i = 0; i < leftTotalSize; i++) {
-                if (lba[i] != rba[i]) {
-                    return lba[i] < rba[i] ? -1 : 1;
-                }
-            }
-            return 0;
-        };
-        return isDescending ? comparator.reversed() : comparator;
+        return isDescending ? DESERIALIZED_OFFHEAP_DATA_COMPARATOR.reversed() : DESERIALIZED_OFFHEAP_DATA_COMPARATOR;
     }
 
     private static Capacity getCapacity(Node node, boolean domLevel3) {
