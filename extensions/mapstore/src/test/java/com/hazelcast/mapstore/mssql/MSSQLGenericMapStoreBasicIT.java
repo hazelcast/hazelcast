@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapstore.mssql;
 
-import com.hazelcast.mapstore.GenericMapStoreTest;
+import com.hazelcast.mapstore.GenericMapStoreBasicIT;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import org.junit.BeforeClass;
@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 
 
 @Category(NightlyTest.class)
-public class MSSQLGenericMapStoreTest extends GenericMapStoreTest {
+public class MSSQLGenericMapStoreBasicIT extends GenericMapStoreBasicIT {
 
     @BeforeClass
     public static void beforeClass() {
