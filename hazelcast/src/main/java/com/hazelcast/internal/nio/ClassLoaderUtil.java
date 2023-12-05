@@ -19,6 +19,9 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.deployment.MapResourceClassLoader;
+
+import javax.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -31,6 +34,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -56,6 +61,8 @@ public final class ClassLoaderUtil {
 
     private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0],
             ClassLoaderUtil.class.getClassLoader());
+
+    private static final Pattern CLASS_PATTERN = Pattern.compile("(.*)\\.class$");
 
     static {
         try {
@@ -437,10 +444,11 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static boolean shouldBypassCache(Class clazz) {
+    private static boolean shouldBypassCache(Class<?> clazz) {
         // dynamically loaded class should not be cached here, as they are already
         // cached in the DistributedLoadingService (when cache is enabled)
-        return (clazz.getClassLoader() instanceof ClassSource);
+        return (clazz.getClassLoader() instanceof ClassSource
+                || clazz.getClassLoader() instanceof MapResourceClassLoader);
     }
 
     private static final class IrresolvableConstructor {
@@ -453,4 +461,9 @@ public final class ClassLoaderUtil {
         }
     }
 
+    @Nullable
+    public static String extractClassName(String filePath) {
+        Matcher matcher = CLASS_PATTERN.matcher(filePath.replace('/', '.'));
+        return matcher.matches() ? matcher.group(1) : null;
+    }
 }

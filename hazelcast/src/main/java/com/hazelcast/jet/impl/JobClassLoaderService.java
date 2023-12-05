@@ -107,8 +107,8 @@ public class JobClassLoaderService {
                     if (!jetConfig.isResourceUploadEnabled()) {
                         jobClassLoader = new JetDelegatingClassLoader(parent);
                     } else {
-                        jobClassLoader = new JetClassLoader(nodeEngine, parent, config.getName(), jobId,
-                                jobRepository);
+                        jobClassLoader = new JetClassLoader(nodeEngine.getLogger(JetClassLoader.class),
+                                parent, config.getName(), jobId, jobRepository);
                     }
 
                     Map<String, ClassLoader> processorCls = createProcessorClassLoaders(
