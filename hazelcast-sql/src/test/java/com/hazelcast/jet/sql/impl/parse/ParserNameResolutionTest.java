@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.TestTableResolver;
 import com.hazelcast.sql.impl.QueryException;
@@ -57,7 +56,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParserNameResolutionTest extends SqlTestSupport {
+public class ParserNameResolutionTest {
     private static OptimizerContext context;
 
     private static final String BAD_CATALOG = "badCatalog";
@@ -79,7 +78,6 @@ public class ParserNameResolutionTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
         context = createContext();
     }
 

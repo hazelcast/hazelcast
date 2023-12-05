@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.mock.MockUtil;
@@ -26,7 +25,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,16 +42,11 @@ import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DataConnectionsTableTest extends SimpleTestInClusterSupport {
+public class DataConnectionsTableTest {
     @Mock
     SqlConnectorCache connectorCache;
 
     private AutoCloseable openMocks;
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(1, null);
-    }
 
     @Before
     public void before() throws Exception {
@@ -62,7 +55,6 @@ public class DataConnectionsTableTest extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() throws Exception {
-        super.shutdownFactory();
         MockUtil.closeMocks(openMocks);
     }
 

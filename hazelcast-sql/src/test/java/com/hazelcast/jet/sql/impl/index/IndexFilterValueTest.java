@@ -33,6 +33,11 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.checkEquals;
+import static com.hazelcast.jet.sql.SqlTestSupport.createExpressionEvalContext;
+import static com.hazelcast.jet.sql.SqlTestSupport.serializeAndCheck;
+import static com.hazelcast.jet.sql.impl.index.IndexFilterTestSupport.composite;
+import static com.hazelcast.jet.sql.impl.index.IndexFilterTestSupport.constant;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -44,7 +49,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IndexFilterValueTest extends IndexFilterTestSupport {
+public class IndexFilterValueTest {
     @Test
     public void testContent() {
         List<Expression> components = singletonList(constant(1, QueryDataType.INT));

@@ -110,6 +110,11 @@ public class AllTypesSelectMongoSqlConnectorIT extends MongoSqlIT {
         });
     }
 
+    @Override
+    public void supportAfter() {
+        // ignore cleanup, we want this test to run in parallel and it only creates a few mappings
+    }
+
     private static LocalDateTime atLocal() {
         return LocalDateTime.of(
                 LocalDate.of(2022, 12, 30),

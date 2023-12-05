@@ -17,18 +17,7 @@
 package com.hazelcast.jet.sql_slow;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
-
-@RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlBasicClientSlowTest extends SqlBasicSlowTest {
     @Override
     protected HazelcastInstance getTarget() {

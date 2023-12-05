@@ -130,6 +130,11 @@ public class AllTypesInsertMongoSqlConnectorIT extends MongoSqlIT {
         });
     }
 
+    @Override
+    public void supportAfter() {
+        // ignore cleanup, we want this test to run in parallel and it only creates a few mappings
+    }
+
     @Test
     public void insertRowWithAllTypes() {
         String collectionName = randomName();
