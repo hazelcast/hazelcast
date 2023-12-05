@@ -19,11 +19,11 @@ package com.hazelcast.jet.kafka.impl;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import io.confluent.kafka.schemaregistry.client.rest.entities.Schema;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
 import io.confluent.kafka.schemaregistry.storage.KafkaSchemaRegistry;
-import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -265,13 +265,14 @@ public abstract class KafkaTestSupport {
         return schemaRegistryServer.getURI();
     }
 
-    public int registerSchema(String subject, Schema schema) throws SchemaRegistryException {
-        return schemaRegistry.register(subject, new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(
-                subject, -1, -1, AvroSchema.TYPE, emptyList(), schema.toString()));
+    public int registerSchema(String subject, org.apache.avro.Schema avroSchema) throws SchemaRegistryException {
+        Schema schema = new Schema(subject, -1, -1, AvroSchema.TYPE, emptyList(), avroSchema.toString());
+        Schema registeredSchema = schemaRegistry.register(subject, schema);
+        return registeredSchema.getId();
     }
 
     public int getLatestSchemaVersion(String subject) throws SchemaRegistryException {
-        return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(s -> s.getVersion())
+        return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(Schema::getVersion)
                 .orElseThrow(() -> new SchemaRegistryException("No schema found in subject '" + subject + "'"));
     }
 

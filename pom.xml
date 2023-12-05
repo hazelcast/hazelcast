@@ -108,7 +108,7 @@
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>3.4.1</kafka.version>
+        <kafka.version>3.6.0</kafka.version>
         <kotlin.version>1.9.21</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.4.2.jre11</mssql.version>
@@ -145,7 +145,7 @@
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.15.1</commons-io.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
-        <confluent.version>7.4.0</confluent.version>
+        <confluent.version>7.5.1</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <http.core.version>4.4.16</http.core.version>
