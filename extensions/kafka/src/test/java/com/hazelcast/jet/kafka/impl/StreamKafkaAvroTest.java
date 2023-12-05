@@ -15,6 +15,8 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -98,12 +100,14 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
     }
 
     private Properties createProperties(Schema keySchema, Schema valueSchema) {
+
         Properties properties = new Properties();
+
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
-        properties.setProperty("key.deserializer", HazelcastKafkaAvroDeserializer.class.getCanonicalName());
-        properties.setProperty("value.deserializer", HazelcastKafkaAvroDeserializer.class.getCanonicalName());
-        properties.setProperty("key.serializer", HazelcastKafkaAvroSerializer.class.getCanonicalName());
-        properties.setProperty("value.serializer", HazelcastKafkaAvroSerializer.class.getCanonicalName());
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
         properties.setProperty("auto.offset.reset", "earliest");
         properties.setProperty(OPTION_KEY_AVRO_SCHEMA, keySchema.toString());
         properties.setProperty(OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
