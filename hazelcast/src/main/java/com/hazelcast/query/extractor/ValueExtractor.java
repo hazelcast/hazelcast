@@ -18,6 +18,7 @@ package com.hazelcast.query.extractor;
 
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.ArgumentParser;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /***
  * Common superclass for all extractors that enable the user to define custom attributes and extract their values.
@@ -73,6 +74,7 @@ import com.hazelcast.query.impl.ArgumentParser;
  * @param <A> type of the extraction argument object passed to the extract() method
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface ValueExtractor<T, A> {
 
     /**
@@ -117,6 +119,6 @@ public interface ValueExtractor<T, A> {
      * @param collector collector of the extracted value(s)
      * @see ValueCollector
      */
-    void extract(T target, A argument, ValueCollector collector);
+    void extract(T target, A argument, ValueCollector<Object> collector);
 
 }

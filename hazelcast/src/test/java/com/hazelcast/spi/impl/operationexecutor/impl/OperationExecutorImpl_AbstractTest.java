@@ -64,6 +64,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     LoggingServiceImpl loggingService;
     HazelcastProperties props;
     Address thisAddress;
+    Node node;
     DefaultNodeExtension nodeExtension;
     OperationRunnerFactory handlerFactory;
     InternalSerializationService serializationService;
@@ -78,7 +79,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = smallInstanceConfig();
         thisAddress = new Address("localhost", 5701);
-        Node node = Mockito.mock(Node.class);
+        node = Mockito.mock(Node.class);
         when(node.getConfig()).thenReturn(config);
         when(node.getProperties()).thenReturn(new HazelcastProperties(config));
         when(node.getVersion()).thenReturn(new MemberVersion(0, 0, 0));
@@ -95,7 +96,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
         props = new HazelcastProperties(config);
         executor = new OperationExecutorImpl(
-                props, loggingService, thisAddress, handlerFactory, nodeExtension,
+                props, loggingService, thisAddress, handlerFactory, node.nodeEngine, nodeExtension,
                 "hzName", Thread.currentThread().getContextClassLoader(), bootstrap);
         executor.start();
         return executor;

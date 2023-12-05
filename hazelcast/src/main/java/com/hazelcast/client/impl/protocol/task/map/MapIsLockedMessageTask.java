@@ -41,7 +41,7 @@ public class MapIsLockedMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new IsLockedOperation(getNamespace(), parameters.key);
+        return new IsLockedOperation(getObjectNamespace(), parameters.key);
     }
 
     @Override
@@ -84,7 +84,13 @@ public class MapIsLockedMessageTask
         return new Object[]{parameters.key};
     }
 
-    private ObjectNamespace getNamespace() {
+    private ObjectNamespace getObjectNamespace() {
         return MapService.getObjectNamespace(parameters.name);
+    }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
     }
 }

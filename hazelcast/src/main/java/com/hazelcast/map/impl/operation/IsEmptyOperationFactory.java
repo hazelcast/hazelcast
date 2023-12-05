@@ -25,13 +25,11 @@ import java.io.IOException;
 
 public class IsEmptyOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
-
     public IsEmptyOperationFactory() {
     }
 
     public IsEmptyOperationFactory(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override

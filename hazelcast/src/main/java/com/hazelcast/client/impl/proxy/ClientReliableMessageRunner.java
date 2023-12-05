@@ -50,6 +50,11 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
     }
 
     @Override
+    protected void runWithNamespaceAwareness(Runnable runnable) {
+        runnable.run();
+    }
+
+    @Override
     protected Member getMember(ReliableTopicMessage m) {
         Member member = null;
         if (m.getPublisherAddress() != null) {

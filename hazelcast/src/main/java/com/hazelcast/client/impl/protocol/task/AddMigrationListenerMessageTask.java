@@ -142,4 +142,10 @@ public class AddMigrationListenerMessageTask
     public Object[] getParameters() {
         return null;
     }
+
+    @Override
+    protected String getNamespace() {
+        // Default Namespace
+        return null;
+    }
 }

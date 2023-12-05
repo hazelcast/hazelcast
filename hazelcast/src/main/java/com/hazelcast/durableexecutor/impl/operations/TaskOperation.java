@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,8 +46,9 @@ public class TaskOperation extends AbstractDurableExecutorOperation implements B
 
     @Override
     public void run() throws Exception {
-        callable = getNodeEngine().toObject(callableData);
         DurableExecutorContainer executorContainer = getExecutorContainer();
+        callable = NamespaceUtil.callWithNamespace(getNodeEngine(), executorContainer.getNamespace(),
+                () -> getNodeEngine().toObject(callableData));
         sequence = executorContainer.execute(callable);
     }
 

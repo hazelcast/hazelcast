@@ -94,7 +94,7 @@ public class QueryCacheBasicTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getMapConfig(TEST_MAP_NAME).addQueryCacheConfig(
                 new QueryCacheConfig(QUERY_CACHE_NAME)
-                        .setPredicateConfig(new PredicateConfig(predicate))
+                        .setPredicateConfig(new PredicateConfig(predicate, null))
                         .setIncludeValue(includeValues)
         );
         if (useNearCache) {

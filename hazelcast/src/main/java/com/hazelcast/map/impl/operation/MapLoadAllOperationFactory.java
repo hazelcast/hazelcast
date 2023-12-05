@@ -33,7 +33,6 @@ import java.util.List;
  */
 public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private List<Data> keys;
     private boolean replaceExistingValues;
 
@@ -42,7 +41,7 @@ public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
     }
 
     public MapLoadAllOperationFactory(String name, List<Data> keys, boolean replaceExistingValues) {
-        this.name = name;
+        super(name);
         this.keys = keys;
         this.replaceExistingValues = replaceExistingValues;
     }

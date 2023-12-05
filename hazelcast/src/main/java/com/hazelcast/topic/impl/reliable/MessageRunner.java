@@ -111,19 +111,20 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                 return;
             }
 
-            for (int i = 0; i < result.size(); i++) {
-                ReliableTopicMessage message = result.get(i);
-                try {
-                    listener.storeSequence(result.getSequence(i));
-                    listener.onMessage(toMessage(message));
-                } catch (Throwable t) {
-                    if (terminate(t)) {
-                        cancel();
-                        return;
+            runWithNamespaceAwareness(() -> {
+                for (int i = 0; i < result.size(); i++) {
+                    ReliableTopicMessage message = result.get(i);
+                    try {
+                        listener.storeSequence(result.getSequence(i));
+                        listener.onMessage(toMessage(message));
+                    } catch (Throwable t) {
+                        if (terminate(t)) {
+                            cancel();
+                            return;
+                        }
                     }
                 }
-
-            }
+            });
 
             sequence = result.getNextSequenceToReadFrom();
             next();
@@ -136,6 +137,8 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
             }
         }
     }
+
+    protected abstract void runWithNamespaceAwareness(Runnable runnable);
 
     private Message<E> toMessage(ReliableTopicMessage m) {
         Member member = getMember(m);

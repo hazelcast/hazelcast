@@ -18,13 +18,11 @@ package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
@@ -40,10 +38,11 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_READMANY}
  */
 public class RingbufferReadManyMessageTask
-        extends AbstractPartitionMessageTask<RingbufferReadManyCodec.RequestParameters> {
+        extends AbstractRingbufferMessageTask<RingbufferReadManyCodec.RequestParameters> {
 
     public RingbufferReadManyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
@@ -81,11 +80,6 @@ public class RingbufferReadManyMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.READ_MANY;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RingbufferService.SERVICE_NAME;
     }
 
     @Override

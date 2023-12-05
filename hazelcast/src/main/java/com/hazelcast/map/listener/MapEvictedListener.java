@@ -18,6 +18,7 @@ package com.hazelcast.map.listener;
 
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked after all entries are evicted by {@link IMap#evictAll()}.
@@ -25,6 +26,7 @@ import com.hazelcast.map.IMap;
  * @since 3.5
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface MapEvictedListener extends MapListener {
 
     /**

@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.IteratorOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -38,7 +36,7 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ITERATOR}
  */
 public class QueueIteratorMessageTask
-        extends AbstractPartitionMessageTask<String> {
+        extends AbstractQueueMessageTask<String> {
 
     public QueueIteratorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -69,11 +67,6 @@ public class QueueIteratorMessageTask
         SerializableList serializableList = (SerializableList) response;
         List<Data> coll = serializableList.getCollection();
         return QueueIteratorCodec.encodeResponse(coll);
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

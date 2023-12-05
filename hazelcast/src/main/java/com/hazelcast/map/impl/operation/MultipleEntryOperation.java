@@ -65,6 +65,7 @@ public class MultipleEntryOperation extends MapOperation
 
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
+        // Namespace awareness already in place from MapOperation#beforeRun
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
@@ -143,7 +144,7 @@ public class MultipleEntryOperation extends MapOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        entryProcessor = in.readObject();
+        entryProcessor = callWithNamespaceAwareness(in::readObject);
         int size = in.readInt();
         keys = createHashSet(size);
         for (int i = 0; i < size; i++) {

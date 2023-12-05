@@ -21,6 +21,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.locksupport.LockSupportService;
@@ -264,6 +265,9 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                             boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
         return eventService.registerListener(SERVICE_NAME, name, filter, listener).getId();
     }
 
@@ -273,6 +277,9 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                                                     boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
         return eventService.registerListenerAsync(SERVICE_NAME, name, filter, listener)
                 .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
@@ -283,6 +290,9 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                                  boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
         return eventService.registerLocalListener(SERVICE_NAME, name, filter, listener).getId();
     }
 
@@ -559,6 +569,25 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, MULTIMAP_PREFIX, getStats());
+    }
+
+    /**
+     * Looks up the UCD Namespace Name associated with the specified multimap name. This is done
+     * by checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param mapName The name of the {@link com.hazelcast.multimap.MultiMap} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine engine, String mapName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            // No regular containers available, fallback to config
+            MultiMapConfig config = engine.getConfig().getMultiMapConfig(mapName);
+            if (config != null) {
+                return config.getNamespace();
+            }
+        }
+        return null;
     }
 
     private class Merger extends

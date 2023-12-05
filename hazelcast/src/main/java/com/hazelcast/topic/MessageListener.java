@@ -16,6 +16,8 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.EventListener;
 
 /**
@@ -29,6 +31,7 @@ import java.util.EventListener;
  * @param <E> message type
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface MessageListener<E> extends EventListener {
 
     /**

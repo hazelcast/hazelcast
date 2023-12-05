@@ -27,10 +27,7 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.SecurityInterceptorConstants;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -70,11 +67,6 @@ public class MapEntrySetMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MapEntrySetCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override

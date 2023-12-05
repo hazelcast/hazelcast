@@ -31,6 +31,7 @@ public final class QueryCacheEventDataBuilder {
     private int eventType;
     private int partitionId;
     private InternalSerializationService serializationService;
+    private String mapName;
     private final boolean includeValue;
 
     private QueryCacheEventDataBuilder(boolean includeValue) {
@@ -76,6 +77,11 @@ public final class QueryCacheEventDataBuilder {
         return this;
     }
 
+    public QueryCacheEventDataBuilder withMapName(String mapName) {
+        this.mapName = mapName;
+        return this;
+    }
+
     public QueryCacheEventData build() {
         DefaultQueryCacheEventData eventData = new DefaultQueryCacheEventData();
         eventData.setDataKey(dataKey);
@@ -85,6 +91,7 @@ public final class QueryCacheEventDataBuilder {
         eventData.setSerializationService(serializationService);
         eventData.setEventType(eventType);
         eventData.setPartitionId(partitionId);
+        eventData.setMapName(mapName);
 
         return eventData;
     }

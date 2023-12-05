@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.util.executor;
 
+import com.hazelcast.spi.impl.NodeEngine;
+
 /**
  * This factory is implemented to have a thread factory that creates threads with `UnblockableThread` interface.
  * see @{@link UnblockableThread}
  */
 public class UnblockablePoolExecutorThreadFactory extends PoolExecutorThreadFactory {
 
-    public UnblockablePoolExecutorThreadFactory(String threadNamePrefix, ClassLoader classLoader) {
-        super(threadNamePrefix, classLoader);
+    public UnblockablePoolExecutorThreadFactory(String threadNamePrefix, ClassLoader classLoader, NodeEngine engine) {
+        super(threadNamePrefix, classLoader, engine);
     }
 
     @Override

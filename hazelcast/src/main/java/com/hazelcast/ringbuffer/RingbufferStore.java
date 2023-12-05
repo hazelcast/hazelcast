@@ -17,12 +17,14 @@
 package com.hazelcast.ringbuffer;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Ringbuffer store makes a ring buffer backed by a central data store; such as database, disk, etc.
  *
  * @param <T> ring buffer item type
  */
+@NamespacesSupported
 public interface RingbufferStore<T> {
 
     /**

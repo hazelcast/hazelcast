@@ -64,4 +64,9 @@ public abstract class AbstractCacheMessageTask<P>
     public Permission getRequiredPermission() {
         return null;
     }
+
+    @Override
+    protected String getNamespace() {
+        return CacheService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListCompareAndRemoveAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndRemoveOperation;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.impl.Node;
@@ -38,7 +37,7 @@ import java.util.Set;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_COMPAREANDREMOVEALL}
  */
 public class ListCompareAndRemoveAllMessageTask
-        extends AbstractPartitionMessageTask<ListCompareAndRemoveAllCodec.RequestParameters> {
+        extends AbstractListMessageTask<ListCompareAndRemoveAllCodec.RequestParameters> {
 
     public ListCompareAndRemoveAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

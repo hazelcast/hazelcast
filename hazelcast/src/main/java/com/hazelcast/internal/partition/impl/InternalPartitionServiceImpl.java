@@ -1259,6 +1259,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     @Override
     public void dispatchEvent(PartitionEvent event, PartitionEventListener<PartitionEvent> partitionEventListener) {
+        // Internal event not used for UCD, no Namespace awareness needed
         partitionEventListener.onEvent(event);
     }
 

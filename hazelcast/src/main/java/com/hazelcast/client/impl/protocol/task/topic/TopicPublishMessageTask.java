@@ -76,4 +76,10 @@ public class TopicPublishMessageTask
     public Object[] getParameters() {
         return new Object[]{parameters.message};
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

@@ -40,6 +40,7 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     public ScheduledExecutorSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
@@ -99,5 +100,10 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     private boolean isAutoDisposable() {
         return parameters.isAutoDisposableExists && parameters.autoDisposable;
+    }
+
+    @Override
+    protected String getNamespace() {
+        return DistributedScheduledExecutorService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

@@ -128,4 +128,8 @@ public class ListAddListenerMessageTask
         return parameters.name;
     }
 
+    @Override
+    protected String getNamespace() {
+        return ListService.lookupNamespace(nodeEngine, parameters.name);
+    }
 }

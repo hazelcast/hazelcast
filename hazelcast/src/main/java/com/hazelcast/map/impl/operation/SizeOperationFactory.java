@@ -25,13 +25,11 @@ import java.io.IOException;
 
 public class SizeOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
-
     public SizeOperationFactory() {
     }
 
     public SizeOperationFactory(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.util.ThreadAffinity;
@@ -28,6 +29,7 @@ import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
@@ -89,7 +91,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </li>
  * </ol>
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public final class OperationExecutorImpl implements OperationExecutor, StaticMetricsProvider {
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
@@ -112,12 +114,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
     private final TpcServerBootstrap tpcServerBootstrap;
+    private final NodeEngine engine;
 
     @SuppressWarnings("java:S107")
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
                                  Address thisAddress,
                                  OperationRunnerFactory runnerFactory,
+                                 NodeEngine engine,
                                  NodeExtension nodeExtension,
                                  String hzName,
                                  ClassLoader configClassLoader,
@@ -137,6 +141,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
+        this.engine = engine;
     }
 
     public PartitionOperationThread[] getPartitionThreads() {
@@ -490,6 +495,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         int partitionId = op.getPartitionId();
         // TODO: do we want to allow non partition specific tasks to be run on a partitionSpecific operation thread?
         if (partitionId < 0) {
+            // Namespace awareness requires NodeEngine context, which is fine on Partition threads,
+            //  but otherwise we need to provide it manually
+            NodeEngineThreadLocalContext.declareNodeEngineReference(engine);
             return true;
         }
 
@@ -587,6 +595,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             awaitTermination(partitionThreads);
         }
         awaitTermination(genericThreads);
+        NodeEngineThreadLocalContext.destroyNodeEngineReference();
     }
 
     private static void shutdownAll(OperationThread[] operationThreads) {

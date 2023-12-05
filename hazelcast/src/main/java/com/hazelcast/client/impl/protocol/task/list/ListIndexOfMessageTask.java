@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListIndexOfOperation;
 import com.hazelcast.instance.impl.Node;
@@ -35,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListIndexOfMessageTask
-        extends AbstractPartitionMessageTask<ListIndexOfCodec.RequestParameters> {
+        extends AbstractListMessageTask<ListIndexOfCodec.RequestParameters> {
 
     public ListIndexOfMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

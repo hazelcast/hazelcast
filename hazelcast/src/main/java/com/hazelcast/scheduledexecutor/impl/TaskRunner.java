@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.scheduledexecutor.StatefulTask;
@@ -75,6 +76,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
         }
         beforeRun();
         try {
+            NamespaceUtil.setupNamespace(container.getNodeEngine(), container.getNamespace());
             V result = original.call();
             if (SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
                 resolution = new ScheduledTaskResult(result);
@@ -95,6 +97,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
                     creationTime = Clock.currentTimeMillis();
                 }
             }
+            NamespaceUtil.cleanupNamespace(container.getNodeEngine(), container.getNamespace());
         }
     }
 
@@ -114,7 +117,9 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
         Map snapshot = descriptor.getState();
         if (original instanceof StatefulTask && !snapshot.isEmpty()) {
-            ((StatefulTask) original).load(snapshot);
+            NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getNamespace(), () -> {
+                ((StatefulTask) original).load(snapshot);
+            });
         }
 
         initialized = true;
@@ -137,7 +142,9 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
             Map state = new HashMap();
             if (original instanceof StatefulTask) {
-                ((StatefulTask) original).save(state);
+                NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getNamespace(), () -> {
+                    ((StatefulTask) original).save(state);
+                });
             }
             container.publishTaskState(taskName, state, statistics.snapshot(), resolution);
         } catch (Exception ex) {

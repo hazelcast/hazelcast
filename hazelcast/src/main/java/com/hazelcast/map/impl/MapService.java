@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
@@ -65,6 +66,7 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -412,5 +414,31 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     @Override
     public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, Collection<ServiceNamespace> namespace) {
         return migrationAwareService.newChunkSupplier(event, namespace);
+    }
+
+    /**
+     * Looks up the UCD Namespace Name associated with the specified map name. This starts
+     * by looking for an existing {@link MapContainer} and checking its defined
+     * {@link MapConfig}. If the {@link MapContainer} does not exist (containers are
+     * created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param mapName The name of the {@link com.hazelcast.map.IMap} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(@Nonnull NodeEngine engine, @Nonnull String mapName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            MapService mapService = engine.getService(MapService.SERVICE_NAME);
+            MapContainer container = mapService.getMapServiceContext().getExistingMapContainer(mapName);
+            if (container != null) {
+                return container.getMapConfig().getNamespace();
+            }
+            // Fallback to config lookup
+            MapConfig mapConfig = engine.getConfig().getMapConfigOrNull(mapName);
+            if (mapConfig != null) {
+                return mapConfig.getNamespace();
+            }
+        }
+        return null;
     }
 }

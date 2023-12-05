@@ -28,13 +28,12 @@ import java.io.IOException;
  */
 public class EvictAllOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
 
     public EvictAllOperationFactory() {
     }
 
     public EvictAllOperationFactory(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override

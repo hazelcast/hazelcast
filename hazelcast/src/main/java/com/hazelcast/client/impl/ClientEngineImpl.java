@@ -182,7 +182,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         String hzName = nodeEngine.getHazelcastInstance().getName();
         String internalName = name.substring("hz:".length());
         String threadNamePrefix = createThreadPoolName(hzName, internalName);
-        UnblockablePoolExecutorThreadFactory factory = new UnblockablePoolExecutorThreadFactory(threadNamePrefix, classLoader);
+        UnblockablePoolExecutorThreadFactory factory = new UnblockablePoolExecutorThreadFactory(threadNamePrefix,
+                classLoader, nodeEngine);
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
                 threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE, factory);
     }

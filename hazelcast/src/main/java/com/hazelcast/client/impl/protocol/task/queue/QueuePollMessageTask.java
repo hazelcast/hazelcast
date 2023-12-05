@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueuePollCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.PollOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -37,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_POLL}
  */
 public class QueuePollMessageTask
-        extends AbstractPartitionMessageTask<QueuePollCodec.RequestParameters> {
+        extends AbstractQueueMessageTask<QueuePollCodec.RequestParameters> {
 
     public QueuePollMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -66,11 +64,6 @@ public class QueuePollMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.POLL;
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

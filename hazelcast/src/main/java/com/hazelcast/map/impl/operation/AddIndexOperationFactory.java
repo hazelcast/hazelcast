@@ -26,14 +26,13 @@ import java.io.IOException;
 
 public class AddIndexOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private IndexConfig config;
 
     public AddIndexOperationFactory() {
     }
 
     public AddIndexOperationFactory(String name, IndexConfig config) {
-        this.name = name;
+        super(name);
         this.config = config;
     }
 

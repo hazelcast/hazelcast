@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.map.EntryProcessor;
@@ -112,8 +114,15 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        entryProcessor = in.readObject();
-        predicate = in.readObject();
+        NodeEngine engine = NodeEngineThreadLocalContext.getNamespaceThreadLocalContext();
+        String namespace = MapService.lookupNamespace(engine, name);
+        NamespaceUtil.setupNamespace(engine, namespace);
+        try {
+            entryProcessor = in.readObject();
+            predicate = in.readObject();
+        } finally {
+            NamespaceUtil.cleanupNamespace(engine, namespace);
+        }
     }
 
     /**

@@ -31,6 +31,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationAwareService;
@@ -279,15 +280,16 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public void initializeListeners(String name) {
-        List<ListenerConfig> listenerConfigs = getReplicatedMapConfig(name).getListenerConfigs();
+        ReplicatedMapConfig mapConfig = getReplicatedMapConfig(name);
+        List<ListenerConfig> listenerConfigs = mapConfig.getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {
                 listener = (EntryListener) listenerConfig.getImplementation();
             } else if (listenerConfig.getClassName() != null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
-                            listenerConfig.getClassName());
+                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, mapConfig.getNamespace());
+                    listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw rethrow(e);
                 }
@@ -385,6 +387,25 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, REPLICATED_MAP_PREFIX, getStats());
+    }
+
+    /**
+     * Looks up the UCD Namespace Name associated with the specified replicated map name. This is done
+     * by checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param mapName The name of the {@link com.hazelcast.replicatedmap.ReplicatedMap} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine engine, String mapName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            // No regular containers available, fallback to config
+            ReplicatedMapConfig config = engine.getConfig().findReplicatedMapConfig(mapName);
+            if (config != null) {
+                return config.getNamespace();
+            }
+        }
+        return null;
     }
 
     private class AntiEntropyTask implements Runnable {

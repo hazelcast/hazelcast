@@ -77,4 +77,10 @@ public class XAFinalizeTransactionMessageTask
     public Permission getRequiredPermission() {
         return new TransactionPermission();
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

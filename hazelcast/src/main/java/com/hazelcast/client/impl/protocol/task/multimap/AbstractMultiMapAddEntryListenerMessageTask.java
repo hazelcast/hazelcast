@@ -25,11 +25,13 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -40,14 +42,14 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
         extends AbstractAddListenerMessageTask<P> {
 
-    public AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected CompletableFuture<UUID> processInternal() {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        EntryAdapter listener = new MultiMapListener();
+        EntryAdapter<?, ?> listener = new MultiMapListener();
 
         final String name = getDistributedObjectName();
         Data key = getKey();
@@ -73,6 +75,11 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
         return new MultiMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = MultiMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
 
     @Override
     public String getMethodName() {
@@ -92,7 +99,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
                     throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
                             + event.getClass().getSimpleName());
                 }
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                DataAwareEntryEvent<?, ?> dataAwareEntryEvent = (DataAwareEntryEvent<?, ?>) event;
                 Data key = dataAwareEntryEvent.getKeyData();
                 Data value = dataAwareEntryEvent.getNewValueData();
                 Data oldValue = dataAwareEntryEvent.getOldValueData();
@@ -118,4 +125,9 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
 
     protected abstract ClientMessage encodeEvent(Data key, Data value, Data oldValue,
                                                  int type, UUID uuid, int numberOfEntriesAffected);
+
+    @Override
+    protected String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

@@ -163,4 +163,37 @@ public class ListService extends CollectionService implements DynamicMetricsProv
     public LocalListStatsImpl getLocalCollectionStats(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localCollectionStatsConstructorFunction);
     }
+
+    /**
+     * Looks up the UCD Namespace Name associated with the specified set name. This starts
+     * by looking for an existing {@link ListContainer} and checking its defined
+     * {@link ListConfig}. If the {@link ListContainer} does not exist (containers are
+     * created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param listName The name of the {@link com.hazelcast.collection.IList} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine engine, String listName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            ListService service = engine.getService(SERVICE_NAME);
+            return service.lookupNamespace(listName);
+        }
+        return null;
+    }
+
+    @Override
+    protected String lookupNamespace(String listName) {
+        if (nodeEngine.getNamespaceService().isEnabled()) {
+            ListContainer container = containerMap.get(listName);
+            if (container != null) {
+                return container.getConfig().getNamespace();
+            }
+            ListConfig config = nodeEngine.getConfig().findListConfig(listName);
+            if (config != null) {
+                return config.getNamespace();
+            }
+        }
+        return null;
+    }
 }

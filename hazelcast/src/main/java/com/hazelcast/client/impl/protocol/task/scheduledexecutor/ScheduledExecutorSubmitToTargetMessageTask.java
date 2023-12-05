@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToMemberC
 import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
@@ -46,7 +47,9 @@ public class ScheduledExecutorSubmitToTargetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = serializationService.toObject(parameters.task);
+        Callable callable = NamespaceUtil.callWithNamespace(nodeEngine,
+                DistributedScheduledExecutorService.lookupNamespace(nodeEngine, parameters.schedulerName),
+                () -> serializationService.toObject(parameters.task));
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
             Subject subject = endpoint.getSubject();

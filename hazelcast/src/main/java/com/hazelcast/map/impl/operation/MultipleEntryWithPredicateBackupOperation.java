@@ -57,7 +57,7 @@ public class MultipleEntryWithPredicateBackupOperation extends MultipleEntryBack
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        predicate = in.readObject();
+        predicate = callWithNamespaceAwareness(in::readObject);
     }
 
     @Override

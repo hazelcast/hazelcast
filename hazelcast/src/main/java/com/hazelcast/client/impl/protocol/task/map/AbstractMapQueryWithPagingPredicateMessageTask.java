@@ -60,7 +60,7 @@ public abstract class AbstractMapQueryWithPagingPredicateMessageTask<P> extends 
     @Override
     protected Predicate getPredicate() {
         if (predicate == null) {
-            predicate = getPagingPredicateHolder().asPredicate(serializationService);
+            predicate = getPagingPredicateHolder().asPredicate(serializationService, getNamespace());
         }
         return predicate;
     }

@@ -29,14 +29,13 @@ import java.util.List;
 
 public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private List<Data> keys = new ArrayList<>();
 
     public MapGetAllOperationFactory() {
     }
 
     public MapGetAllOperationFactory(String name, List<Data> keys) {
-        this.name = name;
+        super(name);
         this.keys = keys;
     }
 

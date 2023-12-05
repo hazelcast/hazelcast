@@ -18,10 +18,14 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.processor.EntryProcessor;
@@ -82,8 +86,7 @@ public class CacheEntryProcessorOperation
     }
 
     @Override
-    public void run()
-            throws Exception {
+    public void run() throws Exception {
         response = recordStore.invoke(key, entryProcessor, arguments, completionId);
         if (entryProcessor instanceof BackupAwareEntryProcessor) {
             BackupAwareEntryProcessor processor = (BackupAwareEntryProcessor) entryProcessor;
@@ -125,7 +128,9 @@ public class CacheEntryProcessorOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        entryProcessor = in.readObject();
+        NodeEngine engine = NodeEngineThreadLocalContext.getNamespaceThreadLocalContext();
+        entryProcessor = NamespaceUtil.callWithNamespace(engine,
+                CacheService.lookupNamespace(engine, name), in::readObject);
         final boolean hasArguments = in.readBoolean();
         if (hasArguments) {
             final int size = in.readInt();

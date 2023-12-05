@@ -887,6 +887,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public UUID addPartitionLostListener(@Nonnull MapPartitionLostListener listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        // Handle dependency injection
+        listener = (MapPartitionLostListener) getSerializationService().getManagedContext().initialize(listener);
         EventHandler<ClientMessage> handler = new ClientMapPartitionLostEventHandler(listener);
         return registerListener(createMapPartitionListenerCodec(), handler);
     }

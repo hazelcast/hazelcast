@@ -30,6 +30,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.security.Permission;
@@ -83,6 +84,12 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = getNamespace();
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
+
     private class ClientMapListener extends MapListenerAdapter<Object, Object> {
 
         @Override
@@ -121,4 +128,9 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
     protected abstract ClientMessage encodeEvent(Data keyData, Data newValueData,
                                                  Data oldValueData, Data meringValueData,
                                                  int type, UUID uuid, int numberOfEntriesAffected);
+
+    @Override
+    protected String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

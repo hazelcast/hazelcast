@@ -17,6 +17,7 @@
 package com.hazelcast.map.listener;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked upon size-based-eviction of an entry.
@@ -27,6 +28,7 @@ import com.hazelcast.core.EntryEvent;
  * @since 3.5
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface EntryEvictedListener<K, V> extends MapListener {
 
     /**
