@@ -1,0 +1,101 @@
+{
+  "instance": {
+    "hazelcast": {
+      "namespaces": {
+        "java-serialization-filter": {
+          "defaults-disabled": "Off",
+          "blacklist": {
+            "class": null,
+            "package": [
+              2
+            ],
+            "unknown-prop": "INVALID"
+          },
+          "whitelist": []
+        },
+        "namespace1": [
+          {
+            "jar": {
+              "id": "unique-jar-id",
+              "url": "wrong/path"
+            }
+          },
+          {
+            "jars-in-zip": {
+              "id": "unique-jarsinzip-id"
+            }
+          },
+          {
+            "jars-in-zip": {
+              "id": 123,
+              "url": "file://path"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/NamespacesConfig",
+    "pointerToViolation": "#/hazelcast/namespaces",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/NamespacesConfig",
+        "pointerToViolation": "#/hazelcast/namespaces",
+        "causingExceptions": [],
+        "keyword": "required",
+        "message": "required key [enabled] not found"
+      },
+      {
+        "schemaLocation": "#/definitions/JavaSerializationFilter",
+        "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClassFilter",
+            "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter/blacklist",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/ClassFilter",
+                "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter/blacklist",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown-prop] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassFilter/properties/class",
+                "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter/blacklist/class",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: JSONArray, found: Null"
+              },
+              {
+                "schemaLocation": "#/definitions/ClassFilter/properties/package/items",
+                "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter/blacklist/package/0",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassFilter",
+            "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter/whitelist",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: JSONArray"
+          },
+          {
+            "schemaLocation": "#/definitions/JavaSerializationFilter/properties/defaults-disabled",
+            "pointerToViolation": "#/hazelcast/namespaces/java-serialization-filter/defaults-disabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "5 schema violations found"
+      }
+    ],
+    "message": "6 schema violations found"
+  }
+}

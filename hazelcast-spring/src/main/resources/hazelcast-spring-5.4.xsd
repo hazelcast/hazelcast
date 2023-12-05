@@ -51,6 +51,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" type="xs:string">
@@ -89,6 +90,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" type="xs:string">
@@ -135,6 +137,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:all>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" type="xs:string" default="16">
@@ -265,6 +268,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="priority-comparator-class-name" type="xs:string">
@@ -355,6 +359,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="capacity" type="parameterized-unsigned-int">
@@ -434,6 +439,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="statistics-enabled" type="parameterized-boolean" default="true">
@@ -693,6 +699,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" type="xs:string" default="BINARY">
@@ -910,6 +917,7 @@
                                     <xs:element name="data-persistence" type="data-persistence" minOccurs="0"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>
@@ -1059,6 +1067,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" default="default"/>
                                 <xs:attribute name="backup-count" type="parameterized-backup-count">
@@ -1132,6 +1141,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" type="xs:string">
@@ -1190,6 +1200,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" type="xs:string">
@@ -1265,6 +1276,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" default="default"/>
                             </xs:complexType>
@@ -1303,6 +1315,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
+                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" default="default"/>
                                 <xs:attribute name="in-memory-format" type="in-memory-format" default="OBJECT"/>
@@ -1412,6 +1425,7 @@
                         <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="data-connection" type="data-connection" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="tpc" type="tpc" minOccurs="0"/>
+                        <xs:element name="namespaces" type="namespaces-type" minOccurs="0"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -3027,6 +3041,8 @@
                         <xs:element name="connector-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="sql-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="namespace-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
@@ -6349,4 +6365,99 @@
             <xs:extension base="xs:string"/>
         </xs:simpleContent>
     </xs:complexType>
+    <xs:complexType name="resource">
+        <xs:annotation>
+            <xs:documentation>
+                A generic type representing a resource with a URI and an optional identifier.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="url" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        The URL must be a valid URI that points to the location of the resource.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    An optional identifier for the resource. It must be unique within the namespace.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="jar-resource">
+        <xs:complexContent>
+            <xs:extension base="resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures a jar type resource specifically pointing to a JAR files.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="jars-in-zip-resource">
+        <xs:complexContent>
+            <xs:extension base="resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures ZIP archives that contain multiple JAR files.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+
+    <xs:complexType name="namespace-type">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="jar" type="jar-resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a single JAR file within a namespace.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="jars-in-zip" type="jars-in-zip-resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a ZIP archive containing multiple JAR files within a namespace.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name for the namespace. This is a required attribute.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="namespaces-type">
+        <xs:annotation>
+            <xs:documentation>
+                Encapsulates multiple namespace configurations. The 'enabled' attribute toggles the namespaces on or off.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element ref="java-serialization-filter" minOccurs="0"/>
+            <xs:element name="namespace" type="namespace-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:element name="namespaces" type="namespaces-type">
+        <xs:annotation>
+            <xs:documentation>
+                Configures namespaces for user code deployment.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
 </xs:schema>

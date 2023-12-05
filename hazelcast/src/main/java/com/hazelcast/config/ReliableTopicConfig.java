@@ -20,15 +20,19 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -53,7 +57,8 @@ import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
  * In the reliable topic, global order is always maintained, so all listeners
  * will observe exactly the same order of sequence of messages.
  */
-public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedConfig {
+public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                            NamespaceAwareConfig {
 
     /**
      * The default read batch size.
@@ -76,6 +81,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
     private List<ListenerConfig> listenerConfigs = new LinkedList<>();
     private TopicOverloadPolicy topicOverloadPolicy = DEFAULT_TOPIC_OVERLOAD_POLICY;
+    private @Nullable String namespace = DEFAULT_NAMESPACE;
 
     public ReliableTopicConfig() {
     }
@@ -99,6 +105,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         this.executor = config.executor;
         this.topicOverloadPolicy = config.topicOverloadPolicy;
         this.listenerConfigs = config.listenerConfigs;
+        this.namespace = config.namespace;
     }
 
     ReliableTopicConfig(ReliableTopicConfig config, String name) {
@@ -291,6 +298,30 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param namespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link ReliableTopicConfig} instance
+     * @since 5.4
+     */
+    public ReliableTopicConfig setNamespace(@Nullable String namespace) {
+        this.namespace = namespace;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ReliableTopicConfig{"
@@ -300,6 +331,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
                 + ", readBatchSize=" + readBatchSize
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", listenerConfigs=" + listenerConfigs
+                + ", namespace=" + namespace
                 + '}';
     }
 
@@ -321,6 +353,11 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         out.writeBoolean(statisticsEnabled);
         writeNullableList(listenerConfigs, out);
         out.writeString(topicOverloadPolicy.name());
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(namespace);
+        }
     }
 
     @Override
@@ -331,6 +368,11 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         statisticsEnabled = in.readBoolean();
         listenerConfigs = readNullableList(in);
         topicOverloadPolicy = TopicOverloadPolicy.valueOf(in.readString());
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            namespace = in.readString();
+        }
     }
 
     @Override
@@ -351,13 +393,16 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (executor != null ? !executor.equals(that.executor) : that.executor != null) {
+        if (!Objects.equals(executor, that.executor)) {
             return false;
         }
         if (!name.equals(that.name)) {
             return false;
         }
-        if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
+        if (!Objects.equals(listenerConfigs, that.listenerConfigs)) {
+            return false;
+        }
+        if (!Objects.equals(namespace, that.namespace)) {
             return false;
         }
         return topicOverloadPolicy == that.topicOverloadPolicy;
@@ -371,6 +416,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (topicOverloadPolicy != null ? topicOverloadPolicy.hashCode() : 0);
+        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
         return result;
     }
 }

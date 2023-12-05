@@ -16,17 +16,21 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
+import java.util.stream.Stream;
 
+import static com.hazelcast.internal.config.ConfigUtils.resolveResourceId;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
 
 /**
@@ -48,16 +52,15 @@ public class ResourceConfig implements IdentifiedDataSerializable {
      * Creates a resource config with the given properties.
      *
      * @param url           url of the resource
-     * @param id            id of the resource
+     * @param id            id of the resource, if empty/{@code null}, derived from {@code url}
      * @param resourceType  type of the resource
      */
-    ResourceConfig(@Nonnull URL url, @Nonnull String id, @Nonnull ResourceType resourceType) {
-        Preconditions.checkNotNull(url, "url");
-        Preconditions.checkNotNull(resourceType, "resourceType");
-        Preconditions.checkHasText(id, "id cannot be null or empty");
+    public ResourceConfig(@Nonnull URL url, @Nullable String id, @Nonnull ResourceType resourceType) {
+        Objects.requireNonNull(url, "url");
+        Objects.requireNonNull(resourceType, "resourceType");
 
         this.url = url;
-        this.id = id;
+        this.id = resolveResourceId(id, url);
         this.resourceType = resourceType;
     }
 
@@ -67,25 +70,27 @@ public class ResourceConfig implements IdentifiedDataSerializable {
      *
      * @param clazz the class to deploy
      */
-    ResourceConfig(@Nonnull Class<?> clazz) {
-        Preconditions.checkNotNull(clazz, "clazz");
+    private ResourceConfig(@Nonnull Class<?> clazz) {
+        Objects.requireNonNull(clazz, "clazz");
 
-        String id = toClassResourceId(clazz.getName());
+        this.id = toClassResourceId(clazz.getName());
         ClassLoader cl = clazz.getClassLoader();
         if (cl == null) {
             throw new IllegalArgumentException(clazz.getName() + ".getClassLoader() returned null, cannot" +
                     " access the class resource. You may have added a JDK class that is loaded by the" +
                     " bootstrap classloader. There is no need to add JDK classes to the job configuration.");
         }
-        URL url = cl.getResource(id);
+        this.url = cl.getResource(id);
         if (url == null) {
             throw new IllegalArgumentException("The classloader of " + clazz.getName() + " couldn't resolve" +
                     " the resource URL of " + id);
         }
 
-        this.id = id;
-        this.url = url;
         this.resourceType = ResourceType.CLASS;
+    }
+
+    public static Stream<ResourceConfig> fromClass(@Nonnull Class<?>... classes) {
+        return ReflectionUtils.nestedClassesOf(classes).stream().map(ResourceConfig::new);
     }
 
     /**

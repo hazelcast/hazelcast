@@ -29,7 +29,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.4.xsd">
 
     <!--
         The name of the cluster. All members of a single cluster must have the same cluster name

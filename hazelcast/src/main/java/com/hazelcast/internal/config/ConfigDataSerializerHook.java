@@ -54,6 +54,7 @@ import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NamespaceConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -82,6 +83,8 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigPreJoinOperation;
+import com.hazelcast.internal.dynamicconfig.RemoveDynamicConfigOperation;
+import com.hazelcast.internal.namespace.impl.ResourceDefinitionImpl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -171,8 +174,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int BTREE_INDEX_CONFIG = 67;
     public static final int DATA_CONNECTION_CONFIG = 68;
     public static final int PARTITION_ATTRIBUTE_CONFIG = 69;
+    public static final int NAMESPACE_CONFIG = 70;
+    public static final int REMOVE_DYNAMIC_CONFIG_OP = 71;
+    public static final int RESOURCE_DEFINITION = 72;
 
-    private static final int LEN = PARTITION_ATTRIBUTE_CONFIG + 1;
+    private static final int LEN = RESOURCE_DEFINITION + 1;
 
     @Override
     public int getFactoryId() {
@@ -252,6 +258,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[BTREE_INDEX_CONFIG] = BTreeIndexConfig::new;
         constructors[DATA_CONNECTION_CONFIG] = DataConnectionConfig::new;
         constructors[PARTITION_ATTRIBUTE_CONFIG] = PartitioningAttributeConfig::new;
+        constructors[NAMESPACE_CONFIG] = NamespaceConfig::new;
+        constructors[REMOVE_DYNAMIC_CONFIG_OP] = RemoveDynamicConfigOperation::new;
+        constructors[RESOURCE_DEFINITION] = ResourceDefinitionImpl::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

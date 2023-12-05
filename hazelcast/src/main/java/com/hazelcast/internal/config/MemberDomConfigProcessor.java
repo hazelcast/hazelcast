@@ -74,6 +74,7 @@ import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.NamespaceConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
@@ -163,6 +164,10 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -213,6 +218,7 @@ import static com.hazelcast.internal.config.ConfigSections.MAP;
 import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
 import static com.hazelcast.internal.config.ConfigSections.METRICS;
 import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
+import static com.hazelcast.internal.config.ConfigSections.NAMESPACES;
 import static com.hazelcast.internal.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.internal.config.ConfigSections.NETWORK;
 import static com.hazelcast.internal.config.ConfigSections.PARTITION_GROUP;
@@ -393,6 +399,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDataConnections(node);
         } else if (matches(TPC.getName(), nodeName)) {
             handleTpc(node);
+        } else if (matches(NAMESPACES.getName(), nodeName)) {
+            handleNamespaces(node);
         } else {
             return true;
         }
@@ -1250,6 +1258,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 scheduledExecutorConfig.setSplitBrainProtectionName(getTextContent(child));
             } else if (matches("statistics-enabled", nodeName)) {
                 scheduledExecutorConfig.setStatisticsEnabled(getBooleanValue(getTextContent(child)));
+            } else if (matches("namespace", nodeName)) {
+                scheduledExecutorConfig.setNamespace(getTextContent(child));
             }
         }
 
@@ -1766,6 +1776,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 qConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("priority-comparator-class-name", nodeName)) {
                 qConfig.setPriorityComparatorClassName(getTextContent(n));
+            } else if (matches("namespace", nodeName)) {
+                qConfig.setNamespace(getTextContent(n));
             }
         }
         config.addQueueConfig(qConfig);
@@ -1809,6 +1821,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, lConfig.getMergePolicyConfig());
                 lConfig.setMergePolicyConfig(mpConfig);
+            } else if (matches("namespace", nodeName)) {
+                lConfig.setNamespace(getTextContent(n));
             }
 
         }
@@ -1841,6 +1855,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, sConfig.getMergePolicyConfig());
                 sConfig.setMergePolicyConfig(mpConfig);
+            } else if (matches("namespace", nodeName)) {
+                sConfig.setNamespace(getTextContent(n));
             }
         }
         config.addSetConfig(sConfig);
@@ -1877,6 +1893,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, multiMapConfig.getMergePolicyConfig());
                 multiMapConfig.setMergePolicyConfig(mpConfig);
+            } else if (matches("namespace", nodeName)) {
+                multiMapConfig.setNamespace(getTextContent(n));
             }
         }
         config.addMultiMapConfig(multiMapConfig);
@@ -1920,6 +1938,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 replicatedMapConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 replicatedMapConfig.setSplitBrainProtectionName(getTextContent(n));
+            } else if (matches("namespace", nodeName)) {
+                replicatedMapConfig.setNamespace(getTextContent(n));
             }
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
@@ -1993,6 +2013,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
             } else if (matches("partition-attributes", nodeName)) {
                 handlePartitionAttributes(node, mapConfig);
+            } else if (matches("namespace", nodeName)) {
+                mapConfig.setNamespace(getTextContent(node));
             }
         }
         config.addMapConfig(mapConfig);
@@ -2130,6 +2152,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(getTextContent(n)));
             } else if (matches("merkle-tree", nodeName)) {
                 handleViaReflection(n, cacheConfig, cacheConfig.getMerkleTreeConfig());
+            } else if (matches("namespace", nodeName)) {
+                cacheConfig.setNamespace(getTextContent(n));
             }
         }
         try {
@@ -2663,9 +2687,84 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("multi-threading-enabled", nodeName)) {
                 tConfig.setMultiThreadingEnabled(getBooleanValue(getTextContent(n)));
+            } else if (matches("namespace", nodeName)) {
+                tConfig.setNamespace(getTextContent(n));
             }
         }
         config.addTopicConfig(tConfig);
+    }
+
+    protected void handleNamespaces(Node node) {
+        Node enabledNode = getNamedItemNode(node, "enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        config.getNamespacesConfig().setEnabled(enabled);
+
+        if (enabled) {
+            handleNamespacesNode(node);
+        }
+    }
+
+    void handleNamespacesNode(Node node) {
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (matches(nodeName, "namespace")) {
+                Node attName = getNamedItemNode(n, "name");
+                String name = getTextContent(attName);
+                NamespaceConfig nsConfig = new NamespaceConfig(name);
+                handleResources(n, nsConfig);
+                config.getNamespacesConfig().addNamespaceConfig(nsConfig);
+            } else if (matches(nodeName, "java-serialization-filter")) {
+                fillJavaSerializationFilter(n, config.getNamespacesConfig());
+            }
+        }
+    }
+
+    void handleResources(Node node, final NamespaceConfig nsConfig) {
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (matches(nodeName, "jar")) {
+                handleJarNode(n, nsConfig);
+            }
+            if (matches(nodeName, "jars-in-zip")) {
+                handleJarsInZipNode(n, nsConfig);
+            }
+        }
+    }
+
+    void handleJarNode(Node node, final NamespaceConfig nsConfig) {
+        URL url = getNamespaceResourceUrl(node);
+        String id = getAttribute(node, "id");
+        if (url != null) {
+            nsConfig.addJar(url, id);
+        } else {
+            throw new InvalidConfigurationException("Path for jars-in-zip is missing");
+        }
+    }
+
+    void handleJarsInZipNode(Node node, final NamespaceConfig nsConfig) {
+        URL url = getNamespaceResourceUrl(node);
+        String id = getAttribute(node, "id");
+        if (url != null) {
+            nsConfig.addJarsInZip(url, id);
+        } else {
+            throw new InvalidConfigurationException("Path for jars-in-zip is missing");
+        }
+    }
+
+    private URL getNamespaceResourceUrl(Node node) {
+        URL url = null;
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (matches(nodeName, "url")) {
+                try {
+                    url = new URI(getTextContent(n)).toURL();
+                    break;
+                } catch (MalformedURLException | URISyntaxException e) {
+                    throw new InvalidConfigurationException("Malformed resource URL", e);
+                }
+            }
+        }
+        return url;
     }
 
     protected void handleReliableTopic(Node node) {
@@ -2691,6 +2790,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     topicConfig.addMessageListenerConfig(listenerConfig);
                     return null;
                 });
+            } else if (matches("namespace", nodeName)) {
+                topicConfig.setNamespace(getTextContent(n));
             }
         }
         config.addReliableTopicConfig(topicConfig);
@@ -2738,6 +2839,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, rbConfig.getMergePolicyConfig());
                 rbConfig.setMergePolicyConfig(mpConfig);
+            } else if (matches("namespace", nodeName)) {
+                rbConfig.setNamespace(getTextContent(n));
             }
         }
         config.addRingBufferConfig(rbConfig);

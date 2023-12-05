@@ -742,7 +742,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             discoveryStrategyConfigs.add(discoveryStrategyConfigBuilder.getBeanDefinition());
         }
 
-        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder serializationConfigBuilder) {
+        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder configBuilder) {
             BeanDefinitionBuilder filterConfigBuilder = createBeanBuilder(JavaSerializationFilterConfig.class);
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
@@ -754,7 +754,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
             filterConfigBuilder.addPropertyValue("defaultsDisabled", getTextContent(defaultsDisabledAttr));
-            serializationConfigBuilder.addPropertyValue("javaSerializationFilterConfig",
+            configBuilder.addPropertyValue("javaSerializationFilterConfig",
                     filterConfigBuilder.getBeanDefinition());
         }
 

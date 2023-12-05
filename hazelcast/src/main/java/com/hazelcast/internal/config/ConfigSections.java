@@ -73,7 +73,8 @@ public enum ConfigSections {
     JOIN("join", false),
     TCP_IP("tcp-ip", false),
     DATA_CONNECTION("data-connection", true),
-    TPC("tpc", false);
+    TPC("tpc", false),
+    NAMESPACES("namespaces", false);
 
     final boolean multipleOccurrence;
     private final String name;

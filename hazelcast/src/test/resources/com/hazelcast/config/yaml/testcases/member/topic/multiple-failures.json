@@ -7,7 +7,8 @@
           "global-ordering-enabled": 2,
           "multi-threading-enabled": "true",
           "statistics-enabled": -1,
-          "message-listeners": null
+          "message-listeners": null,
+          "namespace": []
         }
       }
     }
@@ -51,9 +52,16 @@
           "causingExceptions": [],
           "keyword": "type",
           "message": "expected type: Boolean, found: Integer"
+        },
+        {
+          "schemaLocation": "#/definitions/Topic/additionalProperties/properties/namespace",
+          "pointerToViolation": "#/hazelcast/topic/my-topic/namespace",
+          "causingExceptions": [],
+          "keyword": "type",
+          "message": "expected type: String, found: JSONArray"
         }
       ],
-      "message": "5 schema violations found"
+      "message": "6 schema violations found"
     }],
     "keyword": "allOf",
     "message": "#: only 1 subschema matches out of 2"

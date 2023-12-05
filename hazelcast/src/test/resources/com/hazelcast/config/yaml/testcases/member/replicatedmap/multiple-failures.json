@@ -18,7 +18,8 @@
           "merge-policy": {
             "batch-size": -100,
             "class-name": "invalid"
-          }
+          },
+          "namespace": []
         }
       }
     }
@@ -103,8 +104,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ReplicatedMap/additionalProperties/properties/namespace",
+        "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/namespace",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
       }
     ],
-    "message": "9 schema violations found"
+    "message": "10 schema violations found"
   }
 }

@@ -117,4 +117,9 @@ public class QueueConfigReadOnly extends QueueConfig {
     public QueueConfig setPriorityComparatorClassName(@Nullable String priorityComparatorClassName) {
         return super.setPriorityComparatorClassName(priorityComparatorClassName);
     }
+
+    @Override
+    public QueueConfig setNamespace(@Nullable String namespace) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+    }
 }

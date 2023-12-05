@@ -18,6 +18,8 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ExecutorConfig;
 
+import javax.annotation.Nullable;
+
 /**
  * Configuration for Executor(Read Only)
  */
@@ -49,6 +51,11 @@ public class ExecutorConfigReadOnly extends ExecutorConfig {
 
     @Override
     public ExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+    }
+
+    @Override
+    public ExecutorConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 }
