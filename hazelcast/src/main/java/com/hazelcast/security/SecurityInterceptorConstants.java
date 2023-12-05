@@ -183,6 +183,8 @@ public final class SecurityInterceptorConstants {
     public static final String ADD_DISTRIBUTED_OBJECT_LISTENER = "addDistributedObjectListener";
     public static final String REMOVE_DISTRIBUTED_OBJECT_LISTENER = "removeDistributedObjectListener";
     public static final String COMPARE_AND_SET = "compareAndSet";
+    public static final String ADD_NAMESPACE_CONFIG = "addNamespaceConfig";
+    public static final String REMOVE_NAMESPACE_CONFIG = "removeNamespaceConfig";
 
     private SecurityInterceptorConstants() {
     }
