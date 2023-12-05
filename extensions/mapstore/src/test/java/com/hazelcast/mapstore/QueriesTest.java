@@ -47,98 +47,98 @@ public class QueriesTest {
 
     @Test
     public void testLoadIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.load();
         assertEquals("SELECT * FROM \"mymapping\" WHERE \"id\" = ?", result);
     }
 
     @Test
     public void testLoadIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.load();
         assertEquals("SELECT * FROM \"my\"\"mapping\" WHERE \"i\"\"d\" = ?", result);
     }
 
     @Test
     public void testLoadAllIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.loadAll(2);
         assertEquals("SELECT * FROM \"mymapping\" WHERE \"id\" IN (?, ?)", result);
     }
 
     @Test
     public void testLoadAllIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.loadAll(2);
         assertEquals("SELECT * FROM \"my\"\"mapping\" WHERE \"i\"\"d\" IN (?, ?)", result);
     }
 
     @Test
     public void testLoadAllKeysIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.loadAllKeys();
         assertEquals("SELECT \"id\" FROM \"mymapping\"", result);
     }
 
     @Test
     public void testLoadAllKeysIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.loadAllKeys();
         assertEquals("SELECT \"i\"\"d\" FROM \"my\"\"mapping\"", result);
     }
 
     @Test
     public void testStoreSinkIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.storeSink();
         assertEquals("SINK INTO \"mymapping\" (\"id\", \"name\", \"address\") VALUES (?, ?, ?)", result);
     }
 
     @Test
     public void testStoreSinkIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.storeSink();
         assertEquals("SINK INTO \"my\"\"mapping\" (\"i\"\"d\", \"na\"\"me\", \"add\"\"ress\") VALUES (?, ?, ?)", result);
     }
 
     @Test
     public void testStoreUpdateIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.storeUpdate();
         assertEquals("UPDATE \"mymapping\" SET \"name\" = ?, \"address\" = ? WHERE \"id\" = ?", result);
     }
 
     @Test
     public void testStoreUpdateIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.storeUpdate();
         assertEquals("UPDATE \"my\"\"mapping\" SET \"na\"\"me\" = ?, \"add\"\"ress\" = ? WHERE \"i\"\"d\" = ?", result);
     }
 
     @Test
     public void testDeleteIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.delete();
         assertEquals("DELETE FROM \"mymapping\" WHERE \"id\" = ?", result);
     }
 
     @Test
     public void testDeleteIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.delete();
         assertEquals("DELETE FROM \"my\"\"mapping\" WHERE \"i\"\"d\" = ?", result);
     }
 
     @Test
     public void testDeleteAllIsQuoted() {
-        Queries queries = new Queries(mapping, idColumn, columnMetadata);
+        Queries queries = new Queries(mapping, idColumn, columnMetadata, null, 0);
         String result = queries.deleteAll(2);
         assertEquals("DELETE FROM \"mymapping\" WHERE \"id\" IN (?, ?)", result);
     }
 
     @Test
     public void testDeleteAllIsEscaped() {
-        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape);
+        Queries queries = new Queries(mappingEscape, idColumnEscape, columnMetadataEscape, null, 0);
         String result = queries.deleteAll(2);
         assertEquals("DELETE FROM \"my\"\"mapping\" WHERE \"i\"\"d\" IN (?, ?)", result);
     }

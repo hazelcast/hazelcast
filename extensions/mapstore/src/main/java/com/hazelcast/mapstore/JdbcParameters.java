@@ -21,10 +21,8 @@ import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.SqlColumnMetadata;
 
-import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 
 import java.util.List;
-import java.util.Set;
 
 class JdbcParameters {
     private int idPos;
@@ -66,7 +64,7 @@ class JdbcParameters {
 
         int idPos = -1;
         Object[] params;
-        if ( columns != null && columns.size() != 0) {
+        if (columns != null && columns.size() != 0) {
             if (columns.contains(idColumn)) {
                 params = new Object[columns.size()];
             } else {
@@ -160,7 +158,8 @@ class JdbcParameters {
                     throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
             }
             index++;
-        }}
+        }
+        }
 
         jdbcParameters.setParams(params);
         jdbcParameters.setIdPos(idPos);

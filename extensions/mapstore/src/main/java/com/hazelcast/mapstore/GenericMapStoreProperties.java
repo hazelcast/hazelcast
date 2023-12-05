@@ -92,6 +92,9 @@ class GenericMapStoreProperties {
         return allColumns;
     }
 
+    /**
+     * Get the specified columns in COLUMNS_PROPERTY
+     */
     public List<String> getColumns() {
         return columns;
     }

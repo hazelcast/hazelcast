@@ -71,10 +71,6 @@ public class GenericMapStore<K, V> extends GenericMapLoader<K, V>
                 genericMapStoreProperties.idColumn, genericMapStoreProperties.singleColumnAsValue,
                 genericMapStoreProperties.getColumns());
 
-        queries.recreateStoreSink(genericMapStoreProperties.getAllColumns(),
-                genericMapStoreProperties.getColumns().size());
-
-
         try {
             sqlService.execute(queries.storeSink(), jdbcParameters.getParams()).close();
         } catch (Exception e) {

@@ -26,7 +26,6 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -605,8 +604,8 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
 
         assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "name-0","def"),
-                new Row(1, "name-1","def")
+                new Row(0, "name-0", "def"),
+                new Row(1, "name-1", "def")
         );
     }
 

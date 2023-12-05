@@ -229,7 +229,12 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
             if (!genericMapStoreProperties.hasColumns()) {
                 columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);
             }
-            queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
+
+            queries = new Queries(mappingName,
+                    genericMapStoreProperties.idColumn,
+                    columnMetadataList,
+                    genericMapStoreProperties.getAllColumns(),
+                    genericMapStoreProperties.getColumns().size());
         } catch (Exception e) {
             // We create the mapping on the first member initializing this object
             // Other members trying to concurrently initialize will fail and just read the mapping
@@ -275,7 +280,11 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
                     .stream()
                     .collect(toMap(SqlColumnMetadata::getName, identity()));
             validateColumnsExist(columnMap, genericMapStoreProperties.getAllColumns());
-            queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
+            queries = new Queries(mappingName,
+                                  genericMapStoreProperties.idColumn,
+                                  columnMetadataList,
+                                  genericMapStoreProperties.getAllColumns(),
+                                  genericMapStoreProperties.getColumns().size());
 
         } catch (Exception e) {
             initFailure = e;
