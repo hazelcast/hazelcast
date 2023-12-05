@@ -22,16 +22,16 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * Supplier that creates {@link AddDynamicConfigOperation}s for a given config.
+ * Supplier that creates {@link RemoveDynamicConfigOperation}s for a given config.
  */
-public class AddDynamicConfigOperationSupplier extends DynamicConfigOperationSupplier {
-    public AddDynamicConfigOperationSupplier(ClusterService clusterService, IdentifiedDataSerializable config) {
+public class RemoveDynamicConfigOperationSupplier extends DynamicConfigOperationSupplier {
+    public RemoveDynamicConfigOperationSupplier(ClusterService clusterService, IdentifiedDataSerializable config) {
         super(clusterService, config);
     }
 
     @Override
     public Operation get() {
-        return new AddDynamicConfigOperation(config, clusterService.getMemberListVersion(),
+        return new RemoveDynamicConfigOperation(config, clusterService.getMemberListVersion(),
                 config instanceof NamespaceAwareConfig ? ((NamespaceAwareConfig) config).getNamespace() : null);
     }
 }

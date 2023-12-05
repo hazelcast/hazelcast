@@ -25,8 +25,11 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
+import java.security.Permission;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -57,7 +60,10 @@ public class AddReliableTopicConfigMessageTask
         config.setExecutor(executor);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             config.setMessageListenerConfigs(
-                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
+                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.namespace));
+        }
+        if (parameters.isNamespaceExists) {
+            config.setNamespace(parameters.namespace);
         }
         return config;
     }
@@ -68,10 +74,15 @@ public class AddReliableTopicConfigMessageTask
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         ReliableTopicConfig reliableTopicConfig = (ReliableTopicConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getReliableTopicConfigs(),
-                reliableTopicConfig.getName(), reliableTopicConfig);
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(
+                nodeConfig.getStaticConfig().getReliableTopicConfigs(), reliableTopicConfig.getName(), reliableTopicConfig);
     }
 }

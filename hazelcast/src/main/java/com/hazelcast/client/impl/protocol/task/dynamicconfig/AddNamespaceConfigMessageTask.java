@@ -17,10 +17,10 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
-import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddNamespaceConfigCodec;
+import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.config.NamespaceConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
@@ -29,49 +29,43 @@ import com.hazelcast.security.permission.NamespacePermission;
 
 import java.security.Permission;
 
-public class AddExecutorConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddExecutorConfigCodec.RequestParameters> {
+public class AddNamespaceConfigMessageTask
+        extends AbstractAddConfigMessageTask<DynamicConfigAddNamespaceConfigCodec.RequestParameters> {
 
-    public AddExecutorConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddNamespaceConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddExecutorConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddExecutorConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddNamespaceConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddNamespaceConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddExecutorConfigCodec.encodeResponse();
+        return DynamicConfigAddNamespaceConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ExecutorConfig config = new ExecutorConfig(parameters.name, parameters.poolSize);
-        config.setQueueCapacity(parameters.queueCapacity);
-        config.setStatisticsEnabled(parameters.statisticsEnabled);
-        if (parameters.isNamespaceExists) {
-            config.setNamespace(parameters.namespace);
-        }
+        NamespaceConfig config = new NamespaceConfig(parameters.name);
+        parameters.resources.forEach(holder -> ConfigAccessor.add(config, holder));
         return config;
     }
 
     @Override
     public String getMethodName() {
-        return SecurityInterceptorConstants.ADD_EXECUTOR_CONFIG;
+        return SecurityInterceptorConstants.ADD_NAMESPACE_CONFIG;
     }
 
     @Override
     public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+        return parameters.name != null ? new NamespacePermission(parameters.name, ActionConstants.ACTION_CREATE) : null;
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
-        DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
-        ExecutorConfig executorConfig = (ExecutorConfig) config;
-        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExecutorConfigs(),
-                executorConfig.getName(), executorConfig);
+        // Support add-or-replace semantics
+        return true;
     }
 }

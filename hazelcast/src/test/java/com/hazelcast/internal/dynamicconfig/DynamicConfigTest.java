@@ -220,7 +220,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig() {
-        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false);
+        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false, null);
 
         driver.getConfig().addDurableExecutorConfig(config);
 
@@ -231,7 +231,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
                 new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE),
-                ScheduledExecutorConfig.CapacityPolicy.PER_NODE, false);
+                ScheduledExecutorConfig.CapacityPolicy.PER_NODE, false, null);
 
         driver.getConfig().addScheduledExecutorConfig(config);
 

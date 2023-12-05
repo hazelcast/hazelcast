@@ -25,6 +25,10 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
+
+import java.security.Permission;
 
 public class AddScheduledExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddScheduledExecutorConfigCodec.RequestParameters> {
@@ -62,6 +66,9 @@ public class AddScheduledExecutorConfigMessageTask
         if (parameters.isCapacityPolicyExists) {
             config.setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.getById(parameters.capacityPolicy));
         }
+        if (parameters.isNamespaceExists) {
+            config.setNamespace(parameters.namespace);
+        }
         return config;
     }
 
@@ -71,10 +78,16 @@ public class AddScheduledExecutorConfigMessageTask
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         ScheduledExecutorConfig scheduledExecutorConfig = (ScheduledExecutorConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getScheduledExecutorConfigs(),
-                scheduledExecutorConfig.getName(), scheduledExecutorConfig);
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(
+                nodeConfig.getStaticConfig().getScheduledExecutorConfigs(), scheduledExecutorConfig.getName(),
+                scheduledExecutorConfig);
     }
 }

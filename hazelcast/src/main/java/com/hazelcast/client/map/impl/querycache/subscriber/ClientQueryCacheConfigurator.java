@@ -32,19 +32,21 @@ import java.util.Map;
 public class ClientQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
 
     private final ClientConfig clientConfig;
+    private final ClassLoader classLoader;
 
     public ClientQueryCacheConfigurator(ClientConfig clientConfig,
                                         QueryCacheEventService eventService) {
-        super(clientConfig.getClassLoader(), eventService);
+        super(eventService);
         this.clientConfig = clientConfig;
+        this.classLoader = clientConfig.getClassLoader();
     }
 
     @Override
     public QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName, String cacheId) {
         QueryCacheConfig config = clientConfig.getOrCreateQueryCacheConfig(mapName, cacheName);
 
-        setPredicateImpl(config);
-        setEntryListener(mapName, cacheId, config);
+        setPredicateImpl(config, classLoader);
+        setEntryListener(mapName, cacheId, config, classLoader);
 
         return config;
     }
@@ -53,8 +55,8 @@ public class ClientQueryCacheConfigurator extends AbstractQueryCacheConfigurator
     public QueryCacheConfig getOrNull(String mapName, String cacheName, String cacheId) {
         QueryCacheConfig config = clientConfig.getOrNullQueryCacheConfig(mapName, cacheName);
         if (config != null) {
-            setPredicateImpl(config);
-            setEntryListener(mapName, cacheId, config);
+            setPredicateImpl(config, classLoader);
+            setEntryListener(mapName, cacheId, config, classLoader);
         }
 
         return config;

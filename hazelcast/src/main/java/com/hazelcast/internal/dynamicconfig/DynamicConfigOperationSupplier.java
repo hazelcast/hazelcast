@@ -16,22 +16,18 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.NamespaceAwareConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-/**
- * Supplier that creates {@link AddDynamicConfigOperation}s for a given config.
- */
-public class AddDynamicConfigOperationSupplier extends DynamicConfigOperationSupplier {
-    public AddDynamicConfigOperationSupplier(ClusterService clusterService, IdentifiedDataSerializable config) {
-        super(clusterService, config);
-    }
+import java.util.function.Supplier;
 
-    @Override
-    public Operation get() {
-        return new AddDynamicConfigOperation(config, clusterService.getMemberListVersion(),
-                config instanceof NamespaceAwareConfig ? ((NamespaceAwareConfig) config).getNamespace() : null);
+public abstract class DynamicConfigOperationSupplier implements Supplier<Operation> {
+    protected final ClusterService clusterService;
+    protected final IdentifiedDataSerializable config;
+
+    protected DynamicConfigOperationSupplier(ClusterService clusterService, IdentifiedDataSerializable config) {
+        this.clusterService = clusterService;
+        this.config = config;
     }
 }

@@ -157,13 +157,18 @@ public final class CustomTypeFactory {
     }
 
     public static DefaultQueryCacheEventData createQueryCacheEventData(Data dataKey, Data dataNewValue, long sequence,
-                                                                       int eventType, int partitionId) {
+                                                                       int eventType, int partitionId, boolean isMapNameExists,
+                                                                       String mapName) {
         DefaultQueryCacheEventData eventData = new DefaultQueryCacheEventData();
         eventData.setDataKey(dataKey);
         eventData.setDataNewValue(dataNewValue);
         eventData.setSequence(sequence);
         eventData.setEventType(eventType);
         eventData.setPartitionId(partitionId);
+        if (isMapNameExists) {
+            eventData.setMapName(mapName);
+        }
+
         return eventData;
     }
 

@@ -24,6 +24,10 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
+
+import java.security.Permission;
 
 public class AddDurableExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddDurableExecutorConfigCodec.RequestParameters> {
@@ -50,9 +54,8 @@ public class AddDurableExecutorConfigMessageTask
         boolean statsEnabled = !parameters.isStatisticsEnabledExists
                 || parameters.statisticsEnabled;
 
-        DurableExecutorConfig config = new DurableExecutorConfig(parameters.name, parameters.poolSize,
-                parameters.durability, parameters.capacity, statsEnabled);
-        return config;
+        return new DurableExecutorConfig(parameters.name, parameters.poolSize, parameters.durability, parameters.capacity,
+                statsEnabled, parameters.isNamespaceExists ? parameters.namespace : null);
     }
 
     @Override
@@ -61,10 +64,16 @@ public class AddDurableExecutorConfigMessageTask
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         DurableExecutorConfig durableExecutorConfig = (DurableExecutorConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getDurableExecutorConfigs(),
-                durableExecutorConfig.getName(), durableExecutorConfig);
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(
+                nodeConfig.getStaticConfig().getDurableExecutorConfigs(), durableExecutorConfig.getName(),
+                durableExecutorConfig);
     }
 }

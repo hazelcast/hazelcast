@@ -24,13 +24,17 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionListener;
 
+import javax.annotation.Nullable;
 import java.util.EventListener;
 
 @SuppressWarnings("checkstyle:cyclomaticcomplexity")
@@ -134,7 +138,7 @@ public class ListenerConfigHolder {
         return local;
     }
 
-    public <T extends ListenerConfig> T asListenerConfig(SerializationService serializationService) {
+    public <T extends ListenerConfig> T asListenerConfig(SerializationService serializationService, @Nullable String namespace) {
         validate();
         ListenerConfig listenerConfig = null;
         if (className != null) {
@@ -163,7 +167,13 @@ public class ListenerConfigHolder {
                     // make checkstyle happy.
             }
         } else {
-            EventListener eventListener = serializationService.toObject(listenerImplementation);
+            // This method can be invoked by clients, in which case we don't need Namespace context
+            //  (and we don't have a NodeEngine instance available for use anyway)
+            NodeEngine engine = NodeEngineThreadLocalContext.getNamespaceThreadLocalContextOrNull();
+            EventListener eventListener = engine == null
+                    ? serializationService.toObject(listenerImplementation)
+                    : NamespaceUtil.callWithNamespace(namespace, () -> serializationService.toObject(listenerImplementation));
+
             switch (listenerType) {
                 case GENERIC:
                     listenerConfig = new ListenerConfig(eventListener);
@@ -198,14 +208,26 @@ public class ListenerConfigHolder {
         }
     }
 
-    public static ListenerConfigHolder of(ListenerConfig config, SerializationService serializationService) {
+    public static ListenerConfigHolder of(ListenerConfig config, SerializationService serializationService,
+                                          @Nullable String namespace) {
         ListenerConfigType listenerType = listenerTypeOf(config);
         Data implementationData = null;
         if (config.getImplementation() != null) {
-            implementationData = serializationService.toData(config.getImplementation());
+            // We might be on the client right now, so check our NodeEngine context to determine Namespace awareness needs
+            NodeEngine engine = NodeEngineThreadLocalContext.getNamespaceThreadLocalContextOrNull();
+            if (engine != null) {
+                implementationData = NamespaceUtil.callWithNamespace(engine, namespace,
+                        () -> serializationService.toData(config.getImplementation()));
+            } else {
+                implementationData = serializationService.toData(config.getImplementation());
+            }
         }
         return new ListenerConfigHolder(listenerType, implementationData, config.getClassName(), config.isIncludeValue(),
                 config.isLocal());
+    }
+
+    public static ListenerConfigHolder of(ListenerConfig config, SerializationService serializationService) {
+        return of(config, serializationService, null);
     }
 
     private static ListenerConfigType listenerTypeOf(ListenerConfig config) {

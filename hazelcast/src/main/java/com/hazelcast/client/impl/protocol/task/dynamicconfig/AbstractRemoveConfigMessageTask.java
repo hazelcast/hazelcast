@@ -25,23 +25,17 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
- * Base implementation for dynamic add***Config methods.
+ * Base implementation for dynamic remove***Config methods.
  */
-public abstract class AbstractAddConfigMessageTask<P> extends AbstractUpdateConfigMessageTask<P> {
-    protected AbstractAddConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public abstract class AbstractRemoveConfigMessageTask<P> extends AbstractUpdateConfigMessageTask<P> {
+    protected AbstractRemoveConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
-
-    protected abstract boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config);
 
     @Override
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
         ClusterWideConfigurationService service = getService(getServiceName());
-        if (checkStaticConfigDoesNotExist(config)) {
-            service.broadcastConfigAsync(config).whenCompleteAsync(this, CALLER_RUNS);
-        } else {
-            sendResponse(null);
-        }
+        service.unbroadcastConfigAsync(config).whenCompleteAsync(this, CALLER_RUNS);
     }
 }

@@ -30,6 +30,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
+import javax.annotation.Nullable;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +66,8 @@ public class CacheConfigHolder {
     private final List<ListenerConfigHolder> cachePartitionLostListenerConfigs;
     private final boolean isDataPersistenceConfigExists;
     private final DataPersistenceConfig dataPersistenceConfig;
+    private final boolean isNamespaceExists;
+    private final @Nullable String namespace;
 
     public CacheConfigHolder(String name, String managerPrefix, String uriString, int backupCount, int asyncBackupCount,
                              String inMemoryFormat, EvictionConfigHolder evictionConfigHolder,
@@ -77,7 +80,8 @@ public class CacheConfigHolder {
                              boolean disablePerEntryInvalidationEvents,
                              List<ListenerConfigHolder> cachePartitionLostListenerConfigs, boolean merkleTreeConfigExists,
                              MerkleTreeConfig merkleTreeConfig, boolean isDataPersistenceConfigExist,
-                             DataPersistenceConfig dataPersistenceConfig) {
+                             DataPersistenceConfig dataPersistenceConfig, boolean isNamespaceExists,
+                             String namespace) {
         this.name = name;
         this.managerPrefix = managerPrefix;
         this.uriString = uriString;
@@ -107,6 +111,8 @@ public class CacheConfigHolder {
         this.merkleTreeConfig = merkleTreeConfig;
         this.isDataPersistenceConfigExists = isDataPersistenceConfigExist;
         this.dataPersistenceConfig = dataPersistenceConfig;
+        this.isNamespaceExists = isNamespaceExists;
+        this.namespace = namespace;
     }
 
     public String getName() {
@@ -221,6 +227,10 @@ public class CacheConfigHolder {
         return merkleTreeConfigExists;
     }
 
+    public String getNamespace() {
+        return namespace;
+    }
+
     public <K, V> CacheConfig<K, V> asCacheConfig(SerializationService serializationService) {
         CacheConfig<K, V> config = new CacheConfig();
         config.setName(name);
@@ -261,11 +271,14 @@ public class CacheConfigHolder {
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>(
                     cachePartitionLostListenerConfigs.size());
             cachePartitionLostListenerConfigs.forEach(listenerConfigHolder -> partitionLostListenerConfigs
-                    .add(listenerConfigHolder.asListenerConfig(serializationService)));
+                    .add(listenerConfigHolder.asListenerConfig(serializationService, namespace)));
             config.setPartitionLostListenerConfigs(partitionLostListenerConfigs);
         }
         if (isDataPersistenceConfigExists) {
             config.setDataPersistenceConfig(dataPersistenceConfig);
+        }
+        if (isNamespaceExists) {
+            config.setNamespace(namespace);
         }
         return config;
     }
@@ -289,7 +302,8 @@ public class CacheConfigHolder {
             cachePartitionLostListenerConfigs = new ArrayList<>(partitionLostListenerConfigs.size());
             final List<ListenerConfigHolder> configs = cachePartitionLostListenerConfigs;
             partitionLostListenerConfigs
-                    .forEach(listenerConfig -> configs.add(ListenerConfigHolder.of(listenerConfig, serializationService)));
+                    .forEach(listenerConfig -> configs.add(ListenerConfigHolder.of(listenerConfig, serializationService,
+                            config.getNamespace())));
         }
 
         return new CacheConfigHolder(config.getName(), config.getManagerPrefix(), config.getUriString(), config.getBackupCount(),
@@ -302,7 +316,8 @@ public class CacheConfigHolder {
                 config.getEventJournalConfig(), config.getSplitBrainProtectionName(), listenerConfigurations,
                 config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents(),
                 cachePartitionLostListenerConfigs, config.getMerkleTreeConfig() != null, config.getMerkleTreeConfig(),
-                true, config.getDataPersistenceConfig());
+                true, config.getDataPersistenceConfig(), config.getNamespace() != null,
+                config.getNamespace());
     }
 
 }
