@@ -1,0 +1,41 @@
+name: Synchronize PR reviewers
+on:
+   pull_request_target:
+      branches:
+         - "master"
+         - "[0-9]+.[0-9]+.z"
+         - "[0-9]+.[0-9]+.[0-9]"
+         - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
+         - "[0-9]+.[0-9]+.[0-9]+-DEVEL-[0-9]+"
+         - "data-migration-5.3"
+      types:
+         - review_requested
+         - review_request_removed
+jobs:
+   synchronize-pr-reviewers:
+      runs-on: ubuntu-latest
+      steps:
+         - uses: actions/checkout@v4
+         - name: Copy reviewers to other PR
+           run: |
+              SOURCE_REPO="${{ github.repository }}"
+              SOURCE_PR="${{ github.event.pull_request.number }}"
+              CONTENT="$(gh pr view "$SOURCE_PR" --json "body,comments" -q '.body, .comments[].body')"
+              
+              while read -r line; do
+                if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+/[^/]+)#([0-9]+) ]]; then
+                  TARGET_REPO="${BASH_REMATCH[2]}"
+                  TARGET_PR="${BASH_REMATCH[3]}"
+                  .github/workflows/common-synchronize-pr-reviewers.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+                fi
+              done <<< "$CONTENT"
+           env:
+              GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
+         - uses: 8398a7/action-slack@v3
+           if: failure()
+           with:
+               fields: repo,message,author,action,eventName,workflow,job,pullRequest
+               status: failure
+               channel: "#monorepo-notifications"
+           env:
+               SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
