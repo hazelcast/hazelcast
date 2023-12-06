@@ -1,0 +1,3 @@
+load("app/.github/workflows/common-copybara", "config", "os_config", "add_comment_with_shadow_pr", "pr_workflow")
+
+pr_workflow(config, os_config)
