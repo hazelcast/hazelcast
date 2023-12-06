@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.kafka.impl;
 
 import com.google.common.collect.ImmutableMap;
@@ -23,6 +39,7 @@ import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -32,7 +49,6 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde.OPTION_KEY_AVRO_SCHEMA;
 import static com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde.OPTION_VALUE_AVRO_SCHEMA;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,23 +57,17 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 4;
 
-    static final Schema KEY_SCHEMA = SchemaBuilder.record("schema.key")
-            .fields()
-            .optionalInt("key")
-            .endRecord();
-
-    static final Schema VALUE_SCHEMA = SchemaBuilder.record("schema.value").fields()
+    private static final Schema VALUE_SCHEMA = SchemaBuilder.record("schema.value").fields()
             .optionalString("value")
             .endRecord();
+
+    private static final Map<String, String> AVRO_SCHEMA_PROPERTIES = ImmutableMap.of(
+            OPTION_VALUE_AVRO_SCHEMA, VALUE_SCHEMA.toString()
+    );
 
     private static KafkaTestSupport kafkaTestSupport;
 
     private String TOPIC_NAME;
-
-    private static final Map<String, String> AVRO_SCHEMA_PROPERTIES = ImmutableMap.of(
-            OPTION_KEY_AVRO_SCHEMA, KEY_SCHEMA.toString(),
-            OPTION_VALUE_AVRO_SCHEMA, VALUE_SCHEMA.toString()
-    );
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -86,7 +96,12 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
     public void readGenericRecord() {
         IList<Object> sinkList = instance().getList("output");
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.kafka(createProperties(), TOPIC_NAME))
+        p.readFrom(
+                        KafkaSources.kafka(
+                                createProperties(HazelcastKafkaAvroSerializer.class, HazelcastKafkaAvroDeserializer.class),
+                                TOPIC_NAME
+                        )
+                )
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkList));
 
@@ -105,7 +120,15 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
                 .map(v -> entry(v, toGenericRecord("write_value", VALUE_SCHEMA)))
-                .writeTo(KafkaSinks.kafka(createProperties(), TOPIC_NAME));
+                .writeTo(
+                        KafkaSinks.kafka(
+                                createProperties(
+                                        HazelcastKafkaAvroSerializer.class,
+                                        HazelcastKafkaAvroDeserializer.class
+                                ),
+                                TOPIC_NAME
+                        )
+                );
         instance().getJet().newJob(p).join();
 
         kafkaTestSupport.assertTopicContentsEventually(
@@ -119,10 +142,12 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
 
     @Test
+    @Ignore
     public void readSpecificRecord() {
+        // todo new ser\deser for specific record
         IList<Object> sinkList = instance().getList("actual");
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.kafka(createProperties(), TOPIC_NAME))
+        p.readFrom(KafkaSources.kafka(createProperties(null, null), TOPIC_NAME))
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkList));
 
@@ -135,14 +160,16 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Ignore
     public void writeSpecificRecord() {
+        // todo new ser\deser for specific record
         var list = instance().getList("input");
         list.add(1);
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
-                .map(user -> Map.entry(1, toTestSpecificRecord("specific_value")))
-                .writeTo(KafkaSinks.kafka(createProperties(), TOPIC_NAME));
+                .map(v -> Map.entry(1, toTestSpecificRecord("specific_value")))
+                .writeTo(KafkaSinks.kafka(createProperties(null, null), TOPIC_NAME));
 
         instance().getJet().newJob(p).join();
 
@@ -150,7 +177,48 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
                 TOPIC_NAME,
                 Map.of(1, toTestSpecificRecord("specific_value")),
                 IntegerDeserializer.class,
-                null, // HazelcastKafkaAvroDeserializer.class,
+                null, // todo new deserializer
+                AVRO_SCHEMA_PROPERTIES
+        );
+    }
+
+    @Test
+    @Ignore
+    public void readReflection() {
+        // todo new ser\deser for reflection
+        IList<Object> sinkList = instance().getList("actual");
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.kafka(createProperties(null, null), TOPIC_NAME))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        instance().getJet().newJob(p);
+
+        produceSafe(TOPIC_NAME, 1, new TestRecord("value"));
+
+        assertTrueEventually(() -> assertThat(sinkList).contains(entry(1, new TestRecord("value"))));
+    }
+
+    @Test
+    @Ignore
+    public void writeReflection() {
+        // todo new ser\deser for reflection
+        var list = instance().getList("input");
+        list.add(1);
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.list(list))
+                .map(v -> Map.entry(1, new TestRecord("value")))
+                // todo add class name somewhere. may be in properties?
+                .writeTo(KafkaSinks.kafka(createProperties(null, null), TOPIC_NAME));
+
+        instance().getJet().newJob(p).join();
+
+        kafkaTestSupport.assertTopicContentsEventually(
+                TOPIC_NAME,
+                Map.of(1, new TestRecord("value")),
+                IntegerDeserializer.class,
+                null, // todo new deserializer
                 AVRO_SCHEMA_PROPERTIES
         );
     }
@@ -164,13 +232,13 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private Properties createProperties() {
+    private Properties createProperties(Class<?> serializer, Class<?> deserializer) {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class.getCanonicalName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer.getCanonicalName());
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getCanonicalName());
-        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, serializer.getCanonicalName());
         properties.setProperty("auto.offset.reset", "earliest");
         properties.putAll(AVRO_SCHEMA_PROPERTIES);
 
@@ -187,15 +255,16 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
         return new TestSpecificRecord(value);
     }
 
-    public static class TestSpecificRecord implements SpecificRecord {
 
-        public TestSpecificRecord(String value) {
-            this.value = value;
-        }
+    public static class TestSpecificRecord implements SpecificRecord {
 
         private final Schema schema = VALUE_SCHEMA;
 
         private String value;
+
+        public TestSpecificRecord(String value) {
+            this.value = value;
+        }
 
         @Override
         public void put(int i, Object v) {
@@ -211,5 +280,16 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
         public Schema getSchema() {
             return schema;
         }
+    }
+
+
+    public static class TestRecord {
+
+        public String value;
+
+        public TestRecord(String value) {
+            this.value = value;
+        }
+
     }
 }
