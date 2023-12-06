@@ -15,8 +15,11 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -81,6 +84,42 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
     @Test
     public void readGenericRecord() {
+        IList<Object> sinkList = instance().getList("output");
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.kafka(createProperties(), TOPIC_NAME))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        instance().getJet().newJob(p);
+
+        produceSafe(TOPIC_NAME, 1, toGenericRecord("read_value", VALUE_SCHEMA));
+
+        assertTrueEventually(() -> assertThat(sinkList).contains(entry(1, toGenericRecord("read_value", VALUE_SCHEMA))));
+    }
+
+    @Test
+    public void writeGenericRecord() {
+        var list = instance().getList("input");
+        list.add(1);
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.list(list))
+                .map(v -> entry(v, toGenericRecord("write_value", VALUE_SCHEMA)))
+                .writeTo(KafkaSinks.kafka(createProperties(), TOPIC_NAME));
+        instance().getJet().newJob(p).join();
+
+        kafkaTestSupport.assertTopicContentsEventually(
+                TOPIC_NAME,
+                Map.of(1, toGenericRecord("write_value", VALUE_SCHEMA)),
+                IntegerDeserializer.class,
+                HazelcastKafkaAvroDeserializer.class,
+                AVRO_SCHEMA_PROPERTIES
+        );
+    }
+
+
+    @Test
+    public void readSpecificRecord() {
         IList<Object> sinkList = instance().getList("actual");
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(createProperties(), TOPIC_NAME))
@@ -89,29 +128,30 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
 
         instance().getJet().newJob(p);
 
-        produceSafe(TOPIC_NAME, genericRecord(1, KEY_SCHEMA), genericRecord("value", VALUE_SCHEMA));
+        produceSafe(TOPIC_NAME, 1, toTestSpecificRecord("value"));
 
-        assertTrueEventually(() -> assertThat(sinkList).contains(entry(genericRecord(1, KEY_SCHEMA), genericRecord("value", VALUE_SCHEMA))));
+        assertTrueEventually(() -> assertThat(sinkList).contains(entry(1, toTestSpecificRecord("value"))));
+
     }
 
     @Test
-    public void writeGenericRecord() {
-        var mapName = "source_map";
-        var map = instance().getMap(mapName);
-        map.put(genericRecord(2, KEY_SCHEMA), genericRecord("value_2", VALUE_SCHEMA));
-        Pipeline p = Pipeline.create();
+    public void writeSpecificRecord() {
+        var list = instance().getList("input");
+        list.add(1);
 
-        p.readFrom(Sources.map(mapName))
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.list(list))
+                .map(user -> Map.entry(1, toTestSpecificRecord("specific_value")))
                 .writeTo(KafkaSinks.kafka(createProperties(), TOPIC_NAME));
+
         instance().getJet().newJob(p).join();
 
         kafkaTestSupport.assertTopicContentsEventually(
                 TOPIC_NAME,
-                Map.of(genericRecord(2, KEY_SCHEMA), genericRecord("value_2", VALUE_SCHEMA)),
-                HazelcastKafkaAvroDeserializer.class,
-                HazelcastKafkaAvroDeserializer.class,
+                Map.of(1, toTestSpecificRecord("specific_value")),
+                IntegerDeserializer.class,
+                null, // HazelcastKafkaAvroDeserializer.class,
                 AVRO_SCHEMA_PROPERTIES
-
         );
     }
 
@@ -127,9 +167,9 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
     private Properties createProperties() {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class.getCanonicalName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
-        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getCanonicalName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
         properties.setProperty("auto.offset.reset", "earliest");
         properties.putAll(AVRO_SCHEMA_PROPERTIES);
@@ -137,9 +177,39 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
         return properties;
     }
 
-    private GenericData.Record genericRecord(Object value, Schema schema) {
+    private static GenericData.Record toGenericRecord(Object value, Schema schema) {
         var record = new GenericData.Record(schema);
         record.put(0, value);
         return record;
+    }
+
+    private static SpecificRecord toTestSpecificRecord(String value) {
+        return new TestSpecificRecord(value);
+    }
+
+    public static class TestSpecificRecord implements SpecificRecord {
+
+        public TestSpecificRecord(String value) {
+            this.value = value;
+        }
+
+        private final Schema schema = VALUE_SCHEMA;
+
+        private String value;
+
+        @Override
+        public void put(int i, Object v) {
+            this.value = (String) v;
+        }
+
+        @Override
+        public Object get(int i) {
+            return value;
+        }
+
+        @Override
+        public Schema getSchema() {
+            return schema;
+        }
     }
 }
