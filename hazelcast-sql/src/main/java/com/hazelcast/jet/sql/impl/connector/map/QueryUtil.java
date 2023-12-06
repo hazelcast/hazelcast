@@ -102,11 +102,11 @@ public final class QueryUtil {
         }
     }
 
-    static Projection<Entry<Object, Object>, JetSqlRow> toProjection(
+    public static Projection<Entry<Object, Object>, JetSqlRow> toProjection(
             KvRowProjector.Supplier rightRowProjectorSupplier,
             ExpressionEvalContext evalContext
     ) {
-        return new JoinProjection(rightRowProjectorSupplier, evalContext);
+        return new JoinProjection(rightRowProjectorSupplier, UntrustedExpressionEvalContext.from(evalContext));
     }
 
     static IndexIterationPointer[] indexFilterToPointers(
@@ -227,7 +227,7 @@ public final class QueryUtil {
         private JoinProjection() {
         }
 
-        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext) {
+        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, UntrustedExpressionEvalContext evalContext) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
             this.evalContext = evalContext;
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
