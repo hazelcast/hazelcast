@@ -305,7 +305,8 @@ public interface IndexStore {
 
     /**
      * @param isDescending is the index used in descending order.
-     * @return corresponding comparator for this index.
+     * @return             comparator ordering IMap keys stored for given index key.
+     *                     {@code null} indicates that index store is not ordered.
      */
     @Nullable
     default Comparator getComparator(boolean isDescending) {

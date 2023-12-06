@@ -130,7 +130,7 @@ public interface InternalIndex extends Index {
 
     /**
      * @param isDescending whether the index is used in descending order.
-     * @return corresponding comparator for this index.
+     * @return             comparator ordering IMap keys stored for given index key
      */
     @Nullable
     default Comparator getComparator(boolean isDescending) {
