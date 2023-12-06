@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.Function;
@@ -44,8 +45,8 @@ import static java.util.Objects.requireNonNull;
 public class HazelcastSchema implements Schema {
 
     private final Map<String, Schema> subSchemaMap;
-    //TODO: Change this to something else.
     private final Map<String, Table> tableMap;
+    private SqlCatalog catalog;
 
     public HazelcastSchema(Map<String, Table> tableMap) {
         this(null, tableMap);
@@ -60,7 +61,7 @@ public class HazelcastSchema implements Schema {
         return subSchemaMap;
     }
 
-    final public Map<String, Table> getTableMap() {
+    public final Map<String, Table> getTableMap() {
         return tableMap;
     }
 
@@ -126,7 +127,7 @@ public class HazelcastSchema implements Schema {
     public static class Factory implements SchemaFactory {
         public static final Factory INSTANCE = new Factory();
 
-        private Factory() {}
+        private Factory() { }
 
         @Override public Schema create(SchemaPlus parentSchema, String name,
                                        Map<String, Object> operand) {
