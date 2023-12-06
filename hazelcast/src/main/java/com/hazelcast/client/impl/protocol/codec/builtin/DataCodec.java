@@ -41,7 +41,7 @@ public final class DataCodec {
     }
 
     public static Data decode(ClientMessage.ForwardFrameIterator iterator) {
-        return new HeapData(iterator.next().content);
+        return decode(iterator.next());
     }
 
     public static Data decode(ClientMessage.Frame frame) {
