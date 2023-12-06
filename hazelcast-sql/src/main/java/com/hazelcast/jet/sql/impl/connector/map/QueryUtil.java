@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.services.NodeAware;
-import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,7 +43,6 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -225,8 +223,6 @@ public final class QueryUtil {
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
 
-        private Subject subject;
-
         @SuppressWarnings("unused")
         private JoinProjection() {
         }
@@ -236,7 +232,6 @@ public final class QueryUtil {
             this.evalContext = evalContext;
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
             this.arguments = evalContext.getArguments();
-            this.subject = evalContext.subject();
         }
 
         @Override
@@ -272,14 +267,12 @@ public final class QueryUtil {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
             out.writeObject(arguments);
-            ImdgUtil.writeSubject(out, subject);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
             arguments = in.readObject();
-            subject = ImdgUtil.readSubject(in);
         }
     }
 }
