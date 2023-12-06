@@ -95,11 +95,11 @@ public final class MapGetCodec {
     }
 
     public static MapGetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.Frame frame = clientMessage.getStartFrame();
         RequestParameters request = new RequestParameters();
-        request.threadId = decodeLong(frame.content, REQUEST_THREAD_ID_FIELD_OFFSET);
-        request.name = StringCodec.decode(frame);
-        request.key = DataCodec.decode(frame);
+        ClientMessage.Frame initialFrame = clientMessage.getStartFrame();
+        request.threadId = decodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET);
+        request.name = StringCodec.decode(initialFrame);
+        request.key = DataCodec.decode(initialFrame);
         return request;
     }
 
