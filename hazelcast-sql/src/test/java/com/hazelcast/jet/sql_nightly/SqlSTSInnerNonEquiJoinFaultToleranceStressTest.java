@@ -16,23 +16,7 @@
 
 package com.hazelcast.jet.sql_nightly;
 
-import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
-@RunWith(HazelcastParametrizedRunner.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
-
-    public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
-        super();
-        this.sinkCount = 200;
-    }
 
     @Override
     protected String setupFetchingQuery() {
