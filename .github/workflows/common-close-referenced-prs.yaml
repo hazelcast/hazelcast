@@ -1,0 +1,46 @@
+name: Close Referenced PRs
+on:
+  pull_request_target:
+    branches:
+      - "master"
+      - "[0-9]+.[0-9]+.z"
+      - "[0-9]+.[0-9]+.[0-9]"
+      - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-DEVEL-[0-9]+"
+      - "data-migration-5.3"
+    types:
+      - closed
+jobs:
+  close-referenced-prs:
+    name: Close referenced PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close referenced PRs
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          CONTENT="$(gh pr view --repo ${{ github.repository }} "$PR_NUMBER" --json "body,comments" -q '.body, .comments[].body')"
+          
+          while read -r line; do
+            if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+)/([^/]+)#([0-9]+) ]]; then
+              OWNER="${BASH_REMATCH[2]}"
+              REPO="${BASH_REMATCH[3]}"
+              OTHER_PR="${BASH_REMATCH[4]}"
+              echo "Closing PR: $OWNER/$REPO/$OTHER_PR"
+              REASON=${{ github.event.pull_request.merged && 'merged' || 'closed' }}
+              MESSAGE="This pull request has been closed because it was already $REASON as https://github.com/${{ github.repository }}/pull/${PR_NUMBER}"
+              PR_CLOSED=$(gh pr view --repo "$OWNER/$REPO" $OTHER_PR --json closed -q '.closed')
+              if [ "$PR_CLOSED" == "false" ]; then
+                gh pr close --repo "$OWNER/$REPO" --comment "$MESSAGE" $OTHER_PR
+              fi
+            fi
+          done <<< "$CONTENT"
+        env:
+          GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          fields: repo,message,author,action,eventName,workflow,job,pullRequest
+          status: failure
+          channel: "#monorepo-notifications"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}

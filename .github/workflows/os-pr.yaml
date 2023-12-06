@@ -1,0 +1,85 @@
+name: Copy OS PR to Monorepo
+on:
+  pull_request_target:
+    branches:
+      - "master"
+      - "[0-9]+.[0-9]+.z"
+      - "[0-9]+.[0-9]+.[0-9]"
+      - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-DEVEL-[0-9]+"
+      - "data-migration-5.3"
+    types:
+      - reopened
+      - opened
+      - synchronize
+      - edited
+env:
+  branch_to_sync: ${{ github.base_ref || github.ref_name}}
+  sot_repo: hazelcast/hazelcast-mono
+  destination_repo: hazelcast/hazelcast
+jobs:
+  copybara-os-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reopen referenced PRs
+        if: github.event.action == 'reopened'
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          CONTENT="$(gh pr view "$PR_NUMBER" --json "body,comments" -q '.body, .comments[].body' | tac)"
+
+          while read -r line; do
+            if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+)/([^/]+)#([0-9]+) ]]; then
+              OWNER="${BASH_REMATCH[2]}"
+              REPO="${BASH_REMATCH[3]}"
+              OTHER_PR="${BASH_REMATCH[4]}"
+              echo "Reopening PR: $OWNER/$REPO/$OTHER_PR"
+              gh pr reopen --repo "$OWNER/$REPO" \
+               --comment "This pull request has been reopened because of reopening of https://github.com/${{ github.repository }}/pull/${PR_NUMBER}" \
+              $OTHER_PR
+            fi
+          done <<< "$CONTENT"
+        env:
+          GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
+      - name: Generate copybara config file
+        run: |
+          sed -e 's#<branch_to_sync>#${{ env.branch_to_sync }}#' \
+              -e 's#<sot_repo>#${{ env.sot_repo }}#' \
+              -e 's#<destination_repo>#${{ env.destination_repo }}#' \
+              .github/workflows/common-copybara.bara.sky.template > .github/workflows/common-copybara.bara.sky
+      - uses: hazelcast/copybara-action@main
+        name: "Copybara PR #${{ github.event.pull_request.number }} -> ${{ env.branch_to_sync }}"
+        with:
+          ssh_key: ${{ secrets.GH_DEVOPSHAZELCAST_SSH_KEY }}
+          access_token: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
+          sot_repo: ${{ env.sot_repo }}
+          sot_branch: ${{ env.branch_to_sync }}
+          destination_repo: ${{ env.destination_repo }}
+          copybara_options: "--nogit-destination-rebase"
+          custom_config: .github/workflows/os-pr.sky
+      - name: Copy labels, assignees, reviewers, milestone to other PR
+        run: |
+          SOURCE_REPO="${{ github.repository }}"
+          SOURCE_PR="${{ github.event.pull_request.number }}"
+          CONTENT="$(gh pr view "$SOURCE_PR" --json "body,comments" -q '.body, .comments[].body')"
+
+          while read -r line; do
+            if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+/[^/]+)#([0-9]+) ]]; then
+              TARGET_REPO="${BASH_REMATCH[2]}"
+              TARGET_PR="${BASH_REMATCH[3]}"
+              .github/workflows/common-synchronize-pr-labels.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+              .github/workflows/common-synchronize-pr-assignees.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+              .github/workflows/common-synchronize-pr-reviewers.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+              .github/workflows/common-synchronize-pr-milestone.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+            fi
+          done <<< "$CONTENT"
+        env:
+          GH_TOKEN: ${{ secrets.DEVOPSHAZELCAST_PAT_FOR_MONOREPO }}
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+            fields: repo,message,author,action,eventName,workflow,job,pullRequest
+            status: failure
+            channel: "#monorepo-notifications"
+        env:
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_MONOREPO }}
