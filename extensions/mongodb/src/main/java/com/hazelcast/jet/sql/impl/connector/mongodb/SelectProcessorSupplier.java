@@ -120,7 +120,7 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier implements D
         Bson proj = fields(projection.stream().map(p -> p.projectionExpr).collect(toList()));
         List<String> projectedNames = projection.stream().map(p -> p.externalName).collect(toList());
         if (!projectedNames.contains("_id") && !stream) {
-            aggregates.setProjection(bsonToDocument(project(fields(excludeId(), proj))));
+            aggregates.setProjection(bsonToDocument(project(fields(proj, excludeId()))));
         } else {
             aggregates.setProjection(bsonToDocument(project(proj)));
         }

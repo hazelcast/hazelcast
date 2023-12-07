@@ -20,16 +20,14 @@ import org.testcontainers.containers.MSSQLServerContainer;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeNoArm64Architecture;
 
-public class MSSQLDatabaseProvider implements TestDatabaseProvider {
+public class MSSQLDatabaseProvider extends JdbcDatabaseProvider<MSSQLServerContainer<?>> {
 
     public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2017-CU12");
 
-    private static final int LOGIN_TIMEOUT = 120;
 
     private MSSQLServerContainer<?> container;
 
-    @Override
-    public String createDatabase(String dbName) {
+    MSSQLServerContainer<?> createContainer(String dbName) {
         assumeNoArm64Architecture();
         container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
         container.acceptLicense()
@@ -39,18 +37,7 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
                 .withUrlParam("sendTimeAsDateTime", "false")
                 .withUrlParam("user", container.getUsername())
                 .withUrlParam("password", container.getPassword());
-        container.start();
-        String jdbcUrl = container.getJdbcUrl();
-        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
-        return jdbcUrl;
-    }
-
-    @Override
-    public void shutdown() {
-        if (container != null) {
-            container.stop();
-            container = null;
-        }
+        return container;
     }
 
     @Override
@@ -71,11 +58,8 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
     }
 
     @Override
-    public String createSchemaQuery(String schemaName) {
-        return "IF NOT EXISTS ("
-                + " SELECT 0 FROM information_schema.schemata WHERE schema_name = '" + schemaName + "')"
-                + " BEGIN"
-                + " EXEC sp_executesql N'CREATE SCHEMA " + quote(schemaName) + "';"
-                + " END";
+    public TestDatabaseRecordProvider recordProvider() {
+        return new MSSQLObjectProvider(this);
     }
+
 }

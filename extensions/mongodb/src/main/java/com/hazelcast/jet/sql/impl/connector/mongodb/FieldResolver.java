@@ -31,7 +31,7 @@ import org.bson.Document;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -168,7 +168,7 @@ class FieldResolver {
         String collectionName = externalNames.length == 2 ? externalNames[1] : externalNames[0];
         String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
 
-        Map<String, DocumentField> fields = new HashMap<>();
+        Map<String, DocumentField> fields = new LinkedHashMap<>();
         try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
 

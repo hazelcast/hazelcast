@@ -16,20 +16,38 @@
 
 package com.hazelcast.test.jdbc;
 
+import org.testcontainers.containers.JdbcDatabaseContainer;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class H2DatabaseProvider implements TestDatabaseProvider {
+@SuppressWarnings("rawtypes")
+public class H2DatabaseProvider extends JdbcDatabaseProvider {
 
     private static final int LOGIN_TIMEOUT = 60;
 
     private String jdbcUrl;
 
     @Override
+    JdbcDatabaseContainer<?> createContainer(String dbName) {
+        throw new IllegalStateException("should not be called");
+    }
+
+    @Override
     public String createDatabase(String dbName) {
         jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
+        return jdbcUrl;
+    }
+
+    @Override
+    public String url() {
+        return jdbcUrl;
+    }
+
+    @Override
+    public String noAuthJdbcUrl() {
         return jdbcUrl;
     }
 

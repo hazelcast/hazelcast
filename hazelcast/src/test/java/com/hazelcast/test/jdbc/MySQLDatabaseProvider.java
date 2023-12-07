@@ -24,18 +24,14 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.joining;
 
-public class MySQLDatabaseProvider implements TestDatabaseProvider {
+public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?>> {
 
     public static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.0.32");
-    private static final int LOGIN_TIMEOUT = 120;
-
-    private MySQLContainer<?> container;
-    private Network network = Network.newNetwork();
+    private final Network network = Network.newNetwork();
 
     @Override
-    public String createDatabase(String dbName) {
-        //noinspection resource
-        container = new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
+    MySQLContainer<?> createContainer(String dbName) {
+        return new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
                 .withNetwork(network)
                 .withNetworkAliases("mysql")
                 .withDatabaseName(dbName)
@@ -46,43 +42,6 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
                         "/var/lib/mysql/", "rw",
                         "/tmp/", "rw"
                 ));
-        container.start();
-        String jdbcUrl = container.getJdbcUrl();
-        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
-        return jdbcUrl;
-    }
-
-    @Override
-    public String noAuthJdbcUrl() {
-        return container.getJdbcUrl()
-                        .replaceAll("&?user=root", "")
-                        .replaceAll("&?password=test", "");
-    }
-
-    @Override
-    public String user() {
-        return "root";
-    }
-
-    @Override
-    public String password() {
-        return "test";
-    }
-
-    public MySQLContainer<?> container() {
-        return container;
-    }
-
-    public Network getNetwork() {
-        return network;
-    }
-
-    @Override
-    public void shutdown() {
-        if (container != null) {
-            container.stop();
-            container = null;
-        }
     }
 
     @Override
