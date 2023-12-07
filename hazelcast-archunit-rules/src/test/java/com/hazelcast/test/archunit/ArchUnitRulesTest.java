@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ArchUnitRulesTest extends ArchUnitTestSupport {
 
     @Test
-    public void should_fail_with_non_compliant_class() {
+    public void should_fail_with_non_compliant_class_DUMMY_CHANGE() {
         JavaClasses classes = new ClassFileImporter()
                 .withImportOption(ONLY_INCLUDE_TESTS)
                 .importPackages("com.example.broken");
