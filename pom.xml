@@ -43,7 +43,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
 
-        <jdk.version>11</jdk.version>
+        <maven.compiler.release>11</maven.compiler.release>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -53,7 +53,6 @@
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
         <hazelcast.previous.version>5.3.0</hazelcast.previous.version>
 
-        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.6.2</maven.javadoc.plugin.version>
@@ -331,10 +330,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <release>${jdk.version}</release>
-                    <encoding>${project.build.sourceEncoding}</encoding>
                     <!--
                     Workaround for compilation failure on Windows in hazelcast-sql module:
                     Compilation failure
@@ -834,6 +830,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>${maven.deploy.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
