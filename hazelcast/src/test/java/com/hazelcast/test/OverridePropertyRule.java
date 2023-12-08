@@ -24,6 +24,9 @@ import org.junit.runners.model.Statement;
  * Sets or clears a property before running a test. The property will be restored once the test is finished.
  * <p>
  * Can be used for finer control of the scope of a System property.
+ * <p>
+ * Consider using {@link uk.org.webcompere.systemstubs.jupiter.SystemStub}'s
+ * {@link uk.org.webcompere.systemstubs.properties.SystemProperties}
  */
 public final class OverridePropertyRule implements TestRule {
 
