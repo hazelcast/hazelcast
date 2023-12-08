@@ -55,78 +55,152 @@ public class NonTraversableListTest {
     @Test
     public void test_size() {
         // Used in classical for loop
-        test(() -> 0, i -> i < list.size(), i -> i + 1, i -> list.get(i));
+        new Traversal<Integer>()
+                .initialize(() -> 0)
+                .test(i -> i < list.size())
+                .get(i -> list.get(i))
+                .increment(i -> i + 1)
+                .run();
     }
 
     @Test
     public void test_iterator() {
         // Used in enhanced for loop, spliterator() and stream()
-        test(() -> list.iterator(), Iterator::hasNext, identity(), Iterator::next);
+        new Traversal<Iterator<Integer>>()
+                .initialize(() -> list.iterator())
+                .test(Iterator::hasNext)
+                .get(Iterator::next)
+                .run();
     }
 
     @Test
     public void test_listIterator_forward() {
-        test(() -> list.listIterator(), ListIterator::hasNext, identity(), ListIterator::next);
+        new Traversal<ListIterator<Integer>>()
+                .initialize(() -> list.listIterator())
+                .test(ListIterator::hasNext)
+                .get(ListIterator::next)
+                .run();
     }
 
     @Test
     public void test_listIterator_backward() {
-        test(() -> list.listIterator(3), ListIterator::hasPrevious, identity(), ListIterator::previous,
-                3, 2, 1);
+        new Traversal<ListIterator<Integer>>()
+                .initialize(() -> list.listIterator(3))
+                .test(ListIterator::hasPrevious)
+                .get(ListIterator::previous)
+                .expect(3, 2, 1)
+                .run();
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void test_toArray_withoutGenerator() {
         // Used in copy constructors, bulk add operations and List.copyOf(Collection)
-        test(() -> (List<Integer>) (List<?>) List.of(list.toArray()));
+        new BulkGet<Object[]>()
+                .getAll(() -> list.toArray())
+                .convert(array -> (List<Integer>) (List<?>) List.of(array))
+                .run();
     }
 
     @Test
     public void test_toArray_withGenerator() {
-        test(() -> List.of(list.toArray(Integer[]::new)));
+        new BulkGet<Integer[]>()
+                .getAll(() -> list.toArray(Integer[]::new))
+                .convert(List::of)
+                .run();
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void test_clone() {
-        test(() -> {
-            if (list instanceof NonTraversableList) {
-                return (List<Integer>) ((NonTraversableList<Integer>) list).clone();
-            }
-            if (list instanceof Cloneable) {
-                Method cloneMethod = list.getClass().getMethod("clone");
-                if (cloneMethod.canAccess(list)) {
-                    return (List<Integer>) cloneMethod.invoke(list);
-                }
-            }
-            return list; // Let the non-cloneable lists pass the test
-        });
+        new BulkGet<List<Integer>>()
+                .getAll(() -> {
+                    if (list instanceof NonTraversableList) {
+                        return (List<Integer>) ((NonTraversableList<Integer>) list).clone();
+                    }
+                    if (list instanceof Cloneable) {
+                        Method cloneMethod = list.getClass().getMethod("clone");
+                        if (cloneMethod.canAccess(list)) {
+                            return (List<Integer>) cloneMethod.invoke(list);
+                        }
+                    }
+                    return list; // Let the non-cloneable lists pass the test
+                }).run();
     }
 
-    private <T> void test(Supplier<T> init, Predicate<T> test, UnaryOperator<T> increment,
-                          Function<T, Integer> accessor) {
-        test(init, test, increment, accessor, 1, 2, 3);
-    }
+    private abstract class TestCase<T extends TestCase<T>> {
+        private Integer[] expectedValues = {1, 2, 3};
 
-    private <T> void test(Supplier<T> init, Predicate<T> test, UnaryOperator<T> increment,
-                          Function<T, Integer> accessor, Integer... values) {
-        assertThatThrownBy(() -> test.test(init.get())).hasMessage("List items must be finalized");
-
-        list = ((NonTraversableList<Integer>) list).toReadonlyList();
-
-        List<Integer> clone = new ArrayList<>();
-        for (T value = init.get(); test.test(value); value = increment.apply(value)) {
-            clone.add(accessor.apply(value));
+        @SuppressWarnings("unchecked")
+        T expect(Integer... values) {
+            expectedValues = values;
+            return (T) this;
         }
-        assertThat(clone).containsExactly(values);
+
+        protected abstract List<Integer> getClone();
+
+        void run() {
+            assertThatThrownBy(this::getClone).hasMessage("List items must be finalized");
+
+            list = ((NonTraversableList<Integer>) list).toReadonlyList();
+
+            assertThat(getClone()).containsExactly(expectedValues);
+        }
     }
 
-    private void test(SupplierEx<List<Integer>> getAll) {
-        assertThatThrownBy(getAll::get).hasMessage("List items must be finalized");
+    private class Traversal<T> extends TestCase<Traversal<T>> {
+        private Supplier<T> init;
+        private Predicate<T> test;
+        private Function<T, Integer> get;
+        private UnaryOperator<T> increment = identity();
 
-        list = ((NonTraversableList<Integer>) list).toReadonlyList();
+        Traversal<T> initialize(Supplier<T> init) {
+            this.init = init;
+            return this;
+        }
 
-        assertThat(getAll.get()).containsExactly(1, 2, 3);
+        Traversal<T> test(Predicate<T> test) {
+            this.test = test;
+            return this;
+        }
+
+        Traversal<T> get(Function<T, Integer> get) {
+            this.get = get;
+            return this;
+        }
+
+        Traversal<T> increment(UnaryOperator<T> increment) {
+            this.increment = increment;
+            return this;
+        }
+
+        @Override
+        protected List<Integer> getClone() {
+            List<Integer> clone = new ArrayList<>();
+            for (T value = init.get(); test.test(value); value = increment.apply(value)) {
+                clone.add(get.apply(value));
+            }
+            return clone;
+        }
+    }
+
+    private class BulkGet<T> extends TestCase<BulkGet<T>> {
+        private SupplierEx<T> getAll;
+        private Function<T, List<Integer>> convert = List.class::cast;
+
+        BulkGet<T> getAll(SupplierEx<T> getAll) {
+            this.getAll = getAll;
+            return this;
+        }
+
+        BulkGet<T> convert(Function<T, List<Integer>> convert) {
+            this.convert = convert;
+            return this;
+        }
+
+        @Override
+        protected List<Integer> getClone() {
+            return convert.apply(getAll.get());
+        }
     }
 }
