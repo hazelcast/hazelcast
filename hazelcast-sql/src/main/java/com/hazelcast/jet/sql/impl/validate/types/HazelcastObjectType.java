@@ -89,7 +89,7 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     }
 
     private void generateFullTypeString(StringBuilder sb, Set<String> seen) {
-        sb.append(name);
+        escape(sb, name);
         if (seen.contains(name)) {
             return;
         }
@@ -97,7 +97,8 @@ public class HazelcastObjectType extends RelDataTypeImpl {
         sb.append('(');
         for (Iterator<Field> it = fields.iterator(); it.hasNext();) {
             RelDataTypeField field = it.next();
-            sb.append(field.getName()).append(':');
+            escape(sb, field.getName());
+            sb.append(':');
             if (field.getType() instanceof HazelcastObjectType) {
                 ((HazelcastObjectType) field.getType()).generateFullTypeString(sb, seen);
             } else {
@@ -108,6 +109,15 @@ public class HazelcastObjectType extends RelDataTypeImpl {
             }
         }
         sb.append(')');
+    }
+
+    private static void escape(StringBuilder sb, String value) {
+        for (char c : value.toCharArray()) {
+            if (c == '(' || c == ':' || c == ',' || c == ')') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
     }
 
     public void addField(Field field) {

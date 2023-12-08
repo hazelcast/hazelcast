@@ -188,7 +188,8 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
         }
     }
 
-    private String getDigest() {
+    // Exposed for testing
+    protected String getDigest() {
         if (digest == null) {
             StringBuilder sb = new StringBuilder();
             computeDigest(sb, new HashSet<>());
@@ -408,15 +409,16 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
     }
 
     private void computeDigest(StringBuilder sb, Set<String> seen) {
-        sb.append(objectTypeName);
+        escape(sb, objectTypeName);
         if (seen.contains(objectTypeName)) {
             return;
         }
         seen.add(objectTypeName);
-        sb.append('[').append(objectTypeKind).append(" -> ").append(objectTypeMetadata).append("](");
+        sb.append('[').append(objectTypeKind).append('=').append(objectTypeMetadata).append("](");
         for (Iterator<QueryDataTypeField> it = getObjectFields().iterator(); it.hasNext();) {
             QueryDataTypeField field = it.next();
-            sb.append(field.getName()).append(':');
+            escape(sb, field.getName());
+            sb.append(':');
             if (field.getType().isCustomType()) {
                 field.getType().computeDigest(sb, seen);
             } else {
@@ -427,6 +429,16 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
             }
         }
         sb.append(')');
+    }
+
+    @SuppressWarnings("BooleanExpressionComplexity")
+    private static void escape(StringBuilder sb, String value) {
+        for (char c : value.toCharArray()) {
+            if (c == '[' || c == '=' || c == ']' || c == '(' || c == ':' || c == ',' || c == ')') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
     }
 
     private Object readResolve() throws ObjectStreamException {

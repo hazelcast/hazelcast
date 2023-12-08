@@ -228,6 +228,19 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         checkSerialization(person);
     }
 
+    @Test
+    public void testDigestEscaping() {
+        QueryDataType person = new QueryDataType("[P(e:r=s,o)n]", TypeKind.PORTABLE, "1:2:3");
+        person.addField("name", QueryDataType.VARCHAR);
+        person.addField("[(:fri=end,)]", person);
+        person.finalizeFields();
+
+        assertEquals("\\[P\\(e\\:r\\=s\\,o\\)n\\][PORTABLE=1:2:3]("
+                + "name:VARCHAR, "
+                + "\\[\\(\\:fri\\=end\\,\\)\\]:\\[P\\(e\\:r\\=s\\,o\\)n\\]"
+                + ")", person.getDigest());
+    }
+
     // TODO This test will be removed by HZ-3691.
     @Test
     public void testResolutionByFamily() {
