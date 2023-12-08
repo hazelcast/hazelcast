@@ -25,10 +25,10 @@ import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -41,12 +41,15 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     /** Cached list of field names. */
     private List<String> fieldNames;
 
-    /** Not usable until {@link #finalizeFields} is called. */
+    /**
+     * Creates a nullable type, which will not be usable until
+     * {@linkplain #finalizeFields the fields are finalized}.
+     */
     public HazelcastObjectType(String name) {
         this(name, true);
     }
 
-    /** Not usable until {@link #finalizeFields} is called. */
+    /** Not usable until {@linkplain #finalizeFields the fields are finalized}. */
     public HazelcastObjectType(String name, boolean nullable) {
         super(null);
         this.name = name;
@@ -124,9 +127,16 @@ public class HazelcastObjectType extends RelDataTypeImpl {
         fields.add(field);
     }
 
-    public void finalizeFields(Map<String, HazelcastObjectType> typeMap) {
-        typeMap.values().forEach(type -> type.fields = ((NonTraversableList<Field>) type.fields).toReadonlyList());
-        typeMap.values().forEach(type -> type.computeDigest());
+    /**
+     * @param types vertices of a type graph, which may be disconnected
+     *
+     * @implNote At finalization, the {@link #digest} is also computed, for which
+     * the fields are traversed recursively. This requires all nested types to be
+     * finalized beforehand. That's why the finalization is done in two passes.
+     */
+    public static void finalizeFields(Collection<HazelcastObjectType> types) {
+        types.forEach(type -> type.fields = ((NonTraversableList<Field>) type.fields).toReadonlyList());
+        types.forEach(type -> type.computeDigest());
     }
 
     /**
