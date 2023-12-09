@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.ObjectStreamException;
@@ -35,12 +36,13 @@ import java.util.Map;
 
 /**
  * Interface to convert an item from one type to another.
- * <p>
- * Converters assume that the passed values are not null, caller of conversion methods must ensure that.
- * We do this because most SQL expressions have special treatment for null values, and in general null check
- * is already performed by the time the converter is called.
- * <p>
- * Java serialization is needed for Jet.
+ *
+ * @implSpec <ol>
+ * <li> Conversion methods expect nonnull values because most SQL expressions have
+ *      special treatment for null values, so null check is performed beforehand.
+ * <li> Converters are expected to be singleton by {@link QueryDataType#equals}.
+ *
+ * @implNote Java serialization is needed for Jet.
  */
 @SuppressWarnings({"MethodCount", "ExecutableStatementCount"})
 public abstract class Converter implements Serializable {
