@@ -30,6 +30,11 @@ import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_STORE
 public interface IMapOpStep extends Step<State> {
 
     /**
+     * The batch size of records handled in bulk operations.
+     */
+    int BATCH_SIZE = 1000;
+
+    /**
      * Decides when to offload based on configured map-store type.
      * <p>
      * Reasoning: Blindly offloading every step

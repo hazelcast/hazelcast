@@ -113,6 +113,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final Collection<Future<?>> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
+     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
+     * if set to true then eviction operations by this RecordStore will be WAN replicated
+     */
+    protected boolean wanReplicateEvictions;
+
+    /**
      * A reference to the Json Metadata store. It is initialized lazily only if the
      * store is needed.
      */
@@ -131,12 +137,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
-    /**
-     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
-     * if set to true then eviction operations by this RecordStore will be WAN replicated
-     */
-    private boolean wanReplicateEvictions;
-
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
     // offloadedOperations is only accessed by single thread
