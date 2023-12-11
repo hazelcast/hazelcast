@@ -56,11 +56,7 @@ public class ClearOperation extends MapOperation
 
     @Override
     public Step getStartingStep() {
-        if (recordStore == null) {
-            return ClearOpSteps.CLEAR_MEMORY;
-        }
-
-        return ((DefaultRecordStore) recordStore).getClearOpStartingStep();
+        return ClearOpSteps.CLEAR_MEMORY;
     }
 
     @Override

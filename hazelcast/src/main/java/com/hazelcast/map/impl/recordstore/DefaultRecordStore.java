@@ -1645,8 +1645,4 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean isTieredStorageEnabled() {
         return mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
     }
-
-    public Step getClearOpStartingStep() {
-        return ClearOpSteps.CLEAR_MEMORY;
-    }
 }
