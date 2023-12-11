@@ -123,11 +123,12 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
             .sorted(comparingInt(type -> type.converter.getId())).toArray(QueryDataType[]::new);
 
     private Converter converter;
-    // nonnull for custom types (nested types)
+    /** Nonnull for custom types. */
     private String objectTypeName;
     private TypeKind objectTypeKind = TypeKind.NONE;
     private String objectTypeMetadata;
     private List<QueryDataTypeField> objectFields;
+    /** Used only by custom types. */
     private volatile String digest;
 
     public QueryDataType() { }
