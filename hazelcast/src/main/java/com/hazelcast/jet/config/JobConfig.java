@@ -350,7 +350,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * This variant identifies the JAR with a URL, which must contain at least one
      * path segment. The last path segment ("filename") will be used as the resource
-     * ID, so two JARs with the same filename will be in conflict.
+     * ID - if there's already a resource with that ID, it will <strong>not be
+     * replaced</strong>.
      * <p>
      * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
      * jobs}.
@@ -375,8 +376,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * the Jet instance's classpath.
      * <p>
      * This variant identifies the JAR with a {@code File}. The filename part of the
-     * path will be used as the resource ID, so two JARs with the same filename will
-     * be in conflict.
+     * path will be used as the resource ID - if there's already a resource with that
+     * ID, it will <strong>not be replaced</strong>.
      * <p>
      * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
      * jobs}.
@@ -401,8 +402,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * the Jet instance's classpath.
      * <p>
      * This variant identifies the JAR with a path string. The filename part will be
-     * used as the resource ID, so two JARs with the same filename will be in
-     * conflict.
+     * used as the resource ID - if there's already a resource with that ID, it will
+     * <strong>not be replaced</strong>.
      * <p>
      * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
      * jobs}.
