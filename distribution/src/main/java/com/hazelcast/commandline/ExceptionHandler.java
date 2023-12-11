@@ -16,7 +16,7 @@
 
 package com.hazelcast.commandline;
 
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
@@ -31,7 +31,7 @@ class ExceptionHandler implements CommandLine.IExecutionExceptionHandler {
         CommandLine.Help.ColorScheme colorScheme = commandLine.getColorScheme();
 
         // Print exception
-        String stackTrace = ExceptionUtil.toString(exception);
+        String stackTrace = ExceptionUtil.stackTraceToString(exception);
         errorWriter.println(colorScheme.errorText(stackTrace));
 
         // Print usage

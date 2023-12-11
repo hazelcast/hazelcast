@@ -22,8 +22,6 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -50,19 +48,6 @@ public final class ExceptionUtil {
     };
 
     private ExceptionUtil() {
-    }
-
-    /**
-     * Converts a Throwable stacktrace to a String.
-     *
-     * @param cause the Throwable
-     * @return the String.
-     */
-    public static String toString(Throwable cause) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        cause.printStackTrace(pw);
-        return sw.toString();
     }
 
     public static RuntimeException peel(final Throwable t) {

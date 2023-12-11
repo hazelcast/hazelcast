@@ -28,7 +28,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import org.junit.After;
 
 import java.util.UUID;
@@ -159,7 +159,7 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
     }
 
     private void checkException(QueryResultSizeExceededException e) {
-        String exception = ExceptionUtil.toString(e);
+        String exception = ExceptionUtil.stackTraceToString(e);
         if (exception.contains("QueryPartitionOperation")) {
             fail("QueryResultSizeExceededException was thrown by QueryPartitionOperation:\n" + exception);
         }

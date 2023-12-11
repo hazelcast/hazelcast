@@ -48,14 +48,6 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testToString() {
-        String result = ExceptionUtil.toString(throwable);
-
-        assertContains(result, "RuntimeException");
-        assertContains(result, "expected exception");
-    }
-
-    @Test
     public void testPeel_whenThrowableIsRuntimeException_thenReturnOriginal() {
         RuntimeException result = ExceptionUtil.peel(throwable);
 

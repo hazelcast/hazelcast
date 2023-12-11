@@ -23,6 +23,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -35,8 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -382,10 +381,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
     }
 
     private static String getStackTrace(String message) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        new HazelcastSerializationException(message).printStackTrace(pw);
-        return sw.toString();
+        return ExceptionUtil.stackTraceToString(new HazelcastSerializationException(message));
     }
 
     private static class KeySerializationCountingData implements Portable {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -87,13 +85,7 @@ public class JetConsoleLogHandler extends StreamHandler {
         }
 
         private static String getExceptionString(LogRecord record) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            pw.write(System.lineSeparator());
-            pw.write(ANSI_RED);
-            record.getThrown().printStackTrace(new PrintWriter(sw));
-            pw.write(ANSI_RESET);
-            return sw.toString();
+            return System.lineSeparator() + ANSI_RED + ExceptionUtil.stackTraceToString(record.getThrown()) + ANSI_RESET;
         }
 
         private static String getLevelColor(Level level) {

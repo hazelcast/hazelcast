@@ -21,7 +21,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
@@ -79,7 +79,7 @@ public class MulticastDiscoveryStrategyDeserializationTest {
             datadgramsThread = null;
         }
         if (datagramsThreadException != null) {
-            fail(ExceptionUtil.toString(datagramsThreadException));
+            fail(ExceptionUtil.stackTraceToString(datagramsThreadException));
         }
         HazelcastInstanceFactory.terminateAll();
         TestDeserialized.isDeserialized = false;
