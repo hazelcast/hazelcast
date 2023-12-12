@@ -1553,6 +1553,10 @@
     <distributionManagement>
         <repository>
             <id>release-repository</id>
+            <!-- Irrespective of this configuration, nexus-staging-maven-plugin
+            will *also* deploy to it's own staging destination, configured in
+            //project//plugin[artifactId='nexus-staging-maven-plugin']/configuration/nexusUrl
+            (i.e. Maven central) -->
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
         </repository>
         <snapshotRepository>
