@@ -49,36 +49,32 @@ public final class HazelcastSchemaUtils {
 
     /**
      * Construct a schema from the given table resolvers.
-     * <p>
      * Currently we assume that all tables are resolved upfront by querying a table resolver. It works well for predefined
      * objects such as IMap and ReplicatedMap as well as external tables created by Jet. This approach will not work well
      * should we need a relaxed/dynamic object resolution at some point in future.
      *
      * @return Top-level schema.
      */
-    //TODO: I need to change this method too.
     public static HazelcastSchema createRootSchema(SqlCatalog catalog) {
-        // Create schemas.
         Map<String, Schema> schemaMap = new HashMap<>();
 
+        //Filling of ROOT schema
         for (Map.Entry<String, Map<String, Table>> currentSchemaEntry : catalog.getSchemas().entrySet()) {
             String schemaName = currentSchemaEntry.getKey();
 
             Map<String, org.apache.calcite.schema.Table> schemaTables = new HashMap<>();
 
+            //Each individual Scheme
             for (Map.Entry<String, Table> tableEntry : currentSchemaEntry.getValue().entrySet()) {
+
                 String tableName = tableEntry.getKey();
                 Table table = tableEntry.getValue();
 
-                HazelcastTable convertedTable = new HazelcastTable(
-                        table,
-                        createTableStatistic(table)
-                );
-
-                schemaTables.put(tableName, convertedTable);
+                //CHECK: Maybe we shouldn't have also any names in schemaTables?
+                schemaTables.put(tableName, null);
             }
-
-            HazelcastSchema currentSchema = new HazelcastSchema(Collections.emptyMap(), schemaTables);
+            //Key -> table mapping aka schema.
+            HazelcastSchema currentSchema = new HazelcastSchema(Collections.emptyMap(), schemaTables, catalog, schemaName);
 
             schemaMap.put(schemaName, currentSchema);
         }
@@ -97,7 +93,9 @@ public final class HazelcastSchemaUtils {
      * @param table Target table.
      * @return Statistics for the table.
      */
-    private static Statistic createTableStatistic(Table table) {
+
+    //CHECK: It seems that I could move it to a different place.
+    public static Statistic createTableStatistic(Table table) {
         return new HazelcastTableStatistic(table.getStatistics().getRowCount());
     }
 }

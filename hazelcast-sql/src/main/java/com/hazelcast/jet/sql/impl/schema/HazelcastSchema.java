@@ -34,9 +34,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils.createTableStatistic;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,11 +47,19 @@ import static java.util.Objects.requireNonNull;
 public class HazelcastSchema implements Schema {
 
     private final Map<String, Schema> subSchemaMap;
-    private final Map<String, Table> tableMap;
+    private Map<String, Table> tableMap;
     private SqlCatalog catalog;
+    //TODO: Maybe having a reference to pattern is a better idea?
+    private String schemaName;
 
     public HazelcastSchema(Map<String, Table> tableMap) {
         this(null, tableMap);
+    }
+
+    public HazelcastSchema(SqlCatalog catalog) {
+        this.catalog = catalog;
+        this.subSchemaMap = new HashMap<>();
+        this.tableMap = new HashMap<>();
     }
 
     public HazelcastSchema(Map<String, Schema> subSchemaMap, Map<String, Table> tableMap) {
@@ -57,10 +67,19 @@ public class HazelcastSchema implements Schema {
         this.tableMap = tableMap != null ? tableMap : Collections.emptyMap();
     }
 
+    public HazelcastSchema(Map<String, Schema> subSchemaMap, Map<String, Table> tableMap, SqlCatalog catalog, String schemaName) {
+        this.subSchemaMap = subSchemaMap != null ? subSchemaMap : Collections.emptyMap();
+        this.tableMap = tableMap != null ? tableMap : Collections.emptyMap();
+        this.catalog = catalog;
+        this.schemaName = schemaName;
+    }
+
+    //CHECK: Remove that as now it might be dangerous?
     protected Map<String, Schema> getSubSchemaMap() {
         return subSchemaMap;
     }
 
+    //CHECK: Remove that as now it might be dangerous?
     public final Map<String, Table> getTableMap() {
         return tableMap;
     }
@@ -79,15 +98,23 @@ public class HazelcastSchema implements Schema {
         return Schemas.subSchemaExpression(parentSchema, name, getClass());
     }
 
-    //TODO:
     @Override public final Set<String> getTableNames() {
-        //noinspection RedundantCast
         return (Set<String>) getTableMap().keySet();
     }
 
-    //TODO:
     @Override public final @Nullable Table getTable(String name) {
-        return getTableMap().get(name);
+        if (tableMap.containsKey(name) && tableMap.get(name) != null) {
+            return tableMap.get(name);
+        }
+
+        com.hazelcast.sql.impl.schema.Table table = catalog.getSchemas().get(schemaName).get(name);
+        HazelcastTable convertedTable = new HazelcastTable(
+                table,
+                createTableStatistic(table)
+        );
+
+        tableMap.put(name, convertedTable);
+        return convertedTable;
     }
 
     protected Map<String, RelProtoDataType> getTypeMap() {
