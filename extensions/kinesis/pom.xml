@@ -48,7 +48,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <configuration>
+                <configuration combine.self="append">
                     <relocations>
                         <relocation>
                             <pattern>com.amazonaws</pattern>

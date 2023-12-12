@@ -50,7 +50,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <configuration>
+                    <configuration combine.self="append">
                         <!--
                         We actually don't shade these in here in Hadoop module, they are already part of core
                         But we need to relocate the usage in the Hadoop module
