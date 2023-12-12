@@ -501,7 +501,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         logger.info("Trying to connect to next cluster: " + nextContext.getClusterName());
 
         if (doConnectToCandidateCluster(nextContext, true)) {
-            client.waitForInitialMembershipEvents();
+            if (!failoverConfigProvided) {
+                client.waitForInitialMembershipEvents();
+            } else {
+                // If the client is a failover client, the expected behaviour in case it can't get the initial membership event
+                // is that it should continue trying other clusters.
+                try {
+                    client.waitForInitialMembershipEvents();
+                } catch (IllegalStateException e) {
+                    return false;
+                }
+            }
             fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
             return true;
         }
@@ -929,6 +939,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     @Override
     public void addConnectionListener(ConnectionListener connectionListener) {
         connectionListeners.add(requireNonNull(connectionListener, "connectionListener cannot be null"));
+    }
+
+    public boolean removeConnectionListener(ConnectionListener connectionListener) {
+        return connectionListeners.remove(requireNonNull(connectionListener, "connectionListener cannot be null"));
     }
 
     @Override

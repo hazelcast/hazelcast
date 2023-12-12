@@ -309,6 +309,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return new Diagnostics(name, loggingService, instanceName, properties);
     }
 
+    ClientClusterViewListenerService getClientClusterViewListenerService() {
+        return clientClusterViewListenerService;
+    }
+
     private MetricsRegistryImpl initMetricsRegistry() {
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
         return new MetricsRegistryImpl(getName(), logger, clientMetricsLevel(properties,
