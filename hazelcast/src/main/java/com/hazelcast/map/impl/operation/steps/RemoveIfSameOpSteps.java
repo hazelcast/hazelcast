@@ -31,7 +31,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
     READ() {
         @Override
         public void runStep(State state) {
-           RemoveOpSteps.READ.runStep(state);
+            RemoveOpSteps.READ.runStep(state);
         }
 
         @Override
@@ -50,7 +50,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-            Object oldValue = recordStore.loadValueOf(state.getKey());
+            Object oldValue = recordStore.loadValueOfKey(state.getKey(), state.getNow());
             if (oldValue != null) {
                 recordStore.getMapDataStore().remove(state.getKey(), state.getNow(), state.getTxnId());
                 state.setOldValue(oldValue);

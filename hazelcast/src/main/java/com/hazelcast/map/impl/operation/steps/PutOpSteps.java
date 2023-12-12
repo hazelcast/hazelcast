@@ -58,8 +58,9 @@ public enum PutOpSteps implements IMapOpStep {
         public void runStep(State state) {
             StaticParams staticParams = state.getStaticParams();
             if (staticParams.isPutVanilla()) {
-                state.setOldValue(((DefaultRecordStore) state.getRecordStore())
-                        .loadValueOf(state.getKey()));
+                Object oldValue = ((DefaultRecordStore) state.getRecordStore())
+                        .loadValueOfKey(state.getKey(), state.getNow());
+                state.setOldValue(oldValue);
             } else if (staticParams.isPutIfAbsent() || staticParams.isPutIfExists()) {
                 GetOpSteps.LOAD.runStep(state);
             }
@@ -86,9 +87,9 @@ public enum PutOpSteps implements IMapOpStep {
             if (!staticParams.isPutVanilla()) {
                 if (staticParams.isPutIfAbsent()) {
                     Record record = recordStore.getRecord(state.getKey());
-                    if (record == null && state.getOldValue() != null) {
+                    if (record == null && state.getLoadedOldValueWithExpiry() != null) {
                         record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                                state.getOldValue(), false, state.getCallerAddress());
+                                state.getLoadedOldValueWithExpiry(), false, state.getCallerAddress(), state.getNow());
                     }
 
                     if (record != null) {
@@ -98,9 +99,9 @@ public enum PutOpSteps implements IMapOpStep {
                     }
                 } else if (staticParams.isPutIfExists()) {
                     Record record = recordStore.getRecord(state.getKey());
-                    if (record == null && state.getOldValue() != null) {
+                    if (record == null && state.getLoadedOldValueWithExpiry() != null) {
                         record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                                state.getOldValue(), false, state.getCallerAddress());
+                                state.getLoadedOldValueWithExpiry(), false, state.getCallerAddress(), state.getNow());
                     }
 
                     if (record == null) {

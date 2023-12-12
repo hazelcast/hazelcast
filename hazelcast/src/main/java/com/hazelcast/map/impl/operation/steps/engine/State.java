@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
@@ -37,7 +38,6 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -80,10 +80,11 @@ public class State {
     private volatile boolean changeExpiryOnUpdate = true;
     private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
+    private volatile BiTuple<Object, Long> loadedOldValueWithExpiry;
     private volatile Object newValue;
     private volatile Object result;
     private volatile Collection<Data> keysToLoad = Collections.emptyList();
-    private volatile Map loadedKeyValuePairs = Collections.emptyMap();
+    private volatile List loadedKeyAndOldValueWithExpiryPairs = Collections.emptyList();
     private volatile Collection<Data> keys;
     private volatile List<Record> records;
     private volatile EntryProcessor entryProcessor;
@@ -157,6 +158,14 @@ public class State {
     public State setOldValue(Object oldValue) {
         this.oldValue = oldValue;
         return this;
+    }
+
+    public BiTuple<Object, Long> getLoadedOldValueWithExpiry() {
+        return loadedOldValueWithExpiry;
+    }
+
+    public void setLoadedOldValueWithExpiry(BiTuple<Object, Long> loadedOldValueWithExpiry) {
+        this.loadedOldValueWithExpiry = loadedOldValueWithExpiry;
     }
 
     public State setRecordExistsInMemory(boolean recordExistsInMemory) {
@@ -342,13 +351,15 @@ public class State {
         return this;
     }
 
-    public State setLoadedKeyValuePairs(Map loadedKeyValuePairs) {
-        this.loadedKeyValuePairs = loadedKeyValuePairs;
+    // list of key+bituple(oldValue, expiry)
+    public State setLoadedKeyAndOldValueWithExpiryPairs(List loadedKeyAndOldValueWithExpiryPairs) {
+        this.loadedKeyAndOldValueWithExpiryPairs = loadedKeyAndOldValueWithExpiryPairs;
         return this;
     }
 
-    public Map getLoadedKeyValuePairs() {
-        return loadedKeyValuePairs;
+    // list of loaded key + bituple(oldValue, expiry)
+    public List loadedKeyAndOldValueWithExpiryPairs() {
+        return loadedKeyAndOldValueWithExpiryPairs;
     }
 
     public List<Record> getRecords() {

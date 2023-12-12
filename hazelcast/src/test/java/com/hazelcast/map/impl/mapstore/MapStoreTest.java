@@ -74,7 +74,6 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -176,14 +175,14 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     @Test
     public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
-        Config config = newConfig(new NullLoader());
+        Config config = newConfig(new NullLoader(), 0, EAGER);
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(randomName());
 
-        // load entries.
-        assertThatThrownBy(() -> map.getAll(new HashSet<>(asList("key1", "key2", "key3"))))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("Neither key nor value can be loaded as null");
+        Map<String, String> responseMap = map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+
+        assertEquals(0, responseMap.size());
+        assertEquals(0, map.size());
     }
 
     /**
@@ -200,7 +199,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         public Map<Object, Object> loadAll(Collection keys) {
             Map<Object, Object> map = new HashMap<>();
             for (Object key : keys) {
-                map.put(key, null);
+                map.put(key, load(key));
             }
             return map;
         }

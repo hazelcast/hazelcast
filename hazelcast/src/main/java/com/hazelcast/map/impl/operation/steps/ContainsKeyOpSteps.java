@@ -66,7 +66,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             Record record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                    state.getOldValue(), false, state.getCallerAddress());
+                    state.getLoadedOldValueWithExpiry(), false, state.getCallerAddress(), state.getNow());
             record = recordStore.evictIfExpired(state.getKey(), state.getNow(), false) ? null : record;
             state.setOldValue(record == null ? null : record.getValue());
 

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
@@ -65,7 +66,8 @@ public class TxnLockAndGetOperation
         }
         Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null && shouldLoad) {
-            record = recordStore.loadRecordOrNull(dataKey, false, getCallerAddress());
+            record = recordStore.loadRecordOrNull(dataKey, false,
+                    getCallerAddress(), Clock.currentTimeMillis());
         }
         Data value = record == null ? null : mapServiceContext.toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());

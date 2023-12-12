@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
@@ -64,6 +65,7 @@ public class PutFromLoadAllOperation extends MapOperation
         boolean hasInterceptor = !mapContainer.getInterceptorRegistry()
                 .getInterceptors().isEmpty();
 
+        long now = Clock.currentTimeMillis();
         List<Data> loadingSequence = this.loadingSequence;
         for (int i = 0; i < loadingSequence.size(); ) {
             Data key = loadingSequence.get(i++);
@@ -76,7 +78,7 @@ public class PutFromLoadAllOperation extends MapOperation
 
             if (includesExpirationTime) {
                 long expirationTime = (long) mapServiceContext.toObject(loadingSequence.get(i++));
-                recordStore.putFromLoad(key, value, expirationTime, getCallerAddress());
+                recordStore.putFromLoad(key, value, expirationTime, getCallerAddress(), now);
             } else {
                 recordStore.putFromLoad(key, value, getCallerAddress());
             }
