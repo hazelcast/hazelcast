@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 
 import java.util.function.Consumer;
 
@@ -32,5 +33,9 @@ public interface StepAwareStorage {
      * @param steps consumer which adds step to the head of step-chain.
      */
     void addAsHeadStep(Consumer<Step> steps);
+
+    default Step getPostStep(State state) {
+        return null;
+    }
 
 }

@@ -103,6 +103,8 @@ public class State {
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
     private volatile Consumer backupOpAfterRun;
+    private volatile int sizeBefore;
+    private volatile int sizeAfter;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -523,4 +525,21 @@ public class State {
     public Consumer getBackupOpAfterRun() {
         return backupOpAfterRun;
     }
+
+    public int getSizeBefore() {
+        return sizeBefore;
+    }
+
+    public void setSizeBefore(int sizeBefore) {
+        this.sizeBefore = sizeBefore;
+    }
+
+    public int getSizeAfter() {
+        return sizeAfter;
+    }
+
+    public void setSizeAfter(int sizeAfter) {
+        this.sizeAfter = sizeAfter;
+    }
+
 }
