@@ -326,6 +326,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
@@ -710,6 +711,7 @@ import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapGetMes
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapIsEmptyMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapKeySetMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapPutAllMessageTask;
+import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapPutMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapRemoveEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapRemoveMessageTask;
@@ -1077,6 +1079,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReplicatedMapAddEntryListenerMessageTask(cm, node, con));
         factories.put(ReplicatedMapKeySetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReplicatedMapKeySetMessageTask(cm, node, con));
+        factories.put(ReplicatedMapPutAllWithMetadataCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReplicatedMapPutAllWithMetadataMessageTask(cm, node, con));
     }
 
     private void initializeLongRegisterClientTaskFactories() {

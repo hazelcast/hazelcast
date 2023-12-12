@@ -17,6 +17,7 @@
 package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -35,13 +36,17 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,6 +58,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,6 +71,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
@@ -441,6 +448,49 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         for (Entry<Integer, Integer> entry : entrySet1) {
             Integer value = findValue(entry.getKey(), testValues);
             assertEquals(value, entry.getValue());
+        }
+    }
+
+    @Test
+    public void testPutAllWithMetadataAsync() {
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastClient();
+
+        String name = "default";
+
+        final ClientReplicatedMapProxy<Integer, Integer> map
+                = (ClientReplicatedMapProxy) instance2.getReplicatedMap(name);
+
+        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        Collection<ReplicatedMapEntryView<Integer, Integer>> entryViews = new ArrayList<>(testValues.length);
+        long creationTime = 1234;
+        long ttl = 34567;
+        long lastUpdateTime = 45678;
+        long lastAccessTime = 4553;
+        long hits = 123;
+        for (int i = 0; i < testValues.length; i++) {
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            entryViews.add(new ReplicatedMapEntryView<Integer, Integer>(entry.getKey(), entry.getValue())
+                    .setCreationTime(creationTime + i).setTtl(ttl + i).setLastAccessTime(lastAccessTime + i)
+                    .setLastUpdateTime(lastUpdateTime + i).setHits(hits + i));
+        }
+        map.putAllWithMetadataAsync(entryViews).join();
+
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance1);
+
+        ReplicatedMapService replicatedMapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
+
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(
+                    name, false, nodeEngine.getPartitionService().getPartitionId(testValues[i].getKey()));
+            ReplicatedRecord record = store.getReplicatedRecord(testValues[i].getKey());
+            SoftAssertions softAssertions = new SoftAssertions();
+            softAssertions.assertThat(record.getCreationTime()).isEqualTo(creationTime + i);
+            softAssertions.assertThat(record.getHits()).isEqualTo(hits + i);
+            softAssertions.assertThat(record.getLastAccessTime()).isEqualTo(lastAccessTime + i);
+            softAssertions.assertThat(record.getUpdateTime()).isEqualTo(lastUpdateTime + i);
+            softAssertions.assertThat(record.getTtlMillis()).isEqualTo(ttl + i);
+            softAssertions.assertAll();
         }
     }
 

@@ -84,6 +84,7 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.partition.MigrationState;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -758,6 +759,7 @@ public class ReferenceObjects {
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
     public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(aUUID, anInt, aString, aString);
     public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
+    public static ReplicatedMapEntryView<Data, Data> aReplicatedMapEntryView = new ReplicatedMapEntryView<>(aData, aData);
 
     static {
         aSimpleEntryView.setCost(aLong);
@@ -770,6 +772,13 @@ public class ReferenceObjects {
         aSimpleEntryView.setVersion(aLong);
         aSimpleEntryView.setTtl(aLong);
         aSimpleEntryView.setMaxIdle(aLong);
+
+        aReplicatedMapEntryView.setCreationTime(aLong);
+        aReplicatedMapEntryView.setHits(aLong);
+        aReplicatedMapEntryView.setLastAccessTime(aLong);
+        aReplicatedMapEntryView.setLastUpdateTime(aLong);
+        aReplicatedMapEntryView.setTtl(aLong);
+        aReplicatedMapEntryView.setMaxIdle(aLong);
     }
 
     public static WanReplicationRef aWanReplicationRef = new WanReplicationRef(aString, aString, aListOfStrings, aBoolean);
@@ -945,6 +954,10 @@ public class ReferenceObjects {
 
     public static List<SimpleEntryView<Data, Data>> aListOfSimpleEntryViews = Collections.singletonList(
             aSimpleEntryView
+    );
+
+    public static List<ReplicatedMapEntryView<Data, Data>> aListOfReplicatedMapEntryViews = Collections.singletonList(
+            aReplicatedMapEntryView
     );
 
     public static WanConsumerConfigHolder aWanConsumerConfigHolder =

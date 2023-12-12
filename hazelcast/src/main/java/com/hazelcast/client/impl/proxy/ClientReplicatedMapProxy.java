@@ -30,14 +30,18 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -48,6 +52,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
@@ -55,6 +60,8 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
@@ -68,7 +75,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
@@ -78,6 +87,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * The replicated map client side proxy implementation proxying all requests to a member node
@@ -467,6 +477,51 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     public UUID addNearCacheInvalidationListener(EventHandler handler) {
         return registerListener(createNearCacheInvalidationListenerCodec(), handler);
+    }
+
+    public CompletableFuture<Void> putAllWithMetadataAsync(@Nonnull Collection<? extends ReplicatedMapEntryView<K, V>> entries) {
+        checkNotNull(entries, "Null argument entries is not allowed");
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
+        Map<Integer, List<ReplicatedMapEntryView<Data, Data>>> entriesByPartition = entries.stream().map(e -> {
+            checkNotNull(e.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+            checkNotNull(e.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+            return new ReplicatedMapEntryView<Data, Data>()
+                .setKey(toData(e.getKey())).setValue(toData(e.getValue()))
+                .setHits(e.getHits())
+                .setTtl(e.getTtl())
+                .setCreationTime(e.getCreationTime())
+                .setLastAccessTime(e.getLastAccessTime())
+                .setLastUpdateTime(e.getLastUpdateTime());
+        }).collect(groupingBy(e -> partitionService.getPartitionId(e.getKey())));
+
+        AtomicInteger counter = new AtomicInteger(entriesByPartition.size());
+        InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
+        if (counter.get() == 0) {
+            resultFuture.complete(null);
+            return resultFuture;
+        }
+        for (Entry<Integer, ? extends List<ReplicatedMapEntryView<Data, Data>>> partitionToEntries
+                : entriesByPartition.entrySet()) {
+            Integer partitionId = partitionToEntries.getKey();
+            ClientMessage request = ReplicatedMapPutAllWithMetadataCodec.encodeRequest(name,
+                    partitionToEntries.getValue());
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(),
+                    partitionId).invoke();
+            future.whenCompleteAsync((clientMessage, throwable) -> {
+                if (throwable != null) {
+                    resultFuture.completeExceptionally(throwable);
+                    return;
+                }
+                if (counter.decrementAndGet() == 0) {
+                    if (!resultFuture.isDone()) {
+                        resultFuture.complete(null);
+                    }
+                }
+            }, ConcurrencyUtil.getDefaultAsyncExecutor());
+        }
+
+        return resultFuture;
     }
 
     private void registerInvalidationListener() {

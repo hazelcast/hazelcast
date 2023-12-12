@@ -23,11 +23,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 
 public class ReplicatedMapEntryView<K, V>
-        implements EntryView, IdentifiedDataSerializable {
+        implements EntryView, IdentifiedDataSerializable, SplitBrainMergeTypes.ReplicatedMapMergeTypes {
 
     private static final int NOT_AVAILABLE = -1;
 
@@ -45,6 +46,11 @@ public class ReplicatedMapEntryView<K, V>
     public ReplicatedMapEntryView() {
     }
 
+    public ReplicatedMapEntryView(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+
     public ReplicatedMapEntryView(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
@@ -56,6 +62,11 @@ public class ReplicatedMapEntryView<K, V>
             key = serializationService.toObject(key);
         }
         return (K) key;
+    }
+
+    @Override
+    public Object getRawKey() {
+        return key;
     }
 
     public ReplicatedMapEntryView<K, V> setKey(K key) {
@@ -70,6 +81,16 @@ public class ReplicatedMapEntryView<K, V>
             value = serializationService.toObject(value);
         }
         return (V) value;
+    }
+
+    @Override
+    public Object getDeserializedValue() {
+        return getValue();
+    }
+
+    @Override
+    public Object getRawValue() {
+        return value;
     }
 
     public ReplicatedMapEntryView<K, V> setValue(V value) {
@@ -149,6 +170,11 @@ public class ReplicatedMapEntryView<K, V>
 
     public ReplicatedMapEntryView<K, V> setTtl(long ttl) {
         this.ttl = ttl;
+        return this;
+    }
+
+    public ReplicatedMapEntryView<K, V> setMaxIdle(long maxIdle) {
+        this.maxIdle = maxIdle;
         return this;
     }
 

@@ -62,8 +62,10 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int RECORD_MIGRATION_INFO = 24;
     public static final int MERGE_FACTORY = 25;
     public static final int MERGE = 26;
+    public static final int PUT_ALL_WITH_METADATA = 27;
+    public static final int PUT_ALL_WITH_METADATA_OP_FACTORY = 28;
 
-    private static final int LEN = MERGE + 1;
+    private static final int LEN = PUT_ALL_WITH_METADATA_OP_FACTORY + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
