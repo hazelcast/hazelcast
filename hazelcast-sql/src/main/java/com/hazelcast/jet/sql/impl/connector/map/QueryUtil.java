@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.services.NodeAware;
-import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,20 +32,17 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,11 +102,11 @@ public final class QueryUtil {
         }
     }
 
-    static Projection<Entry<Object, Object>, JetSqlRow> toProjection(
+    public static Projection<Entry<Object, Object>, JetSqlRow> toProjection(
             KvRowProjector.Supplier rightRowProjectorSupplier,
             ExpressionEvalContext evalContext
     ) {
-        return new JoinProjection(rightRowProjectorSupplier, evalContext);
+        return new JoinProjection(rightRowProjectorSupplier, UntrustedExpressionEvalContext.from(evalContext));
     }
 
     static IndexIterationPointer[] indexFilterToPointers(
@@ -226,20 +222,16 @@ public final class QueryUtil {
         private transient Node node;
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
-        private transient SqlSecurityContext ssc;
-
-        private Subject subject;
 
         @SuppressWarnings("unused")
         private JoinProjection() {
         }
 
-        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext) {
+        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, UntrustedExpressionEvalContext evalContext) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
             this.evalContext = evalContext;
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
             this.arguments = evalContext.getArguments();
-            this.subject = evalContext.subject();
         }
 
         @Override
@@ -267,15 +259,7 @@ public final class QueryUtil {
                 return;
             }
 
-            SecurityContext securityContext = node.securityContext;
-            if (securityContext != null) {
-                assert subject != null : "Missing subject when security context exists";
-                this.ssc = securityContext.createSqlContext(subject);
-            } else {
-                this.ssc = NoOpSqlSecurityContext.INSTANCE;
-            }
-
-            this.evalContext = ExpressionEvalContext.createContext(arguments, node.getNodeEngine(), iss, ssc);
+            this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.nodeEngine);
             this.extractors = Extractors.newBuilder(iss).build();
         }
 
@@ -283,14 +267,12 @@ public final class QueryUtil {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
             out.writeObject(arguments);
-            ImdgUtil.writeSubject(out, subject);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
             arguments = in.readObject();
-            subject = ImdgUtil.readSubject(in);
         }
     }
 }
