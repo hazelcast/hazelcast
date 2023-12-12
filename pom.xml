@@ -154,7 +154,7 @@
         <mockito.version>5.8.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.19.3</testcontainers.version>
-        <jna.version>5.13.0</jna.version>
+        <jna.version>5.14.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.2.1</archunit.version>
         <errorprone.version>2.23.0</errorprone.version>
