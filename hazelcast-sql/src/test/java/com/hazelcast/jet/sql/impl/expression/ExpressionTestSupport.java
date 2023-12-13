@@ -226,7 +226,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         }
     }
 
-    protected static String signatureErrorFunction(String functionName, SqlColumnType... columnTypes) {
+    protected static String signatureErrorFunction(String functionName, Object... columnTypes) {
         TestCase.assertNotNull(columnTypes);
 
         StringJoiner joiner = new StringJoiner(", ");

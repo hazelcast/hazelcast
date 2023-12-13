@@ -71,7 +71,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
         return SqlMonotonicity.NOT_MONOTONIC;
     }
 
-    private static final class ArithmeticTypeInference implements SqlReturnTypeInference {
+    public static final class ArithmeticTypeInference implements SqlReturnTypeInference {
         @Override
         public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
             assert opBinding.getOperandCount() == 2;

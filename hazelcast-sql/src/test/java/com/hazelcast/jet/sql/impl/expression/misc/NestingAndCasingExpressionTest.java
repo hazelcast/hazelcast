@@ -547,6 +547,12 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_MOD() {
+        check(sql("MOD(?, 2) || MOD(?, 2)"), 1L, 1L);
+        check(sql("MOD(2, ?) || MOD(2, ?)"), 1L, 1L);
+    }
+
+    @Test
     public void test_JSON_QUERY() {
         check(sql("JSON_QUERY(CAST(? AS JSON), '$') || JSON_QUERY(CAST(? AS JSON), '$')"), "[1]", "[1]");
     }

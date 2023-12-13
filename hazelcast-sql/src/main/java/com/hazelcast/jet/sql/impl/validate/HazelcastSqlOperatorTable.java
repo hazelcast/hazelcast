@@ -45,6 +45,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastFloorCeilFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastModFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastRandFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastRoundTruncateFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastSignFunction;
@@ -207,6 +208,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction FLOOR = HazelcastFloorCeilFunction.FLOOR;
     public static final SqlFunction CEIL = HazelcastFloorCeilFunction.CEIL;
+
+    public static final SqlFunction MOD = HazelcastModFunction.MOD;
 
     public static final SqlFunction ROUND = HazelcastRoundTruncateFunction.ROUND;
     public static final SqlFunction TRUNCATE = HazelcastRoundTruncateFunction.TRUNCATE;
