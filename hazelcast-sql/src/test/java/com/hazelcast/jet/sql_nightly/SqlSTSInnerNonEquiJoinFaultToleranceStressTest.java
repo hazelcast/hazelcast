@@ -16,23 +16,7 @@
 
 package com.hazelcast.jet.sql_nightly;
 
-import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
-@RunWith(HazelcastParametrizedRunner.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
-
-    public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
-        super();
-        this.sinkCount = 200;
-    }
 
     @Override
     protected String setupFetchingQuery() {
@@ -44,7 +28,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
                 " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000') " +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
-                " BETWEEN s1.__key AND s1.__key + 1" +
+                " BETWEEN s1.__key AND s1.__key + 1 " +
                 " WHERE s1.__key != s2.__key";
     }
 }
