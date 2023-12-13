@@ -80,7 +80,7 @@ public class HazelcastSchema implements Schema {
     }
 
     //CHECK: Remove that as now it might be dangerous?
-    public final Map<String, Table> getTableMap() {
+    protected final Map<String, Table> getTableMap() {
         return tableMap;
     }
 
@@ -106,8 +106,18 @@ public class HazelcastSchema implements Schema {
         if (tableMap.containsKey(name) && tableMap.get(name) != null) {
             return tableMap.get(name);
         }
+        if (catalog == null) {
+            return null;
+        }
+        Map<String, com.hazelcast.sql.impl.schema.Table> schema = catalog.getSchemas().get(schemaName);
+        if (schema == null) {
+            return null;
+        }
+        com.hazelcast.sql.impl.schema.Table table = schema.get(name);
+        if (table == null) {
+            return null;
+        }
 
-        com.hazelcast.sql.impl.schema.Table table = catalog.getSchemas().get(schemaName).get(name);
         HazelcastTable convertedTable = new HazelcastTable(
                 table,
                 createTableStatistic(table)
