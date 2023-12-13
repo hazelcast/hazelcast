@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.operation.steps.PutAllOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -246,7 +247,7 @@ public class PutAllOperation extends MapOperation
         List toBackupList = new ArrayList(backupPairs.size());
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
-            Record record = recordStore.getRecord(dataKey);
+            Record record = ((DefaultRecordStore) recordStore).getRecordSafe(dataKey);
             if (record != null) {
                 toBackupList.add(dataKey);
                 toBackupList.add(backupPairs.get(i + 1));

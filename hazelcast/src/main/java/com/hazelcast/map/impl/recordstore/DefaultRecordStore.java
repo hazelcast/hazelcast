@@ -232,6 +232,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return storage.get(key);
     }
 
+    public Record getRecordSafe(Data key) {
+        return storage.getSafe(key);
+    }
+
     @Override
     public Record putOrUpdateReplicatedRecord(Data dataKey, Record replicatedRecord,
                                               ExpiryMetadata expiryMetadata,
