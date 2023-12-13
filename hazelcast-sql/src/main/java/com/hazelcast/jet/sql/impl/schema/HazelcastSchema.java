@@ -34,7 +34,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,17 +48,10 @@ public class HazelcastSchema implements Schema {
     private final Map<String, Schema> subSchemaMap;
     private Map<String, Table> tableMap;
     private SqlCatalog catalog;
-    //TODO: Maybe having a reference to pattern is a better idea?
     private String schemaName;
 
     public HazelcastSchema(Map<String, Table> tableMap) {
         this(null, tableMap);
-    }
-
-    public HazelcastSchema(SqlCatalog catalog) {
-        this.catalog = catalog;
-        this.subSchemaMap = new HashMap<>();
-        this.tableMap = new HashMap<>();
     }
 
     public HazelcastSchema(Map<String, Schema> subSchemaMap, Map<String, Table> tableMap) {
@@ -74,12 +66,10 @@ public class HazelcastSchema implements Schema {
         this.schemaName = schemaName;
     }
 
-    //CHECK: Remove that as now it might be dangerous?
     protected Map<String, Schema> getSubSchemaMap() {
         return subSchemaMap;
     }
 
-    //CHECK: Remove that as now it might be dangerous?
     protected final Map<String, Table> getTableMap() {
         return tableMap;
     }
