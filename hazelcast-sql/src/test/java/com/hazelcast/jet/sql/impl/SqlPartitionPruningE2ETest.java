@@ -21,10 +21,14 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
+import com.hazelcast.jet.sql.impl.module.MyPortableFactory;
 import com.hazelcast.jet.sql.impl.module.Pojo;
+import com.hazelcast.jet.sql.impl.module.PortablePojo;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.sql.SqlResult;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -44,9 +48,21 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.PartitioningStrategyUtil.constructAttributeBasedKey;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -77,6 +93,40 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
         // When
         SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
         assertQueryResult(selectPlan, singletonList(new Row(c, c, c, "" + c)));
+
+        // Then
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
+        assertPrunability(1, partitionsToUse);
+    }
+
+    @Test
+    public void when_scanWithSimplePortablePruningKey_then_prunable() {
+        // Given
+        final int c = 2; // constant
+        final String query = "SELECT * FROM " + mapName + " WHERE f0 = " + c;
+
+        preparePrunableMap(singletonList("f0"), mapName, SerializationType.PORTABLE, c);
+
+        // When
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
+        assertQueryResult(selectPlan, singletonList(new Row(c, c, c, "" + c)));
+
+        // Then
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
+        assertPrunability(1, partitionsToUse);
+    }
+
+    @Test
+    public void when_scanWithSimpleCompactPruningKey_then_prunable() {
+        // Given
+        final int c = 2; // constant
+        final String query = "SELECT f0, f5 FROM " + mapName + " WHERE f0 = " + c;
+
+        preparePrunableMap(singletonList("f0"), mapName, SerializationType.COMPACT, c);
+
+        // When
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
+        assertQueryResult(selectPlan, singletonList(new Row(c, c)));
 
         // Then
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
@@ -389,6 +439,10 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
 
     // region simple keys
     private void preparePrunableMap(List<String> attrs, String mapName, int... constants) {
+        preparePrunableMap(attrs, mapName, SerializationType.JAVA, constants);
+    }
+
+    private void preparePrunableMap(List<String> attrs, String mapName, SerializationType mode, int... constants) {
         if (!attrs.isEmpty()) {
             expectedPartitionsAndMembers = calculateExpectedPartitions(attrs.size(), constants);
             List<PartitioningAttributeConfig> attributes = attrs.stream()
@@ -399,10 +453,64 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
                     new MapConfig(mapName).setPartitioningAttributeConfigs(attributes));
         }
 
-        IMap<Pojo, String> map = instance().getMap(mapName);
-        createMapping(mapName, Pojo.class, String.class);
-        for (int c : constants) {
-            map.put(new Pojo(c, c, c), "" + c);
+        switch (mode) {
+            case JAVA:
+                IMap<Pojo, String> map1 = instance().getMap(mapName);
+                createMapping(mapName, Pojo.class, String.class);
+                for (int c : constants) {
+                    map1.put(new Pojo(c, c, c), "" + c);
+                }
+                return;
+            case PORTABLE:
+                IMap<PortablePojo, String> map2 = instance().getMap(mapName);
+                try (SqlResult result = instance().getSql().execute(
+                        "CREATE OR REPLACE MAPPING " + mapName
+                                + "(f0 INT EXTERNAL NAME  \"__key.f0\","
+                                + " f1 INT EXTERNAL NAME  \"__key.f1\","
+                                + " f2 INT EXTERNAL NAME  \"__key.f2\","
+                                + " this VARCHAR EXTERNAL NAME \"this\")"
+                                + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                                + "OPTIONS ("
+                                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + MyPortableFactory.ID + '\''
+                                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PortablePojo.ID + '\''
+                                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + 0 + '\''
+                                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                                + ")"
+                )) {
+                    assertThat(result.updateCount()).isEqualTo(0);
+                }
+
+                for (int c : constants) {
+                    map2.put(new PortablePojo(c, c, c), c + "");
+                }
+
+                return;
+            case COMPACT:
+                IMap<Pojo, Pojo> map3 = instance().getMap(mapName);
+                try (SqlResult result = instance().getSql().execute(
+                        "CREATE OR REPLACE MAPPING " + mapName
+                                + "(f0 INT EXTERNAL NAME \"__key.f0\","
+                                + " f1 INT EXTERNAL NAME \"__key.f1\","
+                                + " f2 INT EXTERNAL NAME \"__key.f2\","
+                                + " f3 INT EXTERNAL NAME \"this.f0\","
+                                + " f4 INT EXTERNAL NAME \"this.f1\","
+                                + " f5 INT EXTERNAL NAME  \"this.f2\")"
+                                + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                                + "OPTIONS ("
+                                + '\'' + OPTION_KEY_FORMAT + "'='" + COMPACT_FORMAT + '\''
+                                + ", '" + OPTION_KEY_COMPACT_TYPE_NAME + "'='" + "pojo" + '\''
+                                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
+                                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + "string" + '\''
+                                + ")"
+                )) {
+                    assertThat(result.updateCount()).isEqualTo(0);
+                }
+
+                for (int c : constants) {
+                    map3.put(new Pojo(c, c, c), new Pojo(c, c, c));
+                }
         }
     }
 
@@ -604,4 +712,10 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
     }
 
     // endregion
+
+    enum SerializationType {
+        JAVA,
+        PORTABLE,
+        COMPACT
+    }
 }

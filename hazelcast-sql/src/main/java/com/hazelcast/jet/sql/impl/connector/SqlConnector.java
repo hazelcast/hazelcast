@@ -133,7 +133,7 @@ public interface SqlConnector {
     String OPTION_KEY_COMPACT_TYPE_NAME = "keyCompactTypeName";
 
     /**
-     * The value Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * The value Compact type name, if {@value #OPTION_VALUE_FORMAT} is {@value
      * COMPACT_FORMAT}.
      */
     String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";

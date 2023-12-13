@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -54,11 +55,13 @@ public class AttributePartitioningStrategyTest {
 
     @Test
     public void test_portablePojo() {
-        checkFailure(new PortablePojo());
+        check(new PortablePojo(1L, "test"));
+        checkFailure(new PortablePojo(1L, null));
+        checkFailure(new PortablePojo(null, "test"));
     }
 
     @Test
-    public void test_compactPojoOrNonSerializablePojo() {
+    public void test_nonSerializablePojo() {
         checkFailure(new NonSerializablePojo());
     }
 
@@ -218,21 +221,62 @@ public class AttributePartitioningStrategyTest {
         }
     }
 
+    public static class PortablePojoFactory implements PortableFactory {
+        public static final int ID = 359;
+        @Override
+        public Portable create(final int classId) {
+            return new PortablePojo();
+        }
+    }
+
     public static class PortablePojo implements Portable {
+        private Long id;
+        private String name;
+
+        public PortablePojo() {
+        }
+
+        public PortablePojo(Long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
         @Override
         public int getFactoryId() {
-            return 0;
+            return PortablePojoFactory.ID;
         }
 
         @Override
         public int getClassId() {
-            return 0;
+            return 1;
         }
 
         @Override
-        public void writePortable(final PortableWriter writer) throws IOException { }
+        public void writePortable(final PortableWriter writer) throws IOException {
+            writer.writeLong("id", id);
+            writer.writeString("name", name);
+        }
 
         @Override
-        public void readPortable(final PortableReader reader) throws IOException { }
+        public void readPortable(final PortableReader reader) throws IOException {
+            id = reader.readLong("id");
+            name = reader.readString("name");
+        }
     }
 }

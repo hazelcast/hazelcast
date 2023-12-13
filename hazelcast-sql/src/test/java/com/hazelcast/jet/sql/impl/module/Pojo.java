@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.module;
 import java.io.Serializable;
 
 public class Pojo implements Serializable {
-    private Integer f0;
-    private Integer f1;
-    private Integer f2;
+    protected Integer f0;
+    protected Integer f1;
+    protected Integer f2;
 
     public Pojo() {
     }
