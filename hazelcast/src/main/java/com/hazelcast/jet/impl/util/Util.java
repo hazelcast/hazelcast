@@ -630,6 +630,23 @@ public final class Util {
     }
 
     /**
+     * Posix file permissions are not supported on all systems, so this utility method first performs
+     * a support check to see if the attribute is supported, and then applies it if it is. If posix
+     * file permissions are not supported at this {@link Path} then the file is not changed.
+     *
+     * @param path         the {@link Path} to apply the {@code Posix} permissions to
+     * @param permissions  the {@code Posix} permission set to apply
+     * @throws IOException as per {@link Files#setPosixFilePermissions(Path, Set)}
+     */
+    public static void setPosixFilePermissions(@Nonnull Path path, @Nonnull Set<PosixFilePermission> permissions)
+            throws IOException {
+        Set<String> supportedAttr = path.getFileSystem().supportedFileAttributeViews();
+        if (supportedAttr.contains("posix")) {
+            Files.setPosixFilePermissions(path, permissions);
+        }
+    }
+
+    /**
      * Edits the permissions on the file denoted by {@code path} by calling
      * {@code editFn} with the set of that file's current permissions. {@code
      * editFn} should modify that set to the desired permission set, and this

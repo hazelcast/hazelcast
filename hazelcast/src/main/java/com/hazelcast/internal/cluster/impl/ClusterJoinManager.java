@@ -753,7 +753,7 @@ public class ClusterJoinManager {
             try {
                 joinInProgress = true;
                 if (syncJoinStrategy == null && (maxWaitMillisBeforeJoin > 0 && waitMillisBeforeJoin > 0)) {
-                    scheduleMigrationDelay();
+                    migrationPaused = scheduleMigrationDelay();
                 } else {
                     // pause migrations until join, member-update and post-join operations are completed
                     partitionService.pauseMigration();
@@ -1107,7 +1107,7 @@ public class ClusterJoinManager {
     /**
      * assumes clusterServiceLock is locked
      */
-    private void scheduleMigrationDelay() {
+    private boolean scheduleMigrationDelay() {
         boolean subsequentJoinAttempt = migrationDelayActive.getAndSet(true);
         if (subsequentJoinAttempt) {
             assert minDelayFuture.cancel(false) : "Something went wrong canceling min delay future";
@@ -1119,7 +1119,9 @@ public class ClusterJoinManager {
             node.getPartitionService().pauseMigration();
             maxDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
                     maxWaitMillisBeforeJoin, TimeUnit.MILLISECONDS);
+            return true;
         }
+        return false;
     }
 
     // only used for sync join strategy
