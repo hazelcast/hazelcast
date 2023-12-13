@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketWriter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -63,11 +64,11 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     final SocketChannel socketChannel;
     final NioAcceptRequest acceptRequest;
     final boolean clientSide;
-    boolean regularSchedule = true;
-    boolean writeThrough;
     boolean directBuffers = true;
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
     AsyncSocketReader reader;
+    AsyncSocketWriter writer;
+
     NioAsyncSocketOptions options;
     private boolean built;
 
@@ -118,31 +119,19 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         return this;
     }
 
-    public NioAsyncSocketBuilder setRegularSchedule(boolean regularSchedule) {
-        verifyNotBuilt();
-
-        this.regularSchedule = regularSchedule;
-        return this;
-    }
-
-    public NioAsyncSocketBuilder setWriteThrough(boolean writeThrough) {
-        verifyNotBuilt();
-
-        this.writeThrough = writeThrough;
-        return this;
-    }
-
-    /**
-     * Sets the read handler. Should be called before this AsyncSocket is started.
-     *
-     * @param reader the ReadHandler
-     * @return this
-     * @throws NullPointerException if readHandler is null.
-     */
+    @Override
     public final NioAsyncSocketBuilder setReader(AsyncSocketReader reader) {
         verifyNotBuilt();
 
         this.reader = checkNotNull(reader);
+        return this;
+    }
+
+    @Override
+    public AsyncSocketBuilder setWriter(AsyncSocketWriter writer) {
+        verifyNotBuilt();
+
+        this.writer = checkNotNull(writer);
         return this;
     }
 

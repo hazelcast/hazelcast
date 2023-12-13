@@ -35,7 +35,6 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
@@ -53,8 +52,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
@@ -280,23 +277,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (asyncSocket == null) {
             connection.write(resultClientMessage);
         } else {
-            ClientMessage.Frame frame = resultClientMessage.getStartFrame();
-            IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
-            while (frame != null) {
-                buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-
-                int flags = frame.flags;
-                if (frame == resultClientMessage.getEndFrame()) {
-                    flags = frame.flags | IS_FINAL_FLAG;
-                }
-
-                buf.writeShortL((short) flags);
-                buf.writeBytes(frame.content);
-                frame = frame.next;
-            }
-
-            buf.flip();
-            if (!asyncSocket.writeAndFlush(buf)) {
+            if (!asyncSocket.writeAndFlush(resultClientMessage)) {
                 // Unlike the 'classic' networking, the asyncSocket has a bound on the
                 // number of packets on the write-queue to prevent running into OOME.
                 // So if the response can't be send, we close the connection to indicate
