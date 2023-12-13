@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
@@ -78,7 +78,7 @@ public final class TestUtil {
 
         if (!found) {
             assertEquals("expected exception not found in causes chain", expected.toString(),
-                    ExceptionUtil.stackTraceToString(caught));
+                    ExceptionUtil.toString(caught));
         }
     }
 

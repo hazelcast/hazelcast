@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.CoreQueryUtils;
 
@@ -42,7 +42,7 @@ public final class SqlClientUtils {
                 sqlException.getSuggestion() != null,
                 sqlException.getSuggestion(),
                 true,
-                ExceptionUtil.stackTraceToString(exception)
+                ExceptionUtil.toString(exception)
         );
     }
 }

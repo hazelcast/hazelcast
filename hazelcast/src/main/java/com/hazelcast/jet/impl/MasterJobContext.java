@@ -53,7 +53,7 @@ import com.hazelcast.jet.impl.operation.GetLocalExecutionMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.Util;
@@ -829,7 +829,7 @@ public class MasterJobContext {
                 ) {
                     mc.setJobStatus(SUSPENDED, description, userRequested);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
-                            ExceptionUtil.stackTraceToString(failure));
+                            ExceptionUtil.toString(failure));
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else {
                     long completionTime = System.currentTimeMillis();

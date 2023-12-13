@@ -142,14 +142,4 @@ public class ExceptionUtilTest extends JetTestSupport {
         RuntimeException e = new RuntimeException("foo");
         assertTrue(isOrHasCause(e, RuntimeException.class));
     }
-
-    @Test
-    public void test_stackTraceToString() {
-        Exception exception1 = new Exception("exception1");
-        Exception exception2 = new Exception("exception2", exception1);
-        Exception exception3 = new Exception("exception3", exception2);
-
-        String stackTrace = ExceptionUtil.stackTraceToString(exception3);
-        assertThat(stackTrace).contains("exception3", "exception2", "exception1");
-    }
 }

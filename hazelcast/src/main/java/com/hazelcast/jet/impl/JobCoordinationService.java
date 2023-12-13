@@ -59,7 +59,7 @@ import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -458,7 +458,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                             if (t instanceof CancellationException || t instanceof JetException) {
                                 throw sneakyThrow(t);
                             }
-                            throw new JetException(ExceptionUtil.stackTraceToString(t));
+                            throw new JetException(ExceptionUtil.toString(t));
                         }),
                 JobResult::asCompletableFuture,
                 jobRecord -> {
