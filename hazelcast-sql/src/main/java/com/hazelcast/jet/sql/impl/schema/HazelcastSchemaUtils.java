@@ -68,7 +68,6 @@ public final class HazelcastSchemaUtils {
             for (Map.Entry<String, Table> tableEntry : currentSchemaEntry.getValue().entrySet()) {
 
                 String tableName = tableEntry.getKey();
-                Table table = tableEntry.getValue();
 
                 //CHECK: Maybe we shouldn't have also any names in schemaTables?
                 schemaTables.put(tableName, null);
