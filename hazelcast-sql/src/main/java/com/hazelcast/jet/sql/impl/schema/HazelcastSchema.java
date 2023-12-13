@@ -106,14 +106,12 @@ public class HazelcastSchema implements Schema {
         if (tableMap.containsKey(name) && tableMap.get(name) != null) {
             return tableMap.get(name);
         }
-        if (catalog == null) {
-            return null;
-        }
-        Map<String, com.hazelcast.sql.impl.schema.Table> schema = catalog.getSchemas().get(schemaName);
-        if (schema == null) {
-            return null;
-        }
-        com.hazelcast.sql.impl.schema.Table table = schema.get(name);
+        Map<String, com.hazelcast.sql.impl.schema.Table> schema = (catalog != null) ?
+                catalog.getSchemas().get(schemaName) : null;
+
+        com.hazelcast.sql.impl.schema.Table table = (schema != null) ?
+                schema.get(name) : null;
+
         if (table == null) {
             return null;
         }
