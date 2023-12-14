@@ -59,9 +59,8 @@ public class HazelcastSchema implements Schema {
         this.tableMap = tableMap != null ? tableMap : Collections.emptyMap();
     }
 
-    public HazelcastSchema(Map<String, Schema> subSchemaMap, Map<String, Table> tableMap, SqlCatalog catalog, String schemaName) {
+    public HazelcastSchema(Map<String, Schema> subSchemaMap, SqlCatalog catalog, String schemaName) {
         this.subSchemaMap = subSchemaMap != null ? subSchemaMap : Collections.emptyMap();
-        this.tableMap = tableMap != null ? tableMap : Collections.emptyMap();
         this.catalog = catalog;
         this.schemaName = schemaName;
     }
@@ -89,7 +88,13 @@ public class HazelcastSchema implements Schema {
     }
 
     @Override public final Set<String> getTableNames() {
-        return (Set<String>) getTableMap().keySet();
+        if (catalog == null && tableMap.isEmpty()) {
+            return Collections.emptySet();
+        }
+        if (catalog == null && !tableMap.isEmpty()) {
+            return tableMap.keySet();
+        }
+        return catalog.getSchemas().get(schemaName).keySet();
     }
 
     @Override public final @Nullable Table getTable(String name) {
