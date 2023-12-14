@@ -81,8 +81,8 @@ public enum MergeOpSteps implements IMapOpStep {
                 }
 
                 outcomes.add(key);
-                outcomes.add(oldValue);
-                outcomes.add(newValue);
+                outcomes.add(recordStore.copyToHeapWhenNeeded(oldValue));
+                outcomes.add(recordStore.copyToHeapWhenNeeded(newValue));
                 outcomes.add(mergingEntry);
             }
 

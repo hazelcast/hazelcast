@@ -401,7 +401,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 ? serializationService.toObject(value)
                 : serializationService.toData(value);
 
-        Iterator<Map.Entry<Data, Record>> entryIterator = storage.mutationTolerantIterator();
+        Iterator<Map.Entry<Data, Record>> entryIterator = iterator();
         while (entryIterator.hasNext()) {
             Map.Entry<Data, Record> entry = entryIterator.next();
 
@@ -605,7 +605,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = storage.get(key);
         Object value = null;
         if (record != null) {
-            value = record.getValue();
+            value = copyToHeapWhenNeeded(record.getValue());
             mapDataStore.flush(key, value, backup);
             mutationObserver.onEvictRecord(key, record, backup);
             removeKeyFromExpirySystem(key);
@@ -617,6 +617,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 mapEventPublisher.publishWanRemove(name, toHeapData(key));
             }
         }
+        return value;
+    }
+
+    public Object copyToHeapWhenNeeded(Object value) {
+        // by default, no need to copy
         return value;
     }
 
@@ -1091,11 +1096,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Object updateMemory(Record record, Data key, Object oldValue, Object newValue,
                                boolean changeExpiryOnUpdate, long ttl, long maxIdle,
                                long expiryTime, long now, boolean backup) {
-        storage.updateRecordValue(key, record, newValue);
+        Record latestRecordAfterUpdate = storage.updateRecordValue(key, record, newValue);
         if (changeExpiryOnUpdate) {
             expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
         }
-        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+        mutationObserver.onUpdateRecord(key, latestRecordAfterUpdate, oldValue, newValue, backup);
         return oldValue;
     }
 
@@ -1156,7 +1161,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mergeRecordExpiration(key, newRecord, mergingEntry, now);
             return MapMergeResponse.RECORD_CREATED;
         } else {
-            oldValue = record.getValue();
+            oldValue = copyToHeapWhenNeeded(record.getValue());
             ExpiryMetadata expiryMetadata = expirySystem.getExpiryMetadata(key);
             MapMergeTypes<Object, Object> existingEntry
                     = createMergingEntry(serializationService, key, record, expiryMetadata);
@@ -1311,7 +1316,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected Object removeRecord(Data key, @Nonnull Record record,
                                   long now, CallerProvenance provenance,
                                   UUID transactionId) {
-        Object oldValue = record.getValue();
+        Object oldValue = copyToHeapWhenNeeded(record.getValue());
         oldValue = mapServiceContext.interceptRemove(interceptorRegistry, oldValue);
         if (oldValue != null) {
             if (persistenceEnabledFor(provenance)) {
@@ -1329,10 +1334,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         storage.removeRecord(key, record);
     }
 
-    public Record removeByKey(Data key, boolean backup) {
+    public void removeByKey(Data key, boolean backup) {
         Record record = getRecord(key);
         removeRecord0(key, record, backup);
-        return record;
     }
 
     @Override

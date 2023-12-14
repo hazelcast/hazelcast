@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 
 public enum RemoveIfSameOpSteps implements IMapOpStep {
@@ -115,8 +114,8 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         public void runStep(State state) {
             if (state.isRecordExistsInMemory()) {
                 DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-                Record record = recordStore.removeByKey(state.getKey(), false);
-                recordStore.onStore(record);
+                recordStore.onStore(recordStore.getRecord(state.getKey()));
+                recordStore.removeByKey(state.getKey(), false);
                 recordStore.updateStatsOnRemove(state.getNow());
             }
 

@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.query.Predicate;
@@ -158,7 +159,8 @@ public class State {
     }
 
     public State setOldValue(Object oldValue) {
-        this.oldValue = oldValue;
+        this.oldValue = ((DefaultRecordStore) recordStore)
+                .copyToHeapWhenNeeded(oldValue);
         return this;
     }
 

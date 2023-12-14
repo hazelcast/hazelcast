@@ -78,8 +78,8 @@ public enum DeleteOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-            Record record = recordStore.removeByKey(state.getKey(), false);
-            recordStore.onStore(record);
+            recordStore.onStore(recordStore.getRecord(state.getKey()));
+            recordStore.removeByKey(state.getKey(), false);
         }
 
         @Override

@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -55,7 +54,9 @@ public class PutFromLoadAllOperation extends MapOperation
 
     public PutFromLoadAllOperation(String name, List<Data> loadingSequence, boolean includesExpirationTime) {
         super(name);
-        checkFalse(isEmpty(loadingSequence), "key-value sequence cannot be empty or null");
+
+        assert !isEmpty(loadingSequence) : "key-value sequence cannot be empty or null";
+
         this.loadingSequence = loadingSequence;
         this.includesExpirationTime = includesExpirationTime;
     }
