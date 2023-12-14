@@ -34,6 +34,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,7 +47,7 @@ import static java.util.Objects.requireNonNull;
 public class HazelcastSchema implements Schema {
 
     private final Map<String, Schema> subSchemaMap;
-    private Map<String, Table> tableMap;
+    private final Map<String, Table> tableMap;
     private SqlCatalog catalog;
     private String schemaName;
 
@@ -61,6 +62,7 @@ public class HazelcastSchema implements Schema {
 
     public HazelcastSchema(Map<String, Schema> subSchemaMap, SqlCatalog catalog, String schemaName) {
         this.subSchemaMap = subSchemaMap != null ? subSchemaMap : Collections.emptyMap();
+        this.tableMap = new HashMap<>();
         this.catalog = catalog;
         this.schemaName = schemaName;
     }
@@ -88,12 +90,15 @@ public class HazelcastSchema implements Schema {
     }
 
     @Override public final Set<String> getTableNames() {
-        if (catalog == null && tableMap.isEmpty()) {
-            return Collections.emptySet();
+        if (catalog == null) {
+            return getTableMap().keySet();
         }
-        if (catalog == null && !tableMap.isEmpty()) {
-            return tableMap.keySet();
+
+        Map<String, com.hazelcast.sql.impl.schema.Table> schema = catalog.getSchemas().get(schemaName);
+        if (schema == null) {
+            return getTableMap().keySet();
         }
+
         return catalog.getSchemas().get(schemaName).keySet();
     }
 
