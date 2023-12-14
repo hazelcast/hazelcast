@@ -18,9 +18,11 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -300,4 +302,12 @@ public interface IndexStore {
      * @see Index#getRecords(Comparable, boolean, Comparable, boolean)
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
+    /**
+     * @param isDescending is the index used in descending order.
+     * @return comparator ordering IMap keys stored for given index key.
+     */
+    default Comparator<Data> getKeyComparator(boolean isDescending) {
+        throw new UnsupportedOperationException("Key comparator is not available for this type of index");
+    }
 }

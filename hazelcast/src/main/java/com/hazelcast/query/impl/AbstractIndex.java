@@ -22,6 +22,7 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,6 +32,7 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -300,6 +302,11 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public PerIndexStats getPerIndexStats() {
         return stats;
+    }
+
+    @Override
+    public Comparator<Data> getKeyComparator(boolean isDescending) {
+        return indexStore.getKeyComparator(isDescending);
     }
 
     @Override

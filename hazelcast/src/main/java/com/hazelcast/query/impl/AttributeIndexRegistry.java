@@ -19,9 +19,11 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -268,6 +270,11 @@ public class AttributeIndexRegistry {
                 boolean toInclusive,
                 boolean descending
         ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Comparator<Data> getKeyComparator(boolean isDescending) {
             throw new UnsupportedOperationException("Should not be called");
         }
 
