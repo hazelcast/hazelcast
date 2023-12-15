@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate.types;
 
-import com.hazelcast.internal.util.collection.NonTraversableList;
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -36,8 +36,12 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class HazelcastObjectType extends RelDataTypeImpl {
     private final String name;
     private final boolean nullable;
-    /** Modifiable list of fields to support cyclic types. */
-    private List<Field> fields = new NonTraversableList<>("Type fields must be finalized");
+    private ImmutableList.Builder<Field> fieldsBuilder = ImmutableList.builder();
+    /**
+     * Makes it possible to finalize the fields after creating the type,
+     * which is required to support cyclic types.
+     */
+    private List<Field> fields;
     /** Cached list of field names. */
     private List<String> fieldNames;
 
@@ -98,7 +102,7 @@ public class HazelcastObjectType extends RelDataTypeImpl {
         }
         seen.add(name);
         sb.append('(');
-        for (Iterator<Field> it = fields.iterator(); it.hasNext();) {
+        for (Iterator<RelDataTypeField> it = getFieldList().iterator(); it.hasNext();) {
             RelDataTypeField field = it.next();
             escape(sb, field.getName());
             sb.append(':');
@@ -124,7 +128,10 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     }
 
     public void addField(Field field) {
-        fields.add(field);
+        if (fieldsBuilder == null) {
+            throw new IllegalStateException("Type fields are already finalized");
+        }
+        fieldsBuilder.add(field);
     }
 
     /**
@@ -135,7 +142,13 @@ public class HazelcastObjectType extends RelDataTypeImpl {
      * finalized beforehand. That's why the finalization is done in two passes.
      */
     public static void finalizeFields(Collection<HazelcastObjectType> types) {
-        types.forEach(type -> type.fields = ((NonTraversableList<Field>) type.fields).toReadonlyList());
+        types.forEach(type -> {
+            if (type.fieldsBuilder == null) {
+                throw new IllegalStateException("Type fields are already finalized");
+            }
+            type.fields = type.fieldsBuilder.build();
+            type.fieldsBuilder = null;
+        });
         types.forEach(type -> type.computeDigest());
     }
 
@@ -147,7 +160,7 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     @Nullable
     public RelDataTypeField getField(String fieldName, boolean caseSensitive, boolean elideRecord) {
         assert !elideRecord;
-        for (RelDataTypeField field : fields) {
+        for (RelDataTypeField field : getFieldList()) {
             if (fieldName.equals(field.getName())) {
                 return new RelDataTypeFieldImpl(fieldName, field.getIndex(), field.getType());
             }
@@ -158,20 +171,23 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     @Override
     @SuppressWarnings("unchecked")
     public List<RelDataTypeField> getFieldList() {
+        if (fields == null) {
+            throw new IllegalStateException("Type fields are not finalized");
+        }
         return (List<RelDataTypeField>) (List<?>) fields;
     }
 
     @Override
     public List<String> getFieldNames() {
         if (fieldNames == null) {
-            fieldNames = fields.stream().map(Field::getName).collect(toUnmodifiableList());
+            fieldNames = getFieldList().stream().map(RelDataTypeField::getName).collect(toUnmodifiableList());
         }
         return fieldNames;
     }
 
     @Override
     public int getFieldCount() {
-        return fields.size();
+        return getFieldList().size();
     }
 
     @Override

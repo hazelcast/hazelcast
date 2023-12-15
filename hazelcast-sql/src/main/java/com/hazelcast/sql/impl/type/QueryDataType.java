@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.internal.util.collection.NonTraversableList;
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -75,8 +75,11 @@ import static java.util.stream.Collectors.toMap;
  * <p>
  * Java serialization is needed for Jet.
  * <p>
- * Thread-safe if {@linkplain #addField no field will ever be added},
- * or after {@linkplain #finalizeFields the fields are finalized}.
+ * If {@linkplain #addField no field is added} to a custom type before {@linkplain
+ * #getObjectFields accessing its fields}, it is called a <em>placeholder type</em>
+ * and it is usable at creation. Otherwise, it is called a <em>concrete type</em>
+ * and it is usable after {@linkplain #finalizeFields the fields are finalized}.
+ * The type is thread-safe once it is usable.
  */
 public class QueryDataType implements VersionedIdentifiedDataSerializable, Serializable {
     public static final int MAX_DECIMAL_PRECISION = 76;
@@ -127,6 +130,7 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
     private String objectTypeName;
     private TypeKind objectTypeKind = TypeKind.NONE;
     private String objectTypeMetadata;
+    private ImmutableList.Builder<QueryDataTypeField> objectFieldsBuilder;
     private List<QueryDataTypeField> objectFields;
     /** Used only by custom types. */
     private volatile String digest;
@@ -155,6 +159,10 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
     /** @return read-only list of fields */
     public List<QueryDataTypeField> getObjectFields() {
         if (objectFields == null) {
+            if (objectFieldsBuilder != null) {
+                throw new IllegalStateException("Type fields are not finalized");
+            }
+            // This is a placeholder type.
             objectFields = emptyList();
         }
         return objectFields;
@@ -177,15 +185,27 @@ public class QueryDataType implements VersionedIdentifiedDataSerializable, Seria
     }
 
     public void addField(String name, QueryDataType type) {
-        if (objectFields == null) {
-            objectFields = new NonTraversableList<>("Type fields must be finalized");
+        assertFieldsCanBeAdded();
+        if (objectFieldsBuilder == null) {
+            objectFieldsBuilder = ImmutableList.builder();
         }
-        objectFields.add(new QueryDataTypeField(name, type));
+        objectFieldsBuilder.add(new QueryDataTypeField(name, type));
     }
 
     public void finalizeFields() {
-        if (objectFields instanceof NonTraversableList) {
-            objectFields = ((NonTraversableList<QueryDataTypeField>) objectFields).toReadonlyList();
+        assertFieldsCanBeAdded();
+        if (objectFieldsBuilder == null) {
+            throw new IllegalStateException("Type has no fields");
+        }
+        objectFields = objectFieldsBuilder.build();
+        objectFieldsBuilder = null;
+    }
+
+    private void assertFieldsCanBeAdded() {
+        if (objectFields != null) {
+            throw new IllegalStateException(objectFields.isEmpty()
+                    ? "Placeholder types are not expected to have fields"
+                    : "Type fields are already finalized");
         }
     }
 

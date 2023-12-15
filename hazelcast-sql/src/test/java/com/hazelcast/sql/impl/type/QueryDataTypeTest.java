@@ -74,6 +74,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -239,6 +240,30 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
                 + "name:VARCHAR, "
                 + "\\[\\(\\:fri\\=end\\,\\)\\]:\\[P\\(e\\:r\\=s\\,o\\)n\\]"
                 + ")", person.getDigest());
+    }
+
+    @Test
+    public void testFinalization() {
+        QueryDataType placeholder = new QueryDataType("Person");
+        // The type is assumed to be concrete at creation.
+        assertThatThrownBy(placeholder::finalizeFields).hasMessage("Type has no fields");
+        // Accessing the fields before adding any field makes the type a placeholder.
+        assertThat(placeholder.getObjectFields()).isEmpty();
+        assertThatThrownBy(() -> placeholder.addField("name", QueryDataType.VARCHAR))
+                .hasMessage("Placeholder types are not expected to have fields");
+        assertThatThrownBy(placeholder::finalizeFields)
+                .hasMessage("Placeholder types are not expected to have fields");
+
+        QueryDataType person = new QueryDataType("Person");
+        assertThatThrownBy(person::finalizeFields).hasMessage("Type has no fields");
+        person.addField("name", QueryDataType.VARCHAR);
+        person.addField("age", QueryDataType.INT);
+        assertThatThrownBy(person::getObjectFields).hasMessage("Type fields are not finalized");
+        person.finalizeFields();
+        assertThat(person.getObjectFields()).hasSize(2);
+        assertThatThrownBy(() -> person.addField("friend", person))
+                .hasMessage("Type fields are already finalized");
+        assertThatThrownBy(person::finalizeFields).hasMessage("Type fields are already finalized");
     }
 
     // TODO This test will be removed by HZ-3691.
