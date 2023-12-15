@@ -38,6 +38,10 @@ public final class IOVector {
         return length == 0;
     }
 
+    public boolean hasRemaining() {
+        return length > 0;
+    }
+
     public int length() {
         return length;
     }

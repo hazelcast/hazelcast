@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -47,6 +48,14 @@ public class TpcTestSupport {
 
     public static void assertCompletesEventually(final Future future) {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
+    }
+
+    public static void assertCompletesEventually(final List<Future> futures, long timeoutSeconds) {
+        assertTrueEventually(() -> {
+            for (Future future : futures) {
+                assertTrue(future.isDone());
+            }
+        }, timeoutSeconds);
     }
 
     public static void terminateAll(Collection<? extends Reactor> reactors) {

@@ -76,6 +76,16 @@ public interface AsyncSocketBuilder {
     AsyncSocketBuilder setReader(AsyncSocketReader reader);
 
     /**
+     * Sets the AsyncSocketWriter.
+     *
+     * @param writer the AsyncSocketWriter
+     * @return this
+     * @throws NullPointerException  if reader is null.
+     * @throws IllegalStateException when build already has been called.
+     */
+    AsyncSocketBuilder setWriter(AsyncSocketWriter writer);
+
+    /**
      * Builds the {@link AsyncSocket}.
      *
      * @return the opened AsyncSocket.

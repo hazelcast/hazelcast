@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
@@ -197,13 +198,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_readable() {
         Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                    AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReader(new DevNullAsyncSocketReader())
-                            .build();
-                    socket.start();
-                }).build();
+        AsyncServerSocket serverSocket = newServerSocket(reactor);
 
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
@@ -222,5 +217,63 @@ public abstract class AsyncSocketTest {
         assertTrue(clientSocket.isReadable());
         clientSocket.setReadable(false);
         assertFalse(clientSocket.isReadable());
+    }
+
+
+    @Test
+    public void test_write_whenNoWriterSet_thenRejectNonIOBuffer() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket serverSocket = newServerSocket(reactor);
+
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        serverSocket.start();
+
+        AsyncSocketBuilder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.setReader(new DevNullAsyncSocketReader());
+        AsyncSocket socket = socketBuilder.build();
+        socket.start();
+
+        socket.connect(serverSocket.getLocalAddress()).join();
+
+        assertThrows(IllegalArgumentException.class, () -> socket.write("foobar"));
+    }
+
+    @Test
+    public void test_insideWriteAndFlush_whenNoWriterSet_thenRejectNonIOBuffer()
+            throws ExecutionException, InterruptedException {
+        Reactor reactor = newReactor();
+        AsyncServerSocket serverSocket = newServerSocket(reactor);
+
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        serverSocket.start();
+
+        AsyncSocketBuilder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.setReader(new DevNullAsyncSocketReader());
+        AsyncSocket socket = socketBuilder.build();
+        socket.start();
+        socket.connect(serverSocket.getLocalAddress()).join();
+
+        Future<Boolean> f = reactor.submit(() -> {
+            try {
+                socket.unsafeWriteAndFlush("foobar");
+                throw new RuntimeException();
+            } catch (IllegalArgumentException e) {
+                return true;
+            }
+        });
+
+        assertCompletesEventually(f);
+        assertEquals(Boolean.TRUE, f.get());
+    }
+
+
+    private static AsyncServerSocket newServerSocket(Reactor reactor) {
+        return reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                    AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
+                            .setReader(new DevNullAsyncSocketReader())
+                            .build();
+                    socket.start();
+                }).build();
     }
 }
