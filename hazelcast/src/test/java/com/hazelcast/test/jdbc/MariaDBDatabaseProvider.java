@@ -22,41 +22,24 @@ import java.util.Arrays;
 
 import static java.util.stream.Collectors.joining;
 
-public class MariaDBDatabaseProvider implements TestDatabaseProvider {
+public class MariaDBDatabaseProvider extends JdbcDatabaseProvider<MariaDBContainer<?>> {
 
     public static final String TEST_MARIADB_VERSION = System.getProperty("test.mariadb.version", "10.3");
 
-    private static final int LOGIN_TIMEOUT = 120;
-
-    private MariaDBContainer<?> container;
-
     @Override
-    public String createDatabase(String dbName) {
-        container = new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
+    MariaDBContainer<?> createContainer(String dbName) {
+        return new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
                 .withDatabaseName(dbName)
                 .withUsername("user")
                 .withUrlParam("user", "user")
                 .withUrlParam("password", "test");
-
-        container.start();
-        String jdbcUrl = container.getJdbcUrl();
-        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
-        return jdbcUrl;
-    }
-
-    @Override
-    public void shutdown() {
-        if (container != null) {
-            container.stop();
-            container = null;
-        }
     }
 
     @Override
     public String quote(String[] parts) {
         return Arrays.stream(parts)
-                .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                .collect(joining("."));
+                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                     .collect(joining("."));
 
     }
 }

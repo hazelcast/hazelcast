@@ -16,33 +16,30 @@
 
 package com.hazelcast.test.jdbc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.MountableFile;
 
-public class OracleDatabaseProvider implements TestDatabaseProvider {
-
-    private static final int LOGIN_TIMEOUT = 120;
-
-    private OracleContainer container;
+public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OracleDatabaseProvider.class);
 
     @Override
-    public String createDatabase(String dbName) {
-        container = new OracleContainer("gvenzl/oracle-xe:21-slim-faststart")
+    OracleContainer createContainer(String dbName) {
+        return new OracleContainer("gvenzl/oracle-xe:21-slim-faststart")
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("init.sql"), "/container-entrypoint-startdb.d/init.sql");
-
-
-        container.start();
-        String jdbcUrl = "jdbc:oracle:thin:test1/password@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
-        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
-        return jdbcUrl;
     }
 
+    @Override
+    public String url() {
+        return "jdbc:oracle:thin:test1/password@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
+    }
 
     @Override
     public String noAuthJdbcUrl() {
-        return container.getJdbcUrl()
-                .replaceAll("&?user=test1", "")
-                .replaceAll("&?password=password", "");
+        return "jdbc:oracle:thin:@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
     }
 
     @Override
@@ -56,15 +53,7 @@ public class OracleDatabaseProvider implements TestDatabaseProvider {
     }
 
     @Override
-    public void shutdown() {
-        if (container != null) {
-            container.stop();
-            container = null;
-        }
-    }
-    @Override
-    public String createSchemaQuery(String schemaName) {
-        return "CREATE USER " + quote(schemaName) + " IDENTIFIED BY \"password\"\n\n"
-                + "GRANT UNLIMITED TABLESPACE TO " + quote(schemaName);
+    public TestDatabaseRecordProvider recordProvider() {
+        return new OracleObjectProvider(this);
     }
 }

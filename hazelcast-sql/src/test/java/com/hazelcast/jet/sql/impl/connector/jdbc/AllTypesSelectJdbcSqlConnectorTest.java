@@ -100,7 +100,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
 
-        assertRowsAnyOrder("SELECT * FROM " + mappingName + " WHERE table_column = ?",
+        assertRowsAnyOrder("SELECT table_column FROM " + mappingName + " WHERE table_column = ?",
                 newArrayList(expected),
                 new Row(expected)
         );

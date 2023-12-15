@@ -27,6 +27,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.JdbcObjectProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
@@ -84,8 +85,9 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalSchemaAndTableName() throws Exception {
+        assumeThat(recordProvider).isInstanceOf(JdbcObjectProvider.class);
         String schemaName = "schema1";
-        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
+        executeJdbc(((JdbcObjectProvider) recordProvider).createSchemaQuery(schemaName));
         createTableNoQuote(quote(schemaName, tableName));
 
         String mappingName = "mapping_" + randomName();
@@ -340,7 +342,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         // then
         List<Row> showDataConnections = allRows("SHOW DATA CONNECTIONS ", sqlService);
-        Row expectedConnection = new Row(TEST_DATABASE_REF, "jdbc", jsonArray("Table"));
+        Row expectedConnection = new Row(TEST_DATABASE_REF, "Jdbc", jsonArray("Table"));
         assertThat(showDataConnections).contains(expectedConnection);
 
         // Ensure that engine is not broken after Data Connection removal with some unrelated query.

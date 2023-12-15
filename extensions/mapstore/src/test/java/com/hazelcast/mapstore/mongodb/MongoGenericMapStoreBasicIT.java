@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.mapstore.oracle;
+package com.hazelcast.mapstore.mongodb;
 
 import com.hazelcast.mapstore.GenericMapStoreBasicIT;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.OracleDatabaseProvider;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-@Category(NightlyTest.class)
-public class OracleGenericMapStoreBasicIT extends GenericMapStoreBasicIT {
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
+public class MongoGenericMapStoreBasicIT extends GenericMapStoreBasicIT {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(new OracleDatabaseProvider());
+        assumeDockerEnabled();
+        initialize(new MongoDatabaseProvider());
     }
-
 }

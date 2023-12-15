@@ -20,6 +20,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.JdbcObjectProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -33,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -98,9 +100,10 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
+        assumeThat(recordProvider).isInstanceOf(JdbcObjectProvider.class);
         tableFull = quote(schema, table);
         try {
-            executeJdbc(databaseProvider.createSchemaQuery(schema));
+            executeJdbc(((JdbcObjectProvider) recordProvider).createSchemaQuery(schema));
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }
@@ -179,7 +182,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void sinkIntoTableWithSchema() throws Exception {
+    public void sinkIntoTableWithSchema() {
         String mappingName = "mapping_" + randomName();
         myCreateMapping(mappingName);
 
