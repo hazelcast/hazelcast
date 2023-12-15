@@ -78,6 +78,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     private boolean supportsBatch;
     private int batchCount;
 
+    static {
+        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
+        DriverManager.getDrivers();
+    }
+
     public WriteJdbcP(
             @Nonnull String updateQuery,
             @Nonnull CommonDataSource dataSource,
@@ -179,8 +184,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
         super.init(outbox, context);
-        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
-        DriverManager.getDrivers();
         logger = context.logger();
         this.context = context;
         connectAndPrepareStatement();

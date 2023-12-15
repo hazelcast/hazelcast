@@ -100,6 +100,11 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     private boolean snapshotInProgress;
     private ILogger logger;
 
+    static {
+        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
+        DriverManager.getDrivers();
+    }
+
     public CdcSourceP(
             @Nonnull Properties properties,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
@@ -112,9 +117,6 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
-        DriverManager.getDrivers();
-
         String name = getName(properties);
         this.logger = context.logger();
 

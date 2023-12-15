@@ -67,6 +67,11 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private int parallelism;
     private int index;
 
+    static {
+        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
+        DriverManager.getDrivers();
+    }
+
     public ReadJdbcP(
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
@@ -202,8 +207,6 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
-        DriverManager.getDrivers();
         this.connection = newConnectionFn.get();
         this.parallelism = context.totalParallelism();
         this.index = context.globalProcessorIndex();
