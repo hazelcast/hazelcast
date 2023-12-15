@@ -240,9 +240,10 @@ public class IndexRegistry {
         });
     }
 
-    public void getStepAwareStorages(Consumer<Step> stepCollector) {
+    public void getCustomStepAwareStorage(Consumer<Step> stepCollector) {
         for (int i = 0; i < indexes.length; i++) {
-            indexes[i].getStepAwareStorage().addAsHeadStep(stepCollector);
+            indexes[i].getCustomStepAwareStorage()
+                    .collectCustomSteps(stepCollector);
         }
     }
 

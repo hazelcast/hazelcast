@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR;
+import static java.lang.Integer.getInteger;
 
 /**
  * {@link Step} specialized for {@link
@@ -32,7 +33,11 @@ public interface IMapOpStep extends Step<State> {
     /**
      * The batch size of records handled in bulk operations.
      */
-    int BATCH_SIZE = 1000;
+    int DEFAULT_BATCH_SIZE = 10_000;
+
+    String PROP_BULK_OP_BATCH_SIZE = "hazelcast.map.ops.engine.batch.size";
+
+    int BATCH_SIZE = getInteger(PROP_BULK_OP_BATCH_SIZE, DEFAULT_BATCH_SIZE);
 
     /**
      * Decides when to offload based on configured map-store type.

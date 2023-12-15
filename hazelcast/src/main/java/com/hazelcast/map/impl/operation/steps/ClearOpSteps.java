@@ -23,8 +23,6 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.StepAwareStorage;
-import com.hazelcast.map.impl.recordstore.Storage;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,6 +30,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.operation.steps.UtilSteps.FINAL_STEP;
+import static com.hazelcast.map.impl.operation.steps.engine.StepSupplier.injectCustomStepsToOperation;
 
 public enum ClearOpSteps implements IMapOpStep {
 
@@ -40,7 +40,6 @@ public enum ClearOpSteps implements IMapOpStep {
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             if (recordStore == null) {
-                state.setResult(0);
                 return;
             }
             recordStore.checkIfLoaded();
@@ -60,7 +59,7 @@ public enum ClearOpSteps implements IMapOpStep {
                 // skip locked keys
                 if (!recordStore.isLocked(dataKey)) {
                     keys.add(tieredStorageEnabled ? toHeapData(dataKey) : dataKey);
-                    if (!recordStore.isTieredStorageEnabled()) {
+                    if (!tieredStorageEnabled) {
                         records.add(record);
                     }
                 }
@@ -80,7 +79,7 @@ public enum ClearOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getRecordStore() == null
-                    ? UtilSteps.FINAL_STEP : ClearOpSteps.CLEAR_MAP_STORE;
+                    ? FINAL_STEP : ClearOpSteps.CLEAR_MAP_STORE;
         }
     },
 
@@ -108,11 +107,12 @@ public enum ClearOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
-            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(), state.getRecords(), false);
+            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(),
+                    state.getRecords(), false);
             if (removedKeyCount > 0) {
                 recordStore.updateStatsOnRemove(Clock.currentTimeMillis());
             }
-            state.setResult(removedKeyCount);
+            state.setResult(((Integer) state.getResult()) + removedKeyCount);
         }
 
         @Override
@@ -121,22 +121,12 @@ public enum ClearOpSteps implements IMapOpStep {
             int currentSize = recordStore.size();
             int lockedSize = recordStore.getLockedEntryCount();
 
-            if (currentSize - lockedSize > 0) {
-                // We still have entries to process
-                // Process them in the next batch
-                return CLEAR_MEMORY;
-            }
-
-            Storage storage = state.getRecordStore().getStorage();
-            if (storage instanceof StepAwareStorage) {
-                state.setSizeAfter(currentSize);
-                Step postStep = ((StepAwareStorage) storage).getPostStep(state);
-                if (postStep != null) {
-                    return postStep;
-                }
-            }
-
-            return UtilSteps.FINAL_STEP;
+            // setSizeAfter to previous size to prevent forced compaction
+            // we let force compaction only before going FINAL_STEP.
+            boolean loopingToClear = currentSize - lockedSize > 0;
+            state.setSizeAfter(loopingToClear ? state.getSizeBefore() : currentSize);
+            Step injectBeforeStep = loopingToClear ? CLEAR_MEMORY : FINAL_STEP;
+            return injectCustomStepsToOperation(state.getOperation(), injectBeforeStep);
         }
     };
 

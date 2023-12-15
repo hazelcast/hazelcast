@@ -19,18 +19,20 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
-import com.hazelcast.map.impl.recordstore.StepAwareStorage;
+import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedEvictionStrategies;
-import static com.hazelcast.map.impl.operation.steps.engine.AppendAsNewHeadStep.appendAsNewHeadStep;
+import static com.hazelcast.map.impl.operation.steps.engine.LinkerStep.linkSteps;
 
 /**
  * <lu>
@@ -64,7 +66,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
-        collectAndUpdateHeadSteps(operation);
+        collectCustomSteps(operation, this);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
@@ -77,14 +79,34 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
             return;
         }
 
-        this.currentStep = appendAsNewHeadStep(currentStep, headStep);
+        this.currentStep = linkSteps(headStep, currentStep);
     }
 
-    private void collectAndUpdateHeadSteps(MapOperation operation) {
+    public static void collectCustomSteps(MapOperation operation,
+                                          Consumer<Step> consumer) {
         Storage storage = operation.getRecordStore().getStorage();
-        if (storage instanceof StepAwareStorage) {
-            ((StepAwareStorage) storage).addAsHeadStep(this);
+        if (storage instanceof CustomStepAwareStorage) {
+            ((CustomStepAwareStorage) storage).collectCustomSteps(consumer);
         }
+    }
+
+    public static Step injectCustomStepsToOperation(MapOperation operation,
+                                                     Step injectCustomStepsBeforeThisStep) {
+        List<Step> steps = new ArrayList<>();
+
+        collectCustomSteps(operation, customStep -> {
+            if (customStep == null) {
+                return;
+            }
+
+            steps.add(customStep);
+        });
+
+        Step injectionStep = injectCustomStepsBeforeThisStep;
+        for (int i = 0; i < steps.size(); i++) {
+            injectionStep = linkSteps(steps.get(i), injectionStep);
+        }
+        return injectionStep;
     }
 
     // used only for testing

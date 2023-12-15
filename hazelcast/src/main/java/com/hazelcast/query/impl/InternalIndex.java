@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.map.impl.recordstore.StepAwareStorage;
+import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.Comparator;
@@ -124,7 +124,7 @@ public interface InternalIndex extends Index {
      * By default, returns {@code null} that indicates
      * there is no step-aware backed storage.
      */
-    default StepAwareStorage getStepAwareStorage() {
+    default CustomStepAwareStorage getCustomStepAwareStorage() {
         return null;
     }
 

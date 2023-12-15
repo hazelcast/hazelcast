@@ -317,8 +317,9 @@ public class State {
         this.stopExecution = stopExecution;
     }
 
-    public void setResult(Object result) {
+    public State setResult(Object result) {
         this.result = result;
+        return this;
     }
 
     public Object getResult() {

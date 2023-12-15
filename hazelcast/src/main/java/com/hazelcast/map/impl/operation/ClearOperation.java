@@ -59,6 +59,12 @@ public class ClearOperation extends MapOperation
     }
 
     @Override
+    public State createState() {
+        return super.createState()
+                .setResult(0);
+    }
+
+    @Override
     public void applyState(State state) {
         if (recordStore == null) {
             return;

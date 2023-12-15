@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.StepResponseUtil;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
@@ -135,8 +136,13 @@ public enum UtilSteps implements IMapOpStep {
     DIRECT_RUN_STEP {
         @Override
         public void runStep(State state) {
+            RecordStore recordStore = state.getRecordStore();
+            state.setSizeBefore(recordStore.size());
+
             MapOperation op = state.getOperation();
             op.runInternalDirect();
+
+            state.setSizeAfter(recordStore.size());
         }
 
         @Override

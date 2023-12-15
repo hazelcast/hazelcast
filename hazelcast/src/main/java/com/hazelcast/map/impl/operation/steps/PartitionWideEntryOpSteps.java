@@ -23,12 +23,11 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.EntryOperator;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexRegistry;
@@ -41,6 +40,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.impl.operation.steps.engine.StepSupplier.injectCustomStepsToOperation;
 
 public enum PartitionWideEntryOpSteps implements IMapOpStep {
 
@@ -237,15 +237,8 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             Storage storage = state.getRecordStore().getStorage();
-            if (storage instanceof StepAwareStorage) {
-                state.setSizeAfter(storage.size());
-                Step postStep = ((StepAwareStorage) storage).getPostStep(state);
-                if (postStep != null) {
-                    return postStep;
-                }
-            }
-
-            return UtilSteps.FINAL_STEP;
+            state.setSizeAfter(storage.size());
+            return injectCustomStepsToOperation(state.getOperation(), UtilSteps.FINAL_STEP);
         }
     };
 
