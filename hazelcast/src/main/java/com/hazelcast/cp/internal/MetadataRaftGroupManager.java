@@ -1064,7 +1064,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         raftService.updateInvocationManagerMembers(getMetadataGroupId().getSeed(), commitIndex, activeMembers);
-        raftService.updateMissingMembers();
+        raftService.updateMissingMembers(activeMembers);
         broadcastActiveCPMembers();
         sendMembershipEvents(currentMembers, members);
     }
