@@ -18,6 +18,7 @@ package com.hazelcast.test.jdbc;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.Network;
 
+import javax.sql.CommonDataSource;
 import java.util.Properties;
 
 public abstract class JdbcDatabaseProvider<C extends JdbcDatabaseContainer<?>> implements TestDatabaseProvider {
@@ -25,7 +26,10 @@ public abstract class JdbcDatabaseProvider<C extends JdbcDatabaseContainer<?>> i
     private static final int LOGIN_TIMEOUT = 120;
 
     protected C container;
+
     protected final Network network = Network.newNetwork();
+
+    public abstract CommonDataSource createDataSource(boolean xa);
 
     abstract C createContainer(String dbName);
 
@@ -43,6 +47,10 @@ public abstract class JdbcDatabaseProvider<C extends JdbcDatabaseContainer<?>> i
         return container.getJdbcUrl()
                         .replaceAll("&?user=root", "")
                         .replaceAll("&?password=test", "");
+    }
+
+    public String getDatabaseName() {
+        return container.getDatabaseName();
     }
 
     @Override

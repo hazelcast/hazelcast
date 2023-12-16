@@ -18,6 +18,7 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.MariaDBContainer;
 
+import javax.sql.CommonDataSource;
 import java.util.Arrays;
 
 import static java.util.stream.Collectors.joining;
@@ -26,14 +27,27 @@ public class MariaDBDatabaseProvider extends JdbcDatabaseProvider<MariaDBContain
 
     public static final String TEST_MARIADB_VERSION = System.getProperty("test.mariadb.version", "10.3");
 
+
+    @Override
+    public CommonDataSource createDataSource(boolean xa) {
+        throw new RuntimeException("Not supported");
+    }
+
+    @SuppressWarnings("resource")
     @Override
     MariaDBContainer<?> createContainer(String dbName) {
         return new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
                 .withDatabaseName(dbName)
-                .withUsername("user")
-                .withUrlParam("user", "user")
-                .withUrlParam("password", "test");
+                .withUsername(user())
+                .withUrlParam("user", user())
+                .withUrlParam("password", password());
     }
+
+    @Override
+    public String user() {
+        return "user";
+    }
+
 
     @Override
     public String quote(String[] parts) {

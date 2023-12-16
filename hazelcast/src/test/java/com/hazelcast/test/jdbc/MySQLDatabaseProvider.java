@@ -16,9 +16,11 @@
 
 package com.hazelcast.test.jdbc;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
+import com.mysql.cj.jdbc.MysqlXADataSource;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.Network;
 
+import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -27,17 +29,44 @@ import static java.util.stream.Collectors.joining;
 public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?>> {
 
     public static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.0.32");
-    private final Network network = Network.newNetwork();
 
+    @Override
+    public DataSource createDataSource(boolean xa) {
+        if (xa) {
+            return createXADataSource();
+        } else {
+            return createDataSource();
+        }
+    }
+
+    private MysqlDataSource createDataSource() {
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setUrl(url());
+        dataSource.setUser(user());
+        dataSource.setPassword(password());
+        dataSource.setDatabaseName(getDatabaseName());
+        return dataSource;
+    }
+
+    private MysqlXADataSource createXADataSource() {
+        MysqlXADataSource dataSource = new MysqlXADataSource();
+        dataSource.setUrl(url());
+        dataSource.setUser(user());
+        dataSource.setPassword(password());
+        dataSource.setDatabaseName(getDatabaseName());
+        return dataSource;
+    }
+
+    @SuppressWarnings("resource")
     @Override
     MySQLContainer<?> createContainer(String dbName) {
         return new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
                 .withNetwork(network)
                 .withNetworkAliases("mysql")
                 .withDatabaseName(dbName)
-                .withUsername("root")
-                .withUrlParam("user", "root")
-                .withUrlParam("password", "test")
+                .withUsername(user())
+                .withUrlParam("user", user())
+                .withUrlParam("password", password())
                 .withTmpFs(Map.of(
                         "/var/lib/mysql/", "rw",
                         "/tmp/", "rw"
@@ -45,10 +74,18 @@ public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?
     }
 
     @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                .replaceAll("&?user=" + user(), "")
+                .replaceAll("&?password=" + password(), "");
+    }
+
+
+    @Override
     public String quote(String[] parts) {
         return Arrays.stream(parts)
-                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                     .collect(joining("."));
+                .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                .collect(joining("."));
 
     }
 }

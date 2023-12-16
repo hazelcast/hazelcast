@@ -41,4 +41,11 @@ public class DockerTestUtil {
                     );
         }
     }
+
+    public static void assumeTestDatabaseProviderIsNotInstanceOf(TestDatabaseProvider provider,
+                                                                 String message,
+                                                                 Class<?>... clazz) {
+        assumeThat(provider).describedAs(message)
+                .isNotInstanceOfAny(clazz);
+    }
 }

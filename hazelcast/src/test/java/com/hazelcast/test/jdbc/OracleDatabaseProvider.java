@@ -22,9 +22,17 @@ import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.MountableFile;
 
+import javax.sql.CommonDataSource;
+
 public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(OracleDatabaseProvider.class);
 
+    @Override
+    public CommonDataSource createDataSource(boolean xa) {
+        throw new RuntimeException("Not supported");
+    }
+
+    @SuppressWarnings("resource")
     @Override
     OracleContainer createContainer(String dbName) {
         return new OracleContainer("gvenzl/oracle-xe:21-slim-faststart")
@@ -39,7 +47,9 @@ public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer
 
     @Override
     public String noAuthJdbcUrl() {
-        return "jdbc:oracle:thin:@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
+        return container.getJdbcUrl()
+                .replaceAll("&?user=" + user(), "")
+                .replaceAll("&?password=" + password(), "");
     }
 
     @Override
@@ -51,6 +61,7 @@ public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer
     public String password() {
         return "password";
     }
+
 
     @Override
     public TestDatabaseRecordProvider recordProvider() {
