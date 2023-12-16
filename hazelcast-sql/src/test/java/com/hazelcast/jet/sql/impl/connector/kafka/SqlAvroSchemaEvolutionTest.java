@@ -175,8 +175,8 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
     @Test
     public void test_useSpecificSchema() throws SchemaRegistryException {
         // create initial schema
-        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA);
+        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA).getId();
+        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA).getId();
 
         kafkaMapping()
             .fields("id INT EXTERNAL NAME \"__key.id\"",
@@ -212,10 +212,10 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         // alter schema externally
         int valueSchemaId;
         if (topicNameStrategy) {
-            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SSN_SCHEMA);
+            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SSN_SCHEMA).getId();
             assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
         } else {
-            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName + "2", NAME_SSN_SCHEMA2);
+            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName + "2", NAME_SSN_SCHEMA2).getId();
             assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
             assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName + "2"));
         }

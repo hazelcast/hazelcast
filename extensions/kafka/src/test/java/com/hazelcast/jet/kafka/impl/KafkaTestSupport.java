@@ -265,7 +265,8 @@ public abstract class KafkaTestSupport {
         return schemaRegistryServer.getURI();
     }
 
-    public int registerSchema(String subject, Schema schema) throws SchemaRegistryException {
+    public io.confluent.kafka.schemaregistry.client.rest.entities.Schema registerSchema(String subject, Schema schema)
+            throws SchemaRegistryException {
         return schemaRegistry.register(subject, new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(
                 subject, -1, -1, AvroSchema.TYPE, emptyList(), schema.toString()));
     }
