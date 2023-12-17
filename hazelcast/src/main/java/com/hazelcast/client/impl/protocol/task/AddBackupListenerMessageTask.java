@@ -99,4 +99,9 @@ public class AddBackupListenerMessageTask
         return null;
     }
 
+    @Override
+    protected String getNamespace() {
+        // Default Namespace
+        return null;
+    }
 }

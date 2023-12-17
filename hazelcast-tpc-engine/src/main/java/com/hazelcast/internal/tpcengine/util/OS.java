@@ -162,4 +162,19 @@ public final class OS {
     public static boolean isWindows() {
         return IS_WINDOWS;
     }
+
+    /**
+     * Returns a file path string that replaces Windows `\\` file
+     * separators with the Unix equivalent `/` if the current machine
+     * is using Windows as its Operating System.
+     *
+     * @param path the file path string to convert
+     * @return the file path string, with file separators set to `/`
+     */
+    public static String ensureUnixSeparators(final String path) {
+        if (OS.isWindows()) {
+            return path.replace('\\', '/');
+        }
+        return path;
+    }
 }

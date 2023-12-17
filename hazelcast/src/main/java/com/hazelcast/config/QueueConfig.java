@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
@@ -41,7 +42,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link IQueue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
+public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, NamespaceAwareConfig<QueueConfig> {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -74,6 +75,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private String priorityComparatorClassName;
+    private @Nullable String namespace = DEFAULT_NAMESPACE;
 
     public QueueConfig() {
     }
@@ -95,6 +97,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.priorityComparatorClassName = config.priorityComparatorClassName;
+        this.namespace = config.namespace;
     }
 
     /**
@@ -371,6 +374,30 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param namespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link QueueConfig} instance
+     * @since 5.4
+     */
+    public QueueConfig setNamespace(@Nullable String namespace) {
+        this.namespace = namespace;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "QueueConfig{"
@@ -384,6 +411,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", priorityComparatorClassName=" + priorityComparatorClassName
+                + ", namespace=" + namespace
                 + '}';
     }
 
@@ -410,6 +438,11 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
         out.writeString(priorityComparatorClassName);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(namespace);
+        }
     }
 
     @Override
@@ -425,6 +458,11 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
         priorityComparatorClassName = in.readString();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            namespace = in.readString();
+        }
     }
 
     @Override
@@ -447,13 +485,14 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
                 && Objects.equals(queueStoreConfig, that.queueStoreConfig)
                 && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
                 && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
-                && Objects.equals(priorityComparatorClassName, that.priorityComparatorClassName);
+                && Objects.equals(priorityComparatorClassName, that.priorityComparatorClassName)
+                && Objects.equals(namespace, that.namespace);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
                 queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig,
-                priorityComparatorClassName);
+                priorityComparatorClassName, namespace);
     }
 }

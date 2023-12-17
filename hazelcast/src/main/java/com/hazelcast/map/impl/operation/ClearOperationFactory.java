@@ -25,13 +25,11 @@ import java.io.IOException;
 
 public class ClearOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
-
     public ClearOperationFactory() {
     }
 
     public ClearOperationFactory(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override

@@ -21,6 +21,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 
+import javax.annotation.Nullable;
+
 public class RingbufferConfigReadOnly extends RingbufferConfig {
 
     public RingbufferConfigReadOnly(RingbufferConfig config) {
@@ -74,6 +76,11 @@ public class RingbufferConfigReadOnly extends RingbufferConfig {
 
     @Override
     public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public RingbufferConfig setNamespace(@Nullable String namespace) {
         throw throwReadOnly();
     }
 

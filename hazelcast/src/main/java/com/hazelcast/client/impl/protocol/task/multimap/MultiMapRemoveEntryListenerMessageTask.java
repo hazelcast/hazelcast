@@ -25,6 +25,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -69,7 +70,13 @@ public class MultiMapRemoveEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new MultiMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = MultiMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

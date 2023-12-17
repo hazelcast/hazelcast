@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -38,6 +40,7 @@ import java.util.Map;
  * @param <K> type of the MapStore key
  * @param <V> type of the MapStore value
  */
+@NamespacesSupported
 public interface MapStore<K, V> extends MapLoader<K, V> {
 
     /**

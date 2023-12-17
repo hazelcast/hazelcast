@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ClearOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -35,7 +33,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueClearCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueClearMessageTask
-        extends AbstractPartitionMessageTask<String> {
+        extends AbstractQueueMessageTask<String> {
 
     public QueueClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -64,11 +62,6 @@ public class QueueClearMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.CLEAR;
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

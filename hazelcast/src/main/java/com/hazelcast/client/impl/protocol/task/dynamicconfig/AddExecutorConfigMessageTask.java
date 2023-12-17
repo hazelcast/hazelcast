@@ -24,6 +24,10 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
+
+import java.security.Permission;
 
 public class AddExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddExecutorConfigCodec.RequestParameters> {
@@ -47,6 +51,9 @@ public class AddExecutorConfigMessageTask
         ExecutorConfig config = new ExecutorConfig(parameters.name, parameters.poolSize);
         config.setQueueCapacity(parameters.queueCapacity);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
+        if (parameters.isNamespaceExists) {
+            config.setNamespace(parameters.namespace);
+        }
         return config;
     }
 
@@ -56,10 +63,15 @@ public class AddExecutorConfigMessageTask
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         ExecutorConfig executorConfig = (ExecutorConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExecutorConfigs(),
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExecutorConfigs(),
                 executorConfig.getName(), executorConfig);
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.projection;
 
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.io.Serializable;
 
@@ -41,6 +42,7 @@ import java.io.Serializable;
  * @since 3.8
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface Projection<I, O> extends Serializable {
 
     /**

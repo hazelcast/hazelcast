@@ -36,6 +36,7 @@ public class MapExecuteOnKeyMessageTask
 
     public MapExecuteOnKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override

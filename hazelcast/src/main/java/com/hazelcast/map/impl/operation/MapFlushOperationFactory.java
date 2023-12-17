@@ -25,13 +25,11 @@ import java.io.IOException;
 
 public class MapFlushOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
-
     public MapFlushOperationFactory() {
     }
 
     public MapFlushOperationFactory(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override

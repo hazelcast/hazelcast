@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryResult;
@@ -66,7 +67,9 @@ public class MapPublisherCreateWithValueMessageTask
     protected Object call() throws Exception {
         ClusterService clusterService = clientEngine.getClusterService();
         Collection<MemberImpl> members = clusterService.getMemberImpls();
-        List<Future> snapshotFutures = createPublishersAndGetSnapshotOf(members);
+        List<Future> snapshotFutures = NamespaceUtil.callWithNamespace(nodeEngine,
+                MapService.lookupNamespace(nodeEngine, parameters.mapName),
+                () -> createPublishersAndGetSnapshotOf(members));
         return fetchMapSnapshotFrom(snapshotFutures);
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.Executor;
 
 public class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
@@ -50,6 +51,11 @@ public class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
 
     @Override
     public ReliableTopicConfig setTopicOverloadPolicy(TopicOverloadPolicy topicOverloadPolicy) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public ReliableTopicConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

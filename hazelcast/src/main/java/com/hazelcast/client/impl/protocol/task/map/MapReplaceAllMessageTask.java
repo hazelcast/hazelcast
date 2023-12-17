@@ -40,6 +40,7 @@ public class MapReplaceAllMessageTask
 
     public MapReplaceAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override

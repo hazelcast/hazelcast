@@ -75,7 +75,7 @@ public class CompactSchemaReplicatorTest extends HazelcastTestSupport {
         executionService = mock(ExecutionService.class);
         when(executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR))
                 .thenReturn(new CachedExecutorServiceDelegate("test", new ForkJoinPool(3),
-                        8, 1000));
+                        8, 1000, null));
         when(clusterService.getMembers()).thenReturn(Collections.emptySet());
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getClusterService()).thenReturn(clusterService);

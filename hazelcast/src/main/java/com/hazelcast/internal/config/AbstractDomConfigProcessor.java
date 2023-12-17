@@ -25,6 +25,7 @@ import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.NamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
@@ -274,8 +275,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
+        serializationConfig.setJavaSerializationFilterConfig(getJavaSerializationFilter(node));
+    }
+
+    protected void fillJavaSerializationFilter(final Node node, NamespacesConfig namespacesConfig) {
+        namespacesConfig.setClassFilterConfig(getJavaSerializationFilter(node));
+    }
+
+    private JavaSerializationFilterConfig getJavaSerializationFilter(final Node node) {
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
-        serializationConfig.setJavaSerializationFilterConfig(filterConfig);
         Node defaultsDisabledNode = getNamedItemNode(node, "defaults-disabled");
         boolean defaultsDisabled = defaultsDisabledNode != null && getBooleanValue(getTextContent(defaultsDisabledNode));
         filterConfig.setDefaultsDisabled(defaultsDisabled);
@@ -289,6 +297,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 filterConfig.setWhitelist(list);
             }
         }
+        return filterConfig;
     }
 
     protected ClassFilter parseClassFilterList(Node node) {

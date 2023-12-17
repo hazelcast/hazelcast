@@ -40,6 +40,7 @@ public class MapExecuteOnAllKeysMessageTask
 
     public MapExecuteOnAllKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override

@@ -42,6 +42,7 @@ public class BatchEventData implements Sequenced, EventData {
     private String source;
     private Collection<QueryCacheEventData> events;
     private transient int partitionId;
+    private transient String mapName;
 
     public BatchEventData() {
     }
@@ -80,7 +81,16 @@ public class BatchEventData implements Sequenced, EventData {
 
     @Override
     public String getMapName() {
-        throw new UnsupportedOperationException();
+        if (mapName != null) {
+            return mapName;
+        }
+        if (events.isEmpty()) {
+            return null;
+        }
+        // This batch should all relate to a single map
+        QueryCacheEventData next = events.iterator().next();
+        mapName = next.getMapName();
+        return mapName;
     }
 
     @Override

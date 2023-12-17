@@ -26,7 +26,10 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 
+import java.security.Permission;
 import java.util.List;
 
 public class AddListConfigMessageTask
@@ -55,11 +58,14 @@ public class AddListConfigMessageTask
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             List<ItemListenerConfig> itemListenerConfigs =
-                    (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs);
+                    (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.namespace);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
+        if (parameters.isNamespaceExists) {
+            config.setNamespace(parameters.namespace);
+        }
         return config;
     }
 
@@ -69,10 +75,15 @@ public class AddListConfigMessageTask
     }
 
     @Override
+    public Permission getNamespacePermission() {
+        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         ListConfig listConfig = (ListConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getListConfigs(),
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getListConfigs(),
                 listConfig.getName(), listConfig);
     }
 }

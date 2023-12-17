@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetContainsAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.impl.Node;
@@ -37,7 +36,7 @@ import java.util.Set;
  * SetContainsAllMessageTask
  */
 public class SetContainsAllMessageTask
-        extends AbstractPartitionMessageTask<SetContainsAllCodec.RequestParameters> {
+        extends AbstractSetMessageTask<SetContainsAllCodec.RequestParameters> {
 
     public SetContainsAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

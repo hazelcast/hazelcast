@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueAddAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.AddAllOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -35,7 +33,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueAddAllMessageTask
-        extends AbstractPartitionMessageTask<QueueAddAllCodec.RequestParameters> {
+        extends AbstractQueueMessageTask<QueueAddAllCodec.RequestParameters> {
 
     public QueueAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,11 +68,6 @@ public class QueueAddAllMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.ADD_ALL;
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

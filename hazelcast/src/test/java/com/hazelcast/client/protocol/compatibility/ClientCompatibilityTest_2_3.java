@@ -5717,7 +5717,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddMultiMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 717;
-        ClientMessage encoded = DynamicConfigAddMultiMapConfigCodec.encodeRequest(aString, aString, aListOfListenerConfigHolders, aBoolean, anInt, anInt, aBoolean, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddMultiMapConfigCodec.encodeRequest(aString, aString, aListOfListenerConfigHolders, aBoolean, anInt, anInt, aBoolean, aString, aString, anInt, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5730,7 +5730,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddRingbufferConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 719;
-        ClientMessage encoded = DynamicConfigAddRingbufferConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, aString, aRingbufferStoreConfigHolder, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddRingbufferConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, aString, aRingbufferStoreConfigHolder, aString, aString, anInt, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5756,7 +5756,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddListConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 723;
-        ClientMessage encoded = DynamicConfigAddListConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, aBoolean, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddListConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, aBoolean, aString, aString, anInt, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5769,7 +5769,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddSetConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 725;
-        ClientMessage encoded = DynamicConfigAddSetConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, aBoolean, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddSetConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, aBoolean, aString, aString, anInt, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5782,7 +5782,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddReplicatedMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 727;
-        ClientMessage encoded = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(aString, aString, aBoolean, aBoolean, aString, aListOfListenerConfigHolders, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(aString, aString, aBoolean, aBoolean, aString, aListOfListenerConfigHolders, aString, anInt, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5795,7 +5795,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddTopicConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 729;
-        ClientMessage encoded = DynamicConfigAddTopicConfigCodec.encodeRequest(aString, aBoolean, aBoolean, aBoolean, aListOfListenerConfigHolders);
+        ClientMessage encoded = DynamicConfigAddTopicConfigCodec.encodeRequest(aString, aBoolean, aBoolean, aBoolean, aListOfListenerConfigHolders, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5808,7 +5808,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 731;
-        ClientMessage encoded = DynamicConfigAddExecutorConfigCodec.encodeRequest(aString, anInt, anInt, aBoolean, aString);
+        ClientMessage encoded = DynamicConfigAddExecutorConfigCodec.encodeRequest(aString, anInt, anInt, aBoolean, aString, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5821,7 +5821,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddDurableExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 733;
-        ClientMessage encoded = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aString, aBoolean);
+        ClientMessage encoded = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aString, aBoolean, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5834,7 +5834,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddScheduledExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 735;
-        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aString, aString, anInt, aBoolean, aByte);
+        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aString, aString, anInt, aBoolean, aByte, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5847,7 +5847,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddQueueConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 737;
-        ClientMessage encoded = DynamicConfigAddQueueConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, anInt, aBoolean, aString, aQueueStoreConfigHolder, aString, anInt, aString);
+        ClientMessage encoded = DynamicConfigAddQueueConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, anInt, aBoolean, aString, aQueueStoreConfigHolder, aString, anInt, aString, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5860,7 +5860,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 739;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aString, anInt, aString, aListOfListenerConfigHolders, aListOfListenerConfigHolders, aBoolean, aString, aMapStoreConfigHolder, aNearCacheConfigHolder, aWanReplicationRef, aListOfIndexConfigs, aListOfAttributeConfigs, aListOfQueryCacheConfigHolders, aString, aData, aHotRestartConfig, anEventJournalConfig, aMerkleTreeConfig, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig, aListOfPartitioningAttributeConfigs);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aString, anInt, aString, aListOfListenerConfigHolders, aListOfListenerConfigHolders, aBoolean, aString, aMapStoreConfigHolder, aNearCacheConfigHolder, aWanReplicationRef, aListOfIndexConfigs, aListOfAttributeConfigs, aListOfQueryCacheConfigHolders, aString, aData, aHotRestartConfig, anEventJournalConfig, aMerkleTreeConfig, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig, aListOfPartitioningAttributeConfigs, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5873,7 +5873,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddReliableTopicConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 741;
-        ClientMessage encoded = DynamicConfigAddReliableTopicConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, aBoolean, aString, aData);
+        ClientMessage encoded = DynamicConfigAddReliableTopicConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, aBoolean, aString, aData, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5886,7 +5886,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_DynamicConfigAddCacheConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 743;
-        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, aString, aString, aBoolean, aBoolean, aBoolean, aBoolean, aString, aString, aString, aString, anInt, anInt, aString, aString, aString, anInt, aBoolean, aListOfListenerConfigHolders, aString, aTimedExpiryPolicyFactoryConfig, aListOfCacheSimpleEntryListenerConfigs, anEvictionConfigHolder, aWanReplicationRef, anEventJournalConfig, aHotRestartConfig, aMerkleTreeConfig, aDataPersistenceConfig);
+        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, aString, aString, aBoolean, aBoolean, aBoolean, aBoolean, aString, aString, aString, aString, anInt, anInt, aString, aString, aString, anInt, aBoolean, aListOfListenerConfigHolders, aString, aTimedExpiryPolicyFactoryConfig, aListOfCacheSimpleEntryListenerConfigs, anEvictionConfigHolder, aWanReplicationRef, anEventJournalConfig, aHotRestartConfig, aMerkleTreeConfig, aDataPersistenceConfig, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

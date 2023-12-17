@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.listener;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.EventListener;
 
 /**
@@ -49,5 +51,6 @@ import java.util.EventListener;
  * @see EntryLoadedListener
  * @since 3.5
  */
+@NamespacesSupported
 public interface MapListener extends EventListener {
 }

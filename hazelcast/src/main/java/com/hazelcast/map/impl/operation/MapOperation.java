@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -44,6 +46,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
@@ -55,6 +58,7 @@ import com.hazelcast.wan.impl.CallerProvenance;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
@@ -90,6 +94,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected transient boolean tieredStoreOffloadEnabled;
 
     private transient boolean canPublishWanEvent;
+    private transient @Nullable String namespace;
 
     public MapOperation() {
     }
@@ -134,8 +139,11 @@ public abstract class MapOperation extends AbstractNamedOperation
         tieredStoreOffloadEnabled = metWithCommonOffloadConditions
                 && (mapServiceContext.isForceOffloadEnabled() || supportsSteppedRun());
 
-
         assertNativeMapOnPartitionThread();
+
+        // Setup Namespace awareness
+        namespace = mapConfig.getNamespace();
+        getNodeEngine().getNamespaceService().setupNamespace(namespace);
 
         innerBeforeRun();
     }
@@ -273,6 +281,9 @@ public abstract class MapOperation extends AbstractNamedOperation
                 || tieredStoreOffloadEnabled) {
             return;
         }
+        // Cleanup Namespace awareness
+        getNodeEngine().getNamespaceService().cleanupNamespace(namespace);
+
         afterRunInternal();
         disposeDeferredBlocks();
         super.afterRun();
@@ -522,5 +533,16 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapContainer getMapContainer() {
         return mapContainer;
+    }
+
+    /**
+     * Utility method for executing code within the context of the Namespace associated
+     * with IMaps - if one does not exist, this code is executed as if it were called
+     * directly in place of this method.
+     */
+    protected <T> T callWithNamespaceAwareness(Callable<T> callable) {
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        String namespace = MapService.lookupNamespace(engine, name);
+        return NamespaceUtil.callWithNamespace(engine, namespace, callable);
     }
 }

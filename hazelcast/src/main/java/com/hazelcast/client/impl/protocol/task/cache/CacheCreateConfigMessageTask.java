@@ -27,9 +27,10 @@ import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
@@ -56,7 +57,7 @@ public class CacheCreateConfigMessageTask
     protected void processMessage() {
         // parameters.cacheConfig is not nullable by protocol definition, hence no need for null check
         CacheConfig cacheConfig = parameters.cacheConfig.asCacheConfig(serializationService);
-        CacheService cacheService = getService(CacheService.SERVICE_NAME);
+        CacheService cacheService = getService(getServiceName());
 
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         checkCacheConfig(cacheConfig, mergePolicyProvider);
@@ -79,13 +80,19 @@ public class CacheCreateConfigMessageTask
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
         CacheConfig cacheConfig = parameters.cacheConfig.asCacheConfig(serializationService);
         return new CachePermission(CacheUtil.getDistributedObjectName(cacheConfig.getName()), ActionConstants.ACTION_CREATE);
+    }
+
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = parameters.cacheConfig.getNamespace();
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

@@ -31,8 +31,17 @@ abstract class AbstractMapPartitionMessageTask<P> extends AbstractPartitionMessa
     }
 
     protected final MapOperationProvider getMapOperationProvider(String mapName) {
-        MapService mapService = getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapServiceContext mapServiceContext = getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(mapName);
+    }
+
+    protected MapServiceContext getMapServiceContext() {
+        MapService mapService = getService(MapService.SERVICE_NAME);
+        return mapService.getMapServiceContext();
+    }
+
+    @Override
+    protected final String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

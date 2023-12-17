@@ -65,7 +65,8 @@
             "capacity": "10000",
             "time-to-live-seconds": "0"
           },
-          "disable-per-entry-invalidation-events": "true"
+          "disable-per-entry-invalidation-events": "true",
+          "namespace": []
         }
       }
     }
@@ -361,8 +362,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/namespace",
+        "pointerToViolation": "#/hazelcast/cache/default/namespace",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
       }
     ],
-    "message": "34 schema violations found"
+    "message": "35 schema violations found"
   }
 }

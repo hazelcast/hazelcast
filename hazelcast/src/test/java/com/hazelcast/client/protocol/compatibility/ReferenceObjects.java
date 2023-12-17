@@ -37,6 +37,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AttributeConfig;
@@ -175,6 +176,9 @@ public class ReferenceObjects {
         }
         if (a instanceof CacheSimpleEntryListenerConfig && b instanceof CacheSimpleEntryListenerConfig) {
             return isEqual((CacheSimpleEntryListenerConfig) a, (CacheSimpleEntryListenerConfig) b);
+        }
+        if (a instanceof DefaultQueryCacheEventData && b instanceof DefaultQueryCacheEventData) {
+            return isEqual((DefaultQueryCacheEventData) a, (DefaultQueryCacheEventData) b);
         }
         return a.equals(b);
     }
@@ -673,6 +677,33 @@ public class ReferenceObjects {
         return Objects.equals(a.getDiskTierConfig(), b.getDiskTierConfig());
     }
 
+    public static boolean isEqual(DefaultQueryCacheEventData a, DefaultQueryCacheEventData that) {
+        if (a == that) {
+            return true;
+        }
+        if (that == null) {
+            return false;
+        }
+
+        if (a.getSequence() != that.getSequence()) {
+            return false;
+        }
+        if (a.getEventType() != that.getEventType()) {
+            return false;
+        }
+        if (a.getPartitionId() != that.getPartitionId()) {
+            return false;
+        }
+        if (!Objects.equals(a.getDataKey(), that.getDataKey())) {
+            return false;
+        }
+        if (!Objects.equals(a.getDataNewValue(), that.getDataNewValue())) {
+            return false;
+        }
+
+        return Objects.equals(a.getDataOldValue(), that.getDataOldValue());
+    }
+
     private static boolean isEqualStackTrace(StackTraceElement stackTraceElement1, StackTraceElement stackTraceElement2) {
         //Not using stackTraceElement.equals
         //because in IBM JDK stacktraceElements with null method name are not equal
@@ -753,6 +784,7 @@ public class ReferenceObjects {
         aQueryCacheEventData.setSequence(aLong);
         aQueryCacheEventData.setEventType(anInt);
         aQueryCacheEventData.setPartitionId(anInt);
+        aQueryCacheEventData.setMapName(aString);
     }
 
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
@@ -921,7 +953,7 @@ public class ReferenceObjects {
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
             aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig, true,
-            aDataPersistenceConfig);
+            aDataPersistenceConfig, aBoolean, aString);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
     public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
             ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));
@@ -989,4 +1021,7 @@ public class ReferenceObjects {
                             aString
                     )
             );
+
+    public static List<ResourceDefinitionHolder> aListOfResourceDefinitionHolders =
+            Collections.singletonList(new ResourceDefinitionHolder(aString, anInt, aByteArray));
 }

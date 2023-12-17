@@ -21,6 +21,7 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -38,8 +39,19 @@ public final class QueryResultUtils {
         Predicate unwrappedPredicate = unwrapPartitionPredicate(predicate);
 
         if (unwrappedPredicate instanceof PagingPredicate) {
+            // We need an instance of PagingPredicateImpl for later use, so prepare it now
+            PagingPredicate pagingPredicate = (PagingPredicate) unwrappedPredicate;
+            PagingPredicateImpl pagingPredicateImpl;
+            if (unwrappedPredicate instanceof PagingPredicateImpl) {
+                pagingPredicateImpl = (PagingPredicateImpl) unwrappedPredicate;
+            } else {
+                Predicate simplePredicate = mapEntry -> unwrappedPredicate.apply(mapEntry);
+                // We provide Namespace wrapping to parent calls, we don't need to know it within the PagingPredicateImpl
+                pagingPredicateImpl = new PagingPredicateImpl(simplePredicate, pagingPredicate.getComparator(),
+                        pagingPredicate.getPageSize(), null);
+            }
             Set result = new QueryResultCollection(ss, IterationType.ENTRY, binary, unique, queryResult);
-            return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) unwrappedPredicate, iterationType);
+            return getSortedQueryResultSet(new ArrayList(result), pagingPredicateImpl, iterationType);
         } else {
             return new QueryResultCollection(ss, iterationType, binary, unique, queryResult);
         }

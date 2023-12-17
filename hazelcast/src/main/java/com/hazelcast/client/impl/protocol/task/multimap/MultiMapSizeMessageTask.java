@@ -102,4 +102,10 @@ public class MultiMapSizeMessageTask
         MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         return service.getOrCreateCollectionContainer(0, parameters);
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

@@ -31,6 +31,7 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
+import com.hazelcast.internal.namespace.NamespaceService;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -420,4 +421,11 @@ public interface NodeExtension {
      * @throws java.lang.IllegalStateException if the method call is not allowed
      */
     SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig);
+
+    /**
+     * Retrieves the {@link NamespaceService} provided by the implementing class.
+     *
+     * @return the {@link NamespaceService} instance for this member.
+     */
+    NamespaceService getNamespaceService();
 }

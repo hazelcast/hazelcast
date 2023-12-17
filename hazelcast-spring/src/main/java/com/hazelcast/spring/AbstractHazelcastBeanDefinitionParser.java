@@ -410,7 +410,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 } else if ("serializers".equals(nodeName)) {
                     handleSerializers(child, serializationConfigBuilder);
                 } else if ("java-serialization-filter".equals(nodeName)) {
-                    handleJavaSerializationFilter(child, serializationConfigBuilder);
+                    handleJavaSerializationFilter(child, serializationConfigBuilder, "javaSerializationFilterConfig");
                 } else if ("compact-serialization".equals(nodeName)) {
                     handleCompactSerialization(child, serializationConfigBuilder);
                 }
@@ -742,7 +742,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             discoveryStrategyConfigs.add(discoveryStrategyConfigBuilder.getBeanDefinition());
         }
 
-        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder serializationConfigBuilder) {
+        protected void handleJavaSerializationFilter(final Node node, BeanDefinitionBuilder configBuilder, String properyName) {
             BeanDefinitionBuilder filterConfigBuilder = createBeanBuilder(JavaSerializationFilterConfig.class);
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
@@ -754,7 +754,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
             filterConfigBuilder.addPropertyValue("defaultsDisabled", getTextContent(defaultsDisabledAttr));
-            serializationConfigBuilder.addPropertyValue("javaSerializationFilterConfig",
+            configBuilder.addPropertyValue(properyName,
                     filterConfigBuilder.getBeanDefinition());
         }
 

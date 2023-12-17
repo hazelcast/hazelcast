@@ -66,6 +66,9 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
+import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -173,6 +176,7 @@ public class Node {
      */
     public final Address address;
     public final SecurityContext securityContext;
+
     final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
 
     private final ILogger logger;
@@ -182,6 +186,7 @@ public class Node {
     private final InternalSerializationService serializationService;
     private final InternalSerializationService compatibilitySerializationService;
     private final ClassLoader configClassLoader;
+    private NamespaceService namespaceService;
     private final NodeExtension nodeExtension;
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
@@ -207,7 +212,7 @@ public class Node {
         DynamicConfigurationAwareConfig config = new DynamicConfigurationAwareConfig(staticConfig, this.properties);
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
-        this.configClassLoader = getConfigClassloader(config);
+        this.configClassLoader = generateConfigClassloader(config);
 
         String policy = properties.getString(SHUTDOWNHOOK_POLICY);
         this.shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread", policy);
@@ -256,6 +261,8 @@ public class Node {
             nodeExtension.beforeStart();
             nodeExtension.logInstanceTrackingMetadata();
 
+            // Initialise NamespaceService early on, so Namespaces can be used ASAP
+            namespaceService  = nodeExtension.getNamespaceService();
             schemaService = nodeExtension.createSchemaService();
             serializationService = nodeExtension.createSerializationService();
             compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
@@ -320,7 +327,22 @@ public class Node {
         return clientEndpointConfig != null;
     }
 
-    private static ClassLoader getConfigClassloader(Config config) {
+    private ClassLoader generateConfigClassloader(Config config) {
+        ClassLoader parent = getLegacyUCDClassLoader(config);
+        if (config.getNamespacesConfig().isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("UCD Namespaces requires Hazelcast Enterprise Edition");
+            }
+            return new NamespaceAwareClassLoader(parent);
+        }
+        return parent;
+    }
+
+    /**
+     * If legacy user code deployment feature is enabled, then constructs a classloader to facilitate
+     * legacy UCD, otherwise returns the config's classloader.
+     */
+    static ClassLoader getLegacyUCDClassLoader(Config config) {
         UserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
         ClassLoader classLoader;
         if (userCodeDeploymentConfig.isEnabled()) {
@@ -334,6 +356,9 @@ public class Node {
             });
         } else {
             classLoader = config.getClassLoader();
+            if (classLoader == null) {
+                classLoader = Node.class.getClassLoader();
+            }
         }
         return classLoader;
     }
@@ -369,7 +394,8 @@ public class Node {
             Object listener = listenerCfg.getImplementation();
             if (listener == null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(configClassLoader, listenerCfg.getClassName());
+                    listener = ClassLoaderUtil.newInstance(NamespaceUtil.getDefaultClassloader(getNodeEngine()),
+                            listenerCfg.getClassName());
                 } catch (Exception e) {
                     logger.severe(e);
                 }
@@ -449,6 +475,10 @@ public class Node {
 
     public InternalPartitionService getPartitionService() {
         return partitionService;
+    }
+
+    public NamespaceService getNamespaceService() {
+        return namespaceService;
     }
 
     public Address getMasterAddress() {

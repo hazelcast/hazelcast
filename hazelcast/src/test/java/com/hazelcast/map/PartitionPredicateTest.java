@@ -46,7 +46,7 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionPredicateTest extends HazelcastTestSupport {
 
-    private static final int PARTITIONS = 10;
+    public static final int PARTITIONS = 10;
     private static final int ITEMS_PER_PARTITION = 20;
 
     private HazelcastInstance local;

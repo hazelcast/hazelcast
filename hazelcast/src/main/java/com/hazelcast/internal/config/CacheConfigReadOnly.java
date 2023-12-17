@@ -29,6 +29,7 @@ import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.WanReplicationRef;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -244,6 +245,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfig<K, V> setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public CacheConfig<K, V> setNamespace(@Nullable String namespace) {
         throw throwReadOnly();
     }
 

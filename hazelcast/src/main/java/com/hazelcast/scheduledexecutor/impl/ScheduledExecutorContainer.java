@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -91,17 +92,19 @@ public class ScheduledExecutorContainer {
      */
     private final CapacityPermit permit;
     private final ExecutorStats executorStats;
+    private final @Nullable String namespace;
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
-                               int durability, boolean statisticsEnabled) {
-        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>(), statisticsEnabled);
+                               int durability, boolean statisticsEnabled, @Nullable String namespace) {
+        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>(), statisticsEnabled, namespace);
     }
 
     ScheduledExecutorContainer(String name, int partitionId,
                                NodeEngine nodeEngine,
                                CapacityPermit permit, int durability,
                                ConcurrentMap<String, ScheduledTaskDescriptor> tasks,
-                               boolean statisticsEnabled) {
+                               boolean statisticsEnabled,
+                               @Nullable String namespace) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -113,6 +116,7 @@ public class ScheduledExecutorContainer {
         this.statisticsEnabled = statisticsEnabled;
         DistributedScheduledExecutorService service = nodeEngine.getService(SERVICE_NAME);
         this.executorStats = service.getExecutorStats();
+        this.namespace = namespace;
     }
 
     public ExecutorStats getExecutorStats() {
@@ -260,6 +264,11 @@ public class ScheduledExecutorContainer {
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    @Nullable
+    public String getNamespace() {
+        return namespace;
     }
 
     public ScheduledTaskHandler offprintHandler(String taskName) {

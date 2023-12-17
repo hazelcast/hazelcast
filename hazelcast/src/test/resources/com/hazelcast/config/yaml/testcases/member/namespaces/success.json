@@ -1,0 +1,52 @@
+{
+  "instance": {
+    "hazelcast": {
+      "namespaces": {
+        "enabled": false,
+        "class-filter": {
+          "defaults-disabled": true,
+          "blacklist": {
+            "class": [
+              "com.acme.app.BeanComparator"
+            ]
+          },
+          "whitelist": {
+            "class": [
+              "java.lang.String",
+              "example.Foo"
+            ],
+            "package": [
+              "com.acme.app",
+              "com.acme.app.subpkg"
+            ],
+            "prefix": [
+              "com.hazelcast.",
+              "java"
+            ]
+          }
+        },
+        "namespace1": [
+          {
+            "jar": {
+              "id": "test",
+              "url": "file://home/hazelcast/test.jar"
+            }
+          },
+          {
+            "jar": {
+              "id": "test2",
+              "url": "file://home/hazelcast/test2.jar"
+            }
+          },
+          {
+            "jars-in-zip": {
+              "id": "test3",
+              "url": "file://home/hazelcast/test3.zip"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "error": null
+}

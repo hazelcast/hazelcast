@@ -21,6 +21,7 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MergePolicyConfig;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -87,6 +88,11 @@ public class ListConfigReadOnly extends ListConfig {
 
     @Override
     public ListConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        throw new UnsupportedOperationException("This config is read-only list: " + getName());
+    }
+
+    @Override
+    public ListConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only list: " + getName());
     }
 }

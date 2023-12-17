@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.io.Closeable;
 import java.util.Collection;
@@ -67,6 +68,7 @@ import java.util.Map;
  * @param <K> type of the MapLoader key
  * @param <V> type of the MapLoader value
  */
+@NamespacesSupported
 public interface MapLoader<K, V> {
 
     /**

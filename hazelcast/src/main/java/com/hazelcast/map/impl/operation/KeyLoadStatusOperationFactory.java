@@ -29,13 +29,12 @@ import java.io.IOException;
 public class KeyLoadStatusOperationFactory extends AbstractMapOperationFactory {
 
     private Throwable exception;
-    private String name;
 
     public KeyLoadStatusOperationFactory() {
     }
 
     public KeyLoadStatusOperationFactory(String name, Throwable exception) {
-        this.name = name;
+        super(name);
         this.exception = exception;
     }
 

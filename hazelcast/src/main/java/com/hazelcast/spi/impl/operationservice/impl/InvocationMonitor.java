@@ -113,7 +113,6 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
     @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS, unit = MS)
     private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
 
-    //todo: we need to get rid of the nodeEngine dependency
     InvocationMonitor(NodeEngineImpl nodeEngine,
                       Address thisAddress,
                       HazelcastProperties properties,

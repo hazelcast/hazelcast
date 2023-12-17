@@ -119,4 +119,9 @@ public class MapExecuteOnKeysMessageTask
     public Object[] getParameters() {
         return new Object[]{parameters.keys, parameters.entryProcessor};
     }
+
+    @Override
+    protected String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

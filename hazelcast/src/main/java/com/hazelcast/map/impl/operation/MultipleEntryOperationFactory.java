@@ -31,7 +31,6 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private Set<Data> keys;
     private EntryProcessor entryProcessor;
 
@@ -39,7 +38,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
     }
 
     public MultipleEntryOperationFactory(String name, Set<Data> keys, EntryProcessor entryProcessor) {
-        this.name = name;
+        super(name);
         this.keys = keys;
         this.entryProcessor = entryProcessor;
     }
@@ -68,7 +67,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
             Data key = IOUtil.readData(in);
             keys.add(key);
         }
-        this.entryProcessor = in.readObject();
+        this.entryProcessor = callWithNamespaceAwareness(in::readObject);
     }
 
     @Override

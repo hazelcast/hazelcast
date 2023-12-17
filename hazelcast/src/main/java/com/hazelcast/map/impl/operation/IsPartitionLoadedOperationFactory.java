@@ -25,13 +25,11 @@ import java.io.IOException;
 
 public class IsPartitionLoadedOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
-
     public IsPartitionLoadedOperationFactory() {
     }
 
     public IsPartitionLoadedOperationFactory(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override

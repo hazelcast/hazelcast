@@ -175,7 +175,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         newValue = IOUtil.readData(in);
         caller = UUIDSerializationUtil.readUUID(in);
         begin = in.readLong();
-        entryBackupProcessor = in.readObject();
+        entryBackupProcessor = callWithNamespaceAwareness(in::readObject);
         newTtl = in.readLong();
         changeExpiryOnUpdate = in.readBoolean();
     }

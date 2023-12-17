@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
@@ -78,16 +78,14 @@ public class MultiMapProxyImpl<K, V>
                         impl + " should be an instance of EntryListener");
             } else if (listenerConfig.getClassName() != null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+                    listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
 
             if (listener != null) {
-                if (listener instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-                }
                 if (listenerConfig.isLocal()) {
                     addLocalEntryListener(listener);
                 } else {

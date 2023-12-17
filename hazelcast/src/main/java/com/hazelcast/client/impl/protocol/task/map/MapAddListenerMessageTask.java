@@ -127,4 +127,9 @@ public class MapAddListenerMessageTask
     public Object[] getParameters() {
         return null;
     }
+
+    @Override
+    protected String getNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

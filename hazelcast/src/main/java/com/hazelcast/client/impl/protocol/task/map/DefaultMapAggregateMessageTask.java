@@ -23,8 +23,11 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.internal.util.IterationType;
 
+import java.security.Permission;
 import java.util.Collection;
 
 public abstract class DefaultMapAggregateMessageTask<P>
@@ -83,4 +86,8 @@ public abstract class DefaultMapAggregateMessageTask<P>
         return combinedResult.getAggregator().aggregate();
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_AGGREGATE);
+    }
 }

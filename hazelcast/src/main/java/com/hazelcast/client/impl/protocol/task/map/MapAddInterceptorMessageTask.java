@@ -25,10 +25,12 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -49,7 +51,9 @@ public class MapAddInterceptorMessageTask
     protected Supplier<Operation> createOperationSupplier() {
         final MapService mapService = getService(MapService.SERVICE_NAME);
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapInterceptor mapInterceptor = serializationService.toObject(parameters.interceptor);
+        final MapInterceptor mapInterceptor =
+                NamespaceUtil.callWithNamespace(nodeEngine, MapService.lookupNamespace(nodeEngine, parameters.name),
+                        () -> serializationService.toObject(parameters.interceptor));
         id = mapServiceContext.generateInterceptorId(parameters.name, mapInterceptor);
         return new AddInterceptorOperationSupplier(parameters.name, id, mapInterceptor);
     }
@@ -85,8 +89,15 @@ public class MapAddInterceptorMessageTask
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_INTERCEPT);
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_INTERCEPT);
+    }
+
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

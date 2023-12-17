@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -576,8 +577,8 @@ abstract class CacheProxySupport<K, V>
             listener = (T) listenerConfig.getImplementation();
         } else if (listenerConfig.getClassName() != null) {
             try {
-                listener = ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
-                        listenerConfig.getClassName());
+                ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(), cacheConfig.getNamespace());
+                listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

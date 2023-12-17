@@ -150,6 +150,7 @@
         <pool-size>16</pool-size>
         <queue-capacity>1000</queue-capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <namespace>ns1</namespace>
     </executor-service>
     <durable-executor-service name="dummy">
         <statistics-enabled>false</statistics-enabled>
@@ -157,6 +158,7 @@
         <durability>2</durability>
         <capacity>10</capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
+        <namespace>ns1</namespace>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
         <statistics-enabled>false</statistics-enabled>
@@ -165,6 +167,7 @@
         <capacity>50</capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="10">PutIfAbsentMergePolicy</merge-policy>
+        <namespace>ns1</namespace>
     </scheduled-executor-service>
     <cardinality-estimator name="dummy">
         <backup-count>1</backup-count>
@@ -202,6 +205,7 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>
+        <namespace>ns1</namespace>
     </queue>
 
     <map name="default">
@@ -451,6 +455,7 @@
             <attribute>attributeName1</attribute>
             <attribute>attributeName2</attribute>
         </partition-attributes>
+        <namespace>ns1</namespace>
     </map>
 
     <multimap name="default">
@@ -464,6 +469,7 @@
         </entry-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <namespace>ns1</namespace>
     </multimap>
 
     <replicatedmap name="dummy">
@@ -475,6 +481,7 @@
         <entry-listeners>
             <entry-listener include-value="false" local="true">DummyListener</entry-listener>
         </entry-listeners>
+        <namespace>ns1</namespace>
     </replicatedmap>
 
     <list name="default">
@@ -487,6 +494,7 @@
         </item-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <namespace>ns1</namespace>
     </list>
 
     <set name="default">
@@ -499,6 +507,7 @@
         </item-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <namespace>ns1</namespace>
     </set>
 
     <topic name="default">
@@ -508,6 +517,7 @@
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
         <multi-threading-enabled>false</multi-threading-enabled>
+        <namespace>ns1</namespace>
     </topic>
 
 
@@ -518,6 +528,7 @@
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
+        <namespace>ns1</namespace>
     </reliable-topic>
 
     <ringbuffer name="default">
@@ -528,6 +539,7 @@
         <in-memory-format>OBJECT</in-memory-format>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <namespace>ns1</namespace>
     </ringbuffer>
 
     <cache name="default">
@@ -581,6 +593,7 @@
             <capacity>100</capacity>
             <time-to-live-seconds>100</time-to-live-seconds>
         </event-journal>
+        <namespace>ns1</namespace>
     </cache>
 
     <flake-id-generator name="default">
@@ -961,6 +974,11 @@
                     <action>all</action>
                 </actions>
             </sql-permission>
+            <namespace-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </namespace-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -1120,5 +1138,33 @@
     <tpc enabled="true">
         <eventloop-count>12</eventloop-count>
     </tpc>
+
+    <namespaces enabled="false">
+        <class-filter defaults-disabled="true">
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <package>com.acme.app</package>
+                <prefix>com.hazelcast.</prefix>
+            </whitelist>
+        </class-filter>
+        <namespace name="ns1">
+            <jar id="jarId">
+                <url>file:///path/to/jar</url>
+            </jar>
+            <jars-in-zip id="jarsInZipId">
+                <url>file:///path/to/jarsInZip/jars.zip</url>
+            </jars-in-zip>
+        </namespace>
+        <namespace name="ns2">
+            <jar id="jarId2">
+                <url>file:///path/to/jar2</url>
+            </jar>
+            <jar id="jarId3">
+                <url>file:///path/to/jar3</url>
+            </jar>
+        </namespace>
+    </namespaces>
 
 </hazelcast>

@@ -19,12 +19,14 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -148,21 +150,24 @@ public class PartitionScanRunner {
         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
 
-        while (resultList.size() < fetchSize && pointers[pointers.length - 1].getIndex() >= 0) {
-            MapEntriesWithCursor cursor = recordStore.fetchEntries(pointers, fetchSize - resultList.size());
-            pointers = cursor.getIterationPointers();
-            Collection<? extends Entry<Data, Data>> entries = cursor.getBatch();
-            if (entries.isEmpty()) {
-                break;
-            }
-            for (Entry<Data, Data> entry : entries) {
-                QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), ss, extractors);
-                if (predicate.apply(queryEntry)) {
-                    resultList.add(queryEntry);
+        return NamespaceUtil.callWithNamespace(nodeEngine, MapService.lookupNamespace(nodeEngine, mapName), () -> {
+            IterationPointer[] localPointers = pointers;
+            while (resultList.size() < fetchSize && localPointers[localPointers.length - 1].getIndex() >= 0) {
+                MapEntriesWithCursor cursor = recordStore.fetchEntries(localPointers, fetchSize - resultList.size());
+                localPointers = cursor.getIterationPointers();
+                Collection<? extends Entry<Data, Data>> entries = cursor.getBatch();
+                if (entries.isEmpty()) {
+                    break;
+                }
+                for (Entry<Data, Data> entry : entries) {
+                    QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), ss, extractors);
+                    if (predicate.apply(queryEntry)) {
+                        resultList.add(queryEntry);
+                    }
                 }
             }
-        }
-        return new QueryableEntriesSegment(resultList, pointers);
+            return new QueryableEntriesSegment(resultList, localPointers);
+        });
     }
 
     protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer, int partitionId) {

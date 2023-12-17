@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetClearCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionClearOperation;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.impl.Node;
@@ -34,7 +33,7 @@ import java.security.Permission;
  * SetClearMessageTask
  */
 public class SetClearMessageTask
-        extends AbstractPartitionMessageTask<String> {
+        extends AbstractSetMessageTask<String> {
 
     public SetClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

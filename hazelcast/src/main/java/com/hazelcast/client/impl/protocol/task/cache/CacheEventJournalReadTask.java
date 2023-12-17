@@ -58,6 +58,7 @@ public class CacheEventJournalReadTask<K, V, T>
 
     public CacheEventJournalReadTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override

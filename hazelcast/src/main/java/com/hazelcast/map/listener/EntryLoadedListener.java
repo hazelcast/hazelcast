@@ -18,6 +18,7 @@ package com.hazelcast.map.listener;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.map.MapLoader;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked upon load of an entry.
@@ -32,6 +33,7 @@ import com.hazelcast.map.MapLoader;
  * @since 3.11
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface EntryLoadedListener<K, V> extends MapListener {
 
     /**

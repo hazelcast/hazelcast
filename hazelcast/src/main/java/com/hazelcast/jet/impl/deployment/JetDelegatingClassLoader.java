@@ -22,6 +22,10 @@ public class JetDelegatingClassLoader extends ClassLoader {
         super(parent == null ? JetDelegatingClassLoader.class.getClassLoader() : parent);
     }
 
+    public JetDelegatingClassLoader(String name, ClassLoader parent) {
+        super(name, parent == null ? JetDelegatingClassLoader.class.getClassLoader() : parent);
+    }
+
     public void shutdown() {
     }
 }

@@ -97,4 +97,10 @@ public class AddPartitionLostListenerMessageTask
     public Object[] getParameters() {
         return null;
     }
+
+    @Override
+    protected String getNamespace() {
+        // Default Namespace
+        return null;
+    }
 }

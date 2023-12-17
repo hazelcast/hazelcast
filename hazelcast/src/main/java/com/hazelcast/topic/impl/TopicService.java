@@ -25,6 +25,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
@@ -148,7 +149,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
                 , nodeEngine.getSerializationService());
         incrementReceivedMessages(topicEvent.name);
         MessageListener messageListener = (MessageListener) listener;
-        messageListener.onMessage(message);
+        NamespaceUtil.runWithNamespace(nodeEngine, lookupNamespace(nodeEngine, topicEvent.name),
+                () -> messageListener.onMessage(message));
     }
 
     public LocalTopicStatsImpl getLocalTopicStats(String name) {
@@ -228,5 +230,16 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, TOPIC_PREFIX, getStats());
+    }
+
+    public static String lookupNamespace(NodeEngine nodeEngine, String topicName) {
+        if (nodeEngine.getNamespaceService().isEnabled()) {
+            // No regular containers available, fallback to config
+            TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(topicName);
+            if (topicConfig != null) {
+                return topicConfig.getNamespace();
+            }
+        }
+        return null;
     }
 }

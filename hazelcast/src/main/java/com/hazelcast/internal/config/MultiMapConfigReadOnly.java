@@ -21,6 +21,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.multimap.MultiMap;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -96,6 +97,11 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
 
     @Override
     public MultiMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+    }
+
+    @Override
+    public MultiMapConfig setNamespace(@Nullable String namespace) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }
 }

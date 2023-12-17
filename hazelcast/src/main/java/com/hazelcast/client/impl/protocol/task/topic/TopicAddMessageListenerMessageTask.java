@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
@@ -77,7 +78,13 @@ public class TopicAddMessageListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new TopicPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new TopicPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = TopicService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
@@ -122,5 +129,10 @@ public class TopicAddMessageListenerMessageTask
         } else {
             sendClientMessage(partitionKey, eventMessage);
         }
+    }
+
+    @Override
+    protected String getNamespace() {
+        return TopicService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

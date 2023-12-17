@@ -84,4 +84,10 @@ public class TopicPublishAllMessageTask
         Data[] array = new Data[messageList.size()];
         return messageList.toArray(array);
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

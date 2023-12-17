@@ -21,6 +21,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -973,7 +974,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         String comparatorClassName = config.getPriorityComparatorClassName();
         if (!isNullOrEmpty(comparatorClassName)) {
             try {
-                ClassLoader classloader = config.getClass().getClassLoader();
+                ClassLoader classloader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
                 Comparator<?> comparator = ClassLoaderUtil.newInstance(classloader, comparatorClassName);
                 return new PriorityQueue<>(new ForwardingQueueItemComparator<>(comparator));
             } catch (Exception e) {
@@ -1057,7 +1058,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
         // init QueueStore
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        ClassLoader classLoader = nodeEngine.getConfigClassLoader();
 
         // in case we need to create a priority queue
         // we recreate the queue using the items that are currently a LinkedList
@@ -1068,7 +1068,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
             itemQueue = copy;
         }
 
-        this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
+        // Use Namespace specific class loader if available
+        ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+        this.store = QueueStoreWrapper.create(nodeEngine, name, storeConfig, serializationService,
+                classLoader, config.getNamespace());
 
         if (isPriorityQueue && store.isEnabled() && store.getMemoryLimit() < Integer.MAX_VALUE) {
             logger.warning("The queue '" + name + "' has both a comparator class and a store memory limit set. "

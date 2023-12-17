@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.RemainingCapacityOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -35,7 +33,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMAININGCAPACITY}
  */
 public class QueueRemainingCapacityMessageTask
-        extends AbstractPartitionMessageTask<String> {
+        extends AbstractQueueMessageTask<String> {
 
     public QueueRemainingCapacityMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -65,11 +63,6 @@ public class QueueRemainingCapacityMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.REMAINING_CAPACITY;
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

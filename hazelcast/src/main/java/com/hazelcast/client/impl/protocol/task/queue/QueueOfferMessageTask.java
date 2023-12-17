@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueOfferCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.OfferOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -36,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_OFFER}
  */
 public class QueueOfferMessageTask
-        extends AbstractPartitionMessageTask<QueueOfferCodec.RequestParameters> {
+        extends AbstractQueueMessageTask<QueueOfferCodec.RequestParameters> {
 
     public QueueOfferMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -73,11 +71,6 @@ public class QueueOfferMessageTask
     @Override
     public String getMethodName() {
         return SecurityInterceptorConstants.OFFER;
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 
     @Override

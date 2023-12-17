@@ -22,6 +22,7 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -139,7 +140,9 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             }
 
             if (listenerConfig.getClassName() != null) {
-                Object object = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                String namespace = ReliableTopicService.lookupNamespace(nodeEngine, name);
+                ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, namespace);
+                Object object = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
 
                 if (!(object instanceof MessageListener)) {
                     throw new HazelcastException("class '"
@@ -232,6 +235,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
         UUID id = UuidUtil.newUnsecureUUID();
         ReliableMessageListener<E> reliableMessageListener;
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
+
         if (listener instanceof ReliableMessageListener) {
             reliableMessageListener = (ReliableMessageListener) listener;
         } else {

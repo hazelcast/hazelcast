@@ -33,6 +33,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -318,8 +319,8 @@ abstract class MapProxySupport<K, V>
         String className = listenerConfig.getClassName();
         if (className != null) {
             try {
-                ClassLoader configClassLoader = getNodeEngine().getConfigClassLoader();
-                return ClassLoaderUtil.newInstance(configClassLoader, className);
+                ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(), mapConfig.getNamespace());
+                return ClassLoaderUtil.newInstance(classLoader, className);
             } catch (Exception e) {
                 throw rethrow(e);
             }

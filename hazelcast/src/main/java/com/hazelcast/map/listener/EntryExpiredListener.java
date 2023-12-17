@@ -17,6 +17,7 @@
 package com.hazelcast.map.listener;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked upon expiration-based removal of an entry.
@@ -33,6 +34,7 @@ import com.hazelcast.core.EntryEvent;
  * @since 3.6
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface EntryExpiredListener<K, V> extends MapListener {
 
     /**

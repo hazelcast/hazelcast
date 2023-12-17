@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 /**
  * TODO This test doesn't force a re-download, so if an artifact is cached in the local repository, the download won't be
- * exercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
+ *      exercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
  */
 public class HazelcastVersionLocatorTest {
     private static HashFunction hashFunction;

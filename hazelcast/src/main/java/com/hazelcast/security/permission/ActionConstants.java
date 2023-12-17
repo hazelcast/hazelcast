@@ -32,6 +32,7 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.namespace.NamespaceService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.impl.MapService;
@@ -68,6 +69,7 @@ public final class ActionConstants {
     public static final String ACTION_AGGREGATE = "aggregate";
     public static final String ACTION_PROJECTION = "projection";
     public static final String ACTION_USER_CODE_DEPLOY = "deploy";
+    public static final String ACTION_USE = "use";
 
     public static final String ACTION_SUBMIT = "submit";
     public static final String ACTION_CANCEL = "cancel";
@@ -120,6 +122,7 @@ public final class ActionConstants {
         PERMISSION_FACTORY_MAP.put(InternalSqlService.SERVICE_NAME, SqlPermission::new);
         PERMISSION_FACTORY_MAP.put(DistributedScheduledExecutorService.SERVICE_NAME, ScheduledExecutorPermission::new);
         PERMISSION_FACTORY_MAP.put(CPMapServiceUtil.SERVICE_NAME, CPMapPermission::new);
+        PERMISSION_FACTORY_MAP.put(NamespaceService.SERVICE_NAME, NamespacePermission::new);
     }
 
     private ActionConstants() {

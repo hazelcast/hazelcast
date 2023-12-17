@@ -76,4 +76,10 @@ public class ReplicatedMapContainsValueMessageTask
     public Object[] getParameters() {
         return new Object[]{parameters.value};
     }
+
+    @Override
+    protected String getNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
+    }
 }

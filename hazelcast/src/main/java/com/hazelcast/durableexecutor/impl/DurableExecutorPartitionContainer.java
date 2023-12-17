@@ -54,7 +54,7 @@ public class DurableExecutorPartitionContainer {
         int durability = durableExecutorConfig.getDurability();
         boolean statisticsEnabled = durableExecutorConfig.isStatisticsEnabled();
         executorContainerMap.put(name, new DurableExecutorContainer(nodeEngine, name,
-                partitionId, durability, statisticsEnabled, ringBuffer));
+                partitionId, durability, statisticsEnabled, ringBuffer, durableExecutorConfig.getNamespace()));
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
@@ -110,6 +110,7 @@ public class DurableExecutorPartitionContainer {
         int ringBufferCapacity = durableExecutorConfig.getCapacity();
         boolean statisticsEnabled = durableExecutorConfig.isStatisticsEnabled();
         TaskRingBuffer ringBuffer = new TaskRingBuffer(ringBufferCapacity);
-        return new DurableExecutorContainer(nodeEngine, name, partitionId, durability, statisticsEnabled, ringBuffer);
+        return new DurableExecutorContainer(nodeEngine, name, partitionId, durability, statisticsEnabled, ringBuffer,
+                durableExecutorConfig.getNamespace());
     }
 }

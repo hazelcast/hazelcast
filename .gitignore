@@ -20,12 +20,14 @@ atlassian-ide-plugin.xml
 hazelcast/src/main/java/com/hazelcast/instance/GeneratedBuildProperties.java
 diagnostics-*.log
 performance*.log
+derby.log
 build/
 reports/
 */src/test/resources/data/file*
 */src/test/resources/data/result*
 *.jfr
 .mvn/wrapper/maven-wrapper.jar
+hazelcast/src/test/class/**/*.java
 .checkstyle
 
 # Hadoop files

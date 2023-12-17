@@ -17,95 +17,31 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
-import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.security.permission.ConfigPermission;
-
-import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Base implementation for dynamic add***Config methods.
  */
-public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTask<P>
-        implements BiConsumer<Object, Throwable> {
-
-    private static final ConfigPermission CONFIG_PERMISSION = new ConfigPermission();
-
-    public AbstractAddConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public abstract class AbstractAddConfigMessageTask<P> extends AbstractUpdateConfigMessageTask<P> {
+    protected AbstractAddConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-
-    @Override
-    public String getServiceName() {
-        return ConfigurationService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return null;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return CONFIG_PERMISSION;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        // todo may have to specify for security
-        return new Object[0];
-    }
+    protected abstract boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config);
 
     @Override
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
-        ClusterWideConfigurationService service = getService(ConfigurationService.SERVICE_NAME);
+        ClusterWideConfigurationService service = getService(getServiceName());
         if (checkStaticConfigDoesNotExist(config)) {
-            service.broadcastConfigAsync(config)
-                   .whenCompleteAsync(this, CALLER_RUNS);
+            service.broadcastConfigAsync(config).whenCompleteAsync(this, CALLER_RUNS);
         } else {
             sendResponse(null);
         }
     }
-
-    @Override
-    public void accept(Object response, Throwable throwable) {
-        if (throwable == null) {
-            sendResponse(response);
-        } else {
-            handleProcessingFailure(throwable);
-        }
-    }
-
-    protected MergePolicyConfig mergePolicyConfig(String mergePolicy, int batchSize) {
-        return new MergePolicyConfig(mergePolicy, batchSize);
-    }
-
-    protected List<? extends ListenerConfig> adaptListenerConfigs(List<ListenerConfigHolder> listenerConfigHolders) {
-        if (listenerConfigHolders == null || listenerConfigHolders.isEmpty()) {
-            return null;
-        }
-
-        List<ListenerConfig> itemListenerConfigs = new ArrayList<ListenerConfig>();
-        for (ListenerConfigHolder listenerConfigHolder : listenerConfigHolders) {
-            itemListenerConfigs.add(listenerConfigHolder.asListenerConfig(serializationService));
-        }
-        return itemListenerConfigs;
-    }
-
-    protected abstract IdentifiedDataSerializable getConfig();
-
-    protected abstract boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config);
 }

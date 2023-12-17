@@ -21,6 +21,7 @@ import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -55,8 +56,13 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
     private QueueStore store;
     private SerializationService serializationService;
 
-    private QueueStoreWrapper(String name) {
+    private final @Nullable String namespace;
+    private final NodeEngine nodeEngine;
+
+    private QueueStoreWrapper(@Nonnull NodeEngine nodeEngine, @Nonnull String name, @Nullable String namespace) {
         this.name = name;
+        this.nodeEngine = nodeEngine;
+        this.namespace = namespace;
     }
 
     /**
@@ -67,14 +73,16 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
      * @param serializationService serialization service.
      * @return returns a new instance of {@link QueueStoreWrapper}
      */
-    public static QueueStoreWrapper create(@Nonnull String name,
+    public static QueueStoreWrapper create(@Nonnull NodeEngine nodeEngine,
+                                           @Nonnull String name,
                                            @Nullable QueueStoreConfig storeConfig,
                                            @Nonnull SerializationService serializationService,
-                                           @Nullable ClassLoader classLoader) {
+                                           @Nullable ClassLoader classLoader,
+                                           @Nullable String namespace) {
         checkNotNull(name, "name should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
-        QueueStoreWrapper storeWrapper = new QueueStoreWrapper(name);
+        QueueStoreWrapper storeWrapper = new QueueStoreWrapper(nodeEngine, name, namespace);
         storeWrapper.setSerializationService(serializationService);
         if (storeConfig == null || !storeConfig.isEnabled()) {
             return storeWrapper;
@@ -150,14 +158,16 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         if (!enabled) {
             return;
         }
-        Object actualValue;
-        if (binary) {
-            // WARNING: we can't pass original Data to the user
-            actualValue = Arrays.copyOf(value.toByteArray(), value.totalSize());
-        } else {
-            actualValue = serializationService.toObject(value);
-        }
-        store.store(key, actualValue);
+        NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> {
+            Object actualValue;
+            if (binary) {
+                // WARNING: we can't pass original Data to the user
+                actualValue = Arrays.copyOf(value.toByteArray(), value.totalSize());
+            } else {
+                actualValue = serializationService.toObject(value);
+            }
+            store.store(key, actualValue);
+        });
     }
 
     @Override
@@ -166,35 +176,37 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             return;
         }
 
-        Map<Long, Object> objectMap = createHashMap(map.size());
-        if (binary) {
-            // WARNING: we can't pass original Data to the user
-            // TODO: @mm - is there really an advantage of using binary storeAll?
-            // since we need to do array copy for each item.
-            for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                Data value = entry.getValue();
-                byte[] copy = Arrays.copyOf(value.toByteArray(), value.totalSize());
-                objectMap.put(entry.getKey(), copy);
+        NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> {
+            Map<Long, Object> objectMap = createHashMap(map.size());
+            if (binary) {
+                // WARNING: we can't pass original Data to the user
+                // TODO: @mm - is there really an advantage of using binary storeAll?
+                // since we need to do array copy for each item.
+                for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                    Data value = entry.getValue();
+                    byte[] copy = Arrays.copyOf(value.toByteArray(), value.totalSize());
+                    objectMap.put(entry.getKey(), copy);
+                }
+            } else {
+                for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                    objectMap.put(entry.getKey(), serializationService.toObject(entry.getValue()));
+                }
             }
-        } else {
-            for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                objectMap.put(entry.getKey(), serializationService.toObject(entry.getValue()));
-            }
-        }
-        store.storeAll(objectMap);
+            store.storeAll(objectMap);
+        });
     }
 
     @Override
     public void delete(Long key) {
         if (enabled) {
-            store.delete(key);
+            NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> store.delete(key));
         }
     }
 
     @Override
     public void deleteAll(Collection<Long> keys) {
         if (enabled) {
-            store.deleteAll(keys);
+            NamespaceUtil.runWithNamespace(nodeEngine, namespace, () -> store.deleteAll(keys));
         }
     }
 
@@ -204,12 +216,14 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             return null;
         }
 
-        Object val = store.load(key);
-        if (binary) {
-            byte[] dataBuffer = (byte[]) val;
-            return new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
-        }
-        return serializationService.toData(val);
+        return NamespaceUtil.callWithNamespace(nodeEngine, namespace, () -> {
+            Object val = store.load(key);
+            if (binary) {
+                byte[] dataBuffer = (byte[]) val;
+                return new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
+            }
+            return serializationService.toData(val);
+        });
     }
 
     @Override
@@ -218,29 +232,31 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             return null;
         }
 
-        Map<Long, ?> map = store.loadAll(keys);
-        if (map == null) {
-            return Collections.emptyMap();
-        }
-        Map<Long, Data> dataMap = createHashMap(map.size());
-        if (binary) {
-            for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                byte[] dataBuffer = (byte[]) entry.getValue();
-                Data data = new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
-                dataMap.put(entry.getKey(), data);
+        return NamespaceUtil.callWithNamespace(nodeEngine, namespace, () -> {
+            Map<Long, ?> map = store.loadAll(keys);
+            if (map == null) {
+                return Collections.emptyMap();
             }
-        } else {
-            for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
+            Map<Long, Data> dataMap = createHashMap(map.size());
+            if (binary) {
+                for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                    byte[] dataBuffer = (byte[]) entry.getValue();
+                    Data data = new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
+                    dataMap.put(entry.getKey(), data);
+                }
+            } else {
+                for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                    dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
+                }
             }
-        }
-        return dataMap;
+            return dataMap;
+        });
     }
 
     @Override
     public Set<Long> loadAllKeys() {
         if (enabled) {
-            return store.loadAllKeys();
+            return NamespaceUtil.callWithNamespace(nodeEngine, namespace, () -> store.loadAllKeys());
         }
         return null;
     }

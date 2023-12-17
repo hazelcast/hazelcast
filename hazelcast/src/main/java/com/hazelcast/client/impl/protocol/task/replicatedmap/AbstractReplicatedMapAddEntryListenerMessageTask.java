@@ -34,6 +34,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
@@ -46,14 +47,14 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         extends AbstractAddListenerMessageTask<Parameter>
         implements EntryListener<Object, Object> {
 
-    public AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node,
+    protected AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node,
                                                             Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected CompletableFuture<UUID> processInternal() {
-        ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
+        ReplicatedMapService service = getService(getServiceName());
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
         Predicate predicate = getPredicate();
         ReplicatedEntryEventFilter filter;
@@ -80,6 +81,12 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         return new ReplicatedMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = ReplicatedMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
+
     public abstract Predicate getPredicate();
 
     public abstract Data getKey();
@@ -91,7 +98,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             return;
         }
 
-        DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+        DataAwareEntryEvent<Object, Object> dataAwareEntryEvent = (DataAwareEntryEvent<Object, Object>) event;
 
         Data key = dataAwareEntryEvent.getKeyData();
         Data newValue = dataAwareEntryEvent.getNewValueData();
@@ -166,5 +173,10 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     @Override
     public void mapCleared(MapEvent event) {
         handleMapEvent(event);
+    }
+
+    @Override
+    protected String getNamespace() {
+        return ReplicatedMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

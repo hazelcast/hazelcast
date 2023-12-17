@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -50,10 +51,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -70,10 +71,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -295,15 +296,34 @@ public class JobRepository {
      * Unzips the ZIP archive and processes JAR files
      */
     private void loadJarsInZip(Map<String, byte[]> map, URL url) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()))) {
-            ZipEntry zipEntry;
-            while ((zipEntry = zis.getNextEntry()) != null) {
-                if (zipEntry.isDirectory()) {
-                    continue;
-                }
-                if (lowerCaseInternal(zipEntry.getName()).endsWith(".jar")) {
+        try (InputStream inputStream = new BufferedInputStream(url.openStream())) {
+            executeOnJarsInZIP(inputStream, zis -> {
+                try {
                     loadJarFromInputStream(map, zis);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+    }
+
+    /**
+     * Extracts JARs from a ZIP, provided by an {@link InputStream}, passing them to a consumer to process.
+     * <p>
+     * Caller is responsible for closing stream.
+     */
+    public static void executeOnJarsInZIP(InputStream zip, Consumer<ZipInputStream> processor) throws IOException {
+        ZipInputStream zis = new ZipInputStream(zip);
+        ZipEntry zipEntry;
+
+        while ((zipEntry = zis.getNextEntry()) != null) {
+            if (zipEntry.isDirectory()) {
+                continue;
+            }
+            if (lowerCaseInternal(zipEntry.getName()).endsWith(".jar")) {
+                processor.accept(zis);
             }
         }
     }
@@ -323,20 +343,11 @@ public class JobRepository {
         }
     }
 
-    private void readStreamAndPutCompressedToMap(
+    private static void readStreamAndPutCompressedToMap(
             String resourceName, Map<String, byte[]> map, InputStream in
     ) throws IOException {
         // ignore duplicates: the first resource in first jar takes precedence
-        if (map.containsKey(resourceName)) {
-            return;
-        }
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DeflaterOutputStream compressor = new DeflaterOutputStream(baos)) {
-            IOUtil.drainTo(in, compressor);
-        }
-
-        map.put(classKeyName(resourceName), baos.toByteArray());
+        map.putIfAbsent(classKeyName(resourceName), IOUtil.compress(in.readAllBytes()));
     }
 
     /**
@@ -691,14 +702,14 @@ public class JobRepository {
      * Returns the key name in the form {@code file.<id>}
      */
     public static String fileKeyName(String id) {
-        return FILE_STORAGE_KEY_NAME_PREFIX + id;
+        return OS.ensureUnixSeparators(FILE_STORAGE_KEY_NAME_PREFIX + id);
     }
 
     /**
      * Returns the key name in the form {@code class.<id>}
      */
     public static String classKeyName(String id) {
-        return CLASS_STORAGE_KEY_NAME_PREFIX + id;
+        return OS.ensureUnixSeparators(CLASS_STORAGE_KEY_NAME_PREFIX + id);
     }
 
     /**

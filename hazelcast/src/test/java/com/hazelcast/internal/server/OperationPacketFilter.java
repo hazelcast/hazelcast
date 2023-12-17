@@ -25,7 +25,9 @@ import com.hazelcast.internal.nio.Packet;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Abstract {@code Packet} filtering class that allows all non-Operation type
+ * packets to pass the filter, and applies an additional filtering step for
+ * Operations as defined by the abstract {@link #filterOperation} implementation.
  */
 public abstract class OperationPacketFilter implements PacketFilter {
     protected final InternalSerializationService serializationService;

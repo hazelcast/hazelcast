@@ -18,7 +18,8 @@
           "merge-policy": {
             "batch-size": 0.5,
             "class-name": "UnknownMergePolicy"
-          }
+          },
+          "namespace": []
         },
         "limits-exceeded": {
           "capacity": -10000,
@@ -148,11 +149,18 @@
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/Ringbuffer/additionalProperties/properties/namespace",
+            "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/namespace",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: JSONArray"
           }
         ],
-        "message": "11 schema violations found"
+        "message": "12 schema violations found"
       }
     ],
-    "message": "14 schema violations found"
+    "message": "15 schema violations found"
   }
 }

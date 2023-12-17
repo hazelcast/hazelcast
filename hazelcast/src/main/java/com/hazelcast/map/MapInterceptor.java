@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.io.Serializable;
 
@@ -33,6 +34,7 @@ import java.io.Serializable;
  * communication, so changing an implementation's binary format will render it
  * incompatible with its previous versions.
  */
+@NamespacesSupported
 @BinaryInterface
 public interface MapInterceptor extends Serializable {
 

@@ -62,4 +62,8 @@ abstract class AbstractCacheAllPartitionsTask<P>
         return null;
     }
 
+    @Override
+    protected String getNamespace() {
+        return CacheService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

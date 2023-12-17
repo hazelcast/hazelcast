@@ -25,6 +25,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.NamespacePermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
@@ -77,7 +78,12 @@ public class ReplicatedMapRemoveEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new ReplicatedMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public Permission getNamespacePermission() {
+        String namespace = ReplicatedMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
 }

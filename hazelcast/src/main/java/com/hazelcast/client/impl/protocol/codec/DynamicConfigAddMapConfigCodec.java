@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("9a5671268d515eada058e5d66bdc17ad")
+@Generated("c57046e5ef64d919da836b49cd4b746c")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -229,6 +229,11 @@ public final class DynamicConfigAddMapConfigCodec {
         public @Nullable java.util.List<com.hazelcast.config.PartitioningAttributeConfig> partitioningAttributeConfigs;
 
         /**
+         * Name of the namespace applied to this instance.
+         */
+        public @Nullable java.lang.String namespace;
+
+        /**
          * True if the perEntryStatsEnabled is received from the client, false otherwise.
          * If this is false, perEntryStatsEnabled has the default value for its type.
          */
@@ -251,9 +256,15 @@ public final class DynamicConfigAddMapConfigCodec {
          * If this is false, partitioningAttributeConfigs has the default value for its type.
          */
         public boolean isPartitioningAttributeConfigsExists;
+
+        /**
+         * True if the namespace is received from the client, false otherwise.
+         * If this is false, namespace has the default value for its type.
+         */
+        public boolean isNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, int mergeBatchSize, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.internal.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int metadataPolicy, boolean perEntryStatsEnabled, com.hazelcast.config.DataPersistenceConfig dataPersistenceConfig, com.hazelcast.config.TieredStoreConfig tieredStoreConfig, @Nullable java.util.Collection<com.hazelcast.config.PartitioningAttributeConfig> partitioningAttributeConfigs) {
+    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, int mergeBatchSize, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.internal.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int metadataPolicy, boolean perEntryStatsEnabled, com.hazelcast.config.DataPersistenceConfig dataPersistenceConfig, com.hazelcast.config.TieredStoreConfig tieredStoreConfig, @Nullable java.util.Collection<com.hazelcast.config.PartitioningAttributeConfig> partitioningAttributeConfigs, @Nullable java.lang.String namespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -293,6 +304,7 @@ public final class DynamicConfigAddMapConfigCodec {
         DataPersistenceConfigCodec.encode(clientMessage, dataPersistenceConfig);
         TieredStoreConfigCodec.encode(clientMessage, tieredStoreConfig);
         ListMultiFrameCodec.encodeNullable(clientMessage, partitioningAttributeConfigs, PartitioningAttributeConfigCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -350,6 +362,12 @@ public final class DynamicConfigAddMapConfigCodec {
             request.isPartitioningAttributeConfigsExists = true;
         } else {
             request.isPartitioningAttributeConfigsExists = false;
+        }
+        if (iterator.hasNext()) {
+            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isNamespaceExists = true;
+        } else {
+            request.isNamespaceExists = false;
         }
         return request;
     }

@@ -187,7 +187,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         this.operationExecutor = new OperationExecutorImpl(
                 properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getNodeExtension(), hzName, configClassLoader, nodeEngine.getTpcServerBootstrap());
+                nodeEngine, node.getNodeExtension(), hzName, configClassLoader, nodeEngine.getTpcServerBootstrap());
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),

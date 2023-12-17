@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * This is an extension to {@link MapStore}. Implementing classes can
@@ -27,5 +28,6 @@ import com.hazelcast.map.EntryLoader.MetadataAwareValue;
  * @param <K> type of the EntryStore key
  * @param <V> type of the EntryStore value
  */
+@NamespacesSupported
 public interface EntryStore<K, V> extends EntryLoader<K, V>, MapStore<K, MetadataAwareValue<V>> {
 }

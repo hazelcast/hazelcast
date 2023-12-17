@@ -78,6 +78,9 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
+import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.impl.NoOpNamespaceService;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -132,6 +135,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
+import static com.hazelcast.instance.impl.Node.getLegacyUCDClassLoader;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
@@ -706,5 +710,22 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig) {
         throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+    }
+
+    @Override
+    public void onThreadStart(Thread thread) {
+        // Setup NodeEngine context for User Code Deployment Namespacing in operations
+        NodeEngineThreadLocalContext.declareNodeEngineReference(node.getNodeEngine());
+    }
+
+    @Override
+    public void onThreadStop(Thread thread) {
+        // Destroy NodeEngine context from User Code Deployment Namespacing
+        NodeEngineThreadLocalContext.destroyNodeEngineReference();
+    }
+
+    @Override
+    public NamespaceService getNamespaceService() {
+        return new NoOpNamespaceService(getLegacyUCDClassLoader(node.getConfig()));
     }
 }

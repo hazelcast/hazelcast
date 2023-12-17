@@ -30,7 +30,8 @@
             "batch-size": "100",
             "class-name": {}
           },
-          "priority-comparator-class-name": {}
+          "priority-comparator-class-name": {},
+          "namespace": []
         }
       }
     }
@@ -199,8 +200,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Queue/additionalProperties/properties/namespace",
+        "pointerToViolation": "#/hazelcast/queue/default/namespace",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
       }
     ],
-    "message": "18 schema violations found"
+    "message": "19 schema violations found"
   }
 }

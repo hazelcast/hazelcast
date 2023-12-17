@@ -20,11 +20,15 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
@@ -37,7 +41,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @param <T> Type of Collection such as List, Set
  */
 public abstract class CollectionConfig<T extends CollectionConfig>
-        implements IdentifiedDataSerializable, NamedConfig {
+        implements IdentifiedDataSerializable, NamedConfig, Versioned, NamespaceAwareConfig<CollectionConfig<T>> {
 
     /**
      * Default maximum size for the Configuration.
@@ -60,6 +64,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private @Nullable String namespace = DEFAULT_NAMESPACE;
 
     protected CollectionConfig() {
     }
@@ -73,6 +78,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
+        this.namespace = config.namespace;
     }
 
     /**
@@ -265,6 +271,30 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         return (T) this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param namespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link CollectionConfig} instance
+     * @since 5.4
+     */
+    public T setNamespace(@Nullable String namespace) {
+        this.namespace = namespace;
+        return (T) this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -280,6 +310,11 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         out.writeBoolean(statisticsEnabled);
         out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(namespace);
+        }
     }
 
     @Override
@@ -292,6 +327,11 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            namespace = in.readString();
+        }
     }
 
     @Override
@@ -317,14 +357,16 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
-        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
+        if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
+            return false;
+        }
+        if (!Objects.equals(namespace, that.namespace)) {
             return false;
         }
         return getItemListenerConfigs().equals(that.getItemListenerConfigs());
@@ -340,6 +382,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
+        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
         return result;
     }
 
@@ -354,6 +397,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
                 + ", maxSize=" + maxSize
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName='" + splitBrainProtectionName + "'"
-                + ", mergePolicyConfig='" + mergePolicyConfig + "'";
+                + ", mergePolicyConfig='" + mergePolicyConfig + "'"
+                + ", namespace='" + namespace + "'";
     }
 }

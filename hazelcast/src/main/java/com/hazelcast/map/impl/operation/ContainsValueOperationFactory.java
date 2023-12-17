@@ -27,14 +27,13 @@ import java.io.IOException;
 
 public final class ContainsValueOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private Data value;
 
     public ContainsValueOperationFactory() {
     }
 
     public ContainsValueOperationFactory(String name, Data value) {
-        this.name = name;
+        super(name);
         this.value = value;
     }
 

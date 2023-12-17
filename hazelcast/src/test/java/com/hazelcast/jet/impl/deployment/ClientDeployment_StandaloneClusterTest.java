@@ -28,11 +28,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import static com.hazelcast.jet.impl.deployment.AbstractDeploymentTest.CLASS_DIRECTORY;
+import static com.hazelcast.test.UserCodeUtil.CLASS_DIRECTORY_FILE;
+import static com.hazelcast.test.UserCodeUtil.urlFromFile;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -40,7 +40,7 @@ public class ClientDeployment_StandaloneClusterTest extends JetTestSupport {
 
     @Test
     public void when_classAddedUsingUcd_then_visibleToJet() throws Exception {
-        URL classUrl = new File(CLASS_DIRECTORY).toURI().toURL();
+        URL classUrl = urlFromFile(CLASS_DIRECTORY_FILE);
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> personClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
 

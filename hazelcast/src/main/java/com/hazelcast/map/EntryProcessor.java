@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
@@ -93,6 +94,7 @@ import java.util.Map.Entry;
  *
  * @see ExtendedMapEntry
  */
+@NamespacesSupported
 @BinaryInterface
 @FunctionalInterface
 public interface EntryProcessor<K, V, R> extends Serializable {

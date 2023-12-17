@@ -46,9 +46,10 @@ public class LocalEntryEventDataTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         serializationService = new DefaultSerializationServiceBuilder().build();
-        objectEvent = new LocalEntryEventData(serializationService, "source", 23, "key", "oldValue", "value", 42);
-        dataEvent = new LocalEntryEventData(serializationService, "source", 23, toData("key"), toData("oldValue"),
-                toData("value"), 42);
+        objectEvent = new LocalEntryEventData(serializationService, "source", 23, "key", "oldValue",
+                "value", 42, "mapName");
+        dataEvent = new LocalEntryEventData(serializationService, "source", 23, toData("key"),
+                toData("oldValue"), toData("value"), 42, "mapName");
     }
 
     @After
@@ -122,9 +123,9 @@ public class LocalEntryEventDataTest extends HazelcastTestSupport {
         assertEquals("source", objectEvent.getSource());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testGetMapName() {
-        dataEvent.getMapName();
+        assertEquals("mapName", dataEvent.getMapName());
     }
 
     @Test(expected = UnsupportedOperationException.class)

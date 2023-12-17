@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
@@ -59,47 +61,54 @@ public class MapEventPublishingService implements EventPublishingService<Object,
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void dispatchEvent(Object eventData, ListenerAdapter listener) {
-        if (eventData instanceof QueryCacheEventData) {
-            dispatchQueryCacheEventData((QueryCacheEventData) eventData, listener);
+        handleNamespaceAwareness(eventData, false);
+
+        try {
+            if (eventData instanceof QueryCacheEventData) {
+                dispatchQueryCacheEventData((QueryCacheEventData) eventData, listener);
+            } else if (eventData instanceof BatchEventData) {
+                dispatchBatchEventData((BatchEventData) eventData, listener);
+            } else if (eventData instanceof LocalEntryEventData) {
+                dispatchLocalEventData(((LocalEntryEventData) eventData), listener);
+            } else if (eventData instanceof LocalCacheWideEventData) {
+                dispatchLocalEventData(((LocalCacheWideEventData) eventData), listener);
+            } else if (eventData instanceof EntryEventData) {
+                dispatchEntryEventData((EntryEventData) eventData, listener);
+            } else if (eventData instanceof MapEventData) {
+                dispatchMapEventData((MapEventData) eventData, listener);
+            } else if (eventData instanceof MapPartitionEventData) {
+                dispatchMapPartitionLostEventData((MapPartitionEventData) eventData, listener);
+            } else if (eventData instanceof Invalidation) {
+                listener.onEvent(eventData);
+                incrementEventStats(((Invalidation) eventData));
+            } else {
+                throw new IllegalArgumentException("Unknown event data [" + eventData + ']');
+            }
+        } finally {
+            handleNamespaceAwareness(eventData, true);
+        }
+    }
+
+    private void handleNamespaceAwareness(Object eventData, boolean cleanup) {
+        String mapName;
+        if (eventData instanceof EventData) {
+            mapName = ((EventData) eventData).getMapName();
+        } else if (eventData instanceof IMapEvent) {
+            mapName = ((IMapEvent) eventData).getName();
+        } else {
+            throw new IllegalArgumentException("Unknown event data type: " + eventData.getClass());
+        }
+        if (mapName == null) {
+            // Some implementations do not pass a map name, so no Namespace awareness
             return;
         }
 
-        if (eventData instanceof BatchEventData) {
-            dispatchBatchEventData((BatchEventData) eventData, listener);
-            return;
+        String namespace = MapService.lookupNamespace(nodeEngine, mapName);
+        if (cleanup) {
+            NamespaceUtil.cleanupNamespace(nodeEngine, namespace);
+        } else {
+            NamespaceUtil.setupNamespace(nodeEngine, namespace);
         }
-
-        if (eventData instanceof LocalEntryEventData) {
-            dispatchLocalEventData(((LocalEntryEventData) eventData), listener);
-            return;
-        }
-
-        if (eventData instanceof LocalCacheWideEventData) {
-            dispatchLocalEventData(((LocalCacheWideEventData) eventData), listener);
-            return;
-        }
-
-        if (eventData instanceof EntryEventData) {
-            dispatchEntryEventData((EntryEventData) eventData, listener);
-            return;
-        }
-        if (eventData instanceof MapEventData) {
-            dispatchMapEventData((MapEventData) eventData, listener);
-            return;
-        }
-
-        if (eventData instanceof MapPartitionEventData) {
-            dispatchMapPartitionLostEventData((MapPartitionEventData) eventData, listener);
-            return;
-        }
-
-        if (eventData instanceof Invalidation) {
-            listener.onEvent(eventData);
-            incrementEventStats(((Invalidation) eventData));
-            return;
-        }
-
-        throw new IllegalArgumentException("Unknown event data [" + eventData + ']');
     }
 
     private void incrementEventStats(Invalidation data) {

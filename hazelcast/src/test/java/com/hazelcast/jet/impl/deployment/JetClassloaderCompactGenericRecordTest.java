@@ -33,10 +33,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static com.hazelcast.test.UserCodeUtil.CLASS_DIRECTORY_FILE;
+import static com.hazelcast.test.UserCodeUtil.urlFromFile;
 
 
 @Category({NightlyTest.class, ParallelJVMTest.class})
@@ -78,7 +80,7 @@ public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterS
                 .getPipeline();
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = new File(AbstractDeploymentTest.CLASS_DIRECTORY).toURI().toURL();
+        URL classUrl = urlFromFile(CLASS_DIRECTORY_FILE);
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearance);
