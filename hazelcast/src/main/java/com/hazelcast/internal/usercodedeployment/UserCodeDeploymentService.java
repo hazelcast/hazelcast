@@ -38,6 +38,11 @@ import static com.hazelcast.internal.usercodedeployment.impl.filter.MemberProvid
 import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static java.lang.String.format;
 
+/**
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see com.hazelcast.internal.namespace.NamespaceService
+ */
+@Deprecated(since = "5.4", forRemoval = true)
 public final class UserCodeDeploymentService implements ManagedService {
 
     public static final String SERVICE_NAME = "user-code-deployment-service";

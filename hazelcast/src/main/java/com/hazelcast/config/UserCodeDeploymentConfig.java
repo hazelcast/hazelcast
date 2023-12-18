@@ -24,7 +24,11 @@ import java.util.Objects;
  * Configuration of User Code Deployment. When enabled, it allows Hazelcast members to load classes from other cluster
  * members. This simplifies deployment as you do not have to deploy your domain classes into the classpath of all
  * cluster members.
+ *
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see com.hazelcast.config.NamespacesConfig
  */
+@Deprecated(since = "5.4", forRemoval = true)
 public class UserCodeDeploymentConfig {
 
     /**

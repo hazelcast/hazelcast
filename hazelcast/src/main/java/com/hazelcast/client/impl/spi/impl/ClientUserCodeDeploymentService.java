@@ -42,6 +42,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+/**
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see com.hazelcast.internal.namespace.NamespaceService
+ */
+@Deprecated(since = "5.4", forRemoval = true)
 public class ClientUserCodeDeploymentService {
     private final ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig;
     private final ClassLoader configClassLoader;

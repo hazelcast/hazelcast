@@ -18,6 +18,11 @@ package com.hazelcast.security.permission;
 
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 
+/**
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see NamespacePermission
+ */
+@Deprecated(since = "5.4", forRemoval = true)
 public class UserCodeDeploymentPermission extends InstancePermission {
 
     private static final int DEPLOY = 4;
