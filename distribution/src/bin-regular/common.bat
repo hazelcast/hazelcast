@@ -68,7 +68,7 @@ IF %JAVA_VERSION% GEQ 9 (
     )
 )
 REM Disable the log4j2 shutdown hook, otherwise log lines during node shutdown might be lost
-set JAVA_OPTS=%JAVA_OPTS% -Dlog4j.shutdownHookEnabled=false
+set JAVA_OPTS=%JAVA_OPTS% -Dlog4j.shutdownHookEnabled=false -Dhazelcast.logging.shutdown=true
 
 :: HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
 if "x%HAZELCAST_CONFIG%" == "x" (

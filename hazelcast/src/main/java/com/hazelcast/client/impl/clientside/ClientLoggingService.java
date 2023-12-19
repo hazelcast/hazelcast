@@ -45,15 +45,17 @@ public class ClientLoggingService implements LoggingService {
     private final BuildInfo buildInfo;
     private final String instanceName;
     private final boolean detailsEnabled;
+    private final boolean shouldShutdownLoggingOnHazelcastShutdown;
     private volatile String versionMessage;
 
     public ClientLoggingService(
-            String clusterName, String loggingType, BuildInfo buildInfo, String instanceName, boolean detailsEnabled
-    ) {
+            String clusterName, String loggingType, BuildInfo buildInfo, String instanceName, boolean detailsEnabled,
+            boolean shutdownLoggingEnabled) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
         this.instanceName = instanceName;
         this.detailsEnabled = detailsEnabled;
+        this.shouldShutdownLoggingOnHazelcastShutdown = shutdownLoggingEnabled;
         updateClusterName(clusterName);
     }
 
@@ -85,7 +87,7 @@ public class ClientLoggingService implements LoggingService {
 
     @Override
     public void shutdown() {
-        if (loggerFactory instanceof InternalLoggerFactory) {
+        if (shouldShutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory) {
             ((InternalLoggerFactory) loggerFactory).shutdown();
         }
     }

@@ -229,8 +229,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         HazelcastProperties props = new HazelcastProperties(config.getProperties());
         String loggingType = props.getString(ClusterProperty.LOGGING_TYPE);
         boolean detailsEnabled = props.getBoolean(ClusterProperty.LOGGING_ENABLE_DETAILS);
+        boolean shutdownLoggingEnabled = props.getBoolean(ClusterProperty.LOGGING_SHUTDOWN);
         this.loggingService = new ClientLoggingService(config.getClusterName(),
-                loggingType, BuildInfoProvider.getBuildInfo(), instanceName, detailsEnabled);
+                loggingType, BuildInfoProvider.getBuildInfo(), instanceName, detailsEnabled, shutdownLoggingEnabled);
 
         if (clientConfig != null) {
             MetricsConfigHelper.overrideClientMetricsConfig(clientConfig,

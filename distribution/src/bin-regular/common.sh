@@ -58,7 +58,7 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
     fi
 fi
 # Disable the log4j2 shutdown hook, otherwise log lines during node shutdown might be lost
-JDK_OPTS="$JDK_OPTS -Dlog4j.shutdownHookEnabled=false"
+JDK_OPTS="$JDK_OPTS -Dlog4j.shutdownHookEnabled=false -Dhazelcast.logging.shutdown=true"
 
 # ensure CLASSPATH_DEFAULT is unix style + trimmed
 if [ -n "${CLASSPATH_DEFAULT}" ]; then

@@ -30,6 +30,7 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,6 +54,7 @@ public class LoggingServiceImpl implements LoggingService {
 
     private final LoggerFactory loggerFactory;
     private final boolean detailsEnabled;
+    private final boolean shouldShutdownLoggingOnHazelcastShutdown;
     private final Node node;
     private final String versionMessage;
 
@@ -67,6 +69,7 @@ public class LoggingServiceImpl implements LoggingService {
         this.detailsEnabled = detailsEnabled;
         this.node = node;
         versionMessage = "[" + clusterName + "] [" + buildInfo.getVersion() + "] ";
+        this.shouldShutdownLoggingOnHazelcastShutdown = node.getProperties().getBoolean(ClusterProperty.LOGGING_SHUTDOWN);
     }
 
     public void setThisMember(MemberImpl thisMember) {
@@ -181,7 +184,7 @@ public class LoggingServiceImpl implements LoggingService {
 
     @Override
     public void shutdown() {
-        if (loggerFactory instanceof InternalLoggerFactory) {
+        if (shouldShutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory) {
             ((InternalLoggerFactory) loggerFactory).shutdown();
         }
     }
