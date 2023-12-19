@@ -33,6 +33,8 @@ import com.hazelcast.collection.impl.queue.operations.RemoveOperation;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
@@ -69,18 +71,21 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
+        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
             if (listener == null && itemListenerConfig.getClassName() != null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
-                            itemListenerConfig.getClassName());
+                    listener = ClassLoaderUtil.newInstance(classLoader,
+                                    itemListenerConfig.getClassName());
                 } catch (Exception e) {
                     throw rethrow(e);
                 }
             }
             if (listener != null) {
-                handleHazelcastInstanceAwareParams(listener);
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
                 addItemListener(listener, itemListenerConfig.isIncludeValue());
             }
         }
@@ -209,9 +214,11 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
 
     public @Nonnull
     UUID addItemListener(@Nonnull ItemListener<E> listener,
-                           boolean includeValue) {
+                         boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
-        handleHazelcastInstanceAwareParams(listener);
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
         return getService().addItemListener(name, listener, includeValue);
     }
 

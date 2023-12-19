@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.serialization.Data;
@@ -236,13 +235,5 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     protected boolean isClusterVersionUnknown() {
         Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
         return clusterVersion.isUnknown();
-    }
-
-    protected void handleHazelcastInstanceAwareParams(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-            }
-        }
     }
 }

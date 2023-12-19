@@ -18,7 +18,9 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
@@ -34,17 +36,16 @@ import java.util.UUID;
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;
-    private final ClassLoader configClassLoader;
     private final TopicService topicService;
     private final LocalTopicStatsImpl topicStats;
     private final OperationService operationService;
     private final int partitionId;
     private boolean multithreaded;
+    private ClassLoader classLoader;
 
     public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
         this.name = name;
-        this.configClassLoader = nodeEngine.getConfigClassLoader();
         this.topicService = service;
         this.topicStats = topicService.getLocalTopicStats(name);
         this.operationService = nodeEngine.getOperationService();
@@ -56,6 +57,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         NodeEngine nodeEngine = getNodeEngine();
         TopicConfig config = nodeEngine.getConfig().findTopicConfig(name);
         multithreaded = config.isMultiThreadingEnabled();
+        classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
         for (ListenerConfig listenerConfig : config.getMessageListenerConfigs()) {
             initialize(listenerConfig);
         }
@@ -63,12 +65,10 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
 
     private void initialize(ListenerConfig listenerConfig) {
         MessageListener listener = loadListener(listenerConfig);
-
         if (listener == null) {
             return;
         }
 
-        handleHazelcastInstanceAwareParams(listener);
         addMessageListenerInternal(listener);
     }
 
@@ -76,7 +76,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         try {
             MessageListener listener = (MessageListener) listenerConfig.getImplementation();
             if (listener == null && listenerConfig.getClassName() != null) {
-                listener = ClassLoaderUtil.newInstance(configClassLoader, listenerConfig.getClassName());
+                listener = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
             }
             return listener;
         } catch (Exception e) {
@@ -101,6 +101,9 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
 
     public @Nonnull
     UUID addMessageListenerInternal(@Nonnull MessageListener listener) {
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
         return topicService.addMessageListener(name, listener);
     }
 
