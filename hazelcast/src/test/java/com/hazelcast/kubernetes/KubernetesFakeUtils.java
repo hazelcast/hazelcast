@@ -424,10 +424,10 @@ class KubernetesFakeUtils {
                 .build();
     }
 
-
     static Service serviceLb(ServicePort port, String lbIp) {
         return new ServiceBuilder()
                 .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
                         .withPorts(port)
                         .build())
                 .withStatus(new ServiceStatusBuilder()
@@ -443,6 +443,7 @@ class KubernetesFakeUtils {
     static Service serviceLbHost(ServicePort port, String hostname) {
         return new ServiceBuilder()
                 .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
                         .withPorts(port)
                         .build())
                 .withStatus(new ServiceStatusBuilder()
@@ -455,10 +456,20 @@ class KubernetesFakeUtils {
                 .build();
     }
 
+    static Service serviceLbWithoutAddr(ServicePort... port) {
+        return new ServiceBuilder()
+                .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
+                        .withPorts(port)
+                        .build())
+                .build();
+    }
+
     static Service service(ServicePort... ports) {
         return new ServiceBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("service").build())
                 .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_NODEPORT)
                         .withPorts(ports)
                         .build())
                 .build();

@@ -60,7 +60,10 @@ interface KubernetesApiProvider {
         }
         if (ports.size() == 1) {
             JsonValue port = ports.get(0);
-            return port.asObject().get("port").asInt();
+            JsonValue servicePort = port.asObject().get("port");
+            if (servicePort != null && servicePort.isNumber()) {
+                return servicePort.asInt();
+            }
         }
         return null;
     }
