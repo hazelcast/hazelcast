@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketWriter;
-import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -40,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateBuffer;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
@@ -400,10 +400,10 @@ public final class NioAsyncSocket extends AsyncSocket {
         private final ByteBuffer sndBuffer;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
-            this.rcvBuffer = BufferUtil.allocate(builder.directBuffers, builder.options.get(SO_RCVBUF));
+            this.rcvBuffer = allocateBuffer(builder.directBuffers, builder.options.get(SO_RCVBUF));
 
             if (ioVector == null) {
-                this.sndBuffer = BufferUtil.allocate(builder.directBuffers, builder.options.get(SO_SNDBUF));
+                this.sndBuffer = allocateBuffer(builder.directBuffers, builder.options.get(SO_SNDBUF));
             } else {
                 this.sndBuffer = null;
             }

@@ -42,7 +42,7 @@ public final class BufferUtil {
      * @param capacity the capacity of the ByteBuffer to allocate
      * @return the allocated ByteBuffer.
      */
-    public static ByteBuffer allocate(boolean direct, int capacity) {
+    public static ByteBuffer allocateBuffer(boolean direct, int capacity) {
         return direct ? ByteBuffer.allocateDirect(capacity) : ByteBuffer.allocate(capacity);
     }
 

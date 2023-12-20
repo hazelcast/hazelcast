@@ -17,12 +17,13 @@
 package com.hazelcast.internal.tpcengine.iobuffer;
 
 
-import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateBuffer;
 
 /**
  * A {@link IOBufferAllocator} that can be used in parallel by multiple threads.
@@ -101,7 +102,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
             for (int k = count; k < pool.bufs.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
-                ByteBuffer buffer = BufferUtil.allocate(direct, minSize);
+                ByteBuffer buffer = allocateBuffer(direct, minSize);
                 IOBuffer buf = new IOBuffer(buffer);
                 buf.concurrent = true;
                 buf.allocator = this;
