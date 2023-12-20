@@ -16,13 +16,7 @@
 
 package com.hazelcast.internal.namespace.impl;
 
-import com.hazelcast.internal.util.ExceptionUtil;
-
 import java.io.IOException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -34,25 +28,11 @@ import java.util.Enumeration;
  * @see com.hazelcast.config.NamespaceConfig
  */
 public class NamespaceAwareClassLoader extends ClassLoader {
-    private static final MethodHandle FIND_RESOURCE_METHOD_HANDLE;
-    private static final MethodHandle FIND_RESOURCES_METHOD_HANDLE;
-
     // Retain Parent for faster referencing (skips permission checks)
     private final ClassLoader parent;
 
     static {
-        try {
-            ClassLoader.registerAsParallelCapable();
-            Lookup lookup = MethodHandles.lookup();
-
-            FIND_RESOURCE_METHOD_HANDLE = lookup.findVirtual(ClassLoader.class, "findResource",
-                    MethodType.methodType(URL.class, String.class));
-
-            FIND_RESOURCES_METHOD_HANDLE = lookup.findVirtual(ClassLoader.class, "findResources",
-                    MethodType.methodType(Enumeration.class, String.class));
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        ClassLoader.registerAsParallelCapable();
     }
 
     public NamespaceAwareClassLoader(ClassLoader parent) {
@@ -72,30 +52,17 @@ public class NamespaceAwareClassLoader extends ClassLoader {
         }
     }
 
-    @Override
-    protected URL findResource(String name) {
-        try {
-            return (URL) FIND_RESOURCE_METHOD_HANDLE.invoke(pickClassLoader(), name);
-        } catch (Throwable t) {
-            throw ExceptionUtil.sneakyThrow(t);
-        }
-    }
-
-    @Override
-    protected Enumeration<URL> findResources(String name) throws IOException {
-        try {
-            return (Enumeration<URL>) FIND_RESOURCES_METHOD_HANDLE.invoke(pickClassLoader(), name);
-        } catch (Throwable t) {
-            throw ExceptionUtil.sneakyThrow(t);
-        }
-    }
-
     ClassLoader pickClassLoader() {
         ClassLoader classLoader = NamespaceThreadLocalContext.getClassLoader();
         if (classLoader != null) {
             return classLoader;
         }
         return parent;
+    }
+
+    @Override
+    public URL getResource(String name) {
+        return pickClassLoader().getResource(name);
     }
 
     @Override
