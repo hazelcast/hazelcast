@@ -268,7 +268,8 @@ public final class NioAsyncSocket extends AsyncSocket {
             logger.info("Connection established " + NioAsyncSocket.this);
         }
 
-        key.interestOps(key.interestOps() | OP_READ);
+        key.interestOps(OP_READ);
+
         connectFuture.complete(null);
         connectFuture = null;
 
