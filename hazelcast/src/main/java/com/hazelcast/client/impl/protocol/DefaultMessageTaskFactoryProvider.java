@@ -169,6 +169,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCForceCloseCPSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
@@ -551,6 +552,7 @@ import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMe
 import com.hazelcast.client.impl.protocol.task.management.ChangeWanReplicationStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.CheckWanConsistencyMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ClearWanQueuesMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ForceCloseCPSessionTask;
 import com.hazelcast.client.impl.protocol.task.management.GetCPMembersMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetClusterMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
@@ -1867,6 +1869,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReloadConfigMessageTask(cm, node, con));
         factories.put(MCUpdateConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
+        factories.put(MCForceCloseCPSessionCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ForceCloseCPSessionTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {
