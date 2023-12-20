@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The message is used to transfer the declarative pipeline definition and the related resource files from client to the server.
  */
 @SuppressWarnings("unused")
-@Generated("ef2f9fbdd30be0da5a16e649fd1e1a1d")
+@Generated("8a42115b6855f377030157458ef162c5")
 public final class ExperimentalPipelineSubmitCodec {
     //hex: 0xFD0100
     public static final int REQUEST_MESSAGE_TYPE = 16580864;
@@ -72,10 +72,10 @@ public final class ExperimentalPipelineSubmitCodec {
         /**
          * This is the CRC32 checksum over the resource bundle bytes.
          */
-        public @Nullable int resourceBundleChecksum;
+        public int resourceBundleChecksum;
     }
 
-    public static ClientMessage encodeRequest(@Nullable java.lang.String jobName, java.lang.String pipelineDefinition, @Nullable byte[] resourceBundle, @Nullable int resourceBundleChecksum) {
+    public static ClientMessage encodeRequest(@Nullable java.lang.String jobName, java.lang.String pipelineDefinition, @Nullable byte[] resourceBundle, int resourceBundleChecksum) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Experimental.PipelineSubmit");

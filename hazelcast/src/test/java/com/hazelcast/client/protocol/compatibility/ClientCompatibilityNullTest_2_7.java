@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -7028,10 +7027,9 @@ public class ClientCompatibilityNullTest_2_7 {
     }
 
     @Test
-    @Ignore("Fails even with fully generated client-protocol - ignoring for now to allow Namespaces feature merge")
     public void test_ExperimentalPipelineSubmitCodec_encodeRequest() {
         int fileClientMessageIndex = 893;
-        ClientMessage encoded = ExperimentalPipelineSubmitCodec.encodeRequest(null, aString, null, -1);
+        ClientMessage encoded = ExperimentalPipelineSubmitCodec.encodeRequest(null, aString, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

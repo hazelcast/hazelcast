@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -7942,7 +7941,6 @@ public class MemberCompatibilityNullTest_2_7 {
     }
 
     @Test
-    @Ignore("Fails even with fully generated client-protocol - ignoring for now to allow Namespaces feature merge")
     public void test_ExperimentalPipelineSubmitCodec_decodeRequest() {
         int fileClientMessageIndex = 893;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
@@ -7950,7 +7948,7 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.jobName));
         assertTrue(isEqual(aString, parameters.pipelineDefinition));
         assertTrue(isEqual(null, parameters.resourceBundle));
-        assertTrue(isEqual(null, parameters.resourceBundleChecksum));
+        assertTrue(isEqual(anInt, parameters.resourceBundleChecksum));
     }
 
     @Test
