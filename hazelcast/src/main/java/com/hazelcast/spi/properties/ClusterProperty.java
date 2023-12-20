@@ -1026,6 +1026,17 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.hd.global.index.enabled", true);
 
     /**
+     * Page size for every instance of Hybrid Log on member.
+     * <p>
+     * Default value is 1MB, must be a power of 2, the minimum value is 1MB,
+     * the maximum is 16MB.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty TIERED_STORE_HYBRID_LOG_PAGE_SIZE_IN_MEGABYTES
+            = new HazelcastProperty("hazelcast.tiered.store.hybridlog.page.size.in.mb", 1);
+
+    /**
      * Result size limit for query operations on maps.
      * <p>
      * This value defines the maximum number of returned elements for a single
