@@ -65,6 +65,7 @@ public class NamespacesConfig {
      * {@link NamespaceConfig#getName() name}.
      */
     public NamespacesConfig addNamespaceConfig(NamespaceConfig namespaceConfig) {
+        Objects.requireNonNull(namespaceConfig.getName(), "Namespace name cannot be null");
         namespaceConfigs.put(namespaceConfig.getName(), namespaceConfig);
         return this;
     }
