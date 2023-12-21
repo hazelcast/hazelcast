@@ -40,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class MavenInterface {
@@ -98,10 +97,8 @@ public class MavenInterface {
         final ProcessBuilder builder = new ProcessBuilder(
                 buildMavenCommand(artifact, remoteRepositories).toArray(String[]::new)).inheritIO();
         try {
-            final Process process = builder.start();
-            final boolean successful = process.waitFor(2, TimeUnit.MINUTES);
-            checkState(successful, "Maven dependency:get timed out");
-            checkState(process.exitValue() == 0, "Maven dependency:get failed");
+            int exitValue = builder.start().waitFor();
+            checkState(exitValue == 0, MessageFormat.format("Maven dependency:get failed with code {0}", exitValue));
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException(MessageFormat.format("Problem in invoking Maven dependency:get {0}", artifact), e);
         }

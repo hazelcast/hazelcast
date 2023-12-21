@@ -22,6 +22,7 @@ import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TES
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,6 +44,7 @@ import java.util.stream.Stream;
  * TODO This test doesn't force a re-download, so if an artifact is cached in the local repository, the download won't be
  *      exercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
  */
+@Tag("com.hazelcast.test.annotation.NightlyTest")
 public class HazelcastVersionLocatorTest {
     private static HashFunction hashFunction;
     private static Map<HazelcastVersionLocator.Artifact, File> files;
