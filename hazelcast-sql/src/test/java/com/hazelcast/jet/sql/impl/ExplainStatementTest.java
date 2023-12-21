@@ -45,8 +45,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExplainStatementTest extends SqlTestSupport {
+
     @BeforeClass
-    public static void beforeClass() {
+    public static void setup() {
         initialize(1, null);
     }
 
@@ -225,8 +226,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, singletonList(
                 new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], values=[{" +
                         "expressions=[[" +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}])"
+                        "ConstantExpression{type=INT, value=2}, " +
+                        "ConstantExpression{type=INT, value=2}]]}])"
                 )));
 
         createMapping("map", Integer.class, Integer.class);
@@ -236,10 +237,10 @@ public class ExplainStatementTest extends SqlTestSupport {
                 new Row("InsertPhysicalRel(" +
                         "table=[[hazelcast, public, map[projects=[$0, $1]]]], operation=[INSERT], flattened=[false])"),
                 new Row("  ValuesPhysicalRel(values=[{expressions=[" +
-                        "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}], " +
-                        "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=4}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=4}]]}])")
+                        "[ConstantExpression{type=INT, value=3}, " +
+                        "ConstantExpression{type=INT, value=3}], " +
+                        "[ConstantExpression{type=INT, value=4}, " +
+                        "ConstantExpression{type=INT, value=4}]]}])")
         ));
     }
 
@@ -254,8 +255,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, singletonList(
                 new Row("SinkMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], values=" +
                         "[[{expressions=[[" +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}]])"
+                        "ConstantExpression{type=INT, value=2}, " +
+                        "ConstantExpression{type=INT, value=2}]]}]])"
                 )));
     }
 
@@ -444,19 +445,10 @@ public class ExplainStatementTest extends SqlTestSupport {
                                 .contains("partitioningKeyValues=["));
     }
 
+    @SuppressWarnings("unused")
     public static class KeyObj implements Serializable {
         public Long comp1;
         public Long comp2;
         public Long comp3;
-
-        public KeyObj() {
-
-        }
-
-        public KeyObj(final Long comp1, final Long comp2, final Long comp3) {
-            this.comp1 = comp1;
-            this.comp2 = comp2;
-            this.comp3 = comp3;
-        }
     }
 }

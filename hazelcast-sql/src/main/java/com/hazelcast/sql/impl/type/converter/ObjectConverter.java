@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Converter for arbitrary objects which do not have a more specific converter.
@@ -126,15 +128,24 @@ public final class ObjectConverter extends Converter {
     }
 
     @Override
+    public Map<?, ?> asMap(Object val) {
+        return resolveConverter(val, QueryDataTypeFamily.MAP).asMap(val);
+    }
+
+    @Override
     public HazelcastJsonValue asJson(final Object val) {
         return resolveConverter(val, QueryDataTypeFamily.JSON).asJson(val);
+    }
+
+    @Override
+    public RowValue asRow(Object val) {
+        return resolveConverter(val, QueryDataTypeFamily.ROW).asRow(val);
     }
 
     @Override
     public Object convertToSelf(Converter valConverter, Object val) {
         return valConverter.asObject(val);
     }
-
 
     private Converter resolveConverter(Object val, QueryDataTypeFamily target) {
         Converter converter = Converters.getConverter(val.getClass());
@@ -145,5 +156,4 @@ public final class ObjectConverter extends Converter {
 
         return converter;
     }
-
 }

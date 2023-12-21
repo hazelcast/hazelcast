@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.VersionedIdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
@@ -48,21 +50,38 @@ import com.hazelcast.sql.impl.type.converter.RowConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
+
+import static com.hazelcast.internal.cluster.Versions.V5_4;
+import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
+import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
  * <p>
  * Java serialization is needed for Jet.
+ * <p>
+ * If {@linkplain #addField no field is added} to a custom type before {@linkplain
+ * #getObjectFields accessing its fields}, it is called a <em>placeholder type</em>
+ * and it is usable at creation. Otherwise, it is called a <em>concrete type</em>
+ * and it is usable after {@linkplain #finalizeFields the fields are finalized}.
+ * The type is thread-safe once it is usable.
  */
-public class QueryDataType implements IdentifiedDataSerializable, Serializable {
+public class QueryDataType implements VersionedIdentifiedDataSerializable, Serializable {
     public static final int MAX_DECIMAL_PRECISION = 76;
     public static final int MAX_DECIMAL_SCALE = 38;
 
@@ -100,12 +119,21 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
     public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
 
+    private static final Map<String, QueryDataType> TYPES_BY_NAME = getEnumConstants(QueryDataType.class);
+    private static final Map<QueryDataType, String> NAMES =
+            TYPES_BY_NAME.entrySet().stream().collect(toMap(Entry::getValue, Entry::getKey));
+    private static final QueryDataType[] TYPES = TYPES_BY_NAME.values().stream()
+            .sorted(comparingInt(type -> type.converter.getId())).toArray(QueryDataType[]::new);
+
     private Converter converter;
-    // nonnull for custom types (nested types)
+    /** Nonnull for custom types. */
     private String objectTypeName;
     private TypeKind objectTypeKind = TypeKind.NONE;
     private String objectTypeMetadata;
-    private final List<QueryDataTypeField> objectFields = new ArrayList<>();
+    private ImmutableList.Builder<QueryDataTypeField> objectFieldsBuilder;
+    private List<QueryDataTypeField> objectFields;
+    /** Used only by custom types. */
+    private volatile String digest;
 
     public QueryDataType() { }
 
@@ -114,7 +142,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     }
 
     public QueryDataType(String objectTypeName, TypeKind typeKind, String typeMetadata) {
-        converter = ObjectConverter.INSTANCE;
+        converter = OBJECT.getConverter();
         this.objectTypeName = objectTypeName;
         objectTypeKind = typeKind;
         objectTypeMetadata = typeMetadata;
@@ -128,7 +156,15 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return objectTypeName;
     }
 
+    /** @return read-only list of fields */
     public List<QueryDataTypeField> getObjectFields() {
+        if (objectFields == null) {
+            if (objectFieldsBuilder != null) {
+                throw new IllegalStateException("Type fields are not finalized");
+            }
+            // This is a placeholder type.
+            objectFields = emptyList();
+        }
         return objectFields;
     }
 
@@ -146,6 +182,41 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public TypeKind getObjectTypeKind() {
         return objectTypeKind;
+    }
+
+    public void addField(String name, QueryDataType type) {
+        assertFieldsCanBeAdded();
+        if (objectFieldsBuilder == null) {
+            objectFieldsBuilder = ImmutableList.builder();
+        }
+        objectFieldsBuilder.add(new QueryDataTypeField(name, type));
+    }
+
+    public void finalizeFields() {
+        assertFieldsCanBeAdded();
+        if (objectFieldsBuilder == null) {
+            throw new IllegalStateException("Type has no fields");
+        }
+        objectFields = objectFieldsBuilder.build();
+        objectFieldsBuilder = null;
+    }
+
+    private void assertFieldsCanBeAdded() {
+        if (objectFields != null) {
+            throw new IllegalStateException(objectFields.isEmpty()
+                    ? "Placeholder types are not expected to have fields"
+                    : "Type fields are already finalized");
+        }
+    }
+
+    // Exposed for testing
+    protected String getDigest() {
+        if (digest == null) {
+            StringBuilder sb = new StringBuilder();
+            computeDigest(sb, new HashSet<>());
+            digest = sb.toString();
+        }
+        return digest;
     }
 
     /**
@@ -203,8 +274,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     }
 
     @Override
-    public int getClassId() {
-        return SqlDataSerializerHook.QUERY_DATA_TYPE;
+    public int getClassId(Version clusterVersion) {
+        return !isCustomType() && clusterVersion.isGreaterOrEqual(V5_4)
+                ? SqlDataSerializerHook.PREDEFINED_QUERY_DATA_TYPE_BASE + converter.getId()
+                : SqlDataSerializerHook.QUERY_DATA_TYPE;
     }
 
     /**
@@ -218,8 +291,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
      */
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        if (!isCustomType() && out.getVersion().isGreaterOrEqual(V5_4)) {
+            return;
+        }
+
         out.writeInt(converter.getId());
-        if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
+        if (converter != OBJECT.getConverter()) {
             return;
         }
 
@@ -252,7 +329,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     private void collectCustomTypes(QueryDataType type, Map<String, QueryDataType> typeMap) {
         typeMap.put(type.objectTypeName, type);
 
-        for (QueryDataTypeField field : type.objectFields) {
+        for (QueryDataTypeField field : type.getObjectFields()) {
             if (field.getType().isCustomType()) {
                 if (!typeMap.containsKey(field.type.objectTypeName)) {
                     collectCustomTypes(field.type, typeMap);
@@ -263,8 +340,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        if (converter != null) {
+            return;
+        }
+
         converter = Converters.getConverter(in.readInt());
-        if (converter.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
+        if (converter != OBJECT.getConverter()) {
             return;
         }
 
@@ -284,8 +365,9 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                 String fieldName = in.readString();
                 Converter converter = Converters.getConverter(in.readInt());
                 QueryDataType nestedType = readNestedType(converter, in, typeMap);
-                type.getObjectFields().add(new QueryDataTypeField(fieldName, nestedType));
+                type.addField(fieldName, nestedType);
             }
+            type.finalizeFields();
         }
     }
 
@@ -300,20 +382,18 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         QueryDataType type = new QueryDataType(converter);
         readObjectTypeMetadata(type, in);
 
-        return type.objectTypeName == null
-                ? QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass())
+        return !type.isCustomType()
+                ? resolveForConverter(converter)
                 : typeMap.computeIfAbsent(type.objectTypeName, k -> type);
     }
 
     public boolean isCustomType() {
-        return converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && objectTypeName != null;
+        return converter == OBJECT.getConverter() && objectTypeName != null;
     }
 
     @Override
     public int hashCode() {
-        return !isCustomType()
-                ? converter.getId()
-                : Objects.hash(objectTypeName, objectTypeKind, objectTypeMetadata);
+        return !isCustomType() ? converter.getId() : getDigest().hashCode();
     }
 
     @Override
@@ -325,17 +405,65 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
             return false;
         }
         QueryDataType that = (QueryDataType) o;
-        return !isCustomType()
-                ? converter.getId() == that.converter.getId()
-                : objectTypeName.equals(that.objectTypeName)
-                        && objectTypeKind == that.objectTypeKind
-                        && Objects.equals(objectTypeMetadata, that.objectTypeMetadata)
-                        && objectFields.equals(that.objectFields);
+        return !isCustomType() ? converter == that.converter : getDigest().equals(that.getDigest());
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
+        return objectTypeName != null ? objectTypeName : NAMES.get(this);
+    }
+
+    public static QueryDataType valueOf(String name) {
+        QueryDataType type = TYPES_BY_NAME.get(name);
+        if (type == null) {
+            throw new IllegalArgumentException("No predefined QueryDataType with name " + name);
+        }
+        return type;
+    }
+
+    public static QueryDataType resolveForConverter(Converter converter) {
+        return TYPES[converter.getId()];
+    }
+
+    public static QueryDataType[] values() {
+        return TYPES.clone();
+    }
+
+    private void computeDigest(StringBuilder sb, Set<String> seen) {
+        escape(sb, objectTypeName);
+        if (seen.contains(objectTypeName)) {
+            return;
+        }
+        seen.add(objectTypeName);
+        sb.append('[').append(objectTypeKind).append('=').append(objectTypeMetadata).append("](");
+        for (Iterator<QueryDataTypeField> it = getObjectFields().iterator(); it.hasNext();) {
+            QueryDataTypeField field = it.next();
+            escape(sb, field.getName());
+            sb.append(':');
+            if (field.getType().isCustomType()) {
+                field.getType().computeDigest(sb, seen);
+            } else {
+                sb.append(field.getType());
+            }
+            if (it.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+    }
+
+    @SuppressWarnings("BooleanExpressionComplexity")
+    private static void escape(StringBuilder sb, String value) {
+        for (char c : value.toCharArray()) {
+            if (c == '[' || c == '=' || c == ']' || c == '(' || c == ':' || c == ',' || c == ')') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        return isCustomType() ? this : resolveForConverter(converter);
     }
 
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate.types;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -24,7 +25,7 @@ import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -35,17 +36,24 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class HazelcastObjectType extends RelDataTypeImpl {
     private final String name;
     private final boolean nullable;
-    /** Modifiable list of fields to support cyclic types. */
-    private List<Field> fields = new ArrayList<>();
+    private ImmutableList.Builder<Field> fieldsBuilder = ImmutableList.builder();
+    /**
+     * Makes it possible to finalize the fields after creating the type,
+     * which is required to support cyclic types.
+     */
+    private List<Field> fields;
     /** Cached list of field names. */
     private List<String> fieldNames;
 
-    /** Not usable until {@link #finalizeFields()} is called. */
+    /**
+     * Creates a nullable type, which will not be usable until
+     * {@linkplain #finalizeFields the fields are finalized}.
+     */
     public HazelcastObjectType(String name) {
         this(name, true);
     }
 
-    /** Not usable until {@link #finalizeFields()} is called. */
+    /** Not usable until {@linkplain #finalizeFields the fields are finalized}. */
     public HazelcastObjectType(String name, boolean nullable) {
         super(null);
         this.name = name;
@@ -81,24 +89,25 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
         if (withDetail) {
-            generateFullTypeString(this, sb, new HashSet<>());
+            generateFullTypeString(sb, new HashSet<>());
         } else {
             sb.append(name);
         }
     }
 
-    private static void generateFullTypeString(HazelcastObjectType type, StringBuilder sb, Set<String> seen) {
-        sb.append(type.name);
-        if (seen.contains(type.name)) {
+    private void generateFullTypeString(StringBuilder sb, Set<String> seen) {
+        escape(sb, name);
+        if (seen.contains(name)) {
             return;
         }
-        seen.add(type.name);
+        seen.add(name);
         sb.append('(');
-        for (Iterator<Field> it = type.fields.iterator(); it.hasNext();) {
+        for (Iterator<RelDataTypeField> it = getFieldList().iterator(); it.hasNext();) {
             RelDataTypeField field = it.next();
-            sb.append(field.getName()).append(':');
+            escape(sb, field.getName());
+            sb.append(':');
             if (field.getType() instanceof HazelcastObjectType) {
-                generateFullTypeString((HazelcastObjectType) field.getType(), sb, seen);
+                ((HazelcastObjectType) field.getType()).generateFullTypeString(sb, seen);
             } else {
                 sb.append(field.getType().getFullTypeString());
             }
@@ -109,13 +118,38 @@ public class HazelcastObjectType extends RelDataTypeImpl {
         sb.append(')');
     }
 
-    public void addField(Field field) {
-        fields.add(field);
+    private static void escape(StringBuilder sb, String value) {
+        for (char c : value.toCharArray()) {
+            if (c == '(' || c == ':' || c == ',' || c == ')') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
     }
 
-    public void finalizeFields() {
-        fields = List.of(fields.toArray(Field[]::new));
-        super.computeDigest();
+    public void addField(Field field) {
+        if (fieldsBuilder == null) {
+            throw new IllegalStateException("Type fields are already finalized");
+        }
+        fieldsBuilder.add(field);
+    }
+
+    /**
+     * @param types vertices of a type graph, which may be disconnected
+     *
+     * @implNote At finalization, the {@link #digest} is also computed, for which
+     * the fields are traversed recursively. This requires all nested types to be
+     * finalized beforehand. That's why the finalization is done in two passes.
+     */
+    public static void finalizeFields(Collection<HazelcastObjectType> types) {
+        types.forEach(type -> {
+            if (type.fieldsBuilder == null) {
+                throw new IllegalStateException("Type fields are already finalized");
+            }
+            type.fields = type.fieldsBuilder.build();
+            type.fieldsBuilder = null;
+        });
+        types.forEach(type -> type.computeDigest());
     }
 
     /**
@@ -126,7 +160,7 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     @Nullable
     public RelDataTypeField getField(String fieldName, boolean caseSensitive, boolean elideRecord) {
         assert !elideRecord;
-        for (RelDataTypeField field : fields) {
+        for (RelDataTypeField field : getFieldList()) {
             if (fieldName.equals(field.getName())) {
                 return new RelDataTypeFieldImpl(fieldName, field.getIndex(), field.getType());
             }
@@ -137,20 +171,23 @@ public class HazelcastObjectType extends RelDataTypeImpl {
     @Override
     @SuppressWarnings("unchecked")
     public List<RelDataTypeField> getFieldList() {
+        if (fields == null) {
+            throw new IllegalStateException("Type fields are not finalized");
+        }
         return (List<RelDataTypeField>) (List<?>) fields;
     }
 
     @Override
     public List<String> getFieldNames() {
         if (fieldNames == null) {
-            fieldNames = fields.stream().map(Field::getName).collect(toUnmodifiableList());
+            fieldNames = getFieldList().stream().map(RelDataTypeField::getName).collect(toUnmodifiableList());
         }
         return fieldNames;
     }
 
     @Override
     public int getFieldCount() {
-        return fields.size();
+        return getFieldList().size();
     }
 
     @Override

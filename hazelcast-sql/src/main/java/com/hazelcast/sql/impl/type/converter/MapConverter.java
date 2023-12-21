@@ -39,17 +39,17 @@ public class MapConverter extends Converter {
     }
 
     @Override
+    public String asVarchar(Object val) {
+        return val.toString();
+    }
+
+    @Override
+    public Map<?, ?> asMap(Object val) {
+        return (Map<?, ?>) val;
+    }
+
+    @Override
     public Object convertToSelf(Converter converter, Object val) {
-        Object value = converter.asObject(val);
-
-        if (value == null) {
-            return null;
-        }
-
-        if (value instanceof Map) {
-            return value;
-        }
-
-        throw converter.cannotConvertError(converter.getTypeFamily());
+        return converter.asMap(val);
     }
 }

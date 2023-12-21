@@ -28,24 +28,31 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-/**
- * Utilities to extract a list of properties from a
- * {@link Class} object using reflection
- * or from {@link ClassDefinition} of a Portable.
- * or from {@link Schema} of a Compact Serialized Object
- */
-public final class FieldsUtil {
+import static java.lang.reflect.Modifier.FINAL;
+import static java.lang.reflect.Modifier.PUBLIC;
+import static java.lang.reflect.Modifier.STATIC;
+import static java.util.stream.Collectors.toMap;
 
+/**
+ * Utilities to extract properties from <ol>
+ * <li> Java {@link Class} using reflection,
+ * <li> Portable {@link ClassDefinition}, or
+ * <li> Compact {@link Schema}.
+ */
+public final class FieldUtils {
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
 
-    private FieldsUtil() {
-    }
+    private static final int ENUM_CONSTANT_MASK = PUBLIC | STATIC | FINAL;
+
+    private FieldUtils() { }
 
     /**
      * Return a list of fields and their types from a {@link Class}.
@@ -81,6 +88,23 @@ public final class FieldsUtil {
         }
 
         return fields;
+    }
+
+    /**
+     * Constructs name-to-instance mapping for enum-like classes.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Map<String, T> getEnumConstants(Class<T> type) {
+        return Arrays.stream(type.getDeclaredFields())
+                .filter(field -> field.getType() == type
+                        && (field.getModifiers() & ENUM_CONSTANT_MASK) == ENUM_CONSTANT_MASK)
+                .collect(toMap(Field::getName, field -> {
+                    try {
+                        return (T) field.get(null);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
     }
 
     @Nullable
@@ -167,7 +191,7 @@ public final class FieldsUtil {
     }
 
     // TODO: maybe move to more generic utilities class?
-    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"ReturnCount", "CyclomaticComplexity"})
     @Nonnull
     public static QueryDataType resolveType(@Nonnull FieldKind kind) {
         switch (kind) {

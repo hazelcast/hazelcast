@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
+import com.hazelcast.nio.serialization.impl.VersionedIdentifiedDataSerializable;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -248,7 +249,9 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
             out.writeInt(ds.getFactoryId());
-            out.writeInt(ds.getClassId());
+            out.writeInt(ds instanceof VersionedIdentifiedDataSerializable
+                    ? ((VersionedIdentifiedDataSerializable) ds).getClassId(version)
+                    : ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
                 out.writeString(((TypedDataSerializable) obj).getClassType().getName());

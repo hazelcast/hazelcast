@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
  */
 @SerializableByConvention
 public class RowConverter extends Converter {
+
     public static final RowConverter INSTANCE = new RowConverter();
 
     protected RowConverter() {
@@ -37,12 +38,17 @@ public class RowConverter extends Converter {
     }
 
     @Override
-    public Object convertToSelf(final Converter converter, final Object val) {
-        return converter.asRow(val);
+    public String asVarchar(Object val) {
+        return val.toString();
     }
 
     @Override
-    public String asVarchar(Object val) {
-        return val.toString();
+    public RowValue asRow(Object val) {
+        return (RowValue) val;
+    }
+
+    @Override
+    public Object convertToSelf(Converter converter, Object val) {
+        return converter.asRow(val);
     }
 }
