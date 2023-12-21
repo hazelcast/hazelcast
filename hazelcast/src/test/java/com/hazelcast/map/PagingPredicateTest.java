@@ -172,9 +172,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     @Test
     public void testPagingWithFilteringAndComparator() {
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);
-        PagingPredicate<Integer, Integer> predicate
-                = Predicates.pagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize,
-                null);
+        PagingPredicate<Integer, Integer> predicate =
+                Predicates.pagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 8, 7, 6, 5, 4);
@@ -193,7 +192,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         map.addIndex(IndexType.SORTED, "this");
         Predicate<Integer, Integer> lessEqual = Predicates.between("this", 12, 20);
         TestComparator comparator = new TestComparator(false, IterationType.VALUE);
-        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize, null);
+        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 20, 19, 18, 17, 16);
@@ -217,7 +216,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);    // values less than 8
         TestComparator comparator = new TestComparator(true, IterationType.KEY);    //ascending keys
-        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize, null);
+        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize);
 
         Set<Integer> keySet = map.keySet(predicate);
         assertIterableEquals(keySet, 42, 43, 44, 45, 46);
@@ -243,7 +242,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         // ascending values
         TestComparator comparator = new TestComparator(true, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate
-                = Predicates.pagingPredicate(lessEqual, comparator, pageSize, null); //pageSize = 5
+                = Predicates.pagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 0, 0, 1, 1, 2);
@@ -277,7 +276,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         // ascending values
         TestComparator comparator = new TestComparator(true, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate
-                = Predicates.pagingPredicate(lessEqual, comparator, pageSize, null); //pageSize = 5
+                = Predicates.pagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 0, 1, 2, 3);
@@ -340,21 +339,21 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testCustomComparatorAbleToActOnKeysAndValues() {
-        Set<Integer> keys = map.keySet(Predicates.pagingPredicate(new CustomComparator(), pageSize, null));
+        Set<Integer> keys = map.keySet(Predicates.pagingPredicate(new CustomComparator(), pageSize));
         assertEquals(pageSize, keys.size());
         int counter = 0;
         for (Integer key : keys) {
             assertEquals(counter++, (int) key);
         }
 
-        Collection<Integer> values = map.values(Predicates.pagingPredicate(new CustomComparator(), pageSize, null));
+        Collection<Integer> values = map.values(Predicates.pagingPredicate(new CustomComparator(), pageSize));
         assertEquals(pageSize, values.size());
         counter = 0;
         for (Integer value : values) {
             assertEquals(counter++, (int) value);
         }
 
-        Set<Map.Entry<Integer, Integer>> entries = map.entrySet(Predicates.pagingPredicate(new CustomComparator(), pageSize, null));
+        Set<Map.Entry<Integer, Integer>> entries = map.entrySet(Predicates.pagingPredicate(new CustomComparator(), pageSize));
         assertEquals(pageSize, entries.size());
         counter = 0;
         for (Map.Entry<Integer, Integer> entry : entries) {

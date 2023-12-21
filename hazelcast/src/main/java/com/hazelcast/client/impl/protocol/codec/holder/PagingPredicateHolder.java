@@ -108,7 +108,7 @@ public class PagingPredicateHolder {
             Predicate predicate = serializationService.toObject(predicateData);
             Comparator comparator = serializationService.toObject(comparatorData);
             IterationType iterationType = IterationType.getById(iterationTypeId);
-            PagingPredicateImpl<K, V> pagingPredicate = new PagingPredicateImpl<K, V>(anchorList, predicate, comparator, pageSize,
+            PagingPredicateImpl<K, V> pagingPredicate = new PagingPredicateImpl<>(anchorList, predicate, comparator, pageSize,
                     page, iterationType, namespace);
             if (partitionKeysData == null) {
                 return pagingPredicate;

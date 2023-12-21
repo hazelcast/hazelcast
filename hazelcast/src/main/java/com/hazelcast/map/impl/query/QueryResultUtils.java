@@ -45,10 +45,10 @@ public final class QueryResultUtils {
             if (unwrappedPredicate instanceof PagingPredicateImpl) {
                 pagingPredicateImpl = (PagingPredicateImpl) unwrappedPredicate;
             } else {
-                Predicate simplePredicate = mapEntry -> unwrappedPredicate.apply(mapEntry);
+                Predicate simplePredicate = unwrappedPredicate::apply;
                 // We provide Namespace wrapping to parent calls, we don't need to know it within the PagingPredicateImpl
                 pagingPredicateImpl = new PagingPredicateImpl(simplePredicate, pagingPredicate.getComparator(),
-                        pagingPredicate.getPageSize(), null);
+                        pagingPredicate.getPageSize());
             }
             Set result = new QueryResultCollection(ss, IterationType.ENTRY, binary, unique, queryResult);
             return getSortedQueryResultSet(new ArrayList(result), pagingPredicateImpl, iterationType);
@@ -57,7 +57,7 @@ public final class QueryResultUtils {
         }
     }
 
-    private static Predicate unwrapPartitionPredicate(Predicate predicate) {
-        return predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate;
+    private static <K, V> Predicate<K, V> unwrapPartitionPredicate(Predicate<K, V> predicate) {
+        return predicate instanceof PartitionPredicate ? ((PartitionPredicate<K, V>) predicate).getTarget() : predicate;
     }
 }
