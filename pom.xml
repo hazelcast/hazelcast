@@ -113,7 +113,7 @@
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.4.2.jre11</mssql.version>
         <mysql.connector.version>8.2.0</mysql.connector.version>
-        <netty.version>4.1.103.Final</netty.version>
+        <netty.version>4.1.104.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <oracle.version>23.3.0.23.09</oracle.version>
         <osgi.version>4.2.0</osgi.version>
