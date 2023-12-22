@@ -34,11 +34,11 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds a namespace configuration.
+ * Adds a user code namespace configuration.
  */
 @SuppressWarnings("unused")
-@Generated("0e46a906d07a8ec28ab1c1f8bd020c37")
-public final class DynamicConfigAddNamespaceConfigCodec {
+@Generated("9e6038591160ea2cfe265dcfdcc20bd8")
+public final class DynamicConfigAddUserCodeNamespaceConfigCodec {
     //hex: 0x1B1300
     public static final int REQUEST_MESSAGE_TYPE = 1774336;
     //hex: 0x1B1301
@@ -46,7 +46,7 @@ public final class DynamicConfigAddNamespaceConfigCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private DynamicConfigAddNamespaceConfigCodec() {
+    private DynamicConfigAddUserCodeNamespaceConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -66,7 +66,7 @@ public final class DynamicConfigAddNamespaceConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder> resources) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("DynamicConfig.AddNamespaceConfig");
+        clientMessage.setOperationName("DynamicConfig.AddUserCodeNamespaceConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -76,7 +76,7 @@ public final class DynamicConfigAddNamespaceConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddNamespaceConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static DynamicConfigAddUserCodeNamespaceConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame

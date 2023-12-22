@@ -126,7 +126,7 @@ public final class SortingUtil {
     }
 
     private static Comparator<QueryableEntry> newComparator(final PagingPredicateImpl pagingPredicate) {
-        return NamespaceUtil.callWithNamespace(pagingPredicate.getNamespace(), () -> (entry1, entry2) ->
+        return NamespaceUtil.callWithNamespace(pagingPredicate.getUserCodeNamespace(), () -> (entry1, entry2) ->
                 SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2));
     }
 
@@ -168,7 +168,7 @@ public final class SortingUtil {
         PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) pagingPredicate;
         Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
         IterationType iterationType = pagingPredicateImpl.getIterationType();
-        return NamespaceUtil.callWithNamespace(pagingPredicateImpl.getNamespace(),
+        return NamespaceUtil.callWithNamespace(pagingPredicateImpl.getUserCodeNamespace(),
                 () -> SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0);
     }
 

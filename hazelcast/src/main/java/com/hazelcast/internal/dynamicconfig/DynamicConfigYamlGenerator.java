@@ -57,7 +57,7 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -257,7 +257,7 @@ public class DynamicConfigYamlGenerator {
                     getTieredStoreConfigAsMap(subConfigAsObject.getTieredStoreConfig()));
             addNonNullToMap(subConfigAsMap, "partition-attributes",
                     getPartitioningAttributesAsList(subConfigAsObject.getPartitioningAttributeConfigs()));
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -322,7 +322,7 @@ public class DynamicConfigYamlGenerator {
                     getMerkleTreeConfigAsMap(subConfigAsObject.getMerkleTreeConfig()));
             addNonNullToMap(subConfigAsMap, "disable-per-entry-invalidation-events",
                     subConfigAsObject.isDisablePerEntryInvalidationEvents());
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -357,7 +357,7 @@ public class DynamicConfigYamlGenerator {
                     getQueueStoreConfigAsMap(subConfigAsObject.getQueueStoreConfig()));
             addNonNullToMap(subConfigAsMap, "split-brain-protection-ref",
                     subConfigAsObject.getSplitBrainProtectionName());
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
             addNonNullToMap(subConfigAsMap, "merge-policy",
                     getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
 
@@ -418,7 +418,7 @@ public class DynamicConfigYamlGenerator {
                     getEntryListenerConfigsAsList(subConfigAsObject.getEntryListenerConfigs()));
             addNonNullToMap(subConfigAsMap, "merge-policy",
                     getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -447,7 +447,7 @@ public class DynamicConfigYamlGenerator {
                     getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
             addNonNullToMap(subConfigAsMap, "entry-listeners",
                     getEntryListenerConfigsAsList(subConfigAsObject.getListenerConfigs()));
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -480,7 +480,7 @@ public class DynamicConfigYamlGenerator {
                     getRingbufferStoreConfigAsMap(subConfigAsObject.getRingbufferStoreConfig()));
             addNonNullToMap(subConfigAsMap, "merge-policy",
                     getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -505,7 +505,7 @@ public class DynamicConfigYamlGenerator {
                     getListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
             addNonNullToMap(subConfigAsMap, "multi-threading-enabled",
                     subConfigAsObject.isMultiThreadingEnabled());
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -530,7 +530,7 @@ public class DynamicConfigYamlGenerator {
                     subConfigAsObject.getTopicOverloadPolicy().name());
             addNonNullToMap(subConfigAsMap, "message-listeners",
                     getListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
 
@@ -554,7 +554,7 @@ public class DynamicConfigYamlGenerator {
                     subConfigAsObject.getQueueCapacity());
             addNonNullToMap(subConfigAsMap, "split-brain-protection-ref",
                     subConfigAsObject.getSplitBrainProtectionName());
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -581,7 +581,7 @@ public class DynamicConfigYamlGenerator {
                     subConfigAsObject.getSplitBrainProtectionName());
             addNonNullToMap(subConfigAsMap, "statistics-enabled",
                     subConfigAsObject.isStatisticsEnabled());
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -612,7 +612,7 @@ public class DynamicConfigYamlGenerator {
                     getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
             addNonNullToMap(subConfigAsMap, "statistics-enabled",
                     subConfigAsObject.isStatisticsEnabled());
-            addNonNullToMap(subConfigAsMap, "namespace", subConfigAsObject.getNamespace());
+            addNonNullToMap(subConfigAsMap, "user-code-namespace", subConfigAsObject.getUserCodeNamespace());
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
 
@@ -1112,18 +1112,18 @@ public class DynamicConfigYamlGenerator {
 
     private static void namespacesConfigGenerator(Map<String, Object> parent, Config config) {
         Map<String, Object> child = new LinkedHashMap<>();
-        NamespacesConfig namespacesConfig = config.getNamespacesConfig();
-        addNonNullToMap(child, "enabled", namespacesConfig.isEnabled());
-        parent.put("namespaces", child);
-        if (!namespacesConfig.isEnabled()) {
+        UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
+        addNonNullToMap(child, "enabled", userCodeNamespacesConfig.isEnabled());
+        parent.put("user-code-namespaces", child);
+        if (!userCodeNamespacesConfig.isEnabled()) {
             return;
         }
-        if (namespacesConfig.getClassFilterConfig() != null) {
+        if (userCodeNamespacesConfig.getClassFilterConfig() != null) {
             Map<String, Object> javaSerializationFilterCfg =
-                    javaSerializationFilterGenerator(namespacesConfig.getClassFilterConfig());
+                    javaSerializationFilterGenerator(userCodeNamespacesConfig.getClassFilterConfig());
             addNonNullToMap(child, "class-filter", javaSerializationFilterCfg);
         }
-        ConfigAccessor.getNamespaceConfigs(namespacesConfig).forEach((namespace, namespaceConfig) -> {
+        ConfigAccessor.getNamespaceConfigs(userCodeNamespacesConfig).forEach((namespace, namespaceConfig) -> {
             List<Map<String, Object>> resourcesList = new ArrayList<>();
             for (ResourceDefinition resourceDefinition : ConfigAccessor.getResourceDefinitions(namespaceConfig)) {
                 Map<String, Object> resourceAsMap = new LinkedHashMap<>();
@@ -1721,7 +1721,7 @@ public class DynamicConfigYamlGenerator {
                 getItemListenerConfigsAsList(collectionConfig.getItemListenerConfigs()));
         addNonNullToMap(subConfigAsMap, "merge-policy",
                 getMergePolicyConfigAsMap(collectionConfig.getMergePolicyConfig()));
-        addNonNullToMap(subConfigAsMap, "namespace", collectionConfig.getNamespace());
+        addNonNullToMap(subConfigAsMap, "user-code-namespace", collectionConfig.getUserCodeNamespace());
 
         return subConfigAsMap;
     }

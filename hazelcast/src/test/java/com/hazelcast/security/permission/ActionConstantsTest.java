@@ -26,7 +26,7 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchSer
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
@@ -183,9 +183,9 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_NamespaceService() {
-        Permission permission = ActionConstants.getPermission("foo", NamespaceService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", UserCodeNamespaceService.SERVICE_NAME);
 
         assertNotNull(permission);
-        assertTrue(permission instanceof NamespacePermission);
+        assertTrue(permission instanceof UserCodeNamespacePermission);
     }
 }

@@ -28,7 +28,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -98,8 +98,8 @@ public abstract class DefaultMapProjectMessageTask<P>
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        String namespace = getNamespace();
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = getUserCodeNamespace();
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 }

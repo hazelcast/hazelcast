@@ -66,7 +66,7 @@
             "time-to-live-seconds": "0"
           },
           "disable-per-entry-invalidation-events": "true",
-          "namespace": []
+          "user-code-namespace": []
         }
       }
     }
@@ -364,8 +364,8 @@
         "message": "expected type: Integer, found: String"
       },
       {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/namespace",
-        "pointerToViolation": "#/hazelcast/cache/default/namespace",
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/user-code-namespace",
+        "pointerToViolation": "#/hazelcast/cache/default/user-code-namespace",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: JSONArray"

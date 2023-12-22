@@ -78,7 +78,7 @@ public class MultiMapProxyImpl<K, V>
                         impl + " should be an instance of EntryListener");
             } else if (listenerConfig.getClassName() != null) {
                 try {
-                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
                     listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("d5bb0a4e0ed9638946c3c74d782b527c")
+@Generated("cd2063aae57b11e72215a3f8e1816ac6")
 public final class DynamicConfigAddListConfigCodec {
     //hex: 0x1B0400
     public static final int REQUEST_MESSAGE_TYPE = 1770496;
@@ -108,18 +108,18 @@ public final class DynamicConfigAddListConfigCodec {
         public int mergeBatchSize;
 
         /**
-         * Name of the namespace applied to this instance.
+         * Name of the User Code Namespace applied to this instance.
          */
-        public @Nullable java.lang.String namespace;
+        public @Nullable java.lang.String userCodeNamespace;
 
         /**
-         * True if the namespace is received from the client, false otherwise.
-         * If this is false, namespace has the default value for its type.
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
          */
-        public boolean isNamespaceExists;
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String namespace) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -137,7 +137,7 @@ public final class DynamicConfigAddListConfigCodec {
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
-        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -155,10 +155,10 @@ public final class DynamicConfigAddListConfigCodec {
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
-            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-            request.isNamespaceExists = true;
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
         } else {
-            request.isNamespaceExists = false;
+            request.isUserCodeNamespaceExists = false;
         }
         return request;
     }

@@ -55,7 +55,7 @@ public class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
     }
 
     @Override
-    public ReliableTopicConfig setNamespace(@Nullable String namespace) {
+    public ReliableTopicConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

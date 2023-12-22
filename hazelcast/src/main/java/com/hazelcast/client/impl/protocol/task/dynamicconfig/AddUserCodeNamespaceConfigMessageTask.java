@@ -17,38 +17,38 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddNamespaceConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.config.ConfigAccessor;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 
-public class AddNamespaceConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddNamespaceConfigCodec.RequestParameters> {
+public class AddUserCodeNamespaceConfigMessageTask
+        extends AbstractAddConfigMessageTask<DynamicConfigAddUserCodeNamespaceConfigCodec.RequestParameters> {
 
-    public AddNamespaceConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddUserCodeNamespaceConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddNamespaceConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddNamespaceConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddUserCodeNamespaceConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddUserCodeNamespaceConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddNamespaceConfigCodec.encodeResponse();
+        return DynamicConfigAddUserCodeNamespaceConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        NamespaceConfig config = new NamespaceConfig(parameters.name);
+        UserCodeNamespaceConfig config = new UserCodeNamespaceConfig(parameters.name);
         parameters.resources.forEach(holder -> ConfigAccessor.add(config, holder));
         return config;
     }
@@ -59,8 +59,8 @@ public class AddNamespaceConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.name != null ? new NamespacePermission(parameters.name, ActionConstants.ACTION_CREATE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.name != null ? new UserCodeNamespacePermission(parameters.name, ActionConstants.ACTION_CREATE) : null;
     }
 
     @Override

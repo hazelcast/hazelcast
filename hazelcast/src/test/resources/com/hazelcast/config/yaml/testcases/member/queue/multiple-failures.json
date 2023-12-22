@@ -31,7 +31,7 @@
             "class-name": {}
           },
           "priority-comparator-class-name": {},
-          "namespace": []
+          "user-code-namespace": []
         }
       }
     }
@@ -202,8 +202,8 @@
         "message": "expected type: Boolean, found: Integer"
       },
       {
-        "schemaLocation": "#/definitions/Queue/additionalProperties/properties/namespace",
-        "pointerToViolation": "#/hazelcast/queue/default/namespace",
+        "schemaLocation": "#/definitions/Queue/additionalProperties/properties/user-code-namespace",
+        "pointerToViolation": "#/hazelcast/queue/default/user-code-namespace",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: JSONArray"

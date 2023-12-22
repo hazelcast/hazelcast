@@ -125,7 +125,7 @@ public class CacheAddNearCacheInvalidationListenerTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return CacheService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

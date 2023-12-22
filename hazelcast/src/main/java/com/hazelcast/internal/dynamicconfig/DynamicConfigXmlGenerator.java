@@ -129,8 +129,8 @@ public final class DynamicConfigXmlGenerator {
             mapQueryCachesConfigXmlGenerator(gen, m);
             tieredStoreConfigXmlGenerator(gen, m.getTieredStoreConfig());
             mapPartitionAttributesConfigXmlGenerator(gen, m);
-            if (m.getNamespace() != null) {
-                gen.node("namespace", m.getNamespace());
+            if (m.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", m.getUserCodeNamespace());
             }
             gen.close();
         }
@@ -185,8 +185,8 @@ public final class DynamicConfigXmlGenerator {
             if (c.getMerkleTreeConfig().getEnabled() != null) {
                 appendMerkleTreeConfig(gen, c.getMerkleTreeConfig());
             }
-            if (c.getNamespace() != null) {
-                gen.node("namespace", c.getNamespace());
+            if (c.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", c.getUserCodeNamespace());
             }
 
             gen.node("disable-per-entry-invalidation-events", c.isDisablePerEntryInvalidationEvents())
@@ -215,8 +215,8 @@ public final class DynamicConfigXmlGenerator {
                         .appendProperties(storeConfig.getProperties())
                         .close();
             }
-            if (q.getNamespace() != null) {
-                gen.node("namespace", q.getNamespace());
+            if (q.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", q.getUserCodeNamespace());
             }
             MergePolicyConfig mergePolicyConfig = q.getMergePolicyConfig();
             gen.node("split-brain-protection-ref", q.getSplitBrainProtectionName())
@@ -243,8 +243,8 @@ public final class DynamicConfigXmlGenerator {
                     .node("split-brain-protection-ref", mm.getSplitBrainProtectionName())
                     .node("value-collection-type", mm.getValueCollectionType());
 
-            if (mm.getNamespace() != null) {
-                gen.node("namespace", mm.getNamespace());
+            if (mm.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", mm.getUserCodeNamespace());
             }
             entryListenerConfigXmlGenerator(gen, mm.getEntryListenerConfigs());
             MergePolicyConfig mergePolicyConfig = mm.getMergePolicyConfig();
@@ -263,8 +263,8 @@ public final class DynamicConfigXmlGenerator {
                     .node("split-brain-protection-ref", r.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize());
 
-            if (r.getNamespace() != null) {
-                gen.node("namespace", r.getNamespace());
+            if (r.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", r.getUserCodeNamespace());
             }
 
             if (!r.getListenerConfigs().isEmpty()) {
@@ -302,8 +302,8 @@ public final class DynamicConfigXmlGenerator {
                 gen.close();
             }
             MergePolicyConfig mergePolicyConfig = rbConfig.getMergePolicyConfig();
-            if (rbConfig.getNamespace() != null) {
-                gen.node("namespace", rbConfig.getNamespace());
+            if (rbConfig.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", rbConfig.getUserCodeNamespace());
             }
             gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
@@ -324,8 +324,8 @@ public final class DynamicConfigXmlGenerator {
                 gen.close();
             }
             gen.node("multi-threading-enabled", t.isMultiThreadingEnabled());
-            if (t.getNamespace() != null) {
-                gen.node("namespace", t.getNamespace());
+            if (t.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", t.getUserCodeNamespace());
             }
             gen.close();
         }
@@ -337,8 +337,8 @@ public final class DynamicConfigXmlGenerator {
                     .node("statistics-enabled", t.isStatisticsEnabled())
                     .node("read-batch-size", t.getReadBatchSize())
                     .node("topic-overload-policy", t.getTopicOverloadPolicy());
-            if (t.getNamespace() != null) {
-                gen.node("namespace", t.getNamespace());
+            if (t.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", t.getUserCodeNamespace());
             }
 
             if (!t.getMessageListenerConfigs().isEmpty()) {
@@ -359,8 +359,8 @@ public final class DynamicConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("queue-capacity", ex.getQueueCapacity())
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName());
-            if (ex.getNamespace() != null) {
-                gen.node("namespace", ex.getNamespace());
+            if (ex.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", ex.getUserCodeNamespace());
             }
             gen.close();
         }
@@ -374,8 +374,8 @@ public final class DynamicConfigXmlGenerator {
                     .node("capacity", ex.getCapacity())
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("statistics-enabled", ex.isStatisticsEnabled());
-            if (ex.getNamespace() != null) {
-                gen.node("namespace", ex.getNamespace());
+            if (ex.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", ex.getUserCodeNamespace());
             }
             gen.close();
         }
@@ -393,8 +393,8 @@ public final class DynamicConfigXmlGenerator {
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .node("statistics-enabled", ex.isStatisticsEnabled());
-            if (ex.getNamespace() != null) {
-                gen.node("namespace", ex.getNamespace());
+            if (ex.getUserCodeNamespace() != null) {
+                gen.node("user-code-namespace", ex.getUserCodeNamespace());
             }
              gen.close();
         }
@@ -479,8 +479,8 @@ public final class DynamicConfigXmlGenerator {
                         .node("backup-count", config.getBackupCount())
                         .node("async-backup-count", config.getAsyncBackupCount())
                         .node("split-brain-protection-ref", config.getSplitBrainProtectionName());
-                if (config.getNamespace() != null) {
-                    gen.node("namespace", config.getNamespace());
+                if (config.getUserCodeNamespace() != null) {
+                    gen.node("user-code-namespace", config.getUserCodeNamespace());
                 }
                 appendItemListenerConfigs(gen, config.getItemListenerConfigs());
                 MergePolicyConfig mergePolicyConfig = config.getMergePolicyConfig();

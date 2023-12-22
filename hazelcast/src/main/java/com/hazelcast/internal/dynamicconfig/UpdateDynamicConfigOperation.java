@@ -34,15 +34,16 @@ public abstract class UpdateDynamicConfigOperation extends AbstractDynamicConfig
 
     protected IdentifiedDataSerializable config;
     protected int memberListVersion;
-    // User Code Deployment
-    protected @Nullable String namespace;
+    // User Code Namespaces
+    protected @Nullable String userCodeNamespace;
 
     protected UpdateDynamicConfigOperation() {
     }
 
-    protected UpdateDynamicConfigOperation(IdentifiedDataSerializable config, int memberListVersion, @Nullable String namespace) {
+    protected UpdateDynamicConfigOperation(IdentifiedDataSerializable config, int memberListVersion,
+                                           @Nullable String userCodeNamespace) {
         this.config = config;
-        this.namespace = namespace;
+        this.userCodeNamespace = userCodeNamespace;
         this.memberListVersion = memberListVersion;
     }
 
@@ -61,7 +62,7 @@ public abstract class UpdateDynamicConfigOperation extends AbstractDynamicConfig
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         // We need namespace first for config deser
-        out.writeString(namespace);
+        out.writeString(userCodeNamespace);
         out.writeObject(config);
         out.writeInt(memberListVersion);
     }
@@ -70,8 +71,8 @@ public abstract class UpdateDynamicConfigOperation extends AbstractDynamicConfig
     protected void readInternal(ObjectDataInput in) throws IOException {
         // Backwards compatibility is handled in `Add` inheritor (`Remove` inheritor was introduced in 5.4)
         // We need namespace first for config deser
-        namespace = in.readString();
-        config = NamespaceUtil.callWithNamespace(namespace, in::readObject);
+        userCodeNamespace = in.readString();
+        config = NamespaceUtil.callWithNamespace(userCodeNamespace, in::readObject);
         memberListVersion = in.readInt();
     }
 

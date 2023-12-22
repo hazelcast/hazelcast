@@ -68,7 +68,7 @@
             "time-to-live-seconds": 0
           },
           "disable-per-entry-invalidation-events": true,
-          "namespace": "ns1"
+          "user-code-namespace": "ns1"
         },
         "cache-with-timed-expiry-policy-factory": {
           "expiry-policy-factory": {

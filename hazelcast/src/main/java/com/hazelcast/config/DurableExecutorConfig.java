@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * Contains the configuration for an {@link DurableExecutorService}.
  */
 public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
-                                              NamespaceAwareConfig<DurableExecutorConfig> {
+                                              UserCodeNamespaceAwareConfig<DurableExecutorConfig> {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -63,7 +63,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     private String splitBrainProtectionName;
 
     private boolean statisticsEnabled = true;
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public DurableExecutorConfig() {
     }
@@ -73,25 +73,25 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     }
 
     public DurableExecutorConfig(String name, int poolSize, int durability, int capacity,
-                                 boolean statisticsEnabled, @Nullable String namespace) {
-        this(name, poolSize, durability, capacity, null, statisticsEnabled, namespace);
+                                 boolean statisticsEnabled, @Nullable String userCodeNamespace) {
+        this(name, poolSize, durability, capacity, null, statisticsEnabled, userCodeNamespace);
     }
 
     public DurableExecutorConfig(String name, int poolSize, int durability, int capacity,
                                  String splitBrainProtectionName, boolean statisticsEnabled,
-                                 @Nullable String namespace) {
+                                 @Nullable String userCodeNamespace) {
         this.name = name;
         this.poolSize = poolSize;
         this.durability = durability;
         this.capacity = capacity;
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.statisticsEnabled = statisticsEnabled;
-        this.namespace = namespace;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     public DurableExecutorConfig(DurableExecutorConfig config) {
         this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity(),
-                config.getSplitBrainProtectionName(), config.isStatisticsEnabled(), config.getNamespace());
+                config.getSplitBrainProtectionName(), config.isStatisticsEnabled(), config.getUserCodeNamespace());
     }
 
     /**
@@ -220,22 +220,22 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link DurableExecutorConfig} instance
      * @since 5.4
      */
-    public DurableExecutorConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public DurableExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -247,7 +247,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
                 + ", capacity=" + capacity
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -272,7 +272,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -287,7 +287,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -317,7 +317,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
         return name.equals(that.name);
@@ -331,7 +331,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         result = 31 * result + capacity;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 }

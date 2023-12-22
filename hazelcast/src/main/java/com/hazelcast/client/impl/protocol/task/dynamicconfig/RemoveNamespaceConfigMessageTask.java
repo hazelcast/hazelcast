@@ -17,14 +17,14 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigRemoveNamespaceConfigCodec;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigRemoveUserCodeNamespaceConfigCodec;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 
@@ -37,17 +37,17 @@ public class RemoveNamespaceConfigMessageTask
 
     @Override
     protected String decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigRemoveNamespaceConfigCodec.decodeRequest(clientMessage);
+        return DynamicConfigRemoveUserCodeNamespaceConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigRemoveNamespaceConfigCodec.encodeResponse();
+        return DynamicConfigRemoveUserCodeNamespaceConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        NamespaceConfig config = new NamespaceConfig(parameters);
+        UserCodeNamespaceConfig config = new UserCodeNamespaceConfig(parameters);
         return config;
     }
 
@@ -57,7 +57,7 @@ public class RemoveNamespaceConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters != null ? new NamespacePermission(parameters, ActionConstants.ACTION_DESTROY) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters != null ? new UserCodeNamespacePermission(parameters, ActionConstants.ACTION_DESTROY) : null;
     }
 }

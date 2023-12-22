@@ -8,7 +8,7 @@
           "multi-threading-enabled": "true",
           "statistics-enabled": -1,
           "message-listeners": null,
-          "namespace": []
+          "user-code-namespace": []
         }
       }
     }
@@ -54,8 +54,8 @@
           "message": "expected type: Boolean, found: Integer"
         },
         {
-          "schemaLocation": "#/definitions/Topic/additionalProperties/properties/namespace",
-          "pointerToViolation": "#/hazelcast/topic/my-topic/namespace",
+          "schemaLocation": "#/definitions/Topic/additionalProperties/properties/user-code-namespace",
+          "pointerToViolation": "#/hazelcast/topic/my-topic/user-code-namespace",
           "causingExceptions": [],
           "keyword": "type",
           "message": "expected type: String, found: JSONArray"

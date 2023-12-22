@@ -158,7 +158,7 @@
               ]
             }
           },
-          "namespace": []
+          "user-code-namespace": []
         },
         "map-with-both-type-of-query-caches": {
           "query-caches": {
@@ -906,8 +906,8 @@
             "message": "-1 is not greater or equal to 0"
           },
           {
-            "schemaLocation": "#/definitions/Map/additionalProperties/properties/namespace",
-            "pointerToViolation": "#/hazelcast/map/my-map/namespace",
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/user-code-namespace",
+            "pointerToViolation": "#/hazelcast/map/my-map/user-code-namespace",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: String, found: JSONArray"

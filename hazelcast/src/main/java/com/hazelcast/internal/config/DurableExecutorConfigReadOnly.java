@@ -57,7 +57,7 @@ public class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
     }
 
     @Override
-    public DurableExecutorConfig setNamespace(@Nullable String namespace) {
+    public DurableExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
     }
 }

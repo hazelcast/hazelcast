@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("40db60a2cf3b39fc30d4d02d0bf506eb")
+@Generated("3ea9936415cd831404d7b722a62e27ef")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -123,9 +123,9 @@ public final class DynamicConfigAddQueueConfigCodec {
         public @Nullable java.lang.String priorityComparatorClassName;
 
         /**
-         * Name of the namespace applied to this instance.
+         * Name of the User Code Namespace applied to this instance.
          */
-        public @Nullable java.lang.String namespace;
+        public @Nullable java.lang.String userCodeNamespace;
 
         /**
          * True if the priorityComparatorClassName is received from the client, false otherwise.
@@ -134,13 +134,13 @@ public final class DynamicConfigAddQueueConfigCodec {
         public boolean isPriorityComparatorClassNameExists;
 
         /**
-         * True if the namespace is received from the client, false otherwise.
-         * If this is false, namespace has the default value for its type.
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
          */
-        public boolean isNamespaceExists;
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String priorityComparatorClassName, @Nullable java.lang.String namespace) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String priorityComparatorClassName, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -161,7 +161,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         CodecUtil.encodeNullable(clientMessage, queueStoreConfig, QueueStoreConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
         CodecUtil.encodeNullable(clientMessage, priorityComparatorClassName, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -187,10 +187,10 @@ public final class DynamicConfigAddQueueConfigCodec {
             request.isPriorityComparatorClassNameExists = false;
         }
         if (iterator.hasNext()) {
-            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-            request.isNamespaceExists = true;
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
         } else {
-            request.isNamespaceExists = false;
+            request.isUserCodeNamespaceExists = false;
         }
         return request;
     }

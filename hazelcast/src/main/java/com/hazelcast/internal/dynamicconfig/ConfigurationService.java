@@ -26,7 +26,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -399,5 +399,5 @@ public interface ConfigurationService {
      *
      * @return Namespace configurations keyed by configuration name
      */
-    Map<String, NamespaceConfig> getNamespaceConfigs();
+    Map<String, UserCodeNamespaceConfig> getNamespaceConfigs();
 }

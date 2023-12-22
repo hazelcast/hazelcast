@@ -27,7 +27,7 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
@@ -549,12 +549,12 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         Config config = new Config();
         config.getNamespacesConfig().setEnabled(true);
         config.getNamespacesConfig().addNamespaceConfig(
-            new NamespaceConfig("ns1")
+            new UserCodeNamespaceConfig("ns1")
                 .addJar(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarId")
                 .addJarsInZip(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarsInZipId")
         );
         config.getNamespacesConfig().addNamespaceConfig(
-            new NamespaceConfig("ns2")
+            new UserCodeNamespaceConfig("ns2")
                 .addJar(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarId-2")
                 .addJarsInZip(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarsInZipId-2")
         );

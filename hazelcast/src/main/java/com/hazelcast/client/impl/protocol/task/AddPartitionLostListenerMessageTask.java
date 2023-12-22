@@ -99,7 +99,7 @@ public class AddPartitionLostListenerMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         // Default Namespace
         return null;
     }

@@ -57,7 +57,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             return;
         }
 
-        NamespaceUtil.runWithNamespace(nodeEngine, getNamespace(), () -> {
+        NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), () -> {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             OperationFactory operationFactory = createOperationFactory();
             OperationServiceImpl operationService = nodeEngine.getOperationService();

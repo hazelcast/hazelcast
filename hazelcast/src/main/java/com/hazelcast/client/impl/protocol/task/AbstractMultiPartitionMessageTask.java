@@ -41,7 +41,7 @@ public abstract class AbstractMultiPartitionMessageTask<P>
     @Override
     protected void processMessage() {
         // Inheritors of AbstractMultiPartitionMessageTask are always Namespace-aware
-        NamespaceUtil.runWithNamespace(nodeEngine, getNamespace(), super::processMessage);
+        NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), super::processMessage);
     }
 
     @Override
@@ -59,7 +59,7 @@ public abstract class AbstractMultiPartitionMessageTask<P>
         return mapServiceContext.getMapOperationProvider(mapName);
     }
 
-    protected abstract String getNamespace();
+    protected abstract String getUserCodeNamespace();
 
     protected abstract OperationFactory createOperationFactory();
 

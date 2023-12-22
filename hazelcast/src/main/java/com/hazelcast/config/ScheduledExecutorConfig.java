@@ -41,7 +41,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * Configuration options for the {@link IScheduledExecutorService}.
  */
 public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
-                                                NamespaceAwareConfig<ScheduledExecutorConfig> {
+                                                UserCodeNamespaceAwareConfig<ScheduledExecutorConfig> {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -78,7 +78,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     private boolean statisticsEnabled = true;
-    private String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public ScheduledExecutorConfig() {
     }
@@ -88,9 +88,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity,
-                                   int poolSize, boolean statisticsEnabled, @Nullable String namespace) {
+                                   int poolSize, boolean statisticsEnabled, @Nullable String userCodeNamespace) {
         this(name, durability, capacity, poolSize, null,
-                new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY, statisticsEnabled, namespace);
+                new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY, statisticsEnabled, userCodeNamespace);
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize,
@@ -98,7 +98,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
                                    MergePolicyConfig mergePolicyConfig,
                                    CapacityPolicy capacityPolicy,
                                    boolean statisticsEnabled,
-                                   @Nullable String namespace) {
+                                   @Nullable String userCodeNamespace) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
@@ -107,14 +107,14 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
         this.statisticsEnabled = statisticsEnabled;
-        this.namespace = namespace;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
         this(config.getName(), config.getDurability(), config.getCapacity(),
                 config.getPoolSize(), config.getSplitBrainProtectionName(),
                 new MergePolicyConfig(config.getMergePolicyConfig()), config.getCapacityPolicy(),
-                config.isStatisticsEnabled(), config.getNamespace());
+                config.isStatisticsEnabled(), config.getUserCodeNamespace());
     }
 
     /**
@@ -292,22 +292,22 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link ScheduledExecutorConfig} instance
      * @since 5.4
      */
-    public ScheduledExecutorConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public ScheduledExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -322,7 +322,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -349,7 +349,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -366,7 +366,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -403,7 +403,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
         return name.equals(that.name);
@@ -419,7 +419,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 

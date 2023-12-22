@@ -142,7 +142,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     public void init(RingbufferConfig config, NodeEngine nodeEngine) {
         this.config = config;
         this.serializationService = nodeEngine.getSerializationService();
-        initRingbufferStore(NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace()), nodeEngine);
+        initRingbufferStore(NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace()), nodeEngine);
     }
 
     private void initRingbufferStore(ClassLoader classLoader, NodeEngine nodeEngine) {
@@ -152,7 +152,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
                 serializationService,
                 classLoader,
                 nodeEngine,
-                config.getNamespace());
+                config.getUserCodeNamespace());
         if (store.isEnabled()) {
             try {
                 final long storeSequence = store.getLargestSequence();
@@ -660,7 +660,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
-     * Deprecated since 5.4 due to ambiguity between UCD Namespaces (used in
+     * Deprecated since 5.4 due to ambiguity between User Code Namespaces (used in
      * most data structures) and ObjectNamespaces not used in most data structures
      *
      * @return This container's {@link ObjectNamespace}

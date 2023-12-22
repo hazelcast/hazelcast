@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new multimap config is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("279a0934fdc1373d8292944419434cfe")
+@Generated("e22cbcd7734a2590eceb1341cf22bad4")
 public final class DynamicConfigAddMultiMapConfigCodec {
     //hex: 0x1B0100
     public static final int REQUEST_MESSAGE_TYPE = 1769728;
@@ -114,18 +114,18 @@ public final class DynamicConfigAddMultiMapConfigCodec {
         public int mergeBatchSize;
 
         /**
-         * Name of the namespace applied to this instance.
+         * Name of the User Code Namespace applied to this instance.
          */
-        public @Nullable java.lang.String namespace;
+        public @Nullable java.lang.String userCodeNamespace;
 
         /**
-         * True if the namespace is received from the client, false otherwise.
-         * If this is false, namespace has the default value for its type.
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
          */
-        public boolean isNamespaceExists;
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String collectionType, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, boolean binary, int backupCount, int asyncBackupCount, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String namespace) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String collectionType, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, boolean binary, int backupCount, int asyncBackupCount, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -144,7 +144,7 @@ public final class DynamicConfigAddMultiMapConfigCodec {
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
-        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -163,10 +163,10 @@ public final class DynamicConfigAddMultiMapConfigCodec {
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
-            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-            request.isNamespaceExists = true;
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
         } else {
-            request.isNamespaceExists = false;
+            request.isUserCodeNamespaceExists = false;
         }
         return request;
     }

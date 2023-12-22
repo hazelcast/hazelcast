@@ -99,8 +99,8 @@ public class DurableExecutorSubmitToPartitionMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         DurableExecutorConfig config = nodeEngine.getConfig().findDurableExecutorConfig(parameters.name);
-        return config == null ? null : config.getNamespace();
+        return config == null ? null : config.getUserCodeNamespace();
     }
 }

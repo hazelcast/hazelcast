@@ -50,7 +50,7 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
         MapConfig mapConfig = config.getMapConfig(mapName);
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
-        ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(engine, mapConfig.getNamespace());
+        ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(engine, mapConfig.getUserCodeNamespace());
 
         if (queryCacheConfig != null) {
             setPredicateImpl(queryCacheConfig, loader);
@@ -69,7 +69,7 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
         if (mapConfig == null) {
             return null;
         }
-        ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(engine, mapConfig.getNamespace());
+        ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(engine, mapConfig.getUserCodeNamespace());
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
         if (queryCacheConfig != null) {

@@ -11,7 +11,7 @@
           "split-brain-protection-ref": [],
           "merge-policy": {},
           "statistics-enabled": "Off",
-          "namespace": []
+          "user-code-namespace": []
         }
       }
     }
@@ -70,8 +70,8 @@
         "message": "expected type: Boolean, found: String"
       },
       {
-        "schemaLocation": "#/definitions/Set/additionalProperties/properties/namespace",
-        "pointerToViolation": "#/hazelcast/set/my-set/namespace",
+        "schemaLocation": "#/definitions/Set/additionalProperties/properties/user-code-namespace",
+        "pointerToViolation": "#/hazelcast/set/my-set/user-code-namespace",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: JSONArray"

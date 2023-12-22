@@ -135,15 +135,15 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
     }
 
     /**
-     * Returns the User Code Deployment namespace used for this RingBuffer
+     * Returns the User Code Namespace used for this RingBuffer
      *
-     * @return the configured namespace value
+     * @return the configured {@code Namespace} name
      */
-    public String getUCDNamespace() {
+    public String getUserCodeNamespace() {
         // Obtain NodeEngine reference and set for use later in operations
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
         setNodeEngine(engine);
-        return RingbufferService.lookupUcdNamespace(engine, name, getPartitionId());
+        return RingbufferService.lookupUserCodeNamespace(engine, name, getPartitionId());
     }
 
     @Override

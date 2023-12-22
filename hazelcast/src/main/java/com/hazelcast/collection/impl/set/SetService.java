@@ -166,7 +166,7 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified set name. This starts
+     * Looks up the User Code Namespace name associated with the specified set name. This starts
      * by looking for an existing {@link SetContainer} and checking its defined
      * {@link SetConfig}. If the {@link SetContainer} does not exist (containers are
      * created lazily), then fallback to checking the Node's config tree directly.
@@ -187,11 +187,11 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
     protected String lookupNamespace(String setName) {
         SetContainer container = containerMap.get(setName);
         if (container != null) {
-            return container.getConfig().getNamespace();
+            return container.getConfig().getUserCodeNamespace();
         }
         SetConfig config = nodeEngine.getConfig().findSetConfig(setName);
         if (config != null) {
-            return config.getNamespace();
+            return config.getUserCodeNamespace();
         }
         return null;
     }

@@ -66,7 +66,7 @@ public class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public ReplicatedMapConfig setNamespace(@Nullable String namespace) {
+    public ReplicatedMapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw throwReadOnly();
     }
 

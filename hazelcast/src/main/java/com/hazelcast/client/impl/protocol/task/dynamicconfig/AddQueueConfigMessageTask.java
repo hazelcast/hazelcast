@@ -29,7 +29,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.List;
@@ -61,13 +61,13 @@ public class AddQueueConfigMessageTask
         config.setSplitBrainProtectionName(parameters.splitBrainProtectionName);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.queueStoreConfig != null) {
-            QueueStoreConfig storeConfig = NamespaceUtil.callWithNamespace(nodeEngine, parameters.namespace,
+            QueueStoreConfig storeConfig = NamespaceUtil.callWithNamespace(nodeEngine, parameters.userCodeNamespace,
                     () -> parameters.queueStoreConfig.asQueueStoreConfig(serializationService));
             config.setQueueStoreConfig(storeConfig);
         }
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             List<ItemListenerConfig> itemListenerConfigs =
-                    (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.namespace);
+                    (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.userCodeNamespace);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
@@ -75,8 +75,8 @@ public class AddQueueConfigMessageTask
         if (parameters.isPriorityComparatorClassNameExists) {
             config.setPriorityComparatorClassName(parameters.priorityComparatorClassName);
         }
-        if (parameters.isNamespaceExists) {
-            config.setNamespace(parameters.namespace);
+        if (parameters.isUserCodeNamespaceExists) {
+            config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
         return config;
     }
@@ -87,8 +87,9 @@ public class AddQueueConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

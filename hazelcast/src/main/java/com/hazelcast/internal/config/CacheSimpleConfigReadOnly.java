@@ -181,7 +181,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
     }
 
     @Override
-    public CacheSimpleConfig setNamespace(@Nullable String namespace) {
+    public CacheSimpleConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 }

@@ -26,7 +26,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -231,7 +231,7 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public Map<String, NamespaceConfig> getNamespaceConfigs() {
+    public Map<String, UserCodeNamespaceConfig> getNamespaceConfigs() {
         return emptyMap();
     }
 

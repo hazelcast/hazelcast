@@ -116,7 +116,7 @@ public class ReliableTopicService implements ManagedService, RemoteService,
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified reliable topic name. This is done
+     * Looks up the User Code Namespace name associated with the specified reliable topic name. This is done
      * by checking the Node's config tree directly.
      *
      * @param nodeEngine {@link NodeEngine} implementation of this member for service and config lookups
@@ -128,7 +128,7 @@ public class ReliableTopicService implements ManagedService, RemoteService,
             // No regular containers available, fallback to config
             ReliableTopicConfig topicConfig = nodeEngine.getConfig().findReliableTopicConfig(topicName);
             if (topicConfig != null) {
-                return topicConfig.getNamespace();
+                return topicConfig.getUserCodeNamespace();
             }
         }
         return null;

@@ -45,7 +45,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import java.security.Permission;
@@ -75,7 +75,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_READ);
     }
 
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 
@@ -92,16 +92,16 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     protected abstract IterationType getIterationType();
 
     @Override
-    public Permission getNamespacePermission() {
-        String namespace = getNamespace();
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = getUserCodeNamespace();
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
     protected final Object call() throws Exception {
         Collection<AccumulatedResults> result = new LinkedList<AccumulatedResults>();
         try {
-            NamespaceUtil.setupNamespace(nodeEngine, getNamespace());
+            NamespaceUtil.setupNamespace(nodeEngine, getUserCodeNamespace());
             Predicate predicate = getPredicate();
             if (predicate instanceof PartitionPredicate) {
                 QueryResult queryResult = invokeOnPartitions((PartitionPredicate) predicate);
@@ -116,7 +116,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         } catch (Throwable t) {
             throw rethrow(t);
         } finally {
-            NamespaceUtil.cleanupNamespace(nodeEngine, getNamespace());
+            NamespaceUtil.cleanupNamespace(nodeEngine, getUserCodeNamespace());
         }
     }
 

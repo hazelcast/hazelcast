@@ -134,7 +134,7 @@ public class SetAddListenerMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return SetService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

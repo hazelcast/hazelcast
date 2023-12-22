@@ -92,7 +92,7 @@ public class ListConfigReadOnly extends ListConfig {
     }
 
     @Override
-    public ListConfig setNamespace(@Nullable String namespace) {
+    public ListConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only list: " + getName());
     }
 }

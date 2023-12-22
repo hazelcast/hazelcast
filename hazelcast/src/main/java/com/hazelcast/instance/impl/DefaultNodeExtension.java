@@ -78,8 +78,8 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.namespace.NamespaceService;
-import com.hazelcast.internal.namespace.impl.NoOpNamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
+import com.hazelcast.internal.namespace.impl.NoOpUserCodeNamespaceService;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
@@ -725,7 +725,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public NamespaceService getNamespaceService() {
-        return new NoOpNamespaceService(getLegacyUCDClassLoader(node.getConfig()));
+    public UserCodeNamespaceService getNamespaceService() {
+        return new NoOpUserCodeNamespaceService(getLegacyUCDClassLoader(node.getConfig()));
     }
 }

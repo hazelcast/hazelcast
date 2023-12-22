@@ -26,7 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.List;
@@ -56,10 +56,10 @@ public class AddTopicConfigMessageTask
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             config.setMessageListenerConfigs(
-                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.namespace));
+                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.userCodeNamespace));
         }
-        if (parameters.isNamespaceExists) {
-            config.setNamespace(parameters.namespace);
+        if (parameters.isUserCodeNamespaceExists) {
+            config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
         return config;
     }
@@ -70,8 +70,9 @@ public class AddTopicConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

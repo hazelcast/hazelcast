@@ -16,36 +16,37 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URL;
 
-public class NamespaceConfigReadOnly extends NamespaceConfig {
+public class UserCodeNamespaceConfigReadOnly
+        extends UserCodeNamespaceConfig {
 
-    public NamespaceConfigReadOnly(NamespaceConfig config) {
+    public UserCodeNamespaceConfigReadOnly(UserCodeNamespaceConfig config) {
         super(config);
     }
 
     @Override
-    public NamespaceConfig setName(String name) {
+    public UserCodeNamespaceConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
     }
 
 
     @Override
-    public NamespaceConfig addClass(@Nonnull Class<?>... classes) {
+    public UserCodeNamespaceConfig addClass(@Nonnull Class<?>... classes) {
         throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
     }
 
     @Override
-    public NamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
+    public UserCodeNamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
         throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
     }
 
     @Override
-    public NamespaceConfig addJarsInZip(@Nonnull URL url, @Nullable String id) {
+    public UserCodeNamespaceConfig addJarsInZip(@Nonnull URL url, @Nullable String id) {
         throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
     }
 }

@@ -80,7 +80,7 @@ public class RingbufferConfigReadOnly extends RingbufferConfig {
     }
 
     @Override
-    public RingbufferConfig setNamespace(@Nullable String namespace) {
+    public RingbufferConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw throwReadOnly();
     }
 

@@ -577,7 +577,8 @@ abstract class CacheProxySupport<K, V>
             listener = (T) listenerConfig.getImplementation();
         } else if (listenerConfig.getClassName() != null) {
             try {
-                ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(), cacheConfig.getNamespace());
+                ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(),
+                        cacheConfig.getUserCodeNamespace());
                 listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);

@@ -165,7 +165,7 @@ public class ListService extends CollectionService implements DynamicMetricsProv
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified set name. This starts
+     * Looks up the User Code Namespace name associated with the specified set name. This starts
      * by looking for an existing {@link ListContainer} and checking its defined
      * {@link ListConfig}. If the {@link ListContainer} does not exist (containers are
      * created lazily), then fallback to checking the Node's config tree directly.
@@ -187,11 +187,11 @@ public class ListService extends CollectionService implements DynamicMetricsProv
         if (nodeEngine.getNamespaceService().isEnabled()) {
             ListContainer container = containerMap.get(listName);
             if (container != null) {
-                return container.getConfig().getNamespace();
+                return container.getConfig().getUserCodeNamespace();
             }
             ListConfig config = nodeEngine.getConfig().findListConfig(listName);
             if (config != null) {
-                return config.getNamespace();
+                return config.getUserCodeNamespace();
             }
         }
         return null;

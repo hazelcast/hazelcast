@@ -123,9 +123,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
         Processor processor;
         if (task instanceof Runnable) {
-            processor = new Processor(name, uuid, (Runnable) task, op, cfg.isStatisticsEnabled(), cfg.getNamespace());
+            processor = new Processor(name, uuid, (Runnable) task, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
         } else if (task instanceof Callable) {
-            processor = new Processor(name, uuid, (Callable<?>) task, op, cfg.isStatisticsEnabled(), cfg.getNamespace());
+            processor = new Processor(name, uuid, (Callable<?>) task, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
         } else {
             throw new IllegalArgumentException(task.getClass().getName());
         }
@@ -330,7 +330,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified executor name. This is done
+     * Looks up the User Code Namespace name associated with the specified executor name. This is done
      * by checking this service's config caches, and falling back to the Node's config tree.
      *
      * @param engine       {@link NodeEngine} implementation of this member for service and config lookups
@@ -342,7 +342,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             DistributedExecutorService service = engine.getService(SERVICE_NAME);
             ExecutorConfig config = service.getOrFindExecutorConfig(executorName);
             if (config != null) {
-                return config.getNamespace();
+                return config.getUserCodeNamespace();
             }
         }
         return null;

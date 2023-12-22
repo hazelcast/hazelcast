@@ -17,7 +17,7 @@
 package com.hazelcast.internal.namespace;
 
 import com.hazelcast.config.ConfigAccessor;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,14 +26,14 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 /**
- * Primary service used to register and maintain {@code Namespace} definitions, as well
- * as the centralised location for handling {@code Namespace} awareness.
+ * Primary service used to register and maintain {@code User Code Namespace} definitions,
+ * as well as the centralised location for handling {@code Namespace} awareness.
  *
  * @see NamespaceUtil
  * @since 5.4
  */
-public interface NamespaceService {
-    /** Name of the Namespace Service */
+public interface UserCodeNamespaceService {
+    /** Name of the User Code Namespace Service */
     String SERVICE_NAME = "hz:impl:namespaceService";
     /**
      * The default Namespace name to be used when a Namespace-aware execution takes place
@@ -188,21 +188,21 @@ public interface NamespaceService {
 
     /**
      * Convenience method for adding {@code Namespace}s directly using a
-     * {@link NamespaceConfig} instance.
-     * @param config the {@link NamespaceConfig} instance to fetch the {@code Namespace}
+     * {@link UserCodeNamespaceConfig} instance.
+     * @param config the {@link UserCodeNamespaceConfig} instance to fetch the {@code Namespace}
      *               name from for addition via {@link #addNamespace(String, Collection)}
      */
-    default void addNamespaceConfig(NamespaceConfig config) {
+    default void addNamespaceConfig(UserCodeNamespaceConfig config) {
         addNamespace(config.getName(), ConfigAccessor.getResourceDefinitions(config));
     }
 
     /**
      * Convenience method for removing {@code Namespace}s directly using a
-     * {@link NamespaceConfig} instance.
-     * @param config the {@link NamespaceConfig} instance to fetch the {@code Namespace}
+     * {@link UserCodeNamespaceConfig} instance.
+     * @param config the {@link UserCodeNamespaceConfig} instance to fetch the {@code Namespace}
      *               name from for removal via {@link #removeNamespace(String)}
      */
-    default void removeNamespaceConfig(NamespaceConfig config) {
+    default void removeNamespaceConfig(UserCodeNamespaceConfig config) {
         removeNamespace(config.getName());
     }
 }

@@ -19,7 +19,7 @@
             "batch-size": -100,
             "class-name": "invalid"
           },
-          "namespace": []
+          "user-code-namespace": []
         }
       }
     }
@@ -106,8 +106,8 @@
         "message": "expected type: Boolean, found: String"
       },
       {
-        "schemaLocation": "#/definitions/ReplicatedMap/additionalProperties/properties/namespace",
-        "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/namespace",
+        "schemaLocation": "#/definitions/ReplicatedMap/additionalProperties/properties/user-code-namespace",
+        "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/user-code-namespace",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: JSONArray"

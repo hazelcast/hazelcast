@@ -503,7 +503,7 @@ public class EntryOperation extends LockAwareOperation
                         ? new StatsAwareRunnable(runnable, executorName, executorStats) : runnable;
                 // Wrap our runnable in a Namespace context-aware runnable
                 executionService.execute(executorName, () ->
-                        NamespaceUtil.runWithNamespace(nodeEngine, mapContainer.getMapConfig().getNamespace(), command));
+                        NamespaceUtil.runWithNamespace(nodeEngine, mapContainer.getMapConfig().getUserCodeNamespace(), command));
             } catch (RejectedExecutionException e) {
                 if (statisticsEnabled) {
                     executorStats.rejectExecution(executorName);

@@ -45,7 +45,7 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
@@ -321,7 +321,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             if (matches(nodeName, "class-filter")) {
                 fillJavaSerializationFilter(n, config.getNamespacesConfig());
             } else if (!matches("enabled", nodeName)) {
-                NamespaceConfig ns = new NamespaceConfig(nodeName);
+                UserCodeNamespaceConfig ns = new UserCodeNamespaceConfig(nodeName);
                 //get list of resources
                 for (Node subChild : childElements(n)) {
                     String resourceId = null;

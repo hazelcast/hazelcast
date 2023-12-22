@@ -33,7 +33,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -65,7 +65,7 @@ public class AddMapConfigMessageTask
         config.setCacheDeserializedValues(CacheDeserializedValues.valueOf(parameters.cacheDeserializedValues));
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             config.setEntryListenerConfigs(
-                    (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.namespace));
+                    (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.userCodeNamespace));
         }
         if (parameters.merkleTreeConfig != null) {
             config.setMerkleTreeConfig(parameters.merkleTreeConfig);
@@ -84,7 +84,8 @@ public class AddMapConfigMessageTask
         config.setPerEntryStatsEnabled(parameters.perEntryStatsEnabled);
         config.setIndexConfigs(parameters.indexConfigs);
         if (parameters.mapStoreConfig != null) {
-            config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService, parameters.namespace));
+            config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService,
+                    parameters.userCodeNamespace));
         }
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
@@ -101,13 +102,13 @@ public class AddMapConfigMessageTask
         if (parameters.partitionLostListenerConfigs != null && !parameters.partitionLostListenerConfigs.isEmpty()) {
             config.setPartitionLostListenerConfigs(
                     (List<MapPartitionLostListenerConfig>) adaptListenerConfigs(parameters.partitionLostListenerConfigs,
-                            parameters.namespace));
+                            parameters.userCodeNamespace));
         }
         config.setSplitBrainProtectionName(parameters.splitBrainProtectionName);
         if (parameters.queryCacheConfigs != null && !parameters.queryCacheConfigs.isEmpty()) {
             List<QueryCacheConfig> queryCacheConfigs = new ArrayList<>(parameters.queryCacheConfigs.size());
             for (QueryCacheConfigHolder holder : parameters.queryCacheConfigs) {
-                queryCacheConfigs.add(holder.asQueryCacheConfig(serializationService, parameters.namespace));
+                queryCacheConfigs.add(holder.asQueryCacheConfig(serializationService, parameters.userCodeNamespace));
             }
             config.setQueryCacheConfigs(queryCacheConfigs);
         }
@@ -122,8 +123,8 @@ public class AddMapConfigMessageTask
         if (parameters.isPartitioningAttributeConfigsExists) {
             config.setPartitioningAttributeConfigs(parameters.partitioningAttributeConfigs);
         }
-        if (parameters.isNamespaceExists) {
-            config.setNamespace(parameters.namespace);
+        if (parameters.isUserCodeNamespaceExists) {
+            config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
         return config;
     }
@@ -141,8 +142,9 @@ public class AddMapConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

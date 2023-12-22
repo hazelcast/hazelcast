@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.namespace.impl;
 
+import com.hazelcast.config.UserCodeNamespaceConfig;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
@@ -25,7 +27,7 @@ import java.util.Enumeration;
  * The classloading scheme does not follow the recommended {@link ClassLoader} parent delegation model: instead, this
  * {@code ClassLoader} first looks up classes and resources on its own, then delegates if not found.
  *
- * @see com.hazelcast.config.NamespaceConfig
+ * @see UserCodeNamespaceConfig
  */
 public class NamespaceAwareClassLoader extends ClassLoader {
     // Retain Parent for faster referencing (skips permission checks)

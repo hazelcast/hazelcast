@@ -246,7 +246,7 @@
                                  pool-size="2"
                                  queue-capacity="100">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:executor-service>
             <hz:executor-service name="testExec2"
                                  pool-size="5"
@@ -259,7 +259,7 @@
                                          capacity="200"
                                          statistics-enabled="false">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:durable-executor-service>
 
             <hz:scheduled-executor-service name="scheduledExec"
@@ -269,7 +269,7 @@
                                            statistics-enabled="false">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="101">PassThroughMergePolicy</hz:merge-policy>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:scheduled-executor-service>
 
             <hz:cardinality-estimator name="estimator">
@@ -283,7 +283,7 @@
                 <hz:item-listeners>
                     <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>
                 </hz:item-listeners>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:queue>
             <hz:queue name="queueWithSplitBrainConfig"
                       max-size="2500"
@@ -317,7 +317,7 @@
                 <hz:ringbuffer-store enabled="true" class-name="com.hazelcast.spring.DummyRingbufferStore"/>
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:ringbuffer>
 
             <hz:ringbuffer name="testRingbuffer2">
@@ -342,7 +342,7 @@
                 <hz:message-listeners>
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:reliable-topic>
 
             <hz:map name="testMap"
@@ -399,7 +399,7 @@
                 <hz:event-journal enabled="${testMap.journal.enabled}"
                                   capacity="${testMap.journal.capacity}"
                                   time-to-live-seconds="${testMap.journal.ttl}"/>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
@@ -572,7 +572,7 @@
                 <hz:hot-restart enabled="true" fsync="true"/>
                 <hz:event-journal enabled="true"
                                   capacity="123" time-to-live-seconds="321"/>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:cache>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
@@ -582,7 +582,7 @@
                 </hz:entry-listeners>
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="1234">PassThroughMergePolicy</hz:merge-policy>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:multimap>
 
             <hz:list name="testList"
@@ -592,7 +592,7 @@
                      statistics-enabled="false">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:list>
             <hz:set name="testSet"
                     max-size="7777"
@@ -601,7 +601,7 @@
                     statistics-enabled="false">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:set>
 
             <hz:topic name="testTopic">
@@ -610,7 +610,7 @@
                 <hz:message-listeners>
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:topic>
 
             <hz:replicatedmap name="replicatedMap" async-fillup="false"
@@ -621,7 +621,7 @@
                 </hz:entry-listeners>
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
-                <hz:namespace>ns1</hz:namespace>
+                <hz:user-code-namespace>ns1</hz:user-code-namespace>
             </hz:replicatedmap>
 
             <hz:listeners>
@@ -976,11 +976,11 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:sql-permission>
-                    <hz:namespace-permission name="*">
+                    <hz:user-code-namespace-permission name="*">
                         <hz:actions>
                             <hz:action>all</hz:action>
                         </hz:actions>
-                    </hz:namespace-permission>
+                    </hz:user-code-namespace-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>
@@ -1166,7 +1166,7 @@
                 <hz:eventloop-count>12</hz:eventloop-count>
             </hz:tpc>
             <!-- TODO: Move Namespace testing to EE (post-merge) -->
-            <hz:namespaces enabled="false">
+            <hz:user-code-namespaces enabled="false">
                 <hz:class-filter defaults-disabled="true">
                     <hz:blacklist>
                         <hz:class>com.acme.app.BeanComparator</hz:class>
@@ -1192,7 +1192,7 @@
                         <hz:url>file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.zip</hz:url>
                     </hz:jars-in-zip>
                 </hz:namespace>
-            </hz:namespaces>
+            </hz:user-code-namespaces>
         </hz:config>
     </hz:hazelcast>
 

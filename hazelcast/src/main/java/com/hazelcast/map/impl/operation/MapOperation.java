@@ -142,7 +142,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         assertNativeMapOnPartitionThread();
 
         // Setup Namespace awareness
-        namespace = mapConfig.getNamespace();
+        namespace = mapConfig.getUserCodeNamespace();
         getNodeEngine().getNamespaceService().setupNamespace(namespace);
 
         innerBeforeRun();

@@ -25,7 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 
@@ -55,7 +55,7 @@ public class AddDurableExecutorConfigMessageTask
                 || parameters.statisticsEnabled;
 
         return new DurableExecutorConfig(parameters.name, parameters.poolSize, parameters.durability, parameters.capacity,
-                statsEnabled, parameters.isNamespaceExists ? parameters.namespace : null);
+                statsEnabled, parameters.isUserCodeNamespaceExists ? parameters.userCodeNamespace : null);
     }
 
     @Override
@@ -64,8 +64,9 @@ public class AddDurableExecutorConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

@@ -240,7 +240,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             if (permission != null) {
                 securityContext.checkPermission(endpoint.getSubject(), permission);
             }
-            Permission namespacePermission = getNamespacePermission();
+            Permission namespacePermission = getUserCodeNamespacePermission();
             if (namespacePermission != null) {
                 securityContext.checkPermission(endpoint.getSubject(), namespacePermission);
             }

@@ -23,10 +23,7 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.projection.Projection;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
 
-import java.security.Permission;
 import java.util.Collection;
 
 public abstract class DefaultMapQueryMessageTask<P>
@@ -49,11 +46,5 @@ public abstract class DefaultMapQueryMessageTask<P>
     @Override
     protected void extractAndAppendResult(Collection<QueryResultRow> results, QueryResult queryResult) {
         results.addAll(queryResult.getRows());
-    }
-
-    @Override
-    public Permission getNamespacePermission() {
-        String namespace = getNamespace();
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 }

@@ -91,7 +91,7 @@ public class SetConfigReadOnly extends SetConfig {
     }
 
     @Override
-    public SetConfig setNamespace(@Nullable String namespace) {
+    public SetConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 }

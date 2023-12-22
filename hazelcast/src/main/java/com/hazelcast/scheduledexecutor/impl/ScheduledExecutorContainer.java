@@ -92,11 +92,11 @@ public class ScheduledExecutorContainer {
      */
     private final CapacityPermit permit;
     private final ExecutorStats executorStats;
-    private final @Nullable String namespace;
+    private final @Nullable String userCodeNamespace;
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
-                               int durability, boolean statisticsEnabled, @Nullable String namespace) {
-        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>(), statisticsEnabled, namespace);
+                               int durability, boolean statisticsEnabled, @Nullable String userCodeNamespace) {
+        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>(), statisticsEnabled, userCodeNamespace);
     }
 
     ScheduledExecutorContainer(String name, int partitionId,
@@ -104,7 +104,7 @@ public class ScheduledExecutorContainer {
                                CapacityPermit permit, int durability,
                                ConcurrentMap<String, ScheduledTaskDescriptor> tasks,
                                boolean statisticsEnabled,
-                               @Nullable String namespace) {
+                               @Nullable String userCodeNamespace) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -116,7 +116,7 @@ public class ScheduledExecutorContainer {
         this.statisticsEnabled = statisticsEnabled;
         DistributedScheduledExecutorService service = nodeEngine.getService(SERVICE_NAME);
         this.executorStats = service.getExecutorStats();
-        this.namespace = namespace;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     public ExecutorStats getExecutorStats() {
@@ -267,8 +267,8 @@ public class ScheduledExecutorContainer {
     }
 
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     public ScheduledTaskHandler offprintHandler(String taskName) {

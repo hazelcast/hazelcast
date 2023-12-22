@@ -81,7 +81,7 @@ public class StepRunner extends Offload
         this.executionService = nodeEngine.getExecutionService();
         this.maxRunNanos = mapOperation.getMapContainer()
                 .getMapServiceContext().getMaxSuccessiveOffloadedOpRunNanos();
-        this.namespace = mapOperation.getMapContainer().getMapConfig().getNamespace();
+        this.namespace = mapOperation.getMapContainer().getMapConfig().getUserCodeNamespace();
     }
 
     @Override

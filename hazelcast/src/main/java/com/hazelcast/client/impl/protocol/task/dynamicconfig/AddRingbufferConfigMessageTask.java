@@ -29,7 +29,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 
@@ -59,14 +59,14 @@ public class AddRingbufferConfigMessageTask
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         if (parameters.ringbufferStoreConfig != null) {
-            RingbufferStoreConfig storeConfig = NamespaceUtil.callWithNamespace(nodeEngine, parameters.namespace,
+            RingbufferStoreConfig storeConfig = NamespaceUtil.callWithNamespace(nodeEngine, parameters.userCodeNamespace,
                     () -> parameters.ringbufferStoreConfig.asRingbufferStoreConfig(serializationService));
             config.setRingbufferStoreConfig(storeConfig);
         }
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
-        if (parameters.isNamespaceExists) {
-            config.setNamespace(parameters.namespace);
+        if (parameters.isUserCodeNamespaceExists) {
+            config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
         return config;
     }
@@ -77,8 +77,9 @@ public class AddRingbufferConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

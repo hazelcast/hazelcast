@@ -51,7 +51,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" type="xs:string">
@@ -90,7 +90,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" type="xs:string">
@@ -137,7 +137,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:all>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" type="xs:string" default="16">
@@ -268,7 +268,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="priority-comparator-class-name" type="xs:string">
@@ -359,7 +359,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="capacity" type="parameterized-unsigned-int">
@@ -439,7 +439,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="statistics-enabled" type="parameterized-boolean" default="true">
@@ -699,7 +699,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" type="xs:string" default="BINARY">
@@ -917,7 +917,7 @@
                                     <xs:element name="data-persistence" type="data-persistence" minOccurs="0"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>
@@ -1067,7 +1067,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" default="default"/>
                                 <xs:attribute name="backup-count" type="parameterized-backup-count">
@@ -1141,7 +1141,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" type="xs:string">
@@ -1200,7 +1200,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" type="xs:string">
@@ -1276,7 +1276,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" default="default"/>
                             </xs:complexType>
@@ -1315,7 +1315,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
-                                    <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="user-code-namespace" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" default="default"/>
                                 <xs:attribute name="in-memory-format" type="in-memory-format" default="OBJECT"/>
@@ -1425,7 +1425,7 @@
                         <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="data-connection" type="data-connection" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="tpc" type="tpc" minOccurs="0"/>
-                        <xs:element name="namespaces" type="namespaces-type" minOccurs="0"/>
+                        <xs:element name="user-code-namespaces" type="namespaces-type" minOccurs="0"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -1521,14 +1521,16 @@
                 <xs:element name="blacklist" type="filter-list" minOccurs="0">
                     <xs:annotation>
                         <xs:documentation>
-                            Blacklisted class names, package names, and prefixes, which are not allowed to be loaded by Namespaces.
+                            Blacklisted class names, package names, and prefixes, which are not allowed to be loaded by User Code
+                            Namespaces.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 <xs:element name="whitelist" type="filter-list" minOccurs="0">
                     <xs:annotation>
                         <xs:documentation>
-                            Whitelisted class names, package names, and prefixes, which are allowed to be loaded by Namespaces.
+                            Whitelisted class names, package names, and prefixes, which are allowed to be loaded by User Code
+                            Namespaces.
                             If the list is empty (no class, package, or prefix patterns provided) then all classes are allowed.
                         </xs:documentation>
                     </xs:annotation>
@@ -3075,7 +3077,7 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="sql-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
-                        <xs:element name="namespace-permission" type="instance-permission" minOccurs="0"
+                        <xs:element name="user-code-namespace-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
@@ -6452,14 +6454,14 @@
             <xs:element name="jar" type="jar-resource">
                 <xs:annotation>
                     <xs:documentation>
-                        Defines a single JAR file within a namespace.
+                        Defines a single JAR file within a user code namespace.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="jars-in-zip" type="jars-in-zip-resource">
                 <xs:annotation>
                     <xs:documentation>
-                        Defines a ZIP archive containing multiple JAR files within a namespace.
+                        Defines a ZIP archive containing multiple JAR files within a user code namespace.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6467,7 +6469,7 @@
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The unique name for the namespace. This is a required attribute.
+                    The unique name for the user code namespace. This is a required attribute.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -6476,7 +6478,8 @@
     <xs:complexType name="namespaces-type">
         <xs:annotation>
             <xs:documentation>
-                Encapsulates multiple namespace configurations. The 'enabled' attribute toggles the namespaces on or off.
+                Encapsulates multiple User Code Namespace configurations.
+                The 'enabled' attribute toggles the namespaces on or off.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
@@ -6486,7 +6489,7 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
     </xs:complexType>
 
-    <xs:element name="namespaces" type="namespaces-type">
+    <xs:element name="user-code-namespaces" type="namespaces-type">
         <xs:annotation>
             <xs:documentation>
                 Configures namespaces for user code deployment.

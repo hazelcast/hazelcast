@@ -288,7 +288,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                 listener = (EntryListener) listenerConfig.getImplementation();
             } else if (listenerConfig.getClassName() != null) {
                 try {
-                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, mapConfig.getNamespace());
+                    ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, mapConfig.getUserCodeNamespace());
                     listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw rethrow(e);
@@ -390,7 +390,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified replicated map name. This is done
+     * Looks up the User Code Namespace name associated with the specified replicated map name. This is done
      * by checking the Node's config tree directly.
      *
      * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
@@ -402,7 +402,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             // No regular containers available, fallback to config
             ReplicatedMapConfig config = engine.getConfig().findReplicatedMapConfig(mapName);
             if (config != null) {
-                return config.getNamespace();
+                return config.getUserCodeNamespace();
             }
         }
         return null;

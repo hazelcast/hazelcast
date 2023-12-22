@@ -16,13 +16,13 @@
 
 package com.hazelcast.security.permission;
 
-public class NamespacePermission extends InstancePermission {
+public class UserCodeNamespacePermission extends InstancePermission {
     private static final long serialVersionUID = 1L;
 
     private static final int USE = 4;
     private static final int ALL = CREATE | DESTROY | USE;
 
-    public NamespacePermission(String namespace, String... actions) {
+    public UserCodeNamespacePermission(String namespace, String... actions) {
         super(namespace, actions);
     }
 

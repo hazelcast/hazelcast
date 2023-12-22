@@ -9,7 +9,7 @@
           "message-listeners": [
             "com.hazelcast.examples.MessageListener"
           ],
-          "namespace": "ns1"
+          "user-code-namespace": "ns1"
         }
       }
     }

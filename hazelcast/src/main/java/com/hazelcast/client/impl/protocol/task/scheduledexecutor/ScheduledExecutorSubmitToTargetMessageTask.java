@@ -29,7 +29,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -90,9 +90,9 @@ public class ScheduledExecutorSubmitToTargetMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
+    public Permission getUserCodeNamespacePermission() {
         String namespace = DistributedScheduledExecutorService.lookupNamespace(nodeEngine, parameters.schedulerName);
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

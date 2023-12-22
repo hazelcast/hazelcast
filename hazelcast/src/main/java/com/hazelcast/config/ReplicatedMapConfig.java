@@ -39,7 +39,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
-                                            NamespaceAwareConfig<ReplicatedMapConfig> {
+                                            UserCodeNamespaceAwareConfig<ReplicatedMapConfig> {
 
     /**
      * Default value of In-memory format
@@ -57,7 +57,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
     private List<ListenerConfig> listenerConfigs = new ArrayList<>();
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public ReplicatedMapConfig() {
     }
@@ -80,7 +80,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
         this.mergePolicyConfig = new MergePolicyConfig(replicatedMapConfig.mergePolicyConfig);
         this.splitBrainProtectionName = replicatedMapConfig.splitBrainProtectionName;
-        this.namespace = replicatedMapConfig.namespace;
+        this.userCodeNamespace = replicatedMapConfig.userCodeNamespace;
     }
 
     /**
@@ -246,22 +246,22 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link ReplicatedMapConfig} instance
      * @since 5.4
      */
-    public ReplicatedMapConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public ReplicatedMapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -274,7 +274,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName='" + splitBrainProtectionName + '\''
                 + ", mergePolicyConfig='" + mergePolicyConfig + '\''
-                + ", namespace='" + namespace + '\''
+                + ", userCodeNamespace='" + userCodeNamespace + '\''
                 + '}';
     }
 
@@ -300,7 +300,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -316,7 +316,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -349,7 +349,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
         return Objects.equals(listenerConfigs, that.listenerConfigs);
@@ -365,7 +365,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 }

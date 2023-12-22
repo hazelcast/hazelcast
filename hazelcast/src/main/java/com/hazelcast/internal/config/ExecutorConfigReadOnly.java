@@ -55,7 +55,7 @@ public class ExecutorConfigReadOnly extends ExecutorConfig {
     }
 
     @Override
-    public ExecutorConfig setNamespace(@Nullable String namespace) {
+    public ExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 }

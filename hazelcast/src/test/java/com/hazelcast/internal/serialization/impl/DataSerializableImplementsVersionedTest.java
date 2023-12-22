@@ -76,8 +76,8 @@ public class DataSerializableImplementsVersionedTest {
 
     @Test
     public void testIdentifiedDataSerializableForVersionedInterface() throws Exception {
-        // Since this test will instantiate UCD applicable functions, we need to provide
-        //     NodeEngine context or else Namespace lookups will fail
+        // Since this test will instantiate User Code Namespace applicable functions, we need
+        //     to provide NodeEngine context or else Namespace lookups will fail
         NodeEngineThreadLocalContext.declareNodeEngineReference(mock(NodeEngine.class));
         try {
             for (Class<? extends IdentifiedDataSerializable> idsClass : idsClasses) {

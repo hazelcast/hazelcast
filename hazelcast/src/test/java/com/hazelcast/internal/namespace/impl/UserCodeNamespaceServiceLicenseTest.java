@@ -17,7 +17,7 @@
 package com.hazelcast.internal.namespace.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -28,19 +28,19 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithout
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
-public class NamespaceServiceLicenseTest {
+public class UserCodeNamespaceServiceLicenseTest {
 
     @Test
     public void testNamespaceServiceOnlyAvailableFromEE() {
         try {
             Config config = smallInstanceConfigWithoutJetAndMetrics();
             config.getNamespacesConfig().setEnabled(true);
-            config.getNamespacesConfig().addNamespaceConfig(new NamespaceConfig(randomString()));
+            config.getNamespacesConfig().addNamespaceConfig(new UserCodeNamespaceConfig(randomString()));
             Hazelcast.newHazelcastInstance(config);
             throw new AssertionError("NamespaceService was created from OS Edition");
         } catch (IllegalStateException ex) {
             assertTrue("NamespaceService creation does not fail with expected IllegalStateException from OS",
-                    ex.getMessage().contains("UCD Namespaces requires Hazelcast Enterprise Edition"));
+                    ex.getMessage().contains("User Code Namespaces requires Hazelcast Enterprise Edition"));
         }
     }
 }

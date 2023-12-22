@@ -17,34 +17,35 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.NamespaceConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
-/** {@link NamespacesConfig} wrapper that supports dynamically updating */
-public class DynamicNamespacesConfig extends NamespacesConfig {
+/** {@link UserCodeNamespacesConfig} wrapper that supports dynamically updating */
+public class DynamicUserCodeNamespacesConfig
+        extends UserCodeNamespacesConfig {
     /** The configuration service can change at runtime, so we always need to grab a fresh copy */
     private final Supplier<ConfigurationService> configurationServiceAccessor;
 
-    public DynamicNamespacesConfig(Supplier<ConfigurationService> configurationServiceAccessor,
-            NamespacesConfig namespacesConfig) {
-        super(namespacesConfig);
+    public DynamicUserCodeNamespacesConfig(Supplier<ConfigurationService> configurationServiceAccessor,
+                                           UserCodeNamespacesConfig userCodeNamespacesConfig) {
+        super(userCodeNamespacesConfig);
         this.configurationServiceAccessor = configurationServiceAccessor;
     }
 
     @Override
-    public NamespacesConfig addNamespaceConfig(NamespaceConfig namespaceConfig) {
-        super.addNamespaceConfig(namespaceConfig);
-        configurationServiceAccessor.get().broadcastConfig(namespaceConfig);
+    public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
+        super.addNamespaceConfig(userCodeNamespaceConfig);
+        configurationServiceAccessor.get().broadcastConfig(userCodeNamespaceConfig);
         return this;
     }
 
     @Override
-    public NamespacesConfig removeNamespaceConfig(String namespace) {
+    public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {
         super.removeNamespaceConfig(namespace);
-        configurationServiceAccessor.get().unbroadcastConfig(new NamespaceConfig(namespace));
+        configurationServiceAccessor.get().unbroadcastConfig(new UserCodeNamespaceConfig(namespace));
         return this;
     }
 
@@ -54,7 +55,7 @@ public class DynamicNamespacesConfig extends NamespacesConfig {
     }
 
     @Override
-    public NamespacesConfig setEnabled(boolean enabled) {
+    public UserCodeNamespacesConfig setEnabled(boolean enabled) {
         throw new UnsupportedOperationException("Cannot enable or disable NamespacesConfig at runtime.");
     }
 }

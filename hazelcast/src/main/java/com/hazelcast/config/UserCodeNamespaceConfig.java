@@ -38,36 +38,37 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Contains the configuration for a specific Namespace, defining its identifier
+ * Contains the configuration for a specific User Code Namespace, defining its identifier
  * (name) as well as the definitions for resources it provides.
  *
  * @since 5.4
  */
 @Beta
-public class NamespaceConfig implements NamedConfig, IdentifiedDataSerializable {
+public class UserCodeNamespaceConfig
+        implements NamedConfig, IdentifiedDataSerializable {
     private String name;
 
     private final Map<String, ResourceDefinition> resourceDefinitions = new ConcurrentHashMap<>();
 
-    public NamespaceConfig() {
+    public UserCodeNamespaceConfig() {
     }
 
-    public NamespaceConfig(String name) {
+    public UserCodeNamespaceConfig(String name) {
         this.name = name;
     }
 
-    public NamespaceConfig(NamespaceConfig config) {
+    public UserCodeNamespaceConfig(UserCodeNamespaceConfig config) {
         this.name = config.name;
         this.resourceDefinitions.putAll(config.resourceDefinitions);
     }
 
-    public NamespaceConfig(@Nonnull String name, @Nonnull Map<String, ResourceDefinition> resources) {
+    public UserCodeNamespaceConfig(@Nonnull String name, @Nonnull Map<String, ResourceDefinition> resources) {
         this.name = name;
         this.resourceDefinitions.putAll(resources);
     }
 
     @Override
-    public NamespaceConfig setName(@Nonnull String name) {
+    public UserCodeNamespaceConfig setName(@Nonnull String name) {
         Objects.requireNonNull(name, "Namespace name cannot be null");
         this.name = name;
         return this;
@@ -78,26 +79,26 @@ public class NamespaceConfig implements NamedConfig, IdentifiedDataSerializable 
         return name;
     }
 
-    public NamespaceConfig addClass(@Nonnull Class<?>... classes) {
+    public UserCodeNamespaceConfig addClass(@Nonnull Class<?>... classes) {
         Objects.requireNonNull(classes, "Classes cannot be null");
         ResourceConfig.fromClass(classes).map(ResourceDefinitionImpl::new)
                 .forEach(resourceDefinition -> resourceDefinitions.put(resourceDefinition.id(), resourceDefinition));
         return this;
     }
 
-     public NamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
+     public UserCodeNamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
         return add(url, id, ResourceType.JAR);
     }
 
-    public NamespaceConfig addJarsInZip(@Nonnull URL url, @Nullable String id) {
+    public UserCodeNamespaceConfig addJarsInZip(@Nonnull URL url, @Nullable String id) {
         return add(url, id, ResourceType.JARS_IN_ZIP);
     }
 
-    NamespaceConfig add(@Nonnull URL url, @Nullable String id, @Nonnull ResourceType resourceType) {
+    UserCodeNamespaceConfig add(@Nonnull URL url, @Nullable String id, @Nonnull ResourceType resourceType) {
         return add(new ResourceDefinitionImpl(new ResourceConfig(url, id, resourceType)));
     }
 
-    protected NamespaceConfig add(ResourceDefinition resourceDefinition) {
+    protected UserCodeNamespaceConfig add(ResourceDefinition resourceDefinition) {
         if (resourceDefinitions.putIfAbsent(resourceDefinition.id(), resourceDefinition) != null) {
             throw new IllegalArgumentException("Resource with id: " + resourceDefinition.id() + " already exists");
         } else {
@@ -148,7 +149,7 @@ public class NamespaceConfig implements NamedConfig, IdentifiedDataSerializable 
         if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        NamespaceConfig other = (NamespaceConfig) obj;
+        UserCodeNamespaceConfig other = (UserCodeNamespaceConfig) obj;
         return Objects.equals(name, other.name);
     }
 }

@@ -16,23 +16,24 @@
 
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddNamespaceConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.config.ConfigAccessor;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import org.junit.Test;
 
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
-public class AddNamespaceConfigMessageTaskTest extends ConfigMessageTaskTest {
+public class AddUserCodeNamespaceConfigMessageTaskTest
+        extends ConfigMessageTaskTest {
     @Test
     public void test() {
-        NamespaceConfig config = new NamespaceConfig("my-namepsace");
+        UserCodeNamespaceConfig config = new UserCodeNamespaceConfig("my-namespace");
 
 
-        AddNamespaceConfigMessageTask task = new AddNamespaceConfigMessageTask(
-                DynamicConfigAddNamespaceConfigCodec.encodeRequest(config.getName(),
+        AddUserCodeNamespaceConfigMessageTask task = new AddUserCodeNamespaceConfigMessageTask(
+                DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(config.getName(),
                         ConfigAccessor.getResourceDefinitions(config)
                                       .stream()
                                       .map(ResourceDefinitionHolder::new)

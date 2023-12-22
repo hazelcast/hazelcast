@@ -41,37 +41,37 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NamespaceConfigTest {
+public class UserCodeNamespaceConfigTest {
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-    private NamespaceConfig namespaceConfig = new NamespaceConfig();
+    private UserCodeNamespaceConfig userCodeNamespaceConfig = new UserCodeNamespaceConfig();
 
     @Test
     public void testName() {
         String name = randomString();
-        namespaceConfig.setName(name);
-        assertEquals(name, namespaceConfig.getName());
+        userCodeNamespaceConfig.setName(name);
+        assertEquals(name, userCodeNamespaceConfig.getName());
     }
 
     @Test (expected = NullPointerException.class)
     public void testNullName() {
-        namespaceConfig.setName(null);
+        userCodeNamespaceConfig.setName(null);
     }
 
     @Test
     public void testAddClass() {
         Class<?> clazz = Person.class;
-        namespaceConfig.addClass(clazz);
+        userCodeNamespaceConfig.addClass(clazz);
         ClassLoader cl = clazz.getClassLoader();
         assertNotNull(clazz.getName() + ".getClassLoader() returned null", cl);
         String classResourceId = toClassResourceId(clazz.getName());
 
-        long matches = namespaceConfig.getResourceConfigs().stream()
-                .filter(rc -> rc.type().equals(ResourceType.CLASS))
-                .filter(rc -> rc.id().equals(classResourceId))
-                .filter(rc -> rc.url().equals(cl.getResource(classResourceId).toString()))
-                .count();
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                                              .filter(rc -> rc.type().equals(ResourceType.CLASS))
+                                              .filter(rc -> rc.id().equals(classResourceId))
+                                              .filter(rc -> rc.url().equals(cl.getResource(classResourceId).toString()))
+                                              .count();
         assertEquals(1, matches);
     }
 
@@ -79,13 +79,13 @@ public class NamespaceConfigTest {
     public void testAddJar_WithNullID() throws IOException {
         Path fakeResource = createFakeResource("location/of/my/jars/ExampleJar.jar");
         URL fakeUrl = fakeResource.toUri().toURL();
-        namespaceConfig.addJar(fakeUrl, null);
+        userCodeNamespaceConfig.addJar(fakeUrl, null);
 
-        long matches = namespaceConfig.getResourceConfigs().stream()
-                .filter(rc -> rc.type().equals(ResourceType.JAR))
-                .filter(rc -> rc.id().equals("ExampleJar.jar"))
-                .filter(rc -> rc.url().equals(fakeUrl.toString()))
-                .count();
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                                              .filter(rc -> rc.type().equals(ResourceType.JAR))
+                                              .filter(rc -> rc.id().equals("ExampleJar.jar"))
+                                              .filter(rc -> rc.url().equals(fakeUrl.toString()))
+                                              .count();
         assertEquals(1, matches);
     }
 
@@ -93,13 +93,13 @@ public class NamespaceConfigTest {
     public void testAddJar_WithCustomID() throws IOException {
         Path fakeResource = createFakeResource("location/of/my/jars/ExampleJar.jar");
         URL fakeUrl = fakeResource.toUri().toURL();
-        namespaceConfig.addJar(fakeUrl, "MyCustomID");
+        userCodeNamespaceConfig.addJar(fakeUrl, "MyCustomID");
 
-        long matches = namespaceConfig.getResourceConfigs().stream()
-                .filter(rc -> rc.type().equals(ResourceType.JAR))
-                .filter(rc -> rc.id().equals("MyCustomID"))
-                .filter(rc -> rc.url().equals(fakeUrl.toString()))
-                .count();
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                                              .filter(rc -> rc.type().equals(ResourceType.JAR))
+                                              .filter(rc -> rc.id().equals("MyCustomID"))
+                                              .filter(rc -> rc.url().equals(fakeUrl.toString()))
+                                              .count();
         assertEquals(1, matches);
     }
 
@@ -107,13 +107,13 @@ public class NamespaceConfigTest {
     public void testAddJarsInZip_WithNullID() throws IOException {
         Path fakeResource = createFakeResource("location/of/my/zips/ExampleZip.zip");
         URL fakeUrl = fakeResource.toUri().toURL();
-        namespaceConfig.addJarsInZip(fakeUrl, null);
+        userCodeNamespaceConfig.addJarsInZip(fakeUrl, null);
 
-        long matches = namespaceConfig.getResourceConfigs().stream()
-                .filter(rc -> rc.type().equals(ResourceType.JARS_IN_ZIP))
-                .filter(rc -> rc.id().equals("ExampleZip.zip"))
-                .filter(rc -> rc.url().equals(fakeUrl.toString()))
-                .count();
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                                              .filter(rc -> rc.type().equals(ResourceType.JARS_IN_ZIP))
+                                              .filter(rc -> rc.id().equals("ExampleZip.zip"))
+                                              .filter(rc -> rc.url().equals(fakeUrl.toString()))
+                                              .count();
         assertEquals(1, matches);
     }
 
@@ -121,13 +121,13 @@ public class NamespaceConfigTest {
     public void testAddJarsInZip_WithCustomID() throws IOException {
         Path fakeResource = createFakeResource("location/of/my/zips/ExampleZip.zip");
         URL fakeUrl = fakeResource.toUri().toURL();
-        namespaceConfig.addJarsInZip(fakeUrl, "MyZipID");
+        userCodeNamespaceConfig.addJarsInZip(fakeUrl, "MyZipID");
 
-        long matches = namespaceConfig.getResourceConfigs().stream()
-                                      .filter(rc -> rc.type().equals(ResourceType.JARS_IN_ZIP))
-                                      .filter(rc -> rc.id().equals("MyZipID"))
-                                      .filter(rc -> rc.url().equals(fakeUrl.toString()))
-                                      .count();
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                                              .filter(rc -> rc.type().equals(ResourceType.JARS_IN_ZIP))
+                                              .filter(rc -> rc.id().equals("MyZipID"))
+                                              .filter(rc -> rc.url().equals(fakeUrl.toString()))
+                                              .count();
         assertEquals(1, matches);
     }
 

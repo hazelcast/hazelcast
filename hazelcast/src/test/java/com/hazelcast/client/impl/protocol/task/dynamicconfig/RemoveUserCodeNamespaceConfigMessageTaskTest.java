@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddNamespaceConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.config.ConfigAccessor;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import org.junit.Test;
 
 import java.util.stream.Collectors;
@@ -26,13 +26,14 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 
 
-public class RemoveNamespaceConfigMessageTaskTest extends ConfigMessageTaskTest {
+public class RemoveUserCodeNamespaceConfigMessageTaskTest
+        extends ConfigMessageTaskTest {
     @Test
     public void test() {
-        NamespaceConfig config = new NamespaceConfig("my-namepsace");
+        UserCodeNamespaceConfig config = new UserCodeNamespaceConfig("my-namepsace");
 
         RemoveNamespaceConfigMessageTask task = new RemoveNamespaceConfigMessageTask(
-                DynamicConfigAddNamespaceConfigCodec.encodeRequest(config.getName(),
+                DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(config.getName(),
                         ConfigAccessor.getResourceDefinitions(config)
                                       .stream()
                                       .map(ResourceDefinitionHolder::new)

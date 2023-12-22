@@ -42,7 +42,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -143,7 +143,8 @@ public class DynamicConfigurationAwareConfig extends Config {
         this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
         this.dynamicCPSubsystemConfig = new DynamicCPSubsystemConfig(staticConfig.getCPSubsystemConfig());
         this.configSearcher = initConfigSearcher();
-        namespacesConfig = new DynamicNamespacesConfig(() -> configurationService, staticConfig.getNamespacesConfig());
+        this.userCodeNamespacesConfig = new DynamicUserCodeNamespacesConfig(() ->
+                configurationService, staticConfig.getNamespacesConfig());
     }
 
     @Override
@@ -1266,7 +1267,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     // as we are overriding "namespaceConfig" with our own version, the parent implementation is sufficient
     @SuppressWarnings("squid:S1185")
     @Override
-    public NamespacesConfig getNamespacesConfig() {
+    public UserCodeNamespacesConfig getNamespacesConfig() {
         return super.getNamespacesConfig();
     }
 
@@ -1274,7 +1275,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     // as we are overriding "namespaceConfig" with our own version, the parent implementation is sufficient
     @SuppressWarnings("squid:S1185")
     @Override
-    public Config setNamespacesConfig(NamespacesConfig namespacesConfig) {
+    public Config setNamespacesConfig(UserCodeNamespacesConfig userCodeNamespacesConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

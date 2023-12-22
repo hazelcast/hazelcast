@@ -31,7 +31,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -76,9 +76,9 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
     }
 
     @Override
-    public Permission getNamespacePermission() {
+    public Permission getUserCodeNamespacePermission() {
         String namespace = MultiMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
@@ -127,7 +127,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
                                                  int type, UUID uuid, int numberOfEntriesAffected);
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -106,7 +106,7 @@ public interface NodeEngine {
      *
      * @return the NamespaceService
      */
-    NamespaceService getNamespaceService();
+    UserCodeNamespaceService getNamespaceService();
 
     /**
      * Gets the address of the master member.
@@ -154,11 +154,11 @@ public interface NodeEngine {
      * by the configuration (e.g. listeners, policies, stores, partitioning strategies, split brain protection
      * functions, etc.).
      * <p>
-     * When the {@link NamespaceService} is enabled, this will return an instance of the
+     * When the {@link UserCodeNamespaceService} is enabled, this will return an instance of the
      * {@link com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader}, which delegates to child loaders
      * depending on the Namespace context of the class loading.
      * <p>
-     * When the {@link NamespaceService} is disabled, this will return either the legacy User Code Deployment
+     * When the {@link UserCodeNamespaceService} is disabled, this will return either the legacy User Code Deployment
      * class loader if enabled, or else the {@link Config#getClassLoader()} will be returned.
      *
      * @return the config ClassLoader as defined above.

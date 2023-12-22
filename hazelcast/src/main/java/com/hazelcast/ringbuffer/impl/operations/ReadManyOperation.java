@@ -143,7 +143,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         minSize = in.readInt();
         maxSize = in.readInt();
         // Fetch namespace first, which initializes getNodeEngine() value
-        String namespace = getUCDNamespace();
+        String namespace = getUserCodeNamespace();
         filter = NamespaceUtil.callWithNamespace(getNodeEngine(), namespace, in::readObject);
     }
 }

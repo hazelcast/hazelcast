@@ -18,6 +18,7 @@ package com.hazelcast.internal.usercodedeployment;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.usercodedeployment.impl.ClassData;
 import com.hazelcast.internal.usercodedeployment.impl.ClassDataProvider;
@@ -40,7 +41,7 @@ import static java.lang.String.format;
 
 /**
  * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
- * @see com.hazelcast.internal.namespace.NamespaceService
+ * @see UserCodeNamespaceService
  */
 @Deprecated(since = "5.4", forRemoval = true)
 public final class UserCodeDeploymentService implements ManagedService {

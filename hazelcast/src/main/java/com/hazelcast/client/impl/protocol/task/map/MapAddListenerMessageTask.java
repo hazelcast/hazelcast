@@ -129,7 +129,7 @@ public class MapAddListenerMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

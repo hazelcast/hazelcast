@@ -63,7 +63,7 @@ public class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
     }
 
     @Override
-    public ScheduledExecutorConfig setNamespace(@Nullable String namespace) {
+    public ScheduledExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
     }
 }

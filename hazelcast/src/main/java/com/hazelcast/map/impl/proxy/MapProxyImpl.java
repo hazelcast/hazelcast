@@ -823,7 +823,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     private <T> Set<T>  transformToSetWithNamespace(QueryResult result, Predicate predicate,
                                             IterationType iterationType, boolean unique, boolean binary) {
-        return NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getNamespace(),
+        return NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getUserCodeNamespace(),
                 () -> transformToSet(serializationService, result, predicate, iterationType, unique, binary));
     }
 
@@ -971,7 +971,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         // HazelcastInstanceAware handled by cloning
         Projection<? super Map.Entry<K, V>, R> clonedProjection =
-                NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getNamespace(),
+                NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getUserCodeNamespace(),
                         () -> serializationService.toObject(serializationService.toData(projection)));
 
         QueryResult result = executeQueryInternal(predicate, null, clonedProjection, IterationType.VALUE, target);

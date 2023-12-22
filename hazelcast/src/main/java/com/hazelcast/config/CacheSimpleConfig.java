@@ -46,7 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
 public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
-                                          NamespaceAwareConfig<CacheSimpleConfig> {
+                                          UserCodeNamespaceAwareConfig<CacheSimpleConfig> {
 
     /**
      * The minimum number of backups.
@@ -116,7 +116,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      * Full-flush invalidation means the invalidation of events for all entries when clear is called.
      */
     private boolean disablePerEntryInvalidationEvents;
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
@@ -151,7 +151,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         this.dataPersistenceConfig = new DataPersistenceConfig(cacheSimpleConfig.dataPersistenceConfig);
         this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
-        this.namespace = cacheSimpleConfig.namespace;
+        this.userCodeNamespace = cacheSimpleConfig.userCodeNamespace;
     }
 
     /**
@@ -765,22 +765,22 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link CacheSimpleConfig} instance
      * @since 5.4
      */
-    public CacheSimpleConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public CacheSimpleConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -826,7 +826,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -862,7 +862,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -953,7 +953,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         if (!Objects.equals(dataPersistenceConfig, that.dataPersistenceConfig)) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
 
@@ -989,7 +989,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         result = 31 * result + (dataPersistenceConfig != null ? dataPersistenceConfig.hashCode() : 0);
         result = 31 * result + (eventJournalConfig != null ? eventJournalConfig.hashCode() : 0);
         result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 
@@ -1021,7 +1021,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 + ", hotRestartConfig=" + hotRestartConfig
                 + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", eventJournal=" + eventJournalConfig
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 

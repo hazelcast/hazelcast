@@ -63,7 +63,7 @@ abstract class AbstractCacheAllPartitionsTask<P>
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return CacheService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

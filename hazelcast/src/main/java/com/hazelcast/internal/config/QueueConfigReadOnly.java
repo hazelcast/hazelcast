@@ -119,7 +119,7 @@ public class QueueConfigReadOnly extends QueueConfig {
     }
 
     @Override
-    public QueueConfig setNamespace(@Nullable String namespace) {
+    public QueueConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 }

@@ -112,7 +112,7 @@ public class Config {
      */
     public static final String DEFAULT_CLUSTER_NAME = "dev";
 
-    protected NamespacesConfig namespacesConfig = new NamespacesConfig();
+    protected UserCodeNamespacesConfig userCodeNamespacesConfig = new UserCodeNamespacesConfig();
 
     private URL configurationUrl;
 
@@ -3235,8 +3235,8 @@ public class Config {
      * @return the namespaces configuration object
      * @since 5.4.0
      */
-    public NamespacesConfig getNamespacesConfig() {
-        return namespacesConfig;
+    public UserCodeNamespacesConfig getNamespacesConfig() {
+        return userCodeNamespacesConfig;
     }
 
     /**
@@ -3246,8 +3246,8 @@ public class Config {
      * @since 5.4.0
      */
     @PrivateApi
-    public @Nonnull Config setNamespacesConfig(@Nonnull NamespacesConfig namespacesConfig) {
-        this.namespacesConfig = checkNotNull(namespacesConfig);
+    public @Nonnull Config setNamespacesConfig(@Nonnull UserCodeNamespacesConfig userCodeNamespacesConfig) {
+        this.userCodeNamespacesConfig = checkNotNull(userCodeNamespacesConfig);
         return this;
     }
 
@@ -3317,7 +3317,7 @@ public class Config {
                 + ", cardinalityEstimatorConfigs=" + cardinalityEstimatorConfigs
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", pnCounterConfigs=" + pnCounterConfigs
-                + ", namespacesConfig=" + namespacesConfig
+                + ", namespacesConfig=" + userCodeNamespacesConfig
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
                 + ", servicesConfig=" + servicesConfig
                 + ", securityConfig=" + securityConfig
@@ -3343,7 +3343,7 @@ public class Config {
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + ", dataConnectionConfigs=" + dataConnectionConfigs
                 + ", tpcConfig=" + tpcConfig
-                + ", namespacesConfig=" + namespacesConfig
+                + ", namespacesConfig=" + userCodeNamespacesConfig
                 + '}';
     }
 }

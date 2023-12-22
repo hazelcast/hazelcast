@@ -868,8 +868,8 @@
         * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this executor with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this executor with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this executor will run with the context of that Namespace.
     -->
     <executor-service name="default">
@@ -877,7 +877,7 @@
         <pool-size>16</pool-size>
         <queue-capacity>0</queue-capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </executor-service>
 
     <!--
@@ -895,8 +895,8 @@
         * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this executor with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this executor with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this executor will run with the context of that Namespace.
     -->
     <durable-executor-service name="default">
@@ -904,7 +904,7 @@
         <durability>1</durability>
         <capacity>100</capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </durable-executor-service>
 
     <!--
@@ -929,8 +929,8 @@
         * <merge-policy>:
             The default policy is PutIfAbsentMergePolicy with a batch size of 100.
             This is the policy used when merging entries from sub-clusters (after split-brain recovery).
-        * <namespace>:
-            Associates this executor with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this executor with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this executor will run with the context of that Namespace.
     -->
     <scheduled-executor-service name="default">
@@ -940,7 +940,7 @@
         <capacity-policy>PER_NODE</capacity-policy>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </scheduled-executor-service>
 
     <!--
@@ -1025,8 +1025,8 @@
 
             If this value is non-null, then Hazelcast will ignore the queue store
             "memory-limit" configuration value.
-        * <namespace>:
-            Associates this queue with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this queue with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this queue will run with the context of that Namespace.
     -->
     <queue name="default">
@@ -1049,7 +1049,7 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </queue>
 
     <!--
@@ -1360,8 +1360,8 @@
         * <split-brain-protection-ref>:
             Adds the split brain protection for this map which you configure using the <split-brain-protection> element.
             You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this map with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this map with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this map will run with the context of that Namespace.
      -->
     <map name="default">
@@ -1484,7 +1484,7 @@
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
         <!--
         ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
 
@@ -1577,7 +1577,7 @@
         </entry-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </multimap>
 
     <!--
@@ -1608,8 +1608,8 @@
         * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this replicated map with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this replicated map with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this replicated map will run with the context of that Namespace.
     -->
     <replicatedmap name="replicatedMap1">
@@ -1621,7 +1621,7 @@
         </entry-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </replicatedmap>
 
     <!--
@@ -1778,8 +1778,8 @@
             Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
             Full-flush invalidation means the invalidation of events for all entries when clear is called.
             The default value is false.
-        * <namespace>:
-            Associates this cache with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this cache with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this cache will run with the context of that Namespace.
     -->
     <cache name="default">
@@ -1830,7 +1830,7 @@
             <time-to-live-seconds>0</time-to-live-seconds>
         </event-journal>
         <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </cache>
 
 
@@ -1856,8 +1856,8 @@
         * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this list with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this list with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this list will run with the context of that Namespace.
     -->
     <list name="default">
@@ -1870,7 +1870,7 @@
         </item-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </list>
 
     <!--
@@ -1895,8 +1895,8 @@
         * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this set with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this set with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this set will run with the context of that Namespace.
     -->
     <set name="default">
@@ -1908,7 +1908,7 @@
         </item-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </set>
 
     <!--
@@ -1929,8 +1929,8 @@
         * <multi-threading-enabled>:
             Default is `false`, meaning only one dedicated thread will handle topic messages.
             When multi-threading is enabled (true), all threads from event thread pool can be used for message handling.
-        * <namespace>:
-            Associates this topic with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this topic with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this topic will run with the context of that Namespace.
     -->
     <topic name="default">
@@ -1939,7 +1939,7 @@
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </topic>
     <!--
         ===== HAZELCAST RELIABLE TOPIC CONFIGURATION =====
@@ -2014,8 +2014,8 @@
                 The publish call fails immediately.
         * <message-listeners>:
             Adds listeners (listener classes) for the Reliable Topic messages using its sub-element <message-listener>.
-        * <namespace>:
-            Associates this reliable topic with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this reliable topic with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this reliable topic will run with the context of that Namespace.
     -->
     <reliable-topic name="default">
@@ -2025,7 +2025,7 @@
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </reliable-topic>
 
     <!--
@@ -2074,8 +2074,8 @@
             Adds the Split Brain Protection for this data-structure which you configure
             using the <split-brain-protection> element. You should set the
             <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
-        * <namespace>:
-            Associates this ringbuffer with the specified Namespace Name, as defined in the <namespaces> config section.
+        * <user-code-namespace>:
+            Associates this ringbuffer with the specified Namespace Name, as defined in the <user-code-namespaces> config section.
             This means all executions related to this ringbuffer will run with the context of that Namespace.
     -->
     <ringbuffer name="default">
@@ -2093,7 +2093,7 @@
         </ringbuffer-store>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy>PutIfAbsentMergePolicy</merge-policy>
-        <namespace>ns1</namespace>
+        <user-code-namespace>ns1</user-code-namespace>
     </ringbuffer>
 
     <!--
@@ -2677,6 +2677,11 @@
                     <action>all</action>
                 </actions>
             </connector-permission>
+            <user-code-namespace-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </user-code-namespace-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
         <security-interceptors>
@@ -4090,7 +4095,7 @@
     <!--
     ===== NAMESPACES CONFIGURATION =====
 
-        Configuration element's name is <namespaces>.
+        Configuration element's name is <user-code-namespaces>.
 
         It has the following attributes:
         - enabled:
@@ -4158,7 +4163,7 @@
                     * <url>:
                         Defines the URL of the zip resource.
     -->
-    <namespaces enabled="true">
+    <user-code-namespaces enabled="true">
         <class-filter defaults-disabled="true">
             <blacklist>
                 <class>com.acme.app.BeanComparator</class>
@@ -4188,6 +4193,6 @@
                 <url>file:./src/test/class/usercodedeployment/ShadedClasses.jar</url>
             </jar>
         </namespace>
-    </namespaces>
+    </user-code-namespaces>
 
 </hazelcast>

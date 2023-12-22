@@ -34,7 +34,7 @@ public abstract class AbstractQueueMessageTask<T> extends AbstractPartitionMessa
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return QueueService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

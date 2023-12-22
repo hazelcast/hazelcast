@@ -31,7 +31,7 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -423,9 +423,9 @@ public interface NodeExtension {
     SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig);
 
     /**
-     * Retrieves the {@link NamespaceService} provided by the implementing class.
+     * Retrieves the {@link UserCodeNamespaceService} provided by the implementing class.
      *
-     * @return the {@link NamespaceService} instance for this member.
+     * @return the {@link UserCodeNamespaceService} instance for this member.
      */
-    NamespaceService getNamespaceService();
+    UserCodeNamespaceService getNamespaceService();
 }

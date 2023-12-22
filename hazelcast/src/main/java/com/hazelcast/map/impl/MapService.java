@@ -417,7 +417,7 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified map name. This starts
+     * Looks up the User Code Namespace name associated with the specified map name. This starts
      * by looking for an existing {@link MapContainer} and checking its defined
      * {@link MapConfig}. If the {@link MapContainer} does not exist (containers are
      * created lazily), then fallback to checking the Node's config tree directly.
@@ -431,12 +431,12 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
             MapService mapService = engine.getService(MapService.SERVICE_NAME);
             MapContainer container = mapService.getMapServiceContext().getExistingMapContainer(mapName);
             if (container != null) {
-                return container.getMapConfig().getNamespace();
+                return container.getMapConfig().getUserCodeNamespace();
             }
             // Fallback to config lookup
             MapConfig mapConfig = engine.getConfig().getMapConfigOrNull(mapName);
             if (mapConfig != null) {
-                return mapConfig.getNamespace();
+                return mapConfig.getUserCodeNamespace();
             }
         }
         return null;

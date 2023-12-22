@@ -103,7 +103,7 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return DistributedScheduledExecutorService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

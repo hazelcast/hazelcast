@@ -1547,18 +1547,18 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         File tempJarZip = tempFolder.newFile("tempZip.zip");
 
         Config expectedConfig = new Config();
-        NamespaceConfig namespaceConfig = new NamespaceConfig();
-        namespaceConfig.setName("test-namespace");
-        namespaceConfig.addJar(tempJar.toURI().toURL(), "temp-jar");
-        namespaceConfig.addJarsInZip(tempJarZip.toURI().toURL(), "temp-zip");
-        NamespacesConfig namespacesConfig = new NamespacesConfig();
-        namespacesConfig.addNamespaceConfig(namespaceConfig);
-        namespacesConfig.setEnabled(true);
+        UserCodeNamespaceConfig userCodeNamespaceConfig = new UserCodeNamespaceConfig();
+        userCodeNamespaceConfig.setName("test-namespace");
+        userCodeNamespaceConfig.addJar(tempJar.toURI().toURL(), "temp-jar");
+        userCodeNamespaceConfig.addJarsInZip(tempJarZip.toURI().toURL(), "temp-zip");
+        UserCodeNamespacesConfig userCodeNamespacesConfig = new UserCodeNamespacesConfig();
+        userCodeNamespacesConfig.addNamespaceConfig(userCodeNamespaceConfig);
+        userCodeNamespacesConfig.setEnabled(true);
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
         filterConfig.getWhitelist().addClasses("com.foo.bar.MyClass");
         filterConfig.getBlacklist().addPackages("magic.collection.of.code");
-        namespacesConfig.setClassFilterConfig(filterConfig);
-        expectedConfig.setNamespacesConfig(namespacesConfig);
+        userCodeNamespacesConfig.setClassFilterConfig(filterConfig);
+        expectedConfig.setNamespacesConfig(userCodeNamespacesConfig);
 
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 

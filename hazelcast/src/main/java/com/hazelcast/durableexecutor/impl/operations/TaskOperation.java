@@ -47,7 +47,7 @@ public class TaskOperation extends AbstractDurableExecutorOperation implements B
     @Override
     public void run() throws Exception {
         DurableExecutorContainer executorContainer = getExecutorContainer();
-        callable = NamespaceUtil.callWithNamespace(getNodeEngine(), executorContainer.getNamespace(),
+        callable = NamespaceUtil.callWithNamespace(getNodeEngine(), executorContainer.getUserCodeNamespace(),
                 () -> getNodeEngine().toObject(callableData));
         sequence = executorContainer.execute(callable);
     }

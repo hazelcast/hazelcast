@@ -122,7 +122,7 @@ public class QueueAddListenerMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return QueueService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

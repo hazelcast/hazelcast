@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 @SuppressWarnings("unused")
-@Generated("39a253e5f3d214e1ac429d6260523570")
+@Generated("524e1dc0ce1f826807754f708016b13b")
 public final class DynamicConfigAddExecutorConfigCodec {
     //hex: 0x1B0800
     public static final int REQUEST_MESSAGE_TYPE = 1771520;
@@ -85,18 +85,18 @@ public final class DynamicConfigAddExecutorConfigCodec {
         public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
-         * Name of the namespace applied to this instance.
+         * Name of the User Code Namespace applied to this instance.
          */
-        public @Nullable java.lang.String namespace;
+        public @Nullable java.lang.String userCodeNamespace;
 
         /**
-         * True if the namespace is received from the client, false otherwise.
-         * If this is false, namespace has the default value for its type.
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
          */
-        public boolean isNamespaceExists;
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int queueCapacity, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable java.lang.String namespace) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int queueCapacity, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddExecutorConfig");
@@ -109,7 +109,7 @@ public final class DynamicConfigAddExecutorConfigCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -123,10 +123,10 @@ public final class DynamicConfigAddExecutorConfigCodec {
         request.name = StringCodec.decode(iterator);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         if (iterator.hasNext()) {
-            request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-            request.isNamespaceExists = true;
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
         } else {
-            request.isNamespaceExists = false;
+            request.isUserCodeNamespaceExists = false;
         }
         return request;
     }

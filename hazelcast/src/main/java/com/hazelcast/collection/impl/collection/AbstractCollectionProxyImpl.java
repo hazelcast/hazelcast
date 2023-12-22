@@ -79,7 +79,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         checkCollectionConfig(config, nodeEngine.getSplitBrainMergePolicyProvider());
 
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
-        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
 
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();

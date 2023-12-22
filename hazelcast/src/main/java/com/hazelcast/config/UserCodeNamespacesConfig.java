@@ -26,27 +26,27 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Serves as the configuration container for all aspects of Namespaces, used in User Code Deployment.
- * Individual Namespaces are defined within {@link NamespaceConfig}, and a class filtering config
+ * Individual Namespaces are defined within {@link UserCodeNamespaceConfig}, and a class filtering config
  * can optionally be provided with an implementation of {@link JavaSerializationFilterConfig}.
  *
  * @since 5.4
  */
 @Beta
-public class NamespacesConfig {
+public class UserCodeNamespacesConfig {
     private boolean enabled;
-    private final Map<String, NamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();
+    private final Map<String, UserCodeNamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();
     private @Nullable JavaSerializationFilterConfig classFilterConfig;
 
-    public NamespacesConfig() {
+    public UserCodeNamespacesConfig() {
     }
 
-    public NamespacesConfig(NamespacesConfig config) {
+    public UserCodeNamespacesConfig(UserCodeNamespacesConfig config) {
         this.enabled = config.enabled;
         this.namespaceConfigs.putAll(config.namespaceConfigs);
         this.classFilterConfig = config.classFilterConfig;
     }
 
-    public NamespacesConfig(boolean enabled, Map<String, NamespaceConfig> namespaceConfigs) {
+    public UserCodeNamespacesConfig(boolean enabled, Map<String, UserCodeNamespaceConfig> namespaceConfigs) {
         this.enabled = enabled;
         this.namespaceConfigs.putAll(namespaceConfigs);
     }
@@ -55,27 +55,27 @@ public class NamespacesConfig {
         return enabled;
     }
 
-    public NamespacesConfig setEnabled(boolean enabled) {
+    public UserCodeNamespacesConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
     /**
-     * Adds the specified {@code namespaceConfig}, replacing any existing {@link NamespaceConfig} with the same
-     * {@link NamespaceConfig#getName() name}.
+     * Adds the specified {@code namespaceConfig}, replacing any existing {@link UserCodeNamespaceConfig} with the same
+     * {@link UserCodeNamespaceConfig#getName() name}.
      */
-    public NamespacesConfig addNamespaceConfig(NamespaceConfig namespaceConfig) {
-        Objects.requireNonNull(namespaceConfig.getName(), "Namespace name cannot be null");
-        namespaceConfigs.put(namespaceConfig.getName(), namespaceConfig);
+    public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
+        Objects.requireNonNull(userCodeNamespaceConfig.getName(), "Namespace name cannot be null");
+        namespaceConfigs.put(userCodeNamespaceConfig.getName(), userCodeNamespaceConfig);
         return this;
     }
 
-    public NamespacesConfig removeNamespaceConfig(String namespace) {
+    public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {
         namespaceConfigs.remove(namespace);
         return this;
     }
 
-    Map<String, NamespaceConfig> getNamespaceConfigs() {
+    Map<String, UserCodeNamespaceConfig> getNamespaceConfigs() {
         return Collections.unmodifiableMap(namespaceConfigs);
     }
 
@@ -105,7 +105,7 @@ public class NamespacesConfig {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        NamespacesConfig that = (NamespacesConfig) o;
+        UserCodeNamespacesConfig that = (UserCodeNamespacesConfig) o;
         return enabled == that.enabled && Objects.equals(namespaceConfigs, that.namespaceConfigs)
                 && Objects.equals(classFilterConfig, that.classFilterConfig);
     }

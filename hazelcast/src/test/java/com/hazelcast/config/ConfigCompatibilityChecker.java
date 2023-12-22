@@ -145,8 +145,8 @@ public class ConfigCompatibilityChecker {
                 new DataConnectionConfigChecker());
         checkCompatibleConfigs("tpc", c1, c2, singletonMap("", c1.getTpcConfig()),
                 singletonMap("", c2.getTpcConfig()), new TpcConfigChecker());
-        checkCompatibleConfigs("namespaces", c1, c2, singletonMap("", c1.getNamespacesConfig()),
-                singletonMap("", c2.getNamespacesConfig()), new NamespacesConfigChecker());
+        checkCompatibleConfigs("user-code-namespaces", c1, c2, singletonMap("", c1.getNamespacesConfig()),
+                singletonMap("", c2.getNamespacesConfig()), new UserCodeNamespacesConfigChecker());
         return true;
     }
 
@@ -721,9 +721,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class NamespacesConfigChecker extends ConfigChecker<NamespacesConfig> {
+    private static class UserCodeNamespacesConfigChecker extends ConfigChecker<UserCodeNamespacesConfig> {
         @Override
-        boolean check(NamespacesConfig c1, NamespacesConfig c2) {
+        boolean check(UserCodeNamespacesConfig c1, UserCodeNamespacesConfig c2) {
             return nullSafeEqual(c1, c2);
         }
     }

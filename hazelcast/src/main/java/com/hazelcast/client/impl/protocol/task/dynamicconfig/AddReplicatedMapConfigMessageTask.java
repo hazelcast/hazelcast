@@ -27,7 +27,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -59,13 +59,13 @@ public class AddReplicatedMapConfigMessageTask
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             for (ListenerConfigHolder holder : parameters.listenerConfigs) {
-                config.addEntryListenerConfig(holder.asListenerConfig(serializationService, parameters.namespace));
+                config.addEntryListenerConfig(holder.asListenerConfig(serializationService, parameters.userCodeNamespace));
             }
         } else {
             config.setListenerConfigs(new ArrayList<>());
         }
-        if (parameters.isNamespaceExists) {
-            config.setNamespace(parameters.namespace);
+        if (parameters.isUserCodeNamespaceExists) {
+            config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
         return config;
     }
@@ -76,8 +76,9 @@ public class AddReplicatedMapConfigMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        return parameters.namespace != null ? new NamespacePermission(parameters.namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

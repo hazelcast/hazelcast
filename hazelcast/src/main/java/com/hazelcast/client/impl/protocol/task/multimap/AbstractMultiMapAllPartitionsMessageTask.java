@@ -49,7 +49,7 @@ public abstract class AbstractMultiMapAllPartitionsMessageTask<P> extends Abstra
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return MultiMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

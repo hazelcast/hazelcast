@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.NamespaceAwareConfig;
+import com.hazelcast.config.UserCodeNamespaceAwareConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -32,6 +32,7 @@ public class AddDynamicConfigOperationSupplier extends DynamicConfigOperationSup
     @Override
     public Operation get() {
         return new AddDynamicConfigOperation(config, clusterService.getMemberListVersion(),
-                config instanceof NamespaceAwareConfig ? ((NamespaceAwareConfig) config).getNamespace() : null);
+                config instanceof UserCodeNamespaceAwareConfig
+                        ? ((UserCodeNamespaceAwareConfig) config).getUserCodeNamespace() : null);
     }
 }

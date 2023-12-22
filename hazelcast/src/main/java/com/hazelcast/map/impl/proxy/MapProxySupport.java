@@ -319,7 +319,8 @@ abstract class MapProxySupport<K, V>
         String className = listenerConfig.getClassName();
         if (className != null) {
             try {
-                ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(), mapConfig.getNamespace());
+                ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(),
+                        mapConfig.getUserCodeNamespace());
                 return ClassLoaderUtil.newInstance(classLoader, className);
             } catch (Exception e) {
                 throw rethrow(e);

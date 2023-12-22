@@ -34,7 +34,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
@@ -82,9 +82,9 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
-    public Permission getNamespacePermission() {
+    public Permission getUserCodeNamespacePermission() {
         String namespace = ReplicatedMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     public abstract Predicate getPredicate();
@@ -176,7 +176,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return ReplicatedMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

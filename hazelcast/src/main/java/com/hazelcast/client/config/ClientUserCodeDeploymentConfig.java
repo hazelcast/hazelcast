@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.UserCodeNamespacesConfig;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * cluster members.
  *
  * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
- * @see com.hazelcast.config.NamespacesConfig
+ * @see UserCodeNamespacesConfig
  */
 @Deprecated(since = "5.4", forRemoval = true)
 public class ClientUserCodeDeploymentConfig {

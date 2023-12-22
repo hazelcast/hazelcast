@@ -46,7 +46,7 @@ public abstract class AbstractAllPartitionsMessageTask<P>
     protected void processMessage() {
         // Providing Namespace awareness here covers calls in #beforeProcess() as well as processInternal()
         if (namespaceAware) {
-            NamespaceUtil.runWithNamespace(nodeEngine, getNamespace(), super::processMessage);
+            NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), super::processMessage);
         } else {
             super.processMessage();
         }
@@ -68,5 +68,5 @@ public abstract class AbstractAllPartitionsMessageTask<P>
 
     protected abstract Object reduce(Map<Integer, Object> map);
 
-    protected abstract String getNamespace();
+    protected abstract String getUserCodeNamespace();
 }

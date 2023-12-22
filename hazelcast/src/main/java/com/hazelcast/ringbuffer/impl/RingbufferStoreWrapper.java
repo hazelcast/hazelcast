@@ -47,7 +47,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
 
     private final ObjectNamespace objectNamespace;
     private final NodeEngine nodeEngine;
-    private final String ucdNamespace;
+    private final String userCodeNamespace;
     private boolean enabled;
 
     /**
@@ -57,10 +57,10 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     private RingbufferStore store;
     private SerializationService serializationService;
 
-    private RingbufferStoreWrapper(ObjectNamespace objectNamespace, NodeEngine nodeEngine, String ucdNamespace) {
+    private RingbufferStoreWrapper(ObjectNamespace objectNamespace, NodeEngine nodeEngine, String userCodeNamespace) {
         this.objectNamespace = objectNamespace;
         this.nodeEngine = nodeEngine;
-        this.ucdNamespace = ucdNamespace;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     /**
@@ -85,18 +85,18 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
                                                 InMemoryFormat inMemoryFormat, SerializationService serializationService,
                                                 ClassLoader classLoader,
                                                 NodeEngine nodeEngine,
-                                                String ucdNamespace) {
+                                                String userCodeNamespace) {
         checkNotNull(namespace, "namespace should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
-        final RingbufferStoreWrapper storeWrapper = new RingbufferStoreWrapper(namespace, nodeEngine, ucdNamespace);
+        final RingbufferStoreWrapper storeWrapper = new RingbufferStoreWrapper(namespace, nodeEngine, userCodeNamespace);
         storeWrapper.serializationService = serializationService;
         if (storeConfig == null || !storeConfig.isEnabled()) {
             return storeWrapper;
         }
         // create ring buffer store.
         final RingbufferStore ringbufferStore = createRingbufferStore(namespace, storeConfig, classLoader,
-                nodeEngine, ucdNamespace);
+                nodeEngine, userCodeNamespace);
         if (ringbufferStore != null) {
             storeWrapper.enabled = storeConfig.isEnabled();
             storeWrapper.inMemoryFormat = inMemoryFormat;
@@ -109,12 +109,12 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
                                                          RingbufferStoreConfig storeConfig,
                                                          ClassLoader classLoader,
                                                          NodeEngine nodeEngine,
-                                                         String ucdNamespace) {
+                                                         String userCodeNamespace) {
         // 1. Try to create store from `store impl.` class.
         RingbufferStore store = getRingbufferStore(storeConfig, classLoader);
         // 2. Try to create store from `store factory impl.` class.
         if (store == null) {
-            store = getRingbufferStoreFactory(namespace, storeConfig, classLoader, nodeEngine, ucdNamespace);
+            store = getRingbufferStoreFactory(namespace, storeConfig, classLoader, nodeEngine, userCodeNamespace);
         }
         return store;
     }
@@ -130,7 +130,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
                                                              RingbufferStoreConfig storeConfig,
                                                              ClassLoader classLoader,
                                                              NodeEngine nodeEngine,
-                                                             String ucdNamespace) {
+                                                             String userCodeNamespace) {
         if (storeConfig == null) {
             return null;
         }
@@ -143,7 +143,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
         }
 
         // The factory does not get a ClassLoader param, so we need to wrap creation in NS awareness here
-        return NamespaceUtil.callWithNamespace(nodeEngine, ucdNamespace, () ->
+        return NamespaceUtil.callWithNamespace(nodeEngine, userCodeNamespace, () ->
                 factory.newRingbufferStore(objectNamespace.getObjectName(), storeConfig.getProperties()));
     }
 
@@ -181,7 +181,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     @Override
     @SuppressWarnings("unchecked")
     public void store(long sequence, Data value) {
-        NamespaceUtil.runWithNamespace(nodeEngine, ucdNamespace, () -> {
+        NamespaceUtil.runWithNamespace(nodeEngine, userCodeNamespace, () -> {
             final Object actualValue;
             if (isBinaryFormat()) {
                 // WARNING: we can't pass original byte array to the user
@@ -199,7 +199,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     @Override
     @SuppressWarnings("unchecked")
     public void storeAll(long firstItemSequence, Data[] items) {
-        NamespaceUtil.runWithNamespace(nodeEngine, ucdNamespace, () -> {
+        NamespaceUtil.runWithNamespace(nodeEngine, userCodeNamespace, () -> {
             final Object[] storedItems = new Object[items.length];
             for (int i = 0; i < items.length; i++) {
                 final Data value = items[i];
@@ -223,7 +223,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
 
     @Override
     public Data load(long sequence) {
-        return NamespaceUtil.callWithNamespace(nodeEngine, ucdNamespace, () -> {
+        return NamespaceUtil.callWithNamespace(nodeEngine, userCodeNamespace, () -> {
             final Object val = store.load(sequence);
             if (val == null) {
                 return null;

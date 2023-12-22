@@ -66,7 +66,7 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -186,7 +186,7 @@ public class Node {
     private final InternalSerializationService serializationService;
     private final InternalSerializationService compatibilitySerializationService;
     private final ClassLoader configClassLoader;
-    private NamespaceService namespaceService;
+    private UserCodeNamespaceService userCodeNamespaceService;
     private final NodeExtension nodeExtension;
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
@@ -262,7 +262,7 @@ public class Node {
             nodeExtension.logInstanceTrackingMetadata();
 
             // Initialise NamespaceService early on, so Namespaces can be used ASAP
-            namespaceService  = nodeExtension.getNamespaceService();
+            userCodeNamespaceService = nodeExtension.getNamespaceService();
             schemaService = nodeExtension.createSchemaService();
             serializationService = nodeExtension.createSerializationService();
             compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
@@ -331,7 +331,7 @@ public class Node {
         ClassLoader parent = getLegacyUCDClassLoader(config);
         if (config.getNamespacesConfig().isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("UCD Namespaces requires Hazelcast Enterprise Edition");
+                throw new IllegalStateException("User Code Namespaces requires Hazelcast Enterprise Edition");
             }
             return new NamespaceAwareClassLoader(parent);
         }
@@ -477,8 +477,8 @@ public class Node {
         return partitionService;
     }
 
-    public NamespaceService getNamespaceService() {
-        return namespaceService;
+    public UserCodeNamespaceService getNamespaceService() {
+        return userCodeNamespaceService;
     }
 
     public Address getMasterAddress() {

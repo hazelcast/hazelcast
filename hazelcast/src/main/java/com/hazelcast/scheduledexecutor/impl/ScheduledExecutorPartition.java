@@ -47,7 +47,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
             return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
                     newPermitFor(name, service, config), config.getDurability(), config.isStatisticsEnabled(),
-                    config.getNamespace());
+                    config.getUserCodeNamespace());
         };
     }
 

@@ -30,7 +30,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -95,9 +95,9 @@ public class MapAddInterceptorMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
+    public Permission getUserCodeNamespacePermission() {
         String namespace = MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

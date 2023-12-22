@@ -58,7 +58,7 @@ import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
  * will observe exactly the same order of sequence of messages.
  */
 public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
-                                            NamespaceAwareConfig<ReliableTopicConfig> {
+                                            UserCodeNamespaceAwareConfig<ReliableTopicConfig> {
 
     /**
      * The default read batch size.
@@ -81,7 +81,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
     private List<ListenerConfig> listenerConfigs = new LinkedList<>();
     private TopicOverloadPolicy topicOverloadPolicy = DEFAULT_TOPIC_OVERLOAD_POLICY;
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public ReliableTopicConfig() {
     }
@@ -105,7 +105,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         this.executor = config.executor;
         this.topicOverloadPolicy = config.topicOverloadPolicy;
         this.listenerConfigs = config.listenerConfigs;
-        this.namespace = config.namespace;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     ReliableTopicConfig(ReliableTopicConfig config, String name) {
@@ -303,22 +303,22 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link ReliableTopicConfig} instance
      * @since 5.4
      */
-    public ReliableTopicConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public ReliableTopicConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -331,7 +331,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
                 + ", readBatchSize=" + readBatchSize
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", listenerConfigs=" + listenerConfigs
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -356,7 +356,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -371,7 +371,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -402,7 +402,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         if (!Objects.equals(listenerConfigs, that.listenerConfigs)) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
         return topicOverloadPolicy == that.topicOverloadPolicy;
@@ -416,7 +416,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (topicOverloadPolicy != null ? topicOverloadPolicy.hashCode() : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 }

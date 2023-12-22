@@ -74,7 +74,7 @@ public class TopicConfigReadOnly extends TopicConfig {
     }
 
     @Override
-    public TopicConfig setNamespace(@Nullable String namespace) {
+    public TopicConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 }

@@ -179,12 +179,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         if (existing != null) {
             container = existing;
         } else {
-            NamespaceUtil.setupNamespace(nodeEngine, queueConfig.getNamespace());
+            NamespaceUtil.setupNamespace(nodeEngine, queueConfig.getUserCodeNamespace());
             try {
                 container.init(fromBackup);
                 container.getStore().instrument(nodeEngine);
             } finally {
-                NamespaceUtil.cleanupNamespace(nodeEngine, queueConfig.getNamespace());
+                NamespaceUtil.cleanupNamespace(nodeEngine, queueConfig.getUserCodeNamespace());
             }
         }
         return container;
@@ -455,7 +455,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified queue name. This starts
+     * Looks up the User Code Namespace name associated with the specified queue name. This starts
      * by looking for an existing {@link QueueContainer} and checking its defined
      * {@link QueueConfig}. If the {@link QueueContainer} does not exist (containers are
      * created lazily), then fallback to checking the Node's config tree directly.
@@ -476,11 +476,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private String lookupNamespace(String queueName) {
         QueueContainer container = getExistingContainerOrNull(queueName);
         if (container != null) {
-            return container.getConfig().getNamespace();
+            return container.getConfig().getUserCodeNamespace();
         }
         QueueConfig config = nodeEngine.getConfig().getQueueConfig(queueName);
         if (config != null) {
-            return config.getNamespace();
+            return config.getUserCodeNamespace();
         }
         return null;
     }

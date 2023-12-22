@@ -54,7 +54,7 @@ import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -258,7 +258,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[BTREE_INDEX_CONFIG] = BTreeIndexConfig::new;
         constructors[DATA_CONNECTION_CONFIG] = DataConnectionConfig::new;
         constructors[PARTITION_ATTRIBUTE_CONFIG] = PartitioningAttributeConfig::new;
-        constructors[NAMESPACE_CONFIG] = NamespaceConfig::new;
+        constructors[NAMESPACE_CONFIG] = UserCodeNamespaceConfig::new;
         constructors[REMOVE_DYNAMIC_CONFIG_OP] = RemoveDynamicConfigOperation::new;
         constructors[RESOURCE_DEFINITION] = ResourceDefinitionImpl::new;
 

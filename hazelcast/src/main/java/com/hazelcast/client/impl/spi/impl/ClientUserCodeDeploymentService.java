@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 
@@ -44,7 +45,7 @@ import java.util.jar.JarInputStream;
 
 /**
  * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
- * @see com.hazelcast.internal.namespace.NamespaceService
+ * @see UserCodeNamespaceService
  */
 @Deprecated(since = "5.4", forRemoval = true)
 public class ClientUserCodeDeploymentService {

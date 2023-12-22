@@ -73,7 +73,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -132,7 +132,7 @@ public class ClientDynamicClusterConfig extends Config {
     public ClientDynamicClusterConfig(HazelcastClientInstanceImpl instance) {
         this.instance = instance;
         this.serializationService = instance.getSerializationService();
-        namespacesConfig = new ClientDynamicClusterNamespaceConfig(this);
+        userCodeNamespacesConfig = new ClientDynamicClusterUserCodeNamespacesConfig(this);
     }
 
     @Override
@@ -172,7 +172,7 @@ public class ClientDynamicClusterConfig extends Config {
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId(),
                 mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig(),
-                mapConfig.getPartitioningAttributeConfigs(), mapConfig.getNamespace());
+                mapConfig.getPartitioningAttributeConfigs(), mapConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -199,7 +199,7 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
                 cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(), cacheConfig.getHotRestartConfig(),
-                cacheConfig.getMerkleTreeConfig(), cacheConfig.getDataPersistenceConfig(), cacheConfig.getNamespace());
+                cacheConfig.getMerkleTreeConfig(), cacheConfig.getDataPersistenceConfig(), cacheConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -214,7 +214,7 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
                 queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getPriorityComparatorClassName(),
-                queueConfig.getNamespace());
+                queueConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -226,7 +226,7 @@ public class ClientDynamicClusterConfig extends Config {
                 listConfig.getBackupCount(), listConfig.getAsyncBackupCount(), listConfig.getMaxSize(),
                 listConfig.isStatisticsEnabled(), listConfig.getSplitBrainProtectionName(),
                 listConfig.getMergePolicyConfig().getPolicy(), listConfig.getMergePolicyConfig().getBatchSize(),
-                listConfig.getNamespace());
+                listConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -238,7 +238,7 @@ public class ClientDynamicClusterConfig extends Config {
                 DynamicConfigAddSetConfigCodec.encodeRequest(setConfig.getName(), listenerConfigs, setConfig.getBackupCount(),
                         setConfig.getAsyncBackupCount(), setConfig.getMaxSize(), setConfig.isStatisticsEnabled(),
                         setConfig.getSplitBrainProtectionName(), setConfig.getMergePolicyConfig().getPolicy(),
-                        setConfig.getMergePolicyConfig().getBatchSize(), setConfig.getNamespace());
+                        setConfig.getMergePolicyConfig().getBatchSize(), setConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -251,7 +251,7 @@ public class ClientDynamicClusterConfig extends Config {
                 multiMapConfig.getValueCollectionType().toString(), listenerConfigHolders, multiMapConfig.isBinary(),
                 multiMapConfig.getBackupCount(), multiMapConfig.getAsyncBackupCount(), multiMapConfig.isStatisticsEnabled(),
                 multiMapConfig.getSplitBrainProtectionName(), multiMapConfig.getMergePolicyConfig().getPolicy(),
-                multiMapConfig.getMergePolicyConfig().getBatchSize(), multiMapConfig.getNamespace());
+                multiMapConfig.getMergePolicyConfig().getBatchSize(), multiMapConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -264,7 +264,7 @@ public class ClientDynamicClusterConfig extends Config {
                 replicatedMapConfig.getInMemoryFormat().name(), replicatedMapConfig.isAsyncFillup(),
                 replicatedMapConfig.isStatisticsEnabled(), replicatedMapConfig.getMergePolicyConfig().getPolicy(),
                 listenerConfigHolders, replicatedMapConfig.getSplitBrainProtectionName(),
-                replicatedMapConfig.getMergePolicyConfig().getBatchSize(), replicatedMapConfig.getNamespace());
+                replicatedMapConfig.getMergePolicyConfig().getBatchSize(), replicatedMapConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -280,7 +280,7 @@ public class ClientDynamicClusterConfig extends Config {
                 ringbufferConfig.getCapacity(), ringbufferConfig.getBackupCount(), ringbufferConfig.getAsyncBackupCount(),
                 ringbufferConfig.getTimeToLiveSeconds(), ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig,
                 ringbufferConfig.getSplitBrainProtectionName(), ringbufferConfig.getMergePolicyConfig().getPolicy(),
-                ringbufferConfig.getMergePolicyConfig().getBatchSize(), ringbufferConfig.getNamespace());
+                ringbufferConfig.getMergePolicyConfig().getBatchSize(), ringbufferConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -291,7 +291,7 @@ public class ClientDynamicClusterConfig extends Config {
 
         ClientMessage request = DynamicConfigAddTopicConfigCodec.encodeRequest(topicConfig.getName(),
                 topicConfig.isGlobalOrderingEnabled(), topicConfig.isStatisticsEnabled(), topicConfig.isMultiThreadingEnabled(),
-                listenerConfigHolders, topicConfig.getNamespace());
+                listenerConfigHolders, topicConfig.getUserCodeNamespace());
         invoke(request);
         return this;
 
@@ -303,7 +303,7 @@ public class ClientDynamicClusterConfig extends Config {
         Data executorData = serializationService.toData(config.getExecutor());
         ClientMessage request = DynamicConfigAddReliableTopicConfigCodec.encodeRequest(config.getName(), listenerConfigHolders,
                 config.getReadBatchSize(), config.isStatisticsEnabled(), config.getTopicOverloadPolicy().name(), executorData,
-                config.getNamespace());
+                config.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -312,7 +312,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addExecutorConfig(ExecutorConfig executorConfig) {
         ClientMessage request = DynamicConfigAddExecutorConfigCodec.encodeRequest(executorConfig.getName(),
                 executorConfig.getPoolSize(), executorConfig.getQueueCapacity(), executorConfig.isStatisticsEnabled(),
-                executorConfig.getSplitBrainProtectionName(), executorConfig.getNamespace());
+                executorConfig.getSplitBrainProtectionName(), executorConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -322,7 +322,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(durableExecutorConfig.getName(),
                 durableExecutorConfig.getPoolSize(), durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity(),
                 durableExecutorConfig.getSplitBrainProtectionName(), durableExecutorConfig.isStatisticsEnabled(),
-                durableExecutorConfig.getNamespace());
+                durableExecutorConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -334,7 +334,7 @@ public class ClientDynamicClusterConfig extends Config {
                 scheduledExecutorConfig.getCapacity(), scheduledExecutorConfig.getSplitBrainProtectionName(),
                 scheduledExecutorConfig.getMergePolicyConfig().getPolicy(),
                 scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled(),
-                scheduledExecutorConfig.getCapacityPolicy().getId(), scheduledExecutorConfig.getNamespace());
+                scheduledExecutorConfig.getCapacityPolicy().getId(), scheduledExecutorConfig.getUserCodeNamespace());
         invoke(request);
         return this;
     }
@@ -1177,7 +1177,7 @@ public class ClientDynamicClusterConfig extends Config {
     @SuppressWarnings("squid:S1185")
     @Nonnull
     @Override
-    public NamespacesConfig getNamespacesConfig() {
+    public UserCodeNamespacesConfig getNamespacesConfig() {
         return super.getNamespacesConfig();
     }
 
@@ -1186,7 +1186,7 @@ public class ClientDynamicClusterConfig extends Config {
     @SuppressWarnings("squid:S1185")
     @Nonnull
     @Override
-    public Config setNamespacesConfig(@Nonnull NamespacesConfig namespacesConfig) {
+    public Config setNamespacesConfig(@Nonnull UserCodeNamespacesConfig userCodeNamespacesConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

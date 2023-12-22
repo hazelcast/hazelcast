@@ -572,7 +572,7 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified multimap name. This is done
+     * Looks up the User Code Namespace name associated with the specified multimap name. This is done
      * by checking the Node's config tree directly.
      *
      * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
@@ -584,7 +584,7 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
             // No regular containers available, fallback to config
             MultiMapConfig config = engine.getConfig().getMultiMapConfig(mapName);
             if (config != null) {
-                return config.getNamespace();
+                return config.getUserCodeNamespace();
             }
         }
         return null;

@@ -101,14 +101,14 @@ public final class NamespaceThreadLocalContext {
 
     /**
      * Removes the currently set {@link ClassLoader} from this thread's {@link ThreadLocal}
-     * variable, if it's {@link MapResourceClassLoader#getNamespace()} matches the provided
+     * variable, if it's {@link MapResourceClassLoader#getUserCodeNamespace()} matches the provided
      * {@code Namespace} ID.
      *
      * @param namespace the {@code Namespace} ID to expect when removing.
      */
     public static void onCompleteNsAware(String namespace) {
         onCompleteNsAware(tlContext -> tlContext.classLoader instanceof MapResourceClassLoader
-                        && Objects.equals(((MapResourceClassLoader) tlContext.classLoader).getNamespace(), namespace),
+                        && Objects.equals(((MapResourceClassLoader) tlContext.classLoader).getUserCodeNamespace(), namespace),
                 tlContext -> "Attempted to complete NSTLContext for namespace " + namespace
                         + " but there is an existing context: " + tlContext);
     }

@@ -44,7 +44,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * backup in another member in the cluster.
  */
 public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
-                                         NamespaceAwareConfig<RingbufferConfig> {
+                                         UserCodeNamespaceAwareConfig<RingbufferConfig> {
 
     /**
      * Default value of capacity of the RingBuffer.
@@ -76,7 +76,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public RingbufferConfig() {
     }
@@ -110,7 +110,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         }
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.namespace = config.namespace;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -390,22 +390,22 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link RingbufferConfig} instance
      * @since 5.4
      */
-    public RingbufferConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public RingbufferConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -421,7 +421,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
                 + ", ringbufferStoreConfig=" + ringbufferStoreConfig
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -449,7 +449,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -467,7 +467,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -490,12 +490,12 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
                 && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
                 && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
                 && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
-                && Objects.equals(namespace, that.namespace);
+                && Objects.equals(userCodeNamespace, that.userCodeNamespace);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, capacity, backupCount, asyncBackupCount, timeToLiveSeconds, inMemoryFormat,
-                ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig, namespace);
+                ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig, userCodeNamespace);
     }
 }

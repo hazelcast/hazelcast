@@ -17,29 +17,30 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.NamespaceConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 
 import javax.annotation.Nullable;
 
-public class NamespacesConfigReadOnly extends NamespacesConfig {
+public class UserCodeNamespacesConfigReadOnly
+        extends UserCodeNamespacesConfig {
 
-    public NamespacesConfigReadOnly(NamespacesConfig config) {
+    public UserCodeNamespacesConfigReadOnly(UserCodeNamespacesConfig config) {
         super(config);
     }
 
     @Override
-    public NamespacesConfig setEnabled(boolean enabled) {
+    public UserCodeNamespacesConfig setEnabled(boolean enabled) {
         throw new UnsupportedOperationException("This config is read-only name-spaces");
     }
 
     @Override
-    public NamespacesConfig addNamespaceConfig(NamespaceConfig namespaceConfig) {
+    public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
         throw new UnsupportedOperationException("This config is read-only name-spaces");
     }
 
     @Override
-    public NamespacesConfig removeNamespaceConfig(String namespace) {
+    public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {
         throw new UnsupportedOperationException("This config is read-only name-spaces");
     }
 

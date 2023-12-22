@@ -846,8 +846,8 @@ hazelcast:
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
   #     "split-brain-protection-ref"'s value
   #     as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this executor with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this executor with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this executor will run with the context of that Namespace.
   #
   executor-service:
@@ -856,7 +856,7 @@ hazelcast:
       pool-size: 16
       queue-capacity: 0
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST DURABLE EXECUTOR SERVICE CONFIGURATION =====
@@ -874,8 +874,8 @@ hazelcast:
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
   #     the "split-brain-protection-ref"'s value
   #     as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this executor with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this executor with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this executor will run with the context of that Namespace.
   #
   durable-executor-service:
@@ -884,7 +884,7 @@ hazelcast:
       durability: 1
       capacity: 100
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST SCHEDULED EXECUTOR SERVICE CONFIGURATION =====
@@ -908,8 +908,8 @@ hazelcast:
   # * "merge-policy":
   #     The default policy is PutIfAbsentMergePolicy with a batch size of 100.
   #     This is the policy used when merging entries from sub-clusters (after split-brain recovery).
-  # * "namespace":
-  #     Associates this executor with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this executor with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this executor will run with the context of that Namespace.
   #
   scheduled-executor-service:
@@ -922,7 +922,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST CARDINALITY ESTIMATOR SERVICE CONFIGURATION =====
@@ -1008,8 +1008,8 @@ hazelcast:
   #
   #     If this value is non-null, then Hazelcast will ignore the queue store
   #     "memory-limit" configuration value.
-  # * "namespace":
-  #     Associates this queue with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this queue with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this queue will run with the context of that Namespace.
   #
   queue:
@@ -1033,7 +1033,7 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
       priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST MAP CONFIGURATION =====
@@ -1344,8 +1344,8 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the split brain protection for this map which you configure using the "split-brain-protection" element.
   #     You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this map with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this map with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this map will run with the context of that Namespace.
   #
   map:
@@ -1524,7 +1524,7 @@ hazelcast:
       partition-attributes:
         - name: "attributeName1"
         - name: "attributeName2"
-      namespace: "ns1"
+      user-code-namespace: "ns1"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -1538,8 +1538,8 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
   #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this multimap with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this multimap with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this multimap will run with the context of that Namespace.
   #
   multimap:
@@ -1556,7 +1556,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST REPLICATED MAP CONFIGURATION =====
@@ -1586,8 +1586,8 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
   #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this replicated map with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this replicated map with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this replicated map will run with the context of that Namespace.
   #
   replicatedmap:
@@ -1603,7 +1603,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: LatestAccessMergePolicy
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST CACHE CONFIGURATION =====
@@ -1771,8 +1771,8 @@ hazelcast:
   #     Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
   #     Full-flush invalidation means the invalidation of events for all entries when clear is called.
   #     The default value is false.
-  # * "namespace":
-  #     Associates this cache with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this cache with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this cache will run with the context of that Namespace.
   #
   cache:
@@ -1828,7 +1828,7 @@ hazelcast:
         enabled: false
         depth: 10
       disable-per-entry-invalidation-events: true
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST LIST CONFIGURATION =====
@@ -1852,8 +1852,8 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
   #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this list with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this list with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this list will run with the context of that Namespace.
   #
   list:
@@ -1869,7 +1869,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST SET CONFIGURATION =====
@@ -1893,8 +1893,8 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
   #     "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this set with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this set with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this set will run with the context of that Namespace.
   #
   set:
@@ -1909,7 +1909,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST TOPIC CONFIGURATION =====
@@ -1929,8 +1929,8 @@ hazelcast:
   # * "multi-threading-enabled":
   #     Default is `false`, meaning only one dedicated thread will handle topic messages.
   #     When multi-threading is enabled (true), all threads from event thread pool can be used for message handling.
-  # * "namespace":
-  #     Associates this topic with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this topic with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this topic will run with the context of that Namespace.
   #
   topic:
@@ -1939,7 +1939,7 @@ hazelcast:
       statistics-enabled: true
       message-listeners:
         - com.hazelcast.examples.MessageListener
-      namespace: "ns1"
+      user-code-namespace: "ns1"
   #
   # ===== HAZELCAST RELIABLE TOPIC CONFIGURATION =====
   #
@@ -2013,8 +2013,8 @@ hazelcast:
   #         The publish call fails immediately.
   # * "message-listeners":
   #     Adds listeners (listener classes) for the Reliable Topic messages.
-  # * "namespace":
-  #     Associates this reliable topic with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this reliable topic with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this reliable topic will run with the context of that Namespace.
   #
   reliable-topic:
@@ -2024,7 +2024,7 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST RINGBUFFER CONFIGURATION =====
@@ -2072,8 +2072,8 @@ hazelcast:
   #     Adds the Split Brain Protection for this data-structure which you configure
   #     using the "split-brain-protection" element. You should set the "split-brain-protection-ref"'s value as
   #     the "split-brain-protection"'s name.
-  # * "namespace":
-  #     Associates this ringbuffer with the specified Namespace Name, as defined in the "namespaces" config section.
+  # * "user-code-namespace":
+  #     Associates this ringbuffer with the specified Namespace Name, as defined in the "user-code-namespaces" config section.
   #     This means all executions related to this ringbuffer will run with the context of that Namespace.
   #
   ringbuffer:
@@ -2091,7 +2091,7 @@ hazelcast:
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         class-name: PutIfAbsentMergePolicy
-      namespace: "ns1"
+      user-code-namespace: "ns1"
 
   #
   # ===== HAZELCAST FLAKE ID GENERATOR CONFIGURATION =====
@@ -2612,6 +2612,10 @@ hazelcast:
           actions:
             - all
       connector:
+        - name: "*"
+          actions:
+            - all
+      user-code-namespace:
         - name: "*"
           actions:
             - all
@@ -3976,7 +3980,7 @@ hazelcast:
 
   #    ===== HAZELCAST NAMESPACES CONFIGURATION =====
   #
-  #  Configuration element's name is "namespaces".
+  #  Configuration element's name is "user-code-namespaces".
   #
   # It has the following attributes:
   #  - "enabled":
@@ -4033,7 +4037,7 @@ hazelcast:
   #              Defines Jars in a zip file to be loaded for the namespace.
   #      * "url":
   #          Defines the URL of the resource.
-  namespaces:
+  user-code-namespaces:
     # Sub attribute of namespaces, enables or disables namespaces.
     enabled: true
     # Sub attribute of namespaces, allows to configure blacklisting and whitelisting by class, package or prefix.

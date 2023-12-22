@@ -20,7 +20,7 @@
           "merge-policy": {
             "class-name": "PutIfAbsentMergePolicy"
           },
-          "namespace": "ns1"
+          "user-code-namespace": "ns1"
         },
         "my-second-ringbuffer": {
           "capacity": 10000,

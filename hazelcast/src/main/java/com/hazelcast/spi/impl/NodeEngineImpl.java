@@ -40,7 +40,7 @@ import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -643,7 +643,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public NamespaceService getNamespaceService() {
+    public UserCodeNamespaceService getNamespaceService() {
         return node.getNamespaceService();
     }
 }

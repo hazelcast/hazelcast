@@ -65,7 +65,7 @@ public class PagingPredicateImpl<K, V>
     private int pageSize;
     private int page;
     private IterationType iterationType;
-    private @Nullable String namespace;
+    private @Nullable String userCodeNamespace;
 
     /**
      * Used for serialization internally
@@ -138,14 +138,14 @@ public class PagingPredicateImpl<K, V>
     @PrivateApi
     public PagingPredicateImpl(List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList, Predicate<K, V> predicate,
                                Comparator<Map.Entry<K, V>> comparator, int pageSize, int page, IterationType iterationType,
-                               @Nullable String namespace) {
+                               @Nullable String userCodeNamespace) {
         this.anchorList = anchorList;
         this.predicate = predicate;
         this.comparator = comparator;
         this.pageSize = pageSize;
         this.page = page;
         this.iterationType = iterationType;
-        this.namespace = namespace;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     public PagingPredicateImpl(PagingPredicateImpl<K, V> original) {
@@ -166,7 +166,7 @@ public class PagingPredicateImpl<K, V>
         this.pageSize = originalPagingPredicate.pageSize;
         this.page = originalPagingPredicate.page;
         this.iterationType = originalPagingPredicate.iterationType;
-        this.namespace = originalPagingPredicate.namespace;
+        this.userCodeNamespace = originalPagingPredicate.userCodeNamespace;
         setInnerPredicate(predicateReplacement);
     }
 
@@ -187,7 +187,6 @@ public class PagingPredicateImpl<K, V>
      *
      * @param predicate the inner predicate through which results will be filtered
      */
-
     private void setInnerPredicate(Predicate<K, V> predicate) {
         Preconditions.checkNotInstanceOf(PagingPredicate.class, predicate, "Nested PagingPredicate is not supported!");
         this.predicate = predicate;
@@ -205,7 +204,7 @@ public class PagingPredicateImpl<K, V>
             return null;
         }
 
-        Set<QueryableEntry<K, V>> set = NamespaceUtil.callWithNamespace(namespace,
+        Set<QueryableEntry<K, V>> set = NamespaceUtil.callWithNamespace(userCodeNamespace,
                 () -> ((IndexAwarePredicate<K, V>) predicate).filter(queryContext));
         if (set == null || set.isEmpty()) {
             return set;
@@ -233,7 +232,8 @@ public class PagingPredicateImpl<K, V>
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
-            return NamespaceUtil.callWithNamespace(namespace, () -> ((IndexAwarePredicate) predicate).isIndexed(queryContext));
+            return NamespaceUtil.callWithNamespace(userCodeNamespace, () ->
+                    ((IndexAwarePredicate) predicate).isIndexed(queryContext));
         }
         return false;
     }
@@ -246,7 +246,7 @@ public class PagingPredicateImpl<K, V>
      */
     public boolean apply(Map.Entry mapEntry) {
         if (predicate != null) {
-            return NamespaceUtil.callWithNamespace(namespace, () -> predicate.apply(mapEntry));
+            return NamespaceUtil.callWithNamespace(userCodeNamespace, () -> predicate.apply(mapEntry));
         }
         return true;
     }
@@ -334,8 +334,8 @@ public class PagingPredicateImpl<K, V>
         return anchorList;
     }
 
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     public Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
@@ -358,7 +358,7 @@ public class PagingPredicateImpl<K, V>
     public void writeData(ObjectDataOutput out) throws IOException {
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
 
         out.writeObject(predicate);
@@ -379,18 +379,18 @@ public class PagingPredicateImpl<K, V>
     public void readData(ObjectDataInput in) throws IOException {
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         } else {
-            namespace = null;
+            userCodeNamespace = null;
         }
 
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
-        NamespaceUtil.setupNamespace(engine, namespace);
+        NamespaceUtil.setupNamespace(engine, userCodeNamespace);
         try {
             predicate = in.readObject();
             comparator = in.readObject();
         } finally {
-            NamespaceUtil.cleanupNamespace(engine, namespace);
+            NamespaceUtil.cleanupNamespace(engine, userCodeNamespace);
         }
         page = in.readInt();
         pageSize = in.readInt();

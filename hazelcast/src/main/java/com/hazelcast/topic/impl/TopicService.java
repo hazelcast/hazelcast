@@ -237,7 +237,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             // No regular containers available, fallback to config
             TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(topicName);
             if (topicConfig != null) {
-                return topicConfig.getNamespace();
+                return topicConfig.getUserCodeNamespace();
             }
         }
         return null;

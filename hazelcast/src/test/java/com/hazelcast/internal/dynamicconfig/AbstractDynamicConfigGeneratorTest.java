@@ -184,7 +184,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
     public void testMapWithNamespace() {
         MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithNamespace")
-                .setNamespace("ns1");
+                .setUserCodeNamespace("ns1");
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
@@ -341,7 +341,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setPartitionLostListenerConfigs(singletonList(
                         new CachePartitionLostListenerConfig("partitionLostListener")))
                 .setSplitBrainProtectionName("testSplitBrainProtection")
-                .setNamespace("test-ns");
+                .setUserCodeNamespace("test-ns");
 
         expectedConfig.getMergePolicyConfig().setPolicy("HigherHitsMergePolicy").setBatchSize(99);
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
@@ -505,7 +505,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setStatisticsEnabled(true)
                 .setSplitBrainProtectionName("splitBrainProtection")
                 .setEntryListenerConfigs(singletonList(new EntryListenerConfig("java.Listener", true, true)))
-                .setNamespace("ns1");
+                .setUserCodeNamespace("ns1");
 
         Config config = new Config()
                 .addMultiMapConfig(expectedConfig);
@@ -549,7 +549,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setNamespace("ns1")
+                .setUserCodeNamespace("ns1")
                 .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false))
                 .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener2", true, false));
 
@@ -670,7 +670,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setReadBatchSize(10)
                 .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
                 .setStatisticsEnabled(true)
-                .setNamespace("ns1")
+                .setUserCodeNamespace("ns1")
                 .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
 
         cfg.addReliableTopicConfig(expectedConfig);
@@ -690,7 +690,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setPoolSize(10)
                 .setQueueCapacity(100)
                 .setSplitBrainProtectionName("splitBrainProtection")
-                .setNamespace("ns1");
+                .setUserCodeNamespace("ns1");
 
         Config config = new Config()
                 .addExecutorConfig(expectedConfig);
@@ -712,7 +712,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setDurability(2)
                 .setStatisticsEnabled(false)
                 .setSplitBrainProtectionName("splitBrainProtection")
-                .setNamespace("ns1");
+                .setUserCodeNamespace("ns1");
 
         Config config = new Config()
                 .addDurableExecutorConfig(expectedConfig);
@@ -739,7 +739,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                         .setSplitBrainProtectionName("splitBrainProtection")
                         .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23))
                         .setStatisticsEnabled(false)
-                        .setNamespace("ns1");
+                        .setUserCodeNamespace("ns1");
 
         cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
 
@@ -1081,7 +1081,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setRingbufferStoreConfig(ringbufferStoreConfig)
                 .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(mergePolicyConfig)
-                .setNamespace("ns1");
+                .setUserCodeNamespace("ns1");
 
         Config config = new Config().addRingBufferConfig(expectedConfig);
 

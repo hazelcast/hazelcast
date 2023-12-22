@@ -28,7 +28,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -104,9 +104,9 @@ public class CacheAddPartitionLostListenerMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
-        String namespace = getNamespace();
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = getUserCodeNamespace();
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
@@ -115,7 +115,7 @@ public class CacheAddPartitionLostListenerMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return CacheService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

@@ -23,7 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -71,9 +71,9 @@ public class TopicRemoveMessageListenerMessageTask
     }
 
     @Override
-    public Permission getNamespacePermission() {
+    public Permission getUserCodeNamespacePermission() {
         String namespace = TopicService.lookupNamespace(nodeEngine, getDistributedObjectName());
-        return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override

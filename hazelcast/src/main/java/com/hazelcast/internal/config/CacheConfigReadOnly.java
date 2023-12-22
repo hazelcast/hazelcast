@@ -249,7 +249,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setNamespace(@Nullable String namespace) {
+    public CacheConfig<K, V> setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw throwReadOnly();
     }
 

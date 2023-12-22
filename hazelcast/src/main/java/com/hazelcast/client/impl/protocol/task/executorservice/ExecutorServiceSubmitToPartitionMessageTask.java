@@ -98,7 +98,7 @@ public class ExecutorServiceSubmitToPartitionMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return DistributedExecutorService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

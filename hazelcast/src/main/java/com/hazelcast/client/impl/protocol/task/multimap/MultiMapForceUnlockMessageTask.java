@@ -90,7 +90,7 @@ public class MultiMapForceUnlockMessageTask
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         // This task is not Namespace-aware so it doesn't matter
         return null;
     }

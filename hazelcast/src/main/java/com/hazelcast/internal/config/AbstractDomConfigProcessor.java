@@ -25,7 +25,7 @@ import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
@@ -278,8 +278,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         serializationConfig.setJavaSerializationFilterConfig(getJavaSerializationFilter(node));
     }
 
-    protected void fillJavaSerializationFilter(final Node node, NamespacesConfig namespacesConfig) {
-        namespacesConfig.setClassFilterConfig(getJavaSerializationFilter(node));
+    protected void fillJavaSerializationFilter(final Node node, UserCodeNamespacesConfig userCodeNamespacesConfig) {
+        userCodeNamespacesConfig.setClassFilterConfig(getJavaSerializationFilter(node));
     }
 
     private JavaSerializationFilterConfig getJavaSerializationFilter(final Node node) {

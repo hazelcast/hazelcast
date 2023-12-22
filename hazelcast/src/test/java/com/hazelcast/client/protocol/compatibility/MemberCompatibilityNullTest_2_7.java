@@ -6447,8 +6447,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6474,8 +6474,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6521,8 +6521,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6547,8 +6547,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6572,8 +6572,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.listenerConfigs));
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6594,8 +6594,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(aBoolean, parameters.multiThreadingEnabled));
         assertTrue(isEqual(null, parameters.listenerConfigs));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6616,8 +6616,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(anInt, parameters.queueCapacity));
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6640,8 +6640,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(parameters.isStatisticsEnabledExists);
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6668,8 +6668,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(parameters.isCapacityPolicyExists);
         assertTrue(isEqual(aByte, parameters.capacityPolicy));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6698,8 +6698,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(parameters.isPriorityComparatorClassNameExists);
         assertTrue(isEqual(null, parameters.priorityComparatorClassName));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6750,8 +6750,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aTieredStoreConfig, parameters.tieredStoreConfig));
         assertTrue(parameters.isPartitioningAttributeConfigsExists);
         assertTrue(isEqual(null, parameters.partitioningAttributeConfigs));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6773,8 +6773,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(aString, parameters.topicOverloadPolicy));
         assertTrue(isEqual(null, parameters.executor));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6820,8 +6820,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(null, parameters.merkleTreeConfig));
         assertTrue(parameters.isDataPersistenceConfigExists);
         assertTrue(isEqual(aDataPersistenceConfig, parameters.dataPersistenceConfig));
-        assertTrue(parameters.isNamespaceExists);
-        assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(parameters.isUserCodeNamespaceExists);
+        assertTrue(isEqual(null, parameters.userCodeNamespace));
     }
 
     @Test
@@ -6914,33 +6914,33 @@ public class MemberCompatibilityNullTest_2_7 {
     }
 
     @Test
-    public void test_DynamicConfigAddNamespaceConfigCodec_decodeRequest() {
+    public void test_DynamicConfigAddUserCodeNamespaceConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 765;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        DynamicConfigAddNamespaceConfigCodec.RequestParameters parameters = DynamicConfigAddNamespaceConfigCodec.decodeRequest(fromFile);
+        DynamicConfigAddUserCodeNamespaceConfigCodec.RequestParameters parameters = DynamicConfigAddUserCodeNamespaceConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aListOfResourceDefinitionHolders, parameters.resources));
     }
 
     @Test
-    public void test_DynamicConfigAddNamespaceConfigCodec_encodeResponse() {
+    public void test_DynamicConfigAddUserCodeNamespaceConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 766;
-        ClientMessage encoded = DynamicConfigAddNamespaceConfigCodec.encodeResponse();
+        ClientMessage encoded = DynamicConfigAddUserCodeNamespaceConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_DynamicConfigRemoveNamespaceConfigCodec_decodeRequest() {
+    public void test_DynamicConfigRemoveUserCodeNamespaceConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 767;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, DynamicConfigRemoveNamespaceConfigCodec.decodeRequest(fromFile)));
+        assertTrue(isEqual(aString, DynamicConfigRemoveUserCodeNamespaceConfigCodec.decodeRequest(fromFile)));
     }
 
     @Test
-    public void test_DynamicConfigRemoveNamespaceConfigCodec_encodeResponse() {
+    public void test_DynamicConfigRemoveUserCodeNamespaceConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 768;
-        ClientMessage encoded = DynamicConfigRemoveNamespaceConfigCodec.encodeResponse();
+        ClientMessage encoded = DynamicConfigRemoveUserCodeNamespaceConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

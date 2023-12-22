@@ -101,7 +101,7 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
     }
 
     @Override
-    public MultiMapConfig setNamespace(@Nullable String namespace) {
+    public MultiMapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }
 }

@@ -21,7 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.NamespacePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -51,7 +51,7 @@ public abstract class AbstractPartitionMessageTask<P>
     protected void processMessage() {
         // Providing Namespace awareness here covers calls in #beforeProcess() as well as #processInternal()
         if (namespaceAware) {
-            NamespaceUtil.runWithNamespace(nodeEngine, getNamespace(), super::processMessage);
+            NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), super::processMessage);
         } else {
             super.processMessage();
         }
@@ -74,15 +74,15 @@ public abstract class AbstractPartitionMessageTask<P>
     }
 
     @Override
-    public final Permission getNamespacePermission() {
+    public final Permission getUserCodeNamespacePermission() {
         if (namespaceAware) {
-            String namespace = getNamespace();
-            return namespace != null ? new NamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+            String namespace = getUserCodeNamespace();
+            return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
         }
         return null;
     }
 
     protected abstract Operation prepareOperation();
 
-    protected abstract String getNamespace();
+    protected abstract String getUserCodeNamespace();
 }

@@ -154,8 +154,8 @@
         "tpc": {
           "$ref": "#/definitions/TpcConfig"
         },
-        "namespaces": {
-          "$ref": "#/definitions/NamespacesConfig"
+        "user-code-namespaces": {
+          "$ref": "#/definitions/UserCodeNamespacesConfig"
         }
       }
     },
@@ -904,7 +904,7 @@
           "split-brain-protection-ref": {
             "type": "string"
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -929,7 +929,7 @@
         "split-brain-protection-ref": {
           "type": "string"
         },
-        "namespace": {
+        "user-code-namespace": {
           "type": "string"
         }
       }
@@ -962,7 +962,7 @@
         "merge-policy": {
           "$ref": "#/definitions/MergePolicy"
         },
-        "namespace": {
+        "user-code-namespace": {
           "type": "string"
         }
       }
@@ -1604,7 +1604,7 @@
             },
             "minItems": 1
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -1666,7 +1666,7 @@
             "default": true,
             "description": "True if statistics gathering is enabled on the set, false otherwise."
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -1699,7 +1699,7 @@
               "type": "string"
             }
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         },
@@ -1752,7 +1752,7 @@
               "type": "string"
             }
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -1817,7 +1817,7 @@
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -1963,7 +1963,7 @@
             "type": "string",
             "description": "Fully-qualified comparator's class name to be used for the priority queue. If nothing is provided, then queue behaves as a FIFO queue."
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -2025,7 +2025,7 @@
             "type": "boolean",
             "default": true
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -2063,7 +2063,7 @@
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -2323,7 +2323,7 @@
             "default": false,
             "description": "Disables invalidation events for each entry; but full-flush invalidation events are still enabled. Full-flush invalidation means the invalidation of events for all entries when clear is called."
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -2688,7 +2688,7 @@
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
           },
-          "namespace": {
+          "user-code-namespace": {
             "type": "string"
           }
         }
@@ -2982,7 +2982,7 @@
               "connector",
               "sql",
               "cpmap",
-              "namespace"
+              "user-code-namespace"
             ]
           },
           "properties": {
@@ -5180,12 +5180,12 @@
         "name"
       ]
     },
-    "NamespacesConfig": {
+    "UserCodeNamespacesConfig": {
       "type": "object",
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Indicates whether the namespaces configuration is enabled or not."
+          "description": "Indicates whether User Code Namespaces are enabled or not."
         },
         "class-filter": {
           "$ref": "#/definitions/JavaSerializationFilter",
@@ -5198,26 +5198,26 @@
         "items": {
           "$ref": "#/definitions/Namespace"
         },
-        "description": "A list of additional properties where each is a namespace configuration."
+        "description": "A list of additional properties where each is a User Code Namespace configuration."
       },
       "required": [
         "enabled"
       ],
-      "description": "The configuration object for namespaces."
+      "description": "The configuration object for User Code Namespaces."
     },
     "Namespace": {
       "type": "object",
       "items": {
         "$ref": "#/definitions/Resource"
       },
-      "description": "Defines a namespace which can contain configurations for JAR files and JARs in ZIP archives."
+      "description": "Defines a User Code Namespace which can contain configurations for JAR files and JARs in ZIP archives."
     },
     "Resource": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Defines an object that uniquely identifies a namespace resource. If a value is not set, the URL is used as the identifier."
+          "description": "Defines an object that uniquely identifies a User Code Namespace resource. If a value is not set, the URL is used as the identifier."
         },
         "resource-type": {
           "enum": [

@@ -18,7 +18,7 @@
             "batch-size": 100,
             "class-name": "LatestAccessMergePolicy"
           },
-          "namespace": "ns1"
+          "user-code-namespace": "ns1"
         }
       }
     }

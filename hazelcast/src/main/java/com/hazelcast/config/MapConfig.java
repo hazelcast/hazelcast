@@ -46,7 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, NamespaceAwareConfig<MapConfig> {
+public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, UserCodeNamespaceAwareConfig<MapConfig> {
 
     /**
      * The minimum number of backups
@@ -147,7 +147,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
             .setSize(DEFAULT_MAX_SIZE);
     private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
     private List<PartitioningAttributeConfig> partitioningAttributeConfigs;
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public MapConfig() {
     }
@@ -187,7 +187,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
         this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
         this.partitioningAttributeConfigs = new ArrayList<>(config.getPartitioningAttributeConfigs());
-        this.namespace = config.namespace;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -844,22 +844,22 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link MapConfig} instance
      * @since 5.4
      */
-    public MapConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public MapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -958,7 +958,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (!getPartitioningAttributeConfigs().equals(that.getPartitioningAttributeConfigs())) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
 
@@ -996,7 +996,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + tieredStoreConfig.hashCode();
         result = 31 * result + getPartitioningAttributeConfigs().hashCode();
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 
@@ -1030,7 +1030,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
                 + ", tieredStoreConfig=" + tieredStoreConfig
                 + ", partitioningAttributeConfigs=" + partitioningAttributeConfigs
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -1078,7 +1078,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -1116,7 +1116,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 }

@@ -26,7 +26,7 @@ import java.util.Objects;
  * cluster members.
  *
  * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
- * @see com.hazelcast.config.NamespacesConfig
+ * @see UserCodeNamespacesConfig
  */
 @Deprecated(since = "5.4", forRemoval = true)
 public class UserCodeDeploymentConfig {

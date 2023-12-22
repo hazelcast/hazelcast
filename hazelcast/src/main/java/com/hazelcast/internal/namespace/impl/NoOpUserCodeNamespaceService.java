@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.namespace.impl;
 
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -27,17 +27,18 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 /**
- * No-operations implementation for {@link NamespaceService} used when Namespaces are disabled.
+ * No-operations implementation for {@link UserCodeNamespaceService} used when Namespaces are disabled.
  * Replaced by {@code NamespaceServiceImpl} from Enterprise Edition when Namespaces are enabled.
  */
-public final class NoOpNamespaceService implements NamespaceService {
+public final class NoOpUserCodeNamespaceService
+        implements UserCodeNamespaceService {
     /**
      * {@link NodeEngine#getConfigClassLoader()} defined {@link ClassLoader} to use in invocations
      * where returning {@code null} would break functionality.
      */
     private final ClassLoader configClassLoader;
 
-    public NoOpNamespaceService(ClassLoader configClassLoader) {
+    public NoOpUserCodeNamespaceService(ClassLoader configClassLoader) {
         this.configClassLoader = configClassLoader;
     }
 

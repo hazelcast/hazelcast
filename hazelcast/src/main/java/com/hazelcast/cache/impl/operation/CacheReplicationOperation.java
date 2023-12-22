@@ -154,7 +154,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         for (CacheConfig config : configs) {
             // RU_COMPAT_5_3
             if (out.getVersion().isGreaterOrEqual(V5_4)) {
-                out.writeString(config.getNamespace());
+                out.writeString(config.getUserCodeNamespace());
             }
             if (!classesAlwaysAvailable) {
                 out.writeObject(PreJoinCacheConfig.of(config));
@@ -190,7 +190,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int confSize = in.readInt();
-        // Configs can contain listener configs, which need UCD Namespace awareness
+        // Configs can contain listener configs, which need User Code Namespace awareness
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
         for (int i = 0; i < confSize; i++) {
             String namespace = null;

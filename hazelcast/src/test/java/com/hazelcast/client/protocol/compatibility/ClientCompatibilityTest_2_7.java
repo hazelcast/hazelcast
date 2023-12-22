@@ -6036,28 +6036,28 @@ public class ClientCompatibilityTest_2_7 {
     }
 
     @Test
-    public void test_DynamicConfigAddNamespaceConfigCodec_encodeRequest() {
+    public void test_DynamicConfigAddUserCodeNamespaceConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 765;
-        ClientMessage encoded = DynamicConfigAddNamespaceConfigCodec.encodeRequest(aString, aListOfResourceDefinitionHolders);
+        ClientMessage encoded = DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(aString, aListOfResourceDefinitionHolders);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_DynamicConfigAddNamespaceConfigCodec_decodeResponse() {
+    public void test_DynamicConfigAddUserCodeNamespaceConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 766;
     }
 
     @Test
-    public void test_DynamicConfigRemoveNamespaceConfigCodec_encodeRequest() {
+    public void test_DynamicConfigRemoveUserCodeNamespaceConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 767;
-        ClientMessage encoded = DynamicConfigRemoveNamespaceConfigCodec.encodeRequest(aString);
+        ClientMessage encoded = DynamicConfigRemoveUserCodeNamespaceConfigCodec.encodeRequest(aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_DynamicConfigRemoveNamespaceConfigCodec_decodeResponse() {
+    public void test_DynamicConfigRemoveUserCodeNamespaceConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 768;
     }
 

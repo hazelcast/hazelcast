@@ -36,7 +36,7 @@ public abstract class AbstractAddListenerMessageTask<P>
     @Override
     protected void processMessage() {
         // We always want to be Namespace-aware when adding listeners
-        NamespaceUtil.runWithNamespace(nodeEngine, getNamespace(), super::processMessage);
+        NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), super::processMessage);
     }
 
     @Override
@@ -49,5 +49,5 @@ public abstract class AbstractAddListenerMessageTask<P>
         endpoint.addListenerDestroyAction(getServiceName(), getDistributedObjectName(), registrationId);
     }
 
-    protected abstract String getNamespace();
+    protected abstract String getUserCodeNamespace();
 }

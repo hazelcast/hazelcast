@@ -34,7 +34,7 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.namespace.NamespaceService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -330,7 +330,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public NamespaceService getNamespaceService() {
+    public UserCodeNamespaceService getNamespaceService() {
         return nodeExtension.getNamespaceService();
     }
 }

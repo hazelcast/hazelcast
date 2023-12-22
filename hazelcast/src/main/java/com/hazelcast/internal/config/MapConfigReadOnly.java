@@ -400,7 +400,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setNamespace(String namespace) {
+    public MapConfig setUserCodeNamespace(String userCodeNamespace) {
         throw throwReadOnly();
     }
 

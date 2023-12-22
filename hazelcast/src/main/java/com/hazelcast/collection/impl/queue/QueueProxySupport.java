@@ -71,7 +71,7 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
-        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
             if (listener == null && itemListenerConfig.getClassName() != null) {

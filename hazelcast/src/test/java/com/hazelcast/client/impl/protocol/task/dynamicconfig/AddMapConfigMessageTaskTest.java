@@ -66,7 +66,7 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest {
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
                 null,
-                mapConfig.getNamespace()
+                mapConfig.getUserCodeNamespace()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
@@ -118,7 +118,7 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest {
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
                 null,
-                mapConfig.getNamespace()
+                mapConfig.getUserCodeNamespace()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
@@ -166,7 +166,7 @@ public class AddMapConfigMessageTaskTest extends ConfigMessageTaskTest {
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
                 mapConfig.getPartitioningAttributeConfigs(),
-                mapConfig.getNamespace()
+                mapConfig.getUserCodeNamespace()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();

@@ -39,7 +39,7 @@ abstract class AbstractMapAllPartitionsMessageTask<P> extends AbstractAllPartiti
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

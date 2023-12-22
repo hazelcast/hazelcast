@@ -15,20 +15,20 @@
  */
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddNamespaceConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigRemoveNamespaceConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigRemoveUserCodeNamespaceConfigCodec;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder;
 import com.hazelcast.config.ConfigAccessor;
-import com.hazelcast.config.NamespaceConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ClientDynamicClusterNamespaceConfig extends NamespacesConfig {
+public class ClientDynamicClusterUserCodeNamespacesConfig extends UserCodeNamespacesConfig {
     private ClientDynamicClusterConfig parent;
 
-    public ClientDynamicClusterNamespaceConfig(ClientDynamicClusterConfig parent) {
+    public ClientDynamicClusterUserCodeNamespacesConfig(ClientDynamicClusterConfig parent) {
         this.parent = parent;
     }
 
@@ -38,25 +38,25 @@ public class ClientDynamicClusterNamespaceConfig extends NamespacesConfig {
     }
 
     @Override
-    public NamespacesConfig setEnabled(boolean enabled) {
+    public UserCodeNamespacesConfig setEnabled(boolean enabled) {
         throw new UnsupportedOperationException(ClientDynamicClusterConfig.UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public NamespacesConfig addNamespaceConfig(NamespaceConfig namespaceConfig) {
-        parent.invoke(DynamicConfigAddNamespaceConfigCodec.encodeRequest(namespaceConfig.getName(),
-                toResourceDefinitionHolders(namespaceConfig)));
+    public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
+        parent.invoke(DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(userCodeNamespaceConfig.getName(),
+                toResourceDefinitionHolders(userCodeNamespaceConfig)));
         return this;
     }
 
     @Override
-    public NamespacesConfig removeNamespaceConfig(String namespace) {
-        parent.invoke(DynamicConfigRemoveNamespaceConfigCodec.encodeRequest(namespace));
+    public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {
+        parent.invoke(DynamicConfigRemoveUserCodeNamespaceConfigCodec.encodeRequest(namespace));
         return this;
     }
 
-    private static List<ResourceDefinitionHolder> toResourceDefinitionHolders(NamespaceConfig namespaceConfig) {
-        return ConfigAccessor.getResourceDefinitions(namespaceConfig)
+    private static List<ResourceDefinitionHolder> toResourceDefinitionHolders(UserCodeNamespaceConfig userCodeNamespaceConfig) {
+        return ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig)
                 .stream().map(ResourceDefinitionHolder::new).collect(Collectors.toList());
     }
 }

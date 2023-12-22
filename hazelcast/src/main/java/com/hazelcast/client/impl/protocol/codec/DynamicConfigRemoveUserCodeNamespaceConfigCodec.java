@@ -37,8 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes a namespace configuration.
  */
 @SuppressWarnings("unused")
-@Generated("6dc7de0fe61d7ece37f768d2a5c0fcc4")
-public final class DynamicConfigRemoveNamespaceConfigCodec {
+@Generated("d640ba277af89f640a49d24bfbf3b793")
+public final class DynamicConfigRemoveUserCodeNamespaceConfigCodec {
     //hex: 0x1B1400
     public static final int REQUEST_MESSAGE_TYPE = 1774592;
     //hex: 0x1B1401
@@ -46,13 +46,13 @@ public final class DynamicConfigRemoveNamespaceConfigCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private DynamicConfigRemoveNamespaceConfigCodec() {
+    private DynamicConfigRemoveUserCodeNamespaceConfigCodec() {
     }
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("DynamicConfig.RemoveNamespaceConfig");
+        clientMessage.setOperationName("DynamicConfig.RemoveUserCodeNamespaceConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);

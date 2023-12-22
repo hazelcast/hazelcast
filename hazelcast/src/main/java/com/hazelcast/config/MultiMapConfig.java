@@ -38,7 +38,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Configuration for MultiMap.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, NamespaceAwareConfig<MultiMapConfig> {
+public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                       UserCodeNamespaceAwareConfig<MultiMapConfig> {
 
     /**
      * The default number of synchronous backups for this MultiMap.
@@ -64,7 +65,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public MultiMapConfig() {
     }
@@ -83,7 +84,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
-        this.namespace = config.namespace;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -324,22 +325,22 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link MultiMapConfig} instance
      * @since 5.4
      */
-    public MultiMapConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public MultiMapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -353,7 +354,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -389,7 +390,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -415,7 +416,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 
@@ -454,7 +455,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
         if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
         return Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
@@ -472,7 +473,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig, 
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 }

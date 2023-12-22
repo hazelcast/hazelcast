@@ -974,7 +974,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         String comparatorClassName = config.getPriorityComparatorClassName();
         if (!isNullOrEmpty(comparatorClassName)) {
             try {
-                ClassLoader classloader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+                ClassLoader classloader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
                 Comparator<?> comparator = ClassLoaderUtil.newInstance(classloader, comparatorClassName);
                 return new PriorityQueue<>(new ForwardingQueueItemComparator<>(comparator));
             } catch (Exception e) {
@@ -1069,9 +1069,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
 
         // Use Namespace specific class loader if available
-        ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getNamespace());
+        ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
         this.store = QueueStoreWrapper.create(nodeEngine, name, storeConfig, serializationService,
-                classLoader, config.getNamespace());
+                classLoader, config.getUserCodeNamespace());
 
         if (isPriorityQueue && store.isEnabled() && store.getMemoryLimit() < Integer.MAX_VALUE) {
             logger.warning("The queue '" + name + "' has both a comparator class and a store memory limit set. "

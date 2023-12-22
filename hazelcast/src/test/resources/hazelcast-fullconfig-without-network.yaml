@@ -142,7 +142,7 @@ hazelcast:
       pool-size: 16
       queue-capacity: 1000
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      namespace: ns1
+      user-code-namespace: ns1
 
   durable-executor-service:
     dummy:
@@ -151,7 +151,7 @@ hazelcast:
       durability: 2
       capacity: 10
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      namespace: ns1
+      user-code-namespace: ns1
 
   scheduled-executor-service:
     dummy:
@@ -163,7 +163,7 @@ hazelcast:
       merge-policy:
         batch-size: 10
         class-name: PutIfAbsentMergePolicy
-      namespace: ns1
+      user-code-namespace: ns1
 
   cardinality-estimator:
     dummy:
@@ -203,7 +203,7 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
       priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
-      namespace: ns1
+      user-code-namespace: ns1
 
   map:
     default:
@@ -422,7 +422,7 @@ hazelcast:
       partition-attributes:
         - name: "attributeName1"
         - name: "attributeName2"
-      namespace: ns1
+      user-code-namespace: ns1
 
   multimap:
     default:
@@ -439,7 +439,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: ns1
+      user-code-namespace: ns1
 
   replicatedmap:
     dummy:
@@ -454,7 +454,7 @@ hazelcast:
         - include-value: false
           local: true
           class-name: DummyListener
-      namespace: ns1
+      user-code-namespace: ns1
 
   list:
     default:
@@ -469,7 +469,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: ns1
+      user-code-namespace: ns1
 
   set:
     default:
@@ -484,7 +484,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: ns1
+      user-code-namespace: ns1
 
   topic:
     default:
@@ -493,7 +493,7 @@ hazelcast:
       message-listeners:
         - com.hazelcast.examples.MessageListener
       multi-threading-enabled: false
-      namespace: ns1
+      user-code-namespace: ns1
 
   reliable-topic:
     default:
@@ -502,7 +502,7 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-      namespace: ns1
+      user-code-namespace: ns1
 
   ringbuffer:
     default:
@@ -515,7 +515,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      namespace: ns1
+      user-code-namespace: ns1
 
   cache:
     default:
@@ -579,7 +579,7 @@ hazelcast:
       merkle-tree:
         enabled: true
         depth: 5
-      namespace: ns1
+      user-code-namespace: ns1
 
   flake-id-generator:
     default:
@@ -915,7 +915,7 @@ hazelcast:
         - name: "*"
           actions:
             - all
-      namespace:
+      user-code-namespace:
         - name: "*"
           actions:
             - all
@@ -1058,7 +1058,7 @@ hazelcast:
     enabled: true
     eventloop-count: 12
 
-  namespaces:
+  user-code-namespaces:
     enabled: false
     class-filter:
       defaults-disabled: false

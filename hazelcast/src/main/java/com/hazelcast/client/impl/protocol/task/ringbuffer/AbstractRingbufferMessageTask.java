@@ -34,9 +34,9 @@ public abstract class AbstractRingbufferMessageTask<T> extends AbstractPartition
     }
 
     @Override
-    protected String getNamespace() {
+    protected String getUserCodeNamespace() {
         RingbufferService service = nodeEngine.getService(getServiceName());
         RingbufferConfig config = service.getRingbufferConfig(getDistributedObjectName());
-        return config == null ? null : config.getNamespace();
+        return config == null ? null : config.getUserCodeNamespace();
     }
 }

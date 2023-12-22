@@ -698,7 +698,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        </queue-store>"
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </queue>"
                 + HAZELCAST_END_TAG;
 
@@ -711,7 +711,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, queueConfig.getBackupCount());
         assertEquals(1, queueConfig.getAsyncBackupCount());
         assertEquals(1, queueConfig.getEmptyQueueTtl());
-        assertEquals("ns1", queueConfig.getNamespace());
+        assertEquals("ns1", queueConfig.getUserCodeNamespace());
 
         MergePolicyConfig mergePolicyConfig = queueConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -749,7 +749,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <item-listener include-value=\"false\">com.hazelcast.examples.ItemListener</item-listener>"
                 + "        </item-listeners>"
                 + "        <merge-policy batch-size=\"4223\">PassThroughMergePolicy</merge-policy>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </list>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -761,7 +761,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, listConfig.getBackupCount());
         assertEquals(1, listConfig.getAsyncBackupCount());
         assertEquals(1, listConfig.getItemListenerConfigs().size());
-        assertEquals("ns1", listConfig.getNamespace());
+        assertEquals("ns1", listConfig.getUserCodeNamespace());
 
         ItemListenerConfig listenerConfig = listConfig.getItemListenerConfigs().iterator().next();
         assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
@@ -785,7 +785,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>"
                 + "        </item-listeners>"
                 + "        <merge-policy batch-size=\"4223\">PassThroughMergePolicy</merge-policy>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </set>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -797,7 +797,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, setConfig.getBackupCount());
         assertEquals(1, setConfig.getAsyncBackupCount());
         assertEquals(1, setConfig.getItemListenerConfigs().size());
-        assertEquals("ns1", setConfig.getNamespace());
+        assertEquals("ns1", setConfig.getUserCodeNamespace());
 
         ItemListenerConfig listenerConfig = setConfig.getItemListenerConfigs().iterator().next();
         assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
@@ -818,7 +818,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "           <message-listeners>"
                 + "               <message-listener>MessageListenerImpl</message-listener>"
                 + "           </message-listeners>"
-                + "           <namespace>ns1</namespace>"
+                + "           <user-code-namespace>ns1</user-code-namespace>"
                 + "    </reliable-topic>"
                 + HAZELCAST_END_TAG;
 
@@ -829,7 +829,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(35, topicConfig.getReadBatchSize());
         assertFalse(topicConfig.isStatisticsEnabled());
         assertEquals(TopicOverloadPolicy.DISCARD_OLDEST, topicConfig.getTopicOverloadPolicy());
-        assertEquals("ns1", topicConfig.getNamespace());
+        assertEquals("ns1", topicConfig.getUserCodeNamespace());
 
         // checking listener configuration
         assertEquals(1, topicConfig.getMessageListenerConfigs().size());
@@ -849,7 +849,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "           <message-listeners>"
                 + "               <message-listener>MessageListenerImpl</message-listener>"
                 + "           </message-listeners>"
-                + "           <namespace>ns1</namespace>"
+                + "           <user-code-namespace>ns1</user-code-namespace>"
                 + "    </topic>"
                 + HAZELCAST_END_TAG;
 
@@ -860,7 +860,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(topicConfig.isGlobalOrderingEnabled());
         assertFalse(topicConfig.isMultiThreadingEnabled());
         assertFalse(topicConfig.isStatisticsEnabled());
-        assertEquals("ns1", topicConfig.getNamespace());
+        assertEquals("ns1", topicConfig.getUserCodeNamespace());
 
         // checking listener configuration
         assertEquals(1, topicConfig.getMessageListenerConfigs().size());
@@ -932,7 +932,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        </ringbuffer-store>"
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -943,7 +943,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, ringbufferConfig.getAsyncBackupCount());
         assertEquals(9, ringbufferConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.OBJECT, ringbufferConfig.getInMemoryFormat());
-        assertEquals("ns1", ringbufferConfig.getNamespace());
+        assertEquals("ns1", ringbufferConfig.getUserCodeNamespace());
 
         RingbufferStoreConfig ringbufferStoreConfig = ringbufferConfig.getRingbufferStoreConfig();
         assertFalse(ringbufferStoreConfig.isEnabled());
@@ -2187,7 +2187,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "        <merge-policy batch-size=\"111\">LatestAccessMergePolicy</merge-policy>\n"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>\n"
-                + "        <namespace>ns1</namespace>\n"
+                + "        <user-code-namespace>ns1</user-code-namespace>\n"
                 + "        <event-journal enabled=\"true\">\n"
                 + "            <capacity>120</capacity>\n"
                 + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
@@ -2256,7 +2256,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.example.cache.MyEntryEventFilterFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryEventFilterFactory());
         assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
         assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
-        assertEquals("ns1", cacheConfig.getNamespace());
+        assertEquals("ns1", cacheConfig.getUserCodeNamespace());
     }
 
     @Override
@@ -2268,7 +2268,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <queue-capacity>0</queue-capacity>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </executor-service>"
                 + HAZELCAST_END_TAG;
 
@@ -2280,7 +2280,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customSplitBrainProtectionRule", executorConfig.getSplitBrainProtectionName());
         assertFalse(executorConfig.isStatisticsEnabled());
         assertEquals(0, executorConfig.getQueueCapacity());
-        assertEquals("ns1", executorConfig.getNamespace());
+        assertEquals("ns1", executorConfig.getUserCodeNamespace());
     }
 
     @Override
@@ -2293,7 +2293,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <durability>3</durability>\n"
                 + "        <capacity>4</capacity>\n"
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </durable-executor-service>"
                 + HAZELCAST_END_TAG;
 
@@ -2305,7 +2305,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, durableExecutorConfig.getDurability());
         assertEquals(4, durableExecutorConfig.getCapacity());
         assertEquals("customSplitBrainProtectionRule", durableExecutorConfig.getSplitBrainProtectionName());
-        assertEquals("ns1", durableExecutorConfig.getNamespace());
+        assertEquals("ns1", durableExecutorConfig.getUserCodeNamespace());
         assertFalse(durableExecutorConfig.isStatisticsEnabled());
     }
 
@@ -2320,7 +2320,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <capacity>2</capacity>\n"
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy batch-size='99'>PutIfAbsent</merge-policy>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "    </scheduled-executor-service>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2335,7 +2335,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(99, scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
         assertEquals("PutIfAbsent", scheduledExecutorConfig.getMergePolicyConfig().getPolicy());
         assertFalse(scheduledExecutorConfig.isStatisticsEnabled());
-        assertEquals("ns1", scheduledExecutorConfig.getNamespace());
+        assertEquals("ns1", scheduledExecutorConfig.getUserCodeNamespace());
     }
 
     @Override
@@ -2411,7 +2411,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <namespace>ns1</namespace>"
+                + "        <user-code-namespace>ns1</user-code-namespace>"
                 + "  </multimap>"
                 + HAZELCAST_END_TAG;
 
@@ -2427,7 +2427,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.hazelcast.examples.EntryListener", multiMapConfig.getEntryListenerConfigs().get(0).getClassName());
         assertTrue(multiMapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
         assertTrue(multiMapConfig.getEntryListenerConfigs().get(0).isLocal());
-        assertEquals("ns1", multiMapConfig.getNamespace());
+        assertEquals("ns1", multiMapConfig.getUserCodeNamespace());
 
         MergePolicyConfig mergePolicyConfig = multiMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -2445,7 +2445,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <statistics-enabled>false</statistics-enabled>\n"
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>\n"
                 + "        <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>\n"
-                + "        <namespace>ns1</namespace>\n"
+                + "        <user-code-namespace>ns1</user-code-namespace>\n"
                 + "    </replicatedmap>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2457,7 +2457,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
         assertEquals("customSplitBrainProtectionRule", replicatedMapConfig.getSplitBrainProtectionName());
-        assertEquals("ns1", replicatedMapConfig.getNamespace());
+        assertEquals("ns1", replicatedMapConfig.getUserCodeNamespace());
 
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -2545,7 +2545,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <max-idle-seconds>42</max-idle-seconds>\n"
                 + "        <eviction eviction-policy=\"RANDOM\" max-size-policy=\"PER_NODE\" size=\"42\"/>\n"
                 + "        <read-backup-data>true</read-backup-data>\n"
-                + "        <namespace>ns1</namespace>\n"
+                + "        <user-code-namespace>ns1</user-code-namespace>\n"
                 + "        <merkle-tree enabled=\"true\">\n"
                 + "            <depth>20</depth>\n"
                 + "          </merkle-tree>"
@@ -2639,7 +2639,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(mapConfig.getHotRestartConfig().isFsync());
         assertTrue(mapConfig.getDataPersistenceConfig().isEnabled());
         assertTrue(mapConfig.getDataPersistenceConfig().isFsync());
-        assertEquals("ns1", mapConfig.getNamespace());
+        assertEquals("ns1", mapConfig.getUserCodeNamespace());
 
         EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
@@ -4808,7 +4808,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         File tempJarZip = tempFolder.newFile("tempZip.zip");
 
         String xml = HAZELCAST_START_TAG
-                + "<namespaces enabled=\"true\">"
+                + "<user-code-namespaces enabled=\"true\">"
                 + "    <class-filter defaults-disabled=\"true\">\n"
                 + "        <blacklist>\n"
                 + "            <class>com.acme.app.BeanComparator</class>\n"
@@ -4831,22 +4831,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <url>" + tempJar.toURI().toURL() + "</url>"
                 + "        </jar>"
                 + "    </namespace>"
-                + "</namespaces>"
+                + "</user-code-namespaces>"
                 + HAZELCAST_END_TAG;
 
 
-        final NamespacesConfig namespacesConfig = buildConfig(xml).getNamespacesConfig();
-        assertThat(namespacesConfig.isEnabled()).isTrue();
-        assertThat(namespacesConfig.getNamespaceConfigs()).hasSize(2);
-        final NamespaceConfig namespaceConfig = namespacesConfig.getNamespaceConfigs().get("ns1");
+        final UserCodeNamespacesConfig userCodeNamespacesConfig = buildConfig(xml).getNamespacesConfig();
+        assertThat(userCodeNamespacesConfig.isEnabled()).isTrue();
+        assertThat(userCodeNamespacesConfig.getNamespaceConfigs()).hasSize(2);
+        final UserCodeNamespaceConfig userCodeNamespaceConfig = userCodeNamespacesConfig.getNamespaceConfigs().get("ns1");
 
-        assertNotNull(namespaceConfig);
+        assertNotNull(userCodeNamespaceConfig);
 
-        assertThat(namespaceConfig.getName()).isEqualTo("ns1");
-        assertThat(namespaceConfig.getResourceConfigs()).hasSize(2);
+        assertThat(userCodeNamespaceConfig.getName()).isEqualTo("ns1");
+        assertThat(userCodeNamespaceConfig.getResourceConfigs()).hasSize(2);
 
         //validate NS1 ResourceDefinition contents.
-        Collection<ResourceDefinition> ns1Resources = namespaceConfig.getResourceConfigs();
+        Collection<ResourceDefinition> ns1Resources = userCodeNamespaceConfig.getResourceConfigs();
         assertThat(ns1Resources).hasSize(2);
         Optional<ResourceDefinition> jarIdResource = ns1Resources.stream().filter(r -> r.id().equals("jarId")).findFirst();
         assertThat(jarIdResource).isPresent();
@@ -4861,11 +4861,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         //check the bytes[] are equal
         assertArrayEquals(getTestFileBytes(tempJarZip), zipId.get().payload());
         //validate NS2 ResourceDefinition contents.
-        final NamespaceConfig namespaceConfig2 = namespacesConfig.getNamespaceConfigs().get("ns2");
-        assertNotNull(namespaceConfig2);
-        assertThat(namespaceConfig2.getName()).isEqualTo("ns2");
-        assertThat(namespaceConfig2.getResourceConfigs()).hasSize(1);
-        Collection<ResourceDefinition> ns2Resources = namespaceConfig2.getResourceConfigs();
+        final UserCodeNamespaceConfig userCodeNamespaceConfig2 = userCodeNamespacesConfig.getNamespaceConfigs().get("ns2");
+        assertNotNull(userCodeNamespaceConfig2);
+        assertThat(userCodeNamespaceConfig2.getName()).isEqualTo("ns2");
+        assertThat(userCodeNamespaceConfig2.getResourceConfigs()).hasSize(1);
+        Collection<ResourceDefinition> ns2Resources = userCodeNamespaceConfig2.getResourceConfigs();
         assertThat(ns2Resources).hasSize(1);
         Optional<ResourceDefinition> jarId2Resource = ns2Resources.stream().filter(r -> r.id().equals("jarId2")).findFirst();
         assertThat(jarId2Resource).isPresent();
@@ -4875,8 +4875,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertArrayEquals(getTestFileBytes(tempJar), jarId2Resource.get().payload());
 
         // Validate filtering config
-        assertNotNull(namespacesConfig.getClassFilterConfig());
-        JavaSerializationFilterConfig filterConfig = namespacesConfig.getClassFilterConfig();
+        assertNotNull(userCodeNamespacesConfig.getClassFilterConfig());
+        JavaSerializationFilterConfig filterConfig = userCodeNamespacesConfig.getClassFilterConfig();
         assertTrue(filterConfig.isDefaultsDisabled());
         assertTrue(filterConfig.getWhitelist().isListed("com.acme.app.FakeClass"));
         assertTrue(filterConfig.getWhitelist().isListed("com.hazelcast.fake.place.MagicClass"));

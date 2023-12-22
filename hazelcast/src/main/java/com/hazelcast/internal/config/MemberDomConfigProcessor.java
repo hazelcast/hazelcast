@@ -74,7 +74,7 @@ import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
@@ -218,7 +218,7 @@ import static com.hazelcast.internal.config.ConfigSections.MAP;
 import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
 import static com.hazelcast.internal.config.ConfigSections.METRICS;
 import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
-import static com.hazelcast.internal.config.ConfigSections.NAMESPACES;
+import static com.hazelcast.internal.config.ConfigSections.USER_CODE_NAMESPACES;
 import static com.hazelcast.internal.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.internal.config.ConfigSections.NETWORK;
 import static com.hazelcast.internal.config.ConfigSections.PARTITION_GROUP;
@@ -399,7 +399,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDataConnections(node);
         } else if (matches(TPC.getName(), nodeName)) {
             handleTpc(node);
-        } else if (matches(NAMESPACES.getName(), nodeName)) {
+        } else if (matches(USER_CODE_NAMESPACES.getName(), nodeName)) {
             handleNamespaces(node);
         } else {
             return true;
@@ -1258,8 +1258,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 scheduledExecutorConfig.setSplitBrainProtectionName(getTextContent(child));
             } else if (matches("statistics-enabled", nodeName)) {
                 scheduledExecutorConfig.setStatisticsEnabled(getBooleanValue(getTextContent(child)));
-            } else if (matches("namespace", nodeName)) {
-                scheduledExecutorConfig.setNamespace(getTextContent(child));
+            } else if (matches("user-code-namespace", nodeName)) {
+                scheduledExecutorConfig.setUserCodeNamespace(getTextContent(child));
             }
         }
 
@@ -1776,8 +1776,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 qConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("priority-comparator-class-name", nodeName)) {
                 qConfig.setPriorityComparatorClassName(getTextContent(n));
-            } else if (matches("namespace", nodeName)) {
-                qConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                qConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addQueueConfig(qConfig);
@@ -1821,8 +1821,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, lConfig.getMergePolicyConfig());
                 lConfig.setMergePolicyConfig(mpConfig);
-            } else if (matches("namespace", nodeName)) {
-                lConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                lConfig.setUserCodeNamespace(getTextContent(n));
             }
 
         }
@@ -1855,8 +1855,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, sConfig.getMergePolicyConfig());
                 sConfig.setMergePolicyConfig(mpConfig);
-            } else if (matches("namespace", nodeName)) {
-                sConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                sConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addSetConfig(sConfig);
@@ -1893,8 +1893,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, multiMapConfig.getMergePolicyConfig());
                 multiMapConfig.setMergePolicyConfig(mpConfig);
-            } else if (matches("namespace", nodeName)) {
-                multiMapConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                multiMapConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addMultiMapConfig(multiMapConfig);
@@ -1938,8 +1938,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 replicatedMapConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 replicatedMapConfig.setSplitBrainProtectionName(getTextContent(n));
-            } else if (matches("namespace", nodeName)) {
-                replicatedMapConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                replicatedMapConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
@@ -2013,8 +2013,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
             } else if (matches("partition-attributes", nodeName)) {
                 handlePartitionAttributes(node, mapConfig);
-            } else if (matches("namespace", nodeName)) {
-                mapConfig.setNamespace(getTextContent(node));
+            } else if (matches("user-code-namespace", nodeName)) {
+                mapConfig.setUserCodeNamespace(getTextContent(node));
             }
         }
         config.addMapConfig(mapConfig);
@@ -2152,8 +2152,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(getTextContent(n)));
             } else if (matches("merkle-tree", nodeName)) {
                 handleViaReflection(n, cacheConfig, cacheConfig.getMerkleTreeConfig());
-            } else if (matches("namespace", nodeName)) {
-                cacheConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                cacheConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         try {
@@ -2687,8 +2687,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("multi-threading-enabled", nodeName)) {
                 tConfig.setMultiThreadingEnabled(getBooleanValue(getTextContent(n)));
-            } else if (matches("namespace", nodeName)) {
-                tConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                tConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addTopicConfig(tConfig);
@@ -2710,7 +2710,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches(nodeName, "namespace")) {
                 Node attName = getNamedItemNode(n, "name");
                 String name = getTextContent(attName);
-                NamespaceConfig nsConfig = new NamespaceConfig(name);
+                UserCodeNamespaceConfig nsConfig = new UserCodeNamespaceConfig(name);
                 handleResources(n, nsConfig);
                 config.getNamespacesConfig().addNamespaceConfig(nsConfig);
             } else if (matches(nodeName, "class-filter")) {
@@ -2719,7 +2719,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    void handleResources(Node node, final NamespaceConfig nsConfig) {
+    void handleResources(Node node, final UserCodeNamespaceConfig nsConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches(nodeName, "jar")) {
@@ -2731,7 +2731,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    void handleJarNode(Node node, final NamespaceConfig nsConfig) {
+    void handleJarNode(Node node, final UserCodeNamespaceConfig nsConfig) {
         URL url = getNamespaceResourceUrl(node);
         String id = getAttribute(node, "id");
         if (url != null) {
@@ -2741,7 +2741,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    void handleJarsInZipNode(Node node, final NamespaceConfig nsConfig) {
+    void handleJarsInZipNode(Node node, final UserCodeNamespaceConfig nsConfig) {
         URL url = getNamespaceResourceUrl(node);
         String id = getAttribute(node, "id");
         if (url != null) {
@@ -2790,8 +2790,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     topicConfig.addMessageListenerConfig(listenerConfig);
                     return null;
                 });
-            } else if (matches("namespace", nodeName)) {
-                topicConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                topicConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addReliableTopicConfig(topicConfig);
@@ -2839,8 +2839,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(n, rbConfig.getMergePolicyConfig());
                 rbConfig.setMergePolicyConfig(mpConfig);
-            } else if (matches("namespace", nodeName)) {
-                rbConfig.setNamespace(getTextContent(n));
+            } else if (matches("user-code-namespace", nodeName)) {
+                rbConfig.setUserCodeNamespace(getTextContent(n));
             }
         }
         config.addRingBufferConfig(rbConfig);

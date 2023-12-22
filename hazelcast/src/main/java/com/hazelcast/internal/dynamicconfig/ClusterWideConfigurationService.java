@@ -30,8 +30,8 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespaceAwareConfig;
-import com.hazelcast.config.NamespaceConfig;
+import com.hazelcast.config.UserCodeNamespaceAwareConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -126,7 +126,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, NamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, UserCodeNamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -279,9 +279,9 @@ public class ClusterWideConfigurationService implements
         Data data = serializationService.toData(config);
         // Certain configs can contain definitions for UDFs (such as ItemListenerConfig), so
         //     we should wrap the deserialization in Namespace awareness where applicable
-        if (config instanceof NamespaceAwareConfig) {
-            NamespaceAwareConfig nsAware = (NamespaceAwareConfig) config;
-            return NamespaceUtil.callWithNamespace(nodeEngine, nsAware.getNamespace(),
+        if (config instanceof UserCodeNamespaceAwareConfig) {
+            UserCodeNamespaceAwareConfig nsAware = (UserCodeNamespaceAwareConfig) config;
+            return NamespaceUtil.callWithNamespace(nodeEngine, nsAware.getUserCodeNamespace(),
                     () -> serializationService.toObject(data));
         }
         return serializationService.toObject(data);
@@ -367,8 +367,8 @@ public class ClusterWideConfigurationService implements
             if (currentConfig == null) {
                 nodeEngine.getWanReplicationService().addWanReplicationConfig(config);
             }
-        } else if (newConfig instanceof NamespaceConfig) {
-            NamespaceConfig config = (NamespaceConfig) newConfig;
+        } else if (newConfig instanceof UserCodeNamespaceConfig) {
+            UserCodeNamespaceConfig config = (UserCodeNamespaceConfig) newConfig;
             // Deliberately overwrite existing
             currentConfig = namespaceConfigs.put(config.getName(), config);
             nodeEngine.getNamespaceService().addNamespaceConfig(config);
@@ -387,8 +387,8 @@ public class ClusterWideConfigurationService implements
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void deregisterConfigLocally(IdentifiedDataSerializable newConfig) {
-        if (newConfig instanceof NamespaceConfig) {
-            NamespaceConfig config = (NamespaceConfig) newConfig;
+        if (newConfig instanceof UserCodeNamespaceConfig) {
+            UserCodeNamespaceConfig config = (UserCodeNamespaceConfig) newConfig;
             namespaceConfigs.remove(config.getName(), newConfig);
             // remove even if our `namespaceConfigs` map did not contain it, as we may be removing
             // a statically configured NamespaceConfig
@@ -614,7 +614,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public Map<String, NamespaceConfig> getNamespaceConfigs() {
+    public Map<String, UserCodeNamespaceConfig> getNamespaceConfigs() {
         return namespaceConfigs;
     }
 
@@ -684,7 +684,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(MerkleTreeConfig.class, V4_0);
         configToVersion.put(DataConnectionConfig.class, V5_2);
         configToVersion.put(WanReplicationConfig.class, V5_4);
-        configToVersion.put(NamespaceConfig.class, V5_4);
+        configToVersion.put(UserCodeNamespaceConfig.class, V5_4);
 
         return Collections.unmodifiableMap(configToVersion);
     }

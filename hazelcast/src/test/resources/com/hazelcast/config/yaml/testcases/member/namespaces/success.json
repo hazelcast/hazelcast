@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "namespaces": {
+      "user-code-namespaces": {
         "enabled": false,
         "class-filter": {
           "defaults-disabled": true,

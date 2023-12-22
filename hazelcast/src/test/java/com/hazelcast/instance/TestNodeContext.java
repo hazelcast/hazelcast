@@ -28,7 +28,7 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
-import com.hazelcast.internal.namespace.impl.NoOpNamespaceService;
+import com.hazelcast.internal.namespace.impl.NoOpUserCodeNamespaceService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
@@ -96,7 +96,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
-        when(nodeExtension.getNamespaceService()).thenReturn(new NoOpNamespaceService(TestNodeContext.class.getClassLoader()));
+        when(nodeExtension.getNamespaceService()).thenReturn(new NoOpUserCodeNamespaceService(TestNodeContext.class.getClassLoader()));
         return nodeExtension;
     }
 

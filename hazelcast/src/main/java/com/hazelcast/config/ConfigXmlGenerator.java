@@ -1254,12 +1254,12 @@ public class ConfigXmlGenerator {
     }
 
     private static void namespacesConfiguration(XmlGenerator gen, Config config) {
-        NamespacesConfig namespacesConfig = config.getNamespacesConfig();
-        if (namespacesConfig == null) {
+        UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
+        if (userCodeNamespacesConfig == null) {
             return;
         }
-        gen.open("namespaces", "enabled", namespacesConfig.isEnabled());
-        JavaSerializationFilterConfig filterConfig = namespacesConfig.getClassFilterConfig();
+        gen.open("user-code-namespaces", "enabled", userCodeNamespacesConfig.isEnabled());
+        JavaSerializationFilterConfig filterConfig = userCodeNamespacesConfig.getClassFilterConfig();
         if (filterConfig != null) {
             gen.open("class-filter", "defaults-disabled", filterConfig.isDefaultsDisabled());
             appendFilterList(gen, "blacklist", filterConfig.getBlacklist());
@@ -1267,11 +1267,11 @@ public class ConfigXmlGenerator {
             gen.close();
         }
 
-        Map<String, NamespaceConfig> namespaces = namespacesConfig.getNamespaceConfigs();
-        for (Map.Entry<String, NamespaceConfig> entry : namespaces.entrySet()) {
-            NamespaceConfig namespaceConfig = entry.getValue();
+        Map<String, UserCodeNamespaceConfig> namespaces = userCodeNamespacesConfig.getNamespaceConfigs();
+        for (Map.Entry<String, UserCodeNamespaceConfig> entry : namespaces.entrySet()) {
+            UserCodeNamespaceConfig userCodeNamespaceConfig = entry.getValue();
             gen.open("namespace", "name", entry.getKey());
-            Collection<ResourceDefinition> resourceDefinition =  namespaceConfig.getResourceConfigs();
+            Collection<ResourceDefinition> resourceDefinition =  userCodeNamespaceConfig.getResourceConfigs();
             resourceDefinition.forEach(resource -> {
                 String resourceId = resource.id();
                 gen.open(translateResourceType(resource.type()), "id", resourceId);

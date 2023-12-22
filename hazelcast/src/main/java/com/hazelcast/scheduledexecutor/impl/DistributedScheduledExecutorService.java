@@ -402,7 +402,7 @@ public class DistributedScheduledExecutorService
     }
 
     /**
-     * Looks up the UCD Namespace Name associated with the specified executor name. This is done
+     * Looks up the User Code Namespace name associated with the specified executor name. This is done
      * by checking the Node's config tree directly.
      *
      * @param engine       {@link NodeEngine} implementation of this member for service and config lookups
@@ -413,7 +413,7 @@ public class DistributedScheduledExecutorService
         if (engine.getNamespaceService().isEnabled()) {
             ScheduledExecutorConfig config = engine.getConfig().findScheduledExecutorConfig(executorName);
             if (config != null) {
-                return config.getNamespace();
+                return config.getUserCodeNamespace();
             }
         }
         return null;

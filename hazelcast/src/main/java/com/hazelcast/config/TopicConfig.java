@@ -38,7 +38,8 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for a {@link ITopic}.
  */
-public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, NamespaceAwareConfig<TopicConfig> {
+public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                    UserCodeNamespaceAwareConfig<TopicConfig> {
 
     /**
      * Default global ordering configuration.
@@ -50,7 +51,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     private boolean statisticsEnabled = true;
     private boolean multiThreadingEnabled;
     private List<ListenerConfig> listenerConfigs;
-    private @Nullable String namespace = DEFAULT_NAMESPACE;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     /**
      * Creates a TopicConfig.
@@ -78,7 +79,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.multiThreadingEnabled = config.multiThreadingEnabled;
         this.listenerConfigs = new ArrayList<>(config.getMessageListenerConfigs());
-        this.namespace = config.namespace;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -221,22 +222,22 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      */
     @Override
     @Nullable
-    public String getNamespace() {
-        return namespace;
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     /**
      * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
      * <p>
      * The behaviour of setting this to {@code null} is outlined in the documentation for
-     * {@link NamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
      *
-     * @param namespace The ID of the Namespace to associate with this structure.
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
      * @return the updated {@link TopicConfig} instance
      * @since 5.4
      */
-    public TopicConfig setNamespace(@Nullable String namespace) {
-        this.namespace = namespace;
+    public TopicConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
         return this;
     }
 
@@ -270,7 +271,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         if (listenerConfigs == null && that.listenerConfigs != null && !that.listenerConfigs.isEmpty()) {
             return false;
         }
-        if (!Objects.equals(namespace, that.namespace)) {
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
             return false;
         }
         return name != null ? name.equals(that.name) : that.name == null;
@@ -284,7 +285,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (multiThreadingEnabled ? 1 : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
-        result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 
@@ -294,7 +295,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
                 + ", globalOrderingEnabled=" + globalOrderingEnabled
                 + ", multiThreadingEnabled=" + multiThreadingEnabled
                 + ", statisticsEnabled=" + statisticsEnabled
-                + ", namespace=" + namespace
+                + ", userCodeNamespace=" + userCodeNamespace
                 + "]";
     }
 
@@ -318,7 +319,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
         // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(V5_4)) {
-            out.writeString(namespace);
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -332,7 +333,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(V5_4)) {
-            namespace = in.readString();
+            userCodeNamespace = in.readString();
         }
     }
 }

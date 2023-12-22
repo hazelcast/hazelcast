@@ -58,7 +58,7 @@ public class AddCacheConfigMessageTaskTest extends ConfigMessageTaskTest {
                 null,
                 null,
                 cacheConfig.getDataPersistenceConfig(),
-                cacheConfig.getNamespace()
+                cacheConfig.getUserCodeNamespace()
         );
         AddCacheConfigMessageTask addCacheConfigMessageTask = new AddCacheConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addCacheConfigMessageTask.run();
@@ -102,7 +102,7 @@ public class AddCacheConfigMessageTaskTest extends ConfigMessageTaskTest {
                 null,
                 null,
                 cacheConfig.getDataPersistenceConfig(),
-                cacheConfig.getNamespace()
+                cacheConfig.getUserCodeNamespace()
         );
         AddCacheConfigMessageTask addCacheConfigMessageTask = new AddCacheConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addCacheConfigMessageTask.run();

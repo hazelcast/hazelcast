@@ -95,7 +95,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         // Setup Namespace awareness
         CacheConfig config = cacheService.getCacheConfig(name);
-        namespace = config == null ? null : config.getNamespace();
+        namespace = config == null ? null : config.getUserCodeNamespace();
         getNodeEngine().getNamespaceService().setupNamespace(namespace);
 
         beforeRunInternal();

@@ -42,10 +42,10 @@ public class NamespaceUtil {
 
     /**
      * Obtains a {@link NodeEngine} reference from {@link NodeEngineThreadLocalContext}
-     * and uses it to call {@link NamespaceService#setupNamespace(String)} with the provided
+     * and uses it to call {@link UserCodeNamespaceService#setupNamespace(String)} with the provided
      * parameter.
      *
-     * @see NamespaceService#setupNamespace(String)
+     * @see UserCodeNamespaceService#setupNamespace(String)
      */
     public static void setupNamespace(@Nullable String namespace) {
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
@@ -54,10 +54,10 @@ public class NamespaceUtil {
 
     /**
      * Obtains a {@link NodeEngine} reference from {@link NodeEngineThreadLocalContext}
-     * and uses it to call {@link NamespaceService#cleanupNamespace(String)} with the provided
+     * and uses it to call {@link UserCodeNamespaceService#cleanupNamespace(String)} with the provided
      * parameter.
      *
-     * @see NamespaceService#cleanupNamespace(String)
+     * @see UserCodeNamespaceService#cleanupNamespace(String)
      */
     public static void cleanupNamespace(@Nullable String namespace) {
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
@@ -65,20 +65,20 @@ public class NamespaceUtil {
     }
 
     /**
-     * Convenience method for calling the same method name within the {@link NamespaceService},
+     * Convenience method for calling the same method name within the {@link UserCodeNamespaceService},
      * obtained from the provided {@link NodeEngine}.
      *
-     * @see NamespaceService#setupNamespace(String)
+     * @see UserCodeNamespaceService#setupNamespace(String)
      */
     public static void setupNamespace(NodeEngine engine, @Nullable String namespace) {
         engine.getNamespaceService().setupNamespace(namespace);
     }
 
     /**
-     * Convenience method for calling the same method name within the {@link NamespaceService},
+     * Convenience method for calling the same method name within the {@link UserCodeNamespaceService},
      * obtained from the provided {@link NodeEngine}.
      *
-     * @see NamespaceService#cleanupNamespace(String)
+     * @see UserCodeNamespaceService#cleanupNamespace(String)
      */
     public static void cleanupNamespace(NodeEngine engine, @Nullable String namespace) {
         engine.getNamespaceService().cleanupNamespace(namespace);
@@ -86,10 +86,10 @@ public class NamespaceUtil {
 
     /**
      * Obtains a {@link NodeEngine} reference from {@link NodeEngineThreadLocalContext}
-     * and uses it to call {@link NamespaceService#runWithNamespace(String, Runnable)} with
+     * and uses it to call {@link UserCodeNamespaceService#runWithNamespace(String, Runnable)} with
      * the provided parameters.
      *
-     * @see NamespaceService#runWithNamespace(String, Runnable)
+     * @see UserCodeNamespaceService#runWithNamespace(String, Runnable)
      */
     public static void runWithNamespace(@Nullable String namespace, Runnable runnable) {
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
@@ -97,10 +97,10 @@ public class NamespaceUtil {
     }
 
     /**
-     * Convenience method for calling the same method name within the {@link NamespaceService},
+     * Convenience method for calling the same method name within the {@link UserCodeNamespaceService},
      * obtained from the provided {@link NodeEngine}.
      *
-     * @see NamespaceService#runWithNamespace(String, Runnable)
+     * @see UserCodeNamespaceService#runWithNamespace(String, Runnable)
      */
     public static void runWithNamespace(NodeEngine engine, @Nullable String namespace, Runnable runnable) {
         engine.getNamespaceService().runWithNamespace(namespace, runnable);
@@ -108,10 +108,10 @@ public class NamespaceUtil {
 
     /**
      * Obtains a {@link NodeEngine} reference from {@link NodeEngineThreadLocalContext}
-     * and uses it to call {@link NamespaceService#callWithNamespace(String, Callable)} with
+     * and uses it to call {@link UserCodeNamespaceService#callWithNamespace(String, Callable)} with
      * the provided parameters.
      *
-     * @see NamespaceService#callWithNamespace(String, Callable)
+     * @see UserCodeNamespaceService#callWithNamespace(String, Callable)
      */
     public static <V> V callWithNamespace(@Nullable String namespace, Callable<V> callable) {
         NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
@@ -119,10 +119,10 @@ public class NamespaceUtil {
     }
 
     /**
-     * Convenience method for calling the same method name within the {@link NamespaceService},
+     * Convenience method for calling the same method name within the {@link UserCodeNamespaceService},
      * obtained from the provided {@link NodeEngine}.
      *
-     * @see NamespaceService#callWithNamespace(String, Callable)
+     * @see UserCodeNamespaceService#callWithNamespace(String, Callable)
      */
     public static <V> V callWithNamespace(NodeEngine engine, @Nullable String namespace, Callable<V> callable) {
         return engine.getNamespaceService().callWithNamespace(namespace, callable);
@@ -136,20 +136,20 @@ public class NamespaceUtil {
      * without the need for any additional references like we would need when
      * fetching using a {@code String namespace}.
      *
-     * @implNote This should only be used on UCD objects, as the contract is
-     * that all UCD objects are instantiated using the correct Namespace-aware
+     * @implNote This should only be used on User Code objects, as the contract is
+     * that all User Code objects are instantiated using the correct Namespace-aware
      * {@link ClassLoader}, allowing this shortcut to work. This also allows us
-     * to handle client-executed UCD objects without fuss, as it will simply
+     * to handle client-executed User Code objects without fuss, as it will simply
      * use their local {@link ClassLoader}.
      *
      * @see #callWithClassLoader(ClassLoader, Callable)
      *
-     * @param ucdObject the UCD-instantiated object to retrieve the
+     * @param userCodeObject the User Code instantiated object to retrieve the
      *                  {@link ClassLoader} from for execution
      * @param callable  the {@link Callable} to execute with Namespace awareness
      */
-    public static <V> V callWithOwnClassLoader(Object ucdObject, Callable<V> callable) {
-        return callWithClassLoader(ucdObject.getClass().getClassLoader(), callable);
+    public static <V> V callWithOwnClassLoader(Object userCodeObject, Callable<V> callable) {
+        return callWithClassLoader(userCodeObject.getClass().getClassLoader(), callable);
     }
 
     /**
@@ -160,20 +160,20 @@ public class NamespaceUtil {
      * without the need for any additional references like we would need when
      * fetching with only a {@code String namespace}.
      *
-     * @implNote This should only be used on UCD objects, as the contract is
-     * that all UCD objects are instantiated using the correct Namespace-aware
+     * @implNote This should only be used on User Code objects, as the contract is
+     * that all User Code objects are instantiated using the correct Namespace-aware
      * {@link ClassLoader}, allowing this shortcut to work. This also allows us
-     * to handle client-executed UCD objects without fuss, as it will simply
+     * to handle client-executed User Code objects without fuss, as it will simply
      * use their local {@link ClassLoader}.
      *
      * @see #runWithClassLoader(ClassLoader, Runnable)
      *
-     * @param ucdObject the UCD-instantiated object to retrieve the
+     * @param userCodeObject the User Code instantiated object to retrieve the
      *                  {@link ClassLoader} from for execution
      * @param runnable  the {@link Runnable} to execute with Namespace awareness
      */
-    public static void runWithOwnClassLoader(Object ucdObject, Runnable runnable) {
-        runWithClassLoader(ucdObject.getClass().getClassLoader(), runnable);
+    public static void runWithOwnClassLoader(Object userCodeObject, Runnable runnable) {
+        runWithClassLoader(userCodeObject.getClass().getClassLoader(), runnable);
     }
 
     /**
@@ -181,7 +181,7 @@ public class NamespaceUtil {
      * of the passed {@link ClassLoader}, leveraging the
      * {@link com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader}.
      *
-     * @implNote This is intended to be used with UCD Namespace-aware objects.
+     * @implNote This is intended to be used with User Code Namespace-aware objects.
      *
      * @param loader    the {@link ClassLoader} to use for execution context
      * @param callable  the {@link Callable} to execute with Namespace awareness
@@ -210,7 +210,7 @@ public class NamespaceUtil {
      * of the passed {@link ClassLoader}, leveraging the
      * {@link com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader}.
      *
-     * @implNote This is intended to be used with UCD Namespace-aware objects.
+     * @implNote This is intended to be used with User Code Namespace-aware objects.
      *
      * @param loader    the {@link ClassLoader} to use for execution context
      * @param runnable  the {@link Runnable} to execute with Namespace awareness
@@ -237,7 +237,7 @@ public class NamespaceUtil {
      * will retrieve a default {@link ClassLoader} instance to use as a fallback, as
      * defined by {@link #getDefaultClassloader(NodeEngine)}.
      *
-     * @param engine    the {@link NodeEngine} instance to use for accessing the {@link NamespaceService}
+     * @param engine    the {@link NodeEngine} instance to use for accessing the {@link UserCodeNamespaceService}
      * @param namespace the {@code Namespace} name to use for looking up the Namespace {@link ClassLoader}
      * @return the {@link ClassLoader} for the provided {@code Namespace} if it exists, or else a fallback
      *         {@link ClassLoader} as defined by {@link #getDefaultClassloader(NodeEngine)}.
@@ -252,7 +252,7 @@ public class NamespaceUtil {
      * {@code Namespace} name, and returns it if available. If not available, this method
      * will return the provided {@link ClassLoader}.
      *
-     * @param engine        the {@link NodeEngine} instance to use for accessing the {@link NamespaceService}
+     * @param engine        the {@link NodeEngine} instance to use for accessing the {@link UserCodeNamespaceService}
      * @param namespace     the {@code Namespace} name to use for looking up the Namespace {@link ClassLoader}
      * @param defaultLoader the fallback {@link ClassLoader} to use if a Namespace-associated one is not available.
      * @return the {@link ClassLoader} for the provided {@code Namespace} if it exists, or else the provided
@@ -268,11 +268,11 @@ public class NamespaceUtil {
      * Attempts to retrieve the default {@code Namespace} {@link ClassLoader} if available, otherwise
      * retrieves the config-defined {@link ClassLoader} from {@link NodeEngine#getConfigClassLoader()}.
      * <p>
-     * The default Namespace is retrieved by calling {@link NamespaceService#getClassLoaderForNamespace(String)}
-     * with a {@code null} Namespace name, which results in the {@link NamespaceService} checking for a
-     * default Namespace (defined with name {@link NamespaceService#DEFAULT_NAMESPACE_NAME}).
+     * The default Namespace is retrieved by calling {@link UserCodeNamespaceService#getClassLoaderForNamespace(String)}
+     * with a {@code null} Namespace name, which results in the {@link UserCodeNamespaceService} checking for a
+     * default Namespace (defined with name {@link UserCodeNamespaceService#DEFAULT_NAMESPACE_NAME}).
      *
-     * @param engine the {@link NodeEngine} instance to use for accessing the {@link NamespaceService}
+     * @param engine the {@link NodeEngine} instance to use for accessing the {@link UserCodeNamespaceService}
      * @return the default {@code Namespace} {@link MapResourceClassLoader} if defined, or the
      *         config-defined {@link ClassLoader} from {@link NodeEngine#getConfigClassLoader()}.
      */

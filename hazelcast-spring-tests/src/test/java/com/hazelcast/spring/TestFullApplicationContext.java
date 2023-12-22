@@ -79,8 +79,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NamespaceConfig;
-import com.hazelcast.config.NamespacesConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -355,7 +355,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertTrue(cacheConfig.getDataPersistenceConfig().isEnabled());
         assertTrue(cacheConfig.getDataPersistenceConfig().isFsync());
-        assertEquals("ns1", cacheConfig.getNamespace());
+        assertEquals("ns1", cacheConfig.getUserCodeNamespace());
 
         EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
@@ -398,7 +398,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals("ns1", testMapConfig.getNamespace());
+        assertEquals("ns1", testMapConfig.getUserCodeNamespace());
         assertEquals(3, testMapConfig.getIndexConfigs().size());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
             if ("name".equals(index.getAttributes().get(0))) {
@@ -573,7 +573,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1000, testQConfig.getMaxSize());
         assertEquals(1, testQConfig.getItemListenerConfigs().size());
         assertTrue(testQConfig.isStatisticsEnabled());
-        assertEquals("ns1", testQConfig.getNamespace());
+        assertEquals("ns1", testQConfig.getUserCodeNamespace());
         ItemListenerConfig listenerConfig = testQConfig.getItemListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());
         assertTrue(listenerConfig.isIncludeValue());
@@ -626,7 +626,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, testRingbuffer.getBackupCount());
         assertEquals(1, testRingbuffer.getAsyncBackupCount());
         assertEquals(20, testRingbuffer.getTimeToLiveSeconds());
-        assertEquals("ns1", testRingbuffer.getNamespace());
+        assertEquals("ns1", testRingbuffer.getUserCodeNamespace());
         RingbufferStoreConfig store1 = testRingbuffer.getRingbufferStoreConfig();
         assertNotNull(store1);
         assertEquals(DummyRingbufferStore.class.getName(), store1.getClassName());
@@ -729,7 +729,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
         assertEquals(10, testReliableTopic.getReadBatchSize());
         assertEquals(TopicOverloadPolicy.BLOCK, testReliableTopic.getTopicOverloadPolicy());
-        assertEquals("ns1", testReliableTopic.getNamespace());
+        assertEquals("ns1", testReliableTopic.getUserCodeNamespace());
     }
 
     @Test
@@ -739,7 +739,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, testMultiMapConfig.getEntryListenerConfigs().size());
         assertFalse(testMultiMapConfig.isBinary());
         assertFalse(testMultiMapConfig.isStatisticsEnabled());
-        assertEquals("ns1", testMultiMapConfig.getNamespace());
+        assertEquals("ns1", testMultiMapConfig.getUserCodeNamespace());
         for (EntryListenerConfig listener : testMultiMapConfig.getEntryListenerConfigs()) {
             if (listener.getClassName() != null) {
                 assertNull(listener.getImplementation());
@@ -766,7 +766,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, testListConfig.getBackupCount());
         assertEquals(1, testListConfig.getAsyncBackupCount());
         assertFalse(testListConfig.isStatisticsEnabled());
-        assertEquals("ns1", testListConfig.getNamespace());
+        assertEquals("ns1", testListConfig.getUserCodeNamespace());
 
         MergePolicyConfig mergePolicyConfig = testListConfig.getMergePolicyConfig();
         assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
@@ -782,7 +782,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testSetConfig.getBackupCount());
         assertEquals(0, testSetConfig.getAsyncBackupCount());
         assertFalse(testSetConfig.isStatisticsEnabled());
-        assertEquals("ns1", testSetConfig.getNamespace());
+        assertEquals("ns1", testSetConfig.getUserCodeNamespace());
 
         MergePolicyConfig mergePolicyConfig = testSetConfig.getMergePolicyConfig();
         assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
@@ -797,7 +797,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, testTopicConfig.getMessageListenerConfigs().size());
         assertTrue(testTopicConfig.isGlobalOrderingEnabled());
         assertFalse(testTopicConfig.isStatisticsEnabled());
-        assertEquals("ns1", testTopicConfig.getNamespace());
+        assertEquals("ns1", testTopicConfig.getUserCodeNamespace());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
     }
@@ -815,7 +815,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, testExecConfig.getPoolSize());
         assertEquals(100, testExecConfig.getQueueCapacity());
         assertTrue(testExecConfig.isStatisticsEnabled());
-        assertEquals("ns1", testExecConfig.getNamespace());
+        assertEquals("ns1", testExecConfig.getUserCodeNamespace());
         ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
         assertNotNull(testExec2Config);
         assertEquals("testExec2", testExec2Config.getName());
@@ -833,7 +833,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(5, testExecConfig.getDurability());
         assertEquals(200, testExecConfig.getCapacity());
         assertFalse(testExecConfig.isStatisticsEnabled());
-        assertEquals("ns1", testExecConfig.getNamespace());
+        assertEquals("ns1", testExecConfig.getUserCodeNamespace());
     }
 
     @Test
@@ -850,7 +850,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(101, mergePolicyConfig.getBatchSize());
         assertFalse(testExecConfig.isStatisticsEnabled());
-        assertEquals("ns1", testExecConfig.getNamespace());
+        assertEquals("ns1", testExecConfig.getUserCodeNamespace());
     }
 
     @Test
@@ -1294,7 +1294,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
         assertEquals("my-split-brain-protection", replicatedMapConfig.getSplitBrainProtectionName());
-        assertEquals("ns1", replicatedMapConfig.getNamespace());
+        assertEquals("ns1", replicatedMapConfig.getUserCodeNamespace());
 
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         assertNotNull(mergePolicyConfig);
@@ -1721,19 +1721,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final String expectedJarURL = "file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.jar";
         final String expectedZipURL = "file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.zip";
 
-        final NamespacesConfig namespacesConfig = config.getNamespacesConfig();
-        assertTrue(namespacesConfig.isEnabled());
+        final UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
+        assertTrue(userCodeNamespacesConfig.isEnabled());
         assertEquals(2, ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).size());
 
-        final NamespaceConfig namespaceConfig = ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).get("ns1");
+        final UserCodeNamespaceConfig userCodeNamespaceConfig = ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).get("ns1");
 
-        assertNotNull(namespaceConfig);
-        assertEquals("ns1", namespaceConfig.getName());
+        assertNotNull(userCodeNamespaceConfig);
+        assertEquals("ns1", userCodeNamespaceConfig.getName());
 
-        assertEquals(2, ConfigAccessor.getResourceDefinitions(namespaceConfig).size());
+        assertEquals(2, ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig).size());
 
         //validate NS1 ResourceDefinition contents.
-        Collection<ResourceDefinition> ns1Resources = ConfigAccessor.getResourceDefinitions(namespaceConfig);
+        Collection<ResourceDefinition> ns1Resources = ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig);
         assertEquals(2, ns1Resources.size());
 
         Optional<ResourceDefinition> jarIdResource = ns1Resources.stream().filter(r -> r.id().equals("ns1jar")).findFirst();
@@ -1751,11 +1751,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertArrayEquals(getTestFileBytes(zipPath.toFile()), zipId.get().payload());
         //validate NS2 ResourceDefinition contents.
 
-        final NamespaceConfig namespaceConfig2 = ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).get("ns2");
-        assertNotNull(namespaceConfig2);
-        assertEquals("ns2", namespaceConfig2.getName());
+        final UserCodeNamespaceConfig userCodeNamespaceConfig2 = ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).get("ns2");
+        assertNotNull(userCodeNamespaceConfig2);
+        assertEquals("ns2", userCodeNamespaceConfig2.getName());
 
-        Collection<ResourceDefinition> ns2Resources = ConfigAccessor.getResourceDefinitions(namespaceConfig2);
+        Collection<ResourceDefinition> ns2Resources = ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig2);
         assertEquals(2, ns2Resources.size());
         Optional<ResourceDefinition> jarId2Resource = ns2Resources.stream().filter(r -> r.id().equals("ns2jar")).findFirst();
 
@@ -1774,8 +1774,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertArrayEquals(getTestFileBytes(zipPath.toFile()), jarResource.get().payload());
 
         // Validate filtering config
-        assertNotNull(namespacesConfig.getClassFilterConfig());
-        JavaSerializationFilterConfig filterConfig = namespacesConfig.getClassFilterConfig();
+        assertNotNull(userCodeNamespacesConfig.getClassFilterConfig());
+        JavaSerializationFilterConfig filterConfig = userCodeNamespacesConfig.getClassFilterConfig();
         assertTrue(filterConfig.isDefaultsDisabled());
         assertTrue(filterConfig.getWhitelist().isListed("com.acme.app.FakeClass"));
         assertTrue(filterConfig.getWhitelist().isListed("com.hazelcast.fake.place.MagicClass"));

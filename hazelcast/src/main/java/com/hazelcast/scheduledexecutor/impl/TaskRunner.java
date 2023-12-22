@@ -76,7 +76,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
         }
         beforeRun();
         try {
-            NamespaceUtil.setupNamespace(container.getNodeEngine(), container.getNamespace());
+            NamespaceUtil.setupNamespace(container.getNodeEngine(), container.getUserCodeNamespace());
             V result = original.call();
             if (SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
                 resolution = new ScheduledTaskResult(result);
@@ -97,7 +97,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
                     creationTime = Clock.currentTimeMillis();
                 }
             }
-            NamespaceUtil.cleanupNamespace(container.getNodeEngine(), container.getNamespace());
+            NamespaceUtil.cleanupNamespace(container.getNodeEngine(), container.getUserCodeNamespace());
         }
     }
 
@@ -117,7 +117,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
         Map snapshot = descriptor.getState();
         if (original instanceof StatefulTask && !snapshot.isEmpty()) {
-            NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getNamespace(), () -> {
+            NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getUserCodeNamespace(), () -> {
                 ((StatefulTask) original).load(snapshot);
             });
         }
@@ -142,7 +142,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
             Map state = new HashMap();
             if (original instanceof StatefulTask) {
-                NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getNamespace(), () -> {
+                NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getUserCodeNamespace(), () -> {
                     ((StatefulTask) original).save(state);
                 });
             }
