@@ -214,7 +214,7 @@ public class TpcServerBootstrap {
             Reactor reactor = tpcEngine.reactor(k);
 
             Supplier<AsyncSocketReader> readHandlerSupplier =
-                    () -> new ClientAsyncSocketReader(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
+                    () -> new ClientMessageDecoder(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
             boolean success = false;
@@ -258,7 +258,7 @@ public class TpcServerBootstrap {
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocketBuilder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(readHandlerSuppliers.get(reactor).get())
-                            .setWriter(new ClientAsyncSocketWriter())
+                            .setWriter(new ClientMessageEncoder())
                             .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
                             .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                             .set(TCP_NODELAY, tcpNoDelay)

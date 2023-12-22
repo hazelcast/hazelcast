@@ -22,7 +22,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketWriter;
 
 import java.nio.ByteBuffer;
 
-public class ClientAsyncSocketWriter extends AsyncSocketWriter {
+public class ClientMessageEncoder extends AsyncSocketWriter {
 
     private final ClientMessageWriter writer = new ClientMessageWriter();
     private ClientMessage current;
