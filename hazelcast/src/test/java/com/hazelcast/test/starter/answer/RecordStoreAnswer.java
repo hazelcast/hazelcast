@@ -55,11 +55,15 @@ class RecordStoreAnswer extends AbstractAnswer {
         } else if (arguments.length == 2 && methodName.equals("get")) {
             // ICacheRecordStore
             return getCacheValue(methodName, arguments);
-        } else if (arguments.length == 0 && methodName.equals("getReadOnlyRecords")) {
-            // ICacheRecordStore
-            return invoke(invocation);
-        } else if (arguments.length == 0 && methodName.equals("size")) {
-            return invoke(invocation);
+        } else if (arguments.length == 0) {
+            switch (methodName) {
+                case "beforeOperation":
+                case "afterOperation":
+                    return null;
+                case "size":
+                case "getReadOnlyRecords":
+                    return invoke(invocation);
+            }
         }
         throw new UnsupportedOperationException("Method is not implemented in RecordStoreAnswer: " + methodName);
     }
