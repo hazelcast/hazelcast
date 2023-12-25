@@ -832,7 +832,10 @@ public final class Util {
     }
 
     public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {
+
         public static final Identity INSTANCE = new Identity<>();
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public T apply(T t) {

@@ -50,6 +50,7 @@ public final class ExpressionUtil {
     }
 
     public static class SqlRowComparator implements IdentifiedDataSerializable, ComparatorEx<JetSqlRow> {
+        private static final long serialVersionUID = 1L;
         private List<FieldCollation> fieldCollationList;
 
         public SqlRowComparator() {

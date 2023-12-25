@@ -62,13 +62,17 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private ProcessingGuarantee processingGuarantee = NONE;
     private long maxProcessorAccumulatedRecords = Long.MAX_VALUE;
     private boolean isLightJob;
-    private Map<Address, int[]> partitionAssignment = Collections.unmodifiableMap(new HashMap<Address, int[]>() {{
-        try {
-            put(new Address("1.2.3.4", 1), new int[]{0});
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+    private Map<Address, int[]> partitionAssignment = Collections.unmodifiableMap(new HashMap<>() {
+        private static final long serialVersionUID = 1L;
+
+        {
+            try {
+                put(new Address("1.2.3.4", 1), new int[]{0});
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
         }
-    }});
+    });
     private ClassLoader classLoader;
 
     @Nonnull

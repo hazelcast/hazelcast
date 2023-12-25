@@ -79,7 +79,9 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
         Properties properties = context.hazelcastInstance().getConfig().getProperties();
         HazelcastProperties hzProperties = new HazelcastProperties(properties);
         long expirationMs = hzProperties.getMillis(CdcSinks.SEQUENCE_CACHE_EXPIRATION_SECONDS);
-        sequences = new LinkedHashMap<K, Sequence>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+        sequences = new LinkedHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, Sequence> eldest) {
                 return eldest.getValue().isOlderThan(expirationMs);

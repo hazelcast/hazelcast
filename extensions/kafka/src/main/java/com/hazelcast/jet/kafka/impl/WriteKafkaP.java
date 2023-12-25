@@ -246,6 +246,8 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     ) {
         return new ProcessorSupplier() {
 
+            private static final long serialVersionUID = 1L;
+
             private transient KafkaDataConnection kafkaDataConnection;
 
             @Override
@@ -286,6 +288,8 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             boolean exactlyOnce
     ) {
         return new ProcessorSupplier() {
+
+            private static final long serialVersionUID = 1L;
 
             private transient KafkaDataConnection kafkaDataConnection;
 

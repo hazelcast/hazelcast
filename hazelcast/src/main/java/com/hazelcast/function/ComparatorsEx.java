@@ -29,6 +29,8 @@ final class ComparatorsEx {
     @BinaryInterface
     private static final class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
             return left.compareTo(right);
@@ -47,6 +49,8 @@ final class ComparatorsEx {
     @BinaryInterface
     private static final class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
             return right.compareTo(left);
@@ -64,6 +68,7 @@ final class ComparatorsEx {
 
     @BinaryInterface
     public static final class NullComparator<T> implements ComparatorEx<T> {
+        private static final long serialVersionUID = 1L;
         private final boolean isNullFirst;
 
         @SuppressWarnings("unchecked")

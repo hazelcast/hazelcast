@@ -72,6 +72,8 @@ class FunctionsImpl {
             extends ComposedSecuredFunction<FunctionEx<? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements FunctionEx<V, R> {
 
+        private static final long serialVersionUID = 1L;
+
         ComposedFunctionEx(@Nonnull FunctionEx<? super V, ? extends T> before,
                                   @Nonnull FunctionEx<? super T, ? extends R> after) {
             super(before, after);
@@ -88,6 +90,8 @@ class FunctionsImpl {
             extends ComposedSecuredFunction<BiFunctionEx<? super U, ? super V, ? extends T>, FunctionEx<? super T, ? extends R>>
             implements BiFunctionEx<U, V, R> {
 
+        private static final long serialVersionUID = 1L;
+
         ComposedBiFunctionEx(@Nonnull BiFunctionEx<? super U, ? super V, ? extends T> before,
                                   @Nonnull FunctionEx<? super T, ? extends R> after) {
             super(before, after);
@@ -103,6 +107,8 @@ class FunctionsImpl {
     static final class ComposedConsumerEx<T>
             extends ComposedSecuredFunction<ConsumerEx<? super T>, ConsumerEx<? super T>>
             implements ConsumerEx<T> {
+
+        private static final long serialVersionUID = 1L;
 
         ComposedConsumerEx(@Nonnull ConsumerEx<? super T> before,
                                     @Nonnull ConsumerEx<? super T> after) {

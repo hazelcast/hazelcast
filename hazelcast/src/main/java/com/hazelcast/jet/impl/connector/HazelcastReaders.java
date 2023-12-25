@@ -84,6 +84,8 @@ public final class HazelcastReaders {
     public static class LocalCacheReaderFunction implements BiFunctionEx<HazelcastInstance,
             InternalSerializationService, ReadMapOrCacheP.Reader<InternalCompletableFuture<CacheEntriesWithCursor>,
             CacheEntriesWithCursor, Entry<Data, Data>>>, IdentifiedDataSerializable {
+        private static final long serialVersionUID = 1L;
+
         private String cacheName;
 
         public LocalCacheReaderFunction() {
@@ -133,6 +135,9 @@ public final class HazelcastReaders {
     public static class RemoteCacheReaderFunction implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, CacheIterateEntriesCodec.ResponseParameters,
                     Entry<Data, Data>>>, IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
+
         private String cacheName;
 
         public RemoteCacheReaderFunction() {
@@ -184,6 +189,7 @@ public final class HazelcastReaders {
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
             ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
+        private static final long serialVersionUID = 1L;
         private String mapName;
 
         public LocalMapReaderFunction() {
@@ -245,6 +251,8 @@ public final class HazelcastReaders {
             InternalSerializationService, ReadMapOrCacheP.Reader<InternalCompletableFuture<ResultSegment>,
             ResultSegment, QueryResultRow>>, IdentifiedDataSerializable {
 
+        private static final long serialVersionUID = 1L;
+
         private String mapName;
         private Predicate<? super K, ? super V> predicate;
         private Projection<? super Entry<K, V>, ? extends T> projection;
@@ -293,6 +301,9 @@ public final class HazelcastReaders {
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
+
         private String mapName;
 
         public RemoteMapReaderFunction() {
@@ -348,6 +359,8 @@ public final class HazelcastReaders {
     public static class RemoteMapQueryReaderFunction<K, V, T> implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Data>>,
             IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
 
         private String mapName;
         private Predicate<? super K, ? super V> predicate;

@@ -519,6 +519,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
             FunctionEx<List<SqlAggregation>, JetSqlRow> {
         public static final AggregateFinishFunction INSTANCE = new AggregateFinishFunction();
 
+        private static final long serialVersionUID = 1L;
+
         private AggregateFinishFunction() {
         }
 
@@ -554,6 +556,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
             FunctionEx<List<SqlAggregation>, JetSqlRow> {
         public static final AggregateExportFunction INSTANCE = new AggregateExportFunction();
 
+        private static final long serialVersionUID = 1L;
+
         private AggregateExportFunction() {
         }
 
@@ -582,6 +586,9 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
     }
 
     public static class RowGetMaybeSerializedFn implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+
+        private static final long serialVersionUID = 1L;
+
         private Integer groupIndex;
 
         public RowGetMaybeSerializedFn() {
@@ -618,6 +625,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
     }
 
     public static class RowIdentityFn implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+        private static final long serialVersionUID = 1L;
+
         public RowIdentityFn() {
         }
 
@@ -646,6 +655,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
     }
 
     public static class RowGetFn implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+
+        private static final long serialVersionUID = 1L;
         private int index;
 
         public RowGetFn() {
@@ -683,6 +694,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
     public static final class NullFunction implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
         public static final NullFunction INSTANCE = new NullFunction();
+
+        private static final long serialVersionUID = 1L;
 
         private NullFunction() {
         }

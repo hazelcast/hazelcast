@@ -124,7 +124,9 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static <T> ConsumerEx<Configuration> configureFn(
             FileSourceConfiguration<T> fsc, JobConfigurer configurer, FileFormat<T> fileFormat) {
-        return new ConsumerEx<Configuration>() {
+        return new ConsumerEx<>() {
+
+            private static final long serialVersionUID = 1L;
 
             @Override
             public void acceptEx(Configuration configuration) throws Exception {
