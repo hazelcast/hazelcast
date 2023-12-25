@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -460,14 +461,15 @@ class MapServiceContextImpl implements MapServiceContext {
             mapStoreWrapper.destroy();
         }
 
+        Map<String, IndexConfig> indices = mapContainer.getIndexDefinitions();
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
         // final step of node wide map destroy
-        afterMapContainerDestroyed(mapContainer);
+        afterMapContainerDestroyed(mapContainer, indices);
     }
 
     // thought as a final step after per partition destroy logic executed.
-    protected void afterMapContainerDestroyed(MapContainer mapContainer) {
+    protected void afterMapContainerDestroyed(MapContainer mapContainer, Map<String, IndexConfig> indices) {
         if (mapContainer.shouldUseGlobalIndex()) {
             destroyGlobalIndexes(mapContainer);
         }
