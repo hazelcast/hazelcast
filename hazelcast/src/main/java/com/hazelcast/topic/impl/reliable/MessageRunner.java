@@ -244,6 +244,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         if (readRingBufferCompletionStage != null) {
             readRingBufferCompletionStage.toCompletableFuture().cancel(true);
         }
+        listener.onCancel();
     }
 
     private boolean terminate(Throwable failure) {

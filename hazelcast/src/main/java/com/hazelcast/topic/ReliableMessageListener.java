@@ -105,4 +105,11 @@ public interface ReliableMessageListener<E> extends MessageListener<E> {
      * {@code false} if it should keep on running.
      */
     boolean isTerminal(Throwable failure);
+
+    /**
+     * Called when the ReliableMessageListener is cancelled. This can happen
+     * when the listener is unregistered or cancelled due to an exception or during shutdown.
+     */
+    default void onCancel() {
+    }
 }

@@ -27,12 +27,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ReliableMessageListenerMock implements ReliableMessageListener<String> {
 
     private final ILogger logger = Logger.getLogger(ReliableMessageListenerMock.class);
-    public final List<String> objects = new CopyOnWriteArrayList<String>();
-    public final List<Message<String>> messages = new CopyOnWriteArrayList<Message<String>>();
+    public final List<String> objects = new CopyOnWriteArrayList<>();
+    public final List<Message<String>> messages = new CopyOnWriteArrayList<>();
     public volatile long storedSequence;
     public volatile boolean isLossTolerant = false;
     public volatile long initialSequence = -1;
     public volatile boolean isTerminal = true;
+    public volatile boolean onCancelCalled = false;
 
     @Override
     public void onMessage(Message<String> message) {
@@ -59,6 +60,11 @@ public class ReliableMessageListenerMock implements ReliableMessageListener<Stri
     @Override
     public boolean isTerminal(Throwable failure) {
         return isTerminal;
+    }
+
+    @Override
+    public void onCancel() {
+        onCancelCalled = true;
     }
 
     public void clean() {
