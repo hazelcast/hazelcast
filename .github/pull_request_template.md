@@ -10,8 +10,6 @@ Fixes INSERT_LINK_TO_THE_ISSUE_HERE
 
 Backport of: INSERT_LINK_TO_THE_ORIGINAL_PR_HERE
 
-EE PR: INSERT_LINK_TO_THE_EE_PR_HERE
-
 Breaking changes (list specific methods/types/messages):
 * API
 * client protocol format
