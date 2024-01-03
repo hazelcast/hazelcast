@@ -108,8 +108,6 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
                     <archive>
-                        <index>true</index>
-                        <compress>true</compress>
                         <manifest>
                             <mainClass>${hazelcast.serverMainClass}</mainClass>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
