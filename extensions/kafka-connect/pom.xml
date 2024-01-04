@@ -133,7 +133,7 @@
             <version>3.5.1</version>
             <scope>test</scope>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>neo4j</artifactId>
             <version>${testcontainers.version}</version>

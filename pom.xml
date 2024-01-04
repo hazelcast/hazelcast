@@ -449,15 +449,15 @@
                         </goals>
                         <configuration>
                             <rules>
-                                    <dependencyConvergence>
-                                        <excludedScopes>
-                                            <scope>compile</scope>
-                                            <scope>runtime</scope>
-                                        </excludedScopes>
-                                        <includes>
-                                            <include>junit</include>
-                                        </includes>
-                                    </dependencyConvergence>
+                                <dependencyConvergence>
+                                    <excludedScopes>
+                                        <scope>compile</scope>
+                                        <scope>runtime</scope>
+                                    </excludedScopes>
+                                    <includes>
+                                        <include>junit</include>
+                                    </includes>
+                                </dependencyConvergence>
                             </rules>
                         </configuration>
                     </execution>
