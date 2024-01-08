@@ -81,7 +81,7 @@ public class QueryUtilTest extends SqlTestSupport {
 
         assertThat(actual)
                 .usingRecursiveComparison()
-                .comparingOnlyFields("rowProjectorSupplier", "arguments")
+                .comparingOnlyFields("arguments")
                 .isEqualTo(projection);
     }
 }

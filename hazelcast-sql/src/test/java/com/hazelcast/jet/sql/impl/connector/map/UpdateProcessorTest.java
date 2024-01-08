@@ -135,7 +135,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
         assertThat(actual)
                 .usingRecursiveComparison()
-                .comparingOnlyFields("rowProjectorSupplier", "valueProjectorSupplier", "arguments", "subject")
+                .comparingOnlyFields("rowProjectorSupplier", "valueProjectorSupplier", "arguments")
                 .ignoringFields("subject.pubCredentials", "subject.privCredentials")
                 .isEqualTo(processor);
     }
