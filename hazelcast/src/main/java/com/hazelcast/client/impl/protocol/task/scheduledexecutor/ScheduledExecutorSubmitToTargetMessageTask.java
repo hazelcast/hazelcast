@@ -48,9 +48,7 @@ public class ScheduledExecutorSubmitToTargetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = NamespaceUtil.callWithNamespace(nodeEngine,
-                DistributedScheduledExecutorService.lookupNamespace(nodeEngine, parameters.schedulerName),
-                () -> serializationService.toObject(parameters.task));
+        Callable<?> callable = getCallable();
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
             Subject subject = endpoint.getSubject();
@@ -58,9 +56,7 @@ public class ScheduledExecutorSubmitToTargetMessageTask
             serializationService.getManagedContext().initialize(callable);
         }
 
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS, isAutoDisposable());
+        TaskDefinition<?> def = getTaskDefinition(callable);
         return new ScheduleTaskOperation(parameters.schedulerName, def);
     }
 
@@ -105,14 +101,22 @@ public class ScheduledExecutorSubmitToTargetMessageTask
         return SecurityInterceptorConstants.SCHEDULE_ON_MEMBER;
     }
 
+    private Callable<?> getCallable() {
+        return NamespaceUtil.callWithNamespace(nodeEngine,
+                DistributedScheduledExecutorService.lookupNamespace(nodeEngine, parameters.schedulerName),
+                () -> serializationService.toObject(parameters.task));
+    }
+
+    private TaskDefinition<?> getTaskDefinition(Callable<?> callable) {
+        return new TaskDefinition<>(TaskDefinition.Type.getById(parameters.type), parameters.taskName, callable,
+                parameters.initialDelayInMillis, parameters.periodInMillis, TimeUnit.MILLISECONDS, isAutoDisposable());
+    }
+
     @Override
     public Object[] getParameters() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS, isAutoDisposable());
+        TaskDefinition<?> def = getTaskDefinition(getCallable());
         Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
-        return new Object[]{parameters.schedulerName, member == null ? null : member.getAddress(), def};
+        return new Object[] {parameters.schedulerName, member == null ? null : member.getAddress(), def};
     }
 
     private boolean isAutoDisposable() {

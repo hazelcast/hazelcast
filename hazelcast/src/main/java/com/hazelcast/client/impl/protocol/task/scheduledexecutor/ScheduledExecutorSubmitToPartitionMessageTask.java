@@ -45,7 +45,7 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = serializationService.toObject(parameters.task);
+        Callable<?> callable = getCallable();
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
             Subject subject = endpoint.getSubject();
@@ -53,9 +53,7 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
             serializationService.getManagedContext().initialize(callable);
         }
 
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS, isAutoDisposable());
+        TaskDefinition<?> def = getTaskDefinition(callable);
         return new ScheduleTaskOperation(parameters.schedulerName, def);
     }
 
@@ -89,12 +87,19 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
         return SecurityInterceptorConstants.SCHEDULE_ON_PARTITION;
     }
 
+    private Callable<?> getCallable() {
+        return serializationService.toObject(parameters.task);
+    }
+
+    private TaskDefinition<?> getTaskDefinition(Callable<?> callable) {
+        return new TaskDefinition<>(TaskDefinition.Type.getById(parameters.type), parameters.taskName, callable,
+                parameters.initialDelayInMillis, parameters.periodInMillis, TimeUnit.MILLISECONDS, isAutoDisposable());
+    }
+
     @Override
     public Object[] getParameters() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS, isAutoDisposable());
+        Callable<?> callable = getCallable();
+        TaskDefinition<?> def = getTaskDefinition(callable);
         return new Object[] { parameters.schedulerName, def };
     }
 
