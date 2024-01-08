@@ -76,7 +76,7 @@ public class MockServerContext implements ServerContext {
     private final ILogger logger;
 
     public MockServerContext(int port, UUID memberUuid) throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, false, null);
         logger = loggingService.getLogger(MockServerContext.class);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();

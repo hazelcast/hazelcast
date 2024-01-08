@@ -28,4 +28,6 @@ public interface LoggingService {
     @Nonnull ILogger getLogger(@Nonnull String name);
 
     @Nonnull ILogger getLogger(@Nonnull Class type);
+
+    void shutdown();
 }

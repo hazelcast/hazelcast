@@ -36,6 +36,11 @@ public class Log4j2Factory extends LoggerFactorySupport {
         return new Log4j2Logger(LogManager.getContext(false).getLogger(name));
     }
 
+    @Override
+    public void shutdown() {
+        LogManager.shutdown();
+    }
+
     @PrivateApi
     public static class Log4j2Logger extends AbstractLogger implements InternalLogger {
 

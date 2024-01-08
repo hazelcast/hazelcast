@@ -82,7 +82,7 @@ public class LocalRaftIntegration implements RaftIntegration {
         this.groupId = groupId;
         this.service = service;
         this.appendNopEntryOnLeaderElection = appendNopEntryOnLeaderElection;
-        this.loggingService = new LoggingServiceImpl("dev", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
+        this.loggingService = new LoggingServiceImpl("dev", "log4j2", BuildInfoProvider.getBuildInfo(), true, false, null);
         loggingService.setThisMember(getThisMember(localEndpoint));
     }
 

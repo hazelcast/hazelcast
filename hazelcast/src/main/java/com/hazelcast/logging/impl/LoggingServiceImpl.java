@@ -53,6 +53,7 @@ public class LoggingServiceImpl implements LoggingService {
 
     private final LoggerFactory loggerFactory;
     private final boolean detailsEnabled;
+    private final boolean shutdownLoggingOnHazelcastShutdown;
     private final Node node;
     private final String versionMessage;
 
@@ -62,11 +63,13 @@ public class LoggingServiceImpl implements LoggingService {
 
     private volatile Level levelSet;
 
-    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo, boolean detailsEnabled, Node node) {
+    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo, boolean detailsEnabled,
+                              boolean shutdownLoggingOnHazelcastShutdown, Node node) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.detailsEnabled = detailsEnabled;
         this.node = node;
         versionMessage = "[" + clusterName + "] [" + buildInfo.getVersion() + "] ";
+        this.shutdownLoggingOnHazelcastShutdown = shutdownLoggingOnHazelcastShutdown;
     }
 
     public void setThisMember(MemberImpl thisMember) {
@@ -177,6 +180,13 @@ public class LoggingServiceImpl implements LoggingService {
     @Override
     public void removeLogListener(@Nonnull LogListener logListener) {
         listeners.remove(new LogListenerRegistration(Level.ALL, logListener));
+    }
+
+    @Override
+    public void shutdown() {
+        if (shutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory) {
+            ((InternalLoggerFactory) loggerFactory).shutdown();
+        }
     }
 
     void handleLogEvent(LogEvent logEvent) {

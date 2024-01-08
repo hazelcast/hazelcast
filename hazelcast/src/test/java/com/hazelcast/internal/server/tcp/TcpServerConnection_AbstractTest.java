@@ -75,7 +75,7 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
 
     @Before
     public void setup() throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, false, null);
         logger = loggingService.getLogger(TcpServerConnection_AbstractTest.class);
 
         metricsRegistryA = newMetricsRegistry();

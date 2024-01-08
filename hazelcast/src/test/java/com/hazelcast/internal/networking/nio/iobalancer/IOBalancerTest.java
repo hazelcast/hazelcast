@@ -34,7 +34,7 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IOBalancerTest {
-    private final LoggingService loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
+    private final LoggingService loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, false, null);
 
     // https://github.com/hazelcast/hazelcast/issues/11501
     @Test

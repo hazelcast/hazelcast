@@ -1645,6 +1645,20 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.logging.details.enabled", true);
 
     /**
+     * Controls whether Hazelcast will explicitly shutdown the logging implementation as part of
+     * Hazelcast graceful shutdown procedure. Default value is {@code false}.
+     * <p/>
+     * This property can be enabled when Hazelcast is the only application being executed in the JVM,
+     * for example, when running a Hazelcast cluster member in its own process.
+     * If the JVM process is expected to continue executing other application bits after Hazelcast is shut down, then
+     * if this property is {@code true}, logging may be disrupted.
+     *
+     * @since 5.4.0
+     */
+    public static final HazelcastProperty LOGGING_SHUTDOWN
+            = new HazelcastProperty("hazelcast.logging.shutdown", false);
+
+    /**
      * All locks which are acquired without an explicit lease time use this value
      * (in seconds) as the lease time. When you want to set an explicit lease
      * time for your locks, you cannot set it to a longer time than this value.
