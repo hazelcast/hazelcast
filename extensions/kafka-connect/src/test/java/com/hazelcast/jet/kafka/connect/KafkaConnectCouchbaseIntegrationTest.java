@@ -48,7 +48,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.couchbase.BucketDefinition;
 import org.testcontainers.couchbase.CouchbaseContainer;
 
-import java.net.URL;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
@@ -127,7 +127,7 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
 
 
         Config config = smallInstanceConfig();

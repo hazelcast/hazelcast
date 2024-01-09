@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
@@ -81,7 +82,7 @@ public class HazelcastCloudDiscovery {
     }
 
     private DiscoveryResponse callService() throws IOException, CertificateException {
-        URL url = new URL(endpointUrl);
+        URL url = URI.create(endpointUrl).toURL();
         HttpURLConnection httpsConnection = (HttpURLConnection) url.openConnection();
         httpsConnection.setRequestMethod("GET");
         httpsConnection.setConnectTimeout(connectionTimeoutInMillis);

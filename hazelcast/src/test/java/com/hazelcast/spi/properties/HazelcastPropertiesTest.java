@@ -40,7 +40,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.net.URL;
+import java.net.URI;
 
 import static com.hazelcast.spi.properties.ClusterProperty.ENTERPRISE_LICENSE_KEY;
 import static org.junit.Assert.assertEquals;
@@ -341,9 +341,9 @@ public class HazelcastPropertiesTest {
     public static void main(final String[] args) throws Exception {
         // Load translation data
         // https://github.com/hyperreality/American-British-English-Translator/
-        final Map<String, String> rawMap = new ObjectMapper().readValue(new URL(
-                "https://raw.githubusercontent.com/hyperreality/American-British-English-Translator/master/data/american_spellings.json"),
-                new TypeReference<Map<String, String>>() {
+        final Map<String, String> rawMap = new ObjectMapper().readValue(URI.create(
+                "https://raw.githubusercontent.com/hyperreality/American-British-English-Translator/master/data/american_spellings.json")
+                .toURL(), new TypeReference<Map<String, String>>() {
                 });
 
         final Map<String, String> americanToBritish = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

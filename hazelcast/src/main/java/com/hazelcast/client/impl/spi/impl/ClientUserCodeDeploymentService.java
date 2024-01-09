@@ -34,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -125,9 +126,9 @@ public class ClientUserCodeDeploymentService {
         }
 
         try {
-            URL url = new URL(jarPath);
+            URL url = URI.create(jarPath).toURL();
             return new JarInputStream(url.openStream());
-        } catch (MalformedURLException e) {
+        } catch (IllegalArgumentException | MalformedURLException e) {
             ignore(e);
         }
 

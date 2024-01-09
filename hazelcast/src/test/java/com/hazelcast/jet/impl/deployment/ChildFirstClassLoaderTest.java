@@ -100,13 +100,13 @@ public class ChildFirstClassLoaderTest {
 
     @Test
     public void parentMustNotBeNull() {
-        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[]{new URL("file:///somefile.jar")}, null))
+        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[]{Paths.get("somefile.jar").toUri().toURL()}, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void canLoadClassFromParentClassLoader() throws Exception {
-        cl = new ChildFirstClassLoader(new URL[]{new URL("file:///somefile.jar")}, ChildFirstClassLoader.class.getClassLoader());
+        cl = new ChildFirstClassLoader(new URL[]{Paths.get("somefile.jar").toUri().toURL()}, ChildFirstClassLoader.class.getClassLoader());
 
         Class<?> clazz = cl.loadClass(ChildFirstClassLoaderTest.class.getName());
         assertThat(clazz).isSameAs(this.getClass());

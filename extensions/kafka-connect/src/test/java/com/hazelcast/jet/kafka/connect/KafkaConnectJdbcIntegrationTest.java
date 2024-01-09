@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-import java.net.URL;
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -124,7 +124,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -169,7 +169,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -221,7 +221,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
 
         Job job = hazelcastInstance1.getJet().newJob(pipeline, jobConfig);
 
@@ -269,7 +269,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(3 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -339,7 +339,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         streamStage.writeTo(Sinks.logger());
         streamStage.writeTo(Sinks.list("windowing_test_results"));
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);

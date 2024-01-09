@@ -23,6 +23,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class PhoneHome {
         HttpURLConnection conn = null;
         OutputStreamWriter writer = null;
         try {
-            URL url = new URL(basePhoneHomeUrl);
+            URL url = URI.create(basePhoneHomeUrl).toURL();
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(TIMEOUT);
             conn.setReadTimeout(TIMEOUT);

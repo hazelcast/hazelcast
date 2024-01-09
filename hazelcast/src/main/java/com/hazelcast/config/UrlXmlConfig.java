@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
 
@@ -47,7 +48,7 @@ public class UrlXmlConfig extends Config {
      * @throws InvalidConfigurationException if the XML content is invalid
      */
     public UrlXmlConfig(String url) throws IOException {
-        this(new URL(url));
+        this(URI.create(url).toURL());
     }
 
     /**
@@ -61,7 +62,7 @@ public class UrlXmlConfig extends Config {
      * @throws InvalidConfigurationException if the XML content is invalid
      */
     public UrlXmlConfig(String url, Properties properties) throws IOException {
-        this(new URL(url), properties);
+        this(URI.create(url).toURL(), properties);
     }
 
     /**
