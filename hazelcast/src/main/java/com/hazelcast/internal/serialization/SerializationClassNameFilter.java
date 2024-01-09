@@ -21,6 +21,8 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 
+import javax.annotation.Nonnull;
+
 import static java.lang.String.format;
 
 /**
@@ -51,7 +53,8 @@ public final class SerializationClassNameFilter implements ClassNameFilter {
      * @param className class name to check
      * @throws SecurityException if the classname is not allowed for deserialization
      */
-    public void filter(String className) throws SecurityException {
+    @Override
+    public void filter(@Nonnull String className) throws SecurityException {
         if (blacklist.isListed(className)) {
             throw new SecurityException(format(DESERIALIZATION_ERROR, className));
         }
