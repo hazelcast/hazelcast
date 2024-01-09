@@ -815,17 +815,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Object loadedValue = entry.getValue();
             Data key = toData(loadedKey);
 
-            if (key == null) {
-                String msg = String.format("Key cannot be null.[mapName: %s]", name);
-                throw new NullPointerException(msg);
-            }
-
-            if (loadedValue == null) {
-                // we haven't found any matching value to load, this
-                // is a legitimate case when loading not-existing keys
-                // from a map-loader, so we can continue with the rest.
-                continue;
-            }
+            checkKeyAndValue(key, loadedValue);
 
             BiTuple<Object, Long> biTuple = getOldValueWithExpiryTupleOrNull(loadedValue, now);
             if (biTuple != null) {
