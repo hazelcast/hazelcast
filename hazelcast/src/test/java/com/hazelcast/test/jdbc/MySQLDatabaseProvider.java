@@ -58,19 +58,25 @@ public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?
     }
 
     @SuppressWarnings("resource")
+    public static MySQLContainer<?> createContainer() {
+        return new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
+                .withTmpFs(Map.of(
+                        "/var/lib/mysql/", "rw",
+                        "/tmp/", "rw"
+                ));
+    }
+
+    @SuppressWarnings("resource")
     @Override
     MySQLContainer<?> createContainer(String dbName) {
-        return new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
+        return createContainer()
                 .withNetwork(network)
                 .withNetworkAliases("mysql")
                 .withDatabaseName(dbName)
                 .withUsername(user())
                 .withUrlParam("user", user())
-                .withUrlParam("password", password())
-                .withTmpFs(Map.of(
-                        "/var/lib/mysql/", "rw",
-                        "/tmp/", "rw"
-                ));
+                .withUrlParam("password", password()
+                );
     }
 
     @Override

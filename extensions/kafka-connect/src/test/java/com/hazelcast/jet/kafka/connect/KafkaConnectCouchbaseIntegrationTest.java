@@ -48,7 +48,9 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.couchbase.BucketDefinition;
 import org.testcontainers.couchbase.CouchbaseContainer;
 
-import java.net.URI;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
@@ -58,6 +60,7 @@ import java.util.concurrent.CompletionException;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -76,11 +79,8 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"))
             .withStartupAttempts(5);
 
-
     private static final int ITEM_COUNT = 1_000;
 
-    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
-            + "/tests/couchbase-kafka-connect-couchbase-4.1.11.zip";
     private static final String COUCHBASE_LOGS_IN_CONTAINER = "/opt/couchbase/var/lib/couchbase/logs";
     private static final String COUCHBASE_LOGS_FILE = "couchbase-logs.tar.gz";
 
@@ -127,7 +127,7 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
+        jobConfig.addJarsInZip(getCouchbaseConnectorURL());
 
 
         Config config = smallInstanceConfig();
@@ -168,6 +168,15 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
 
     private static Cluster connectToCluster() {
         return Cluster.connect(container.getConnectionString(), container.getUsername(), container.getPassword());
+    }
+
+    private URL getCouchbaseConnectorURL() throws URISyntaxException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        final String CONNECTOR_FILE_PATH = "couchbase-kafka-connect-couchbase-4.1.11.zip";
+        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
+        assert resource != null;
+        assertThat(new File(resource.toURI())).exists();
+        return resource;
     }
 
 }

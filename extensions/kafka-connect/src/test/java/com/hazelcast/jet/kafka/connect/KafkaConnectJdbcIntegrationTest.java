@@ -35,8 +35,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.assertj.core.api.Assertions;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -47,7 +47,9 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-import java.net.URI;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -58,6 +60,7 @@ import java.util.concurrent.CompletionException;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -73,29 +76,19 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
 
     @SuppressWarnings("resource")
-    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
-            .withUsername(USERNAME).withPassword(PASSWORD)
+    @ClassRule
+    public static final MySQLContainer<?> mysql = MySQLDatabaseProvider.createContainer()
+            .withUsername(USERNAME)
+            .withPassword(PASSWORD)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
-
-
     private static final int ITEM_COUNT = 1_000;
-
-    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
-            + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
     @BeforeClass
     public static void setUpDocker() {
         assumeDockerEnabled();
-        mysql.start();
     }
 
-    @AfterClass
-    public static void afterAll() {
-        if (mysql != null) {
-            mysql.stop();
-        }
-    }
 
     @Test
     public void testReading() throws Exception {
@@ -124,7 +117,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -169,7 +162,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -221,7 +214,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         Job job = hazelcastInstance1.getJet().newJob(pipeline, jobConfig);
 
@@ -237,9 +230,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         // Do not call job.join(). It blocks forever for some reason
 
         // We should see more items in the list
-        assertTrueEventually(() -> {
-            assertTrue(sinkList.size() >= 2 * ITEM_COUNT);
-        });
+        assertTrueEventually(() -> assertTrue(sinkList.size() >= 2 * ITEM_COUNT));
     }
 
     @Test
@@ -269,7 +260,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(3 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -339,7 +330,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         streamStage.writeTo(Sinks.logger());
         streamStage.writeTo(Sinks.list("windowing_test_results"));
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(URI.create(CONNECTOR_URL).toURL());
+        jobConfig.addJarsInZip(getJdbcConnectorURL());
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
@@ -355,6 +346,15 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         job.cancel();
         assertJobStatusEventually(job, FAILED);
+    }
+
+    private URL getJdbcConnectorURL() throws URISyntaxException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
+        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
+        assert resource != null;
+        assertThat(new File(resource.toURI())).exists();
+        return resource;
     }
 
 }

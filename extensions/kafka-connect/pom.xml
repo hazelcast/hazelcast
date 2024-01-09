@@ -72,7 +72,9 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
+                            <url>
+                                https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip
+                            </url>
                             <unpack>false</unpack>
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
                         </configuration>
@@ -83,7 +85,58 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip</url>
+                            <url>
+                                https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip
+                            </url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-couchbase-zip-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>
+                                https://repository.hazelcast.com/download/tests/couchbase-kafka-connect-couchbase-4.1.11.zip
+                            </url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-ne4j-zip-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/neo4j-kafka-connect-neo4j-2.0.1.zip
+                            </url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-redis-zip-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/redis-redis-kafka-connect-0.9.0.zip
+                            </url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-sqs-jar-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/kafka-connect-sqs-1.5.0.jar
+                            </url>
                             <unpack>false</unpack>
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
                         </configuration>
@@ -121,6 +174,7 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Couchbase-->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>couchbase</artifactId>
@@ -133,6 +187,7 @@
             <version>3.5.1</version>
             <scope>test</scope>
         </dependency>
+        <!-- Neo4J-->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>neo4j</artifactId>
@@ -144,6 +199,31 @@
             <artifactId>neo4j-java-driver</artifactId>
             <!-- Driver 5.x requires JDK 17 -->
             <version>4.4.13</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Redis-->
+        <dependency>
+            <groupId>com.redis</groupId>
+            <artifactId>testcontainers-redis</artifactId>
+            <version>2.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>6.2.3.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- AWS SQS-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>localstack</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
