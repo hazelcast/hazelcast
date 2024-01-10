@@ -55,10 +55,12 @@ import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -81,9 +83,7 @@ public class AdvancedNetworkClientIntegrationTest {
     @After
     public void tearDown() {
         client.shutdown();
-        for (int i = 0; i < CLUSTER_SIZE; i++) {
-            instances[i].getLifecycleService().terminate();
-        }
+        instances[0].getCluster().shutdown();
     }
 
     @Test
@@ -121,6 +121,27 @@ public class AdvancedNetworkClientIntegrationTest {
             int memberPort = member.getAddressMap().get(EndpointQualifier.MEMBER).getPort();
             assertTrue("member address port is between 5700 and 6000", 5700  <= memberPort && memberPort <= 6000);
         }
+    }
+
+    @Test
+    public void testClientViewOfAddressMapWhenMemberWithNoClientEndpointExist() {
+        HazelcastInstance memberWithNoClientEndpoint = Hazelcast.newHazelcastInstance(getMemberConfigWithNoClientEndpoint());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
+        Set<Member> members = client.getCluster().getMembers();
+        assertEquals(3, members.size());
+        Member noClientEndpointMember = memberWithNoClientEndpoint.getCluster().getLocalMember();
+        assertFalse(members.contains(noClientEndpointMember));
+        for (Member member : members) {
+            assertEquals(member.getAddress(), member.getAddressMap().get(CLIENT));
+            int memberPort = member.getAddressMap().get(EndpointQualifier.MEMBER).getPort();
+            assertTrue("member address port is between 5700 and 6000", 5700 <= memberPort && memberPort <= 6000);
+        }
+
+        // try to insert some data to the member which does not have client endpoint
+        int key = findNextKeyForMember(memberWithNoClientEndpoint, noClientEndpointMember);
+        IMap<Integer, Integer> map = client.getMap(randomMapName());
+        map.put(key, key);
+        assertEquals(key, map.get(key).intValue());
     }
 
     @Test
@@ -237,9 +258,28 @@ public class AdvancedNetworkClientIntegrationTest {
         return config;
     }
 
+    private Config getMemberConfigWithNoClientEndpoint() {
+        Config config = smallInstanceConfig();
+        //config.setLiteMember(true);
+        config.getAdvancedNetworkConfig().setEnabled(true);
+        config.getAdvancedNetworkConfig()
+                .getJoin().getMulticastConfig().setEnabled(false);
+        config.getAdvancedNetworkConfig()
+                .getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        return config;
+    }
+
     private ClientConfig getClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1:9090");
         return clientConfig;
+    }
+
+    protected int findNextKeyForMember(HazelcastInstance instance, Member localMember) {
+        int key = 0;
+        while (!localMember.equals(instance.getPartitionService().getPartition(key).getOwner())) {
+            key++;
+        }
+        return key;
     }
 }
