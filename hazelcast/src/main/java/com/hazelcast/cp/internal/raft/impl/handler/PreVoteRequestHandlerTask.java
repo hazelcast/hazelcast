@@ -24,7 +24,6 @@ import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.PreVoteTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
-import com.hazelcast.internal.util.Clock;
 
 /**
  * Handles {@link PreVoteRequest} and responds to the sender
@@ -60,8 +59,8 @@ public class PreVoteRequestHandlerTask extends RaftNodeStatusAwareTask implement
             return;
         }
 
-        // Reply false if last AppendEntries call was received less than election timeout ago (leader stickiness)
-        if (raftNode.lastAppendEntriesTimestamp() > Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis()) {
+        // Reply false if the leader is available (leader stickiness)
+        if (raftNode.isLeaderAvailable()) {
             logger.info("Rejecting " + req + " since received append entries recently.");
             raftNode.send(new PreVoteResponse(localEndpoint, state.term(), false), req.candidate());
             return;
