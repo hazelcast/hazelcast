@@ -69,6 +69,8 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
 
         hzInstances = createHazelcastInstances(config, MEMBER_COUNT);
+
+        assertEquals(MEMBER_COUNT, hzInstances[0].getCluster().getMembers().size());
     }
 
     @After

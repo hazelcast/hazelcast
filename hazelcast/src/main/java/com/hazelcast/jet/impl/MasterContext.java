@@ -43,6 +43,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -104,7 +105,7 @@ public class MasterContext implements DynamicMetricsProvider {
      * Responses to {@link StartExecutionOperation}, populated as they arrive.
      * We do not store the whole response, only the error or success status.
      */
-    private volatile ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses;
+    private volatile ConcurrentMap<Address, CompletableFuture<Object>> startOperationResponses;
 
     private final MasterJobContext jobContext;
     private final MasterSnapshotContext snapshotContext;
@@ -302,7 +303,7 @@ public class MasterContext implements DynamicMetricsProvider {
         return timeout - elapsed;
     }
 
-    ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses() {
+    ConcurrentMap<Address, CompletableFuture<Object>> startOperationResponses() {
         return startOperationResponses;
     }
 
@@ -374,12 +375,36 @@ public class MasterContext implements DynamicMetricsProvider {
      */
     void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
-            @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
+            @Nullable Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback,
+            @Nullable BiConsumer<Address, Object> individualCallback,
+            boolean retryOnTimeoutException
+    ) {
+        invokeOnParticipants(executionPlanMap, operationCtor, completionCallback, individualCallback, retryOnTimeoutException);
+    }
+
+    void invokeOnParticipants(
+            List<Address> participants,
+            Function<ExecutionPlan, Operation> operationCtor,
+            @Nullable Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback,
+            @Nullable BiConsumer<Address, Object> individualCallback,
+            boolean retryOnTimeoutException
+    ) {
+        Map<MemberInfo, ExecutionPlan> entitiesInvokeOn = executionPlanMap.entrySet().stream()
+                .filter(member -> participants.contains(member.getKey().getAddress()))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        invokeOnParticipants(entitiesInvokeOn, operationCtor, completionCallback, individualCallback, retryOnTimeoutException);
+    }
+
+    private void invokeOnParticipants(
+            Map<MemberInfo, ExecutionPlan> executionPlanMap,
+            Function<ExecutionPlan, Operation> operationCtor,
+            @Nullable Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback,
             @Nullable BiConsumer<Address, Object> individualCallback,
             boolean retryOnTimeoutException
     ) {
         ConcurrentMap<MemberInfo, Object> responses = new ConcurrentHashMap<>();
         AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
+
         for (Entry<MemberInfo, ExecutionPlan> entry : executionPlanMap.entrySet()) {
             MemberInfo memberInfo = entry.getKey();
             Supplier<Operation> opSupplier = () -> operationCtor.apply(entry.getValue());
@@ -391,7 +416,7 @@ public class MasterContext implements DynamicMetricsProvider {
     private void invokeOnParticipant(
             MemberInfo memberInfo,
             Supplier<Operation> operationSupplier,
-            @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
+            @Nullable Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback,
             @Nullable BiConsumer<Address, Object> individualCallback,
             boolean retryOnTimeoutException,
             ConcurrentMap<MemberInfo, Object> collectedResponses,

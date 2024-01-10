@@ -250,7 +250,7 @@ class MasterSnapshotContext {
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             SnapshotPhase1Result mergedResult = new SnapshotPhase1Result();
-            List<CompletableFuture<Void>> missingResponses = new ArrayList<>();
+            List<CompletableFuture<Object>> missingResponses = new ArrayList<>();
             for (Map.Entry<MemberInfo, Object> entry : responses) {
                 // the response is either SnapshotOperationResult or an exception, see #invokeOnParticipants() method
                 Object response = entry.getValue();
@@ -291,7 +291,7 @@ class MasterSnapshotContext {
             long snapshotId,
             SnapshotRequest requestedSnapshot,
             SnapshotPhase1Result mergedResult,
-            List<CompletableFuture<Void>> missingResponses
+            List<CompletableFuture<Object>> missingResponses
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             final boolean isSuccess;
@@ -314,7 +314,7 @@ class MasterSnapshotContext {
                     return;
                 }
 
-                for (CompletableFuture<Void> response : missingResponses) {
+                for (CompletableFuture<Object> response : missingResponses) {
                     assert response.isDone() : "response not done";
                     try {
                         response.get();
