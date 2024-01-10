@@ -54,7 +54,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Provides access to CP Subsystem utilities
  */
 public class CPSubsystemImpl implements CPSubsystem {
-    public static final String CPMAP_LICENSE_MESSAGE = "CPMap is not included in your license";
+    public static final String CPMAP_LICENSE_MESSAGE =
+            "CPMap is not included in your license. Please also ensure you are using the enterprise client.";
 
     protected final boolean cpSubsystemEnabled;
     private final NodeEngine nodeEngine;
