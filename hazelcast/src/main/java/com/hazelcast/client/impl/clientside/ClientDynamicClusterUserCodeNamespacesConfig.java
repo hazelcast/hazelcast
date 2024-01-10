@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionH
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.UserCodeNamespacesConfig;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +47,14 @@ public class ClientDynamicClusterUserCodeNamespacesConfig extends UserCodeNamesp
     public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
         parent.invoke(DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(userCodeNamespaceConfig.getName(),
                 toResourceDefinitionHolders(userCodeNamespaceConfig)));
+        return this;
+    }
+
+    // Exists to provide (Cloud) Operators a method of registering Namespace resources available from a URL to all members
+    @PrivateApi
+    public UserCodeNamespacesConfig addMemberRelativeNamespaceConfig(String namespaceName,
+                                                                     List<ResourceDefinitionHolder> resourceDefinitionHolders) {
+        parent.invoke(DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(namespaceName, resourceDefinitionHolders));
         return this;
     }
 

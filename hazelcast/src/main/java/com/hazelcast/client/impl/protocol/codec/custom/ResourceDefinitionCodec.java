@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("045e22fe03d5a24ef06b77792ef86eed")
+@Generated("be9ae3df4d9a3189405c83f4218c8c47")
 public final class ResourceDefinitionCodec {
     private static final int RESOURCE_TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = RESOURCE_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -41,7 +41,8 @@ public final class ResourceDefinitionCodec {
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, resourceDefinition.getId());
-        ByteArrayCodec.encode(clientMessage, resourceDefinition.getPayload());
+        CodecUtil.encodeNullable(clientMessage, resourceDefinition.getPayload(), ByteArrayCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, resourceDefinition.getResourceUrl(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -54,10 +55,11 @@ public final class ResourceDefinitionCodec {
         int resourceType = decodeInt(initialFrame.content, RESOURCE_TYPE_FIELD_OFFSET);
 
         java.lang.String id = StringCodec.decode(iterator);
-        byte[] payload = ByteArrayCodec.decode(iterator);
+        byte[] payload = CodecUtil.decodeNullable(iterator, ByteArrayCodec::decode);
+        java.lang.String resourceUrl = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder(id, resourceType, payload);
+        return new com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder(id, resourceType, payload, resourceUrl);
     }
 }

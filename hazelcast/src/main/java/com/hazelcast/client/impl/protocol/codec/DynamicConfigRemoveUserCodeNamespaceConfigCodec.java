@@ -34,10 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes a namespace configuration.
+ * Removes a user code namespace configuration.
  */
 @SuppressWarnings("unused")
-@Generated("d640ba277af89f640a49d24bfbf3b793")
+@Generated("a9907843e947e8dbc98d9f382cece1ec")
 public final class DynamicConfigRemoveUserCodeNamespaceConfigCodec {
     //hex: 0x1B1400
     public static final int REQUEST_MESSAGE_TYPE = 1774592;

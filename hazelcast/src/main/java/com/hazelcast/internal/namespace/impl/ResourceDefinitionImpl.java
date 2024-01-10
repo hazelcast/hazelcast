@@ -24,8 +24,13 @@ import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Objects;
 
 public class ResourceDefinitionImpl implements ResourceDefinition {
@@ -45,22 +50,37 @@ public class ResourceDefinitionImpl implements ResourceDefinition {
     }
 
     public ResourceDefinitionImpl(ResourceConfig resourceConfig) {
-        try (InputStream is = resourceConfig.getUrl().openStream()) {
-            id = resourceConfig.getId();
-            payload = is.readAllBytes();
-            type = resourceConfig.getResourceType();
-            url = resourceConfig.getUrl().toString();
-        } catch (IOException e) {
-            throw new IllegalArgumentException(
-                    "Could not open stream for resource id " + resourceConfig.getId() + " and URL " + resourceConfig.getUrl(),
-                    e);
-        }
+        id = resourceConfig.getId();
+        payload = readPayloadFromUrl(id, resourceConfig.getUrl());
+        type = resourceConfig.getResourceType();
+        url = resourceConfig.getUrl().toString();
     }
 
     public ResourceDefinitionImpl(ResourceDefinitionHolder holder) {
         id = holder.getId();
         payload = holder.getPayload();
         type = ResourceType.getById(holder.getResourceType());
+        url = holder.getResourceUrl();
+
+        // ResourceDefinitionHolder can have a null payload, and we should read from URL like above
+        if (payload == null) {
+            if (url == null) {
+                throw new IllegalStateException("URL is not defined while payload is null for resource id " + id);
+            }
+            try {
+                payload = readPayloadFromUrl(id, new URI(url).toURL());
+            } catch (URISyntaxException | MalformedURLException ex) {
+                throw new IllegalArgumentException("Encountered invalid URL for resource id " + id + " and URL " + url, ex);
+            }
+        }
+    }
+
+    private byte[] readPayloadFromUrl(String id, URL url) {
+        try (InputStream is = url.openStream()) {
+            return is.readAllBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not open stream for resource id " + id + " and URL " + url, e);
+        }
     }
 
     @Override
@@ -76,6 +96,12 @@ public class ResourceDefinitionImpl implements ResourceDefinition {
     @Override
     public byte[] payload() {
         return payload;
+    }
+
+    @Override
+    @Nullable
+    public String url() {
+        return url;
     }
 
     @Override
@@ -105,11 +131,6 @@ public class ResourceDefinitionImpl implements ResourceDefinition {
     @Override
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    @Override
-    public String url() {
-        return url;
     }
 
     @Override

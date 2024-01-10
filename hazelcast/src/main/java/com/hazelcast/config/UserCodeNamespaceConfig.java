@@ -86,7 +86,7 @@ public class UserCodeNamespaceConfig
         return this;
     }
 
-     public UserCodeNamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
+    public UserCodeNamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
         return add(url, id, ResourceType.JAR);
     }
 

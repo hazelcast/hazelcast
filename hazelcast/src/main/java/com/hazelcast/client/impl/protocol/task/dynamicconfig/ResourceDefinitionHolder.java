@@ -18,24 +18,34 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.internal.namespace.ResourceDefinition;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 
 public class ResourceDefinitionHolder {
     private final String id;
     private final int resourceType;
+    @Nullable
     private final byte[] payload;
+    @Nullable
+    private final String resourceUrl;
 
     public ResourceDefinitionHolder(ResourceDefinition resourceDefinition) {
         id = resourceDefinition.id();
         resourceType = resourceDefinition.type().ordinal();
         payload = resourceDefinition.payload();
+        if (payload == null) {
+            resourceUrl = resourceDefinition.url();
+        } else {
+            resourceUrl = null;
+        }
     }
 
-    public ResourceDefinitionHolder(String id, int resourceType, byte[] payload) {
+    public ResourceDefinitionHolder(String id, int resourceType, @Nullable byte[] payload, @Nullable String resourceUrl) {
         this.id = id;
         this.resourceType = resourceType;
         this.payload = payload;
+        this.resourceUrl = resourceUrl;
     }
 
     public String getId() {
@@ -46,8 +56,30 @@ public class ResourceDefinitionHolder {
         return resourceType;
     }
 
+    /**
+     * This holder can either contain the {@code byte[]} payload, or the URL
+     * {@code String} to read the payload from. The direct payload is preferred,
+     * so if available it will always be returned by this method.
+     *
+     * @return the {@code byte[]} for this resource, or {@code null}
+     */
+    @Nullable
     public byte[] getPayload() {
         return payload;
+    }
+
+    /**
+     * This holder can either contain the URL {@code String} to read the payload
+     * from, or the {@code byte[]} payload itself. The URL is not preferred, so it
+     * may be {@code null} if a payload is available.
+     * <p>
+     * If available, this URL represents one relative to the Hazelcast member.
+     *
+     * @return the url {@code String} for this resource, or {@code null}
+     */
+    @Nullable
+    public String getResourceUrl() {
+        return resourceUrl;
     }
 
     @Override
@@ -55,7 +87,7 @@ public class ResourceDefinitionHolder {
         final int prime = 31;
         int result = 1;
         result = (prime * result) + Arrays.hashCode(payload);
-        result = (prime * result) + Objects.hash(id, resourceType);
+        result = (prime * result) + Objects.hash(id, resourceType, resourceUrl);
         return result;
     }
 
@@ -68,6 +100,7 @@ public class ResourceDefinitionHolder {
             return false;
         }
         ResourceDefinitionHolder other = (ResourceDefinitionHolder) obj;
-        return Objects.equals(id, other.id) && Arrays.equals(payload, other.payload) && (resourceType == other.resourceType);
+        return Objects.equals(id, other.id) && Arrays.equals(payload, other.payload) && (resourceType == other.resourceType)
+                && Objects.equals(resourceUrl, other.resourceUrl);
     }
 }
