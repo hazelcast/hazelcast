@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a user code namespace configuration.
  */
 @SuppressWarnings("unused")
-@Generated("9e6038591160ea2cfe265dcfdcc20bd8")
+@Generated("ee60b4b37f1e08f6b8588d4ff66633fb")
 public final class DynamicConfigAddUserCodeNamespaceConfigCodec {
     //hex: 0x1B1300
     public static final int REQUEST_MESSAGE_TYPE = 1774336;

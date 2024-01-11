@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("764df2e82d7e814fc9b257e202d28be3")
+@Generated("8a289820a6a49e9b17be349784877df3")
 public final class FieldDescriptorCodec {
     private static final int KIND_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = KIND_FIELD_OFFSET + INT_SIZE_IN_BYTES;

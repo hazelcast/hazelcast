@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("520224bf4e4f4fcbbe82cef1e01ad53c")
+@Generated("b754a1389fbef0b753f99cc8f18ae795")
 public final class StackTraceElementCodec {
     private static final int LINE_NUMBER_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = LINE_NUMBER_FIELD_OFFSET + INT_SIZE_IN_BYTES;

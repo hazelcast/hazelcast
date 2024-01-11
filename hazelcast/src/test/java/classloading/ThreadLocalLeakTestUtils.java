@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 1999-2017 The Apache Software Foundation
- * Modified work Copyright (c) 2017-2023, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2017-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

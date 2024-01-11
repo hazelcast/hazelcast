@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Closes the given session forcefully on the given CP group.
  */
 @SuppressWarnings("unused")
-@Generated("da6f290e6716413d68caedb8392e9b3c")
+@Generated("2c95b0272c9c0ab47ff37c908f1830c5")
 public final class MCForceCloseCPSessionCodec {
     //hex: 0x202400
     public static final int REQUEST_MESSAGE_TYPE = 2106368;

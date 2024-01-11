@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to TPC channels.
  */
 @SuppressWarnings("unused")
-@Generated("fc89f3416aeb5972e2c469b8da65e8bf")
+@Generated("f63f24443c87e3d420232929913df172")
 public final class ClientTpcAuthenticationCodec {
     //hex: 0x001600
     public static final int REQUEST_MESSAGE_TYPE = 5632;

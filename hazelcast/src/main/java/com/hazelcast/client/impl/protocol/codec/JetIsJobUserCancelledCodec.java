@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  */
 @SuppressWarnings("unused")
-@Generated("fb4b689423664956a7c0e40004d2da0c")
+@Generated("cc979f1b22bac59d5da08e044a82b830")
 public final class JetIsJobUserCancelledCodec {
     //hex: 0xFE1000
     public static final int REQUEST_MESSAGE_TYPE = 16650240;
