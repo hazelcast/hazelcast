@@ -380,6 +380,29 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- Fix issue with Eclipse not adding "generated-sources" to
+            classpath causing compilation errors
+            https://github.com/hazelcast/hazelcast-mono/pull/350 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/java/</source>
+                                <source>${project.build.directory}/generated-sources/annotations/</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
