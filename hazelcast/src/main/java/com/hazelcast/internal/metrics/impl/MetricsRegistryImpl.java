@@ -326,6 +326,20 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
+    @Override
+    public void collectDynamicMetrics(MetricsCollector collector, Set<DynamicMetricsProvider> metricsProviders) {
+        checkNotNull(collector, "collector can't be null");
+
+        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(
+                this::loadSourceMetadata,
+                this::lookupMetricValueCatcher,
+                collector,
+                minimumLevel,
+                null
+        );
+        collectionCycle.collectDynamicMetrics(metricsProviders);
+    }
+
     private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {
         AbstractGauge gauge = gauges.get(((MetricDescriptorImpl) descriptor).lookupView());
         return gauge != null ? gauge.getCatcherOrNull() : null;

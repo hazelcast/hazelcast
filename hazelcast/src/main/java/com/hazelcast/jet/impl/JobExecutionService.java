@@ -84,6 +84,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.singleton;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -569,9 +570,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       .thenApply(r -> {
                           RawJobMetrics terminalMetrics;
                           if (collectMetrics) {
-                              try (JobMetricsCollector metricsRenderer =
-                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger)) {
-                                  nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                              try (
+                                      var metricsRenderer = new JobMetricsCollector(nodeEngine.getLocalMember(), logger)
+                              ) {
+                                  nodeEngine.getMetricsRegistry().collectDynamicMetrics(metricsRenderer, singleton(execCtx));
                                   terminalMetrics = metricsRenderer.getMetrics();
                               }
                           } else {
@@ -743,42 +745,31 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     private static class JobMetricsCollector implements MetricsCollector, AutoCloseable {
 
-        private final Long executionId;
         private final MetricsCompressor compressor;
         private final ILogger logger;
         private final UnaryOperator<MetricDescriptor> addPrefixFn;
 
-        JobMetricsCollector(long executionId, @Nonnull Member member, @Nonnull ILogger logger) {
+        JobMetricsCollector(@Nonnull Member member, @Nonnull ILogger logger) {
             Objects.requireNonNull(member, "member");
             this.logger = Objects.requireNonNull(logger, "logger");
-
-            this.executionId = executionId;
             this.addPrefixFn = JobMetricsUtil.addMemberPrefixFn(member);
             this.compressor = new MetricsCompressor();
         }
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
-            if (this.executionId.equals(executionId)) {
-                compressor.addLong(addPrefixFn.apply(descriptor), value);
-            }
+            compressor.addLong(addPrefixFn.apply(descriptor), value);
         }
 
         @Override
         public void collectDouble(MetricDescriptor descriptor, double value) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
-            if (this.executionId.equals(executionId)) {
-                compressor.addDouble(addPrefixFn.apply(descriptor), value);
-            }
+            compressor.addDouble(addPrefixFn.apply(descriptor), value);
         }
 
         @Override
         public void collectException(MetricDescriptor descriptor, Exception e) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
-            if (this.executionId.equals(executionId)) {
-                logger.warning("Exception when rendering job metrics: " + e, e);
-            }
+            logger.warning("Exception when rendering job metrics: " + e, e);
+
         }
 
         @Override

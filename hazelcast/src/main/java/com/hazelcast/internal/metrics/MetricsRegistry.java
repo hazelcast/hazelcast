@@ -298,6 +298,16 @@ public interface MetricsRegistry {
     void collect(MetricsCollector collector);
 
     /**
+     * Collects metrics for specific providers.
+     *
+     * @param collector the collector that consumes the metrics collected
+     * @param metricsProviders specific metrics providers
+     *
+     * @throws NullPointerException if collector is null.
+     */
+    void collectDynamicMetrics(MetricsCollector collector, Set<DynamicMetricsProvider> metricsProviders);
+
+    /**
      * For each object that implements {@link StaticMetricsProvider} the
      * {@link StaticMetricsProvider#provideStaticMetrics(MetricsRegistry)} is called.
      *

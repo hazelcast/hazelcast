@@ -19,6 +19,8 @@ package com.hazelcast.jet.core.metrics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
@@ -48,6 +50,25 @@ import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
+import static com.hazelcast.jet.core.metrics.MetricNames.COALESCED_WM;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_BYTES_IN;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_BYTES_OUT;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_ITEMS_IN;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_ITEMS_OUT;
+import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
+import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
+import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
+import static com.hazelcast.jet.core.metrics.MetricNames.IS_USER_CANCELLED;
+import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
+import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM;
+import static com.hazelcast.jet.core.metrics.MetricNames.LAST_FORWARDED_WM_LATENCY;
+import static com.hazelcast.jet.core.metrics.MetricNames.QUEUES_CAPACITY;
+import static com.hazelcast.jet.core.metrics.MetricNames.QUEUES_SIZE;
+import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_BATCHES;
+import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
+import static com.hazelcast.jet.core.metrics.MetricNames.SNAPSHOT_BYTES;
+import static com.hazelcast.jet.core.metrics.MetricNames.SNAPSHOT_KEYS;
+import static com.hazelcast.jet.core.metrics.MetricNames.TOP_OBSERVED_WM;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -217,8 +238,68 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         assertTrueEventually(() -> assertJobStatusMetric(job, COMPLETED));
 
         JobMetricsChecker checker = new JobMetricsChecker(job);
-        checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_START_TIME, 1);
-        checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_COMPLETION_TIME, 1);
+        checker.assertRandomMetricValueAtLeast(EXECUTION_START_TIME, 1);
+        checker.assertRandomMetricValueAtLeast(EXECUTION_COMPLETION_TIME, 1);
+    }
+
+    @Test
+    public void jobFinishedAllMetricsPresents() {
+        var p = Pipeline.create();
+        p.readFrom(TestSources.items(0, 1, 2, 3, 4, 5))
+                .groupingKey(i -> i % 2 == 0 ? "odds" : "evens")
+                .rollingAggregate(AggregateOperations.counting())
+                .writeTo(Sinks.logger());
+
+        var job = hzInstances[0].getJet().newJob(p, createJobConfigWithEnabledMetrics("targetJob"));
+        job.join();
+
+        JobMetricsChecker jobChecker = new JobMetricsChecker(job);
+        List<String> expectedMetrics = List.of(
+                COALESCED_WM,
+                EMITTED_COUNT,
+                EXECUTION_COMPLETION_TIME,
+                EXECUTION_START_TIME,
+                LAST_FORWARDED_WM,
+                LAST_FORWARDED_WM_LATENCY,
+                QUEUES_CAPACITY,
+                QUEUES_SIZE,
+                RECEIVED_BATCHES,
+                RECEIVED_COUNT,
+                SNAPSHOT_BYTES,
+                SNAPSHOT_KEYS,
+                JOB_STATUS,
+                IS_USER_CANCELLED,
+                TOP_OBSERVED_WM,
+                DISTRIBUTED_BYTES_IN,
+                DISTRIBUTED_BYTES_OUT,
+                DISTRIBUTED_ITEMS_IN,
+                DISTRIBUTED_ITEMS_OUT,
+                "lateEventsDropped"
+
+        );
+        var metrics = job.getMetrics();
+        assertEquals(metrics.metrics().size(), expectedMetrics.size());
+        expectedMetrics.forEach(jobChecker::assertMetricExists);
+    }
+
+    @Test
+    public void jobFinishedReceiveMetricsFromTargetJob() {
+        hzInstances[0].getJet().newJob(streamingPipeline(), createJobConfigWithEnabledMetrics("otherJob"));
+        var job = hzInstances[0].getJet().newJob(batchPipeline(), createJobConfigWithEnabledMetrics("targetJob"));
+        job.join();
+        var jobName = job.getName();
+        var metrics = job.getMetrics();
+        metrics.metrics().stream()
+                .flatMap(metricName -> metrics.get(metricName).stream())
+                .forEach(measurement -> assertEquals(jobName, measurement.tag("jobName")));
+    }
+
+    private JobConfig createJobConfigWithEnabledMetrics(String jobName) {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setMetricsEnabled(true);
+        jobConfig.setStoreMetricsAfterJobCompletion(true);
+        jobConfig.setName(jobName);
+        return jobConfig;
     }
 
     private Pipeline batchPipeline() {
@@ -274,18 +355,18 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         try {
             // Check job metrics
             JobMetrics metrics = job.getMetrics();
-            List<Measurement> statuses = metrics.get(MetricNames.JOB_STATUS);
+            List<Measurement> statuses = metrics.get(JOB_STATUS);
             long lastStatus = statuses.get(statuses.size() - 1).value();
             assertEquals(status, JobStatus.getById((int) lastStatus));
 
-            List<Measurement> cancelled = metrics.get(MetricNames.IS_USER_CANCELLED);
+            List<Measurement> cancelled = metrics.get(IS_USER_CANCELLED);
             long lastCancelled = cancelled.get(cancelled.size() - 1).value();
             assertEquals(isUserCancelled ? 1 : 0, lastCancelled);
 
             if (!status.isTerminal()) {
                 // Check JMX metrics
                 long jmxStatus = JmxMetricsChecker.forJob(hzInstances[0], job)
-                        .getMetricValue(MetricNames.JOB_STATUS);
+                        .getMetricValue(JOB_STATUS);
                 assertEquals(status, JobStatus.getById((int) jmxStatus));
                 // IS_USER_CANCELLED is not reported in JMX metrics by design
             }

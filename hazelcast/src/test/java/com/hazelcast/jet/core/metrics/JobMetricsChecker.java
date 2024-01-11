@@ -50,6 +50,15 @@ final class JobMetricsChecker {
         );
     }
 
+    void assertMetricExists(String metricName) {
+        JobMetrics jobMetrics = getJobMetrics();
+        List<Measurement> measurements = jobMetrics.get(metricName);
+        assertFalse(
+                String.format("Expect measurements for metric '%s', but measurements are empty", metricName),
+                measurements.isEmpty()
+        );
+    }
+
     void assertSummedMetricValue(String metricName, long expectedValue) {
         assertAggregatedMetricValue(metricName, expectedValue,
                 m -> m.stream().mapToLong(Measurement::value).sum());
