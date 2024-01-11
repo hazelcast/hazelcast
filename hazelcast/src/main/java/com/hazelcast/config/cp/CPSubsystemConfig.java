@@ -778,6 +778,8 @@ public class CPSubsystemConfig {
 
     /**
      * Sets the limit of permitted {@link com.hazelcast.cp.CPMap} instances.
+     * <p>
+     * This is a soft limit and is used exclusively by Hazelcast Management Center.
      * @param cpMapLimit limit of {@link com.hazelcast.cp.CPMap} instances
      * @throws IllegalArgumentException if {@code cpMapLimit < 0}
      */
