@@ -11,7 +11,7 @@ config = {
 ee_config = {
    "PR_TRANSFORMATIONS" : [],
    "PUSH_INCLUDE" : ["**"],
-   "PUSH_EXCLUDE" : ["hazelcast/**", ".github/workflows/mono-*"],
+   "PUSH_EXCLUDE" : ["hazelcast/**", ".github/workflows/mono-*", ".github/dependabot.yml"],
 }
 
 os_config = {
