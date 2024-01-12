@@ -348,6 +348,9 @@
                     <testExcludes>
                         <exclude>**/package-info.java</exclude>
                     </testExcludes>
+                    <compilerArgs>
+                        <arg>-Xlint:-deprecation,-removal</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
