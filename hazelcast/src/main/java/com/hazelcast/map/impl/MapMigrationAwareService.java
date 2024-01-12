@@ -251,10 +251,6 @@ class MapMigrationAwareService
         }
     }
 
-    private RecordStore getOrNullRecordStore(PartitionMigrationEvent event, String mapName) {
-        return mapServiceContext.getPartitionContainer(event.getPartitionId()).getExistingRecordStore(mapName);
-    }
-
     private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
             mapServiceContext.removeRecordStoresFromPartitionMatchingWith(recordStore -> true, partitionId,

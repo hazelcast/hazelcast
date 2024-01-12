@@ -62,6 +62,12 @@ public final class IMapAccessors {
     }
 
     @Nonnull
+    public static PartitionContainer[] getPartitionContainers(IMap map) {
+        MapServiceContext mapServiceContext = getMapServiceContext(map);
+        return mapServiceContext.getPartitionContainers();
+    }
+
+    @Nonnull
     public static List<RecordStore> getAllRecordStoresOf(IMap map) {
         assertMapImpl(map);
 

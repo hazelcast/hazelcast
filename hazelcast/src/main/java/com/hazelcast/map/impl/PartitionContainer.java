@@ -247,10 +247,10 @@ public class PartitionContainer {
                 .stream()
                 .filter(entry -> replicaIndex == -1
                         || lesserBackupMapsThenWithContainer(replicaIndex).test(entry.getValue()))
-                .forEach(entry -> cleanUpMap(entry.getKey()));
+                .forEach(entry -> cleanUpMap(entry.getKey(), entry.getValue()));
     }
 
-    protected void cleanUpMap(String mapName) {
+    protected void cleanUpMap(String mapName, MapContainer mapContainer) {
         // overridden in enterprise
     }
 }
