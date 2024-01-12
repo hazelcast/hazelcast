@@ -66,6 +66,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {"VARCHAR(10)", "VARCHAR", "'dummy'", "dummy", "dummy"},
+                {"CHAR(3)", "VARCHAR", "'try'", "try", "try"},
                 {"BOOLEAN", "BOOLEAN", "TRUE", true, true},
                 {"TINYINT", "TINYINT", "1", 1, 1},
                 {"SMALLINT", "SMALLINT", "2", 2, 2},

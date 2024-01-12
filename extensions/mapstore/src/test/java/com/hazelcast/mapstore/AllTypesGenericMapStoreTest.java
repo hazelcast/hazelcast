@@ -91,6 +91,10 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
                         (r, s) -> assertThat(r.getString(s)).isEqualTo("dummy"),
                         (Consumer<Tuple3<GenericRecordBuilder, String, Object>>) (tuple3) -> tuple3.f0().setString(tuple3.f1(), (String) tuple3.f2()),
                         (Consumer<Object>) (o) -> assertThat((String) o).isEqualTo("dummy")},
+                {"CHAR(3)", "'try'", "try", (BiConsumer<GenericRecord, String>)
+                        (r, s) -> assertThat(r.getString(s)).isEqualTo("try"),
+                        (Consumer<Tuple3<GenericRecordBuilder, String, Object>>) (tuple3) -> tuple3.f0().setString(tuple3.f1(), (String) tuple3.f2()),
+                        (Consumer<Object>) (o) -> assertThat((String) o).isEqualTo("try")},
                 {"BOOLEAN", "TRUE", true,  (BiConsumer<GenericRecord, String>)
                         (r, s) -> assertThat(r.getBoolean(s)).isTrue(),
                         (Consumer<Tuple3<GenericRecordBuilder, String, Object>>) (tuple3) -> tuple3.f0().setBoolean(tuple3.f1(), (Boolean) tuple3.f2()),
