@@ -26,10 +26,8 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ObjectSpec;
-import com.hazelcast.test.jdbc.JdbcDatabaseProvider;
 import com.hazelcast.test.jdbc.JdbcObjectProvider;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -407,9 +405,8 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/22527")
     public void givenColumnPropSubset_whenStore_thenTableContainsRow() throws SQLException {
-        assumeThat(objectProvider).isInstanceOf(JdbcDatabaseProvider.class);
+        assumeThat(objectProvider).isInstanceOf(JdbcObjectProvider.class);
         var jdbcDbProvider = (JdbcObjectProvider) objectProvider;
         jdbcDbProvider.createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
@@ -432,8 +429,64 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
 
 
         objectProvider.assertRows(mapName, List.of(
-                asList(0, "name-0"),
-                asList(1, "name-1")
+                asList(0, "name-0", "def"),
+                asList(1, "name-1", "def")
+        ));
+    }
+
+    @Test
+    public void givenColumnPropSubset_whenStoreAsSingleColumn_thenTableContainsRow() throws SQLException {
+        assumeThat(objectProvider).isInstanceOf(JdbcObjectProvider.class);
+        var jdbcDbProvider = (JdbcObjectProvider) objectProvider;
+        jdbcDbProvider.createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
+        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute("INSERT INTO " + mapName + " (id, name) VALUES(0, 'name-0')");
+        }
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(SINGLE_COLUMN_AS_VALUE, "true");
+
+        properties.setProperty("columns", "name");
+        mapStoreSingleColAsValue = createMapStore(properties, hz);
+
+        String name = "name-1";
+        mapStoreSingleColAsValue.store(1, name);
+
+
+        objectProvider.assertRows(mapName, List.of(
+                asList(0, "name-0", "def"),
+                asList(1, "name-1", "def")
+        ));
+    }
+
+    @Test
+    public void givenColumnPropSubsetWithoutId_whenStore_thenTableContainsRow() throws SQLException {
+        assumeThat(objectProvider).isInstanceOf(JdbcObjectProvider.class);
+        var jdbcDbProvider = (JdbcObjectProvider) objectProvider;
+        jdbcDbProvider.createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
+        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute("INSERT INTO " + mapName + " (id, name) VALUES(0, 'name-0')");
+        }
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty("columns", "name");
+        mapStore = createMapStore(properties, hz);
+
+        GenericRecord person = GenericRecordBuilder.compact(mapName)
+                .setString("name", "name-1")
+                .build();
+        mapStore.store(1, person);
+
+        objectProvider.assertRows(mapName, List.of(
+                asList(0, "name-0", "def"),
+                asList(1, "name-1", "def")
         ));
     }
 
