@@ -1046,7 +1046,22 @@ hazelcast:
 
   sql:
     statement-timeout-millis: 0
-
+    java-reflection-filter:
+      defaults-disabled: true
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - java
+          - "["
+          - com.
   data-connection:
     mysql-database:
       type: jdbc

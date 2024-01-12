@@ -1125,6 +1125,20 @@
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
         <catalog-persistence-enabled>false</catalog-persistence-enabled>
+        <java-reflection-filter defaults-disabled="true">
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+                <prefix>java</prefix>
+                <prefix>com.</prefix>
+                <prefix>[</prefix>
+            </whitelist>
+        </java-reflection-filter>
     </sql>
 
     <data-connection name="mysql-database">

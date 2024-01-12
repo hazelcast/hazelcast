@@ -5726,6 +5726,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="java-reflection-filter" type="java-serialization-filter" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Basic protection against untrusted reflection based on class/package blacklisting and whitelisting.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 

@@ -3392,6 +3392,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("catalog-persistence-enabled", nodeName)) {
                 sqlConfig.setCatalogPersistenceEnabled(Boolean.parseBoolean(getTextContent(child)));
             }
+            if (matches("java-reflection-filter", nodeName)) {
+                sqlConfig.setJavaReflectionFilterConfig(getJavaFilter(child));
+            }
         }
     }
 

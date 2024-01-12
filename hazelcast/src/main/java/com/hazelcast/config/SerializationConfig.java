@@ -508,7 +508,7 @@ public class SerializationConfig {
     /**
      * Allows to configure deserialization protection filter.
      *
-     * @param javaSerializationFilterConfig the javaSerializationFilterConfig to set (may be {@code null})
+     * @param javaSerializationFilterConfig the javaFilterConfig to set (may be {@code null})
      */
     public SerializationConfig setJavaSerializationFilterConfig(JavaSerializationFilterConfig javaSerializationFilterConfig) {
         this.javaSerializationFilterConfig = javaSerializationFilterConfig;

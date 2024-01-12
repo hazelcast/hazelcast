@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
@@ -49,4 +50,6 @@ public interface InternalSqlService extends SqlService {
     long getSqlStreamingQueriesExecutedCount();
 
     String mappingDdl(String name);
+
+    ReflectionClassNameFilter getReflectionClassNameFilter();
 }

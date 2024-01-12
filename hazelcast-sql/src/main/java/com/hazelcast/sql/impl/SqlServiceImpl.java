@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -48,6 +49,7 @@ import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
 import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
+import static java.util.Objects.isNull;
 
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
@@ -77,6 +79,8 @@ public class SqlServiceImpl implements InternalSqlService {
     private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
     private final Counter sqlStreamingQueriesExecuted = MwCounter.newMwCounter();
 
+    private final ReflectionClassNameFilter reflectionClassNameFilter;
+
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
@@ -85,6 +89,8 @@ public class SqlServiceImpl implements InternalSqlService {
         long queryTimeout = nodeEngine.getConfig().getSqlConfig().getStatementTimeoutMillis();
         assert queryTimeout >= 0L;
         this.queryTimeout = queryTimeout;
+        var reflectionConfig = nodeEngine.getConfig().getSqlConfig().getJavaReflectionFilterConfig();
+        this.reflectionClassNameFilter = isNull(reflectionConfig) ? null : new ReflectionClassNameFilter(reflectionConfig);
     }
 
     public void start() {
@@ -130,6 +136,11 @@ public class SqlServiceImpl implements InternalSqlService {
         if (internalService != null) {
             internalService.shutdown();
         }
+    }
+
+    @Override
+    public ReflectionClassNameFilter getReflectionClassNameFilter() {
+        return reflectionClassNameFilter;
     }
 
     public SqlInternalService getInternalService() {

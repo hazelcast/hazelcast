@@ -1058,10 +1058,17 @@ public class ConfigXmlGenerator {
 
     private static void sqlConfig(XmlGenerator gen, Config config) {
         SqlConfig sqlConfig = config.getSqlConfig();
+        JavaSerializationFilterConfig filterConfig = sqlConfig.getJavaReflectionFilterConfig();
         gen.open("sql")
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
-                .node("catalog-persistence-enabled", sqlConfig.isCatalogPersistenceEnabled())
-                .close();
+                .node("catalog-persistence-enabled", sqlConfig.isCatalogPersistenceEnabled());
+        if (filterConfig != null) {
+            gen.open("java-reflection-filter", "defaults-disabled", filterConfig.isDefaultsDisabled());
+            appendFilterList(gen, "blacklist", filterConfig.getBlacklist());
+            appendFilterList(gen, "whitelist", filterConfig.getWhitelist());
+            gen.close();
+        }
+        gen.close();
     }
 
     private static void jetConfig(XmlGenerator gen, Config config) {

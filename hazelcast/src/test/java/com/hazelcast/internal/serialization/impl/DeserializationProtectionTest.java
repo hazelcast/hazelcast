@@ -119,7 +119,7 @@ public class DeserializationProtectionTest extends HazelcastTestSupport {
     }
 
     private void assertDeserializationFails(JavaSerializationFilterConfig javaSerializationFilterConfig,
-            boolean keyOwnedByTarget) {
+                                            boolean keyOwnedByTarget) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
         config.getSerializationConfig().setJavaSerializationFilterConfig(javaSerializationFilterConfig);

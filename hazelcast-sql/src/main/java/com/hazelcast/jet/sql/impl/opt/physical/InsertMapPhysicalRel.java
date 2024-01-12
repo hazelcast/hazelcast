@@ -81,7 +81,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
                     (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                     (UpsertTargetDescriptor) table.getValueJetMetadata(),
                     true
-            ).get(evalContext.getSerializationService());
+            ).get(evalContext);
 
             return values.toValues(evalContext)
                     .map(projector::project)

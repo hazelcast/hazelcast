@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 public final class JsonUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
@@ -28,7 +28,7 @@ public final class JsonUpsertTargetDescriptor implements UpsertTargetDescriptor 
     }
 
     @Override
-    public UpsertTarget create(InternalSerializationService serializationService) {
+    public UpsertTarget create(ExpressionEvalContext evalContext) {
         return new JsonUpsertTarget();
     }
 

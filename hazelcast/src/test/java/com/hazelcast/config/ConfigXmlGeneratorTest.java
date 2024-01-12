@@ -1189,11 +1189,16 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         config.getSqlConfig().setStatementTimeoutMillis(30L);
         config.getSqlConfig().setCatalogPersistenceEnabled(true);
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        filterConfig.getWhitelist().addClasses("com.foo.bar.MyClass");
+        filterConfig.getBlacklist().addPackages("magic.collection.of.code");
+        config.getSqlConfig().setJavaReflectionFilterConfig(filterConfig);
 
         SqlConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSqlConfig();
 
         assertEquals(config.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
         assertEquals(config.getSqlConfig().isCatalogPersistenceEnabled(), generatedConfig.isCatalogPersistenceEnabled());
+        assertEquals(config.getSqlConfig().getJavaReflectionFilterConfig(), generatedConfig.getJavaReflectionFilterConfig());
     }
 
     @Test

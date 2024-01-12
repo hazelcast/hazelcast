@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 /**
- * Configuration for Serialization Filter.
+ * Configuration for Serialization Filters and Reflection Filters.
  */
 public class JavaSerializationFilterConfig {
 

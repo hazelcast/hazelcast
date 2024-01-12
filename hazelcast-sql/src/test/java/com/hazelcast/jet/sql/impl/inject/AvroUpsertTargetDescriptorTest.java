@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -45,7 +46,7 @@ public class AvroUpsertTargetDescriptorTest {
         AvroUpsertTargetDescriptor descriptor = new AvroUpsertTargetDescriptor(SCHEMA);
 
         // when
-        UpsertTarget target = descriptor.create(SERIALIZATION_SERVICE);
+        UpsertTarget target = descriptor.create(mock());
 
         // then
         assertThat(target).isInstanceOf(AvroUpsertTarget.class);

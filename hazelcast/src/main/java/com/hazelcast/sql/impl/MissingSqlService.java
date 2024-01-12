@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -93,6 +94,11 @@ public class MissingSqlService implements InternalSqlService {
 
     @Override
     public String mappingDdl(String name) {
+        throw throwDisabled();
+    }
+
+    @Override
+    public ReflectionClassNameFilter getReflectionClassNameFilter() {
         throw throwDisabled();
     }
 

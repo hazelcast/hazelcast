@@ -79,7 +79,7 @@ public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
                     (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                     (UpsertTargetDescriptor) table.getValueJetMetadata(),
                     true
-            ).get(evalContext.getSerializationService());
+            ).get(evalContext);
 
             return values.stream()
                     .flatMap(vs -> vs.toValues(evalContext))

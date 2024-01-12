@@ -80,7 +80,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected HazelcastInstance hazelcastInstance;
     protected CompactSerializationConfig compactSerializationConfig;
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
-    protected ClassNameFilter classNameFilter;
+    protected ClassNameFilter classNameSerializationFilter;
+
     protected SchemaService schemaService;
     protected boolean isCompatibility;
 
@@ -124,7 +125,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         allowUnsafe = config.isAllowUnsafe();
         allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
-        classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        classNameSerializationFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
         compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
@@ -300,7 +301,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withEnableCompression(enableCompression)
                     .withEnableSharedObject(enableSharedObject)
                     .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
-                    .withClassNameFilter(classNameFilter)
+                    .withClassNameFilter(classNameSerializationFilter)
                     .withCheckClassDefErrors(checkClassDefErrors)
                     .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
                     .withCompactSerializationConfig(compactSerializationConfig)

@@ -3124,6 +3124,46 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
+    public void testJavaReflectionFilter() {
+        String yaml = ""
+            + "hazelcast:\n"
+            + "  sql:\n"
+            + "    java-reflection-filter:\n"
+            + "      defaults-disabled: true\n"
+            + "      whitelist:\n"
+            + "        class:\n"
+            + "          - java.lang.String\n"
+            + "          - example.Foo\n"
+            + "        package:\n"
+            + "          - com.acme.app\n"
+            + "          - com.acme.app.subpkg\n"
+            + "        prefix:\n"
+            + "          - java\n"
+            + "          - com.hazelcast.\n"
+            + "          - \"[\"\n"
+            + "      blacklist:\n"
+            + "        class:\n"
+            + "          - com.acme.app.BeanComparator\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        JavaSerializationFilterConfig javaReflectionFilterConfig
+            = config.getSqlConfig().getJavaReflectionFilterConfig();
+        assertNotNull(javaReflectionFilterConfig);
+        ClassFilter blackList = javaReflectionFilterConfig.getBlacklist();
+        assertNotNull(blackList);
+        ClassFilter whiteList = javaReflectionFilterConfig.getWhitelist();
+        assertNotNull(whiteList);
+        assertTrue(whiteList.getClasses().contains("java.lang.String"));
+        assertTrue(whiteList.getClasses().contains("example.Foo"));
+        assertTrue(whiteList.getPackages().contains("com.acme.app"));
+        assertTrue(whiteList.getPackages().contains("com.acme.app.subpkg"));
+        assertTrue(whiteList.getPrefixes().contains("java"));
+        assertTrue(whiteList.getPrefixes().contains("["));
+        assertTrue(blackList.getClasses().contains("com.acme.app.BeanComparator"));
+    }
+
+    @Override
     public void testCompactSerialization_serializerRegistration() {
         String yaml = ""
                 + "hazelcast:\n"

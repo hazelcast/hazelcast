@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
@@ -109,7 +110,7 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
         private static final NullUpsertTargetDescriptor INSTANCE = new NullUpsertTargetDescriptor();
 
         @Override
-        public UpsertTarget create(InternalSerializationService serializationService) {
+        public UpsertTarget create(ExpressionEvalContext evalContext) {
             return new NullUpsertTarget();
         }
 

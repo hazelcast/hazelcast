@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
     }
 
     @Override
-    public UpsertTarget create(InternalSerializationService serializationService) {
+    public UpsertTarget create(ExpressionEvalContext evalContext) {
         return new PortableUpsertTarget(classDefinition);
     }
 

@@ -126,7 +126,7 @@ class Projector {
             return new Projector(
                     paths,
                     types,
-                    descriptor.create(evalContext.getSerializationService()),
+                    descriptor.create(evalContext),
                     projection,
                     evalContext
             );

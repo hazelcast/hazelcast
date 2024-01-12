@@ -25,7 +25,6 @@ import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
@@ -34,6 +33,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.internal.util.StringUtil;
@@ -275,14 +275,14 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
-        serializationConfig.setJavaSerializationFilterConfig(getJavaSerializationFilter(node));
+        serializationConfig.setJavaSerializationFilterConfig(getJavaFilter(node));
     }
 
     protected void fillJavaSerializationFilter(final Node node, UserCodeNamespacesConfig userCodeNamespacesConfig) {
-        userCodeNamespacesConfig.setClassFilterConfig(getJavaSerializationFilter(node));
+        userCodeNamespacesConfig.setClassFilterConfig(getJavaFilter(node));
     }
 
-    private JavaSerializationFilterConfig getJavaSerializationFilter(final Node node) {
+    JavaSerializationFilterConfig getJavaFilter(final Node node) {
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
         Node defaultsDisabledNode = getNamedItemNode(node, "defaults-disabled");
         boolean defaultsDisabled = defaultsDisabledNode != null && getBooleanValue(getTextContent(defaultsDisabledNode));
