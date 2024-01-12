@@ -61,10 +61,10 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     /**
      * Cost calculation of Hash Join relation. It does not rely on children cost.
      * <p>
-     * Hash Join algorithm is a more advanced join algorithm, which builds a hash table for the left
-     * row set, and then compare each row from the right side. Cost estimation is the following: <ol>
+     * Hash Join algorithm is a more advanced join algorithm, which builds a hash table for the right
+     * row set, and then compare each row from the left side. Cost estimation is the following: <ol>
      * <li> Processed row count (PR) is L + R because we traverse both sides once per join.
-     * <li> CPU is L * (hash table build cost) + R * (row comparison cost) + (PR * (row projection cost))
+     * <li> CPU is R * (hash table build cost) + L * (row comparison cost) + (PR * (row projection cost))
      * <li> Also, for the right side, if it is broadcast, we multiply the row comparison
      * cost by a (network broadcast factor)</ol>
      * <p>
@@ -84,8 +84,8 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
             networkBroadcastFactor = Cost.NETWORK_BROADCAST_FACTOR;
         }
 
-        double cpu = leftRowCount * Cost.HASH_JOIN_MULTIPLIER
-                + rightRowCount * Cost.HASH_JOIN_ROW_CMP_MULTIPLIER * networkBroadcastFactor
+        double cpu = leftRowCount * Cost.HASH_JOIN_ROW_CMP_MULTIPLIER
+                + rightRowCount * Cost.HASH_JOIN_MULTIPLIER * networkBroadcastFactor
                 + mq.getRowCount(this) * projectionCost;
 
         return planner.getCostFactory().makeCost(processedRowsCount, cpu, 0.);

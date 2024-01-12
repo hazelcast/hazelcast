@@ -93,43 +93,6 @@ public class PhysicalJoinTest extends OptimizerTestSupport {
         );
     }
 
-    @Ignore("Support streaming tables with watermarks in OptimizerTestSupport")
-    @Test
-    public void when_bothInputsAreStreamScan_then_useS2SJoin() {
-        String leftStream = "l";
-        TestStreamSqlConnector.create(
-                instance().getSql(),
-                leftStream,
-                asList("a", "b"),
-                asList(INTEGER, TIMESTAMP),
-                row(1, timestamp(1L))
-        );
-
-        String rightStream = "r";
-        TestStreamSqlConnector.create(
-                instance().getSql(),
-                rightStream,
-                asList("x", "y"),
-                asList(INTEGER, TIMESTAMP),
-                row(1, timestamp(1L))
-        );
-
-        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
-        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(1));
-        HazelcastTable tableLeft = streamingTable(resolver.getTables().get(0));
-        HazelcastTable tableRight = streamingTable(resolver.getTables().get(1));
-
-        String query = "SELECT * FROM l JOIN r ON l.b = r.y";
-        assertPlan(
-                optimizePhysical(query, ImmutableList.of(), tableLeft, tableRight).getPhysical(),
-                plan(
-                        planRow(0, StreamToStreamJoinPhysicalRel.class),
-                        planRow(1, FullScanPhysicalRel.class),
-                        planRow(1, FullScanPhysicalRel.class)
-                )
-        );
-    }
-
     private static HazelcastTable streamingTable(Table table) {
         return new HazelcastTable(table, new HazelcastTableStatistic(1));
     }
