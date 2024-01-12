@@ -107,7 +107,8 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
-        assertJdbcQueryRowsAnyOrder("SELECT table_column FROM " + databaseProvider.quote(tableName),
+        assertJdbcQueryRowsAnyOrder("SELECT " + databaseProvider.quote("table_column")
+                        + " FROM " + databaseProvider.quote(tableName),
                 List.of(jdbcValue.getClass()),
                 new Row(jdbcValue),
                 new Row(jdbcValue)

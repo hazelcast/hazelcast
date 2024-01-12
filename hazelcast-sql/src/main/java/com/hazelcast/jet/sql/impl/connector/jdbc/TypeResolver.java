@@ -18,8 +18,15 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
 public interface TypeResolver {
 
     QueryDataType resolveType(String columnTypeName, int precision, int scale);
+
+    default void setObject(PreparedStatement ps, Object obj, int j) throws SQLException {
+        ps.setObject(j + 1, obj);
+    }
 
 }

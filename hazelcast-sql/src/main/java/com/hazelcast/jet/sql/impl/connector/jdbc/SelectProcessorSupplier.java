@@ -85,7 +85,7 @@ public class SelectProcessorSupplier
                     PreparedStatement statement = connection.prepareStatement(query);
                     List<Object> arguments = evalContext.getArguments();
                     for (int j = 0; j < parameterPositions.length; j++) {
-                        statement.setObject(j + 1, arguments.get(parameterPositions[j]));
+                        typeResolver.setObject(statement, arguments.get(parameterPositions[j]), j);
                     }
                     try {
                         ResultSet rs = statement.executeQuery();

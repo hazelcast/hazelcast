@@ -57,9 +57,9 @@ public class InsertProcessorSupplier
                     query,
                     dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
+                        TypeResolver typeResolver = JdbcSqlConnector.typeResolver(ps.getConnection());
                         for (int j = 0; j < row.getFieldCount(); j++) {
-                            // JDBC parameterIndex is 1-based, so j + 1
-                            ps.setObject(j + 1, row.get(j));
+                            typeResolver.setObject(ps, row.get(j), j);
                         }
                     },
                     SQLExceptionUtils::isNonTransientException,

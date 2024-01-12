@@ -28,6 +28,10 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Locale;
 
 /**
@@ -89,4 +93,15 @@ public class HazelcastOracleDialect extends OracleSqlDialect implements TypeReso
         }
         return QueryDataType.DECIMAL;
     }
+
+    @Override
+    public void setObject(PreparedStatement ps, Object obj, int j) throws SQLException {
+        if (obj instanceof LocalDate) {
+            Date date = Date.valueOf(((LocalDate) obj));
+            ps.setDate(j + 1, date);
+        } else {
+            TypeResolver.super.setObject(ps, obj, j);
+        }
+    }
+
 }
