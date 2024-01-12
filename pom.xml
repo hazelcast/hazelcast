@@ -502,10 +502,6 @@
                     <dependency>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>extra-enforcer-rules</artifactId>
-                        <!--
-                        Version 1.6.1 produces harmless, but noisy warning about missing dependencies.
-                        See https://github.com/mojohaus/extra-enforcer-rules/issues/225
-                        -->
                         <version>1.7.0</version>
                     </dependency>
                 </dependencies>
