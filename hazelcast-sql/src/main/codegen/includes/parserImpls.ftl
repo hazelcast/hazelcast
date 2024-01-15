@@ -827,6 +827,7 @@ SqlNode SqlAnalyzeStatement() :
 {
     <ANALYZE>
     [
+        LOOKAHEAD(2)
         <WITH> <OPTIONS>
         sqlOptions = SqlOptions()
     ]
