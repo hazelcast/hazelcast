@@ -62,13 +62,6 @@ public interface ConfigurationService {
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
-     * Deregisters a dynamic configurations to all cluster members.
-     *
-     * @param config configuration to derigster
-     */
-    void unbroadcastConfig(IdentifiedDataSerializable config);
-
-    /**
      * Update the license for the cluster.
      *
      * @param licenseKey new license key to set

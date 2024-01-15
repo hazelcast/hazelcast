@@ -48,11 +48,6 @@ public final class NoOpUserCodeNamespaceService
     }
 
     @Override
-    public boolean removeNamespace(@Nonnull String nsName) {
-        return false;
-    }
-
-    @Override
     public boolean hasNamespace(String namespace) {
         return false;
     }

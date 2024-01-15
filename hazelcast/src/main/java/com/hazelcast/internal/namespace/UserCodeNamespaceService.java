@@ -56,14 +56,6 @@ public interface UserCodeNamespaceService {
                       @Nonnull Collection<ResourceDefinition> resources);
 
     /**
-     * Removes the {@code Namespace} defined by the provided Namespace name.
-     *
-     * @param nsName the name of the {@code Namespace} to attempt to remove
-     * @return {@code true} if {@code nsName} namespace was found and removed, otherwise {@code false}.
-     */
-    boolean removeNamespace(@Nonnull String nsName);
-
-    /**
      * Checks to see if there is a {@code Namespace} defined with the provided name.
      *
      * @param namespace the name of the {@code Namespace} to check for
@@ -194,15 +186,5 @@ public interface UserCodeNamespaceService {
      */
     default void addNamespaceConfig(UserCodeNamespaceConfig config) {
         addNamespace(config.getName(), ConfigAccessor.getResourceDefinitions(config));
-    }
-
-    /**
-     * Convenience method for removing {@code Namespace}s directly using a
-     * {@link UserCodeNamespaceConfig} instance.
-     * @param config the {@link UserCodeNamespaceConfig} instance to fetch the {@code Namespace}
-     *               name from for removal via {@link #removeNamespace(String)}
-     */
-    default void removeNamespaceConfig(UserCodeNamespaceConfig config) {
-        removeNamespace(config.getName());
     }
 }

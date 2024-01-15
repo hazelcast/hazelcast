@@ -241,11 +241,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public void unbroadcastConfig(IdentifiedDataSerializable config) {
-        throw new IllegalStateException("Cannot modify configuration while Hazelcast is starting.");
-    }
-
-    @Override
     public void persist(Object subConfig) {
         // Code shouldn't come here. broadcastConfig() will throw an exception
         // before here.

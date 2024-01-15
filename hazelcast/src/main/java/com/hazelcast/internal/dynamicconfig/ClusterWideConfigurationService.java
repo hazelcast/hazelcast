@@ -220,11 +220,6 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public void unbroadcastConfig(IdentifiedDataSerializable config) {
-        unbroadcastConfigAsync(config).joinInternal();
-    }
-
-    @Override
     public void updateLicense(String licenseKey) {
         throw new UnsupportedOperationException("Updating the license requires Hazelcast Enterprise");
     }
@@ -241,10 +236,6 @@ public class ClusterWideConfigurationService implements
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         return broadcastConfigAsync(config, AddDynamicConfigOperationSupplier::new);
-    }
-
-    public InternalCompletableFuture<Object> unbroadcastConfigAsync(IdentifiedDataSerializable config) {
-        return broadcastConfigAsync(config, RemoveDynamicConfigOperationSupplier::new);
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config,
@@ -376,26 +367,6 @@ public class ClusterWideConfigurationService implements
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
-        persist(newConfig);
-    }
-
-    /**
-     * Register a dynamic configuration in a local member.
-     *
-     * @param newConfig       Configuration to register.
-     * @throws UnsupportedOperationException when given configuration type is not supported
-     */
-    @SuppressWarnings("checkstyle:methodlength")
-    public void deregisterConfigLocally(IdentifiedDataSerializable newConfig) {
-        if (newConfig instanceof UserCodeNamespaceConfig) {
-            UserCodeNamespaceConfig config = (UserCodeNamespaceConfig) newConfig;
-            namespaceConfigs.remove(config.getName(), newConfig);
-            // remove even if our `namespaceConfigs` map did not contain it, as we may be removing
-            // a statically configured NamespaceConfig
-            nodeEngine.getNamespaceService().removeNamespaceConfig(config);
-        } else {
-            throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
-        }
         persist(newConfig);
     }
 

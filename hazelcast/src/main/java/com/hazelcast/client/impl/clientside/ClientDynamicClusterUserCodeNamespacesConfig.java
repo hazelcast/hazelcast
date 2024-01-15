@@ -16,7 +16,6 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigRemoveUserCodeNamespaceConfigCodec;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespaceConfig;
@@ -60,8 +59,7 @@ public class ClientDynamicClusterUserCodeNamespacesConfig extends UserCodeNamesp
 
     @Override
     public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {
-        parent.invoke(DynamicConfigRemoveUserCodeNamespaceConfigCodec.encodeRequest(namespace));
-        return this;
+        throw new UnsupportedOperationException(ClientDynamicClusterConfig.UNSUPPORTED_ERROR_MESSAGE);
     }
 
     private static List<ResourceDefinitionHolder> toResourceDefinitionHolders(UserCodeNamespaceConfig userCodeNamespaceConfig) {

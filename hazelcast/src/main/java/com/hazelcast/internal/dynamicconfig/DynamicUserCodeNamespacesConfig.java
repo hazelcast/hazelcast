@@ -44,9 +44,7 @@ public class DynamicUserCodeNamespacesConfig
 
     @Override
     public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {
-        super.removeNamespaceConfig(namespace);
-        configurationServiceAccessor.get().unbroadcastConfig(new UserCodeNamespaceConfig(namespace));
-        return this;
+        throw new UnsupportedOperationException("Namespaces cannot be removed at runtime");
     }
 
     @Override
