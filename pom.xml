@@ -159,7 +159,6 @@
         <archunit.version>1.2.1</archunit.version>
         <errorprone.version>2.24.1</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.9.2</kubernetes-server-mock.version>
         <hikari.version>5.1.0</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -2091,8 +2090,10 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-server-mock</artifactId>
-                <version>${kubernetes-server-mock.version}</version>
+                <artifactId>kubernetes-client-bom</artifactId>
+                <version>6.9.2</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.j2objc</groupId>
