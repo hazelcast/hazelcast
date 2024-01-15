@@ -29,7 +29,9 @@ import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -85,9 +87,9 @@ public class SourceConnectorWrapper {
 
     void createSourceConnector(Properties propertiesFromUser) {
         String connectorClazz = propertiesFromUser.getProperty("connector.class");
-        sourceConnector = newConnectorInstance(connectorClazz);
+        logger.fine("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
 
-        logger.fine("Initializing connector '" + name + "'");
+        sourceConnector = newConnectorInstance(connectorClazz);
         sourceConnector.initialize(new JetConnectorContext());
 
         logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
@@ -140,7 +142,7 @@ public class SourceConnectorWrapper {
     }
 
     private void processMessage(Message<TaskConfigMessage> message) {
-        logger.info("Received TaskConfigTopic topic");
+        logger.info("Received TaskConfigTopic message");
         TaskConfigMessage taskConfigMessage = message.getMessageObject();
         processMessage(taskConfigMessage);
     }
@@ -159,12 +161,24 @@ public class SourceConnectorWrapper {
         if (taskConfig != null) {
             // Pass my taskConfig to taskRunner
             logger.info("Updating taskRunner with processorOrder = " + processorOrder
-                        + " with taskConfig=" + taskConfig);
+                        + " with taskConfig=" + maskPasswords(taskConfig));
 
             taskRunner.updateTaskConfig(taskConfig);
 
         }
         receivedTaskConfiguration.set(true);
+    }
+
+    private Map<String, String> maskPasswords(Map<String, String> configMap) {
+        var newMap = new LinkedHashMap<>(configMap);
+        newMap.replaceAll((k, v) -> {
+            if (k.toLowerCase(Locale.ROOT).contains("password")) {
+                return "****";
+            } else {
+                return v;
+            }
+        });
+        return newMap;
     }
 
     public List<SourceRecord> poll() {
@@ -236,7 +250,7 @@ public class SourceConnectorWrapper {
         }
         try {
             reconfigurationLock.lock();
-            logger.fine("Updating tasks configuration");
+            logger.info("Updating tasks configuration");
             List<Map<String, String>> taskConfigs = sourceConnector.taskConfigs(tasksMax);
 
             // Log taskConfigs
@@ -248,6 +262,7 @@ public class SourceConnectorWrapper {
             TaskConfigMessage taskConfigMessage = new TaskConfigMessage();
             taskConfigMessage.setTaskConfigs(taskConfigs);
             publishMessage(taskConfigMessage);
+            logger.info(taskConfigs.size() + " task configs were sent");
         } finally {
             reconfigurationLock.unlock();
         }

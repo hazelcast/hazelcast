@@ -100,8 +100,11 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     protected void init(@Nonnull Context context) {
         globalProcessorIndex = context.globalProcessorIndex();
         localProcessorIndex = context.localProcessorIndex();
-        logger.info("Entering ReadKafkaConnectP init processorOrder=" +
-                         processorOrder + " localProcessorIndex= " + localProcessorIndex);
+        logger.info("Entering ReadKafkaConnectP init processorOrder=" + processorOrder
+                + " localProcessorIndex= " + localProcessorIndex
+                + ", globalProcessorIndex=" + globalProcessorIndex
+                + ", snapshotsEnabled=" + snapshotsEnabled
+        );
 
         if (sourceConnectorWrapper == null) {
             sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser, processorOrder, context);
@@ -164,7 +167,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public boolean saveToSnapshot() {
-        logger.info("saveToSnapshot for globalProcessorIndex=" + globalProcessorIndex +
+        logger.info("Saving to snapshot for globalProcessorIndex=" + globalProcessorIndex +
                          " localProcessorIndex= " + localProcessorIndex);
 
         if (!snapshotsEnabled) {
@@ -187,7 +190,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        logger.info("restoreFromSnapshot key " + key + " value " + value);
+        logger.info("Restoring from snapshot with key " + key + " value " + value);
 
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
