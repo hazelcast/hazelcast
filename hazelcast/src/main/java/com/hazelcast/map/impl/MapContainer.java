@@ -103,7 +103,6 @@ public class MapContainer {
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
-
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
 

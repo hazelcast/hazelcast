@@ -61,6 +61,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.BadTable;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -87,6 +88,7 @@ import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapInde
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_TSTORE_ENABLED;
 import static com.hazelcast.sql.impl.QueryUtils.getMapContainer;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
@@ -149,7 +151,8 @@ public class IMapSqlConnector implements SqlConnector {
         KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
                 true,
                 resolvedFields,
-                externalResource.options(), ss
+                externalResource.options(),
+                ss
         );
         KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
                 false,
@@ -164,6 +167,13 @@ public class IMapSqlConnector implements SqlConnector {
         MapServiceContext context = service.getMapServiceContext();
         String mapName = externalResource.externalName()[0];
         MapContainer container = context.getExistingMapContainer(mapName);
+
+        if ((container != null && container.getMapConfig().getTieredStoreConfig().isEnabled()) &&
+                !nodeEngine.getProperties().getBoolean(SQL_TSTORE_ENABLED)) {
+            return new BadTable(schemaName, mappingName, TYPE_NAME,
+                    new HazelcastException("Querying Tiered Storage IMap via SQL is an experimental feature. " +
+                            "Enable 'hazelcast.sql.tstore.enabled' cluster property to use it."));
+        }
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;

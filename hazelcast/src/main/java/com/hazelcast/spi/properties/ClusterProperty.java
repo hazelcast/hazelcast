@@ -1893,6 +1893,15 @@ public final class ClusterProperty {
             "hazelcast.sql.experimental.custom.cyclic.types.enabled", false);
 
     /**
+     * Enable experimental support for querying Tiered Storage IMaps via SQL.
+     * @since 5.4
+     */
+    @Beta
+    public static final HazelcastProperty SQL_TSTORE_ENABLED = new HazelcastProperty(
+            "hazelcast.sql.tstore.enabled", false);
+
+
+    /**
      * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
      * and automate cluster state management decisions.
      * Supported when persistence is enabled and Hazelcast is executed in a Kubernetes
