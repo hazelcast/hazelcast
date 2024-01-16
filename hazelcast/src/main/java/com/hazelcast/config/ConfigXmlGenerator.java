@@ -24,6 +24,7 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.AbstractClusterLoginConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -316,6 +317,10 @@ public class ConfigXmlGenerator {
             }
             kerberosIdentityGenerator(gen, c.getKerberosIdentityConfig());
             gen.close();
+        }
+        AccessControlServiceConfig acs = c.getAccessControlServiceConfig();
+        if (acs != null) {
+            factoryWithPropertiesXmlGenerator(gen, "access-control-service", acs);
         }
         gen.close();
     }
@@ -797,8 +802,13 @@ public class ConfigXmlGenerator {
     }
 
     protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
-                                                     AbstractFactoryWithPropertiesConfig<?> factoryWithProps) {
-        gen.open(elementName, "enabled", factoryWithProps != null && factoryWithProps.isEnabled());
+                                                     AbstractBaseFactoryWithPropertiesConfig<?> factoryWithProps) {
+        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig) {
+            AbstractFactoryWithPropertiesConfig cfgWithEnabled = (AbstractFactoryWithPropertiesConfig) factoryWithProps;
+            gen.open(elementName, "enabled", cfgWithEnabled.isEnabled());
+        } else {
+            gen.open(elementName);
+        }
         if (factoryWithProps != null) {
             gen.node("factory-class-name", factoryWithProps.getFactoryClassName())
                     .appendProperties(factoryWithProps.getProperties());

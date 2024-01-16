@@ -6153,6 +6153,7 @@
         <xs:all>
             <xs:element name="authentication" type="authentication" minOccurs="0"/>
             <xs:element name="identity" type="identity" minOccurs="0"/>
+            <xs:element name="access-control-service" type="access-control-service" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
@@ -6282,6 +6283,14 @@
             <xs:element name="use-canonical-hostname" type="xs:boolean" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
+
+    <xs:complexType name="access-control-service">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="factory-class-name" type="xs:string"/>
+    </xs:complexType>
+
 
     <xs:complexType name="realm-reference">
         <xs:attribute name="realm" type="xs:string" use="required"/>

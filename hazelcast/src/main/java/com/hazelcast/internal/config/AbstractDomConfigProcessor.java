@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AbstractBaseFactoryWithPropertiesConfig;
 import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
@@ -319,11 +320,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         return fillFactoryWithPropertiesConfig(node, new SSLConfig());
     }
 
-    protected <T extends AbstractFactoryWithPropertiesConfig<?>> T fillFactoryWithPropertiesConfig(Node node, T factoryConfig) {
-        Node enabledNode = getNamedItemNode(node, "enabled");
-        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
-        factoryConfig.setEnabled(enabled);
-
+    protected <T extends AbstractBaseFactoryWithPropertiesConfig<?>> T fillBaseFactoryWithPropertiesConfig(Node node,
+            T factoryConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("factory-class-name", nodeName)) {
@@ -332,6 +330,14 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 fillProperties(n, factoryConfig.getProperties());
             }
         }
+        return factoryConfig;
+    }
+
+    protected <T extends AbstractFactoryWithPropertiesConfig<?>> T fillFactoryWithPropertiesConfig(Node node, T factoryConfig) {
+        fillBaseFactoryWithPropertiesConfig(node, factoryConfig);
+        Node enabledNode = getNamedItemNode(node, "enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        factoryConfig.setEnabled(enabled);
         return factoryConfig;
     }
 

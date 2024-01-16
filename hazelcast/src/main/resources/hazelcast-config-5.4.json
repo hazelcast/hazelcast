@@ -2899,6 +2899,18 @@
                     "$ref": "#/definitions/CredentialsFactoryIdentity"
                   }
                 }
+              },
+              "access-control-service": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "factory-class-name": {
+                    "type": "string"
+                  },
+                  "properties": {
+                    "type": "object"
+                  }
+                }
               }
             }
           }

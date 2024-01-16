@@ -125,6 +125,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -1910,9 +1911,23 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleIdentity(child, realmConfigBuilder);
                 } else if ("authentication".equals(nodeName)) {
                     handleAuthentication(child, realmConfigBuilder);
+                } else if ("access-control-service".equals(nodeName)) {
+                    handleAccessControlService(child, realmConfigBuilder);
                 }
             }
             return beanDefinition;
+        }
+
+        private void handleAccessControlService(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            BeanDefinitionBuilder builder = createBeanBuilder(AccessControlServiceConfig.class);
+            fillValues(node, builder);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, builder);
+                }
+            }
+            realmConfigBuilder.addPropertyValue("accessControlServiceConfig", builder.getBeanDefinition());
         }
 
         private void handleAuthentication(Node node, BeanDefinitionBuilder realmConfigBuilder) {

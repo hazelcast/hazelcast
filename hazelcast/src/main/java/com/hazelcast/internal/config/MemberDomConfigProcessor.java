@@ -137,6 +137,7 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.AbstractClusterLoginConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
@@ -3408,6 +3409,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleAuthentication(realmConfig, child);
             } else if (matches("identity", nodeName)) {
                 handleIdentity(realmConfig, child);
+            } else if (matches("access-control-service", nodeName)) {
+                handleAccessControlService(realmConfig, child);
             }
         }
     }
@@ -3442,6 +3445,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleKerberosIdentity(realmConfig, child);
             }
         }
+    }
+
+    private void handleAccessControlService(RealmConfig realmConfig, Node node) {
+        AccessControlServiceConfig acs = new AccessControlServiceConfig();
+        realmConfig.setAccessControlServiceConfig(acs);
+        fillBaseFactoryWithPropertiesConfig(node, acs);
     }
 
     protected void handleToken(RealmConfig realmConfig, Node node) {

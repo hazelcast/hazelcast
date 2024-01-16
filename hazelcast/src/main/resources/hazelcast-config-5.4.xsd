@@ -2528,7 +2528,7 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
-    <xs:complexType name="factory-class-with-properties">
+    <xs:complexType name="factory-class-with-properties-base">
         <xs:all>
             <xs:element name="factory-class-name" type="xs:string" minOccurs="0">
                 <xs:annotation>
@@ -2539,13 +2539,19 @@
             </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    True to enable this configuration element, false to disable.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="factory-class-with-properties">
+        <xs:complexContent>
+            <xs:extension base="factory-class-with-properties-base">
+                <xs:attribute name="enabled" default="false" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            True to enable this configuration element, false to disable.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="item-listener">
         <xs:simpleContent>
@@ -6011,6 +6017,7 @@
         <xs:all>
             <xs:element name="authentication" type="authentication" minOccurs="0"/>
             <xs:element name="identity" type="identity" minOccurs="0"/>
+            <xs:element name="access-control-service" type="factory-class-with-properties-base" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>

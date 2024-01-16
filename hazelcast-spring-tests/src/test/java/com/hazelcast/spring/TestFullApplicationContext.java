@@ -128,6 +128,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
@@ -716,6 +717,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         expectedRoles.add("monitor");
         expectedRoles.add("hazelcast");
         assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
+        AccessControlServiceConfig acs = simpleRealm.getAccessControlServiceConfig();
+        assertNotNull(acs);
+        assertEquals("com.acme.access.AccessControlServiceFactory", acs.getFactoryClassName());
+        assertEquals("/opt/acl.xml", acs.getProperty("decisionFile"));
     }
 
     @Test

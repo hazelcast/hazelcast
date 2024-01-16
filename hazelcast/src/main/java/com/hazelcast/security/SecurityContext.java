@@ -20,9 +20,13 @@ import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
+import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+
+import java.net.InetAddress;
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Set;
@@ -58,6 +62,27 @@ public interface SecurityContext {
      */
     LoginContext createClientLoginContext(String clusterName, Credentials credentials, Connection connection)
             throws LoginException;
+
+    /**
+     * Creates JAAS login {@link Configuration} from given Security Realm configuration.
+     *
+     * @param realmName security realm name
+     * @return {@link Configuration} for given realm (or default authentication configuration if the realm doesn't exist).
+     */
+    Configuration createLoginConfigurationForRealm(String realmName);
+
+    /**
+     * Creates {@link LoginContext} from given JAAS Configuration.
+     *
+     * @param configuration JAAS configuration object
+     * @param clusterName cluster name
+     * @param credentials credentials
+     * @param remoteAddress address of the HTTP client
+     * @return {@link LoginContext}
+     * @throws LoginException in case of any exceptional case
+     */
+    LoginContext createLoginContext(@Nonnull Configuration configuration, String clusterName, Credentials credentials,
+            InetAddress remoteAddress) throws LoginException;
 
     /**
      * Returns current {@link ICredentialsFactory}.

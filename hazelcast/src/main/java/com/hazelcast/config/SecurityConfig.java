@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.security.ICredentialsFactory;
 
 /**
@@ -273,6 +274,10 @@ public class SecurityConfig {
 
     private RealmConfig getRealmConfigOrDefault(String realmName) {
         RealmConfig realmConfig = realmName == null ? null : realmConfigs.get(realmName);
+        if (realmConfig == null) {
+            Logger.getLogger(getClass())
+                    .warning("Realm '" + realmName + "' is requested, but it doesn't exist in member configuration.");
+        }
         return realmConfig == null ? RealmConfig.DEFAULT_REALM : realmConfig;
     }
 }

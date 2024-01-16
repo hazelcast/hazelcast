@@ -2493,6 +2493,18 @@ hazelcast:
                 storeKey: true
                 principal: hz/127.0.0.1@HAZELCAST.COM
                 keyTab: /opt/hz-localhost.keytab
+      - name: restRealm
+        authentication:
+          simple:
+            users:
+              - username: restuser
+                password: 'restpassword'
+                roles:
+                  - admin
+        access-control-service:
+          factory-class-name: com.acme.access.AccessControlServiceFactory
+          properties:
+            decisionFile: '/opt/acl.xml'
     member-authentication:
       realm: jaasRealm
     client-authentication:
