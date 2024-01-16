@@ -42,7 +42,7 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_arrow=0
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_colon=0
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_logical_operator=16
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_method_declaration=0
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_method_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_module_statements=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_multiple_fields=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_multiplicative_operator=16
@@ -53,11 +53,11 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_record_components=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_relational_operator=0
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_resources_in_try=80
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation=16
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation=81
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_shift_operator=0
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_string_concatenation=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superclass_in_type_declaration=16
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_enum_declaration=16
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_enum_declaration=48
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_record_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_type_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_switch_case_with_arrow=0
