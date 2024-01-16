@@ -245,6 +245,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public void getCompactSchemas(BufferObjectDataInput in, Set<Schema> schemas) throws IOException {
+        delegate.getCompactSchemas(in, schemas);
+    }
+
+    @Override
     public void dispose() {
         delegate.dispose();
     }

@@ -41,15 +41,9 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
-import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER;
-import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
-import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.INT_OFFSET_READER;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.NULL_OFFSET;
-import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER;
-import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
@@ -91,52 +85,22 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  */
 public class CompactInternalGenericRecord extends CompactGenericRecord implements InternalGenericRecord {
 
-    private final OffsetReader offsetReader;
     private final Schema schema;
     private final BufferObjectDataInput in;
-    private final int dataStartPosition;
-    private final int variableOffsetsPosition;
     private final CompactStreamSerializer serializer;
     private final boolean schemaIncludedInBinary;
+    private final CompactOffsetHelper offsetHelper;
     private final @Nullable
     Class associatedClass;
 
     protected CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
                                            @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
-        this.in = in;
         this.serializer = serializer;
         this.schema = schema;
         this.associatedClass = associatedClass;
         this.schemaIncludedInBinary = schemaIncludedInBinary;
-        try {
-            int finalPosition;
-            int numberOfVariableLengthFields = schema.getNumberOfVariableSizeFields();
-            if (numberOfVariableLengthFields != 0) {
-                int dataLength = in.readInt();
-                dataStartPosition = in.position();
-                variableOffsetsPosition = dataStartPosition + dataLength;
-                if (dataLength < BYTE_OFFSET_READER_RANGE) {
-                    offsetReader = BYTE_OFFSET_READER;
-                    finalPosition = variableOffsetsPosition + numberOfVariableLengthFields;
-                } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
-                    offsetReader = SHORT_OFFSET_READER;
-                    finalPosition = variableOffsetsPosition + (numberOfVariableLengthFields * SHORT_SIZE_IN_BYTES);
-                } else {
-                    offsetReader = INT_OFFSET_READER;
-                    finalPosition = variableOffsetsPosition + (numberOfVariableLengthFields * INT_SIZE_IN_BYTES);
-                }
-            } else {
-                offsetReader = INT_OFFSET_READER;
-                variableOffsetsPosition = 0;
-                dataStartPosition = in.position();
-                finalPosition = dataStartPosition + schema.getFixedSizeFieldsLength();
-            }
-            //set the position to final so that the next one to read something from `in` can start from
-            //correct position
-            in.position(finalPosition);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
+        this.in = in;
+        this.offsetHelper = new CompactOffsetHelper(in, schema);
     }
 
     @Nonnull
@@ -149,8 +113,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return associatedClass;
     }
 
-    public BufferObjectDataInput getIn() {
-        return in;
+    private int getDataStartPosition() {
+        return offsetHelper.getDataStartPosition();
+    }
+
+    private OffsetReader getOffsetReader() {
+        return offsetHelper.getOffsetReader();
     }
 
     @Override
@@ -213,7 +181,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         try {
             int booleanOffset = fd.getOffset();
             int bitOffset = fd.getBitOffset();
-            int getOffset = booleanOffset + dataStartPosition;
+            int getOffset = booleanOffset + getDataStartPosition();
             byte lastByte = in.readByte(getOffset);
             return ((lastByte >>> bitOffset) & 1) != 0;
         } catch (IOException e) {
@@ -228,7 +196,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT8:
                 try {
-                    return in.readByte(readFixedSizePosition(fd));
+                    return in.readByte(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -246,7 +214,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT16:
                 try {
-                    return in.readShort(readFixedSizePosition(fd));
+                    return in.readShort(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -264,7 +232,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT32:
                 try {
-                    return in.readInt(readFixedSizePosition(fd));
+                    return in.readInt(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -282,7 +250,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT64:
                 try {
-                    return in.readLong(readFixedSizePosition(fd));
+                    return in.readLong(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -300,7 +268,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case FLOAT32:
                 try {
-                    return in.readFloat(readFixedSizePosition(fd));
+                    return in.readFloat(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -318,7 +286,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case FLOAT64:
                 try {
-                    return in.readDouble(readFixedSizePosition(fd));
+                    return in.readDouble(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -339,11 +307,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, STRING, BufferObjectDataInput::readString);
     }
 
-    private <T> T getVariableSize(FieldDescriptor fieldDescriptor,
-                                  Reader<T> reader) {
+    private <T> T getVariableSize(FieldDescriptor fd, Reader<T> reader) {
+        return getVariableSize(fd, reader, in, offsetHelper);
+    }
+
+    static <T> T getVariableSize(FieldDescriptor fieldDescriptor,
+                                  Reader<T> reader, BufferObjectDataInput in, CompactOffsetHelper offsetHelper) {
         int currentPos = in.position();
         try {
-            int pos = readVariableSizeFieldPosition(fieldDescriptor);
+            int pos = offsetHelper.readVariableSizeFieldPosition(in, fieldDescriptor);
             if (pos == NULL_OFFSET) {
                 return null;
             }
@@ -549,7 +521,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T getNullableArrayAsPrimitiveArray(FieldDescriptor fd, Reader<T> reader, String methodSuffix) {
         int currentPos = in.position();
         try {
-            int position = readVariableSizeFieldPosition(fd);
+            int position = offsetHelper.readVariableSizeFieldPosition(in, fd);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
@@ -599,7 +571,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT8:
                 try {
-                    return in.readByte(readFixedSizePosition(fd));
+                    return in.readByte(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -618,7 +590,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT16:
                 try {
-                    return in.readShort(readFixedSizePosition(fd));
+                    return in.readShort(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -637,7 +609,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT32:
                 try {
-                    return in.readInt(readFixedSizePosition(fd));
+                    return in.readInt(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -656,7 +628,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case INT64:
                 try {
-                    return in.readLong(readFixedSizePosition(fd));
+                    return in.readLong(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -675,7 +647,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case FLOAT32:
                 try {
-                    return in.readFloat(readFixedSizePosition(fd));
+                    return in.readFloat(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -694,7 +666,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         switch (fieldKind) {
             case FLOAT64:
                 try {
-                    return in.readDouble(readFixedSizePosition(fd));
+                    return in.readDouble(offsetHelper.readFixedSizePosition(fd));
                 } catch (IOException e) {
                     throw illegalStateException(e);
                 }
@@ -782,7 +754,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 in -> serializer.read(in, schemaIncludedInBinary));
     }
 
-    protected interface Reader<R> {
+    interface Reader<R> {
         R read(BufferObjectDataInput t) throws IOException;
     }
 
@@ -791,7 +763,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                                      Reader<T> reader) {
         int currentPos = in.position();
         try {
-            int pos = readVariableSizeFieldPosition(fieldDescriptor);
+            int pos = offsetHelper.readVariableSizeFieldPosition(in, fieldDescriptor);
             if (pos == NULL_OFFSET) {
                 return null;
             }
@@ -813,9 +785,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T[] getArrayOfVariableSize(FieldDescriptor fieldDescriptor,
                                            Function<Integer, T[]> constructor,
                                            Reader<T> reader) {
+        return getArrayOfVariableSize(fieldDescriptor, constructor, reader, in, offsetHelper);
+    }
+
+    static <T> T[] getArrayOfVariableSize(FieldDescriptor fieldDescriptor,
+                                        Function<Integer, T[]> constructor,
+                                        Reader<T> reader, BufferObjectDataInput in, CompactOffsetHelper offsetHelper) {
         int currentPos = in.position();
         try {
-            int position = readVariableSizeFieldPosition(fieldDescriptor);
+            int position = offsetHelper.readVariableSizeFieldPosition(in, fieldDescriptor);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
@@ -842,17 +820,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-
     private <T> T[] getArrayOfVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
                                            Function<Integer, T[]> constructor,
                                            Reader<T> reader) {
         FieldDescriptor fieldDefinition = getFieldDescriptor(fieldName, fieldKind);
         return getArrayOfVariableSize(fieldDefinition, constructor, reader);
-    }
-
-    private int readFixedSizePosition(FieldDescriptor fd) {
-        int primitiveOffset = fd.getOffset();
-        return primitiveOffset + dataStartPosition;
     }
 
     @Nonnull
@@ -871,16 +843,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             throw unexpectedFieldKind(fd.getKind(), fieldName);
         }
         return fd;
-    }
-
-    private int readVariableSizeFieldPosition(FieldDescriptor fd) {
-        try {
-            int index = fd.getIndex();
-            int offset = offsetReader.read(in, variableOffsetsPosition, index);
-            return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
     }
 
     private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
@@ -904,7 +866,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         FieldDescriptor fd = getFieldDescriptor(fieldName, ARRAY_OF_BOOLEAN);
-        int position = readVariableSizeFieldPosition(fd);
+        int position = offsetHelper.readVariableSizeFieldPosition(in, fd);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -952,7 +914,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                              Reader<T> reader, int index) {
         checkNotNegative(index, "Array indexes can not be negative");
         FieldDescriptor fd = getFieldDescriptor(fieldName, fieldKind);
-        int position = readVariableSizeFieldPosition(fd);
+        int position = offsetHelper.readVariableSizeFieldPosition(in, fd);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -1073,7 +1035,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         int currentPos = in.position();
         try {
             FieldDescriptor fd = getFieldDescriptor(fieldName, fieldKind);
-            int pos = readVariableSizeFieldPosition(fd);
+            int pos = offsetHelper.readVariableSizeFieldPosition(in, fd);
 
             if (pos == NULL_OFFSET) {
                 return null;
@@ -1105,7 +1067,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return schema.getTypeName();
     }
 
-    protected IllegalStateException illegalStateException(IOException e) {
+    protected static IllegalStateException illegalStateException(IOException e) {
         return new IllegalStateException("IOException is not expected since we get from a well known format and position", e);
     }
 

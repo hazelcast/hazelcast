@@ -40,8 +40,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 
@@ -389,6 +391,60 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             return schema;
         }
         return schema;
+    }
+
+    public void getCompactSchemas(BufferObjectDataInput in, Set<Schema> schemas) throws IOException {
+        if (in == null) {
+            throw new IllegalStateException("BufferObjectDataInput is null");
+        }
+        if (schemaService == null) {
+            throw new IllegalStateException("SchemaService is null");
+        }
+        long schemaId = in.readLong();
+        Schema schema = schemaService.get(schemaId);
+        if (schema == null) {
+            throw new IllegalStateException("Schema with id " + schemaId + " is not available in the cluster");
+        }
+        schemas.add(schema);
+        CompactOffsetHelper offsetHelper = new CompactOffsetHelper(in, schema);
+        Collection<FieldDescriptor> fields = schema.getFields();
+        for (FieldDescriptor field : fields) {
+            if (field.getKind() == FieldKind.COMPACT) {
+                in.position(offsetHelper.readVariableSizeFieldPosition(in, field));
+                getCompactSchemas(in, schemas);
+            } else if (field.getKind() == FieldKind.ARRAY_OF_COMPACT) {
+                getSchemasOfFirstElement(in, schemas, field, offsetHelper);
+            }
+        }
+    }
+
+    private void getSchemasOfFirstElement(BufferObjectDataInput in, Set<Schema> schemas, FieldDescriptor field,
+                                          CompactOffsetHelper offsetHelper) {
+        int currentPos = in.position();
+        try {
+            int position = offsetHelper.readVariableSizeFieldPosition(in, field);
+            if (position == NULL_ARRAY_LENGTH) {
+                return;
+            }
+            in.position(position);
+            int dataLength = in.readInt();
+            int itemCount = in.readInt();
+            if (itemCount == 0) {
+                return;
+            }
+            int dataStartPosition = in.position();
+            OffsetReader offsetReader = OffsetReader.readerFor(dataLength);
+            int offsetsPosition = dataStartPosition + dataLength;
+            // just read the first item
+            int offset = offsetReader.read(in, offsetsPosition, 0);
+            if (offset != NULL_ARRAY_LENGTH) {
+                in.position(offset + dataStartPosition);
+                getCompactSchemas(in, schemas);
+            }
+        } catch (IOException ignored) {
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     private static Schema buildSchema(CompactSerializableRegistration registration, Object o) {

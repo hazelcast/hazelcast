@@ -32,6 +32,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.Set;
 
 public interface InternalSerializationService extends SerializationService, Disposable {
 
@@ -178,4 +179,15 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     byte getVersion();
 
+    /**
+     * Searches all the compact schemas in the given data input recursively, including nested compact schemas.
+     * Adds them into the schemas set.
+     * <p>
+     * @param in {@link BufferObjectDataInput} to read the compact data, it has to be ready and positioned to the
+     *                                        start of the compact data.
+     * @param schemas set of schemas to add the schemas found in the compact data
+     * @throws IllegalStateException if one of the schemas is not available in the cluster/client proxy
+     * @throws IOException if an IO error occurs
+     */
+    void getCompactSchemas(BufferObjectDataInput in, Set<Schema> schemas) throws IOException;
 }

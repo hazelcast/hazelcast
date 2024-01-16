@@ -32,6 +32,7 @@ import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializerAdapter;
 import com.hazelcast.internal.serialization.impl.compact.CompactWithSchemaStreamSerializerAdapter;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
@@ -49,6 +50,7 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteOrder;
 import java.util.IdentityHashMap;
@@ -717,6 +719,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
                     + "provided by Hazelcast."
             );
         }
+    }
+
+    @Override
+    public void getCompactSchemas(BufferObjectDataInput in, Set<Schema> schemas) throws IOException {
+        compactStreamSerializer.getCompactSchemas(in, schemas);
     }
 
     public abstract static class Builder<T extends Builder<T>> {
