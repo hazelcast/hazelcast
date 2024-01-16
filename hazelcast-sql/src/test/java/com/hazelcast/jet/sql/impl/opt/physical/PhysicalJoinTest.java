@@ -16,29 +16,23 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
-import com.hazelcast.jet.sql.impl.connector.test.TestAbstractSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
-import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static java.util.Arrays.asList;
 
 public class PhysicalJoinTest extends OptimizerTestSupport {
