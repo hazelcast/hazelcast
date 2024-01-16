@@ -471,11 +471,10 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <!-- JDK 11+ is required for compilation. -->
-                                    <version>[11,)</version>
+                                    <version>[${jdk.version},)</version>
                                 </requireJavaVersion>
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>11</maxJdkVersion>
+                                    <maxJdkVersion>${jdk.version}</maxJdkVersion>
                                     <excludes>
                                         <!--
                                         The archunit library containse several classes to process JDK9 modules.
