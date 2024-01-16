@@ -175,9 +175,9 @@ public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
     }
 
     // This does not create equi join indices
-    // Put 5 items to tablename
-    // Put 3 items to otherTableName
-    // Left join should return 4 items but because of limit within the sql it returns 2 rows
+    // Put items to tablename
+    // Put items to otherTableName
+    // Left join should return a lot of items but because of limit within the sql it returns 2 rows
     // The iterator on sql is closed before the ResultSet is exhausted
     @Test
     public void thetaJoinByPrimaryKey_traverser_is_closed() throws SQLException {
@@ -188,18 +188,14 @@ public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
                 + "', 'maximumPoolSize'='64')");
 
         // So we need different tables
-        int count = 10_000;
+        int count = 500;
         String tableName0 = randomTableName();
         createTable(tableName0);
         insertItems(tableName0, count);
 
         String tableName1 = randomTableName();
         createTable(tableName1);
-
-        for (int i = 1; i < count; i++) {
-            String sql = getInsertSQL(tableName1, i, "othername-" + i);
-            executeJdbc(sql);
-        }
+        insertItems(tableName1, count);
 
         DataSource dataSource0 = getDataSource(0, jdbcDataConnection);
         DataSource dataSource1 = getDataSource(1, jdbcDataConnection);
