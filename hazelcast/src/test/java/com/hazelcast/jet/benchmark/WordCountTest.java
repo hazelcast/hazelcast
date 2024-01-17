@@ -201,7 +201,7 @@ public class WordCountTest extends JetTestSupport implements Serializable {
 
         dag.edge(between(source, mapReduce))
            .edge(between(mapReduce, combineLocal))
-           .edge(between(combineLocal, combineGlobal).distributed().allToOne("ALL"))
+           .edge(between(combineLocal, combineGlobal).distributed().allToOne())
            .edge(between(combineGlobal, sink));
 
         benchmark("jet", () -> instance.getJet().newJob(dag).join());

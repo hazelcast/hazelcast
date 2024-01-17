@@ -88,7 +88,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Spliterators;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -103,7 +102,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
@@ -389,7 +387,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     }
 
     private static Set<String> ownedObservables(DAG dag) {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(dag.iterator(), 0), false)
+        return dag.vertices().stream()
                 .map(vertex -> vertex.getMetaSupplier().getTags().get(ObservableImpl.OWNED_OBSERVABLE))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());

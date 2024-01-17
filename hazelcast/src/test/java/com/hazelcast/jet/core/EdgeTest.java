@@ -169,6 +169,22 @@ public class EdgeTest {
     }
 
     @Test
+    public void whenAllToOneDontCare_thenAlwaysSamePartition() {
+        // Given
+        final Edge e = Edge.from(a);
+        final int mockPartitionCount = 100;
+
+        // When
+        e.allToOne();
+        final Partitioner partitioner = e.getPartitioner();
+        assertNotNull(partitioner);
+
+        // Then
+        assertSame(RoutingPolicy.PARTITIONED, e.getRoutingPolicy());
+        assertEquals(partitioner.getPartition(17, mockPartitionCount), partitioner.getPartition(13, mockPartitionCount));
+    }
+
+    @Test
     public void whenBroadcastSet_thenIsBroadcast() {
         final Edge e = Edge.from(a).broadcast();
         assertSame(RoutingPolicy.BROADCAST, e.getRoutingPolicy());

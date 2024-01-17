@@ -154,7 +154,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
            .vertex(consumer)
            .edge(between(producer, consumer)
                    .distributeTo(new Address("1.2.3.4", 9999))
-                   .allToOne("foo"));
+                   .allToOne());
 
         exception.expectMessage("The target member of an edge is not present in the cluster");
         instance().getJet().newJob(dag).join();

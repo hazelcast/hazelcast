@@ -441,6 +441,7 @@ public class DAGTest {
                 () -> edge.unicast(),
                 () -> edge.partitioned(null),
                 () -> edge.partitioned(null, null),
+                () -> edge.allToOne(),
                 () -> edge.allToOne(null),
                 () -> edge.broadcast(),
                 () -> edge.isolated(),

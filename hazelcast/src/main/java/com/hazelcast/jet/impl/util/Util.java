@@ -24,7 +24,9 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -829,6 +831,22 @@ public final class Util {
 
     public static boolean isJetEnabled(NodeEngine nodeEngine) {
         return nodeEngine.getConfig().getJetConfig().isEnabled();
+    }
+
+    /**
+     * Creates heap data payload with deterministic hash which always selects
+     * the same partition if `hash` is smaller than the number of partitions.
+     *
+     * @implNote This method relies on cached hash stored in {@link HeapData} header.
+     * The actual data is 0 length.
+     *
+     * @param hash desired hash
+     * @return heap data payload
+     */
+    public static byte[] heapDataWithHash(int hash) {
+        var data = new byte[HeapData.HEAP_DATA_OVERHEAD];
+        Bits.writeIntB(data, 0, hash);
+        return data;
     }
 
     public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {

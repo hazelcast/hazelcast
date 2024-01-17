@@ -323,7 +323,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Edge edge = between(sortVertex, combineVertex)
                 .ordered(comparator)
                 .distributeTo(localMemberAddress)
-                .allToOne("");
+                .allToOne();
         dag.edge(edge);
 
         return combineVertex;
@@ -341,7 +341,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 )
         );
         connectInput(rel.getInput(), vertex, edge ->
-                edge.distributeTo(localMemberAddress).allToOne(""));
+                edge.distributeTo(localMemberAddress).allToOne());
         return vertex;
     }
 
@@ -369,7 +369,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 )
         );
         connectInput(rel.getInput(), vertex, edge ->
-                edge.distributeTo(localMemberAddress).allToOne(""));
+                edge.distributeTo(localMemberAddress).allToOne());
         return vertex;
     }
 
@@ -466,7 +466,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             resultMapping,
                             watermarkKey));
             connectInput(rel.getInput(), vertex, edge ->
-                    edge.distributeTo(localMemberAddress).allToOne(""));
+                    edge.distributeTo(localMemberAddress).allToOne());
             return vertex;
         } else {
             assert rel.numStages() == 2;
@@ -650,7 +650,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
-                .allToOne(""));
+                .allToOne());
         return vertex;
     }
 

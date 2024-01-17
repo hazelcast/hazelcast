@@ -77,6 +77,9 @@ import static java.util.stream.Collectors.joining;
  * </li></ol>
  * Data travels from sources to sinks and is transformed and reshaped
  * as it passes through the processors.
+ * <p>
+ * Note that {@link #iterator()) must be invoked at least once in order to
+ * validate the DAG and check against cycles.
  *
  * @since Jet 3.0
  */
@@ -299,7 +302,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Returns an iterator over the DAG's vertices in topological order.
+     * Validates the DAG and returns an iterator over the DAG's vertices in topological order.
+     * <p>
+     * Note that this method must be invoked at least once in order to validate
+     * the DAG and check against cycles.
      */
     @Nonnull @Override
     public Iterator<Vertex> iterator() {

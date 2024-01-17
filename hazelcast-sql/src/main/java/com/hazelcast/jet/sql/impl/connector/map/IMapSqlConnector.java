@@ -76,7 +76,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
@@ -346,7 +345,7 @@ public class IMapSqlConnector implements SqlConnector {
             context.getDag().edge(between(scanner, sorter)
                     .ordered(comparator)
                     .distributeTo(localMemberAddress)
-                    .allToOne("")
+                    .allToOne()
             );
             return sorter;
         }
@@ -393,7 +392,7 @@ public class IMapSqlConnector implements SqlConnector {
                         )
                 )
         ).localParallelism(1);
-        return new VertexWithInputConfig(vertex, edge -> edge.distributed().allToOne(newUnsecureUuidString()));
+        return new VertexWithInputConfig(vertex, edge -> edge.distributed().allToOne());
     }
 
     @Nonnull

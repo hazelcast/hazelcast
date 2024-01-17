@@ -23,6 +23,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -521,7 +522,8 @@ public class TopologyChangeTest extends JetTestSupport {
         JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet(), null);
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
-        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, version, memberInfos, null, false);
+        InitExecutionOperation op = InitExecutionOperation.forNormalJob(jobId, executionId, memberListVersion, version,
+                memberInfos, new HeapData());
         Future<Object> future = Accessors.getOperationService(master)
                 .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, Accessors.getAddress(master))
                 .invoke();
