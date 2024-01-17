@@ -52,6 +52,7 @@ public final class SecurityInterceptorConstants {
     public static final String LOAD_ALL = "loadAll";
     public static final String ENABLE_MANAGEMENT = "enableManagement";
     public static final String PUT_ALL = "putAll";
+    public static final String PUT_ALL_WITH_METADATA = "putAllWithMetadata";
     public static final String PUT_IF_ABSENT = "putIfAbsent";
     public static final String PUT = "put";
     public static final String GET_AND_PUT = "getAndPut";

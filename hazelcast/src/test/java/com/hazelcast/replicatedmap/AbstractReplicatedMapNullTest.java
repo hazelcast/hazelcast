@@ -71,7 +71,7 @@ public abstract class AbstractReplicatedMapNullTest extends HazelcastTestSupport
         assertThrowsNPE(m -> m.removeEntryListener(null));
     }
 
-    private void assertThrowsNPE(ConsumerEx<ReplicatedMap<Object, Object>> method) {
+    protected void assertThrowsNPE(ConsumerEx<ReplicatedMap<Object, Object>> method) {
         assertThrows(NullPointerException.class, method);
     }
 

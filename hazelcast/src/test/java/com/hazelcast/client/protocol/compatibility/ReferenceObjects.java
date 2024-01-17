@@ -85,6 +85,8 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.partition.MigrationState;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -790,6 +792,9 @@ public class ReferenceObjects {
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
     public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(aUUID, anInt, aString, aString);
     public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
+    public static ReplicatedMapEntryViewHolder aReplicatedMapEntryViewHolder = new ReplicatedMapEntryViewHolder(
+            aData, aData, aLong, aLong, aLong, aLong, aLong
+    );
 
     static {
         aSimpleEntryView.setCost(aLong);
@@ -977,6 +982,10 @@ public class ReferenceObjects {
 
     public static List<SimpleEntryView<Data, Data>> aListOfSimpleEntryViews = Collections.singletonList(
             aSimpleEntryView
+    );
+
+    public static List<ReplicatedMapEntryViewHolder> aListOfReplicatedMapEntryViewHolders = Collections.singletonList(
+            aReplicatedMapEntryViewHolder
     );
 
     public static WanConsumerConfigHolder aWanConsumerConfigHolder =

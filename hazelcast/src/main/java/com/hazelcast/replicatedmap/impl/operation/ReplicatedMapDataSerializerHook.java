@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
 
 import java.util.function.Supplier;
 
@@ -62,8 +63,9 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int RECORD_MIGRATION_INFO = 24;
     public static final int MERGE_FACTORY = 25;
     public static final int MERGE = 26;
-
-    private static final int LEN = MERGE + 1;
+    public static final int PUT_ALL_WITH_METADATA = 27;
+    public static final int ENTRY_VIEW_HOLDER = 28;
+    private static final int LEN = ENTRY_VIEW_HOLDER + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -105,6 +107,8 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
         constructors[RECORD_MIGRATION_INFO] = RecordMigrationInfo::new;
         constructors[MERGE_FACTORY] = MergeOperationFactory::new;
         constructors[MERGE] = MergeOperation::new;
+        constructors[PUT_ALL_WITH_METADATA] = PutAllWithMetadataOperation::new;
+        constructors[ENTRY_VIEW_HOLDER] = ReplicatedMapEntryViewHolder::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }
