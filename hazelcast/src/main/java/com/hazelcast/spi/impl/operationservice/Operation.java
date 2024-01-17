@@ -243,6 +243,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         return serviceName;
     }
 
+    @SuppressWarnings("java:S4973")
     @SuppressFBWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
         // If the name of the service is the same as the name already provided, the call is skipped.

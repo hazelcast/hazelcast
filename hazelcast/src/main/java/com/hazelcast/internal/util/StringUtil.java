@@ -315,16 +315,13 @@ public final class StringUtil {
     }
 
     /**
-     * Returns true if two strings are equals ignoring the letter case in {@link #LOCALE_INTERNAL} locale.
-     *
      * @param str1 first string to compare
      * @param str2 second string to compare
-     * @return true if the strings are equals ignoring the case
+     * @return {@code true} if the two strings are equals ignoring the letter case in {@link #LOCALE_INTERNAL} locale.
      */
+    @SuppressWarnings("java:S4973")
     public static boolean equalsIgnoreCase(String str1, String str2) {
-        return (str1 == null || str2 == null)
-                ? false
-                : (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
+        return (str1 != null && str2 != null) && (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
     }
 
     /**
