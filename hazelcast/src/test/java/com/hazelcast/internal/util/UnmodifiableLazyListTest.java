@@ -56,7 +56,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        List<Data> dataList = new ArrayList<Data>();
+        List<Data> dataList = new ArrayList<>();
         for (int i = 0; i < SIZE; i++) {
             dataList.add(serializationService.toData(i));
         }
@@ -133,7 +133,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll_True() {
-        ArrayList<Integer> integers = new ArrayList<Integer>();
+        ArrayList<Integer> integers = new ArrayList<>();
         integers.add(randomInt());
         integers.add(randomInt());
         assertContainsAll(list, integers);
@@ -141,7 +141,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll_False() {
-        ArrayList<Integer> integers = new ArrayList<Integer>();
+        ArrayList<Integer> integers = new ArrayList<>();
         integers.add(randomInt());
         integers.add(randomInt() + SIZE);
         assertNotContainsAll(list, integers);
@@ -149,7 +149,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testAddAll() {
-        ArrayList<Integer> integers = new ArrayList<Integer>();
+        ArrayList<Integer> integers = new ArrayList<>();
         integers.add(randomInt());
         integers.add(randomInt());
         list.addAll(integers);
@@ -157,7 +157,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveAll() {
-        ArrayList<Integer> integers = new ArrayList<Integer>();
+        ArrayList<Integer> integers = new ArrayList<>();
         integers.add(randomInt());
         integers.add(randomInt());
         list.removeAll(integers);
@@ -165,7 +165,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRetainAll() {
-        ArrayList<Integer> integers = new ArrayList<Integer>();
+        ArrayList<Integer> integers = new ArrayList<>();
         integers.add(randomInt());
         integers.add(randomInt());
         list.retainAll(integers);
@@ -201,7 +201,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testAddAll_WithIndex() {
-        ArrayList<Integer> integers = new ArrayList<Integer>();
+        ArrayList<Integer> integers = new ArrayList<>();
         integers.add(randomInt());
         integers.add(randomInt());
         list.addAll(randomInt(), integers);

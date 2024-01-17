@@ -45,12 +45,12 @@ public class ToHeapDataConverterTest {
     }
 
     @Test
-    public void whenNull() throws Exception {
+    public void whenNull() {
         Data data = ToHeapDataConverter.toHeapData(null);
         assertNull(data);
     }
 
-    class AnotherDataImpl implements Data {
+    static class AnotherDataImpl implements Data {
 
         @Override
         public byte[] toByteArray() {

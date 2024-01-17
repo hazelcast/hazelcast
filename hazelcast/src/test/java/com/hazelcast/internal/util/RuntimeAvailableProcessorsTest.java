@@ -30,13 +30,13 @@ import static org.junit.Assert.assertEquals;
 public class RuntimeAvailableProcessorsTest {
 
     @Test
-    public void getAvailableProcessors_withoutOverride() throws Exception {
+    public void getAvailableProcessors_withoutOverride() {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         assertEquals(availableProcessors, RuntimeAvailableProcessors.get());
     }
 
     @Test
-    public void getAvailableProcessors_withOverride() throws Exception {
+    public void getAvailableProcessors_withOverride() {
         int customAvailableProcessors = 1234;
         RuntimeAvailableProcessors.override(customAvailableProcessors);
         try {
