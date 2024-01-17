@@ -18,17 +18,64 @@ package com.hazelcast.commandline;
 
 import com.hazelcast.instance.GeneratedBuildProperties;
 import org.junit.Test;
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertArrayEquals;
 
 public class VersionProviderTest {
     @Test
     public void test_gerVersion() {
-        // given
-        String[] expected = {"Version: " + GeneratedBuildProperties.VERSION};
-        // when
-        String[] version = new VersionProvider().getVersion();
-        // then
-        assertArrayEquals(expected, version);
+        try {
+            // given
+            String[] expected = {"Version: " + GeneratedBuildProperties.VERSION};
+            // when
+            String[] version = new VersionProvider().getVersion();
+            // then
+            assertArrayEquals(expected, version);
+        } catch (ExceptionInInitializerError error) {
+            // Catch block to investigate test failure
+            // https://github.com/hazelcast/hazelcast/issues/26088
+
+            // Investigate how log4j is configured
+            // https://logging.apache.org/log4j/2.x/manual/configuration.html#automatic-configuration
+
+            System.out.println("System.getProperties():");
+            System.getProperties()
+                    .entrySet()
+                    .forEach(System.out::println);
+
+            System.out.println();
+
+            String log4j2ConfigurationFileString = System.getProperty("log4j2.configurationFile");
+
+            if (log4j2ConfigurationFileString != null) {
+                Path log4j2ConfigurationFile = Paths.get("log4j2ConfigurationFileString");
+
+                if (Files.exists(log4j2ConfigurationFile)) {
+                    try {
+                        System.out.println("\"log4j2.configurationFile\" contents:");
+                        System.out.println(Files.readString(log4j2ConfigurationFile, StandardCharsets.UTF_8));
+                    } catch (IOException ioException) {
+                        throw new UncheckedIOException(ioException);
+                    }
+                }
+            }
+
+            System.out.println();
+
+            System.out.println("Classpath Contents:");
+            new Reflections(null, new ResourcesScanner()).getResources(x -> true)
+                    .forEach(System.out::println);
+
+            System.out.println();
+        }
     }
 }
