@@ -227,7 +227,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         new Thread(new TxnIncrementor(count1, h1, latch)).start();
         new Thread(new TxnIncrementor(count2, h2, latch)).start();
         latch.await(600, TimeUnit.SECONDS);
-        assertEquals(new Integer(count1 + count2), map.get(key));
+        assertEquals(Integer.valueOf(count1 + count2), map.get(key));
     }
 
     public static class ProducerThread extends Thread {
@@ -352,7 +352,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     LockSupport.parkNanos(10000);
                 }
             };
@@ -370,7 +370,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public void run() throws Exception {
+                public void run() {
                 }
             };
         }
@@ -402,7 +402,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     static class TxnIncrementor implements Runnable {
         final String key = "count";
         final CountDownLatch latch;
-        int count = 0;
+        int count;
         HazelcastInstance instance;
 
 

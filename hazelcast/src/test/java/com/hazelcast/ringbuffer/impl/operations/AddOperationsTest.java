@@ -77,7 +77,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
         assertFalse(addOperation.shouldBackup());
         assertFalse(addOperation.shouldNotify());
-        assertEquals(new Long(-1L), addOperation.getResponse());
+        assertEquals(Long.valueOf(-1L), addOperation.getResponse());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
         assertTrue(addOperation.shouldBackup());
         assertTrue(addOperation.shouldNotify());
-        assertEquals(new Long(ringbuffer.tailSequence()), addOperation.getResponse());
+        assertEquals(Long.valueOf(ringbuffer.tailSequence()), addOperation.getResponse());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
         assertTrue(addOperation.shouldBackup());
         assertTrue(addOperation.shouldNotify());
-        assertEquals(new Long(ringbuffer.tailSequence()), addOperation.getResponse());
+        assertEquals(Long.valueOf(ringbuffer.tailSequence()), addOperation.getResponse());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class AddOperationsTest extends HazelcastTestSupport {
 
         assertTrue(addOperation.shouldNotify());
         assertTrue(addOperation.shouldBackup());
-        assertEquals(new Long(ringbuffer.tailSequence()), addOperation.getResponse());
+        assertEquals(Long.valueOf(ringbuffer.tailSequence()), addOperation.getResponse());
     }
 
     private AddOperation getAddOperation(Data item, OverflowPolicy policy) {

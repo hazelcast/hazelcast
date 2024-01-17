@@ -128,7 +128,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemove() {
-        list.remove(new Integer(randomInt()));
+        list.remove(Integer.valueOf(randomInt()));
     }
 
     @Test

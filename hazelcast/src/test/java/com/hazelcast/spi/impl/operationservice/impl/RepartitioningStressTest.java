@@ -165,7 +165,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
                     Random random = new Random();
                     while (true) {
                         int key = random.nextInt(itemCount);
-                        assertEquals(new Integer(key), map.get(key));
+                        assertEquals(Integer.valueOf(key), map.get(key));
                         if (System.currentTimeMillis() > endTime) {
                             break;
                         }

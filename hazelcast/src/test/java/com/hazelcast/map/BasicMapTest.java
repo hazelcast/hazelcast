@@ -170,19 +170,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertPutGet(map, Boolean.TRUE);
         assertPutGet(map, Boolean.FALSE);
 
-        assertPutGet(map, new Integer(10));
+        assertPutGet(map, Integer.valueOf(10));
 
-        assertPutGet(map, new Short((short) 10));
+        assertPutGet(map, Short.valueOf((short) 10));
 
-        assertPutGet(map, new Byte((byte) 10));
+        assertPutGet(map, Byte.valueOf((byte) 10));
 
-        assertPutGet(map, new Long(10));
+        assertPutGet(map, Long.valueOf(10));
 
-        assertPutGet(map, new Float(10));
+        assertPutGet(map, Float.valueOf(10));
 
-        assertPutGet(map, new Double(10));
+        assertPutGet(map, Double.valueOf(10));
 
-        assertPutGet(map, new Character('x'));
+        assertPutGet(map, Character.valueOf('x'));
     }
 
     public void assertPutGet(Map<String, Object> map, Object value) {

@@ -221,7 +221,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
                     completed = 0;
                 }
                 int totalBackups = min(BACKUPS, syncBackups + asyncBackups);
-                assertEquals(new Integer(totalBackups), completed);
+                assertEquals(Integer.valueOf(totalBackups), completed);
             }
         });
     }

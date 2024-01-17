@@ -255,7 +255,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
                 if (t == null) {
                     completedCall.incrementAndGet();
 
-                    if (!new Long(expectedResult).equals(response)) {
+                    if (!Long.valueOf(expectedResult).equals(response)) {
                         System.out.println("Wrong result received, expecting: " + expectedResult + " but found:" + response);
                         failedOperationCount.incrementAndGet();
                     }

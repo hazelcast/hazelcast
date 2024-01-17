@@ -198,7 +198,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         Future<Long> f = clientRingbuffer.addAsync("foo", OVERWRITE).toCompletableFuture();
         Long result = f.get();
 
-        assertEquals(new Long(serverRingbuffer.headSequence()), result);
+        assertEquals(Long.valueOf(serverRingbuffer.headSequence()), result);
         assertEquals("foo", serverRingbuffer.readOne(0));
         assertEquals(0, serverRingbuffer.headSequence());
         assertEquals(0, serverRingbuffer.tailSequence());
@@ -209,7 +209,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         Future<Long> f = clientRingbuffer.addAllAsync(asList("foo", "bar"), OVERWRITE).toCompletableFuture();
         Long result = f.get();
 
-        assertEquals(new Long(serverRingbuffer.tailSequence()), result);
+        assertEquals(Long.valueOf(serverRingbuffer.tailSequence()), result);
         assertEquals("foo", serverRingbuffer.readOne(0));
         assertEquals("bar", serverRingbuffer.readOne(1));
         assertEquals(0, serverRingbuffer.headSequence());

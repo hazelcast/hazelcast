@@ -183,7 +183,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
                     break;
                 }
 
-                assertEquals(new Long(seq), item);
+                assertEquals(Long.valueOf(seq), item);
 
                 seq++;
 

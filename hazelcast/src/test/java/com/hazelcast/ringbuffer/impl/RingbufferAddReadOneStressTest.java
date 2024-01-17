@@ -177,7 +177,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
                     break;
                 }
 
-                assertEquals(new Long(seq), item);
+                assertEquals(Long.valueOf(seq), item);
 
                 seq++;
 

@@ -142,7 +142,7 @@ public class SqlClientPortableQueryTest extends SqlTestSupport {
         SqlResult rows = client.getSql().execute("SELECT id FROM test WHERE child = ?", expected);
 
         SqlRow row = Iterators.getOnlyElement(rows.iterator());
-        assertEquals(new Integer(10), row.getObject("id"));
+        assertEquals(Integer.valueOf(10), row.getObject("id"));
     }
 
     @Test

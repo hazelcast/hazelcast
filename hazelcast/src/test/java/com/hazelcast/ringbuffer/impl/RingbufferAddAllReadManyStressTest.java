@@ -257,7 +257,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                         return;
                     }
 
-                    assertEquals(new Long(seq), item);
+                    assertEquals(Long.valueOf(seq), item);
 
                     long currentTimeMs = currentTimeMillis();
                     if (lastLogMs + SECONDS.toMillis(5) < currentTimeMs) {
