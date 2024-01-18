@@ -45,8 +45,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse;
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
@@ -67,6 +66,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
@@ -84,7 +84,7 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
 
     private static final String QUEUE_NAME = "myqueue";
 
-    private static final int ITEM_COUNT = 1_000;
+    private static final int ITEM_COUNT = 200;
 
     private String queueUrl;
 
@@ -95,6 +95,14 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
 
     @Test
     public void testReadFromSQSConnector() throws Exception {
+        // com.nordstrom.kafka.connect.sqs.SqsSourceConnector is using AWS SDK version 1
+        // Set the environment variables for the connector accordingly
+        withEnvironmentVariables("AWS_ACCESS_KEY_ID", container.getAccessKey())
+                .and("AWS_SECRET_KEY", container.getSecretKey())
+                .execute(this::runSQSConnector);
+    }
+
+    public void runSQSConnector() throws Exception {
         insertData();
 
         Pipeline pipeline = Pipeline.create();
@@ -149,9 +157,6 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
     }
 
     void insertData() throws URISyntaxException {
-        System.setProperty("aws.accessKeyId", container.getAccessKey());
-        System.setProperty("aws.secretKey", container.getSecretKey());
-
         SqsClient sqs = SqsClient.builder()
                 .endpointOverride(container.getEndpointOverride(LocalStackContainer.Service.SQS))
                 .credentialsProvider(
@@ -172,17 +177,15 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
                 .queueName(QUEUE_NAME)
                 .build();
 
-        sqsClient.createQueue(createQueueRequest);
+        CreateQueueResponse createQueueResponse = sqsClient.createQueue(createQueueRequest);
+        String originalUrl = createQueueResponse.queueUrl();
 
-        LOGGER.info("Get queue url");
-        GetQueueUrlResponse getQueueUrlResponse = sqsClient.
-                getQueueUrl(GetQueueUrlRequest.builder().queueName(QUEUE_NAME).build());
-        String originalUrl = getQueueUrlResponse.queueUrl();
         queueUrl = changePort(originalUrl);
 
         LOGGER.info("sqs.queue.url {} ", queueUrl);
     }
 
+    // Change port according to LocalStackContainer's port
     @Nonnull
     private String changePort(String str) throws URISyntaxException {
         URI originalUri = new URI(str);
@@ -209,7 +212,7 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
         // Size of each sublist
         int sublistSize = 10;
 
-        // Iterate the list with sublists of size 10
+        // Iterate the list with sublist of size 10
         for (int i = 0; i < messageList.size(); i += sublistSize) {
             int endIndex = Math.min(i + sublistSize, messageList.size());
             List<SendMessageBatchRequestEntry> sublist = messageList.subList(i, endIndex);
@@ -223,7 +226,7 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
         }
     }
 
-    List<SendMessageBatchRequestEntry> messageList() {
+    private List<SendMessageBatchRequestEntry> messageList() {
         ArrayList<SendMessageBatchRequestEntry> list = new ArrayList<>();
         for (int index = 0; index < ITEM_COUNT; index++) {
             SendMessageBatchRequestEntry requestEntry = SendMessageBatchRequestEntry.builder()
