@@ -47,6 +47,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
     private static final String COUNT_DOWN_LATCH = "countDownLatch";
     private static final String SEMAPHORE = "semaphore";
     private static final String LOCK = "lock";
+    private static final String CPMAP = "cpmap";
     private static final String RELIABLE_TOPIC = "reliableTopic";
     private static final String PNCOUNTER = "PNCounter";
 
@@ -56,6 +57,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         CP_TYPES.add(COUNT_DOWN_LATCH);
         CP_TYPES.add(ATOMIC_LONG);
         CP_TYPES.add(ATOMIC_REFERENCE);
+        CP_TYPES.add(CPMAP);
     }
 
     @Override
@@ -72,7 +74,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 {MAP, MULTI_MAP, REPLICATED_MAP, QUEUE, TOPIC, SET, LIST, EXECUTOR_SERVICE,
                  DURABLE_EXECUTOR_SERVICE, SCHEDULED_EXECUTOR_SERVICE, RINGBUFFER, CARDINALITY_ESTIMATOR,
                  FLAKE_ID_GENERATOR, ATOMIC_LONG, ATOMIC_REFERENCE, COUNT_DOWN_LATCH, SEMAPHORE,
-                 LOCK, RELIABLE_TOPIC, PNCOUNTER};
+                 LOCK, RELIABLE_TOPIC, PNCOUNTER, CPMAP};
         for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }

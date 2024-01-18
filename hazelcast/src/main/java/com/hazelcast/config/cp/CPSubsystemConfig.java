@@ -26,6 +26,7 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
@@ -718,6 +719,15 @@ public class CPSubsystemConfig {
         return this;
     }
 
+    @PrivateApi
+    public CPSubsystemConfig setCpMapConfigs(Map<String, CPMapConfig> cpMapConfigs) {
+        this.cpMapConfigs.clear();
+        this.cpMapConfigs.putAll(cpMapConfigs);
+        for (Entry<String, CPMapConfig> entry : this.cpMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
 
     /**
      * Returns the map of {@link com.hazelcast.cp.CPMap} configurations
@@ -794,6 +804,11 @@ public class CPSubsystemConfig {
      */
     public int getCPMapLimit() {
         return cpMapLimit;
+    }
+
+    @PrivateApi
+    public CPSubsystemConfig setMapLimit(int cpMapLimit) {
+        return setCPMapLimit(cpMapLimit);
     }
 
     @Override

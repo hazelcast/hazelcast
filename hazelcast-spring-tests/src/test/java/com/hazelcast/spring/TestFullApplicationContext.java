@@ -122,6 +122,7 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -1607,6 +1608,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
+        assertEquals(20, cpSubsystemConfig.getCPMapLimit());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertFalse(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir").getAbsolutePath(), cpSubsystemConfig.getBaseDir().getAbsolutePath());
@@ -1633,6 +1635,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(lockConfig2);
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
+
+        CPMapConfig mapConfig1 = cpSubsystemConfig.findCPMapConfig("map1");
+        assertNotNull(mapConfig1);
+        assertEquals(50, mapConfig1.getMaxSizeMb());
+
+        CPMapConfig mapConfig2 = cpSubsystemConfig.findCPMapConfig("map2");
+        assertNotNull(mapConfig2);
+        assertEquals(75, mapConfig2.getMaxSizeMb());
+
+        CPMapConfig mapConfig3 = cpSubsystemConfig.findCPMapConfig("map3");
+        assertNotNull(mapConfig3);
+        assertEquals(100, mapConfig3.getMaxSizeMb());
     }
 
     @Test

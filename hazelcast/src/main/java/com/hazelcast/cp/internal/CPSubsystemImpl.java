@@ -176,6 +176,14 @@ public class CPSubsystemImpl implements CPSubsystem {
         throw new UnsupportedOperationException(CPMAP_LICENSE_MESSAGE);
     }
 
+    /*
+    'map' is already taken in HazelcastNamespaceProvider for Spring support. When you create a 'hz:cpmap' type (see
+    fullConfig-applicationContext-hazelcast.xml) it will call this method as per the semantics of HazelcastNamespaceProvider.
+     */
+    private <K, V> CPMap<K, V> getCpmap(@Nonnull String name) {
+        return getMap(name);
+    }
+
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {
         private final RaftService raftService;
 

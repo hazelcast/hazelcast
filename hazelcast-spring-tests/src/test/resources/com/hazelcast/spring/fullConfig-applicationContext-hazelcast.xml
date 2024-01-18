@@ -1061,6 +1061,7 @@
             <hz:cp-subsystem>
                 <hz:cp-member-count>0</hz:cp-member-count>
                 <hz:group-size>0</hz:group-size>
+                <hz:map-limit>20</hz:map-limit>
                 <hz:session-time-to-live-seconds>15</hz:session-time-to-live-seconds>
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
                 <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>
@@ -1100,6 +1101,19 @@
                         <hz:lock-acquire-limit>2</hz:lock-acquire-limit>
                     </hz:fenced-lock>
                 </hz:locks>
+                <hz:maps>
+                    <hz:map>
+                        <hz:name>map1</hz:name>
+                        <hz:max-size-mb>50</hz:max-size-mb>
+                    </hz:map>
+                    <hz:map>
+                        <hz:name>map2</hz:name>
+                        <hz:max-size-mb>75</hz:max-size-mb>
+                    </hz:map>
+                    <hz:map>
+                        <hz:name>map3</hz:name>
+                    </hz:map>
+                </hz:maps>
             </hz:cp-subsystem>
 
             <hz:metrics enabled="false">
@@ -1222,6 +1236,10 @@
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
     <hz:lock id="lock" instance-ref="instance" name="lock"/>
+    <!--
+    Not supported in open source. Defining this here would result in a UnsupportedOperationException
+    <hz:cpmap id="cpmap" instance-ref="instance" name="cpmap"/>
+    -->
     <hz:cardinalityEstimator id="cardinality" instance-ref="instance" name="cardinality"/>
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>

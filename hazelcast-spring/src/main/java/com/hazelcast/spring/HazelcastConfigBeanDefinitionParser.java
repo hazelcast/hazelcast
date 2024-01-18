@@ -119,6 +119,7 @@ import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -565,7 +566,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder cpSubsystemConfigBuilder = createBeanBuilder(CPSubsystemConfig.class);
 
             fillValues(node, cpSubsystemConfigBuilder, "raftAlgorithm", "semaphores", "locks", "cpMemberCount",
-                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority");
+                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority", "maps");
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -582,6 +583,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ManagedMap<String, AbstractBeanDefinition> locks = new ManagedMap<>();
                     handleFencedLocks(locks, child);
                     cpSubsystemConfigBuilder.addPropertyValue("LockConfigs", locks);
+                } else if ("maps".equals(nodeName)) {
+                    ManagedMap<String, AbstractBeanDefinition> maps = new ManagedMap<>();
+                    handleCpMaps(maps, child);
+                    cpSubsystemConfigBuilder.addPropertyValue("CpMapConfigs", maps);
                 } else {
                     String value = getTextContent(child).trim();
                     if ("cp-member-count".equals(nodeName)) {
@@ -627,6 +632,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 AbstractBeanDefinition beanDefinition = lockConfigBuilder.getBeanDefinition();
                 String name = (String) beanDefinition.getPropertyValues().get("name");
                 locks.put(name, beanDefinition);
+            }
+        }
+
+        private void handleCpMaps(ManagedMap<String, AbstractBeanDefinition> maps, Node node) {
+            for (Node child : childElements(node)) {
+                BeanDefinitionBuilder cpMapConfigBuilder = createBeanBuilder(CPMapConfig.class);
+                fillValues(child, cpMapConfigBuilder);
+                AbstractBeanDefinition beanDefinition = cpMapConfigBuilder.getBeanDefinition();
+                String name = (String) beanDefinition.getPropertyValues().get("name");
+                maps.put(name, beanDefinition);
             }
         }
 
