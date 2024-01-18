@@ -159,7 +159,7 @@ public class PartitionContainer {
         return maps.get(mapName);
     }
 
-    public void destroyMap(MapContainer mapContainer) {
+    public final void destroyMap(MapContainer mapContainer) {
         // Mark map container destroyed before the underlying
         // data structures are destroyed. We need this to
         // ensure that every reader that observed non-destroyed
@@ -184,22 +184,11 @@ public class PartitionContainer {
             clearLockStore(name);
         }
 
-        destroyMapContainer(mapContainer);
-        mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+        MapServiceContext mapServiceContext = mapService.mapServiceContext;
+        mapServiceContext.removeMapContainer(mapContainer);
+        mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
     }
 
-    /**
-     * @return {@code true} if destruction is successful, otherwise
-     * return {@code false} if it is already destroyed.
-     */
-    public boolean destroyMapContainer(MapContainer mapContainer) {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        if (mapServiceContext.removeMapContainer(mapContainer)) {
-            mapContainer.onDestroy();
-            return true;
-        }
-        return false;
-    }
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();

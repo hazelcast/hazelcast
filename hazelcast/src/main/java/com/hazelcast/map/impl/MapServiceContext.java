@@ -146,6 +146,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     void destroyMap(String mapName);
 
+    boolean removeMapContainer(MapContainer mapContainer);
+
     void reset();
 
     /**
@@ -195,8 +197,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     IndexProvider getIndexProvider(MapConfig mapConfig);
 
     Extractors getExtractors(String mapName);
-
-    boolean removeMapContainer(MapContainer mapContainer);
 
     PartitioningStrategy getPartitioningStrategy(
             String mapName,

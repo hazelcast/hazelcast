@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
@@ -33,6 +34,7 @@ import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,12 +60,15 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <Store>       type of the store in a partition
  * @param <MergingItem> type of the merging item
  */
-public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends MergingEntry<K, V>> implements Runnable {
+public abstract class AbstractMergeRunnable<K, V, Store, MergingItem
+        extends MergingEntry<K, V>> implements Runnable, Disposable {
 
     private static final long TIMEOUT_FACTOR = 500;
-    private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
+    private static final long SPLIT_HEALING_MIN_WAITING_MILLIS = TimeUnit.SECONDS.toMillis(5);
 
     protected Map<String, Collection<Store>> mergingStoresByName;
+
+    protected final Collection<Store> copyOfMergingStores;
     protected final SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private final ILogger logger;
@@ -74,12 +79,12 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     private final AbstractSplitBrainHandlerService<Store> splitBrainHandlerService;
     private final Semaphore semaphore = new Semaphore(0);
 
-
     protected AbstractMergeRunnable(String serviceName,
                                     Collection<Store> mergingStores,
                                     AbstractSplitBrainHandlerService<Store> splitBrainHandlerService,
                                     NodeEngine nodeEngine) {
         this.mergingStoresByName = groupStoresByName(mergingStores);
+        this.copyOfMergingStores = new ArrayList<>(mergingStores);
         this.serviceName = serviceName;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
@@ -90,7 +95,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     }
 
     private Map<String, Collection<Store>> groupStoresByName(Collection<Store> stores) {
-        Map<String, Collection<Store>> storesByName = new HashMap<String, Collection<Store>>();
+        Map<String, Collection<Store>> storesByName = new HashMap<>();
         for (Store store : stores) {
             String dataStructureName = getDataStructureName(store);
 
@@ -148,7 +153,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
 
     private void waitMergeEnd(int mergedCount) {
         try {
-            long timeoutMillis = Math.max(mergedCount * TIMEOUT_FACTOR, MINIMAL_TIMEOUT_MILLIS);
+            long timeoutMillis = Math.max(mergedCount * TIMEOUT_FACTOR, SPLIT_HEALING_MIN_WAITING_MILLIS);
             if (!semaphore.tryAcquire(mergedCount, timeoutMillis, MILLISECONDS)) {
                 logger.warning("Split-brain healing didn't finish within the timeout...");
             }
@@ -295,6 +300,12 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         for (Store store : stores) {
             splitBrainHandlerService.asyncDestroyStores(singleton(store), getPartitionId(store));
         }
+    }
+
+    @Override
+    public void dispose() {
+        // default impl clears copied collection of stores
+        copyOfMergingStores.clear();
     }
 
     protected void onMerge(String dataStructureName) {

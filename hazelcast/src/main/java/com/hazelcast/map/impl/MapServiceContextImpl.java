@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -75,7 +74,6 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
-import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -461,25 +459,8 @@ class MapServiceContextImpl implements MapServiceContext {
             mapStoreWrapper.destroy();
         }
 
-        Map<String, IndexConfig> indices = mapContainer.getIndexDefinitions();
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
-        // final step of node wide map destroy
-        afterMapContainerDestroyed(mapContainer, indices);
-    }
-
-    // thought as a final step after per partition destroy logic executed.
-    protected void afterMapContainerDestroyed(MapContainer mapContainer, Map<String, IndexConfig> indices) {
-        if (mapContainer.shouldUseGlobalIndex()) {
-            destroyGlobalIndexes(mapContainer);
-        }
-
-        localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
-    }
-
-    protected void destroyGlobalIndexes(MapContainer mapContainer) {
-        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
-        indexRegistry.destroyIndexes();
     }
 
     /**
@@ -512,6 +493,8 @@ class MapServiceContextImpl implements MapServiceContext {
                 nodeEngine.getLogger(getClass()).warning(e);
             }
         }
+
+        mapContainer.onDestroy();
     }
 
     @Override

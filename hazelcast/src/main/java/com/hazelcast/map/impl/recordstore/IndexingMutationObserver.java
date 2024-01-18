@@ -127,8 +127,8 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearPartitionedIndexes(boolean destroy) {
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (indexRegistry.isGlobal()) {
+        IndexRegistry indexRegistry = mapContainer.getOrNullPartitionedIndexRegistry(partitionId);
+        if (indexRegistry == null) {
             return;
         }
 

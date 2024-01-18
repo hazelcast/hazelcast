@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -102,6 +103,7 @@ public class MapContainer {
      */
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
+    protected final AtomicBoolean onDestroyCalled = new AtomicBoolean();
 
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
@@ -240,8 +242,8 @@ public class MapContainer {
 
     public boolean shouldUseGlobalIndex() {
         return mapConfig.getInMemoryFormat() != NATIVE
-            || (!mapConfig.getTieredStoreConfig().isEnabled() && mapServiceContext.globalIndexEnabled())
-            || mapServiceContext.isForciblyEnabledGlobalIndex();
+                || (!mapConfig.getTieredStoreConfig().isEnabled() && mapServiceContext.globalIndexEnabled())
+                || mapServiceContext.isForciblyEnabledGlobalIndex();
     }
 
     protected static MemoryInfoAccessor getMemoryInfoAccessor() {
@@ -411,7 +413,25 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered
     // from MapService and destroyed - basically on map-destroy
-    public void onDestroy() {
+    public final void onDestroy() {
+        if (!onDestroyCalled.compareAndSet(false, true)) {
+            return;
+        }
+
+        onDestroyInternal();
+    }
+
+    protected void onDestroyInternal() {
+        if (shouldUseGlobalIndex()) {
+            destroyGlobalIndexes();
+        }
+
+        mapServiceContext.getLocalMapStatsProvider()
+                .destroyLocalMapStatsImpl(getName());
+    }
+
+    protected void destroyGlobalIndexes() {
+        getGlobalIndexRegistry().destroyIndexes();
     }
 
     public boolean isDestroyed() {

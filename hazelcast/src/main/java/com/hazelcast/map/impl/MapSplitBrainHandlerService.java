@@ -85,9 +85,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         // This one-time logic also helps us to add shared
         // global indexes to new-map-container only once.
         MapContainer mapContainer = recordStore.getMapContainer();
-        PartitionContainer partitionContainer
-                = mapServiceContext.getPartitionContainer(recordStore.getPartitionId());
-        if (partitionContainer.destroyMapContainer(mapContainer)) {
+        if (mapServiceContext.removeMapContainer(mapContainer)) {
             if (mapContainer.shouldUseGlobalIndex()) {
                 // remove global indexes from old-map-container and add them to new one
                 addIndexConfigToNewMapContainer(mapContainer.getName(), GLOBAL_INDEX_NOOP_PARTITION_ID,
