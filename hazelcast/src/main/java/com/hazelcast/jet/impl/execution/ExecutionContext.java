@@ -161,9 +161,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
-        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-
-        serializationService = jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
+        serializationService = isLightJob
+                ? (InternalSerializationService) nodeEngine.getSerializationService()
+                : ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME))
+                        .createSerializationService(jobConfig.getSerializerConfigs());
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
@@ -296,7 +297,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                         }
                     });
 
-                    if (serializationService != null) {
+                    if (!isLightJob && serializationService != null) {
                         serializationService.dispose();
                     }
                 }));
