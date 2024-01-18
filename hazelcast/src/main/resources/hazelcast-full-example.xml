@@ -4207,18 +4207,18 @@
         </class-filter>
         <namespace name="ns1">
             <jar id="jarId">
-                <url>file:./src/test/class/usercodedeployment/ShadedClasses.jar</url>
+                <url>file:///etc/hazelcast/jar.jar</url>
             </jar>
             <jars-in-zip id="jarsInZipId">
-                <url>file:./src/test/class/usercodedeployment/ShadedClasses.jar</url>
+                <url>file:///etc/hazelcast/jarsInZip.zip</url>
             </jars-in-zip>
         </namespace>
         <namespace name="ns2">
             <jar id="jarId2">
-                <url>file:./src/test/class/usercodedeployment/ChildParent.jar</url>
+                <url>file:///etc/hazelcast/jar2.jar</url>
             </jar>
             <jar id="jarId3">
-                <url>file:./src/test/class/usercodedeployment/ShadedClasses.jar</url>
+                <url>file:///etc/hazelcast/jar3.jar</url>
             </jar>
         </namespace>
     </user-code-namespaces>

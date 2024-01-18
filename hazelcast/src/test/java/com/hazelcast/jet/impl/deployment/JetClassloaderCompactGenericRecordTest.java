@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
+import com.hazelcast.test.UserCodeUtil;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -36,10 +37,6 @@ import org.junit.rules.Timeout;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static com.hazelcast.test.UserCodeUtil.CLASS_DIRECTORY_FILE;
-import static com.hazelcast.test.UserCodeUtil.urlFromFile;
-
 
 @Category({NightlyTest.class, ParallelJVMTest.class})
 public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterSupport {
@@ -80,10 +77,11 @@ public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterS
                 .getPipeline();
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = urlFromFile(CLASS_DIRECTORY_FILE);
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
-        Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
-        jobConfig.addClass(appearance);
+        URL classUrl = UserCodeUtil.urlRelativeToBinariesFolder("sample");
+        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {classUrl}, null)) {
+            Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+            jobConfig.addClass(appearance);
+        }
 
         // prepare entry processor
         Thread asyncExecuteOnEntries = new Thread(() ->

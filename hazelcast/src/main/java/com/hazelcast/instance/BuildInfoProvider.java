@@ -89,6 +89,7 @@ public final class BuildInfoProvider {
         String build = readStaticStringField(clazz, "BUILD");
         String revision = readStaticStringField(clazz, "REVISION");
         String distribution = readStaticStringField(clazz, "DISTRIBUTION");
+        String artifactId = readStaticStringField(clazz, "ARTIFACT_ID");
         String commitId = readStaticStringField(clazz, "COMMIT_ID");
 
         revision = checkMissingExpressionValue(revision, "${git.commit.id.abbrev}");

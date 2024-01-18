@@ -27,6 +27,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.UserCodeUtil;
 import com.hazelcast.test.annotation.NamespaceTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,13 +39,15 @@ import org.junit.runner.RunWith;
 import usercodedeployment.IncrementingEntryProcessor;
 
 import java.io.FileNotFoundException;
+import java.util.stream.Stream;
 
-import static com.hazelcast.test.UserCodeUtil.fileRelativeToBinariesFolder;
+import static com.hazelcast.test.UserCodeUtil.pathRelativeToBinariesFolder;
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("removal")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, NamespaceTest.class})
 public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport {
@@ -76,7 +79,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         }
     }
 
-    private Config createNodeConfig() {
+    private static Config createNodeConfig() {
         Config i2Config = new Config();
         FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
@@ -84,7 +87,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
     }
 
 
-    private ClientConfig createClientConfig() {
+    private static ClientConfig createClientConfig() {
         ClientConfig config = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addClass("usercodedeployment.IncrementingEntryProcessor");
@@ -103,8 +106,8 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
     }
 
     /**
-     * The two JARs {@code IncrementingEntryProcessor.jar} and {@code IncrementingEntryProcessorConflicting.jar}
-     * contain the same class {@link IncrementingEntryProcessor} with different implementations
+     * The two JARs (IncrementingEntryProcessor) and (IncrementingEntryProcessorConflicting) contain the same class
+     * {@link IncrementingEntryProcessor} with different implementations
      */
     @Test(expected = IllegalStateException.class)
     public void testClientsWithConflictingClassRepresentations() {
@@ -112,18 +115,17 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         config.getUserCodeDeploymentConfig().setEnabled(true);
         factory.newHazelcastInstance(config);
 
-        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig1 = new ClientUserCodeDeploymentConfig()
-                .addJar(fileRelativeToBinariesFolder("usercodedeployment/IncrementingEntryProcessor.jar")).setEnabled(true);
-        ClientConfig clientConfig1 = new ClientConfig()
-                .setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig1);
-        factory.newHazelcastClient(clientConfig1);
-
-        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig2 = new ClientUserCodeDeploymentConfig()
-                .addJar(fileRelativeToBinariesFolder("usercodedeployment/IncrementingEntryProcessorConflicting.jar"))
-                .setEnabled(true);
-        ClientConfig clientConfig2 = new ClientConfig()
-                .setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig2);
-        factory.newHazelcastClient(clientConfig2);
+        Stream.of(
+                new String[] {"IncrementingEntryProcessor",
+                        UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor")},
+                new String[] {"IncrementingEntryProcessorConflicting",
+                        UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor-conflicting")})
+                .forEach(path -> {
+                    ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig1 = new ClientUserCodeDeploymentConfig()
+                            .addJar(pathRelativeToBinariesFolder(path).toFile()).setEnabled(true);
+                    ClientConfig clientConfig = new ClientConfig().setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig1);
+                    factory.newHazelcastClient(clientConfig);
+                });
     }
 
     @Test

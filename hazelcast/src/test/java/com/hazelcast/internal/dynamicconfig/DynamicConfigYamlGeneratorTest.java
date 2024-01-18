@@ -38,11 +38,10 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.UserCodeUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -52,10 +51,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -69,11 +65,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("deprecation")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
-
-    private static final ILogger LOGGER = Logger.getLogger(DynamicConfigYamlGeneratorTest.class);
 
     // LICENSE KEY
 
@@ -545,19 +540,21 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
     }
 
     @Test
-    public void testNamespacesConfig() throws URISyntaxException, MalformedURLException {
+    public void testNamespacesConfig() {
         Config config = new Config();
         config.getNamespacesConfig().setEnabled(true);
-        config.getNamespacesConfig().addNamespaceConfig(
-            new UserCodeNamespaceConfig("ns1")
-                .addJar(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarId")
-                .addJarsInZip(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarsInZipId")
-        );
-        config.getNamespacesConfig().addNamespaceConfig(
-            new UserCodeNamespaceConfig("ns2")
-                .addJar(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarId-2")
-                .addJarsInZip(new URI("file:./src/test/class/usercodedeployment/ChildParent.jar").toURL(), "jarsInZipId-2")
-        );
+        config.getNamespacesConfig()
+                .addNamespaceConfig(new UserCodeNamespaceConfig("ns1")
+                        .addJar(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarId")
+                        .addJarsInZip(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarsInZipId"));
+        config.getNamespacesConfig()
+                .addNamespaceConfig(new UserCodeNamespaceConfig("ns2")
+                        .addJar(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarId-2")
+                        .addJarsInZip(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarsInZipId-2"));
         Config actual = getNewConfigViaGenerator(config);
         assertEquals(config.getNamespacesConfig(), actual.getNamespacesConfig());
     }

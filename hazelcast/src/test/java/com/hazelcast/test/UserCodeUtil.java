@@ -16,37 +16,46 @@
 
 package com.hazelcast.test;
 
-import java.io.File;
+import com.hazelcast.instance.GeneratedBuildProperties;
+import org.apache.commons.io.FilenameUtils;
+
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
- * Utility methods to facilitate referencing files from {@code src/test/class} which are not part of the classpath at
- * test execution time.
+ * References to classes which are not part of the classpath at test execution time.
  */
 public class UserCodeUtil {
+    public static final UserCodeUtil INSTANCE = new UserCodeUtil(GeneratedBuildProperties.ARTIFACT_ID, GeneratedBuildProperties.VERSION);
 
-    public static final String CLASS_DIRECTORY = "src/test/class";
-    public static final File CLASS_DIRECTORY_FILE = new File(CLASS_DIRECTORY);
+    private String artifactId;
+    private String version;
 
-    private UserCodeUtil() {
+    UserCodeUtil(String artifactId, String version) {
+        this.artifactId = artifactId;
+        this.version = version;
     }
 
-    /** @return a File for the given path, relative to src/test/class */
-    public static File fileRelativeToBinariesFolder(String path) {
-        return new File(CLASS_DIRECTORY_FILE, path);
+    /**
+     * Not possible to name the files in a sensible way on creation - because the `maven-jar-plugin` only supports a single
+     * output name for the entire project - so the classifier is used to distinguish (and to prevent overlap which will confuse
+     * maven)
+     */
+    public String getCompiledJARName(String classifier) {
+        return String.join("-", artifactId, version, classifier) + FilenameUtils.EXTENSION_SEPARATOR + "jar";
     }
 
-    /** @see #fileRelativeToBinariesFolder(String) */
-    public static String pathRelativeToBinariesFolder(String path) {
-        return fileRelativeToBinariesFolder(path).toString();
+    public static Path pathRelativeToBinariesFolder(String... path) {
+        return Paths.get("target", path);
     }
 
-    public static URL urlFromFile(File f) {
+    public static URL urlRelativeToBinariesFolder(String... path) {
         try {
-            return f.toURI().toURL();
+            return pathRelativeToBinariesFolder(path).toUri().toURL();
         } catch (MalformedURLException e) {
             throw sneakyThrow(e);
         }

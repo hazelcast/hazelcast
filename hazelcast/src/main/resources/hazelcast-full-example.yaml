@@ -4093,16 +4093,16 @@ hazelcast:
         # Sub-Attribute of a namespace object, Defines a Jar resource to be loaded for the namespace.
         resource-type: JAR
         # Sub-Attribute of a namespace object, Defines the URL of the Jar resource.
-        url: "file:./src/test/class/usercodedeployment/ShadedClasses.jar"
+        url: "file:///etc/hazelcast/jar.jar"
       - id: jarsInZipId
         # Sub-Attribute of a namespace object, Defines Jars in a zip file to be loaded for the namespace.
         resource-type: JARS_IN_ZIP
         # Sub-Attribute of a namespace object, Defines the URL of the zip resource.
-        url: "file:./src/test/class/usercodedeployment/ShadedClasses.jar"
+        url: "file:///etc/hazelcast/jarsInZip.zip"
     ns2:
       - id: jarId2
         resource-type: JAR
-        url: "file:./src/test/class/usercodedeployment/ChildParent.jar"
+        url: "file:///etc/hazelcast/jar2.jar"
       - id: jarId3
         resource-type: JAR
-        url: "file:./src/test/class/usercodedeployment/ShadedClasses.jar"
+        url: "file:///etc/hazelcast/jar3.jar"

@@ -40,6 +40,7 @@ public final class GeneratedBuildProperties {
     public static final String REVISION = "${git.commit.id.abbrev}";
     public static final String COMMIT_ID = "${git.commit.id}";
     public static final String DISTRIBUTION = "${hazelcast.distribution}";
+    public static final String ARTIFACT_ID = "${project.artifactId}";
     public static final String SERIALIZATION_VERSION = "${hazelcast.serialization.version}";
 
     private GeneratedBuildProperties() {
