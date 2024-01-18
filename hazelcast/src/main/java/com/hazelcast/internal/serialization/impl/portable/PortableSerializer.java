@@ -108,7 +108,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         return currentVersion;
     }
 
-    private Portable createNewPortableInstance(int factoryId, int classId) {
+    public Portable createNewPortableInstance(int factoryId, int classId) {
         final PortableFactory portableFactory = factories.get(factoryId);
         if (portableFactory == null) {
             return null;

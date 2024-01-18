@@ -637,26 +637,6 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_unknownClassDef_then_wholeValueMapped() {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='9999'"
-                + ", '" + OPTION_KEY_CLASS_ID + "'='9999'"
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='9999'"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='9998'"
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='9998'"
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='9998'"
-                + ")"
-        );
-
-        assertRowsAnyOrder("SELECT __key, this FROM " + name, emptyList());
-    }
-
-    @Test
     public void test_classDefMappingMismatch() {
         assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING " + randomName() + " ("
                 + "id VARCHAR"
@@ -694,6 +674,26 @@ public class SqlPortableTest extends SqlTestSupport {
                 rows(2,
                         1, null,
                         2, null));
+    }
+
+    @Test
+    public void when_unknownClassDef_then_wholeValueMapped() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='9999'"
+                + ", '" + OPTION_KEY_CLASS_ID + "'='9999'"
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='9999'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='9998'"
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='9998'"
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='9998'"
+                + ")"
+        );
+
+        assertRowsAnyOrder("SELECT __key, this FROM " + name, emptyList());
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

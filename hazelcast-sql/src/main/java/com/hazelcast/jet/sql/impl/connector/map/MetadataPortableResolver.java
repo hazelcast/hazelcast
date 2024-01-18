@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -83,7 +84,8 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
 
     static final MetadataPortableResolver INSTANCE = new MetadataPortableResolver();
 
-    private MetadataPortableResolver() { }
+    private MetadataPortableResolver() {
+    }
 
     @Override
     public Stream<String> supportedFormats() {
@@ -102,6 +104,28 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
         PortableId portableId = getPortableId(fieldsByPath, options, isKey);
         ClassDefinition classDefinition = serializationService.getPortableContext()
                 .lookupClassDefinition(portableId);
+
+        // Fallback option for the case, when the portable objects were not de/serialized yet
+        // and user fields were not provided by the user explicitly. In this case we try to
+        // manually create a Portable instance and register its ClassDefinition.
+        if (userFields.isEmpty() && classDefinition == null) {
+            SerializationServiceV1 ss = (SerializationServiceV1) serializationService;
+            // Try to create a Portable instance with the default constructor,
+            // register its ClassDefinition, and throw object away.
+            var tempPortableObj = ss.getPortableSerializer()
+                    .createNewPortableInstance(portableId.getFactoryId(), portableId.getClassId());
+            if (tempPortableObj != null) {
+                try {
+                    ss.getPortableContext().lookupOrRegisterClassDefinition(tempPortableObj);
+                } catch (Exception e) {
+                    // If the default constructor doesn't make Portable fields non-null,we're done:
+                    // we can't register the class, so we interrupt the execution with the exception.
+                    throw QueryException.error("Cannot create mapping for Portable type. "
+                            + "Please, provide the explicit definition for all columns.");
+                }
+                classDefinition = serializationService.getPortableContext().lookupClassDefinition(portableId);
+            }
+        }
 
         return userFields.isEmpty()
                 ? resolveFields(isKey, classDefinition)
