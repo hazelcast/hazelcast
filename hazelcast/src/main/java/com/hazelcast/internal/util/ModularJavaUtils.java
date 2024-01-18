@@ -43,9 +43,6 @@ public final class ModularJavaUtils {
     }
 
     public static String getHazelcastModuleName() {
-        if (!JavaVersion.isAtLeast(JavaVersion.JAVA_9)) {
-            return null;
-        }
         try {
             return getName(hazelcastModule());
         } catch (Exception e) {
@@ -63,11 +60,6 @@ public final class ModularJavaUtils {
      * Java 9 and newer.
      */
     public static void checkJavaInternalAccess(ILogger logger) {
-        if (logger == null || !JavaVersion.isAtLeast(JavaVersion.JAVA_9)) {
-            // older Java versions are fine with the reflection
-            return;
-        }
-
         Map<String, PackageAccessRequirement[]> moduleRequirements = new TreeMap<>();
         moduleRequirements.put("java.base",
                 packages(

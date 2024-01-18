@@ -33,9 +33,6 @@ import java.util.Arrays;
  * @see FutureJavaVersion
  */
 public enum JavaVersion implements JavaMajorVersion {
-    JAVA_8(8),
-    JAVA_9(9),
-    JAVA_10(10),
     JAVA_11(11),
     JAVA_12(12),
     JAVA_13(13),
