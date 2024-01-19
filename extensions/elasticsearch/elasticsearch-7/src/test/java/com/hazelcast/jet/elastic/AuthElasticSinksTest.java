@@ -77,7 +77,7 @@ public class AuthElasticSinksTest extends BaseElasticTest {
     @Test
     public void given_clientWithWrongPassword_whenWriteToElasticSink_thenFailWithAuthenticationException() {
         ElasticsearchContainer container = ElasticSupport.secureElastic.get();
-        String containerIp = container.getContainerIpAddress();
+        String containerIp = container.getHost();
         Integer port = container.getMappedPort(PORT);
 
         Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
@@ -99,7 +99,7 @@ public class AuthElasticSinksTest extends BaseElasticTest {
     @Test
     public void given_clientWithoutAuthentication_whenWriteToElasticSink_thenFailWithAuthenticationException() {
         ElasticsearchContainer container = ElasticSupport.secureElastic.get();
-        String containerIp = container.getContainerIpAddress();
+        String containerIp = container.getHost();
         Integer port = container.getMappedPort(PORT);
 
         Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()

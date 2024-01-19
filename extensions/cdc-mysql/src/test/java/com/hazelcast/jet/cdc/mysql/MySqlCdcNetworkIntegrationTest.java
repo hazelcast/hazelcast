@@ -95,7 +95,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     }
 
     @Before
-    public void ignoreOnJdk15OrHigher() throws SQLException {
+    public void ignoreOnJdk15OrHigher() {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[567].*"));
@@ -112,7 +112,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     public void when_noDatabaseToConnectTo() throws Exception {
         mysql = initMySql(null, null);
         int port = fixPortBinding(mysql, MYSQL_PORT);
-        String containerIpAddress = mysql.getContainerIpAddress();
+        String containerIpAddress = mysql.getHost();
         stopContainer(mysql);
 
         Pipeline pipeline = initPipeline(containerIpAddress, port);
@@ -147,7 +147,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     public void when_networkDisconnectDuringSnapshotting_then_jetSourceIsStuckUntilReconnect() throws Exception {
         try (
                 Network network = initNetwork();
-                ToxiproxyContainer toxiproxy = initToxiproxy(network);
+                ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             mysql = initMySql(network, null);
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
@@ -184,7 +184,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         mysql = initMySql(null, null);
         int port = fixPortBinding(mysql, MYSQL_PORT);
 
-        Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
+        Pipeline pipeline = initPipeline(mysql.getHost(), port);
         // when job starts
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline);
@@ -219,7 +219,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     public void when_networkDisconnectDuringBinlogRead_then_connectorReconnectsInternally() throws Exception {
         try (
                 Network network = initNetwork();
-                ToxiproxyContainer toxiproxy = initToxiproxy(network);
+                ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             mysql = initMySql(network, null);
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
@@ -257,7 +257,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         mysql = initMySql(null, null);
         int port = fixPortBinding(mysql, MYSQL_PORT);
 
-        Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
+        Pipeline pipeline = initPipeline(mysql.getHost(), port);
         // when connector is up and transitions to binlog reading
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline);

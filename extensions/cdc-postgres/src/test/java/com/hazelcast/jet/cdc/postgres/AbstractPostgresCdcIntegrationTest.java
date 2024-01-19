@@ -62,7 +62,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
 
     protected PostgresCdcSources.Builder sourceBuilder(String name) {
         return PostgresCdcSources.postgres(name)
-                .setDatabaseAddress(postgres.getContainerIpAddress())
+                .setDatabaseAddress(postgres.getHost())
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
