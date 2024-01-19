@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("86e2b9c454d334fc2aab7183f9a772d6")
+@Generated("0e629706fbc56ba2fc03f400620a96df")
 public final class ReplicatedMapEntryViewHolderCodec {
     private static final int CREATION_TIME_FIELD_OFFSET = 0;
     private static final int HITS_FIELD_OFFSET = CREATION_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -48,8 +48,8 @@ public final class ReplicatedMapEntryViewHolderCodec {
         encodeLong(initialFrame.content, TTL_MILLIS_FIELD_OFFSET, replicatedMapEntryViewHolder.getTtlMillis());
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, replicatedMapEntryViewHolder.getKey(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, replicatedMapEntryViewHolder.getValue(), DataCodec::encode);
+        DataCodec.encode(clientMessage, replicatedMapEntryViewHolder.getKey());
+        DataCodec.encode(clientMessage, replicatedMapEntryViewHolder.getValue());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -65,8 +65,8 @@ public final class ReplicatedMapEntryViewHolderCodec {
         long lastUpdateTime = decodeLong(initialFrame.content, LAST_UPDATE_TIME_FIELD_OFFSET);
         long ttlMillis = decodeLong(initialFrame.content, TTL_MILLIS_FIELD_OFFSET);
 
-        com.hazelcast.internal.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.internal.serialization.Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data key = DataCodec.decode(iterator);
+        com.hazelcast.internal.serialization.Data value = DataCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
