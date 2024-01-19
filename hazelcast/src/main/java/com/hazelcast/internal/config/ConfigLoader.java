@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UrlXmlConfig;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.io.File;
 import java.io.IOException;
@@ -87,7 +88,7 @@ public final class ConfigLoader {
 
     private static URL asURL(final String path) {
         try {
-            return URI.create(path).toURL();
+            return URI.create(OS.ensureUnixSeparators(path)).toURL();
         } catch (IllegalArgumentException | MalformedURLException ignored) {
             ignore(ignored);
         }
