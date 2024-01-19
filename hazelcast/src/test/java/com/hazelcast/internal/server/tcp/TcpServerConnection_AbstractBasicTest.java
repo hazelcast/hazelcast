@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerConnection_AbstractTest {
 
@@ -47,6 +48,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
     @Mock
     private ConnectionLifecycleListener<TcpServerConnection> mockedListener;
 
+    @Override
     @Before
     public void setup() throws Exception {
         super.setup();
@@ -104,13 +106,12 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         long lastWriteTimeMs = connAB.lastWriteTimeMillis();
         long nowMs = currentTimeMillis();
 
-        // make sure that the lastWrite time is within the given MARGIN_OF_ERROR_MS
-
-        // last write time should be equal or smaller than now
-        assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs, lastWriteTimeMs <= nowMs);
-        // last write time should be larger or equal than the now - MARGIN_OF_ERROR_MS
-        assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs,
-                lastWriteTimeMs >= nowMs - MARGIN_OF_ERROR_MS);
+        long start = nowMs - MARGIN_OF_ERROR_MS;
+        long end = nowMs;
+        assertThat(lastWriteTimeMs)
+                .as("last write time (%s) should be between (now - MARGIN_OF_ERROR_MS) (%s) & now (%s)", lastWriteTimeMs, start,
+                        end)
+                .isBetween(start, end);
     }
 
     @Test
@@ -147,12 +148,12 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         long lastReadTimeMs = connBA.lastReadTimeMillis();
         long nowMs = currentTimeMillis();
 
-        // make sure that the lastRead time is within the given MARGIN_OF_ERROR_MS
-
-        // last read time should be equal or smaller than now
-        assertTrue("nowMs = " + nowMs + ", lastReadTimeMs = " + lastReadTimeMs, lastReadTimeMs <= nowMs);
-        // last read time should be larger or equal than the now - MARGIN_OF_ERROR_MS
-        assertTrue("nowMs = " + nowMs + ", lastReadTimeMs = " + lastReadTimeMs, lastReadTimeMs >= nowMs - MARGIN_OF_ERROR_MS);
+        long start = nowMs - MARGIN_OF_ERROR_MS;
+        long end = nowMs;
+        assertThat(lastReadTimeMs)
+                .as("last read time (%s) should be between (now - MARGIN_OF_ERROR_MS) (%s) & now (%s)", lastReadTimeMs, start,
+                        end)
+                .isBetween(start, end);
     }
 
     @Test
