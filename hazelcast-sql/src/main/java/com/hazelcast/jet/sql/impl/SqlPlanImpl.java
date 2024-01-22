@@ -1122,7 +1122,9 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public boolean isCacheable() {
-            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
+            // Do not cache ANALYZE plan to give always the most up-to-date result
+            // and avoid race conditions due to shared, mutable analyzeJobConfig instance.
+            return !isAnalyzed() && !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
         }
 
         @Override
@@ -1220,7 +1222,9 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public boolean isCacheable() {
-            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
+            // Do not cache ANALYZE plan to give always the most up-to-date result
+            // and avoid race conditions due to shared, mutable analyzeJobConfig instance.
+            return !isAnalyzed() && !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
         }
 
         @Override

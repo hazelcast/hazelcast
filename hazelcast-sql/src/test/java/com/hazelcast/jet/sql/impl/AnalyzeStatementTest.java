@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
@@ -131,6 +132,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .orElse(null);
         assertNotNull(job);
         assertFalse(job.isLightJob());
+        assertThat(job.getMetrics().metrics()).isNotEmpty();
 
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE SELECT * FROM test WHERE __key = 1"))
@@ -143,8 +145,9 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, Long.class);
 
         final String insertQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
-        assertJobIsAnalyzed(insertQuery);
+        Job job = assertJobIsAnalyzed(insertQuery);
         assertEquals(2, instance().getMap("test").size());
+        assertThat(job.getMetrics().metrics()).isNotEmpty();
 
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE INSERT INTO test VALUES(3, 3)"))
@@ -157,8 +160,9 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, Long.class);
 
         final String insertQuery = " SINK INTO test SELECT v, v from table(generate_series(1,2))";
-        assertJobIsAnalyzed(insertQuery);
+        Job job = assertJobIsAnalyzed(insertQuery);
         assertEquals(2, instance().getMap("test").size());
+        assertThat(job.getMetrics().metrics()).isNotEmpty();
 
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE SINK INTO test VALUES(3, 3)"))
@@ -172,8 +176,9 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         instance().getMap("test").put(1L, 1L);
 
         final String updateQuery = "UPDATE test SET this = 3 WHERE this = 1 AND this IS NOT NULL";
-        assertJobIsAnalyzed(updateQuery);
+        Job job = assertJobIsAnalyzed(updateQuery);
         assertEquals(3L, instance().getMap("test").get(1L));
+        assertThat(job.getMetrics().metrics()).isNotEmpty();
 
         // Check optimized plan failure with ANALYZE statement
         assertThatThrownBy(() -> sqlService.execute("ANALYZE UPDATE test SET this = 3 WHERE __key = 1"))
@@ -187,8 +192,9 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         instance().getMap("test").put(1L, 1L);
 
         final String deleteQuery = "DELETE FROM test WHERE this = 1 AND this IS NOT NULL";
-        assertJobIsAnalyzed(deleteQuery);
+        Job job = assertJobIsAnalyzed(deleteQuery);
         assertTrue(instance().getMap("test").isEmpty());
+        assertThat(job.getMetrics().metrics()).isNotEmpty();
 
         assertThatThrownBy(() -> sqlService.execute("ANALYZE DELETE FROM test WHERE __key = 1"))
                 .hasCauseInstanceOf(QueryException.class)
@@ -210,9 +216,39 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     }
 
     @Test
+    public void test_suspendDmlJob() {
+        // Given
+        createMapping("test", Long.class, Long.class);
+        Job job = assertAsyncJobIsAnalyzed("INSERT INTO test SELECT v, v from table(generate_stream(1))");
+
+        // When
+        job.suspend();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
+        // Note: this exception doesn't have message.
+    }
+
+    @Test
     public void test_restartJob() {
         // Given
         Job job = runQuery();
+
+        // When
+        job.restart();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
+        // Note: this exception doesn't have message.
+    }
+
+    @Test
+    public void test_restartDmlJob() {
+        // Given
+        createMapping("test", Long.class, Long.class);
+        Job job = assertAsyncJobIsAnalyzed("INSERT INTO test SELECT v, v from table(generate_stream(1))");
 
         // When
         job.restart();
@@ -347,14 +383,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         instance().getSql().execute("ANALYZE " + query);
 
         // When
-        Job job = instance().getJet().getJobs()
-                .stream()
-                .filter(j -> Objects.equals(
-                        j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + query
-                ))
-                .findFirst()
-                .orElse(null);
+        Job job = findJobForQuery("ANALYZE " + query);
 
         // Then
         assertNotNull(job);
@@ -362,18 +391,43 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         return job;
     }
 
-    private static void assertJobIsAnalyzed(String query) {
+    private static Job assertJobIsAnalyzed(String query) {
         instance().getSql().execute("ANALYZE " + query);
-        Job job = instance().getJet().getJobs()
+        Job job = findJobForQuery("ANALYZE " + query);
+        assertNotNull(job);
+        assertFalse(job.isLightJob());
+        return job;
+    }
+
+    /**
+     * Same as {@link #assertJobIsAnalyzed(String)} but does not wait for {@link com.hazelcast.sql.SqlService#execute}
+     * to finish and is better suited for testing running streaming DML queries.
+     */
+    private static Job assertAsyncJobIsAnalyzed(String query) {
+        new Thread(() -> instance().getSql().execute("ANALYZE " + query)).start();
+
+        // wait until job is created
+        assertTrueEventually(() -> {
+            Job job = findJobForQuery("ANALYZE " + query);
+            assertNotNull(job);
+            assertFalse(job.isLightJob());
+        });
+
+        Job job = findJobForQuery("ANALYZE " + query);
+        assertJobStatusEventually(job, RUNNING);
+        return job;
+    }
+
+    @Nullable
+    private static Job findJobForQuery(String query) {
+        return instance().getJet().getJobs()
                 .stream()
                 .filter(j -> Objects.equals(
                         j.getConfig().getArgument("__sql.queryText"),
-                        "ANALYZE " + query
+                        query
                 ))
                 .findFirst()
                 .orElse(null);
-        assertNotNull(job);
-        assertFalse(job.isLightJob());
     }
 
     private static void joinAndExpectUserCancellation(Job job) {

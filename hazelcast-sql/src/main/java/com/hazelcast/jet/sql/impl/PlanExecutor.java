@@ -576,8 +576,8 @@ public class PlanExecutor {
                       long timeout,
                       @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = new JobConfig()
-                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+        JobConfig jobConfig = plan.isAnalyzed() ? plan.analyzeJobConfig() : new JobConfig();
+        jobConfig.setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
