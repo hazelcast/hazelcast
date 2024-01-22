@@ -211,6 +211,7 @@ import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
@@ -1714,7 +1715,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DataConnectionConfig dataConnectionConfig = config.getDataConnectionConfig("my-data-connection");
         assertNotNull(dataConnectionConfig);
         assertEquals("my-data-connection", dataConnectionConfig.getName());
-        assertEquals("dummy", dataConnectionConfig.getType());
+        assertEquals(DUMMY_TYPE, dataConnectionConfig.getType());
         assertFalse(dataConnectionConfig.isShared());
         assertEquals("jdbc:mysql://dummy:3306", dataConnectionConfig.getProperty("jdbcUrl"));
     }

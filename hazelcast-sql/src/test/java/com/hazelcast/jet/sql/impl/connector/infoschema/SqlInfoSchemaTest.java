@@ -27,6 +27,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
@@ -100,7 +101,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     @Test
     public void test_dataConnections() {
         // given
-        String type = "dummy";
+        String type = DUMMY_TYPE;
         // create config-originated data connection
         getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
                 new DataConnectionConfig()
@@ -109,9 +110,9 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         );
 
         // create SQL-originated data connection
-        sqlService.execute("CREATE DATA CONNECTION sql_default_shared_dc TYPE DUMMY");
-        sqlService.execute("CREATE DATA CONNECTION sql_shared_dc TYPE DUMMY SHARED");
-        sqlService.execute("CREATE DATA CONNECTION sql_non_shared_dc TYPE DUMMY NOT SHARED");
+        sqlService.executeUpdate("CREATE DATA CONNECTION sql_default_shared_dc TYPE DUMMY");
+        sqlService.executeUpdate("CREATE DATA CONNECTION sql_shared_dc TYPE DUMMY SHARED");
+        sqlService.executeUpdate("CREATE DATA CONNECTION sql_non_shared_dc TYPE DUMMY NOT SHARED");
 
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.dataconnections",

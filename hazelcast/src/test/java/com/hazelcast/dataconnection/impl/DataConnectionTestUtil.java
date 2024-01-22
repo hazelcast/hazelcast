@@ -30,6 +30,8 @@ import java.util.Properties;
 
 public final class DataConnectionTestUtil {
 
+    public static final String DUMMY_TYPE = "DUMMY";
+
     private DataConnectionTestUtil() {
     }
 
@@ -109,7 +111,7 @@ public final class DataConnectionTestUtil {
 
         @Override
         public String type() {
-            return "DUMMY";
+            return DUMMY_TYPE;
         }
 
         @Override

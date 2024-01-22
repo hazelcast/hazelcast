@@ -378,7 +378,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         "public",
                         mappingName,
                         '"' + mappingName + '"',
-                        "kafka",
+                        "Kafka",
                         "{}")));
 
         // cleanup

@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Collections.singletonMap;
@@ -56,7 +57,7 @@ public class DataConnectionConsistencyCheckerTest extends HazelcastTestSupport {
     private DataConnectionConsistencyChecker dataConnectionConsistencyChecker;
 
     private String name;
-    private final String type = "dummy";
+    private final String type = DUMMY_TYPE;
 
     private HazelcastInstance[] instances;
 

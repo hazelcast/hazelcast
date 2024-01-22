@@ -23,7 +23,6 @@ import com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DummyDataConnect
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -33,13 +32,14 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class})
 public class SqlDataConnectionStatementTest extends SqlTestSupport {
     private InternalDataConnectionService[] dataConnectionServices;
 
@@ -59,7 +59,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createDataConnection_then_success() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE DUMMY "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
@@ -67,7 +67,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo(DUMMY_TYPE);
             assertThat(dataConnection.getConfig().isShared()).isFalse();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -76,7 +76,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createDataConnectionWithCaseInsensitiveName_then_success() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE DuMMy "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
@@ -84,7 +84,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo(DUMMY_TYPE);
             assertThat(dataConnection.getConfig().isShared()).isFalse();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -93,7 +93,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createDataConnectionWithWrongType_then_throws() {
         String dlName = randomName() + "_shouldNotExist";
-        assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+        assertThatThrownBy(() -> instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE DUMMIES " // <-- DUMMIES is wrong type
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')"))
@@ -114,7 +114,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo(DUMMY_TYPE);
             assertThat(dataConnection.getConfig().isShared()).isTrue();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -130,7 +130,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo(DUMMY_TYPE);
             assertThat(dataConnection.getConfig().isShared()).isTrue();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -145,7 +145,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo(DUMMY_TYPE);
             assertThat(dataConnection.getConfig().getProperties().get("b")).isEqualTo("c");
         }
     }
@@ -188,7 +188,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createDataConnectionIfAlreadyExistsCreatedByConfig_then_throws() {
         String dlName = randomName();
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(dlName)
-                .setType("dummy")
+                .setType(DUMMY_TYPE)
                 .setProperty("b", "c");
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             dataConnectionService.createConfigDataConnection(dataConnectionConfig);
@@ -216,7 +216,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createdDataConnectionCreatedAfterMappingWithSameName_then_success() {
         String dlName = randomName();
         createMapping(dlName, int.class, int.class);
-        instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE \"DUMMY\" "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
@@ -252,8 +252,8 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
-        instance().getSql().execute("DROP DATA CONNECTION " + dlName1);
-        instance().getSql().execute("DROP DATA CONNECTION IF EXISTS " + dlName2);
+        instance().getSql().executeUpdate("DROP DATA CONNECTION " + dlName1);
+        instance().getSql().executeUpdate("DROP DATA CONNECTION IF EXISTS " + dlName2);
 
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             assertThatThrownBy(() ->
@@ -273,7 +273,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         String dlName = randomName();
 
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(dlName)
-                .setType("dummy")
+                .setType(DUMMY_TYPE)
                 .setProperty("b", "c");
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             dataConnectionService.createConfigDataConnection(dataConnectionConfig);

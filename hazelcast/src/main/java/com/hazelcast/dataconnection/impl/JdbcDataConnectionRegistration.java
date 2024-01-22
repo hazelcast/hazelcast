@@ -26,7 +26,7 @@ public class JdbcDataConnectionRegistration implements DataConnectionRegistratio
 
     @Override
     public String type() {
-        return "JDBC";
+        return "Jdbc";
     }
 
     @Override

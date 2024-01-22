@@ -100,6 +100,7 @@ import java.util.function.BiFunction;
 
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -726,7 +727,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         properties.setProperty("prop2", "val2");
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName("some-name")
-                .setType("dummy")
+                .setType(DUMMY_TYPE)
                 .setProperties(properties);
 
 

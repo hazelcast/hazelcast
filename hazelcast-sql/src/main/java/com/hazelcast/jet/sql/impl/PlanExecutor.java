@@ -108,7 +108,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -193,12 +192,13 @@ public class PlanExecutor {
         }
 
         // checks if type is correct
-        dlService.classForDataConnectionType(plan.type());
+        String normalizedTypeName = dlService.normalizedTypeName(plan.type());
+        dlService.classForDataConnectionType(normalizedTypeName);
 
         boolean added = dataConnectionCatalog.createDataConnection(
                 new DataConnectionCatalogEntry(
                         plan.name(),
-                        plan.type().toLowerCase(Locale.ROOT),
+                        normalizedTypeName,
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),

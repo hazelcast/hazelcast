@@ -98,6 +98,11 @@ public interface InternalDataConnectionService extends DataConnectionService {
     Class<? extends DataConnection> classForDataConnectionType(String type);
 
     /**
+     * Returns type name with normalized casing.
+     */
+    String normalizedTypeName(String typeName);
+
+    /**
      * Close this DataConnectionService, should be called only on member shutdown.
      */
     void shutdown();

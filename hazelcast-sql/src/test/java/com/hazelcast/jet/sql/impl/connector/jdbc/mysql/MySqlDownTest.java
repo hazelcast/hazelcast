@@ -92,8 +92,8 @@ public class MySqlDownTest extends JdbcSqlTestSupport {
 
 
         assertThat(allRows(result)).containsExactly(
-                new Row("mysql", "jdbc", jsonArray("Table")),
-                new Row("testDatabaseRef", "jdbc", jsonArray("Table")));
+                new Row("mysql", "Jdbc", jsonArray("Table")),
+                new Row("testDatabaseRef", "Jdbc", jsonArray("Table")));
 
         result = executor.submit(() -> sqlService.execute("SHOW MAPPINGS"))
                 .get(5, TimeUnit.SECONDS);
