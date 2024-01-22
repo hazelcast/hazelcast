@@ -475,19 +475,7 @@
                                 </requireJavaVersion>
                                 <enforceBytecodeVersion>
                                     <maxJdkVersion>${jdk.version}</maxJdkVersion>
-                                    <excludes>
-                                        <!--
-                                        The archunit library containse several classes to process JDK9 modules.
-                                        It is a test dependency and can be ignored.
-                                        -->
-                                        <exclude>com.tngtech.archunit:archunit</exclude>
-                                    </excludes>
                                     <ignoreClasses>
-                                        <!--
-                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
-                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
-                                        -->
-                                        <ignoreClass>*JDK9*</ignoreClass>
                                         <!--
                                         Classes from org:mongodb:bson-record-codec to map record to bson.
                                         Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
