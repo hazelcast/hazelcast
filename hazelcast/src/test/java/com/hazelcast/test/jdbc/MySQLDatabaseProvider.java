@@ -19,16 +19,22 @@ package com.hazelcast.test.jdbc;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import com.mysql.cj.jdbc.MysqlXADataSource;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.Network;
 
 import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.joining;
 
 public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?>> {
 
     public static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.0.32");
+
+    private Network network;
+
+    private String networkAlias;
 
     @Override
     public DataSource createDataSource(boolean xa) {
@@ -69,14 +75,17 @@ public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?
     @SuppressWarnings("resource")
     @Override
     MySQLContainer<?> createContainer(String dbName) {
-        return createContainer()
-                .withNetwork(network)
-                .withNetworkAliases("mysql")
+        MySQLContainer<?> mySQLContainer = createContainer()
                 .withDatabaseName(dbName)
                 .withUsername(user())
                 .withUrlParam("user", user())
                 .withUrlParam("password", password()
                 );
+        if (network != null) {
+            mySQLContainer.withNetwork(network);
+            mySQLContainer.withNetworkAliases(networkAlias);
+        }
+        return mySQLContainer;
     }
 
     @Override
@@ -93,5 +102,10 @@ public class MySQLDatabaseProvider extends JdbcDatabaseProvider<MySQLContainer<?
                 .map(part -> '`' + part.replaceAll("`", "``") + '`')
                 .collect(joining("."));
 
+    }
+
+    public void setNetwork(Network network, String networkAlias) {
+        this.network = Objects.requireNonNull(network);
+        this.networkAlias = Objects.requireNonNull(networkAlias);
     }
 }
