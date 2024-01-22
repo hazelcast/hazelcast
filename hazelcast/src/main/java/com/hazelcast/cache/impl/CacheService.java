@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
@@ -30,6 +31,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
@@ -162,6 +164,30 @@ public class CacheService extends AbstractCacheService {
     @Override
     public void doPrepublicationChecks(String cacheName) {
         // NOP intentionally
+    }
+
+    /**
+     * Checks if the given namespace is referenced by a hot restart enabled
+     * cache configuration.
+     *
+     * @param engine the node engine.
+     * @param namespace  the namespace.
+     * @return {@code true} if the namespace is referenced by a hot restart
+     * enabled data structure, {@code false} otherwise.
+     */
+    public boolean isNamespaceReferencedWithHotRestart(@Nonnull String namespace)  {
+        return nodeEngine.getConfig()
+                .getCacheConfigs()
+                .values()
+                .stream()
+                .filter(cacheConfig -> cacheConfig.getDataPersistenceConfig().isEnabled())
+                .map(CacheSimpleConfig::getUserCodeNamespace)
+                .anyMatch(namespace::equals)
+                || getCacheConfigs()
+                .stream()
+                .filter(cacheConfig -> cacheConfig.getHotRestartConfig().isEnabled())
+                .map(CacheConfig::getUserCodeNamespace)
+                .anyMatch(namespace::equals);
     }
 
     public static ObjectNamespace getObjectNamespace(String cacheName) {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -54,6 +56,7 @@ import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -296,7 +299,8 @@ public class ClusterWideConfigurationService implements
             MapConfig newMapConfig = (MapConfig) newConfig;
             currentConfig = mapConfigs.putIfAbsent(newMapConfig.getName(), newMapConfig);
             if (currentConfig == null) {
-                listener.onConfigRegistered(newMapConfig);
+                UserCodeNamespaceConfig namespace = findPersistableNamespaceConfig(newMapConfig.getUserCodeNamespace());
+                listener.onConfigRegistered(newMapConfig, namespace);
             }
         } else if (newConfig instanceof CardinalityEstimatorConfig) {
             CardinalityEstimatorConfig cardinalityEstimatorConfig = (CardinalityEstimatorConfig) newConfig;
@@ -338,7 +342,8 @@ public class ClusterWideConfigurationService implements
             CacheSimpleConfig cacheSimpleConfig = (CacheSimpleConfig) newConfig;
             currentConfig = cacheSimpleConfigs.putIfAbsent(cacheSimpleConfig.getName(), cacheSimpleConfig);
             if (currentConfig == null) {
-                listener.onConfigRegistered(cacheSimpleConfig);
+                UserCodeNamespaceConfig namespace = findPersistableNamespaceConfig(cacheSimpleConfig.getUserCodeNamespace());
+                listener.onConfigRegistered(cacheSimpleConfig, namespace);
             }
         } else if (newConfig instanceof FlakeIdGeneratorConfig) {
             FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
@@ -362,7 +367,11 @@ public class ClusterWideConfigurationService implements
             UserCodeNamespaceConfig config = (UserCodeNamespaceConfig) newConfig;
             // Deliberately overwrite existing
             currentConfig = namespaceConfigs.put(config.getName(), config);
-            nodeEngine.getNamespaceService().addNamespaceConfig(config);
+            // ensure that the namespace is registered and added to the config.
+            nodeEngine.getNamespaceService().addNamespaceConfig(nodeEngine.getConfig().getNamespacesConfig(), config);
+            if (isNamespaceReferencedWithHRPersistence(nodeEngine, config)) {
+                listener.onConfigRegistered(config);
+            }
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -394,6 +403,43 @@ public class ClusterWideConfigurationService implements
             }
         }
     }
+
+    /**
+     * Retrieve a namespace from the list of dynamically added or updated
+     * namespaces.
+     * <p>
+     * Only those namespaces that are not statically configured should be
+     * persisted for hot restart enabled data structures.
+     *
+     * @param name namespace name.
+     * @return the {@code UserCodeNamespaceConfig} or {@code null} if not found.
+     */
+    private UserCodeNamespaceConfig findPersistableNamespaceConfig(String name) {
+        if (name == null) {
+            return null;
+        }
+        return namespaceConfigs.get(name);
+    }
+
+    /**
+     * Checks if the given namespace is referenced by a hot restart enabled
+     * data structure.
+     *
+     * @param nodeEngine the node engine.
+     * @param namespace  the namespace.
+     * @return {@code true} if the namespace is referenced by a hot restart
+     * enabled data structure, {@code false} otherwise.
+     */
+    private boolean isNamespaceReferencedWithHRPersistence(NodeEngine nodeEngine, UserCodeNamespaceConfig namespace) {
+        CacheService cacheService = nodeEngine.getServiceOrNull(ICacheService.SERVICE_NAME);
+        if (cacheService == null) {
+            return MapService.isNamespaceReferencedWithHotRestart(nodeEngine, namespace.getName());
+        } else {
+            return MapService.isNamespaceReferencedWithHotRestart(nodeEngine, namespace.getName())
+                    || cacheService.isNamespaceReferencedWithHotRestart(namespace.getName());
+        }
+    }
+
 
     @Override
     public void persist(Object subConfig) {

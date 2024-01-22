@@ -441,4 +441,24 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
         }
         return null;
     }
+
+    /**
+     * Checks if the given namespace is referenced by a hot restart enabled
+     * map configuration.
+     *
+     * @param engine the node engine.
+     * @param namespace  the namespace.
+     * @return {@code true} if the namespace is referenced by a hot restart
+     * enabled data structure, {@code false} otherwise.
+     */
+    public static boolean isNamespaceReferencedWithHotRestart(@Nonnull NodeEngine engine, @Nonnull String namespace) {
+        return engine
+                .getConfig()
+                .getMapConfigs()
+                .values()
+                .stream()
+                .filter(cacheConfig -> cacheConfig.getDataPersistenceConfig().isEnabled())
+                .map(MapConfig::getUserCodeNamespace)
+                .anyMatch(namespace::equals);
+    }
 }

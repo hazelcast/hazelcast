@@ -18,6 +18,7 @@ package com.hazelcast.internal.namespace;
 
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -181,10 +182,16 @@ public interface UserCodeNamespaceService {
     /**
      * Convenience method for adding {@code Namespace}s directly using a
      * {@link UserCodeNamespaceConfig} instance.
-     * @param config the {@link UserCodeNamespaceConfig} instance to fetch the {@code Namespace}
+     * <p>
+     * This method will add the {@code Namespace} to the provided {@link UserCodeNamespacesConfig}
+     * but will not broadcast the change to cluster members.
+     *
+     * @param namespacesConfig the {@link UserCodeNamespacesConfig} instance to add the namespace to.
+     * @param namespaceConfig the {@link UserCodeNamespaceConfig} instance to fetch the {@code Namespace}
      *               name from for addition via {@link #addNamespace(String, Collection)}
      */
-    default void addNamespaceConfig(UserCodeNamespaceConfig config) {
-        addNamespace(config.getName(), ConfigAccessor.getResourceDefinitions(config));
+    default void addNamespaceConfig(UserCodeNamespacesConfig namespacesConfig, UserCodeNamespaceConfig namespaceConfig) {
+        ConfigAccessor.addNamespaceConfigLocally(namespacesConfig, namespaceConfig);
+        addNamespace(namespaceConfig.getName(), ConfigAccessor.getResourceDefinitions(namespaceConfig));
     }
 }

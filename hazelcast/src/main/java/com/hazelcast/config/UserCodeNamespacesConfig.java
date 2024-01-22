@@ -65,9 +65,19 @@ public class UserCodeNamespacesConfig {
      * {@link UserCodeNamespaceConfig#getName() name}.
      */
     public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
+        addNamespaceConfigLocally(userCodeNamespaceConfig);
+        return this;
+    }
+
+    /**
+     * Adds the specified {@code namespaceConfig}, replacing any existing {@link UserCodeNamespaceConfig} with the same
+     * {@link UserCodeNamespaceConfig#getName() name}.
+     *
+     * The {@code namespaceConfig} is not broadcast to cluster members.
+     */
+    protected void addNamespaceConfigLocally(UserCodeNamespaceConfig userCodeNamespaceConfig) {
         Objects.requireNonNull(userCodeNamespaceConfig.getName(), "Namespace name cannot be null");
         namespaceConfigs.put(userCodeNamespaceConfig.getName(), userCodeNamespaceConfig);
-        return this;
     }
 
     public UserCodeNamespacesConfig removeNamespaceConfig(String namespace) {

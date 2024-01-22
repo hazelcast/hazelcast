@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 
 
 /**
@@ -27,12 +28,17 @@ import com.hazelcast.config.MapConfig;
 public class EmptyDynamicConfigListener implements DynamicConfigListener {
 
     @Override
-    public void onConfigRegistered(MapConfig configObject) {
+    public void onConfigRegistered(MapConfig configObject, UserCodeNamespaceConfig ns) {
         //intentionally no-op
     }
 
     @Override
-    public void onConfigRegistered(CacheSimpleConfig configObject) {
+    public void onConfigRegistered(CacheSimpleConfig configObject, UserCodeNamespaceConfig ns) {
+        //intentionally no-op
+    }
+
+    @Override
+    public void onConfigRegistered(UserCodeNamespaceConfig configObject) {
         //intentionally no-op
     }
 

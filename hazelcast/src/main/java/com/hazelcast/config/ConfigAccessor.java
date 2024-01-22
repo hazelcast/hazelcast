@@ -65,4 +65,16 @@ public final class ConfigAccessor {
     public static Collection<ResourceDefinition> getResourceDefinitions(UserCodeNamespaceConfig nsConfig) {
         return nsConfig.getResourceConfigs();
     }
+
+    /**
+     * Adds Namespace directly to namespaces configuration without
+     * Broadcasting to cluster members.
+     * <p>
+     * @param namespacesConfig The namespaces configuration.
+     * @param namespaceConfig The namespace to add.
+     */
+    public static void addNamespaceConfigLocally(UserCodeNamespacesConfig namespacesConfig,
+                                                 UserCodeNamespaceConfig namespaceConfig) {
+        namespacesConfig.addNamespaceConfigLocally(namespaceConfig);
+    }
 }
