@@ -187,6 +187,7 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
+        config.setProperty("hazelcast.logging.type", "log4j2");
         config.getMetricsConfig().setEnabled(false);
         config.getJetConfig().setEnabled(false);
         return config;
