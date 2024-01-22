@@ -169,7 +169,7 @@ public class PartitionContainer {
         mapContainer.onBeforeDestroy();
 
         String name = mapContainer.getName();
-        RecordStore recordStore = maps.get(name);
+        RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
             // this call also clears and disposes Indexes for that partition
             recordStore.destroy();

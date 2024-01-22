@@ -53,8 +53,8 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 @SuppressWarnings("checkstyle:methodcount")
 public class State {
 
-    private final RecordStore recordStore;
-    private final MapOperation operation;
+    private volatile RecordStore recordStore;
+    private volatile MapOperation operation;
 
     // fields coming from operation
     private int partitionId = UNSET;
@@ -108,13 +108,11 @@ public class State {
     private volatile int sizeAfter;
 
     public State(RecordStore recordStore, MapOperation operation) {
-        this.recordStore = recordStore;
-        this.operation = operation;
+        init(recordStore, operation);
     }
 
     public State(State state) {
-        this.recordStore = state.getRecordStore();
-        this.operation = state.getOperation();
+        init(state.getRecordStore(), state.getOperation());
 
         setTtl(state.getTtl())
                 .setMaxIdle(state.getMaxIdle())
@@ -128,6 +126,11 @@ public class State {
                 .setEntryProcessor(state.getEntryProcessor())
                 .setCallerAddress(state.getCallerAddress())
                 .setPartitionId(state.getPartitionId());
+    }
+
+    public void init(RecordStore recordStore, MapOperation operation) {
+        this.recordStore = recordStore;
+        this.operation = operation;
     }
 
     public RecordStore getRecordStore() {

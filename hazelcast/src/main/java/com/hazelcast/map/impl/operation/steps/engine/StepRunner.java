@@ -19,9 +19,10 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -63,7 +64,6 @@ public class StepRunner extends Offload
     private final long maxRunNanos;
     private final Set<MapOperation> offloadedOperations;
     private final OperationExecutor operationExecutor;
-    private final ExecutionService executionService;
     private final @Nullable String namespace;
 
     private volatile StepSupplier stepSupplier;
@@ -78,7 +78,6 @@ public class StepRunner extends Offload
         NodeEngine nodeEngine = mapOperation.getNodeEngine();
         this.operationExecutor = ((OperationServiceImpl) nodeEngine
                 .getOperationService()).getOperationExecutor();
-        this.executionService = nodeEngine.getExecutionService();
         this.maxRunNanos = mapOperation.getMapContainer()
                 .getMapServiceContext().getMaxSuccessiveOffloadedOpRunNanos();
         this.namespace = mapOperation.getMapContainer().getMapConfig().getUserCodeNamespace();
@@ -134,7 +133,7 @@ public class StepRunner extends Offload
      */
     @Override
     @SuppressWarnings({"checkstyle:innerassignment",
-            "checkstyle:CyclomaticComplexity"})
+            "checkstyle:CyclomaticComplexity", "squid:S1764"})
     public void run() {
         final boolean runningOnPartitionThread = isRunningOnPartitionThread();
         final long start = System.nanoTime();
@@ -207,6 +206,7 @@ public class StepRunner extends Offload
      * create next step supplier for the next offloaded operation
      */
     @Nullable
+    @SuppressWarnings("squid:S1751")
     private StepSupplier getNextStepSupplierOrNull() {
         for (MapOperation operation : offloadedOperations) {
             return new StepSupplier(operation);
@@ -281,7 +281,10 @@ public class StepRunner extends Offload
             assertRunningOnPartitionThread();
 
             if (offloadedOperations.remove(op)) {
-                ((MapOperation) op).getRecordStore().decMapStoreOffloadedOperationsCount();
+                RecordStore<Record> recordStore = ((MapOperation) op).getRecordStore();
+                if (recordStore != null) {
+                    recordStore.decMapStoreOffloadedOperationsCount();
+                }
                 delegate.sendResponse(op, response);
             }
         }

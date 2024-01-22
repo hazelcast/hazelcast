@@ -123,6 +123,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     protected final ILogger logger;
+
     private final NodeEngine nodeEngine;
     private final QueryEngine queryEngine;
     private final EventService eventService;

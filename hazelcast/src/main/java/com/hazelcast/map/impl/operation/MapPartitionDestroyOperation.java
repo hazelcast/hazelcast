@@ -17,11 +17,15 @@
 package com.hazelcast.map.impl.operation;
 
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
+
+import java.util.logging.Level;
 
 /**
  * Operation to destroy the map data on the partition thread
@@ -30,7 +34,6 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState {
 
     private final PartitionContainer partitionContainer;
-    private final MapContainer mapContainer;
 
     public MapPartitionDestroyOperation(PartitionContainer partitionContainer,
                                         MapContainer mapContainer) {
@@ -42,7 +45,21 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
 
     @Override
     protected void runInternal() {
+        if (mapContainer == null) {
+            // no such map exists
+            return;
+        }
         partitionContainer.destroyMap(mapContainer);
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof DistributedObjectDestroyedException) {
+            ILogger logger = getLogger();
+            logger.log(Level.FINEST, e.getMessage());
+        } else {
+            super.logError(e);
+        }
     }
 
     @Override

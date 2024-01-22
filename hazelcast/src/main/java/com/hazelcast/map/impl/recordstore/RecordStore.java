@@ -684,6 +684,6 @@ public interface RecordStore<R extends Record> {
     boolean isTieredStorageEnabled();
 
     default void disposeOnSplitBrainHeal() {
-        // no-op
+        getMapContainer().onDestroy();
     }
 }

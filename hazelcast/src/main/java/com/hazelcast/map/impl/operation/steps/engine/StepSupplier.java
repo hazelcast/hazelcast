@@ -20,8 +20,10 @@ import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
@@ -91,7 +93,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     }
 
     public static Step injectCustomStepsToOperation(MapOperation operation,
-                                                     Step injectCustomStepsBeforeThisStep) {
+                                                    Step injectCustomStepsBeforeThisStep) {
         List<Step> steps = new ArrayList<>();
 
         collectCustomSteps(operation, customStep -> {
@@ -185,7 +187,14 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
         boolean metWithPreconditions = true;
         try {
-            state.getRecordStore().beforeOperation();
+            refreshSate(state);
+
+            // we check for error step here to handle potential
+            // errors in `beforeOperation`/`afterOperation` calls.
+            boolean errorStep = step == UtilSteps.HANDLE_ERROR;
+            if (!errorStep) {
+                state.getRecordStore().beforeOperation();
+            }
             try {
                 if (runningOnPartitionThread && state.getThrowable() == null) {
                     metWithPreconditions = metWithPreconditions();
@@ -203,7 +212,9 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
                     throw e;
                 }
             } finally {
-                state.getRecordStore().afterOperation();
+                if (!errorStep) {
+                    state.getRecordStore().afterOperation();
+                }
             }
         } catch (Throwable throwable) {
             if (runningOnPartitionThread) {
@@ -219,6 +230,32 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
                 currentRunnable = null;
             }
         }
+    }
+
+    /**
+     * Refreshes this {@code StepSupplier} {@link State} by
+     * resetting its record-store and operation objects.
+     * <p>
+     * Reasoning:
+     * <p>
+     * This is needed because while an offloaded operation is waiting
+     * in queue, a previously queued operation can be a map#destroy
+     * operation and it can remove all current IMap state. In this
+     * case later operations' state in the queue become stale.
+     * By refreshing the {@link State} we are fixing this issue.
+     *
+     */
+    private void refreshSate(State state) {
+        MapOperation operation = state.getOperation();
+        boolean mapExists = operation.checkMapExists();
+        RecordStore recordStore = operation.getRecordStore();
+        if (!mapExists || recordStore == null) {
+            state.setThrowable(new DistributedObjectDestroyedException("No such map exists with name="
+                    + operation.getName() + ", op=" + operation.getClass().getSimpleName()));
+            return;
+        }
+
+        state.init(recordStore, operation);
     }
 
     private boolean metWithPreconditions() {

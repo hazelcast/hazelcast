@@ -112,16 +112,9 @@ public abstract class MapOperation extends AbstractNamedOperation
         mapServiceContext = mapService.getMapServiceContext();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
 
-        try {
-            recordStore = getRecordStoreOrNull();
-            mapContainer = getMapContainerOrNull();
-            if (mapContainer == null) {
-                logNoSuchMapExists();
-                return;
-            }
-        } catch (Throwable t) {
-            disposeDeferredBlocks();
-            throw rethrow(t, Exception.class);
+        if (!checkMapExists()) {
+            // no such map exists
+            return;
         }
 
         canPublishWanEvent = canPublishWanEvent(mapContainer);
@@ -146,6 +139,21 @@ public abstract class MapOperation extends AbstractNamedOperation
         getNodeEngine().getNamespaceService().setupNamespace(namespace);
 
         innerBeforeRun();
+    }
+
+    public boolean checkMapExists() {
+        try {
+            recordStore = getRecordStoreOrNull();
+            mapContainer = getMapContainerOrNull();
+            if (mapContainer == null) {
+                logNoSuchMapExists();
+                return false;
+            }
+        } catch (Throwable t) {
+            disposeDeferredBlocks();
+            throw rethrow(t);
+        }
+        return true;
     }
 
     private void logNoSuchMapExists() {
