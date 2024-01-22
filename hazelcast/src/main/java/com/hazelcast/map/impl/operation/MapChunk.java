@@ -144,7 +144,7 @@ public class MapChunk extends Operation
     }
 
     @Override
-    public final void beforeRun() {
+    public void beforeRun() {
         RecordStore recordStore = getRecordStore(mapName);
         recordStore.beforeOperation();
     }
@@ -377,7 +377,7 @@ public class MapChunk extends Operation
         return true;
     }
 
-    private RecordStore getRecordStore(String mapName) {
+    protected RecordStore getRecordStore(String mapName) {
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getRecordStore(getPartitionId(), mapName, true);
