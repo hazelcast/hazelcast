@@ -33,6 +33,9 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import eu.rekawek.toxiproxy.Proxy;
+import eu.rekawek.toxiproxy.ToxiproxyClient;
+import eu.rekawek.toxiproxy.model.ToxicDirection;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -44,6 +47,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -72,6 +76,8 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
+    private static final String NETWORK_ALIAS = "mysql";
+    private static final String UPSTREAM = "mysql:3306";
     private static final String TOXI_PROXY_IMAGE = "ghcr.io/shopify/toxiproxy:2.5.0";
 
     @Parameter(value = 0)
@@ -150,8 +156,11 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             mysql = initMySql(network, null);
-            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
-            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
+            Proxy proxy = initProxy(toxiproxy);
+
+            String host = toxiproxy.getHost();
+            Integer port = toxiproxy.getMappedPort(8666);
+            Pipeline pipeline = initPipeline(host, port);
             // when job starts
             HazelcastInstance hz = createHazelcastInstances(2)[0];
             Job job = hz.getJet().newJob(pipeline);
@@ -162,13 +171,13 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(0, 500));
 
             // and connection is cut
-            proxy.setConnectionCut(true);
+            setConnectionCut(proxy, true);
 
             // and some time passes
             MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
 
             // and connection recovers
-            proxy.setConnectionCut(false);
+            setConnectionCut(proxy, false);
 
             // then connector manages to reconnect and finish snapshot
             try {
@@ -222,8 +231,11 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             mysql = initMySql(network, null);
-            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
-            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
+            Proxy proxy = initProxy(toxiproxy);
+
+            String host = toxiproxy.getHost();
+            Integer port = toxiproxy.getMappedPort(8666);
+            Pipeline pipeline = initPipeline(host, port);
             // when connector is up and transitions to binlog reading
             HazelcastInstance hz = createHazelcastInstances(2)[0];
             Job job = hz.getJet().newJob(pipeline);
@@ -232,7 +244,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
             // and the connection is cut
-            proxy.setConnectionCut(true);
+            setConnectionCut(proxy, true);
 
             // and some new events get generated in the DB
             insertRecords(mysql, 1006, 1007);
@@ -241,7 +253,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
 
             // and the connection is re-established
-            proxy.setConnectionCut(false);
+            setConnectionCut(proxy, false);
 
             // then the connector catches up
             try {
@@ -328,6 +340,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         }
     }
 
+    @SuppressWarnings("resource")
     private MySQLContainer<?> initMySql(Network network, Integer fixedExposedPort) {
         MySQLContainer<?> mysql = namedTestContainer(
                 new MySQLContainer<>(AbstractMySqlCdcIntegrationTest.DOCKER_IMAGE)
@@ -340,12 +353,14 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             mysql = mysql.withCreateContainerCmdModifier(cmd);
         }
         if (network != null) {
-            mysql = mysql.withNetwork(network);
+            mysql = mysql.withNetwork(network)
+                    .withNetworkAliases(NETWORK_ALIAS);
         }
         mysql.start();
         return mysql;
     }
 
+    @SuppressWarnings("resource")
     private ToxiproxyContainer initToxiproxy(Network network) {
         ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXI_PROXY_IMAGE).withNetwork(network));
         toxiproxy.start();
@@ -356,8 +371,19 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         return Network.newNetwork();
     }
 
-    private static ToxiproxyContainer.ContainerProxy initProxy(ToxiproxyContainer toxiproxy, MySQLContainer<?> mysql) {
-        return toxiproxy.getProxy(mysql, MYSQL_PORT);
+    private static Proxy initProxy(ToxiproxyContainer toxiproxy) throws IOException {
+        ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxiproxy.getHost(), toxiproxy.getControlPort());
+        return toxiproxyClient.createProxy(NETWORK_ALIAS, "0.0.0.0:8666", UPSTREAM);
+    }
+
+    private void setConnectionCut(Proxy proxy, boolean shouldCutConnection) throws IOException {
+        if (shouldCutConnection) {
+            proxy.toxics().bandwidth(ToxicDirection.DOWNSTREAM.name(), ToxicDirection.DOWNSTREAM, 0);
+            proxy.toxics().bandwidth(ToxicDirection.UPSTREAM.name(), ToxicDirection.UPSTREAM, 0);
+        } else {
+            proxy.toxics().get(ToxicDirection.DOWNSTREAM.name()).remove();
+            proxy.toxics().get(ToxicDirection.UPSTREAM.name()).remove();
+        }
     }
 
     private static void insertRecords(MySQLContainer<?> mysql, int... ids) throws SQLException {

@@ -33,6 +33,9 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import eu.rekawek.toxiproxy.Proxy;
+import eu.rekawek.toxiproxy.ToxiproxyClient;
+import eu.rekawek.toxiproxy.model.ToxicDirection;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Test;
@@ -46,11 +49,13 @@ import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
@@ -73,11 +78,13 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
-    private static final DockerImageName TOXI_PROXY_IMAGE = DockerImageName
-            .parse("ghcr.io/shopify/toxiproxy:2.4.0")
+    private static final String NETWORK_ALIAS = "postgres";
+    private static final String UPSTREAM = "postgres:5432";
+    private static final DockerImageName TOXIPROXY_IMAGE = DockerImageName
+            .parse("ghcr.io/shopify/toxiproxy:2.5.0")
             .asCompatibleSubstituteFor("shopify/toxiproxy");
 
-    @Parameter(value = 0)
+    @Parameter
     public RetryStrategy reconnectBehavior;
 
     @Parameter(value = 1)
@@ -148,8 +155,12 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             postgres = initPostgres(network, null);
-            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
-            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
+            Proxy proxy = initProxy(toxiproxy);
+
+            String host = toxiproxy.getHost();
+            Integer port = toxiproxy.getMappedPort(8666);
+
+            Pipeline pipeline = initPipeline(host, port);
             // when job starts
             HazelcastInstance hz = createHazelcastInstances(2)[0];
             Job job = hz.getJet().newJob(pipeline);
@@ -160,14 +171,14 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(0, 500));
 
             // and connection is cut
-            proxy.setConnectionCut(true);
+            setConnectionCut(proxy, true);
 
             // and some time passes
             MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
             //it takes the bloody thing ages to notice the connection being down, so it won't notice this...
 
             // and connection recovers
-            proxy.setConnectionCut(false);
+            setConnectionCut(proxy, false);
 
             // then connector manages to reconnect and finish snapshot
             try {
@@ -224,8 +235,12 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             postgres = initPostgres(network, null);
-            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
-            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
+            Proxy proxy = initProxy(toxiproxy);
+
+            String host = toxiproxy.getHost();
+            Integer port = toxiproxy.getMappedPort(8666);
+
+            Pipeline pipeline = initPipeline(host, port);
             // when connector is up and transitions to binlog reading
             HazelcastInstance hz = createHazelcastInstances(2)[0];
             Job job = hz.getJet().newJob(pipeline);
@@ -235,7 +250,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
             // and the connection is cut
-            proxy.setConnectionCut(true);
+            setConnectionCut(proxy, true);
 
             // and some new events get generated in the DB
             insertRecords(postgres, 1006, 1007);
@@ -244,7 +259,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             MILLISECONDS.sleep(5 * RECONNECT_INTERVAL_MS);
 
             // and the connection is re-established
-            proxy.setConnectionCut(false);
+            setConnectionCut(proxy, false);
 
             // then
             try {
@@ -324,7 +339,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source(host, port))
                 .withNativeTimestamps(0)
-                .map(r -> entry(r.key().toMap().get("id"), r.value().toJson()))
+                .map(r -> entry(Objects.requireNonNull(r.key()).toMap().get("id"), r.value().toJson()))
                 .writeTo(Sinks.map("results"));
         return pipeline;
     }
@@ -352,7 +367,8 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             postgres = postgres.withCreateContainerCmdModifier(cmd);
         }
         if (network != null) {
-            postgres = postgres.withNetwork(network);
+            postgres = postgres.withNetwork(network)
+                    .withNetworkAliases(NETWORK_ALIAS);
         }
         postgres.start();
         return postgres;
@@ -360,7 +376,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     @SuppressWarnings("resource")
     private ToxiproxyContainer initToxiproxy(Network network) {
-        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXI_PROXY_IMAGE).withNetwork(network));
+        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXIPROXY_IMAGE).withNetwork(network));
         toxiproxy.start();
         return toxiproxy;
     }
@@ -369,9 +385,19 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         return Network.newNetwork();
     }
 
-    private static ToxiproxyContainer.ContainerProxy initProxy(
-            ToxiproxyContainer toxiproxy, PostgreSQLContainer<?> postgres) {
-        return toxiproxy.getProxy(postgres, POSTGRESQL_PORT);
+    private static Proxy initProxy(ToxiproxyContainer toxiproxy) throws IOException {
+        ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxiproxy.getHost(), toxiproxy.getControlPort());
+        return toxiproxyClient.createProxy(NETWORK_ALIAS, "0.0.0.0:8666", UPSTREAM);
+    }
+
+    private void setConnectionCut(Proxy proxy, boolean shouldCutConnection) throws IOException {
+        if (shouldCutConnection) {
+            proxy.toxics().bandwidth(ToxicDirection.DOWNSTREAM.name(), ToxicDirection.DOWNSTREAM, 0);
+            proxy.toxics().bandwidth(ToxicDirection.UPSTREAM.name(), ToxicDirection.UPSTREAM, 0);
+        } else {
+            proxy.toxics().get(ToxicDirection.DOWNSTREAM.name()).remove();
+            proxy.toxics().get(ToxicDirection.UPSTREAM.name()).remove();
+        }
     }
 
     private static void insertRecords(PostgreSQLContainer<?> postgres, int... ids) throws SQLException {
