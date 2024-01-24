@@ -15,7 +15,6 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,7 +43,7 @@ public class PhoneHomeParameterCreatorTest {
         phoneHomeParameterCreator.addParam("2", "phonehome");
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
         assertEquals("1=hazelcast&2=phonehome", phoneHomeParameterCreator.build());
-        assertEquals(ImmutableMap.of("1", "hazelcast", "2", "phonehome"), map);
+        assertEquals(Map.of("1", "hazelcast", "2", "phonehome"), map);
     }
 
     @Test

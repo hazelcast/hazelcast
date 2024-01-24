@@ -15,7 +15,6 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -186,7 +185,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void pardotIdOverride_withEnvVar() {
-        PhoneHome phoneHome = new PhoneHome(node, "http://example.org", ImmutableMap.of("HZ_PARDOT_ID", "1234"));
+        PhoneHome phoneHome = new PhoneHome(node, "http://example.org", Map.of("HZ_PARDOT_ID", "1234"));
         Map<String, String> params = phoneHome.phoneHome(true);
         assertEquals("1234", params.get("p"));
     }

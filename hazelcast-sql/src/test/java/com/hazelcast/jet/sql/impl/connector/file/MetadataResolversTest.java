@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -78,7 +77,7 @@ public class MetadataResolversTest {
     public void when_formatIsNotSupported_then_throws() {
         assertThatThrownBy(() -> resolvers.resolveAndValidateFields(
                 emptyList(),
-                ImmutableMap.of(OPTION_FORMAT, "some-other-format", OPTION_PATH, "/path")
+                Map.of(OPTION_FORMAT, "some-other-format", OPTION_PATH, "/path")
         )).isInstanceOf(QueryException.class)
           .hasMessageContaining("Unsupported serialization format");
     }
@@ -86,7 +85,7 @@ public class MetadataResolversTest {
     @Test
     public void test_resolveAndValidateFields() {
         // given
-        Map<String, String> options = ImmutableMap.of(OPTION_FORMAT, FORMAT, OPTION_PATH, "/path", OPTION_GLOB, "*");
+        Map<String, String> options = Map.of(OPTION_FORMAT, FORMAT, OPTION_PATH, "/path", OPTION_GLOB, "*");
 
         given(resolver.resolveAndValidateFields(emptyList(), options))
                 .willReturn(singletonList(new MappingField("field", QueryDataType.VARCHAR)));
@@ -102,7 +101,7 @@ public class MetadataResolversTest {
     public void test_resolveMetadata() {
         // given
         List<MappingField> resolvedFields = singletonList(new MappingField("field", QueryDataType.VARCHAR));
-        Map<String, String> options = ImmutableMap.of(OPTION_FORMAT, FORMAT, OPTION_PATH, "/path", OPTION_GLOB, "*");
+        Map<String, String> options = Map.of(OPTION_FORMAT, FORMAT, OPTION_PATH, "/path", OPTION_GLOB, "*");
 
         given(resolver.resolveMetadata(resolvedFields, options)).willReturn(metadata);
 

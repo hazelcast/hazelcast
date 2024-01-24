@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -28,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
+
+import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,7 +61,7 @@ public class PojoUpsertTargetDescriptorTest {
     public void test_serialization() {
         PojoUpsertTargetDescriptor original = new PojoUpsertTargetDescriptor(
                 "com.hazelcast.class",
-                ImmutableMap.of("field", int.class.getName())
+                Map.of("field", int.class.getName())
         );
 
         // when
