@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,7 +37,7 @@ public class CsvResolverTest {
     @Test
     public void test_resolveFields() {
         // given
-        Set<String> headers = ImmutableSet.of("field1", "field2");
+        Set<String> headers = Set.of("field1", "field2");
 
         // when
         List<MappingField> fields = CsvResolver.resolveFields(headers);

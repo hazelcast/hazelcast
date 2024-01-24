@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.google.common.collect.ImmutableSet;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
@@ -30,7 +29,7 @@ import java.util.Set;
 
 public class SupportsRexVisitor extends RexVisitorImpl<Boolean> {
 
-    private static final Set<String> OTHER_SUPPORTED = ImmutableSet.of(
+    private static final Set<String> OTHER_SUPPORTED = Set.of(
             "||",
             "NOT LIKE",
             "LENGTH",

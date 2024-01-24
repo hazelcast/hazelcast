@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.DAG;
@@ -73,7 +72,7 @@ import static java.util.Collections.singletonList;
  */
 public abstract class MongoSqlConnectorBase implements SqlConnector {
 
-    protected static final Set<String> ALLOWED_OBJECT_TYPES = ImmutableSet.of("Collection", "ChangeStream");
+    protected static final Set<String> ALLOWED_OBJECT_TYPES = Set.of("Collection", "ChangeStream");
 
     @Nonnull
     @Override

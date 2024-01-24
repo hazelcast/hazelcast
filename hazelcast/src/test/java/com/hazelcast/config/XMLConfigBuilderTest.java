@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -63,6 +62,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Collection;
@@ -165,7 +165,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_END_TAG;
-        Writer writer = new PrintWriter(file, "UTF-8");
+        Writer writer = new PrintWriter(file, StandardCharsets.UTF_8);
         writer.write(xml);
         writer.close();
 
@@ -989,7 +989,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(mcConfig.isConsoleEnabled());
         assertFalse(mcConfig.isDataAccessEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
-        assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
+        assertTrue(mcConfig.getTrustedInterfaces().containsAll(Set.of("127.0.0.1", "192.168.1.*")));
     }
 
     @Override
@@ -1856,7 +1856,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(4, multicastConfig.getMulticastTimeoutSeconds());
         assertEquals(42, multicastConfig.getMulticastTimeToLive());
         assertEquals(2, multicastConfig.getTrustedInterfaces().size());
-        assertTrue(multicastConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "0.0.0.0")));
+        assertTrue(multicastConfig.getTrustedInterfaces().containsAll(Set.of("127.0.0.1", "0.0.0.0")));
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
@@ -84,7 +83,7 @@ public final class HazelcastRelMdWatermarkedFields
         if (watermarkedFieldIndex < 0) {
             return null;
         }
-        return new WatermarkedFields(ImmutableSet.of(watermarkedFieldIndex));
+        return new WatermarkedFields(Set.of(watermarkedFieldIndex));
     }
 
     @SuppressWarnings("unused")

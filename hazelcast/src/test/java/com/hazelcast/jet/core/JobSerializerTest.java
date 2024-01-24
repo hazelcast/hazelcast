@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
@@ -49,6 +48,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -146,7 +146,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
         ICache<Integer, Value> cache = client().getCacheManager().getCache(SINK_CACHE_NAME);
         assertThat(cache).hasSize(2);
-        assertThat(cache.getAll(ImmutableSet.of(1, 2))).containsExactlyInAnyOrderEntriesOf(
+        assertThat(cache.getAll(Set.of(1, 2))).containsExactlyInAnyOrderEntriesOf(
                 ImmutableMap.of(1, new Value(1), 2, new Value(2))
         );
     }
