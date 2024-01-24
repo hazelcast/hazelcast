@@ -54,7 +54,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
-    private final ILogger logger = Logger.getLogger(ReadKafkaConnectP.class);
+    private ILogger logger = Logger.getLogger(ReadKafkaConnectP.class);
     private SourceConnectorWrapper sourceConnectorWrapper;
     private final EventTimeMapper<T> eventTimeMapper;
     private final FunctionEx<SourceRecord, T> projectionFn;
@@ -98,6 +98,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     protected void init(@Nonnull Context context) {
+        logger = getLogger();
         globalProcessorIndex = context.globalProcessorIndex();
         localProcessorIndex = context.localProcessorIndex();
         logger.info("Entering ReadKafkaConnectP init processorOrder=" + processorOrder
@@ -185,7 +186,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     }
 
     private BroadcastKey<String> snapshotKey() {
-        return broadcastKey("snapshot-" + globalProcessorIndex);
+        return broadcastKey("snapshot-" + processorOrder);
     }
 
     @Override

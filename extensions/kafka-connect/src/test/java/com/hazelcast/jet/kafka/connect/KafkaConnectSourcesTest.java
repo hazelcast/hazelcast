@@ -38,7 +38,7 @@ public class KafkaConnectSourcesTest {
     @Test
     public void should_fail_when_no_name_property() {
         Properties properties = new Properties();
-        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
+        assertThatThrownBy(() -> connect(properties, TestUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'name' is required");
     }
@@ -58,7 +58,7 @@ public class KafkaConnectSourcesTest {
     public void should_fail_when_no_connector_class_property() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
-        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
+        assertThatThrownBy(() -> connect(properties, TestUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'connector.class' is required");
     }

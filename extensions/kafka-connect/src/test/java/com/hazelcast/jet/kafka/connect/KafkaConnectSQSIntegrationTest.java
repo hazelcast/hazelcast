@@ -50,19 +50,17 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -109,7 +107,7 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
 
         Properties connectorProperties = getConnectorProperties();
         StreamSource<String> streamSource = KafkaConnectSources.connect(connectorProperties,
-                SourceRecordUtil::convertToString);
+                TestUtil::convertToString);
 
         StreamStage<String> streamStage = pipeline.readFrom(streamSource)
                 .withoutTimestamps()
@@ -121,7 +119,7 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
         streamStage.writeTo(sink);
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJar(getSQSConnectorURL());
+        jobConfig.addJar(getConnectorURL("kafka-connect-sqs-1.5.0.jar"));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -236,15 +234,5 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
             list.add(requestEntry);
         }
         return list;
-    }
-
-    private URL getSQSConnectorURL() throws URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        final String CONNECTOR_FILE_PATH = "kafka-connect-sqs-1.5.0.jar";
-        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
-        assert resource != null;
-        assertThat(new File(resource.toURI())).exists();
-
-        return resource;
     }
 }

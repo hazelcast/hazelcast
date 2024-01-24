@@ -46,18 +46,15 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -90,7 +87,7 @@ public class KafkaConnectRedisIntegrationTest extends JetTestSupport {
 
         Properties connectorProperties = getConnectorProperties();
         StreamSource<String> streamSource = KafkaConnectSources.connect(connectorProperties,
-                SourceRecordUtil::convertToString);
+                TestUtil::convertToString);
 
         StreamStage<String> streamStage = pipeline.readFrom(streamSource)
                 .withoutTimestamps()
@@ -102,7 +99,7 @@ public class KafkaConnectRedisIntegrationTest extends JetTestSupport {
         streamStage.writeTo(sink);
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getRedisConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL("redis-redis-kafka-connect-0.9.0.zip"));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -158,14 +155,5 @@ public class KafkaConnectRedisIntegrationTest extends JetTestSupport {
         messageBody.put("direction", "270");
         messageBody.put("sensor_ts", String.valueOf(System.currentTimeMillis()));
         return messageBody;
-    }
-
-    private URL getRedisConnectorURL() throws URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        final String CONNECTOR_FILE_PATH = "redis-redis-kafka-connect-0.9.0.zip";
-        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
-        assert resource != null;
-        assertThat(new File(resource.toURI())).exists();
-        return resource;
     }
 }

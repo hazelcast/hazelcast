@@ -194,7 +194,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         assertTrue(snapshot);
         Map.Entry<Object, Object> lastSnapshot = outbox.snapshotQueue().peek();
         assertThat(lastSnapshot).isNotNull();
-        assertThat(lastSnapshot.getKey()).isEqualTo(BroadcastKey.broadcastKey("snapshot-1"));
+        assertThat(lastSnapshot.getKey()).isEqualTo(BroadcastKey.broadcastKey("snapshot-0"));
     }
 
     @Test

@@ -148,7 +148,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> mappedValueStage = pipeline
                 .readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
 
@@ -221,7 +221,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> mappedValueStage = pipeline
                 .readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
 
@@ -307,7 +307,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> mappedValueStage = pipeline
                 .readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
 
@@ -392,7 +392,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> mappedValueStage = pipeline
                 .readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
 

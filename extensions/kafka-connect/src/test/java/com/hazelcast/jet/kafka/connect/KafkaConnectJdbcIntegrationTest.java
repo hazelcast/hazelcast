@@ -47,9 +47,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -58,9 +55,9 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -83,6 +80,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
     private static final int ITEM_COUNT = 1_000;
+    private static final String FILE_NAME = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
     @BeforeClass
     public static void setUpDocker() {
@@ -109,7 +107,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
@@ -117,7 +115,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getJdbcConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -154,7 +152,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
@@ -162,7 +160,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getJdbcConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -207,14 +205,14 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         // Create job
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage.writeTo(Sinks.list(sinkList));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jobConfig.addJarsInZip(getJdbcConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
 
         Job job = hazelcastInstance1.getJet().newJob(pipeline, jobConfig);
 
@@ -251,7 +249,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
         streamStage.writeTo(Sinks.logger());
@@ -260,7 +258,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                         list -> assertEquals(3 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getJdbcConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -321,7 +319,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         final Pipeline pipeline = Pipeline.create();
         StreamStage<Long> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withIngestionTimestamps()
                 .setLocalParallelism(1)
                 .window(WindowDefinition.tumbling(10))
@@ -330,7 +328,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         streamStage.writeTo(Sinks.logger());
         streamStage.writeTo(Sinks.list("windowing_test_results"));
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getJdbcConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
@@ -346,15 +344,6 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
         job.cancel();
         assertJobStatusEventually(job, FAILED);
-    }
-
-    private URL getJdbcConnectorURL() throws URISyntaxException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-jdbc-10.6.3.zip";
-        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
-        assert resource != null;
-        assertThat(new File(resource.toURI())).exists();
-        return resource;
     }
 
 }

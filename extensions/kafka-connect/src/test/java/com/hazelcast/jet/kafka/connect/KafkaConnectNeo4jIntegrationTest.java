@@ -45,16 +45,13 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -81,14 +78,14 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void testReadFromNeo4jConnector() throws Exception {
+    public void testReadFromNeo4jConnector() {
         Properties connectorProperties = getConnectorProperties();
 
         insertNodes("items-1");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(2);
         streamStage.writeTo(Sinks.logger());
@@ -97,7 +94,7 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getNeo4JConnectorURL());
+        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -142,15 +139,5 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
                         + prefix + "-value-" + i + "', timestamp: datetime().epochMillis});");
             }
         }
-    }
-
-    private URL getNeo4JConnectorURL() throws URISyntaxException {
-        //This is the last JDK8-compatible version of the Neo4j connector
-        ClassLoader classLoader = getClass().getClassLoader();
-        final String CONNECTOR_FILE_PATH = "neo4j-kafka-connect-neo4j-2.0.1.zip";
-        URL resource = classLoader.getResource(CONNECTOR_FILE_PATH);
-        assert resource != null;
-        assertThat(new File(resource.toURI())).exists();
-        return resource;
     }
 }

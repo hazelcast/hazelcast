@@ -141,6 +141,18 @@
                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>download-mongo-jar-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/mongo-kafka-connect-1.10.0-all.jar
+                            </url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
 
             </plugin>
@@ -156,11 +168,6 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -224,6 +231,19 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sqs</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Mongo connector tests -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>${mongodb.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

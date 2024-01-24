@@ -116,7 +116,7 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<Map<String, Object>> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
-                        SourceRecordUtil::convertToString))
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .map(base64 -> Base64.getDecoder().decode(base64))
                 .map(JsonUtil::mapFrom);
