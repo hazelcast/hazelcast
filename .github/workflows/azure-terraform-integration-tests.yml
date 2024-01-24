@@ -33,11 +33,11 @@ jobs:
       )
     steps:
       - name: Setup JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 11
           architecture: x64
-          distribution: adopt
+          distribution: temurin
           cache: 'maven'
 
       - name: Decide which ref to checkout
