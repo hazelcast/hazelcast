@@ -1110,29 +1110,35 @@ public class DynamicConfigYamlGenerator {
         return classFilterMap;
     }
 
-    private static void namespacesConfigGenerator(Map<String, Object> parent, Config config) {
+    public static void namespacesConfigGenerator(Map<String, Object> parent, Config config) {
         Map<String, Object> child = new LinkedHashMap<>();
         UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
         addNonNullToMap(child, "enabled", userCodeNamespacesConfig.isEnabled());
         parent.put("user-code-namespaces", child);
-        if (!userCodeNamespacesConfig.isEnabled()) {
-            return;
-        }
+
         if (userCodeNamespacesConfig.getClassFilterConfig() != null) {
             Map<String, Object> javaSerializationFilterCfg =
                     javaSerializationFilterGenerator(userCodeNamespacesConfig.getClassFilterConfig());
             addNonNullToMap(child, "class-filter", javaSerializationFilterCfg);
         }
-        ConfigAccessor.getNamespaceConfigs(userCodeNamespacesConfig).forEach((namespace, namespaceConfig) -> {
-            List<Map<String, Object>> resourcesList = new ArrayList<>();
+
+        namespaceConfigGenerator(child, config);
+    }
+
+    public static void namespaceConfigGenerator(Map<String, Object> parent, Config config) {
+        ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).forEach((namespaceName, namespaceConfig) -> {
+            List<Map<String, Object>> items = new ArrayList<>();
+
             for (ResourceDefinition resourceDefinition : ConfigAccessor.getResourceDefinitions(namespaceConfig)) {
-                Map<String, Object> resourceAsMap = new LinkedHashMap<>();
-                resourceAsMap.put("id", resourceDefinition.id());
-                resourceAsMap.put("resource-type", resourceDefinition.type().toString());
-                resourceAsMap.put("url", resourceDefinition.url());
-                resourcesList.add(resourceAsMap);
+                Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+                subConfigAsMap.put("id", resourceDefinition.id());
+                subConfigAsMap.put("resource-type", resourceDefinition.type().toString());
+                subConfigAsMap.put("url", resourceDefinition.url());
+
+                items.add(subConfigAsMap);
             }
-            child.put(namespace, resourcesList);
+
+            parent.put(namespaceName, items);
         });
     }
 

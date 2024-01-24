@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class ResourceDefinitionImpl implements ResourceDefinition {
@@ -105,6 +106,11 @@ public class ResourceDefinitionImpl implements ResourceDefinition {
     }
 
     @Override
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
@@ -129,19 +135,25 @@ public class ResourceDefinitionImpl implements ResourceDefinition {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ResourceDefinitionImpl that = (ResourceDefinitionImpl) o;
+        return Objects.equals(id, that.id)
+                && Arrays.equals(payload, that.payload)
+                && type == that.type
+                && Objects.equals(url, that.url);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
-        }
-        ResourceDefinitionImpl other = (ResourceDefinitionImpl) obj;
-        return Objects.equals(id, other.id);
+    public int hashCode() {
+        int result = Objects.hash(id, type, url);
+        result = 31 * result + Arrays.hashCode(payload);
+        return result;
     }
 }

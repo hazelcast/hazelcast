@@ -102,7 +102,7 @@ public class UserCodeNamespacesConfig {
     public String toString() {
         return "NamespacesConfig{"
                 + "enabled=" + enabled
-                + ", namespaceConfigs=" + namespaceConfigs + '}'
+                + ", namespaceConfigs=" + namespaceConfigs
                 + ", classFilterConfig=" + classFilterConfig
                 + '}';
     }

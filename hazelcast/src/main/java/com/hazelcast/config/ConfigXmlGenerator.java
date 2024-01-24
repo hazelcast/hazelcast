@@ -1270,7 +1270,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void namespacesConfiguration(XmlGenerator gen, Config config) {
+    public static void namespacesConfiguration(XmlGenerator gen, Config config) {
         UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
         if (userCodeNamespacesConfig == null) {
             return;
@@ -1284,7 +1284,12 @@ public class ConfigXmlGenerator {
             gen.close();
         }
 
-        Map<String, UserCodeNamespaceConfig> namespaces = userCodeNamespacesConfig.getNamespaceConfigs();
+        namespaceConfigurations(gen, config);
+        gen.close();
+    }
+
+    public static void namespaceConfigurations(XmlGenerator gen, Config config) {
+        Map<String, UserCodeNamespaceConfig> namespaces = config.getNamespacesConfig().getNamespaceConfigs();
         for (Map.Entry<String, UserCodeNamespaceConfig> entry : namespaces.entrySet()) {
             UserCodeNamespaceConfig userCodeNamespaceConfig = entry.getValue();
             gen.open("namespace", "name", entry.getKey());
@@ -1297,8 +1302,6 @@ public class ConfigXmlGenerator {
             });
             gen.close();
         }
-
-        gen.close();
     }
 
     private static String translateResourceType(ResourceType type) {

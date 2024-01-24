@@ -36,6 +36,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.util.XmlUtil;
 import org.snakeyaml.engine.v2.api.Dump;
@@ -270,6 +271,16 @@ public final class DynamicConfigGeneratorUtil {
                 DynamicConfigXmlGenerator::tcpIpConfigXmlGenerator,
                 DynamicConfigYamlGenerator::tcpIpConfigYamlGenerator
         );
+    }
+
+    public static String userCodeNamespaceConfigGenerator(UserCodeNamespaceConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent, null,
+                (config, userCodeNamespaceConfig) -> {
+                    // assumes namespaces are already enabled declaratively
+                    config.getNamespacesConfig().setEnabled(true);
+                    config.getNamespacesConfig().addNamespaceConfig(userCodeNamespaceConfig);
+                },
+                ConfigXmlGenerator::namespaceConfigurations, DynamicConfigYamlGenerator::namespaceConfigGenerator);
     }
 
     private static <T> String configGenerator(

@@ -321,7 +321,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             if (matches(nodeName, "class-filter")) {
                 fillJavaSerializationFilter(n, config.getNamespacesConfig());
             } else if (!matches("enabled", nodeName)) {
-                UserCodeNamespaceConfig ns = new UserCodeNamespaceConfig(nodeName);
+                UserCodeNamespaceConfig ns = new UserCodeNamespaceConfig(n.getNodeName());
                 //get list of resources
                 for (Node subChild : childElements(n)) {
                     String resourceId = null;

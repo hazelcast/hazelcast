@@ -37,6 +37,9 @@ public class DynamicUserCodeNamespacesConfig
 
     @Override
     public UserCodeNamespacesConfig addNamespaceConfig(UserCodeNamespaceConfig userCodeNamespaceConfig) {
+        if (!isEnabled()) {
+            throw new UnsupportedOperationException("Cannot add namespace while Namespaces are disabled.");
+        }
         super.addNamespaceConfig(userCodeNamespaceConfig);
         configurationServiceAccessor.get().broadcastConfig(userCodeNamespaceConfig);
         return this;

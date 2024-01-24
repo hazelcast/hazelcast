@@ -43,4 +43,10 @@ public interface ResourceDefinition extends IdentifiedDataSerializable {
      * @return the path of the resource
      */
     String url();
+
+    /**
+     * Sets the path of the resource
+     * @param url the path of the resource
+     */
+    void setUrl(String url);
 }

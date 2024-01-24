@@ -100,8 +100,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-
-
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
         Config cfg = new Config();
