@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nullable;
 
@@ -29,7 +28,6 @@ import javax.annotation.Nullable;
  * @since 5.4
  * @param <T> Implementation type for use in return type of {@link #setUserCodeNamespace(String)}
  */
-@Beta
 public interface UserCodeNamespaceAwareConfig<T> {
     /**
      * Defines the default User Code Namespace Name used for all {@link UserCodeNamespaceAwareConfig} implementations.

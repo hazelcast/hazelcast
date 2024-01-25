@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
@@ -31,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 5.4
  */
-@Beta
 public class UserCodeNamespacesConfig {
     private boolean enabled;
     private final Map<String, UserCodeNamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();

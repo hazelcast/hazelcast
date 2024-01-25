@@ -25,7 +25,6 @@ import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 5.4
  */
-@Beta
 public class UserCodeNamespaceConfig
         implements NamedConfig, IdentifiedDataSerializable {
     private String name;
