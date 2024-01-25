@@ -43,8 +43,9 @@ public class CsvResolverTest {
         List<MappingField> fields = CsvResolver.resolveFields(headers);
 
         // then
-        assertThat(fields).hasSize(2);
-        assertThat(fields.get(0)).isEqualTo(new MappingField("field1", QueryDataType.VARCHAR));
-        assertThat(fields.get(1)).isEqualTo(new MappingField("field2", QueryDataType.VARCHAR));
+        assertThat(fields)
+                .hasSize(2)
+                .contains(new MappingField("field1", QueryDataType.VARCHAR))
+                .contains(new MappingField("field2", QueryDataType.VARCHAR));
     }
 }

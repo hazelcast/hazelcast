@@ -17,7 +17,6 @@
 package com.hazelcast.aws;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.aws.AwsEcsApi.Task;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -86,7 +85,7 @@ public class AwsEcsApiTest {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
         stubListTasks(cluster, null);
-        Map<String, String> tasksArnToIp = ImmutableMap.of(
+        Map<String, String> tasksArnToIp = Map.of(
                 "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
                 "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219");
         stubDescribeTasks(tasksArnToIp, cluster);
@@ -108,7 +107,7 @@ public class AwsEcsApiTest {
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
         stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", "family-name");
-        stubDescribeTasks(ImmutableMap.of(
+        stubDescribeTasks(Map.of(
                         "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
                         "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"),
                 cluster);
@@ -131,7 +130,7 @@ public class AwsEcsApiTest {
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
         stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", null);
-        stubDescribeTasks(ImmutableMap.of(
+        stubDescribeTasks(Map.of(
                         "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
                         "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"),
                 cluster);
@@ -148,7 +147,7 @@ public class AwsEcsApiTest {
     public void describeTasks() {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
-        Map<String, String> tasks = ImmutableMap.of(
+        Map<String, String> tasks = Map.of(
                 "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
                 "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219");
         stubDescribeTasks(tasks, cluster);
