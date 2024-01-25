@@ -62,12 +62,18 @@ jobs:
           ref: ${{steps.decide-ref.outputs.ref}}
           path: ${{steps.decide-ref.outputs.ref}}
 
+      - name: Read Java Config
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: java-config
+        with:
+          config: ${{ github.workspace }}/.github/java-config.yml
+  
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: ${{ steps.java-config.outputs['java-version'] }}
+          distribution: ${{ steps.java-config.outputs['distribution'] }}
           architecture: x64
-          distribution: temurin
           cache: 'maven'
 
       - name: Setup Local Maven Cache
