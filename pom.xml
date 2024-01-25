@@ -85,7 +85,7 @@
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
         <owasp.dependency-check.version>9.0.9</owasp.dependency-check.version>
-        <codehause.license.plugin.version>2.3.0</codehause.license.plugin.version>
+        <codehause.license.plugin.version>2.4.0</codehause.license.plugin.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
