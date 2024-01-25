@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
@@ -227,6 +228,10 @@ public class Config {
 
     // @since 5.3
     private TpcConfig tpcConfig = new TpcConfig();
+
+    // @since 5.4
+    @Beta
+    private RestConfig restConfig = new RestConfig();
 
     public Config() {
     }
@@ -3278,6 +3283,29 @@ public class Config {
     }
 
     /**
+     * Gets the configuration for the REST API server.
+     *
+     * @return the RestConfig.
+     */
+    @Beta
+    public RestConfig getRestConfig() {
+        return restConfig;
+    }
+
+    /**
+     * Sets the configuration for the REST API server.
+     *
+     * @param restConfig the RestConfig.
+     * @return this Config instance
+     * @throws NullPointerException if restConfig is null
+     */
+    @Beta
+    public @Nonnull Config setRestConfig(@Nonnull RestConfig restConfig) {
+        this.restConfig = checkNotNull(restConfig, "RestConfig cannot be null!");
+        return this;
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3344,6 +3372,7 @@ public class Config {
                 + ", dataConnectionConfigs=" + dataConnectionConfigs
                 + ", tpcConfig=" + tpcConfig
                 + ", namespacesConfig=" + userCodeNamespacesConfig
+                + ", restConfig=" + restConfig
                 + '}';
     }
 }

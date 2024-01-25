@@ -62,6 +62,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
@@ -1298,5 +1299,16 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public RestConfig getRestConfig() {
+        return staticConfig.getRestConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setRestConfig(@Nonnull RestConfig restConfig) {
+        return staticConfig.setRestConfig(restConfig);
     }
 }
