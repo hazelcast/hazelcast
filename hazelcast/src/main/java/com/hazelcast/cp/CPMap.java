@@ -44,6 +44,15 @@ public interface CPMap<K, V> extends DistributedObject {
     V put(@Nonnull K key, @Nonnull V value);
 
     /**
+     * Associates {@code key} with {@code value} only if {@code key} is not present.
+     * @param key non-null key of the entry
+     * @param value non-null value of the entry
+     * @return null if {@code key} had no previous mapping, otherwise the value associated with {@code key}
+     * @throws NullPointerException when {@code key} or {@code value} is null
+     */
+    V putIfAbsent(@Nonnull K key, @Nonnull V value);
+
+    /**
      * Associates {@code key} with {@code value}.
      * <p>
      *     This method should be preferred over {@link CPMap#put(K, V)} as it has a smaller network footprint due to the previous
