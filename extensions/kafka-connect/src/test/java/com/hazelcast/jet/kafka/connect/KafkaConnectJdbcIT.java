@@ -64,13 +64,13 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
+public class KafkaConnectJdbcIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
     public static final String USERNAME = "mysql";
     public static final String PASSWORD = "mysql";
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIT.class);
 
     @SuppressWarnings("resource")
     @ClassRule

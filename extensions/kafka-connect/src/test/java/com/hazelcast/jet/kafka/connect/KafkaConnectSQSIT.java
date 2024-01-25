@@ -68,7 +68,7 @@ import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
+public class KafkaConnectSQSIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
@@ -78,7 +78,7 @@ public class KafkaConnectSQSIntegrationTest extends JetTestSupport {
             .withServices(LocalStackContainer.Service.SQS)
             .withEnv("SQS_ENDPOINT_STRATEGY", "path");
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectSQSIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectSQSIT.class);
 
     private static final String QUEUE_NAME = "myqueue";
 

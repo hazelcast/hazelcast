@@ -125,8 +125,8 @@
                         <configuration>
                             <url>https://repository.hazelcast.com/download/tests/redis-redis-kafka-connect-0.9.0.zip
                             </url>
-                            <unpack>false</unpack>
-                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                            <unpack>true</unpack>
+                            <outputDirectory>${project.build.directory}/</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -154,7 +154,18 @@
                         </configuration>
                     </execution>
                 </executions>
-
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.plugin.version}</version>
+                <configuration combine.children="append">
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>
+                            ${project.build.directory}/redis-kafka-connect-0.9.0-all/lib/redis-kafka-connect-0.9.0-all.jar
+                        </additionalClasspathElement>
+                    </additionalClasspathElements>
+                </configuration>
             </plugin>
         </plugins>
     </build>

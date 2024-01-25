@@ -21,9 +21,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -31,23 +29,22 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.redis.testcontainers.RedisContainer;
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.sync.RedisCommands;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
@@ -61,18 +58,19 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class KafkaConnectRedisIntegrationTest extends JetTestSupport {
+public class KafkaConnectNeo4jIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectRedisIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectNeo4jIT.class);
 
-    private static final String STREAM_NAME = "weather_sensor:wind";
-
+    @SuppressWarnings("resource")
     @ClassRule
-    public static final RedisContainer container = new RedisContainer(DockerImageName.parse("redis:6.2.6"))
+    public static final Neo4jContainer<?> container = new Neo4jContainer<>(DockerImageName.parse("neo4j:5.5.0"))
+            .withoutAuthentication()
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
     private static final int ITEM_COUNT = 1_000;
+
 
     @BeforeClass
     public static void setUpDocker() {
@@ -80,26 +78,23 @@ public class KafkaConnectRedisIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void testReadFromRedisConnector() throws Exception {
-        insertData();
+    public void testReadFromNeo4jConnector() {
+        Properties connectorProperties = getConnectorProperties();
+
+        insertNodes("items-1");
 
         Pipeline pipeline = Pipeline.create();
-
-        Properties connectorProperties = getConnectorProperties();
-        StreamSource<String> streamSource = KafkaConnectSources.connect(connectorProperties,
-                TestUtil::convertToString);
-
-        StreamStage<String> streamStage = pipeline.readFrom(streamSource)
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
+                        TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(2);
         streamStage.writeTo(Sinks.logger());
-
-        Sink<String> sink = AssertionSinks.assertCollectedEventually(60,
-                list -> assertEquals(ITEM_COUNT, list.size()));
-        streamStage.writeTo(sink);
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(2 * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(getConnectorURL("redis-redis-kafka-connect-0.9.0.zip"));
+        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -107,53 +102,42 @@ public class KafkaConnectRedisIntegrationTest extends JetTestSupport {
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
+        insertNodes("items-2");
+
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
         }
     }
 
     @Nonnull
     private static Properties getConnectorProperties() {
         Properties connectorProperties = new Properties();
-        connectorProperties.setProperty("name", "RedisSourceConnector");
-        connectorProperties.setProperty("connector.class", "com.redis.kafka.connect.RedisStreamSourceConnector");
-        connectorProperties.setProperty("tasks.max", "2");
-        connectorProperties.setProperty("redis.uri", container.getRedisURI());
-        connectorProperties.setProperty("redis.stream.name", STREAM_NAME);
-
+        connectorProperties.setProperty("name", "neo4j");
+        connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
+        connectorProperties.setProperty("topic", "some-topic");
+        connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
+        connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");
+        connectorProperties.setProperty("neo4j.authentication.basic.password", "password");
+        connectorProperties.setProperty("neo4j.streaming.poll.interval.msecs", "5000");
+        connectorProperties.setProperty("neo4j.streaming.property", "timestamp");
+        connectorProperties.setProperty("neo4j.streaming.from", "ALL");
+        connectorProperties.setProperty("neo4j.source.query",
+                "MATCH (ts:TestSource) RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
         return connectorProperties;
     }
 
-    private void insertData() {
-        String redisURI = container.getRedisURI();
-        try (RedisClient client = RedisClient.create(redisURI);
-             StatefulRedisConnection<String, String> connection = client.connect()) {
-
-            RedisCommands<String, String> syncCommands = connection.sync();
-
-            for (int index = 0; index < ITEM_COUNT; index++) {
-                // Redis Streams messages are string key/values in Java.
-                Map<String, String> messageBody = createMessageBody(index);
-
-                String messageId = syncCommands.xadd(
-                        STREAM_NAME,
-                        messageBody);
-
-                LOGGER.info("Message {} : {} posted", messageId, messageBody);
+    private static void insertNodes(String prefix) {
+        String boltUrl = container.getBoltUrl();
+        try (Driver driver = GraphDatabase.driver(boltUrl, AuthTokens.none()); Session session = driver.session()) {
+            for (int i = 0; i < ITEM_COUNT; i++) {
+                session.run("CREATE (:TestSource {name: '" + prefix + "-name-" + i + "', value: '"
+                        + prefix + "-value-" + i + "', timestamp: datetime().epochMillis});");
             }
         }
-    }
-
-    private Map<String, String> createMessageBody(int index) {
-        Map<String, String> messageBody = new HashMap<>();
-        messageBody.put("speed", String.valueOf(index));
-        messageBody.put("direction", "270");
-        messageBody.put("sensor_ts", String.valueOf(System.currentTimeMillis()));
-        return messageBody;
     }
 }

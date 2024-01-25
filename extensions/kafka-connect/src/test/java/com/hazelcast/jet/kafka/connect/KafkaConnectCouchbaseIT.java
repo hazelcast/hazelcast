@@ -67,10 +67,10 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
+public class KafkaConnectCouchbaseIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectCouchbaseIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectCouchbaseIT.class);
 
     private static final String BUCKET_NAME = "mybucket";
     public static final CouchbaseContainer container = new CouchbaseContainer("couchbase/server:7.1.1")
