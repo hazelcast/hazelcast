@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
@@ -43,7 +44,6 @@ import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Predicates.alwaysFalse;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.and;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq_2;
@@ -115,7 +116,15 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(DEFAULT_MEMBERS_COUNT, null);
+        Config config = smallInstanceConfig();
+
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName("map*")
+                .setBackupCount(0);
+
+        config.addMapConfig(mapConfig);
+
+        initialize(DEFAULT_MEMBERS_COUNT, config);
     }
 
     @Before
@@ -124,9 +133,9 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         valueClass = ExpressionBiValue.createBiClass(f1, f2);
 
         createMapping(mapName, int.class, valueClass);
-        MapConfig mapConfig = getMapConfig();
-        instance().getConfig().addMapConfig(mapConfig);
         map = instance().getMap(mapName);
+        map.addIndex(getIndexConfig());
+
         fill();
     }
 
@@ -148,7 +157,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     @Test
-    @Ignore("HZ-3013")
     public void testDisjunctionSameValue() {
         // Test for index scans with disjunctions that match the same row.
         // SQL query must not return duplicate rows in such case.
@@ -180,9 +188,22 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
         // this query might not use index also due to selectivity of predicates
         check(query("field1>=? or field1<=?", f1.valueFrom(), f1.valueTo()),
-                false, //TODO: HZ-3014 c_sorted(),
+                c_sorted(),
                 isNotNull()
         );
+    }
+
+    @Test
+    public void testConjunctionOfRanges() {
+        ///// Conjunction of ranges open on the same end
+        check(query("field1>? and field1>?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), gt(f1.valueTo()));
+        check(query("field1>=? and field1>=?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), gte(f1.valueTo()));
+        check(query("field1<? and field1<?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), lt(f1.valueFrom()));
+        check(query("field1<=? and field1<=?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), lte(f1.valueFrom()));
     }
 
     @Test
@@ -210,7 +231,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1 IS NULL"), c_notHashComposite(), isNull());
 
         // WHERE f1 IS NOT NULL
-        check(query("field1 IS NOT NULL"), false, isNotNull());
+        // index with additional condition is not used due to cost estimation, full scan is slightly cheaper
+        check(query("field1 IS NOT NULL"), c_sorted(), false, isNotNull());
 
         // WHERE f1=literal
         check(query("field1=" + toLiteral(f1, f1.valueFrom())), c_notHashComposite(), eq(f1.valueFrom()));
@@ -231,6 +253,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
         check(query("?=field1 or ?=field1", f1.valueFrom(), f1.valueTo()),
                 c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+
+        // WHERE f1=? and f1=? - contradictory values
+        check(query("field1=? and field1=?", f1.valueTo(), f1.valueFrom()),
+                c_notHashComposite(), alwaysFalse());
+        check(query("?=field1 and ?=field1", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(), alwaysFalse());
 
         // WHERE f1=? or f1 is null
         check(query("field1=? or field1 is null", f1.valueFrom()),
@@ -263,6 +291,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1>?
         check(query("field1>?", f1.valueFrom()), c_sorted(), gt(f1.valueFrom()));
         check(query("?<field1", f1.valueFrom()), c_sorted(), gt(f1.valueFrom()));
+        check(query("field1>?", null), c_sorted(), alwaysFalse());
+        check(query("?<field1", null), c_sorted(), alwaysFalse());
 
         // WHERE f1>=literal
         check(query("field1>=" + toLiteral(f1, f1.valueFrom())), c_sorted(), gte(f1.valueFrom()));
@@ -271,6 +301,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1>=?
         check(query("field1>=?", f1.valueFrom()), c_sorted(), gte(f1.valueFrom()));
         check(query("?<=field1", f1.valueFrom()), c_sorted(), gte(f1.valueFrom()));
+        check(query("field1>=?", null), c_sorted(), alwaysFalse());
+        check(query("?<=field1", null), c_sorted(), alwaysFalse());
 
         // WHERE f1<literal
         check(query("field1<" + toLiteral(f1, f1.valueFrom())), c_sorted(), lt(f1.valueFrom()));
@@ -279,6 +311,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1<?
         check(query("field1<?", f1.valueFrom()), c_sorted(), lt(f1.valueFrom()));
         check(query("?>field1", f1.valueFrom()), c_sorted(), lt(f1.valueFrom()));
+        check(query("field1<?", null), c_sorted(), alwaysFalse());
+        check(query("?<field1", null), c_sorted(), alwaysFalse());
 
         // WHERE f1<=literal
         check(query("field1<=" + toLiteral(f1, f1.valueFrom())), c_sorted() || c_booleanComponent() && c_notHashComposite(), lte(f1.valueFrom()));
@@ -287,6 +321,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1<=?
         check(query("field1<=?", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
         check(query("?>=field1", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
+        check(query("field1<=?", null), c_sorted(), alwaysFalse());
+        check(query("?>=field1", null), c_sorted(), alwaysFalse());
 
         ///// single range from...to
         if (!(f1 instanceof ExpressionType.BooleanType)) {
@@ -325,12 +361,32 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted(),
                 and(gt(f1.valueFrom()), lt(f1.valueTo()))
         );
+        check(
+                query("field1>? AND field1<?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
+        );
+        check(
+                query("field1>? AND field1<?", f1.valueFrom(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
+        );
 
         // WHERE f1>? AND f1<=?
         check(
                 query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gt(f1.valueFrom()), lte(f1.valueTo()))
+        );
+        check(
+                query("field1>? AND field1<=?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
+        );
+        check(
+                query("field1>? AND field1<=?", f1.valueFrom(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
         );
 
         // WHERE f1>=? AND f1<?
@@ -339,12 +395,32 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted(),
                 and(gte(f1.valueFrom()), lt(f1.valueTo()))
         );
+        check(
+                query("field1>=? AND field1<?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
+        );
+        check(
+                query("field1>=? AND field1<?", f1.valueFrom(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
+        );
 
         // WHERE f1>=? AND f1<=?
         check(
                 query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+        check(
+                query("field1>=? AND field1<=?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                alwaysFalse()
+        );
+        check(
+                query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueFrom()),
+                c_sorted(),
+                eq(f1.valueFrom())
         );
 
         ///// 2 disjoint unlimited ranges
@@ -358,7 +434,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1<? OR f1>? (range from -inf..val1 and val2..+inf)
         check(
                 query("field1<? OR field1>?", f1.valueFrom(), f1.valueTo()),
-                false, //TODO: HZ-3014 c_sorted(),
+                c_sorted(),
                 or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
 
@@ -443,11 +519,11 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private void checkSecondColumn() {
-        // WHERE f1 IS (NOT) NULL
+        // WHERE f2 IS (NOT) NULL
         check(query("field2 IS NULL"), false, isNull_2());
         check(query("field2 IS NOT NULL"), false, isNotNull_2());
 
-        // WHERE f1<cmp>?
+        // WHERE f2<cmp>?
         check(query("field2=?", f2.valueFrom()), false, eq_2(f2.valueFrom()));
         check(query("field2!=?", f2.valueFrom()), false, neq_2(f2.valueFrom()));
         check(query("field2>?", f2.valueFrom()), false, gt_2(f2.valueFrom()));
@@ -513,6 +589,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted() || c_notComposite(),
                 and(or(eq(f1.valueFrom()), eq(f1.valueTo())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
         );
+        check(
+                // both field1 parameters have the same value
+                query("(field1=? OR field1=?) AND (field2>? AND field2<?)", f1.valueFrom(), f1.valueFrom(), f2.valueFrom(), f2.valueTo()),
+                c_sorted() || c_notComposite(),
+                and(or(eq(f1.valueFrom()), eq(f1.valueFrom())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
+        );
 
         // RANGE + EQ
         check(
@@ -534,6 +616,37 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted(),
                 and(and(gt(f1.valueFrom()), lt(f1.valueTo())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
         );
+
+        // IS NOT NULL/IS NULL combinations
+        check(
+                query("field1 IS NULL AND field2 IS NULL"),
+                // lookup on all index types is possible
+                true,
+                and(isNull(), isNull_2())
+        );
+        check(
+                query("field1 IS NULL AND field2 IS NOT NULL"),
+                // NOT NULL is range scan so composite hash index cannot be used at all.
+                // Sorted index can be used at least for prefix (field1),
+                // condition on field2 should use composite index.
+                c_notHashComposite(),
+                and(isNull(), isNotNull_2())
+        );
+        check(
+                query("field1 IS NOT NULL AND field2 IS NULL"),
+                // basic query does not use sorted index due to poor selectivity of IS NOT NULL
+                // queries with ORDER BY will use sorted index due to high sort cost.
+                false,
+                and(isNotNull(), isNull_2())
+        );
+        check(
+                query("field1 IS NOT NULL AND field2 IS NOT NULL"),
+                // Note that with composite sorted index field2 will not be used in the lookup range
+                // because it is not possible to express such scan as bounded number of iteration pointers
+                // (and also it would not bring much value due to poor selectivity).
+                false,
+                and(isNotNull(), isNotNull_2())
+        );
     }
 
     private boolean c_always() {
@@ -546,6 +659,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     private boolean c_sorted() {
         return indexType == IndexType.SORTED;
+    }
+
+    private boolean c_hash() {
+        return indexType == IndexType.HASH;
     }
 
     private boolean c_composite() {
@@ -596,17 +713,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // Run query with OR, no index should be used
         check0(queryWithOr, false, expectedKeysPredicateWithOr);
 
-        // TODO: enable after fixing HZ-3012 and HZ-3013
-        // TODO: remove `or field1 is null` condition after those fixes as well
         // Sorting is so costly that index should be preferred regardless of predicates
         // For hash index sorting does not use index, but scan still can use it.
-        if (!query.sql.toLowerCase(Locale.ROOT).contains("or field1 is null") || !c_sorted()) {
-            check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
-            if (!c_sorted()) {
-                // TODO: DESC works correctly only for HASH, will be enabled globally after fixing HZ-3012 and HZ-3013
-                check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
-            }
-        }
+        check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+        check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
     }
 
     private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
@@ -832,12 +942,9 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     private Multiset<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
         SqlStatement query = new SqlStatement(sql);
-        // with some bugs the queries could hang, prevent long waiting in such cases
-        query.setTimeoutMillis(10_000);
-
-        if (!params.isEmpty()) {
-            query.setParameters(params);
-        }
+        // with some bugs the queries could hang, however the CI tests sometimes are very slow
+        query.setTimeoutMillis(60_000);
+        query.setParameters(params);
 
         Multiset<Integer> keys = HashMultiset.create();
 
@@ -894,7 +1001,9 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private Query query(String condition, Object... parameters) {
-        return new Query(sql(condition), parameters != null ? Arrays.asList(parameters) : null);
+        // parameters == null if single null argument was passed.
+        // lack of arguments => parameters is emtpy array
+        return new Query(sql(condition), parameters != null ? Arrays.asList(parameters) : Arrays.asList(new Object[]{null}));
     }
 
     private static class Query {

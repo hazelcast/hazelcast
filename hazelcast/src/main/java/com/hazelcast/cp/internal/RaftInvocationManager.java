@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public class RaftInvocationManager {
 
     private long generateRandomGroupIndex(Collection<RaftGroupId> groupIds) {
         long groupIndex = RandomPicker.getInt(RANDOM_RAFT_GROUP_INDEX_RANGE);
-        if (groupIds.size() > 0) {
+        if (!groupIds.isEmpty()) {
             groupIndex += groupIds.stream().mapToLong(RaftGroupId::getId).max().getAsLong();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 /**
  * Predicates which can be visited by optimizer.
@@ -35,5 +35,5 @@ public interface VisitablePredicate {
      * @param indexes indexes
      * @return itself or its changed copy
      */
-    Predicate accept(Visitor visitor, Indexes indexes);
+    Predicate accept(Visitor visitor, IndexRegistry indexes);
 }

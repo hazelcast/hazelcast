@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,12 @@ class HazelcastObjectUpsertTarget implements UpsertTarget {
     private Object object;
 
     @Override
-    public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
-        final TypeKind typeKind = TypeKind.of(queryDataType.getObjectTypeKind());
-        switch (typeKind) {
-            case JAVA:
-                return value -> this.object = convertRowToJavaType(value, queryDataType);
-            default:
-                throw QueryException.error("TypeKind " + typeKind + " does not support top-level custom types");
+    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
+        TypeKind typeKind = type.getObjectTypeKind();
+        if (typeKind == TypeKind.JAVA) {
+            return value -> object = convertRowToJavaType(value, type);
+        } else {
+            throw QueryException.error("TypeKind " + typeKind + " does not support top-level custom types");
         }
     }
 

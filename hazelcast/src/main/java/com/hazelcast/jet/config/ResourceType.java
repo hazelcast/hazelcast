@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.annotation.PrivateApi;
+
+import java.util.Arrays;
 
 /**
  * Represents the type of the resource to be uploaded.
@@ -54,12 +56,15 @@ public enum ResourceType {
      */
     JARS_IN_ZIP(5);
 
+    /** Deliberately duplicates {@link #ordinal()} to prevent issues if members were re-ordered */
     private final int id;
 
+    /** @param id {@link #id} */
     ResourceType(int id) {
         this.id = id;
     }
 
+    /** @see #id */
     public int getId() {
         return id;
     }
@@ -78,12 +83,7 @@ public enum ResourceType {
      * @return the ResourceType found or null if not found
      */
     public static ResourceType getById(final int id) {
-        for (ResourceType resourceType : values()) {
-            if (resourceType.id == id) {
-                return resourceType;
-            }
-        }
-        return null;
+        return Arrays.stream(values()).filter(resourceType -> resourceType.id == id).findFirst().orElse(null);
     }
 
 }

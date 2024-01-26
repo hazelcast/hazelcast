@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_DROPPED_COUNT;
@@ -87,7 +88,7 @@ public class WanEventCounters {
     /**
      * Returns a map from distributed object name to {@link DistributedObjectWanEventCounters}.
      */
-    public ConcurrentHashMap<String, DistributedObjectWanEventCounters> getEventCounterMap() {
+    public ConcurrentMap<String, DistributedObjectWanEventCounters> getEventCounterMap() {
         return eventCounterMap;
     }
 

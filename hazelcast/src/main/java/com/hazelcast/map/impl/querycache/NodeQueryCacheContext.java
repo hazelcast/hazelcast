@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         this.mapServiceContext = mapServiceContext;
         this.queryCacheScheduler = new NodeQueryCacheScheduler(mapServiceContext);
         this.queryCacheEventService = new NodeQueryCacheEventService(mapServiceContext, lifecycleMutexFactory);
-        this.queryCacheConfigurator = new NodeQueryCacheConfigurator(nodeEngine.getConfig(),
-                nodeEngine.getConfigClassLoader(), queryCacheEventService);
+        this.queryCacheConfigurator = new NodeQueryCacheConfigurator(nodeEngine, nodeEngine.getConfig(), queryCacheEventService);
         this.invokerWrapper = new NodeInvokerWrapper(nodeEngine.getOperationService());
         // init these in the end
         this.subscriberContext = new NodeSubscriberContext(this);

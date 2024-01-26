@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,9 @@ public final class SQLExceptionUtils {
     }
 
     private static boolean isTransientCode(String code) {
+        if (code == null) {
+            return false;
+        }
         // Full list of error codes at:
         // https://www.postgresql.org/docs/current/errcodes-appendix.html
         switch (code) {

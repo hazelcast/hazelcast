@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.UserCodeUtil;
+import com.hazelcast.test.annotation.NamespaceTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -55,12 +56,12 @@ import java.util.UUID;
 
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("removal")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class, NamespaceTest.class})
 public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -78,7 +79,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
     @Parameters(name = "ClassCacheMode:{0}, ProviderMode:{1}")
     public static Collection<Object[]> parameters() {
-        LinkedList<Object[]> parameters = new LinkedList<Object[]>();
+        LinkedList<Object[]> parameters = new LinkedList<>();
         for (UserCodeDeploymentConfig.ClassCacheMode classCacheMode : UserCodeDeploymentConfig.ClassCacheMode.values()) {
             for (UserCodeDeploymentConfig.ProviderMode providerMode : UserCodeDeploymentConfig.ProviderMode.values()) {
                 parameters.add(new Object[]{classCacheMode, providerMode});
@@ -89,8 +90,8 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
     private Config createNodeConfig() {
         Config config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
-        config.setClassLoader(filteringCL);
+//        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
+//        config.setClassLoader(filteringCL);
         config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setClassCacheMode(classCacheMode)
@@ -98,7 +99,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         return config;
     }
 
-    private ClientConfig createClientConfig() {
+    private static ClientConfig createClientConfig() {
         ClientConfig config = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addClass("usercodedeployment.IncrementingEntryProcessor");
@@ -201,7 +202,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
     }
 
-    private void assertCodeDeploymentWorking(HazelcastInstance client, EntryProcessor entryProcessor) {
+    private static void assertCodeDeploymentWorking(HazelcastInstance client, EntryProcessor<Integer, Integer, ?> entryProcessor) {
         int keyCount = 100;
         IMap<Integer, Integer> map = client.getMap(randomName());
 
@@ -224,7 +225,8 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
     public void testWithMultipleMembers_anonymousAndInnerClasses() {
         ClientConfig clientConfig = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-        clientUserCodeDeploymentConfig.addJar("EntryProcessorWithAnonymousAndInner.jar");
+        clientUserCodeDeploymentConfig.addJar(UserCodeUtil.pathRelativeToBinariesFolder("EntryProcessorWithAnonymousAndInner",
+                UserCodeUtil.INSTANCE.getCompiledJARName("entry-processor-with-anonymous-and-inner")).toFile());
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         Config config = createNodeConfig();
@@ -292,25 +294,23 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
     public void testWithParentAndChildClassesWorksIndependentOfOrder_withChildParentJar() {
         ClientConfig clientConfig = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-        /*child parent jar contains two classes as follows. This classes are not put into code base on purpose,
-        in order not to effect the test. Child class is loaded first when reading via JarInputStream.getNextJarEntry, which
-        is the case we wanted to test.
-
-        package usercodedeployment;
-        import java.io.Serializable;
-        public class ParentClass implements Serializable, Runnable {
-            @Override
-            public void run() {
-
-            }
-        }
-
-        package usercodedeployment;
-        public class AChildClass extends AParentClass {
-        }
-
+        /*
+         * child parent jar contains two classes as follows. This classes are not put into code base on purpose, in order not to
+         * effect the test. Child class is loaded first when reading via JarInputStream.getNextJarEntry, which is the case we
+         * wanted to test.
+         *
+         * package usercodedeployment; import java.io.Serializable; public class ParentClass implements Serializable, Runnable {
+         *
+         * @Override public void run() {
+         *
+         * } }
+         *
+         * package usercodedeployment; public class AChildClass extends AParentClass { }
+         *
          */
-        clientUserCodeDeploymentConfig.addJar("ChildParent.jar");
+        clientUserCodeDeploymentConfig.addJar(UserCodeUtil
+                .pathRelativeToBinariesFolder("ChildParent", UserCodeUtil.INSTANCE.getCompiledJARName("child-parent"))
+                .toFile());
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         factory.newHazelcastInstance(createNodeConfig());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_404;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_503;
 import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
@@ -160,7 +159,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
             }
         }
         response.put(TextCommandConstants.RETURN);
-        upcast(response).flip();
+        response.flip();
         setStatusCode(statusCode.code);
     }
 
@@ -218,7 +217,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (value != null) {
             response.put(value);
         }
-        upcast(response).flip();
+        response.flip();
         setStatusCode(statusCode.code);
     }
 
@@ -262,7 +261,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (value != null) {
             response.put(value);
         }
-        upcast(response).flip();
+        response.flip();
         setStatusCode(statusCode.code);
     }
 

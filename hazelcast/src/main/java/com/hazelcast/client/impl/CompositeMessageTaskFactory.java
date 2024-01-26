@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,14 +32,13 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
-import java.util.Map;
 
 public class CompositeMessageTaskFactory implements MessageTaskFactory {
     private static final String FACTORY_ID = "com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider";
 
     private final Node node;
     private final NodeEngine nodeEngine;
-    private final Map<Integer, MessageTaskFactory> factories;
+    private final Int2ObjectHashMap<MessageTaskFactory> factories;
 
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;

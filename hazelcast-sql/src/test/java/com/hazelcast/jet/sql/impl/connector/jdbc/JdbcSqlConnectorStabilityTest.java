@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
-    private static String tableName;
+    protected static String tableName;
 
     @BeforeClass
     public static void beforeClass() throws Exception {

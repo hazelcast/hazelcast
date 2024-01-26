@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -67,6 +68,11 @@ public final class PortableContextImpl implements PortableContext {
     @Override
     public ClassDefinition lookupClassDefinition(int factoryId, int classId, int version) {
         return getClassDefContext(factoryId).lookup(classId, version);
+    }
+
+    @Override
+    public ClassDefinition lookupClassDefinition(PortableId portableId) {
+        return lookupClassDefinition(portableId.getFactoryId(), portableId.getClassId(), portableId.getVersion());
     }
 
     @Override
@@ -197,8 +203,7 @@ public final class PortableContextImpl implements PortableContext {
                     if (fd == null) {
                         throw new IllegalArgumentException("Unknown field: " + name);
                     }
-                    currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
-                            fd.getVersion());
+                    currentClassDef = lookupClassDefinition(fd.getPortableId());
                     if (currentClassDef == null) {
                         throw new IllegalArgumentException("Not a registered Portable field: " + fd);
                     }

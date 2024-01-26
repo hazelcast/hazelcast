@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public abstract class IndexFilterIteratorTestSupport extends IndexFilterTestSupp
 
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(MAP_NAME);
 
-        return mapContainer.getIndexes().getIndex(INDEX_NAME);
+        return mapContainer.getGlobalIndexRegistry().getIndex(INDEX_NAME);
     }
 
     protected static <T> void checkIterator(IndexType indexType, boolean expectedDescending, Iterator<QueryableEntry> iterator, T... expectedKeys) {

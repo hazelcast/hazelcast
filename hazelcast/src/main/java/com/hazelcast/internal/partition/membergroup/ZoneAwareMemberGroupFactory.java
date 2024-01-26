@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,7 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
                 throw new IllegalArgumentException("Not enough metadata information is provided. "
                         + "Availability zone information must be provided with ZONE_AWARE partition group.");
             }
-            MemberGroup group = groups.get(zoneInfo);
-            if (group == null) {
-                group = new DefaultMemberGroup();
-                groups.put(zoneInfo, group);
-            }
+            MemberGroup group = groups.computeIfAbsent(zoneInfo, x -> new DefaultMemberGroup());
             group.addMember(member);
         }
         return new HashSet<>(groups.values());

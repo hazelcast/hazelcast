@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
@@ -39,6 +41,7 @@ import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.services.ManagedService;
@@ -90,6 +93,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -786,16 +790,19 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
-        switch (event.getEventType()) {
-            case MembershipEvent.MEMBER_ADDED:
-                listener.memberAdded(event);
-                break;
-            case MembershipEvent.MEMBER_REMOVED:
-                listener.memberRemoved(event);
-                break;
-            default:
-                throw new IllegalArgumentException("Unhandled event: " + event);
-        }
+        // Call with `null` namespace, which will fallback to a default Namespace if available
+        NamespaceUtil.runWithNamespace(nodeEngine, null, () -> {
+            switch (event.getEventType()) {
+                case MembershipEvent.MEMBER_ADDED:
+                    listener.memberAdded(event);
+                    break;
+                case MembershipEvent.MEMBER_REMOVED:
+                    listener.memberRemoved(event);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unhandled event: " + event);
+            }
+        });
     }
 
     public String getMemberListString() {
@@ -1046,13 +1053,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
-            boolean result = localMemberInMemberList.isLiteMember();
+            boolean isStillLiteMember = localMemberInMemberList.isLiteMember();
             node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_PROMOTE_MEMBER)
                 .message("Promotion of the lite member")
-                .addParameter("success", result)
+                .addParameter("success", !isStillLiteMember)
                 .addParameter("address", node.getThisAddress())
                 .log();
-            if (result) {
+            if (isStillLiteMember) {
                 throw new IllegalStateException("Cannot promote to data member! Previous master was: " + master.getAddress()
                         + ", Current master is: " + getMasterAddress());
             }
@@ -1076,6 +1083,72 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 .build();
         node.loggingService.setThisMember(localMember);
         return localMember;
+    }
+
+    MemberImpl demoteAndGetLocalMember() {
+        MemberImpl member = getLocalMember();
+        assert !member.isLiteMember() : "Local member is not data member!";
+        assert clusterServiceLock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
+
+        localMember = new MemberImpl.Builder(member.getAddressMap())
+                .version(member.getVersion())
+                .localMember(true)
+                .uuid(member.getUuid())
+                .attributes(member.getAttributes())
+                .memberListJoinVersion(member.getMemberListJoinVersion())
+                .instance(node.hazelcastInstance)
+                .liteMember(true)
+                .build();
+        node.loggingService.setThisMember(localMember);
+        return localMember;
+    }
+
+
+    @Override
+    public void demoteLocalDataMember() {
+
+        if (getClusterVersion().isUnknownOrLessThan(Versions.V5_4)) {
+            throw new UnsupportedOperationException("demoteLocalDataMember requires cluster version 5.4 or greater");
+        }
+
+        MemberImpl member = getLocalMember();
+        if (member.isLiteMember()) {
+            throw new IllegalStateException(member + " is not a data member!");
+        }
+
+        MemberImpl master = getMasterMember();
+
+        long maxWaitSeconds = node.getProperties().getSeconds(ClusterProperty.DEMOTE_MAX_WAIT);
+        if (!nodeEngine.getPartitionService().onDemote(maxWaitSeconds, SECONDS)) {
+            throw new IllegalStateException("Cannot demote to lite member! Previous master was: " + master.getAddress()
+                    + ", Current master is: " + getMasterAddress() + ". Cluster state is " + getClusterState());
+        }
+
+        DemoteDataMemberOp op = new DemoteDataMemberOp();
+        op.setCallerUuid(member.getUuid());
+        InvocationFuture<MembersViewResponse> future = nodeEngine.getOperationService().invokeOnMaster(SERVICE_NAME, op);
+        MembersViewResponse response = future.joinInternal();
+
+        clusterServiceLock.lock();
+        try {
+            if (!node.isMaster()) {
+                updateMembers(response.getMembersView(), response.getMemberAddress(), response.getMemberUuid(), getThisUuid());
+            }
+
+            MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
+            boolean isNowLiteMember = localMemberInMemberList.isLiteMember();
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_DEMOTE_MEMBER)
+                    .message("Demotion of the data member")
+                    .addParameter("success", isNowLiteMember)
+                    .addParameter("address", node.getThisAddress())
+                    .log();
+            if (!isNowLiteMember) {
+                throw new IllegalStateException("Cannot demote to lite member! Previous master was: " + master.getAddress()
+                        + ", Current master is: " + getMasterAddress());
+            }
+        } finally {
+            clusterServiceLock.unlock();
+        }
     }
 
     @Override

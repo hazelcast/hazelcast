@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 /**
- * Provides query contexts for {@link Indexes} to execute queries.
+ * Provides query contexts for {@link IndexRegistry} to execute queries.
  */
 public interface QueryContextProvider {
 
@@ -32,6 +32,6 @@ public interface QueryContextProvider {
      *                            Negative value indicates that the value is not defined.
      * @return the obtained query context.
      */
-    QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount);
+    QueryContext obtainContextFor(IndexRegistry indexes, int ownedPartitionCount);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,12 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
@@ -45,11 +50,10 @@ import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
-import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
+import com.hazelcast.jet.impl.operation.GetLocalExecutionMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.Util;
@@ -63,7 +67,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,12 +81,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
@@ -116,13 +120,15 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
-import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -143,11 +149,19 @@ public class MasterJobContext {
     private final int defaultQueueSize;
 
     private volatile long executionStartTime = System.currentTimeMillis();
-    private volatile ExecutionFailureCallback executionFailureCallback;
+    private volatile ExecutionParticipantManager executionManager;
     private volatile Set<Vertex> vertices;
     private volatile boolean verticesCompleted;
+
+    /** Execution-level metrics. Available after the job finishes. */
     @Nonnull
-    private volatile List<RawJobMetrics> jobMetrics = Collections.emptyList();
+    private volatile List<RawJobMetrics> finalExecutionMetrics = emptyList();
+
+    /** Job-level metrics. Nonnull iff metrics are enabled. */
+    private volatile RawJobMetrics jobMetrics;
+
+    private final MetricDescriptor statusMetricDescriptor;
+    private final MetricDescriptor userCancelledMetricDescriptor;
 
     /**
      * A new instance is (re)assigned when the execution is started and
@@ -181,11 +195,23 @@ public class MasterJobContext {
     private volatile TerminationRequest terminationRequest;
 
     MasterJobContext(MasterContext masterContext, ILogger logger) {
-        this.mc = masterContext;
+        mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
-        this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
+        defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
+        defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
+        MetricDescriptorImpl jobMetricDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                .withTag(MetricTags.JOB, mc.jobIdString())
+                .withTag(MetricTags.JOB_NAME, mc.jobName());
+        statusMetricDescriptor = jobMetricDescriptor.copy()
+                .withMetric(MetricNames.JOB_STATUS)
+                .withUnit(ProbeUnit.ENUM);
+        userCancelledMetricDescriptor = jobMetricDescriptor.copy()
+                .withMetric(MetricNames.IS_USER_CANCELLED)
+                .withUnit(ProbeUnit.BOOLEAN);
+
+        // Set initial status metrics
+        setJobMetrics(mc.jobStatus(), false);
     }
 
     public CompletableFuture<Void> jobCompletionFuture() {
@@ -288,7 +314,7 @@ public class MasterJobContext {
 
                   createExecutionPlans(dag, membersView)
                           .thenCompose(plans -> coordinator.submitToCoordinatorThread(
-                                  () -> initExecution(membersView, plans)
+                                  () -> initExecution(membersView, plans, dag)
                           ))
                           .whenComplete((r, e) -> {
                               if (e != null) {
@@ -314,14 +340,16 @@ public class MasterJobContext {
                 false, mc.jobRecord().getSubject());
     }
 
-    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap, DAG dag) {
         mc.setExecutionPlanMap(executionPlanMap);
         logger.fine("Built execution plans for " + mc.jobIdString());
         Set<MemberInfo> participants = mc.executionPlanMap().keySet();
         Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        mc.coordinationService().jobInvocationObservers.forEach(obs ->
+                obs.onLightJobInvocation(mc.jobId(), participants, dag, mc.jobConfig()));
         Function<ExecutionPlan, Operation> operationCtor = plan ->
-                new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
-                        participants, mc.nodeEngine().getSerializationService().toData(plan), false);
+                InitExecutionOperation.forNormalJob(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                        participants, mc.nodeEngine().getSerializationService().toData(plan));
         mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
     }
 
@@ -411,6 +439,7 @@ public class MasterJobContext {
      * <li> a string with a message why this call did nothing or null, if
      *      this call actually initiated the termination
      * </ol>
+     *
      * @param allowWhileExportingSnapshot if false and jobStatus is
      *        SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
      * @param userInitiated if the termination was requested by the user
@@ -422,6 +451,13 @@ public class MasterJobContext {
             boolean userInitiated
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
+
+        ActionAfterTerminate action = mode.actionAfterTerminate();
+        if ((action == SUSPEND || action == RESTART) && !isJobSuspendable(mc.jobConfig())) {
+            // We cancel the job if it is not allowed to be suspended.
+            mode = CANCEL_FORCEFUL;
+        }
+
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
         if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
@@ -543,7 +579,7 @@ public class MasterJobContext {
     }
 
     // Called as callback when all InitOperation invocations are done
-    private void onInitStepCompleted(Collection<Map.Entry<MemberInfo, Object>> responses) {
+    private void onInitStepCompleted(Collection<Entry<MemberInfo, Object>> responses) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             Throwable error = getErrorFromResponses("Init", responses);
             JobStatus status = mc.jobStatus();
@@ -566,20 +602,21 @@ public class MasterJobContext {
 
         long executionId = mc.executionId();
         mc.resetStartOperationResponses();
-        executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
+        executionManager = new ExecutionParticipantManager(executionId, mc.startOperationResponses());
+
         getTerminationRequest().ifPresent(request -> handleTermination(request.getMode()));
 
         boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
         Function<ExecutionPlan, Operation> operationCtor =
                 plan -> new StartExecutionOperation(mc.jobId(), executionId, savingMetricsEnabled);
-        Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback =
+        Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback =
                 responses -> onStartExecutionComplete(getErrorFromResponses("Execution", responses),
                         responses);
 
         mc.setJobStatus(RUNNING);
         // There can be a snapshot enqueued while the job is starting, start it now if that's the case
         mc.snapshotContext().tryBeginSnapshot();
-        mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
+        mc.invokeOnParticipants(operationCtor, completionCallback, executionManager::processResponse, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {
             mc.coordinationService().scheduleSnapshot(mc, executionId);
@@ -591,8 +628,8 @@ public class MasterJobContext {
         // be safe against it (idempotent).
         if (mode.isWithTerminalSnapshot()) {
             mc.snapshotContext().tryBeginSnapshot();
-        } else if (executionFailureCallback != null) {
-            executionFailureCallback.cancelInvocations(mode);
+        } else if (executionManager != null) {
+            executionManager.cancelInvocations(mode);
         }
     }
 
@@ -620,7 +657,7 @@ public class MasterJobContext {
      *      that the job will be restarted
      * </ul>
      */
-    private Throwable getErrorFromResponses(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
+    private Throwable getErrorFromResponses(String opName, Collection<Entry<MemberInfo, Object>> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
             return createCancellationException();
@@ -654,9 +691,10 @@ public class MasterJobContext {
         }
 
         // If all exceptions are of certain type, treat it as TopologyChangedException
+        @SuppressWarnings("checkstyle:LineLength")
         Map<Boolean, List<Entry<Address, Object>>> splitFailures = failures.stream()
-                .collect(Collectors.partitioningBy(
-                        e -> e.getValue() instanceof CancellationException
+                .collect(partitioningBy(
+                        e -> (e.getValue() instanceof CancellationException && !(e.getValue() instanceof CancellationByUserException))
                                 || e.getValue() instanceof TerminatedWithSnapshotException
                                 || isTopologyException((Throwable) e.getValue())));
         List<Entry<Address, Object>> topologyFailures = splitFailures.getOrDefault(true, emptyList());
@@ -686,10 +724,7 @@ public class MasterJobContext {
             error = new IllegalStateException("Job coordination failed");
         }
 
-        setJobMetrics(responses.stream()
-                .filter(en -> en.getValue() instanceof RawJobMetrics)
-                .map(e1 -> (RawJobMetrics) e1.getValue())
-                .collect(Collectors.toList()));
+        setFinalExecutionMetrics(responses);
 
         if (error instanceof JobTerminateRequestedException
                 && ((JobTerminateRequestedException) error).mode().isWithTerminalSnapshot()) {
@@ -758,6 +793,12 @@ public class MasterJobContext {
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
 
+                // TODO: workaround for cancelling non-suspendable jobs,
+                //  remove it after SqlResult will be able to cancel the Jet job.
+                if (failure instanceof CancellationByUserException && terminationRequest == null) {
+                    terminationRequest = new TerminationRequest(CANCEL_FORCEFUL, true);
+                }
+
                 String description = requestedTerminationMode()
                         .map(mode -> mode.actionAfterTerminate().description())
                         .orElse(failure != null ? failure.toString() : null);
@@ -787,7 +828,7 @@ public class MasterJobContext {
                 ) {
                     mc.setJobStatus(SUSPENDED, description, userRequested);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
-                            ExceptionUtil.stackTraceToString(failure));
+                            ExceptionUtil.toString(failure));
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else {
                     long completionTime = System.currentTimeMillis();
@@ -812,7 +853,7 @@ public class MasterJobContext {
                 }
                 // reset the state for the next execution
                 terminationRequest = null;
-                executionFailureCallback = null;
+                executionManager = null;
             } finally {
                 mc.unlock();
             }
@@ -848,10 +889,10 @@ public class MasterJobContext {
         sb.append("Execution of ").append(mc.jobIdString()).append(' ').append(conclusion);
         sb.append("\n\t").append("Start time: ").append(Util.toLocalDateTime(executionStartTime));
         sb.append("\n\t").append("Duration: ").append(formatJobDuration(completionTime - executionStartTime));
-        if (jobMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
+        if (finalExecutionMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
             sb.append("\n\tTo see additional job metrics enable JobConfig.storeMetricsAfterJobCompletion");
         } else {
-            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(this.jobMetrics);
+            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(finalExecutionMetrics);
 
             Map<String, Long> receivedCounts = mergeByVertex(jobMetrics.get(MetricNames.RECEIVED_COUNT));
             Map<String, Long> emittedCounts = mergeByVertex(jobMetrics.get(MetricNames.EMITTED_COUNT));
@@ -952,11 +993,11 @@ public class MasterJobContext {
      */
     @Nonnull
     CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
-        return hasParticipant(uuid) ? gracefullyTerminate() : completedFuture(null);
+        return hasParticipant(uuid) ? gracefullyTerminateOrCancel() : completedFuture(null);
     }
 
     @Nonnull
-    CompletableFuture<Void> gracefullyTerminate() {
+    CompletableFuture<Void> gracefullyTerminateOrCancel() {
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
                 () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
@@ -1000,52 +1041,166 @@ public class MasterJobContext {
         return false;
     }
 
-    List<RawJobMetrics> jobMetrics() {
-        return jobMetrics;
+    /**
+     * Returns aggregated job and execution metrics.
+     *
+     * @implNote
+     * {@linkplain JobCoordinationService#completeJob When terminal metrics are requested},
+     * job and execution metrics must have already been collected, for which there are two
+     * code paths. In both cases, the same coordinator thread follows the given flow before
+     * requesting the terminal metrics. <ol type=a>
+     * <li> If the job is not suspended before termination: <ol>
+     *      <li> {@link JobExecutionService#beginExecution0}: Collection of terminal execution
+     *           metrics is triggered.
+     *      <li> {@link #onStartExecutionComplete} → <ol type=i>
+     *           <li> {@link #setFinalExecutionMetrics}: Terminal execution metrics are saved.
+     *           <li> {@link #finalizeExecution} → {@link MasterContext#setJobStatus} →
+     *                {@link #setJobMetrics}: Terminal job metrics are saved. </ol></ol>
+     * <li> If the job is suspended before termination: <ol>
+     *      <li> Terminal execution metrics are already collected when suspending the job.
+     *      <li> {@link #requestTermination} → {@link MasterContext#setJobStatus} →
+     *           {@link #setJobMetrics}: Terminal job metrics are saved. </ol></ol>
+     *
+     * @see MasterContext#provideDynamicMetrics
+     */
+    List<RawJobMetrics> persistentMetrics() {
+        if (!mc.metricsEnabled()) {
+            return emptyList();
+        }
+        return withJobMetrics(finalExecutionMetrics);
     }
 
-    private void setJobMetrics(List<RawJobMetrics> jobMetrics) {
-        assert jobMetrics.stream().allMatch(Objects::nonNull) : "responses=" + jobMetrics;
-        this.jobMetrics = Objects.requireNonNull(jobMetrics);
+    private List<RawJobMetrics> persistentJobOnlyMetrics() {
+        if (!mc.metricsEnabled()) {
+            return emptyList();
+        }
+        return withJobMetrics(emptyList());
+    }
+
+    /**
+     * Enriches execution metrics with job metrics if any.
+     */
+    @Nonnull
+    private List<RawJobMetrics> withJobMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
+        List<RawJobMetrics> metrics = new ArrayList<>(executionMetrics.size() + 1);
+        if (jobMetrics != null) {
+            // It is initialized in the constructor, but due to instruction reordering, it can be null.
+            metrics.add(jobMetrics);
+        }
+        metrics.addAll(executionMetrics);
+        return metrics;
+    }
+
+    /**
+     * Generates persistent job metrics, namely {@link MetricNames#JOB_STATUS} and
+     * {@link MetricNames#IS_USER_CANCELLED}.
+     *
+     * @see MasterContext#provideDynamicMetrics
+     */
+    void setJobMetrics(JobStatus status, boolean userRequested) {
+        if (!mc.metricsEnabled()) {
+            return;
+        }
+        MetricsCompressor compressor = new MetricsCompressor();
+        compressor.addLong(statusMetricDescriptor, status.getId());
+        boolean isUserCancelled = status == FAILED && userRequested;
+        compressor.addLong(userCancelledMetricDescriptor, isUserCancelled ? 1 : 0);
+        jobMetrics = RawJobMetrics.of(compressor.getBlobAndClose());
+    }
+
+    private void setFinalExecutionMetrics(@Nonnull Collection<Entry<MemberInfo, Object>> responses) {
+        if (!mc.metricsEnabled()) {
+            return;
+        }
+        var executionMetrics = responses.stream()
+            .filter(e -> e.getValue() instanceof RawJobMetrics)
+            .map(e -> (RawJobMetrics) e.getValue())
+            .collect(toList());
+        assert executionMetrics.stream().allMatch(Objects::nonNull) : "responses=" + executionMetrics;
+        finalExecutionMetrics = executionMetrics;
+    }
+
+    private List<RawJobMetrics> extractMetrics(Collection<Object> responses) {
+        return responses.stream()
+                .filter(v -> v instanceof RawJobMetrics)
+                .map(v -> (RawJobMetrics) v)
+                .collect(toList());
     }
 
     void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {
-        if (mc.jobStatus() == RUNNING) {
-            long jobId = mc.jobId();
-            long executionId = mc.executionId();
-            mc.invokeOnParticipants(
-                    plan -> new GetLocalJobMetricsOperation(jobId, executionId),
-                    objects -> completeWithMetrics(clientFuture, objects),
-                    null,
-                    false
-            );
-        } else {
-            clientFuture.complete(jobMetrics);
+        var executionManagerRef = executionManager;
+        if (mc.jobStatus() != RUNNING || executionManagerRef == null) {
+            if (mc.jobStatus().isTerminal()) {
+                clientFuture.complete(persistentMetrics());
+            } else {
+                clientFuture.complete(persistentJobOnlyMetrics());
+            }
+            return;
         }
+
+        var runningParticipants = executionManagerRef.getRunningParticipants();
+        if (runningParticipants.isEmpty()) {
+            clientFuture.complete(
+                withJobMetrics(
+                    extractMetrics(executionManagerRef.getSuccessfulResponses().values())
+                )
+            );
+            return;
+        }
+
+        long jobId = mc.jobId();
+        long executionId = executionManagerRef.executionId;
+        mc.invokeOnParticipants(
+                runningParticipants,
+                plan -> new GetLocalExecutionMetricsOperation(jobId, executionId),
+                responses -> processMetricsResponses(clientFuture, responses, executionManagerRef),
+                null,
+                false
+        );
     }
 
-    private void completeWithMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture,
-                                     Collection<Map.Entry<MemberInfo, Object>> metrics) {
-        if (metrics.stream().anyMatch(en -> en.getValue() instanceof ExecutionNotFoundException)) {
-            // If any member threw ExecutionNotFoundException, we'll retry. This happens
+    private void processMetricsResponses(
+            CompletableFuture<List<RawJobMetrics>> clientFuture,
+            Collection<Entry<MemberInfo, Object>> responses,
+            ExecutionParticipantManager executionManager
+    ) {
+        if (responses.stream().anyMatch(e -> e.getValue() instanceof ExecutionNotFoundException)) {
+            // If any member threw ExecutionNotFoundException, we'll retry. This may happen
             // when the job is starting or completing - master sees the job as
             // RUNNING, but some members might have terminated already. When
             // retrying, the job will eventually not be RUNNING, in which case
             // we'll return last known metrics, or it will be running again, in
             // which case we'll get fresh metrics.
-            logFinest(logger, "Rescheduling collectMetrics for %s, some members threw %s", mc.jobIdString(),
-                    ExecutionNotFoundException.class.getSimpleName());
-            mc.nodeEngine().getExecutionService().schedule(() ->
-                    collectMetrics(clientFuture), COLLECT_METRICS_RETRY_DELAY_MILLIS, MILLISECONDS);
+            logFinest(
+                logger,
+                "Rescheduling collectMetrics for %s, some members threw %s",
+                mc.jobIdString(),
+                ExecutionNotFoundException.class.getSimpleName()
+            );
+            mc.nodeEngine().getExecutionService().schedule(
+                    () -> collectMetrics(clientFuture), COLLECT_METRICS_RETRY_DELAY_MILLIS, MILLISECONDS
+            );
             return;
         }
-        Throwable firstThrowable = (Throwable) metrics.stream().map(Map.Entry::getValue)
-                                                      .filter(Throwable.class::isInstance).findFirst().orElse(null);
-        if (firstThrowable != null) {
-            clientFuture.completeExceptionally(firstThrowable);
-        } else {
-            clientFuture.complete(toList(metrics, e -> (RawJobMetrics) e.getValue()));
+
+        var unexpectedExceptions = responses.stream().map(Entry::getValue).filter(Throwable.class::isInstance).findAny();
+        if (unexpectedExceptions.isPresent()) {
+            clientFuture.completeExceptionally((Throwable) unexpectedExceptions.get());
+            return;
         }
+
+        var executionResponses = executionManager.getSuccessfulResponses();
+
+        var inProcessParticipantMetricsStream = responses.stream()
+                .filter(entry -> nonNull(entry.getValue()) && !executionResponses.containsKey(entry.getKey().getAddress()))
+                .map((entry) -> (RawJobMetrics) entry.getValue());
+
+        var metrics = Stream.concat(
+                extractMetrics(executionResponses.values()).stream(),
+                inProcessParticipantMetricsStream
+        ).collect(toList());
+
+        clientFuture.complete(withJobMetrics(metrics));
     }
 
     /**
@@ -1098,22 +1253,21 @@ public class MasterJobContext {
      * Attached to {@link StartExecutionOperation} invocations to cancel
      * invocations in case of a failure.
      */
-    private class ExecutionFailureCallback implements BiConsumer<Address, Object> {
+    private class ExecutionParticipantManager {
 
         private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
         private final long executionId;
-        private final Map<Address, CompletableFuture<Void>> startOperationResponses;
+        private final Map<Address, CompletableFuture<Object>> operationResponses;
 
-        ExecutionFailureCallback(long executionId, Map<Address, CompletableFuture<Void>> startOperationResponses) {
+        ExecutionParticipantManager(long executionId, Map<Address, CompletableFuture<Object>> startOperationResponses) {
             this.executionId = executionId;
-            this.startOperationResponses = startOperationResponses;
+            this.operationResponses = startOperationResponses;
         }
 
-        @Override
-        public void accept(Address address, Object response) {
+        public void processResponse(Address address, Object response) {
             LoggingUtil.logFine(logger, "%s received response to StartExecutionOperation from %s: %s",
                     mc.jobIdString(), address, response);
-            CompletableFuture<Void> future = startOperationResponses.get(address);
+            CompletableFuture<Object> future = operationResponses.get(address);
             if (response instanceof Throwable) {
                 Throwable throwable = (Throwable) response;
                 future.completeExceptionally(throwable);
@@ -1123,8 +1277,24 @@ public class MasterJobContext {
                 }
             } else {
                 // complete successfully
-                future.complete(null);
+                future.complete(response);
             }
+        }
+
+        public Map<Address, Object> getSuccessfulResponses() {
+            return operationResponses.entrySet().stream()
+                    .filter(f -> f.getValue().isDone() && !f.getValue().isCompletedExceptionally())
+                    .map(entry -> entry(entry.getKey(), entry.getValue().getNow(null)))
+                    .filter(entry -> nonNull(entry.getValue()))
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        }
+
+        public List<Address> getRunningParticipants() {
+            return operationResponses
+                .entrySet().stream()
+                .filter(f -> !f.getValue().isDone())
+                .map(Entry::getKey)
+                .collect(toList());
         }
 
         void cancelInvocations(TerminationMode mode) {

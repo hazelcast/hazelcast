@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,11 +148,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             return;
         }
 
-        SessionSemaphoreState state = sessionStates.get(sessionId);
-        if (state == null) {
-            state = new SessionSemaphoreState();
-            sessionStates.put(sessionId, state);
-        }
+        SessionSemaphoreState state = sessionStates.computeIfAbsent(sessionId, x -> new SessionSemaphoreState());
 
         BiTuple<UUID, Integer> prev = state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, permits));
         if (prev == null || !prev.element1.equals(invocationUid)) {
@@ -299,11 +295,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
 
         long sessionId = endpoint.sessionId();
         if (sessionId != NO_SESSION_ID) {
-            SessionSemaphoreState state = sessionStates.get(sessionId);
-            if (state == null) {
-                state = new SessionSemaphoreState();
-                sessionStates.put(sessionId, state);
-            }
+            SessionSemaphoreState state = sessionStates.computeIfAbsent(sessionId, x -> new SessionSemaphoreState());
 
             long threadId = endpoint.threadId();
             Integer response = state.getInvocationResponse(threadId, invocationUid);

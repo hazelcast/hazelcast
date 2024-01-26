@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class DurableExecutorPartitionContainer {
         int durability = durableExecutorConfig.getDurability();
         boolean statisticsEnabled = durableExecutorConfig.isStatisticsEnabled();
         executorContainerMap.put(name, new DurableExecutorContainer(nodeEngine, name,
-                partitionId, durability, statisticsEnabled, ringBuffer));
+                partitionId, durability, statisticsEnabled, ringBuffer, durableExecutorConfig.getUserCodeNamespace()));
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
@@ -110,6 +110,7 @@ public class DurableExecutorPartitionContainer {
         int ringBufferCapacity = durableExecutorConfig.getCapacity();
         boolean statisticsEnabled = durableExecutorConfig.isStatisticsEnabled();
         TaskRingBuffer ringBuffer = new TaskRingBuffer(ringBufferCapacity);
-        return new DurableExecutorContainer(nodeEngine, name, partitionId, durability, statisticsEnabled, ringBuffer);
+        return new DurableExecutorContainer(nodeEngine, name, partitionId, durability, statisticsEnabled, ringBuffer,
+                durableExecutorConfig.getUserCodeNamespace());
     }
 }

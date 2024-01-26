@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,8 +64,8 @@ final class MetadataJsonResolver implements KvMetadataResolver {
         return extractFields(userFields, isKey).entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
-                    if (path.getPath() == null) {
-                        throw QueryException.error("Cannot use the '" + path + "' field with JSON serialization");
+                    if (path.isTopLevel()) {
+                        throw QueryException.error("Cannot use '" + path + "' field with JSON serialization");
                     }
                     return entry.getValue();
                 });

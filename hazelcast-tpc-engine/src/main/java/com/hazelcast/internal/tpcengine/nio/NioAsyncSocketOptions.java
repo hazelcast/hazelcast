@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.io.UncheckedIOException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -33,6 +35,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public class NioAsyncSocketOptions implements AsyncSocketOptions {
 
     private final SocketChannel socketChannel;
+    private final Map<Option, Object> extraOptions = new HashMap<>();
 
     NioAsyncSocketOptions(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
@@ -64,7 +67,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     public boolean isSupported(Option option) {
         checkNotNull(option, "option");
 
-        return isSupported(toSocketOption(option));
+        return isSupported(toSocketOption(option)) || SSL_ENGINE_FACTORY.equals(option) || TLS_EXECUTOR.equals(option);
     }
 
     private boolean isSupported(SocketOption socketOption) {
@@ -76,12 +79,16 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
         checkNotNull(option, "option");
 
         try {
+            if (!isSupported(option)) {
+                return null;
+            }
+
             SocketOption socketOption = toSocketOption(option);
             if (isSupported(socketOption)) {
                 return (T) socketChannel.getOption(socketOption);
-            } else {
-                return null;
             }
+
+            return (T) extraOptions.get(option);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -93,13 +100,18 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
         checkNotNull(value, "value");
 
         try {
+            if (!isSupported(option)) {
+                return false;
+            }
+
             SocketOption socketOption = toSocketOption(option);
             if (isSupported(socketOption)) {
                 socketChannel.setOption(socketOption, value);
                 return true;
-            } else {
-                return false;
             }
+
+            extraOptions.put(option, value);
+            return true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

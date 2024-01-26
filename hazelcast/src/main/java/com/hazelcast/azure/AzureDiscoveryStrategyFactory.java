@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,9 +104,8 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
 
     static boolean isEndpointAvailable(String url) {
-        return !RestClient.create(url)
-                .withConnectTimeoutSeconds(1)
-                .withReadTimeoutSeconds(1)
+        return !RestClient.create(url, 1)
+                .withRequestTimeoutSeconds(1)
                 .withRetries(1)
                 .withHeader("Metadata", "True")
                 .get()

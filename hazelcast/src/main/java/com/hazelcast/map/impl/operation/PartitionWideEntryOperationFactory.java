@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,13 @@ import java.io.IOException;
 
 public class PartitionWideEntryOperationFactory extends AbstractMapOperationFactory {
 
-    private String name;
     private EntryProcessor entryProcessor;
 
     public PartitionWideEntryOperationFactory() {
     }
 
     public PartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor) {
-        this.name = name;
+        super(name);
         this.entryProcessor = entryProcessor;
     }
 
@@ -51,7 +50,7 @@ public class PartitionWideEntryOperationFactory extends AbstractMapOperationFact
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        entryProcessor = in.readObject();
+        entryProcessor = callWithNamespaceAwareness(in::readObject);
     }
 
     @Override

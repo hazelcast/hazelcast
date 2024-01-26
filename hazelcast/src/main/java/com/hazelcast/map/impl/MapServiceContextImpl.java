@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,6 +123,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     protected final ILogger logger;
+
     private final NodeEngine nodeEngine;
     private final QueryEngine queryEngine;
     private final EventService eventService;
@@ -147,7 +148,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
-    private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
     private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
 
     /**
@@ -368,13 +368,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
         Iterator<RecordStore> partitionIterator = container.getMaps().values().iterator();
         while (partitionIterator.hasNext()) {
-            RecordStore partition = partitionIterator.next();
-            if (predicate.test(partition)) {
-                partition.beforeOperation();
+            RecordStore recordStore = partitionIterator.next();
+            if (predicate.test(recordStore)) {
+                recordStore.beforeOperation();
                 try {
-                    partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                    recordStore.clearPartition(onShutdown, onRecordStoreDestroy);
                 } finally {
-                    partition.afterOperation();
+                    recordStore.afterOperation();
                 }
                 partitionIterator.remove();
             }
@@ -462,9 +462,6 @@ class MapServiceContextImpl implements MapServiceContext {
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
-        localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
-        getEventListenerCounter()
-                .removeCounter(mapName, mapContainer.getInvalidationListenerCounter());
     }
 
     /**
@@ -497,6 +494,8 @@ class MapServiceContextImpl implements MapServiceContext {
                 nodeEngine.getLogger(getClass()).warning(e);
             }
         }
+
+        mapContainer.onDestroy();
     }
 
     @Override
@@ -915,6 +914,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public boolean isForciblyEnabledGlobalIndex() {
+        return false;
+    }
+
+    @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
     }
@@ -933,8 +937,4 @@ class MapServiceContextImpl implements MapServiceContext {
         return partitioningStrategyFactory;
     }
 
-    @Override
-    public EventListenerCounter getEventListenerCounter() {
-        return eventListenerCounter;
-    }
 }

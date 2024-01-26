@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -59,8 +60,8 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
                 Data dataValue = toHeapData(record.getValue());
                 ExpiryMetadata expiryMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
                 consumer.accept(partitionId,
-                    createMergingEntry(getSerializationService(), dataKey, dataValue,
-                        record, expiryMetadata));
+                        createMergingEntry(getSerializationService(), dataKey, dataValue,
+                                record, expiryMetadata));
             }, false);
         } finally {
             store.afterOperation();
@@ -107,11 +108,11 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
 
     @Override
     public void dispose() {
-        Collection<Collection<RecordStore>> collections = mergingStoresByName.values();
-        for (Collection<RecordStore> recordStores : collections) {
-            for (RecordStore recordStore : recordStores) {
-                recordStore.disposeOnSplitBrainHeal();
-            }
+        Iterator<RecordStore> iterator = copyOfMergingStores.iterator();
+        while (iterator.hasNext()) {
+            RecordStore recordStore = iterator.next();
+            recordStore.disposeOnSplitBrainHeal();
+            iterator.remove();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
@@ -49,6 +47,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -90,7 +89,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     @Test
     public void when_serializerIsRegistered_then_itIsAvailableForLocalMapSource() {
         Map<Integer, Value> map = client().getMap(SOURCE_MAP_NAME);
-        map.putAll(ImmutableMap.of(1, new Value(1), 2, new Value(2)));
+        map.putAll(Map.of(1, new Value(1), 2, new Value(2)));
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(Sources.<Integer, Value>map(SOURCE_MAP_NAME))
@@ -111,7 +110,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
         Map<Integer, Value> map = client().getMap(SINK_MAP_NAME);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(
-                ImmutableMap.of(1, new Value(1), 2, new Value(2))
+                Map.of(1, new Value(1), 2, new Value(2))
         );
     }
 
@@ -125,7 +124,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     @Test
     public void when_serializerIsRegistered_then_itIsAvailableForLocalCacheSource() {
         Cache<Integer, Value> map = client().getCacheManager().getCache(SOURCE_CACHE_NAME);
-        map.putAll(ImmutableMap.of(1, new Value(1), 2, new Value(2)));
+        map.putAll(Map.of(1, new Value(1), 2, new Value(2)));
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(Sources.<Integer, Value>cache(SOURCE_CACHE_NAME))
@@ -146,8 +145,8 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
         ICache<Integer, Value> cache = client().getCacheManager().getCache(SINK_CACHE_NAME);
         assertThat(cache).hasSize(2);
-        assertThat(cache.getAll(ImmutableSet.of(1, 2))).containsExactlyInAnyOrderEntriesOf(
-                ImmutableMap.of(1, new Value(1), 2, new Value(2))
+        assertThat(cache.getAll(Set.of(1, 2))).containsExactlyInAnyOrderEntriesOf(
+                Map.of(1, new Value(1), 2, new Value(2))
         );
     }
 

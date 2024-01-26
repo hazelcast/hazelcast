@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,18 @@ public final class JobConfigArguments {
      * member pruning technique.
      */
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
+
+    /**
+     * The key under which caller marks analyzed job.
+     * The reason for not having a separate flag in {@link JobConfig}
+     * is that we want to preserve Jet's independence from SQL.
+     * <p>
+     * The value for that key supposed to have {@link Boolean} 'false' value
+     * to prevent job suspension.
+     * <p>
+     * By default, any normal Jet job is suspendable.
+     */
+    public static final String KEY_JOB_IS_SUSPENDABLE = "__jet.jobIsSuspendable";
 
     private JobConfigArguments() {
     }

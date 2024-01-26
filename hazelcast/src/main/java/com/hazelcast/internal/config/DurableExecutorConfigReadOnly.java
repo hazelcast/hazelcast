@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.DurableExecutorConfig;
+
+import javax.annotation.Nullable;
 
 public class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
 
@@ -51,6 +53,11 @@ public class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
 
     @Override
     public DurableExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
+    }
+
+    @Override
+    public DurableExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,11 @@ public class RelationsStorage extends AbstractSchemaStorage {
 
     Mapping removeMapping(String name) {
         return (Mapping) storage().remove(name);
+    }
+
+    public Mapping getMapping(String name) {
+        Object object = storage().get(name);
+        return object instanceof Mapping ? (Mapping) object : null;
     }
 
     public Collection<Type> getAllTypes() {

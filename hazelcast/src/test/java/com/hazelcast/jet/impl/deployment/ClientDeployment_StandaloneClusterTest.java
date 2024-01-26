@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,44 +22,41 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.UserCodeUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-
-import static com.hazelcast.jet.impl.deployment.AbstractDeploymentTest.CLASS_DIRECTORY;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientDeployment_StandaloneClusterTest extends JetTestSupport {
-
+    @SuppressWarnings("removal")
     @Test
     public void when_classAddedUsingUcd_then_visibleToJet() throws Exception {
-        URL classUrl = new File(CLASS_DIRECTORY).toURI().toURL();
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
-        Class<?> personClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+        URL classUrl = UserCodeUtil.urlRelativeToBinariesFolder("sample");
+        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {classUrl}, null)) {
+            Class<?> personClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
 
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClassLoader(urlClassLoader);
-        clientConfig.getUserCodeDeploymentConfig()
-                       .setEnabled(true)
-                       .addClass(personClz);
+            ClientConfig clientConfig = new ClientConfig();
+            clientConfig.setClassLoader(urlClassLoader);
+            clientConfig.getUserCodeDeploymentConfig().setEnabled(true).addClass(personClz);
 
-        Config config = new Config();
-        config.getJetConfig().setEnabled(true);
-        config.getUserCodeDeploymentConfig().setEnabled(true);
+            Config config = new Config();
+            config.getJetConfig().setEnabled(true);
+            config.getUserCodeDeploymentConfig().setEnabled(true);
 
-        HazelcastInstance instance = createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient(clientConfig);
+            HazelcastInstance instance = createHazelcastInstance(config);
+            createHazelcastClient(clientConfig);
 
-        DAG dag = new DAG();
-        dag.newVertex("v", () -> new LoadClassesIsolated(true));
+            DAG dag = new DAG();
+            dag.newVertex("v", () -> new LoadClassesIsolated(true));
 
-        instance.getJet().newJob(dag).join();
+            instance.getJet().newJob(dag).join();
+        }
     }
 }

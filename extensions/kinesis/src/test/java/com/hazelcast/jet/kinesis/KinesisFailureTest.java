@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
+import eu.rekawek.toxiproxy.Proxy;
+import eu.rekawek.toxiproxy.ToxiproxyClient;
+import eu.rekawek.toxiproxy.model.ToxicDirection;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -34,18 +37,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
-import org.testcontainers.containers.ToxiproxyContainer.ContainerProxy;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -58,14 +61,16 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule
     public static final Network NETWORK = Network.newNetwork();
-    public static LocalStackContainer localStack;
+    private static LocalStackContainer localStack;
 
-    public static ToxiproxyContainer toxiProxy;
-
+    private static ToxiproxyContainer toxiproxy;
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
-    private static ContainerProxy PROXY;
+    private static Proxy PROXY;
     private static KinesisTestHelper HELPER;
+
+    private static final String NETWORK_ALIAS = "toxiproxy";
+    private static final String UPSTREAM = "toxiproxy:4566";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFailureTest.class);
 
@@ -74,40 +79,48 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     }
 
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeClass() throws IOException {
         assumeDockerEnabled();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag(LOCALSTACK_VERSION))
                 .withNetwork(NETWORK)
+                .withNetworkAliases(NETWORK_ALIAS)
                 .withServices(Service.KINESIS)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         localStack.start();
-        toxiProxy = new ToxiproxyContainer(parse("ghcr.io/shopify/toxiproxy")
+        toxiproxy = new ToxiproxyContainer(parse("ghcr.io/shopify/toxiproxy")
                 .withTag("2.5.0"))
                 .withNetwork(NETWORK)
-                .withNetworkAliases("toxiproxy")
+                .withNetworkAliases(NETWORK_ALIAS)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER));
-        toxiProxy.start();
+        toxiproxy.start();
 
-        PROXY = toxiProxy.getProxy(localStack, 4566);
+        PROXY = initProxy(toxiproxy);
+
+        String host = toxiproxy.getHost();
+        Integer port = toxiproxy.getMappedPort(8666);
 
         AWS_CONFIG = new AwsConfig()
-                .withEndpoint("http://" + PROXY.getContainerIpAddress() + ":" + PROXY.getProxyPort())
+                .withEndpoint("http://" + host + ":" + port)
                 .withRegion(localStack.getRegion())
                 .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         KINESIS = AWS_CONFIG.buildClient();
         HELPER = new KinesisTestHelper(KINESIS, STREAM);
     }
 
+    private static Proxy initProxy(ToxiproxyContainer toxiproxy) throws IOException {
+        ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxiproxy.getHost(), toxiproxy.getControlPort());
+        return toxiproxyClient.createProxy(NETWORK_ALIAS, "0.0.0.0:8666", UPSTREAM);
+    }
     @AfterClass
     public static void afterClass() {
         if (KINESIS != null) {
             KINESIS.shutdown();
         }
 
-        if (toxiProxy != null) {
-            toxiProxy.stop();
+        if (toxiproxy != null) {
+            toxiproxy.stop();
         }
         if (localStack != null) {
             localStack.stop();
@@ -120,7 +133,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         HELPER.createStream(10);
 
         System.err.println("Cutting network connection ...");
-        PROXY.setConnectionCut(true);
+        setConnectionCut(PROXY, true);
 
         hz().getJet().newJob(getPipeline(kinesisSource().build()));
         Map<String, List<String>> expectedMessages = sendMessages();
@@ -128,7 +141,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         SECONDS.sleep(5);
 
         System.err.println("Network connection re-established");
-        PROXY.setConnectionCut(false);
+        setConnectionCut(PROXY, false);
 
         assertMessages(expectedMessages, true, false);
     }
@@ -145,10 +158,10 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         assertTrueEventually(() -> assertFalse(results.isEmpty()));
 
         System.err.println("Cutting network connection ...");
-        PROXY.setConnectionCut(true);
+        setConnectionCut(PROXY, true);
         SECONDS.sleep(5);
         System.err.println("Network connection re-established");
-        PROXY.setConnectionCut(false);
+        setConnectionCut(PROXY, false);
 
         assertMessages(expectedMessages, true, true);
         // duplication happens due AWS SDK internals (producer retries; details here:
@@ -259,6 +272,16 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                     .hasMessageContaining(messageFragment);
         } catch (Throwable t) {
             throw sneakyThrow(t);
+        }
+    }
+
+    private void setConnectionCut(Proxy proxy, boolean shouldCutConnection) throws IOException {
+        if (shouldCutConnection) {
+            proxy.toxics().bandwidth(ToxicDirection.DOWNSTREAM.name(), ToxicDirection.DOWNSTREAM, 0);
+            proxy.toxics().bandwidth(ToxicDirection.UPSTREAM.name(), ToxicDirection.UPSTREAM, 0);
+        } else {
+            proxy.toxics().get(ToxicDirection.DOWNSTREAM.name()).remove();
+            proxy.toxics().get(ToxicDirection.UPSTREAM.name()).remove();
         }
     }
 

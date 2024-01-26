@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -429,11 +429,11 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public void addIndex(IndexConfig config) {
         checkNotNull(config, "Index config cannot be null.");
 
-        assert indexes.isGlobal();
+        assert indexRegistry.isGlobal();
 
         IndexConfig config0 = getNormalizedIndexConfig(config);
 
-        indexes.addOrGetIndex(config0);
+        indexRegistry.addOrGetIndex(config0);
 
         InternalSerializationService serializationService = context.getSerializationService();
 
@@ -447,7 +447,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             Data keyData = toData(queryCacheKey);
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, extractors);
             newEntry.init(keyData, value);
-            indexes.putEntry(newEntry, null, queryable, Index.OperationSource.USER);
+            indexRegistry.putEntry(newEntry, null, queryable, Index.OperationSource.USER);
         }
     }
 

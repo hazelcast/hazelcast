@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
@@ -45,7 +46,7 @@ final class SourceMetadata {
 
     SourceMetadata(Class clazz) {
         // we scan all the methods/fields of the class/interface hierarchy.
-        List<Class<?>> classList = new ArrayList<>();
+        Collection<Class<?>> classList = new LinkedHashSet<>();
         flatten(clazz, classList);
 
         for (Class flattenedClass : classList) {

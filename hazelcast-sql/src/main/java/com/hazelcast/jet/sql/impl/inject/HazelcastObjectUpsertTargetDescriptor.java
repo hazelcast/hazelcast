@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
 
@@ -28,7 +28,7 @@ public class HazelcastObjectUpsertTargetDescriptor implements UpsertTargetDescri
     public HazelcastObjectUpsertTargetDescriptor() { }
 
     @Override
-    public UpsertTarget create(final InternalSerializationService serializationService) {
+    public UpsertTarget create(final ExpressionEvalContext evalContext) {
         return new HazelcastObjectUpsertTarget();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public final class EntryOperator {
         this.mapContainer = recordStore.getMapContainer();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.mapName = mapContainer.getName();
-        this.wanReplicationEnabled = mapContainer.isWanReplicationEnabled();
+        this.wanReplicationEnabled = mapContainer.getWanContext().isWanReplicationEnabled();
         this.shouldClone = mapContainer.shouldCloneOnEntryProcessing(mapOperation.getPartitionId());
         this.mapServiceContext = mapContainer.getMapServiceContext();
         LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
@@ -256,6 +256,10 @@ public final class EntryOperator {
 
     public Object getOldValue() {
         return oldValue;
+    }
+
+    public Object getOldValueClone() {
+        return oldValueClone;
     }
 
     public Data getResult() {

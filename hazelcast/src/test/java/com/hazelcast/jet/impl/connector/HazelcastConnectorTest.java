@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,12 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex src = dag.newVertex("src", () -> new TestProcessors.ListSource(items))
                 .localParallelism(1);
-        Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP(sinkName, i -> i, i -> i));
+
+        MapSinkConfiguration<Object, Object, Object> sinkConfig = new MapSinkConfiguration<>(sinkName);
+        sinkConfig.setToKeyFn(i -> i);
+        sinkConfig.setToValueFn(i -> i);
+
+        Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP(sinkConfig));
         dag.edge(between(src, sink));
 
         instance().getJet().newJob(dag).join();

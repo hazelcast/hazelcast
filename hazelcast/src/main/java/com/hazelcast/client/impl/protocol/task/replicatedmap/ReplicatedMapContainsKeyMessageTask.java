@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ContainsKeyOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -68,11 +69,17 @@ public class ReplicatedMapContainsKeyMessageTask
 
     @Override
     public String getMethodName() {
-        return "containsKey";
+        return SecurityInterceptorConstants.CONTAINS_KEY;
     }
 
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.key};
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
     }
 }

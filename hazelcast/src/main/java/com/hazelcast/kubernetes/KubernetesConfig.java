@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -185,8 +184,7 @@ final class KubernetesConfig {
     static class DefaultFileContentsReader implements FileContentsReader {
         public String readFileContents(String fileName) {
             try {
-                byte[] data = Files.readAllBytes(Paths.get(fileName));
-                return new String(data, StandardCharsets.UTF_8);
+                return Files.readString(Paths.get(fileName));
             } catch (IOException e) {
                 throw new RuntimeException("Could not get " + fileName, e);
             }

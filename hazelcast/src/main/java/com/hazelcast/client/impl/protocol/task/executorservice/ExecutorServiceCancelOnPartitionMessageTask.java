@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ExecutorServicePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -74,11 +75,17 @@ public class ExecutorServiceCancelOnPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return "cancel";
+        return SecurityInterceptorConstants.CANCEL;
     }
 
     @Override
     public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
         return null;
     }
 }

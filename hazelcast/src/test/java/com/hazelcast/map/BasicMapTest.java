@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -169,19 +170,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertPutGet(map, Boolean.TRUE);
         assertPutGet(map, Boolean.FALSE);
 
-        assertPutGet(map, new Integer(10));
+        assertPutGet(map, Integer.valueOf(10));
 
-        assertPutGet(map, new Short((short) 10));
+        assertPutGet(map, Short.valueOf((short) 10));
 
-        assertPutGet(map, new Byte((byte) 10));
+        assertPutGet(map, Byte.valueOf((byte) 10));
 
-        assertPutGet(map, new Long(10));
+        assertPutGet(map, Long.valueOf(10));
 
-        assertPutGet(map, new Float(10));
+        assertPutGet(map, Float.valueOf(10));
 
-        assertPutGet(map, new Double(10));
+        assertPutGet(map, Double.valueOf(10));
 
-        assertPutGet(map, new Character('x'));
+        assertPutGet(map, Character.valueOf('x'));
     }
 
     public void assertPutGet(Map<String, Object> map, Object value) {
@@ -444,6 +445,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         Random random = new Random();
 
         IMap<String, String> map = getInstance().getMap("testMapClear");
+        map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < entryCount; i++) {
             map.put("key" + i, toRandomStringValue(random));
         }
@@ -462,6 +464,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         Random random = new Random();
 
         IMap<String, String> map = getInstance().getMap("testMap_evictAll_nonEmptyMap");
+        map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < entryCount; i++) {
             map.put("key" + i, toRandomStringValue(random));
         }

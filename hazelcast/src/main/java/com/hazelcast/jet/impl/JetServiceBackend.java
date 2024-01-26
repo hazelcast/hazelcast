@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,11 +75,11 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.config.MapConfig.DISABLED_TTL_SECONDS;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -135,8 +135,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
         MetricsService metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
-        metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
-                nodeEngine.getLocalMember()));
+        metricsService.registerPublisher(nodeEngine ->
+                new JobMetricsPublisher(jobExecutionService, nodeEngine.getLocalMember()));
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobCoordinationService);
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
         networking = new Networking(engine, jobExecutionService, jetConfig.getFlowControlPeriodMs());
 
@@ -473,7 +474,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         // Exception is not JetException
         if (!(exception instanceof JetException)) {
             // Get the root cause and wrap it with JetException
-            ExceptionUtil.rethrow(exception);
+            throw rethrow(exception);
         } else {
             // Just throw the JetException as is
             sneakyThrow(exception);

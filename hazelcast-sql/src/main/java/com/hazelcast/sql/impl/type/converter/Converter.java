@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -29,17 +32,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Interface to convert an item from one type to another.
- * <p>
- * Converters assume that the passed values are not null, caller of conversion methods must ensure that.
- * We do this because most SQL expressions have special treatment for null values, and in general null check
- * is already performed by the time the converter is called.
- * <p>
- * Java serialization is needed for Jet.
+ *
+ * @implSpec <ol>
+ * <li> Conversion methods expect nonnull values because most SQL expressions have
+ *      special treatment for null values, so null check is performed beforehand.
+ * <li> Converters are expected to be singleton by {@link QueryDataType#equals}.
+ *
+ * @implNote Java serialization is needed for Jet.
  */
-@SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ExecutableStatementCount"})
+@SuppressWarnings({"MethodCount", "ExecutableStatementCount"})
 public abstract class Converter implements Serializable {
     protected static final int ID_BOOLEAN = 0;
     protected static final int ID_BYTE = 1;
@@ -69,24 +74,25 @@ public abstract class Converter implements Serializable {
     protected static final int ID_ROW = 25;
 
     private final int id;
-    private final QueryDataTypeFamily typeFamily;
+    private final transient QueryDataTypeFamily typeFamily;
 
-    private final boolean convertToBoolean;
-    private final boolean convertToTinyint;
-    private final boolean convertToSmallint;
-    private final boolean convertToInt;
-    private final boolean convertToBigint;
-    private final boolean convertToDecimal;
-    private final boolean convertToReal;
-    private final boolean convertToDouble;
-    private final boolean convertToVarchar;
-    private final boolean convertToDate;
-    private final boolean convertToTime;
-    private final boolean convertToTimestamp;
-    private final boolean convertToTimestampWithTimezone;
-    private final boolean convertToObject;
-    private final boolean convertToJson;
-    private final boolean convertToRow;
+    private final transient boolean convertToBoolean;
+    private final transient boolean convertToTinyint;
+    private final transient boolean convertToSmallint;
+    private final transient boolean convertToInt;
+    private final transient boolean convertToBigint;
+    private final transient boolean convertToDecimal;
+    private final transient boolean convertToReal;
+    private final transient boolean convertToDouble;
+    private final transient boolean convertToVarchar;
+    private final transient boolean convertToDate;
+    private final transient boolean convertToTime;
+    private final transient boolean convertToTimestamp;
+    private final transient boolean convertToTimestampWithTimezone;
+    private final transient boolean convertToObject;
+    private final transient boolean convertToMap;
+    private final transient boolean convertToJson;
+    private final transient boolean convertToRow;
 
     protected Converter(int id, QueryDataTypeFamily typeFamily) {
         this.id = id;
@@ -109,6 +115,7 @@ public abstract class Converter implements Serializable {
             convertToTimestamp = canConvert(clazz.getMethod("asTimestamp", Object.class));
             convertToTimestampWithTimezone = canConvert(clazz.getMethod("asTimestampWithTimezone", Object.class));
             convertToObject = canConvert(clazz.getMethod("asObject", Object.class));
+            convertToMap = canConvert(clazz.getMethod("asMap", Object.class));
             convertToJson = canConvert(clazz.getMethod("asJson", Object.class));
             convertToRow = canConvert(clazz.getMethod("asRow", Object.class));
         } catch (ReflectiveOperationException e) {
@@ -202,12 +209,17 @@ public abstract class Converter implements Serializable {
     }
 
     @NotConvertible
+    public Map<?, ?> asMap(Object val) {
+        throw cannotConvertError(QueryDataTypeFamily.MAP);
+    }
+
+    @NotConvertible
     public HazelcastJsonValue asJson(Object val) {
         throw cannotConvertError(QueryDataTypeFamily.JSON);
     }
 
     @NotConvertible
-    public Object asRow(Object val) {
+    public RowValue asRow(Object val) {
         throw cannotConvertError(QueryDataTypeFamily.ROW);
     }
 
@@ -271,6 +283,10 @@ public abstract class Converter implements Serializable {
         return convertToObject;
     }
 
+    public final boolean canConvertToMap() {
+        return convertToMap;
+    }
+
     public final boolean canConvertToJson() {
         return convertToJson;
     }
@@ -279,7 +295,7 @@ public abstract class Converter implements Serializable {
         return convertToRow;
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
+    @SuppressWarnings({"CyclomaticComplexity", "ReturnCount"})
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
             case BOOLEAN:
@@ -323,6 +339,9 @@ public abstract class Converter implements Serializable {
 
             case OBJECT:
                 return canConvertToObject();
+
+            case MAP:
+                return canConvertToMap();
 
             case JSON:
                 return canConvertToJson();
@@ -368,5 +387,9 @@ public abstract class Converter implements Serializable {
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    protected Object readResolve() throws ObjectStreamException {
+        return Converters.getConverter(id);
     }
 }

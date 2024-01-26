@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a065987c6f33dd6f48fb32b67bff131c")
+@SuppressWarnings("unused")
+@Generated("57fb9cc102cdc8bf6996b41a75a7e943")
 public final class SqlErrorCodec {
     private static final int CODE_FIELD_OFFSET = 0;
     private static final int ORIGINATING_MEMBER_ID_FIELD_OFFSET = CODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -43,6 +44,7 @@ public final class SqlErrorCodec {
 
         CodecUtil.encodeNullable(clientMessage, sqlError.getMessage(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, sqlError.getSuggestion(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, sqlError.getCauseStackTrace(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -62,9 +64,15 @@ public final class SqlErrorCodec {
             suggestion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
             isSuggestionExists = true;
         }
+        boolean isCauseStackTraceExists = false;
+        java.lang.String causeStackTrace = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            causeStackTrace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            isCauseStackTraceExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.sql.impl.client.SqlError(code, message, originatingMemberId, isSuggestionExists, suggestion);
+        return new com.hazelcast.sql.impl.client.SqlError(code, message, originatingMemberId, isSuggestionExists, suggestion, isCauseStackTraceExists, causeStackTrace);
     }
 }

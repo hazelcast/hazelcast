@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public final class GetterFactory {
     }
 
     public static Getter newMethodGetter(Object object, Getter parent, Method method, String modifier) throws Exception {
-        return newGetter(object, parent, modifier, method.getReturnType(), o -> method.invoke(o),
+        return newGetter(object, parent, modifier, method.getReturnType(), method::invoke,
                 (t, et) -> new MethodGetter(parent, method, modifier, t, et));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.assertj.core.util.Lists.newArrayList;
+
 public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private static final String JSON = "{\"value\":42}";
@@ -36,8 +38,8 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         tableName = randomTableName();
 
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "data VARCHAR(100)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -61,6 +63,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("DELETE FROM " + tableName + " WHERE age = 0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }
@@ -70,6 +73,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("DELETE FROM " + tableName + " WHERE age = 0 AND JSON_QUERY(data, '$.value') = '42'");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }
@@ -79,15 +83,17 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("DELETE FROM " + tableName + " WHERE age = ?", 0);
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }
 
     @Test
     public void parameterInWhereClausePredicateCanPushDownCastColumn() throws Exception {
-        execute("DELETE FROM " + tableName + " WHERE CAST(age as VARCHAR) = ?", "0");
+        execute("DELETE FROM " + tableName + " WHERE CAST(age as VARCHAR(100)) = ?", "0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }
@@ -97,6 +103,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         execute("DELETE FROM " + tableName + " WHERE age = CAST(? as INTEGER)", "0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }
@@ -109,6 +116,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }
@@ -121,6 +129,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
     }

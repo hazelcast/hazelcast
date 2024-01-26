@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -142,6 +142,7 @@ hazelcast:
       pool-size: 16
       queue-capacity: 1000
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      user-code-namespace: ns1
 
   durable-executor-service:
     dummy:
@@ -150,6 +151,7 @@ hazelcast:
       durability: 2
       capacity: 10
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
+      user-code-namespace: ns1
 
   scheduled-executor-service:
     dummy:
@@ -161,6 +163,7 @@ hazelcast:
       merge-policy:
         batch-size: 10
         class-name: PutIfAbsentMergePolicy
+      user-code-namespace: ns1
 
   cardinality-estimator:
     dummy:
@@ -200,6 +203,7 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
       priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
+      user-code-namespace: ns1
 
   map:
     default:
@@ -418,6 +422,7 @@ hazelcast:
       partition-attributes:
         - name: "attributeName1"
         - name: "attributeName2"
+      user-code-namespace: ns1
 
   multimap:
     default:
@@ -434,6 +439,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      user-code-namespace: ns1
 
   replicatedmap:
     dummy:
@@ -448,6 +454,7 @@ hazelcast:
         - include-value: false
           local: true
           class-name: DummyListener
+      user-code-namespace: ns1
 
   list:
     default:
@@ -462,6 +469,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      user-code-namespace: ns1
 
   set:
     default:
@@ -476,6 +484,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      user-code-namespace: ns1
 
   topic:
     default:
@@ -484,6 +493,7 @@ hazelcast:
       message-listeners:
         - com.hazelcast.examples.MessageListener
       multi-threading-enabled: false
+      user-code-namespace: ns1
 
   reliable-topic:
     default:
@@ -492,6 +502,7 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
+      user-code-namespace: ns1
 
   ringbuffer:
     default:
@@ -504,6 +515,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      user-code-namespace: ns1
 
   cache:
     default:
@@ -567,6 +579,7 @@ hazelcast:
       merkle-tree:
         enabled: true
         depth: 5
+      user-code-namespace: ns1
 
   flake-id-generator:
     default:
@@ -766,6 +779,19 @@ hazelcast:
                 storeKey: true
                 principal: hz/127.0.0.1@HAZELCAST.COM
                 keyTab: /opt/hz-localhost.keytab
+      - name: restRealm
+        authentication:
+          simple:
+            users:
+              - username: restuser
+                password: 'restpassword'
+                roles:
+                  - admin
+        access-control-service:
+          factory-class-name: com.acme.access.AccessControlServiceFactory
+          properties:
+            decisionFile: '/opt/acl.xml'
+
     member-authentication:
       realm: jaasRealm
     client-authentication:
@@ -805,6 +831,10 @@ hazelcast:
           actions:
             - all
       atomic-reference:
+        - name: "*"
+          actions:
+            - all
+      cpmap:
         - name: "*"
           actions:
             - all
@@ -895,6 +925,10 @@ hazelcast:
           actions:
             - all
       sql:
+        - name: "*"
+          actions:
+            - all
+      user-code-namespace:
         - name: "*"
           actions:
             - all
@@ -997,6 +1031,11 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+    maps:
+      map1:
+        max-size-mb: 50
+      map2:
+        max-size-mb: 25
 
   auditlog:
     enabled: false
@@ -1020,7 +1059,22 @@ hazelcast:
 
   sql:
     statement-timeout-millis: 0
-
+    java-reflection-filter:
+      defaults-disabled: true
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - java
+          - "["
+          - com.
   data-connection:
     mysql-database:
       type: jdbc
@@ -1031,3 +1085,31 @@ hazelcast:
   tpc:
     enabled: true
     eventloop-count: 12
+
+  user-code-namespaces:
+    enabled: false
+    class-filter:
+      defaults-disabled: false
+      blacklist:
+        class:
+          - com.acme.app.BeanComparator
+      whitelist:
+        class:
+          - java.lang.String
+          - example.Foo
+        package:
+          - com.acme.app
+          - com.acme.app.subpkg
+        prefix:
+          - com.hazelcast.
+          - java
+    namespace1:
+      - id: "test"
+        resource-type: "jar"
+        url: "file://home/hazelcast/test.jar"
+      - id: "test2"
+        resource-type: "jar"
+        url: "file://home/hazelcast/test2.jar"
+      - id: "test3"
+        resource-type: "jars_in_zip"
+        url: "file://home/hazelcast/test3.zip"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -30,14 +31,16 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class ToConverters {
-
     private static final Map<QueryDataType, ToConverter> CONVERTERS = prepareConverters();
 
-    private ToConverters() {
-    }
+    private ToConverters() { }
 
     @Nonnull
     public static ToConverter getToConverter(QueryDataType type) {
+        if (type.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+            // User-defined types are subject to the same conversion rules as ordinary OBJECT.
+            type = QueryDataType.OBJECT;
+        }
         return Objects.requireNonNull(CONVERTERS.get(type), "missing converter for " + type);
     }
 
@@ -68,6 +71,7 @@ public final class ToConverters {
         converters.put(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, ToCalendarConverter.INSTANCE);
 
         converters.put(QueryDataType.OBJECT, new ToCanonicalConverter(QueryDataType.OBJECT));
+        converters.put(QueryDataType.MAP, new ToCanonicalConverter(QueryDataType.MAP));
         converters.put(QueryDataType.JSON, new ToCanonicalConverter(QueryDataType.JSON));
         converters.put(QueryDataType.ROW, new ToCanonicalConverter(QueryDataType.ROW));
 

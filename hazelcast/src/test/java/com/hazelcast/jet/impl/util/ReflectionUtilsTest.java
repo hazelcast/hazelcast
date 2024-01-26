@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 
@@ -200,8 +203,62 @@ public class ReflectionUtilsTest {
                               .contains("package.properties");
     }
 
+    @Test
+    public void testAllConstantTagsReadable_whenReadingInternalBinaryName() {
+        // To read an internal binary name, we need to read (and skip values for) all constant pool bytes
+        //    in the class file, so we need to make sure all 17 (as of JDK 21) are handled correctly
+        byte[] classBytes = generateClassFileHeaderWithAllConstants();
+        assertEquals("com.hazelcast.test.FakeClass", ReflectionUtils.getInternalBinaryName(classBytes));
+    }
+
+    private static final byte[] CONSTANT_POOL_TAGS = new byte[]      {1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 19, 20};
+    private static final int[] CONSTANT_POOL_PAYLOAD_SIZE = new int[]{0, 4, 4, 8, 8, 2, 2, 4, 4,  4,  4,  3,  2,  4,  4,  2,  2};
+
+    private static byte[] generateClassFileHeaderWithAllConstants() {
+        // We need to define all bytes up to the `this_class` definition
+        ByteBuffer buffer = ByteBuffer.allocate(154);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+
+        // 4 bytes of magic
+        fillBuffer(buffer, 4);
+        // 4 bytes of versioning
+        fillBuffer(buffer, 4);
+        // constant pool length (for all our constants + 2 for 2x 8 byte payloads + 1 because the index starts at 1)
+        buffer.putShort((short) (CONSTANT_POOL_TAGS.length + 2 + 1));
+        // constant pool definition
+        for (int k = 0; k < CONSTANT_POOL_TAGS.length; k++) {
+            byte tagId = CONSTANT_POOL_TAGS[k];
+            buffer.put(tagId);
+            // Special handling for CONSTANT_Class to point at our Utf8 index (1)
+            if (tagId == 7) {
+                buffer.putShort((short) 1);
+            } else if (tagId == 1) {
+                // Special handling for CONSTANT_Utf8 to write our fake class name
+                byte[] bytes = "com.hazelcast.test.FakeClass".getBytes(StandardCharsets.UTF_8);
+                buffer.putShort((short) bytes.length);
+                buffer.put(bytes);
+            } else {
+                int payloadByteLength = CONSTANT_POOL_PAYLOAD_SIZE[k];
+                fillBuffer(buffer, payloadByteLength);
+            }
+        }
+        // 2 bytes of access flags
+        fillBuffer(buffer, 2);
+        // this_class definition (point to our CONSTANT_Class index)
+        buffer.putShort((short) 8);
+        // extra noise for completeness
+        fillBuffer(buffer, 32);
+        return buffer.array();
+    }
+
+    private static void fillBuffer(ByteBuffer buffer, int bytes) {
+        for (int k = 0; k < bytes; k++) {
+            buffer.put((byte) 0);
+        }
+    }
+
     private static ClassResource classResource(Class<?> clazz) {
-        URL url = clazz.getClassLoader().getResource(clazz.getName().replace('.', '/') + ".class");
+        URL url = clazz.getClassLoader().getResource(ReflectionUtils.toClassResourceId(clazz));
         return new ClassResource(clazz.getName(), url);
     }
 

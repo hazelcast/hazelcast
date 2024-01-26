@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
@@ -118,10 +119,14 @@ final class BasicMapStoreContext implements MapStoreContext {
         final PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
         final MapConfig mapConfig = mapContainer.getMapConfig();
         final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        final ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
+        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, mapConfig.getUserCodeNamespace());
         // create store.
-        final Object store = createStore(mapName, mapStoreConfig, configClassLoader);
-        final MapStoreWrapper storeWrapper = new MapStoreWrapper(mapName, store);
+        // Despite passing the Namespace aware class loader, we still need to wrap the entire call in
+        //  Namespace awareness separately as the class loader is only for instantiation, and execution
+        //  of the implementation takes place in this call as well.
+        final Object store = NamespaceUtil.callWithNamespace(nodeEngine, mapConfig.getUserCodeNamespace(),
+                () -> createStore(mapName, mapStoreConfig, classLoader));
+        final MapStoreWrapper storeWrapper = new MapStoreWrapper(nodeEngine, mapName, store, mapConfig.getUserCodeNamespace());
         storeWrapper.instrument(nodeEngine);
 
         context.setMapName(mapName);

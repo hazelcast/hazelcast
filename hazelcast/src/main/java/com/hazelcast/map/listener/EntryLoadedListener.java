@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.listener;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.map.MapLoader;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 /**
  * Invoked upon load of an entry.
@@ -32,6 +33,7 @@ import com.hazelcast.map.MapLoader;
  * @since 3.11
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface EntryLoadedListener<K, V> extends MapListener {
 
     /**

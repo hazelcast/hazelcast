@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -67,7 +69,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = getFirstResourceConfig();
-        assertEquals(toId(this.getClass()), resourceConfig.getId());
+        assertEquals(ReflectionUtils.toClassResourceId(this.getClass()), resourceConfig.getId());
         assertEquals(ResourceType.CLASS, resourceConfig.getResourceType());
     }
 
@@ -81,7 +83,7 @@ public class ResourceConfigTest extends JetTestSupport {
         assertTrue(resourceConfigs
                 .stream()
                 .anyMatch(resourceConfig ->
-                        resourceConfig.getId().equals(toId(this.getClass())) &&
+                        resourceConfig.getId().equals(ReflectionUtils.toClassResourceId(this.getClass())) &&
                                 resourceConfig.getResourceType().equals(ResourceType.CLASS)
                 ));
         assertTrue(resourceConfigs
@@ -106,7 +108,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addJarWithUrl() throws Exception {
         // Given
         String resourceId = "jarfile";
-        URL url = new URL("http://site/path/to/" + resourceId);
+        URL url = URI.create("http://site/path/to/" + resourceId).toURL();
 
         // When
         config.addJar(url);
@@ -121,7 +123,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addJarWithUrlNoPath_then_throwsException() throws Exception {
         // Given
-        URL url = new URL("http://hazelcast.org");
+        URL url = URI.create("http://hazelcast.org").toURL();
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
@@ -134,8 +136,8 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addDuplicateJarWithUrl_then_throwsException() throws Exception {
         // Given
         String resourceId = "file";
-        URL url1 = new URL("http://site/" + resourceId);
-        URL url2 = new URL("http://another.site/" + resourceId);
+        URL url1 = URI.create("http://site/" + resourceId).toURL();
+        URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.addJar(url1);
 
         // Then
@@ -243,7 +245,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addZipOfJarWithUrl() throws Exception {
         // Given
         String resourceId = "zipFile";
-        URL url = new URL("http://path/to/" + resourceId);
+        URL url = URI.create("http://path/to/" + resourceId).toURL();
 
         // When
         config.addJarsInZip(url);
@@ -258,7 +260,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addZipOfJarWithUrlNoPath_then_throwsException() throws Exception {
         // Given
-        URL url = new URL("http://hazelcast.org");
+        URL url = URI.create("http://hazelcast.org").toURL();
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
@@ -271,8 +273,8 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addDuplicateZipOfJarWithUrl_then_throwsException() throws Exception {
         // Given
         String resourceId = "zipfile";
-        URL url1 = new URL("http://site/" + resourceId);
-        URL url2 = new URL("http://another.site/" + resourceId);
+        URL url1 = URI.create("http://site/" + resourceId).toURL();
+        URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.addJarsInZip(url1);
 
         // Then
@@ -528,7 +530,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addResourceWithURL() throws Exception {
         // Given
         String resourceId = "my.txt";
-        URL url = new URL("http://site/" + resourceId);
+        URL url = URI.create("http://site/" + resourceId).toURL();
 
         // When
         config.addClasspathResource(url);
@@ -544,8 +546,8 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addDuplicateResourceWithUrl_then_throwsException() throws Exception {
         // Given
         String resourceId = "my.txt";
-        URL url1 = new URL("http://site/" + resourceId);
-        URL url2 = new URL("http://another.site/" + resourceId);
+        URL url1 = URI.create("http://site/" + resourceId).toURL();
+        URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.addClasspathResource(url1);
 
         // Then
@@ -558,7 +560,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addResourceWithUrlNoPath_then_throwsException() throws Exception {
         // Given
-        URL url = new URL("http://hazelcast.org");
+        URL url = URI.create("http://hazelcast.org").toURL();
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
@@ -586,7 +588,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addResourceWithURLAndId() throws Exception {
         // Given
         String resourceId = "resourceId";
-        URL url = new URL("http://site/my.txt");
+        URL url = URI.create("http://site/my.txt").toURL();
 
         // When
         config.addClasspathResource(url, resourceId);
@@ -602,7 +604,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_attachFileWithUrl() throws Exception {
         // Given
         String resourceId = "resourceId";
-        URL url = new URL("http://site/" + resourceId);
+        URL url = URI.create("http://site/" + resourceId).toURL();
 
         // When
         config.attachFile(url);
@@ -618,8 +620,8 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_attachDuplicateFileWithUrl_then_throwsException() throws Exception {
         // Given
         String resourceId = "resourceId";
-        URL url1 = new URL("http://site/" + resourceId);
-        URL url2 = new URL("http://another.site/" + resourceId);
+        URL url1 = URI.create("http://site/" + resourceId).toURL();
+        URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.attachFile(url1);
 
         // Then
@@ -632,7 +634,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_attachFileWithUrlNoPath_then_throwsException() throws Exception {
         // Given
-        URL url = new URL("http://hazelcast.org");
+        URL url = URI.create("http://hazelcast.org").toURL();
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
@@ -1090,9 +1092,5 @@ public class ResourceConfigTest extends JetTestSupport {
         File dirFile = new File(baseDir, path);
         assertTrue("Failed to create directory " + dirFile, dirFile.mkdirs());
         return dirFile;
-    }
-
-    private static String toId(Class<?> clazz) {
-        return clazz.getName().replace('.', '/') + ".class";
     }
 }

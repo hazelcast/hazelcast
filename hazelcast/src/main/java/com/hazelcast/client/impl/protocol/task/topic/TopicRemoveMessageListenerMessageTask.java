@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -65,7 +67,13 @@ public class TopicRemoveMessageListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new TopicPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new TopicPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = TopicService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
@@ -75,7 +83,7 @@ public class TopicRemoveMessageListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeMessageListener";
+        return SecurityInterceptorConstants.REMOVE_MESSAGE_LISTENER;
     }
 
 }

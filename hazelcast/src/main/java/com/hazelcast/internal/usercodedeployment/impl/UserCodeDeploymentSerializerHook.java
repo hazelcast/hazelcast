@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderO
 import com.hazelcast.internal.usercodedeployment.impl.operation.DeployClassesOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.USER_CODE_DEPLOYMENT_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.USER_CODE_DEPLOYMENT_DS_FACTORY_ID;
 
 public class UserCodeDeploymentSerializerHook implements DataSerializerHook {
-    public static final int F_ID = FactoryIdHelper.getFactoryId(USER_CODE_DEPLOYMENT_DS_FACTORY,
-            USER_CODE_DEPLOYMENT_DS_FACTORY_ID);
+    public static final int F_ID =
+            FactoryIdHelper.getFactoryId(USER_CODE_DEPLOYMENT_DS_FACTORY, USER_CODE_DEPLOYMENT_DS_FACTORY_ID);
 
     public static final int CLASS_DATA = 0;
     public static final int CLASS_DATA_FINDER_OP = 1;
@@ -45,25 +46,10 @@ public class UserCodeDeploymentSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[CLASS_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClassData();
-            }
-        };
-        constructors[CLASS_DATA_FINDER_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClassDataFinderOperation();
-            }
-        };
-        constructors[DEPLOY_CLASSES_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DeployClassesOperation();
-            }
-        };
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
+        constructors[CLASS_DATA] = () -> new ClassData();
+        constructors[CLASS_DATA_FINDER_OP] = () -> new ClassDataFinderOperation();
+        constructors[DEPLOY_CLASSES_OP] = () -> new DeployClassesOperation();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

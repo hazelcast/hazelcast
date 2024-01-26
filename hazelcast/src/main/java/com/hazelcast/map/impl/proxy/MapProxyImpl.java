@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
@@ -817,7 +818,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         QueryResult result = executeQueryInternal(predicate, iterationType, target);
         incrementOtherOperationsStat();
-        return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
+        return transformToSetWithNamespace(result, predicate, iterationType, uniqueResult, false);
+    }
+
+    private <T> Set<T>  transformToSetWithNamespace(QueryResult result, Predicate predicate,
+                                            IterationType iterationType, boolean unique, boolean binary) {
+        return NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getUserCodeNamespace(),
+                () -> transformToSet(serializationService, result, predicate, iterationType, unique, binary));
     }
 
     @Override
@@ -831,7 +838,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         QueryResult result = executeQueryInternal(predicate, IterationType.KEY, Target.LOCAL_NODE);
         incrementOtherOperationsStat();
-        return transformToSet(serializationService, result, predicate, IterationType.KEY, false, false);
+        return transformToSetWithNamespace(result, predicate, IterationType.KEY, false, false);
     }
 
     @Override
@@ -963,10 +970,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkDoesNotContainPagingPredicate(predicate, "project");
 
         // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
+        Projection<? super Map.Entry<K, V>, R> clonedProjection =
+                NamespaceUtil.callWithNamespace(getNodeEngine(), mapConfig.getUserCodeNamespace(),
+                        () -> serializationService.toObject(serializationService.toData(projection)));
 
-        QueryResult result = executeQueryInternal(predicate, null, projection, IterationType.VALUE, target);
-        return transformToSet(serializationService, result, predicate, IterationType.VALUE, false, false);
+        QueryResult result = executeQueryInternal(predicate, null, clonedProjection, IterationType.VALUE, target);
+        return transformToSetWithNamespace(result, predicate, IterationType.VALUE, false, false);
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

@@ -176,7 +176,8 @@
                 }
               ]
             }
-          }
+          },
+          "user-code-namespace": "ns1"
         },
         "map-with-sql-query-cache": {
           "query-caches": {

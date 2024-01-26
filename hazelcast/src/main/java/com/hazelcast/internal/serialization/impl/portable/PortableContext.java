@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -34,6 +35,8 @@ public interface PortableContext {
     void setClassVersion(int factoryId, int classId, int version);
 
     ClassDefinition lookupClassDefinition(int factoryId, int classId, int version);
+
+    ClassDefinition lookupClassDefinition(PortableId portableId);
 
     ClassDefinition lookupClassDefinition(Data data) throws IOException;
 

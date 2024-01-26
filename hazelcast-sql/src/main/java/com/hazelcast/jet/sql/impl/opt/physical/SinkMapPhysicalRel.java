@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
                     (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                     (UpsertTargetDescriptor) table.getValueJetMetadata(),
                     true
-            ).get(evalContext.getSerializationService());
+            ).get(evalContext);
 
             return values.stream()
                     .flatMap(vs -> vs.toValues(evalContext))

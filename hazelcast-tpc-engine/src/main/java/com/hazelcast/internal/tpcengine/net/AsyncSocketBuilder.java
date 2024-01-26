@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,16 @@ public interface AsyncSocketBuilder {
      * @throws IllegalStateException when build already has been called.
      */
     AsyncSocketBuilder setReader(AsyncSocketReader reader);
+
+    /**
+     * Sets the AsyncSocketWriter.
+     *
+     * @param writer the AsyncSocketWriter
+     * @return this
+     * @throws NullPointerException  if reader is null.
+     * @throws IllegalStateException when build already has been called.
+     */
+    AsyncSocketBuilder setWriter(AsyncSocketWriter writer);
 
     /**
      * Builds the {@link AsyncSocket}.

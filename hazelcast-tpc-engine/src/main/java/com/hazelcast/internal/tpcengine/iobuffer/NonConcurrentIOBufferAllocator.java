@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.internal.tpcengine.iobuffer;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateBuffer;
 
 /**
  * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
@@ -49,7 +51,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
             for (int k = 0; k < bufs.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
-                ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
+                ByteBuffer buffer = allocateBuffer(direct, minSize);
                 IOBuffer buf = new IOBuffer(buffer);
                 buf.concurrent = false;
                 newAllocateCnt++;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,5 +46,10 @@ public abstract class AbstractMultiMapAllPartitionsMessageTask<P> extends Abstra
     protected MultiMapContainer getSampleContainer() {
         MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         return service.getOrCreateCollectionContainer(0, getDistributedObjectName());
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        return MultiMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

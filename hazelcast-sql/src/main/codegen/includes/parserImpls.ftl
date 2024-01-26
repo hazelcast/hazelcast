@@ -1,5 +1,5 @@
 <#--
-// Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -138,8 +138,10 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     name = CompoundIdentifier()
     columns = TypeColumns()
 
-    <OPTIONS>
-    sqlOptions = SqlOptions()
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
     {
         return new SqlCreateType(
             name,
@@ -814,6 +816,23 @@ SqlNode SqlExplainStatement() :
     ]
     stmt = ExtendedSqlQueryOrDml() {
         return new SqlExplainStatement(getPos(), stmt);
+    }
+}
+
+SqlNode SqlAnalyzeStatement() :
+{
+    SqlNode stmt;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+}
+{
+    <ANALYZE>
+    [
+        LOOKAHEAD(2)
+        <WITH> <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+    stmt = ExtendedSqlQueryOrDml() {
+        return new SqlAnalyzeStatement(getPos(), stmt, sqlOptions);
     }
 }
 

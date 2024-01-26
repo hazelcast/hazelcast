@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,8 +211,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 name -> null,
-                NoOpSqlSecurityContext.INSTANCE
-        );
+                null,
+                NoOpSqlSecurityContext.INSTANCE);
     }
 
     private static TableField field(String name) {

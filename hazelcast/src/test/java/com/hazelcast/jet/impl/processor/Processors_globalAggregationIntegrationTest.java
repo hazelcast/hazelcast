@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             Vertex aggregate = dag.newVertex("aggregate", Processors.aggregateP(summingOp))
                     .localParallelism(1);
             dag
-                    .edge(between(source, aggregate).distributed().allToOne("foo"))
+                    .edge(between(source, aggregate).distributed().allToOne())
                     .edge(between(aggregate, sink).isolated());
 
         } else {
@@ -87,7 +87,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             Vertex combine = dag.newVertex("combine", combineP(summingOp)).localParallelism(1);
             dag
                     .edge(between(source, accumulate))
-                    .edge(between(accumulate, combine).distributed().allToOne("foo"))
+                    .edge(between(accumulate, combine).distributed().allToOne())
                     .edge(between(combine, sink).isolated());
         }
 

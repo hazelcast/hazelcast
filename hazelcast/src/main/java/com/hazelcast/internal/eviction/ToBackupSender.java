@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 /**
  * Helper class to create and send backup expiration operations.
@@ -38,12 +39,12 @@ public final class ToBackupSender<RS> {
 
     private final String serviceName;
     private final OperationService operationService;
-    private final BiFunction<Integer, Integer, Boolean> backupOpFilter;
+    private final BiPredicate<Integer, Integer> backupOpFilter;
     private final BiFunction<RS, Collection<ExpiredKey>, Operation> backupOpSupplier;
 
     private ToBackupSender(String serviceName,
                            BiFunction<RS, Collection<ExpiredKey>, Operation> backupOpSupplier,
-                           BiFunction<Integer, Integer, Boolean> backupOpFilter,
+                           BiPredicate<Integer, Integer> backupOpFilter,
                            NodeEngine nodeEngine) {
         this.serviceName = serviceName;
         this.backupOpFilter = backupOpFilter;
@@ -53,7 +54,7 @@ public final class ToBackupSender<RS> {
 
     static <S> ToBackupSender<S> newToBackupSender(String serviceName,
                                                    BiFunction<S, Collection<ExpiredKey>, Operation> operationSupplier,
-                                                   BiFunction<Integer, Integer, Boolean> backupOpFilter,
+                                                   BiPredicate<Integer, Integer> backupOpFilter,
                                                    NodeEngine nodeEngine) {
         return new ToBackupSender<S>(serviceName, operationSupplier, backupOpFilter, nodeEngine);
     }
@@ -88,7 +89,7 @@ public final class ToBackupSender<RS> {
     public void invokeBackupExpiryOperation(Collection<ExpiredKey> expiredKeys, int backupReplicaCount,
                                             int partitionId, RS recordStore) {
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
-            if (backupOpFilter.apply(partitionId, replicaIndex)) {
+            if (backupOpFilter.test(partitionId, replicaIndex)) {
                 Operation operation = backupOpSupplier.apply(recordStore, expiredKeys);
                 operationService.invokeOnPartitionAsync(serviceName, operation, partitionId, replicaIndex);
             }

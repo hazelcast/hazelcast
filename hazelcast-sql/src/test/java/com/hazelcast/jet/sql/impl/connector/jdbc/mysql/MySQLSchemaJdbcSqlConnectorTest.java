@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
-
-import static java.util.stream.Collectors.joining;
 import static org.junit.Assume.assumeFalse;
 
 @Category(NightlyTest.class)
@@ -48,10 +45,4 @@ public class MySQLSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
                 && table.equals("table.with.dot"));
     }
 
-    @Override
-    protected String quote(String... parts) {
-        return Arrays.stream(parts)
-                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                     .collect(joining("."));
-    }
 }

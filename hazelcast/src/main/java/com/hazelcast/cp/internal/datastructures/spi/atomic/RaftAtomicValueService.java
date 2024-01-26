@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,6 +154,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         return atomicValues.size();
     }
 
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     public final V getAtomicValue(CPGroupId groupId, String name) {
         checkNotNull(groupId);
         checkNotNull(name);

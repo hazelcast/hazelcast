@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -54,13 +55,14 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         if (keyValueSequence == null || keyValueSequence.isEmpty()) {
             return;
         }
-        for (int i = 0; i < keyValueSequence.size();) {
+        long now = Clock.currentTimeMillis();
+        for (int i = 0; i < keyValueSequence.size(); ) {
             final Data key = keyValueSequence.get(i++);
             final Data value = keyValueSequence.get(i++);
             final Object object = mapServiceContext.toObject(value);
             if (includesExpirationTime) {
                 long expirationTime = (long) mapServiceContext.toObject(keyValueSequence.get(i++));
-                recordStore.putFromLoadBackup(key, object, expirationTime);
+                recordStore.putFromLoadBackup(key, object, expirationTime, now);
             } else {
                 recordStore.putFromLoadBackup(key, object);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AbstractBaseFactoryWithPropertiesConfig;
 import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
@@ -33,6 +34,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.internal.util.StringUtil;
@@ -274,8 +276,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
+        serializationConfig.setJavaSerializationFilterConfig(getJavaFilter(node));
+    }
+
+    protected void fillJavaSerializationFilter(final Node node, UserCodeNamespacesConfig userCodeNamespacesConfig) {
+        userCodeNamespacesConfig.setClassFilterConfig(getJavaFilter(node));
+    }
+
+    JavaSerializationFilterConfig getJavaFilter(final Node node) {
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
-        serializationConfig.setJavaSerializationFilterConfig(filterConfig);
         Node defaultsDisabledNode = getNamedItemNode(node, "defaults-disabled");
         boolean defaultsDisabled = defaultsDisabledNode != null && getBooleanValue(getTextContent(defaultsDisabledNode));
         filterConfig.setDefaultsDisabled(defaultsDisabled);
@@ -289,6 +298,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 filterConfig.setWhitelist(list);
             }
         }
+        return filterConfig;
     }
 
     protected ClassFilter parseClassFilterList(Node node) {
@@ -310,11 +320,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         return fillFactoryWithPropertiesConfig(node, new SSLConfig());
     }
 
-    protected <T extends AbstractFactoryWithPropertiesConfig<?>> T fillFactoryWithPropertiesConfig(Node node, T factoryConfig) {
-        Node enabledNode = getNamedItemNode(node, "enabled");
-        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
-        factoryConfig.setEnabled(enabled);
-
+    protected <T extends AbstractBaseFactoryWithPropertiesConfig<?>> T fillBaseFactoryWithPropertiesConfig(Node node,
+            T factoryConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("factory-class-name", nodeName)) {
@@ -323,6 +330,14 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 fillProperties(n, factoryConfig.getProperties());
             }
         }
+        return factoryConfig;
+    }
+
+    protected <T extends AbstractFactoryWithPropertiesConfig<?>> T fillFactoryWithPropertiesConfig(Node node, T factoryConfig) {
+        fillBaseFactoryWithPropertiesConfig(node, factoryConfig);
+        Node enabledNode = getNamedItemNode(node, "enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        factoryConfig.setEnabled(enabled);
         return factoryConfig;
     }
 

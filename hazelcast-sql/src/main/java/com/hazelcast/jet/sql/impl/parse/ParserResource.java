@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,9 @@ public interface ParserResource {
 
     @BaseMessage("Unknown job option: {0}")
     ExInst<SqlValidatorException> unknownJobOption(String key);
+
+    @BaseMessage("Job option is not supported for ANALYZE: {0}")
+    ExInst<SqlValidatorException> unsupportedAnalyzeJobOption(String key);
 
     @BaseMessage("The OR REPLACE option is required for CREATE SNAPSHOT")
     ExInst<SqlValidatorException> createSnapshotWithoutReplace();

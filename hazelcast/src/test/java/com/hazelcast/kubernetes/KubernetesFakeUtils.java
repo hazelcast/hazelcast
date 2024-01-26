@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
+import io.fabric8.kubernetes.api.model.EndpointAddress;
 import io.fabric8.kubernetes.api.model.EndpointAddressBuilder;
 import io.fabric8.kubernetes.api.model.EndpointPortBuilder;
 import io.fabric8.kubernetes.api.model.EndpointSubsetBuilder;
@@ -49,9 +50,11 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.fabric8.kubernetes.api.model.ServiceStatusBuilder;
+import io.fabric8.kubernetes.api.model.discovery.v1.Endpoint;
 import io.fabric8.kubernetes.api.model.discovery.v1.EndpointBuilder;
 import io.fabric8.kubernetes.api.model.discovery.v1.EndpointConditions;
 import io.fabric8.kubernetes.api.model.discovery.v1.EndpointPort;
+import io.fabric8.kubernetes.api.model.discovery.v1.EndpointSlice;
 import io.fabric8.kubernetes.api.model.discovery.v1.EndpointSliceBuilder;
 import io.fabric8.kubernetes.api.model.discovery.v1.EndpointSliceList;
 import io.fabric8.kubernetes.api.model.discovery.v1.EndpointSliceListBuilder;
@@ -59,6 +62,7 @@ import io.fabric8.kubernetes.api.model.discovery.v1.EndpointSliceListBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -215,6 +219,92 @@ class KubernetesFakeUtils {
                 .build();
     }
 
+    static Endpoints endpoints(Map<String, String> addressesTargetRef, Integer port) {
+        EndpointsBuilder endpointsBuilder = new EndpointsBuilder();
+        EndpointSubsetBuilder endpointSubsetBuilder = new EndpointSubsetBuilder();
+        for (Map.Entry<String, String> targetRefAddress : addressesTargetRef.entrySet()) {
+            endpointSubsetBuilder.addToAddresses(new EndpointAddressBuilder()
+                    .withIp(targetRefAddress.getKey())
+                    .withNewTargetRef()
+                    .withName(targetRefAddress.getValue())
+                    .endTargetRef()
+                    .build());
+        }
+        return endpointsBuilder.withSubsets(endpointSubsetBuilder.withPorts(new EndpointPortBuilder()
+                        .withPort(port)
+                        .withName(String.valueOf(port))
+                        .withProtocol("TCP")
+                        .build()).build())
+                .build();
+    }
+
+    static Endpoints endpoints(Map<String, String> addressesTargetRef, Map<String, String> notReadyAddressesTargetRef, Map<String, Integer> ports) {
+        EndpointsBuilder endpointsBuilder = new EndpointsBuilder();
+        EndpointSubsetBuilder endpointSubsetBuilder = new EndpointSubsetBuilder();
+        for (Map.Entry<String, String> targetRefAddress : addressesTargetRef.entrySet()) {
+            endpointSubsetBuilder.addToAddresses(new EndpointAddressBuilder()
+                    .withIp(targetRefAddress.getKey())
+                    .withNewTargetRef()
+                    .withName(targetRefAddress.getValue())
+                    .endTargetRef()
+                    .build());
+        }
+        for (Map.Entry<String, String> targetRefAddress : notReadyAddressesTargetRef.entrySet()) {
+            endpointSubsetBuilder.addToNotReadyAddresses(new EndpointAddressBuilder()
+                    .withIp(targetRefAddress.getKey())
+                    .withNewTargetRef()
+                    .withName(targetRefAddress.getValue())
+                    .endTargetRef()
+                    .build());
+        }
+        for (Map.Entry<String, Integer> port : ports.entrySet()) {
+            endpointSubsetBuilder.addToPorts(new EndpointPortBuilder()
+                    .withName(port.getKey())
+                    .withPort(port.getValue())
+                    .withProtocol("TCP")
+                    .build());
+        }
+        return endpointsBuilder.withSubsets(endpointSubsetBuilder.build()).build();
+    }
+
+    static Endpoints endpoints(String name, String address, Integer port) {
+        return new EndpointsBuilder().withNewMetadata()
+                .withName(name)
+                .endMetadata()
+                .addNewSubset()
+                .addNewAddress()
+                .withIp(address)
+                .endAddress()
+                .addNewPort()
+                .withPort(port)
+                .endPort()
+                .endSubset()
+                .build();
+    }
+
+    static EndpointAddress endpointAddress(String ip, String targetRefName, String nodeName) {
+        return new EndpointAddressBuilder()
+                .withIp(ip)
+                .withNewTargetRef()
+                .withName(targetRefName)
+                .endTargetRef()
+                .withNodeName(nodeName)
+                .build();
+    }
+
+    static Endpoints endpoints(String name, Integer port, EndpointAddress... addresses) {
+        return new EndpointsBuilder().withNewMetadata()
+                .withName(name)
+                .endMetadata()
+                .addNewSubset()
+                .withAddresses(addresses)
+                .addNewPort()
+                .withPort(port)
+                .endPort()
+                .endSubset()
+                .build();
+    }
+
     static EndpointsList endpointsList(Endpoints... endpoints) {
         return new EndpointsListBuilder().withItems(endpoints).build();
     }
@@ -228,6 +318,92 @@ class KubernetesFakeUtils {
                     .build());
         }
         return result;
+    }
+
+    static EndpointSlice endpointSlice(String name, List<String> addresses, List<Integer> ports, String targetRefName, String nodeName) {
+        EndpointSliceBuilder endpointSliceBuilder = new EndpointSliceBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(name)
+                        .addNewOwnerReference()
+                        .withApiVersion("v1")
+                        .withKind("Service")
+                        .withName(name)
+                        .withController()
+                        .endOwnerReference()
+                        .build())
+                .withAddressType("IPv4")
+                .withEndpoints(new EndpointBuilder()
+                        .withAddresses(addresses)
+                        .withNewTargetRef()
+                        .withKind("Pod")
+                        .withName(targetRefName)
+                        .endTargetRef()
+                        .withNodeName(nodeName)
+                        .withConditions(new EndpointConditions(true, true, false))
+                        .build());
+        for (Integer port : ports) {
+            endpointSliceBuilder.addToPorts(new EndpointPort("TCP", port.toString(), port, "TCP"));
+        }
+        return endpointSliceBuilder.build();
+    }
+
+    static Endpoint endpointSliceEndpoint(List<String> addresses, String targetRefName, String nodeName, boolean conditionReady) {
+        return new EndpointBuilder()
+                .withAddresses(addresses)
+                .withNewTargetRef()
+                .withKind("Pod")
+                .withName(targetRefName)
+                .endTargetRef()
+                .withNodeName(nodeName)
+                .withConditions(new EndpointConditions(conditionReady, conditionReady, false))
+                .build();
+    }
+
+    static EndpointSlice endpointSlice(String name, Map<String, Integer> ports, Endpoint... endpoints) {
+        EndpointSliceBuilder endpointSliceBuilder = new EndpointSliceBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(name)
+                        .addNewOwnerReference()
+                        .withApiVersion("v1")
+                        .withKind("Service")
+                        .withName(name)
+                        .withController()
+                        .endOwnerReference()
+                        .build())
+                .withAddressType("IPv4")
+                .withEndpoints(endpoints);
+        for (Map.Entry<String, Integer> port : ports.entrySet()) {
+            endpointSliceBuilder.addToPorts(new EndpointPort("TCP", port.getKey(), port.getValue(), "TCP"));
+        }
+        return endpointSliceBuilder.build();
+    }
+
+    static EndpointSlice endpointSlice(String name, List<Integer> ports, Endpoint... endpoints) {
+        Map<String, Integer> portMap = new HashMap<>();
+        for (Integer port : ports) {
+            portMap.put(port.toString(), port);
+        }
+        return endpointSlice(name, portMap, endpoints);
+    }
+
+    static EndpointSlice endpointSlice(String name, List<String> addresses, List<Integer> ports) {
+        EndpointSliceBuilder endpointSliceBuilder = new EndpointSliceBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(name)
+                        .build())
+                .withAddressType("IPv4")
+                .withEndpoints(new EndpointBuilder()
+                        .withAddresses(addresses)
+                        .withConditions(new EndpointConditions(true, true, false))
+                        .build());
+        for (Integer port : ports) {
+            endpointSliceBuilder.addToPorts(new EndpointPort("TCP", port.toString(), port, "TCP"));
+        }
+        return endpointSliceBuilder.build();
+    }
+
+    static EndpointSliceList endpointSliceList(EndpointSlice... endpointSlices) {
+        return new EndpointSliceListBuilder().withItems(endpointSlices).build();
     }
 
     static EndpointSliceList endpointSliceList(List<Integer> ports, String... ips) {
@@ -248,10 +424,10 @@ class KubernetesFakeUtils {
                 .build();
     }
 
-
     static Service serviceLb(ServicePort port, String lbIp) {
         return new ServiceBuilder()
                 .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
                         .withPorts(port)
                         .build())
                 .withStatus(new ServiceStatusBuilder()
@@ -267,6 +443,7 @@ class KubernetesFakeUtils {
     static Service serviceLbHost(ServicePort port, String hostname) {
         return new ServiceBuilder()
                 .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
                         .withPorts(port)
                         .build())
                 .withStatus(new ServiceStatusBuilder()
@@ -279,10 +456,20 @@ class KubernetesFakeUtils {
                 .build();
     }
 
+    static Service serviceLbWithoutAddr(ServicePort... port) {
+        return new ServiceBuilder()
+                .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_LOADBALANCER)
+                        .withPorts(port)
+                        .build())
+                .build();
+    }
+
     static Service service(ServicePort... ports) {
         return new ServiceBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("service").build())
                 .withSpec(new ServiceSpecBuilder()
+                        .withType(KubernetesClient.SERVICE_TYPE_NODEPORT)
                         .withPorts(ports)
                         .build())
                 .build();

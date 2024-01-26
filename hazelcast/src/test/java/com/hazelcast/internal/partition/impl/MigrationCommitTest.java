@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -504,7 +504,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1);
 
         Throwable t = exceptionRef.get();
-        Supplier<String> messageSupplier = () -> t == null ? "" : ExceptionUtil.stackTraceToString(t);
+        Supplier<String> messageSupplier = () -> t == null ? "" : ExceptionUtil.toString(t);
         assertNull(messageSupplier.get(), t);
     }
 

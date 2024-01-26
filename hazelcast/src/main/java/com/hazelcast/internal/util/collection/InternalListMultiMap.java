@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,11 +50,7 @@ public class InternalListMultiMap<K, V> {
      * @param value
      */
     public void put(K key, V value) {
-        List<V> values = backingMap.get(key);
-        if (values == null) {
-            values = new ArrayList<V>();
-            backingMap.put(key, values);
-        }
+        List<V> values = backingMap.computeIfAbsent(key, x -> new ArrayList<>());
         values.add(value);
     }
 

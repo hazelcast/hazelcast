@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
+
     @Test
     public void selectAllFromTableWhereIdColumn() {
         assertRowsAnyOrder(
@@ -159,6 +160,31 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT * FROM " + tableName + " WHERE fullName = 'name-0'",
                 newArrayList(
                         new Row(0, "name-0")
+                )
+        );
+    }
+
+    @Test
+    public void selectColumnDifferentTypeInMappingAndTable() throws Exception {
+        tableName = randomTableName();
+        createTable(tableName);
+        insertItems(tableName, ITEM_COUNT);
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id VARCHAR, " // The type in database table is INT, but it's convertible
+                        + " name VARCHAR "
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + tableName,
+                newArrayList(
+                        new Row("0", "name-0"),
+                        new Row("1", "name-1"),
+                        new Row("2", "name-2"),
+                        new Row("3", "name-3"),
+                        new Row("4", "name-4")
                 )
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,8 @@ public final class AccumulatorSweeper {
                     accumulator.poll(handler, 0, TimeUnit.SECONDS);
 
                     // send end event
-                    QueryCacheEventData eventData = createEndOfSequenceEvent(partitionId);
+                    QueryCacheEventData eventData = createEndOfSequenceEvent(partitionId,
+                            accumulatorRegistry.getInfo().getMapName());
                     processor.process(eventData);
                 }
             }
@@ -69,8 +70,6 @@ public final class AccumulatorSweeper {
     }
 
     public static void flushAccumulator(PublisherContext publisherContext, int partitionId) {
-        QueryCacheEventData endOfSequenceEvent = createEndOfSequenceEvent(partitionId);
-
         QueryCacheContext context = publisherContext.getContext();
         EventPublisherAccumulatorProcessor processor
                 = new EventPublisherAccumulatorProcessor(context.getQueryCacheEventService());
@@ -93,14 +92,14 @@ public final class AccumulatorSweeper {
                 // give 0 to delay-time in order to fetch all events in the accumulator
                 accumulator.poll(handler, 0, TimeUnit.SECONDS);
                 // send end event
+                QueryCacheEventData endOfSequenceEvent = createEndOfSequenceEvent(partitionId,
+                        accumulator.getInfo().getMapName());
                 processor.process(endOfSequenceEvent);
             }
         }
     }
 
     public static void sendEndOfSequenceEvents(PublisherContext publisherContext, int partitionId) {
-        QueryCacheEventData endOfSequenceEvent = createEndOfSequenceEvent(partitionId);
-
         QueryCacheContext context = publisherContext.getContext();
         EventPublisherAccumulatorProcessor processor
                 = new EventPublisherAccumulatorProcessor(context.getQueryCacheEventService());
@@ -111,6 +110,7 @@ public final class AccumulatorSweeper {
             for (AccumulatorInfo accumulatorInfo : oneMapsAccumulators.values()) {
                 if (accumulatorInfo.getDelaySeconds() == 0) {
                     processor.setInfo(accumulatorInfo);
+                    QueryCacheEventData endOfSequenceEvent = createEndOfSequenceEvent(partitionId, accumulatorInfo.getMapName());
                     processor.process(endOfSequenceEvent);
                 }
             }
@@ -137,8 +137,9 @@ public final class AccumulatorSweeper {
      * After this event received by subscriber-side, subscriber resets its next-expected-sequence counter to zero for the
      * corresponding partition.
      */
-    private static QueryCacheEventData createEndOfSequenceEvent(int partitionId) {
+    private static QueryCacheEventData createEndOfSequenceEvent(int partitionId, String mapName) {
         return QueryCacheEventDataBuilder.newQueryCacheEventDataBuilder(false)
-                .withSequence(END_SEQUENCE).withPartitionId(partitionId).build();
+                .withSequence(END_SEQUENCE).withPartitionId(partitionId)
+                .withMapName(mapName).build();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 
-import java.util.function.Function;
-
-import static java.lang.Boolean.TRUE;
+import java.util.function.Predicate;
 
 /**
  * Utils for invalidations.
@@ -28,15 +26,15 @@ import static java.lang.Boolean.TRUE;
 public final class InvalidationUtils {
 
     public static final long NO_SEQUENCE = -1L;
-    public static final Function<EventRegistration, Boolean> TRUE_FILTER = new TrueFilter();
+    public static final Predicate<EventRegistration> TRUE_FILTER = new TrueFilter();
 
     private InvalidationUtils() {
     }
 
-    private static class TrueFilter implements Function<EventRegistration, Boolean> {
+    private static class TrueFilter implements Predicate<EventRegistration> {
         @Override
-        public Boolean apply(EventRegistration eventRegistration) {
-            return TRUE;
+        public boolean test(EventRegistration eventRegistration) {
+            return true;
         }
     }
 }

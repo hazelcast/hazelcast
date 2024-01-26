@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,11 +66,7 @@ public final class Bitmap<E> {
             Object value = values.next();
             assert value != null;
 
-            SparseBitSet bitSet = bitSets.get(value);
-            if (bitSet == null) {
-                bitSet = new SparseBitSet();
-                bitSets.put(value, bitSet);
-            }
+            SparseBitSet bitSet = bitSets.computeIfAbsent(value, x -> new SparseBitSet());
             operationStats.onEntryAdded(ZeroCost.ZERO_COST);
             bitSet.add(key);
         }
@@ -103,11 +99,7 @@ public final class Bitmap<E> {
             Object value = newValues.next();
             assert value != null;
 
-            SparseBitSet bitSet = bitSets.get(value);
-            if (bitSet == null) {
-                bitSet = new SparseBitSet();
-                bitSets.put(value, bitSet);
-            }
+            SparseBitSet bitSet = bitSets.computeIfAbsent(value, x -> new SparseBitSet());
             operationStats.onEntryAdded(ZeroCost.ZERO_COST);
             bitSet.add(key);
         }

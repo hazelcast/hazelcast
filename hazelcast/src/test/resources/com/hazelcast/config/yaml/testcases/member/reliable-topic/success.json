@@ -8,7 +8,8 @@
           "read-batch-size": 10,
           "message-listeners": [
             "com.hazelcast.examples.MessageListener"
-          ]
+          ],
+          "user-code-namespace": "ns1"
         }
       }
     }

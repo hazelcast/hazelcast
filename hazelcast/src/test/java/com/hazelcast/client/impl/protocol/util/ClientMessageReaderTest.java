@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -176,14 +175,14 @@ public class ClientMessageReaderTest {
         int capacity = buffer.capacity();
         // Set limit to a small value so that we can simulate
         // that the frame length and flags are not read yet.
-        upcast(buffer).limit(4);
+        buffer.limit(4);
 
         ClientMessageReader reader = new ClientMessageReader(-1);
 
         // should not be able to read with just 4 bytes of data
         assertFalse(reader.readFrom(buffer, true));
 
-        upcast(buffer).limit(capacity);
+        buffer.limit(capacity);
 
         // should be able to read when the rest of the data comes
         assertTrue(reader.readFrom(buffer, true));
@@ -208,7 +207,7 @@ public class ClientMessageReaderTest {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[message.getFrameLength()]);
         ClientMessageWriter writer = new ClientMessageWriter();
         writer.writeTo(buffer, message);
-        upcast(buffer).flip();
+        buffer.flip();
         return buffer;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -265,4 +266,15 @@ public class JdbcDataConnectionTest {
         }
     }
 
+    public static DataSource pooledDataSource(JdbcDataConnection dataConnection) {
+        return dataConnection.pooledDataSource();
+    }
+
+    public static boolean isClosed(DataSource dataSource) {
+        try {
+            return dataSource.unwrap(HikariDataSource.class).isClosed();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

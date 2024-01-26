@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +49,7 @@ public class PlacementAwareMemberGroupFactory extends BackupSafeMemberGroupFacto
                         + "A group name indicating the placement group must be provided with "
                         + "PLACEMENT_AWARE partition group.");
             }
-            MemberGroup group = groups.get(placementInfo);
-            if (group == null) {
-                group = new DefaultMemberGroup();
-                groups.put(placementInfo, group);
-            }
+            MemberGroup group = groups.computeIfAbsent(placementInfo, x -> new DefaultMemberGroup());
             group.addMember(member);
         }
         return new HashSet<>(groups.values());

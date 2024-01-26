@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.checkEquals;
+import static com.hazelcast.jet.sql.SqlTestSupport.createExpressionEvalContext;
+import static com.hazelcast.jet.sql.SqlTestSupport.serializeAndCheck;
+import static com.hazelcast.jet.sql.impl.index.IndexFilterTestSupport.composite;
+import static com.hazelcast.jet.sql.impl.index.IndexFilterTestSupport.intValue;
+import static com.hazelcast.jet.sql.impl.index.IndexFilterTestSupport.intValues;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IndexEqualsFilterTest extends IndexFilterTestSupport {
+public class IndexEqualsFilterTest {
     @Test
     public void testContent() {
         IndexFilterValue value = intValue(1, true);

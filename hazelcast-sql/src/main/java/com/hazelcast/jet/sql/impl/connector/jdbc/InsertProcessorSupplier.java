@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.security.Permission;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
-import static java.util.Collections.singletonList;
 
 public class InsertProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
@@ -63,9 +57,9 @@ public class InsertProcessorSupplier
                     query,
                     dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
+                        TypeResolver typeResolver = JdbcSqlConnector.typeResolver(ps.getConnection());
                         for (int j = 0; j < row.getFieldCount(); j++) {
-                            // JDBC parameterIndex is 1-based, so j + 1
-                            ps.setObject(j + 1, row.get(j));
+                            typeResolver.setObject(ps, row.get(j), j);
                         }
                     },
                     SQLExceptionUtils::isNonTransientException,
@@ -75,15 +69,6 @@ public class InsertProcessorSupplier
             processors.add(processor);
         }
         return processors;
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-
-
-    @Nullable
-    @Override
-    public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_WRITE));
     }
 
     @Override

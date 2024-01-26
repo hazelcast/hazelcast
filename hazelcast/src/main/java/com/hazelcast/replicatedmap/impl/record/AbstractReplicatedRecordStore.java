@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -307,6 +307,14 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         return new RecordIterator(getStorage().entrySet().iterator());
     }
 
+    @Override
+    public ReplicatedRecord<K, V> putRecord(RecordMigrationInfo record) {
+        InternalReplicatedMapStorage<K, V> storage = getStorage();
+        ReplicatedRecord<K, V> oldRecord = putRecord(storage, record);
+        storage.incrementVersion();
+        return oldRecord;
+    }
+
     public void putRecords(Collection<RecordMigrationInfo> records, long version) {
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         for (RecordMigrationInfo record : records) {
@@ -316,7 +324,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     }
 
     @SuppressWarnings("unchecked")
-    private void putRecord(InternalReplicatedMapStorage<K, V> storage, RecordMigrationInfo record) {
+    private ReplicatedRecord<K, V> putRecord(InternalReplicatedMapStorage<K, V> storage, RecordMigrationInfo record) {
         K key = (K) marshall(record.getKey());
         V value = (V) marshall(record.getValue());
         ReplicatedRecord<K, V> newRecord = buildReplicatedRecord(key, value, record.getTtl());
@@ -324,10 +332,11 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         newRecord.setCreationTime(record.getCreationTime());
         newRecord.setLastAccessTime(record.getLastAccessTime());
         newRecord.setUpdateTime(record.getLastUpdateTime());
-        storage.put(key, newRecord);
+        ReplicatedRecord<K, V> oldRecord = storage.put(key, newRecord);
         if (record.getTtl() > 0) {
             scheduleTtlEntry(record.getTtl(), key, value);
         }
+        return oldRecord;
     }
 
     private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {

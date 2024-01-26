@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     public boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
         switch (provenance) {
             case WAN:
-                return mapContainer.isPersistWanReplicatedData();
+                return mapContainer.getWanContext().isPersistWanReplicatedData();
             case NOT_WAN:
                 return true;
             default:

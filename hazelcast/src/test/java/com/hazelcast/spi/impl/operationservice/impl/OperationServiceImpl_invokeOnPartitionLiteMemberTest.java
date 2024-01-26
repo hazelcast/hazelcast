@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.singletonList;
-import static junit.framework.Assert.assertFalse;
+import static org.junit.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -53,7 +53,7 @@ import static org.junit.Assert.fail;
 public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         extends HazelcastTestSupport {
 
-    private Config liteMemberConfig = new Config().setLiteMember(true);
+    private final Config liteMemberConfig = new Config().setLiteMember(true);
 
     private Operation operation;
 

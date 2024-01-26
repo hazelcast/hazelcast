@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,13 +44,20 @@ public final class PermissionsUtil {
     }
 
     @Nullable
-    public static Permission checkRemote(@Nullable String clientXml, @Nonnull Permission permission) {
+    private static Permission checkRemote(@Nullable String clientXml, @Nonnull Permission permission) {
         if (clientXml == null) {
             return permission;
         }
         return null;
     }
 
+    @Nullable
+    private static Permission checkRemote(boolean isRemote, @Nonnull Permission permission) {
+        if (isRemote) {
+            return null;
+        }
+        return permission;
+    }
 
     @Nullable
     public static Permission mapUpdatePermission(@Nullable String clientXml, @Nonnull String name) {
@@ -59,8 +66,24 @@ public final class PermissionsUtil {
     }
 
     @Nullable
-    public static Permission mapPutPermission(@Nullable String clientXml, @Nonnull String name) {
-        return checkRemote(clientXml, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
+    public static Permission mapUpdatePermission(boolean isRemote, @Nonnull String name) {
+        return checkRemote(isRemote,
+                new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ));
+    }
+
+    @Nonnull
+    public static Permission mapUpdatePermission(@Nonnull String name) {
+        return new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ);
+    }
+
+    @Nullable
+    public static Permission mapPutPermission(boolean isRemote, @Nonnull String name) {
+        return checkRemote(isRemote, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
+    }
+
+    @Nonnull
+    public static Permission mapPutPermission(@Nonnull String name) {
+        return new MapPermission(name, ACTION_CREATE, ACTION_PUT);
     }
 
     @Nullable

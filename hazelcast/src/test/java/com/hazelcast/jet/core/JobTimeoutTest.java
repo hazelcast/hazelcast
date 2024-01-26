@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,11 +89,17 @@ public class JobTimeoutTest extends JetTestSupport {
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
-        assertJobStatusEventually(job, RUNNING);
-        job.suspend();
+        // If the job times out before or during execution of these operations
+        // catch and ignore the error to continue testing. The job should eventually finish with CancellationException
+        // due to timeout
+        try {
+            assertJobStatusEventually(job, RUNNING, 10);
+            job.suspend();
 
-        assertJobStatusEventually(job, SUSPENDED);
-        job.resume();
+            assertJobStatusEventually(job, SUSPENDED, 10);
+            job.resume();
+        } catch (AssertionError | IllegalStateException ignored) {
+        }
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(FAILED, job.getStatus());
@@ -106,11 +112,16 @@ public class JobTimeoutTest extends JetTestSupport {
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
-        assertJobStatusEventually(job, RUNNING);
-        job.suspend();
+        // If the job times out before or during execution of these operations
+        // catch and ignore the error to continue testing. The job should eventually finish with CancellationException
+        // due to timeout
+        try {
+            assertJobStatusEventually(job, RUNNING);
+            job.suspend();
 
-        assertJobStatusEventually(job, SUSPENDED);
-
+            assertJobStatusEventually(job, SUSPENDED);
+        } catch (AssertionError | IllegalStateException ignored) {
+        }
         assertThrows(CancellationException.class, job::join);
         assertEquals(FAILED, job.getStatus());
         assertFalse(job.isUserCancelled());

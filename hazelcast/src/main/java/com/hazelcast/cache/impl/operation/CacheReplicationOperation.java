@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.ServiceNamespace;
 
@@ -41,6 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
@@ -144,11 +148,14 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         int confSize = configs.size();
         out.writeInt(confSize);
         for (CacheConfig config : configs) {
+            // RU_COMPAT_5_3
+            if (out.getVersion().isGreaterOrEqual(V5_4)) {
+                out.writeString(config.getUserCodeNamespace());
+            }
             if (!classesAlwaysAvailable) {
                 out.writeObject(PreJoinCacheConfig.of(config));
             } else {
@@ -180,12 +187,18 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int confSize = in.readInt();
+        // Configs can contain listener configs, which need User Code Namespace awareness
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
         for (int i = 0; i < confSize; i++) {
-            final CacheConfig config = in.readObject();
+            String namespace = null;
+            // RU_COMPAT_5_3
+            if (in.getVersion().isGreaterOrEqual(V5_4)) {
+                namespace = in.readString();
+            }
+            final CacheConfig config = NamespaceUtil.callWithNamespace(engine, namespace, in::readObject);
             if (!classesAlwaysAvailable) {
                 configs.add(PreJoinCacheConfig.asCacheConfig(config));
             } else {

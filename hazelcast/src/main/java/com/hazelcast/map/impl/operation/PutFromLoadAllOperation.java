@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
@@ -34,7 +35,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -54,7 +54,9 @@ public class PutFromLoadAllOperation extends MapOperation
 
     public PutFromLoadAllOperation(String name, List<Data> loadingSequence, boolean includesExpirationTime) {
         super(name);
-        checkFalse(isEmpty(loadingSequence), "key-value sequence cannot be empty or null");
+
+        assert !isEmpty(loadingSequence) : "key-value sequence cannot be empty or null";
+
         this.loadingSequence = loadingSequence;
         this.includesExpirationTime = includesExpirationTime;
     }
@@ -64,6 +66,7 @@ public class PutFromLoadAllOperation extends MapOperation
         boolean hasInterceptor = !mapContainer.getInterceptorRegistry()
                 .getInterceptors().isEmpty();
 
+        long now = Clock.currentTimeMillis();
         List<Data> loadingSequence = this.loadingSequence;
         for (int i = 0; i < loadingSequence.size(); ) {
             Data key = loadingSequence.get(i++);
@@ -76,7 +79,7 @@ public class PutFromLoadAllOperation extends MapOperation
 
             if (includesExpirationTime) {
                 long expirationTime = (long) mapServiceContext.toObject(loadingSequence.get(i++));
-                recordStore.putFromLoad(key, value, expirationTime, getCallerAddress());
+                recordStore.putFromLoad(key, value, expirationTime, getCallerAddress(), now);
             } else {
                 recordStore.putFromLoad(key, value, getCallerAddress());
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.test.starter.hz3;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.topic.ITopic;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,7 +29,7 @@ import java.util.List;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({QuickTest.class})
+@Category(NightlyTest.class)
 public class Hazelcast3StarterTest {
 
     private static final String HZ3_MEMBER_CONFIG =
@@ -65,14 +65,9 @@ public class Hazelcast3StarterTest {
         HazelcastInstance instance = Hazelcast3Starter.newHazelcastInstance(HZ3_MEMBER_CONFIG);
         ITopic<String> topic = instance.getTopic("my-topic");
         List<String> result = new ArrayList<>();
-        topic.addMessageListener(message -> {
-            result.add(message.getMessageObject());
-        });
+        topic.addMessageListener(message -> result.add(message.getMessageObject()));
         topic.publish("value");
-        assertTrueEventually(
-                () -> assertThat(result).contains("value"),
-                5
-        );
+        assertTrueEventually(() -> assertThat(result).contains("value"));
 
         instance.shutdown();
     }

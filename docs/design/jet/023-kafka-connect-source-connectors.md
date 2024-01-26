@@ -111,7 +111,7 @@ To use any Kafka Connect Connector as a source in your pipeline you need to crea
 calling `KafkaConnectSources.connect()`
 method with the Properties object. After that you can use your pipeline like any other source in the Jet pipeline.
 The source will emit items in `SourceRecord` type from Kafka Connect API, where you can access the key and value along
-with their corresponding schemas. Hazelcast Jet will instantiate a single task for the specified source in the cluster.
+with their corresponding schemas. Hazelcast Jet will instantiate **"tasks.max"** number of tasks for the specified source in the cluster.
 You need to make sure the source connector is available on the classpath, either by putting its jar to the classpath of
 the members or by uploading the connector jar as a part for the job config.
 
@@ -188,6 +188,16 @@ There are also nice to have features:
 - Add Kafka connect metrics
 - Add benchmarks for Kafka connect source
 - Add Soak tests for Kafka connect source
+
+### Task Distribution
+**TaskMaxProcessorMetaSupplier**  evenly distributes the number of tasks specified in the properties input to cluster members.    
+It creates **TaskMaxProcessorSupplier** objects and assigns them a processor order number.   
+The first processor with **processor order 0** is the **master** processor    
+The **master processor** distributes task assignments to all other processors via a 
+**Reliable Topic** named **"__jet." + executionId**  
+**All** processors subscribe to this Reliable Topic  
+A special listener is used to get the only last item if available, or to wait for the next item  
+A processor starts polling Kafka Connector when it receives its task assignment
 
 #### Fault-Tolerance
 

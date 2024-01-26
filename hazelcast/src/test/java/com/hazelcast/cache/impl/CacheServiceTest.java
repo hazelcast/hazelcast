@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -35,7 +38,9 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -45,8 +50,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -65,6 +72,7 @@ public class CacheServiceTest {
     private NodeEngine mockNodeEngine;
     private CountDownLatch latch;
     private ExecutorService executorService;
+    private Config mockConfig;
 
     @Before
     public void setup() {
@@ -73,6 +81,8 @@ public class CacheServiceTest {
         ManagedExecutorService executorService = mock(ManagedExecutorService.class);
         when(executionService.getExecutor(anyString())).thenReturn(executorService);
         mockNodeEngine = Mockito.mock(NodeEngine.class);
+        mockConfig = Mockito.mock(Config.class);
+        when(mockNodeEngine.getConfig()).thenReturn(mockConfig);
         when(mockNodeEngine.getLogger(any(Class.class))).thenReturn(Logger.getLogger(CacheServiceTest.class));
         when(mockNodeEngine.getExecutionService()).thenReturn(executionService);
 
@@ -153,6 +163,41 @@ public class CacheServiceTest {
             // assert the CacheConfigFuture was not put in the configs map
             assertNull(cacheService.getCacheConfig(PREFIXED_CACHE_NAME));
         }
+    }
+
+    @Test
+    public void testIsNamespaceReferencedWithHotRestart_withCacheConfigs_true() {
+        CacheService cacheService = new TestCacheService(mockNodeEngine, true);
+        when(mockConfig.getCacheConfigs()).thenReturn(Map.of());
+        CompletableFuture<CacheConfig> completableFuture = CompletableFuture.supplyAsync(() -> {
+            CacheConfig cacheConfig = newCacheConfig();
+            cacheConfig.setUserCodeNamespace("ns1");
+            cacheConfig.getHotRestartConfig().setEnabled(true);
+            return cacheConfig;
+        });
+
+        cacheService.configs.put(PREFIXED_CACHE_NAME, completableFuture);
+        assertTrue(cacheService.isNamespaceReferencedWithHotRestart("ns1"));
+    }
+
+    @Test
+    public void testIsNamespaceReferencedWithHotRestart_withNoCacheConfigs_false() {
+        CacheService cacheService = new TestCacheService(mockNodeEngine, true);
+        when(mockConfig.getCacheConfigs()).thenReturn(Map.of());
+        assertFalse(cacheService.isNamespaceReferencedWithHotRestart("ns1"));
+    }
+
+    @Test
+    public void testIsNamespaceReferencedWithHotRestart_withSimpleCacheConfigs_true() {
+        CacheService cacheService = new TestCacheService(mockNodeEngine, true);
+        CacheSimpleConfig cacheConfigMock = Mockito.mock(CacheSimpleConfig.class);
+        DataPersistenceConfig dataPersistenceConfigMock = Mockito.mock(DataPersistenceConfig.class);
+        when(dataPersistenceConfigMock.isEnabled()).thenReturn(true);
+        when(cacheConfigMock.getDataPersistenceConfig()).thenReturn(dataPersistenceConfigMock);
+        when(cacheConfigMock.getUserCodeNamespace()).thenReturn("ns1");
+        when(cacheConfigMock.getDataPersistenceConfig()).thenReturn(dataPersistenceConfigMock);
+        when(mockConfig.getCacheConfigs()).thenReturn(Map.of("test-cache", cacheConfigMock));
+        assertTrue(cacheService.isNamespaceReferencedWithHotRestart("ns1"));
     }
 
     public static class PutCacheConfigRunnable implements Callable<CacheConfig> {

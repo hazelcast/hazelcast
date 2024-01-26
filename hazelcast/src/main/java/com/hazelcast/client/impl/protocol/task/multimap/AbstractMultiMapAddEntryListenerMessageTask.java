@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,13 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -39,14 +42,14 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
         extends AbstractAddListenerMessageTask<P> {
 
-    public AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected CompletableFuture<UUID> processInternal() {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        EntryAdapter listener = new MultiMapListener();
+        EntryAdapter<?, ?> listener = new MultiMapListener();
 
         final String name = getDistributedObjectName();
         Data key = getKey();
@@ -72,10 +75,15 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
         return new MultiMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = MultiMapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
 
     @Override
     public String getMethodName() {
-        return "addEntryListener";
+        return SecurityInterceptorConstants.ADD_ENTRY_LISTENER;
     }
 
     public Data getKey() {
@@ -91,7 +99,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
                     throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
                             + event.getClass().getSimpleName());
                 }
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                DataAwareEntryEvent<?, ?> dataAwareEntryEvent = (DataAwareEntryEvent<?, ?>) event;
                 Data key = dataAwareEntryEvent.getKeyData();
                 Data value = dataAwareEntryEvent.getNewValueData();
                 Data oldValue = dataAwareEntryEvent.getOldValueData();
@@ -117,4 +125,9 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
 
     protected abstract ClientMessage encodeEvent(Data key, Data value, Data oldValue,
                                                  int type, UUID uuid, int numberOfEntriesAffected);
+
+    @Override
+    protected String getUserCodeNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

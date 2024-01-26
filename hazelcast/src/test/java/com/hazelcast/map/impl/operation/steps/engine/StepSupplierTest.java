@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -252,7 +252,7 @@ public class StepSupplierTest extends HazelcastTestSupport {
         List<Step> actualSteps = new ArrayList<>();
         for (int i = 0; i < headSteps; i++) {
             Step currentStep = stepSupplier.getCurrentStep();
-            actualSteps.add(((AppendAsNewHeadStep) currentStep).getAppendedStep());
+            actualSteps.add(((LinkerStep) currentStep).getFirstStep());
 
             // execute current step to move next one.
             Runnable nextStepsRunnable = stepSupplier.get();

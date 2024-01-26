@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -38,14 +39,25 @@ public final class QueryResultUtils {
         Predicate unwrappedPredicate = unwrapPartitionPredicate(predicate);
 
         if (unwrappedPredicate instanceof PagingPredicate) {
+            // We need an instance of PagingPredicateImpl for later use, so prepare it now
+            PagingPredicate pagingPredicate = (PagingPredicate) unwrappedPredicate;
+            PagingPredicateImpl pagingPredicateImpl;
+            if (unwrappedPredicate instanceof PagingPredicateImpl) {
+                pagingPredicateImpl = (PagingPredicateImpl) unwrappedPredicate;
+            } else {
+                Predicate simplePredicate = unwrappedPredicate::apply;
+                // We provide Namespace wrapping to parent calls, we don't need to know it within the PagingPredicateImpl
+                pagingPredicateImpl = new PagingPredicateImpl(simplePredicate, pagingPredicate.getComparator(),
+                        pagingPredicate.getPageSize());
+            }
             Set result = new QueryResultCollection(ss, IterationType.ENTRY, binary, unique, queryResult);
-            return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) unwrappedPredicate, iterationType);
+            return getSortedQueryResultSet(new ArrayList(result), pagingPredicateImpl, iterationType);
         } else {
             return new QueryResultCollection(ss, iterationType, binary, unique, queryResult);
         }
     }
 
-    private static Predicate unwrapPartitionPredicate(Predicate predicate) {
-        return predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate;
+    private static <K, V> Predicate<K, V> unwrapPartitionPredicate(Predicate<K, V> predicate) {
+        return predicate instanceof PartitionPredicate ? ((PartitionPredicate<K, V>) predicate).getTarget() : predicate;
     }
 }

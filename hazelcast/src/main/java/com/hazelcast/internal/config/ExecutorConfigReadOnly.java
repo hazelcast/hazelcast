@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ExecutorConfig;
+
+import javax.annotation.Nullable;
 
 /**
  * Configuration for Executor(Read Only)
@@ -49,6 +51,11 @@ public class ExecutorConfigReadOnly extends ExecutorConfig {
 
     @Override
     public ExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+    }
+
+    @Override
+    public ExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 }

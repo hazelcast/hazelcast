@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Set;
  * Defines a class schema for {@link Portable} classes. It allows querying of field names, types, class IDs etc.
  * It can be created manually using {@link ClassDefinitionBuilder} or on demand during deserialization.
  *
- * @see com.hazelcast.nio.serialization.Portable
+ * @see Portable
  * @see ClassDefinitionBuilder
  */
 public interface ClassDefinition {
@@ -104,4 +104,12 @@ public interface ClassDefinition {
      * @return version
      */
     int getVersion();
+
+    /**
+     * @return portable ID of this class
+     * @since 5.4
+     */
+    default PortableId getPortableId() {
+        return new PortableId(getFactoryId(), getClassId(), getVersion());
+    }
 }

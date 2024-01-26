@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         super(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     protected JobStatus getStatus0() {
         assert !isLightJob();
         try {
@@ -95,7 +96,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobSuspensionCause getSuspensionCause() {
         checkNotLightJob("suspensionCause");
         try {
@@ -105,7 +107,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobMetrics getMetrics() {
         checkNotLightJob("metrics");
         try {
@@ -167,16 +170,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        return doExportSnapshot(name, true);
-    }
-
-    @Override
-    public JobStateSnapshot exportSnapshot(String name) {
-        return doExportSnapshot(name, false);
-    }
-
-    private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+    protected JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         checkNotLightJob("export snapshot");
         JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -658,7 +658,10 @@ class RaftGroupMembershipManager {
             CPGroupId groupId = null;
             int min = maxLeaderships;
             for (CPGroupSummary group : groups) {
-                for (CPMember member : group.members()) {
+                List<CPMember> groupMembers = new ArrayList<>(group.members());
+                // If the destination member is unavailable minimise the probability of using it next time
+                Collections.shuffle(groupMembers);
+                for (CPMember member : groupMembers) {
                     Collection<CPGroupId> g = leaderships.get(member);
                     if (g == null) {
                         continue;

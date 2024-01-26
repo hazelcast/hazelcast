@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
@@ -156,6 +157,11 @@ public class CPSubsystemConfig {
      * See {@link #dataLoadTimeoutSeconds}
      */
     public static final int DEFAULT_DATA_LOAD_TIMEOUT_SECONDS = 2 * 60;
+
+    /**
+     * The default limit number of {@link com.hazelcast.cp.CPMap} that can be created.
+     */
+    public static final int DEFAULT_CP_MAP_LIMIT = 10;
 
     /**
      * Number of CP members to initialize CP Subsystem. It is 0 by default,
@@ -303,6 +309,19 @@ public class CPSubsystemConfig {
 
     private final ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
+    /**
+     * Configurations for {@link com.hazelcast.cp.CPMap} instances.
+     */
+    private Map<String, CPMapConfig> cpMapConfigs = new ConcurrentHashMap<>();
+
+    /**
+     * The limit of {@link com.hazelcast.cp.CPMap} that can be created. If set, it must be
+     * a positive number. Please take into consideration the size of the hosted {@link com.hazelcast.cp.CPMap}
+     * instances and their accumulated memory requirements. Headroom should also be given for snapshotting
+     * which is a multiple of the number of other members in the CP group, as an upper-bound.
+     */
+    private int cpMapLimit = DEFAULT_CP_MAP_LIMIT;
+
     public CPSubsystemConfig() {
     }
 
@@ -324,6 +343,10 @@ public class CPSubsystemConfig {
         for (FencedLockConfig lockConfig : config.lockConfigs.values()) {
             this.lockConfigs.put(lockConfig.getName(), new FencedLockConfig(lockConfig));
         }
+        for (CPMapConfig cpMapConfig : config.cpMapConfigs.values()) {
+            this.cpMapConfigs.put(cpMapConfig.getName(), new CPMapConfig(cpMapConfig));
+        }
+        this.cpMapLimit = config.cpMapLimit;
     }
 
     /**
@@ -696,6 +719,98 @@ public class CPSubsystemConfig {
         return this;
     }
 
+    @PrivateApi
+    public CPSubsystemConfig setCpMapConfigs(Map<String, CPMapConfig> cpMapConfigs) {
+        this.cpMapConfigs.clear();
+        this.cpMapConfigs.putAll(cpMapConfigs);
+        for (Entry<String, CPMapConfig> entry : this.cpMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns the map of {@link com.hazelcast.cp.CPMap} configurations
+     *
+     * @since 5.4
+     * @return the map of {@link CPMapConfig} configurations
+     */
+    public Map<String, CPMapConfig> getCpMapConfigs() {
+        return cpMapConfigs;
+    }
+
+    /**
+     * Returns the {@link CPMapConfig} configuration for the given name.
+     * <p>
+     * The name is matched by stripping the {@link CPGroup} name from
+     * the given {@code name} if present.
+     * Returns null if there is no config found by the given {@code name}
+     *
+     * @since 5.4
+     * @param name name of the {@link CPMapConfig}
+     * @return the {@link CPMapConfig} configuration
+     */
+    public CPMapConfig findCPMapConfig(String name) {
+        return lookupByPattern(configPatternMatcher, cpMapConfigs, getBaseName(name));
+    }
+
+    /**
+     * Adds the {@link CPMapConfig} configuration. Name of the
+     * {@link CPMapConfig} could optionally contain a {@link CPGroup} name,
+     * like "myMap@group1".
+     *
+     * @since 5.4
+     * @param cpMapConfig the {@link CPMapConfig} configuration
+     * @return this config instance
+     */
+    public CPSubsystemConfig addCPMapConfig(CPMapConfig cpMapConfig) {
+        cpMapConfigs.put(cpMapConfig.getName(), cpMapConfig);
+        return this;
+    }
+
+    /**
+     * Sets the map of {@link CPMapConfig} configurations, mapped by config
+     * name. Names could optionally contain a {@link CPGroup} name, such as
+     * "myLock@group1".
+     *
+     * @since 5.4
+     * @param cpMapConfigs the {@link CPMapConfig} config map to set
+     * @return this config instance
+     */
+    public CPSubsystemConfig setCPMapConfigs(Map<String, CPMapConfig> cpMapConfigs) {
+        this.cpMapConfigs.clear();
+        this.cpMapConfigs.putAll(cpMapConfigs);
+        for (Entry<String, CPMapConfig> entry : this.cpMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Sets the limit of permitted {@link com.hazelcast.cp.CPMap} instances.
+     * <p>
+     * This is a soft limit and is used exclusively by Hazelcast Management Center.
+     * @param cpMapLimit limit of {@link com.hazelcast.cp.CPMap} instances
+     * @throws IllegalArgumentException if {@code cpMapLimit < 0}
+     */
+    public CPSubsystemConfig setCPMapLimit(int cpMapLimit) {
+        checkPositive("cpMapLimit", cpMapLimit);
+        this.cpMapLimit = cpMapLimit;
+        return this;
+    }
+
+    /**
+     * Gets the limit of {@link com.hazelcast.cp.CPMap} instances that are permitted to be created.
+     */
+    public int getCPMapLimit() {
+        return cpMapLimit;
+    }
+
+    @PrivateApi
+    public CPSubsystemConfig setMapLimit(int cpMapLimit) {
+        return setCPMapLimit(cpMapLimit);
+    }
+
     @Override
     public String toString() {
         return "CPSubsystemConfig{" + "cpMemberCount=" + cpMemberCount + ", groupSize=" + groupSize
@@ -703,7 +818,8 @@ public class CPSubsystemConfig {
                 + sessionHeartbeatIntervalSeconds + ", missingCPMemberAutoRemovalSeconds=" + missingCPMemberAutoRemovalSeconds
                 + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState
                 + ", cpMemberPriority=" + cpMemberPriority + ", raftAlgorithmConfig=" + raftAlgorithmConfig
-                + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs + '}';
+                + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs
+                + ", cpMapConfigs=" + cpMapConfigs + ", cpMapLimit=" + cpMapLimit + '}';
     }
 
     @Override
@@ -723,17 +839,20 @@ public class CPSubsystemConfig {
                 && failOnIndeterminateOperationState == that.failOnIndeterminateOperationState
                 && persistenceEnabled == that.persistenceEnabled && dataLoadTimeoutSeconds == that.dataLoadTimeoutSeconds
                 && cpMemberPriority == that.cpMemberPriority
+                && cpMapLimit == that.cpMapLimit
                 && Objects.equals(baseDir, that.baseDir)
                 && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
                 && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
                 && Objects.equals(lockConfigs, that.lockConfigs)
-                && Objects.equals(configPatternMatcher, that.configPatternMatcher);
+                && Objects.equals(configPatternMatcher, that.configPatternMatcher)
+                && Objects.equals(cpMapConfigs, that.cpMapConfigs);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
                 missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, cpMemberPriority,
-                baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher);
+                baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher,
+                cpMapConfigs, cpMapLimit);
     }
 }

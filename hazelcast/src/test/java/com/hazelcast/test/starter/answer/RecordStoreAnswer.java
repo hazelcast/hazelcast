@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,11 +55,15 @@ class RecordStoreAnswer extends AbstractAnswer {
         } else if (arguments.length == 2 && methodName.equals("get")) {
             // ICacheRecordStore
             return getCacheValue(methodName, arguments);
-        } else if (arguments.length == 0 && methodName.equals("getReadOnlyRecords")) {
-            // ICacheRecordStore
-            return invoke(invocation);
-        } else if (arguments.length == 0 && methodName.equals("size")) {
-            return invoke(invocation);
+        } else if (arguments.length == 0) {
+            switch (methodName) {
+                case "beforeOperation":
+                case "afterOperation":
+                    return null;
+                case "size":
+                case "getReadOnlyRecords":
+                    return invoke(invocation);
+            }
         }
         throw new UnsupportedOperationException("Method is not implemented in RecordStoreAnswer: " + methodName);
     }

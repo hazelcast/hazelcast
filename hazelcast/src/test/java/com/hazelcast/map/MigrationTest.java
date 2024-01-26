@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,17 +46,23 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationTest extends HazelcastTestSupport {
 
+    protected Config getConfig(String mapName) {
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB.getName(), "1");
+        return config;
+    }
+
     @Test
     public void testMigration_whenAddingInstances_withStatisticsEnabled() {
-        int size = 1000;
+        int size = 1_000;
         String name = randomString();
-        Config config = getConfig();
+        Config config = getConfig(name);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        Map<Integer, Integer> map = instance1.getMap(name);
+        Map<Integer, Value> map = instance1.getMap(name);
         for (int i = 0; i < size; i++) {
-            map.put(i, i);
+            map.put(i, new Value(i));
         }
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
@@ -62,7 +70,7 @@ public class MigrationTest extends HazelcastTestSupport {
 
         assertEquals("Some records have been lost.", size, map.values().size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i).intValue());
+            assertEquals(i, map.get(i).value);
         }
 
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
@@ -70,10 +78,10 @@ public class MigrationTest extends HazelcastTestSupport {
 
         assertEquals("Some records have been lost.", size, map.values().size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i).intValue());
+            assertEquals(i, map.get(i).value);
         }
 
-        List<HazelcastInstance> list = new ArrayList<HazelcastInstance>(3);
+        List<HazelcastInstance> list = new ArrayList<>(3);
         list.add(instance1);
         list.add(instance2);
         list.add(instance3);
@@ -82,9 +90,9 @@ public class MigrationTest extends HazelcastTestSupport {
 
     @Test
     public void testMigration_whenRemovingInstances_withStatisticsDisabled() {
-        int size = 100;
+        int size = 1_000;
         String name = randomString();
-        Config config = getConfig();
+        Config config = getConfig(name);
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setStatisticsEnabled(false);
 
@@ -93,9 +101,9 @@ public class MigrationTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
 
-        IMap<Integer, Integer> map = instance1.getMap(name);
+        IMap<Integer, Value> map = instance1.getMap(name);
         for (int i = 0; i < size; i++) {
-            map.put(i, i);
+            map.put(i, new Value(i));
         }
         instance2.shutdown();
         instance3.shutdown();
@@ -103,7 +111,7 @@ public class MigrationTest extends HazelcastTestSupport {
         waitAllForSafeState(instance1);
         assertEquals("Some records have been lost.", size, map.values().size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i).intValue());
+            assertEquals(i, map.get(i).value);
         }
         assertThatMigrationIsDoneAndReplicasAreIntact(singletonList(instance1));
     }
@@ -126,4 +134,17 @@ public class MigrationTest extends HazelcastTestSupport {
             assertEquals(0, getScheduledReplicaSyncRequests(instance).size());
         }
     }
+
+    static class Value implements Serializable {
+
+        int value;
+        @SuppressWarnings("unused")
+        byte[] payload = new byte[100 * 1024];
+
+        Value(int value) {
+            this.value = value;
+        }
+
+    }
+
 }

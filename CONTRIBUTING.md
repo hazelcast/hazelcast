@@ -62,6 +62,11 @@ All PRs follow the same process:
    Push your PR once it is free of CheckStyle errors.
 7. If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description
    or commit message.
+8. Your PRs will first be merged into our internal repo.
+9. Following internal merging, the final commit will be pushed back to this repository.
+10. You will be acknowledged as a co-author of the final commit, recognizing your valuable contribution.
+11. Your original PR will be closed, accompanied by a comment indicating that it has been merged internally as part of
+    the monorepo process.
 
 ## Additional Documentation
 

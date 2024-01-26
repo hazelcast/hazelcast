@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -221,7 +221,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
                     completed = 0;
                 }
                 int totalBackups = min(BACKUPS, syncBackups + asyncBackups);
-                assertEquals(new Integer(totalBackups), completed);
+                assertEquals(Integer.valueOf(totalBackups), completed);
             }
         });
     }

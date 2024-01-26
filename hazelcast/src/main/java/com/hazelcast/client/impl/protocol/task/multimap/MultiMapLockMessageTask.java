@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.internal.locksupport.operations.LockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
@@ -44,12 +45,12 @@ public class MultiMapLockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        DistributedObjectNamespace namespace = getNamespace();
+        DistributedObjectNamespace namespace = getObjectNamespace();
         return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.ttl,
                 -1, parameters.referenceId, true);
     }
 
-    private DistributedObjectNamespace getNamespace() {
+    private DistributedObjectNamespace getObjectNamespace() {
         return new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
     }
 
@@ -75,7 +76,7 @@ public class MultiMapLockMessageTask
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return SecurityInterceptorConstants.LOCK;
     }
 
     @Override
@@ -93,5 +94,11 @@ public class MultiMapLockMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
     }
 }

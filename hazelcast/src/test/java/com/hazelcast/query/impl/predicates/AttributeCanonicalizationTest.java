@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -65,7 +65,7 @@ public class AttributeCanonicalizationTest {
 
     @Test
     public void testIndexes() {
-        Indexes indexes = Indexes.newBuilder(null, "test",
+        IndexRegistry indexes = IndexRegistry.newBuilder(null, "test",
                 new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER, DEFAULT_IN_MEMORY_FORMAT).build();
 
         checkIndex(indexes, "foo", "foo");
@@ -80,7 +80,7 @@ public class AttributeCanonicalizationTest {
 
     @Test
     public void testCompositeIndexes() {
-        Indexes indexes = Indexes.newBuilder(null, "test2",
+        IndexRegistry indexes = IndexRegistry.newBuilder(null, "test2",
                 new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER, DEFAULT_IN_MEMORY_FORMAT).build();
 
         checkIndex(indexes, new String[]{"foo", "bar"}, new String[]{"foo", "bar"});
@@ -92,16 +92,16 @@ public class AttributeCanonicalizationTest {
         checkIndex(indexes, new String[]{"foo", "this.bar", "__key.baz"}, new String[]{"foo", "bar", "__key.baz"});
     }
 
-    private void checkIndex(Indexes indexes, String attribute, String expAttribute) {
+    private void checkIndex(IndexRegistry indexes, String attribute, String expAttribute) {
         checkIndex(indexes, new String[]{attribute}, new String[]{expAttribute});
     }
 
-    private void checkIndex(Indexes indexes, String[] attributes, String[] expAttributes) {
+    private void checkIndex(IndexRegistry indexes, String[] attributes, String[] expAttributes) {
         checkIndex(indexes, IndexType.HASH, attributes, expAttributes);
         checkIndex(indexes, IndexType.SORTED, attributes, expAttributes);
     }
 
-    private void checkIndex(Indexes indexes, IndexType indexType, String[] attributes, String[] expAttributes) {
+    private void checkIndex(IndexRegistry indexes, IndexType indexType, String[] attributes, String[] expAttributes) {
         IndexConfig config = new IndexConfig().setType(indexType);
 
         for (String attribute : attributes) {

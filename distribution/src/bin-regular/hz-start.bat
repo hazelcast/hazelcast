@@ -2,7 +2,7 @@
 
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-CALL common.bat
+CALL "%~dp0common.bat"
 
 ECHO ########################################
 ECHO # RUN_JAVA=%RUN_JAVA%
@@ -11,6 +11,6 @@ ECHO # CLASSPATH=%CLASSPATH%
 ECHO ########################################
 ECHO Starting Hazelcast
 
-"%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.HazelcastMemberStarter"
+"%RUN_JAVA%" %JAVA_OPTS% -cp %CLASSPATH% "com.hazelcast.core.server.HazelcastMemberStarter"
 
 ENDLOCAL

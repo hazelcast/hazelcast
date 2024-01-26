@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -29,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,7 +49,7 @@ public class MappingTest {
                 "mapping-type",
                 null,
                 new ArrayList<>(singletonList(new MappingField("field-name", QueryDataType.INT, null, null))),
-                new HashMap<>(ImmutableMap.of("option.key", "option.value"))
+                new HashMap<>(Map.of("option.key", "option.value"))
         );
 
         // when

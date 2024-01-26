@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,12 +94,12 @@ public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJson
 
         for (final QueryDataType.QueryDataTypeField field : dataType.getObjectFields()) {
             final Object fieldValue = extractors.extract(source, field.getName(), false);
-            if (!field.getDataType().isCustomType() || fieldValue == null) {
+            if (!field.getType().isCustomType() || fieldValue == null) {
                 values.put(field.getName(), fieldValue);
             } else {
                 final Map<String, Object> subFieldValue = new HashMap<>();
                 values.put(field.getName(), subFieldValue);
-                convert(fieldValue, subFieldValue, field.getDataType(), seenObjects, extractors);
+                convert(fieldValue, subFieldValue, field.getType(), seenObjects, extractors);
             }
         }
     }

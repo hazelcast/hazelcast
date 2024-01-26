@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,12 +123,12 @@ public class XmlYamlClientConfigBuilderEqualsTest {
     }
 
     private static ClientConfig buildConfigFromXml(String xml) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes(UTF_8));
         return new XmlClientConfigBuilder(bis).build();
     }
 
     private static ClientConfig buildConfigFromYaml(String yaml) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes(UTF_8));
         return new YamlClientConfigBuilder(bis).build();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
+import com.hazelcast.test.UserCodeUtil;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -33,11 +34,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.ThreadLocalRandom;
-
 
 @Category({NightlyTest.class, ParallelJVMTest.class})
 public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterSupport {
@@ -78,10 +77,11 @@ public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterS
                 .getPipeline();
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = new File(AbstractDeploymentTest.CLASS_DIRECTORY).toURI().toURL();
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
-        Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
-        jobConfig.addClass(appearance);
+        URL classUrl = UserCodeUtil.urlRelativeToBinariesFolder("sample");
+        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {classUrl}, null)) {
+            Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+            jobConfig.addClass(appearance);
+        }
 
         // prepare entry processor
         Thread asyncExecuteOnEntries = new Thread(() ->

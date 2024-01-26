@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,23 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,6 +43,13 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
+    private Path tempDirectory;
+
+    @Before
+    public void setUp() throws IOException {
+        tempDirectory = Files.createTempDirectory(getClass().getName());
+        tempDirectory.toFile().deleteOnExit();
+    }
 
     @Test
     public void testFullConfigNormalNetwork() {
@@ -72,23 +83,8 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
 
     @Test
     public void testFullExample() throws IOException {
-        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
-        String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
-
-        // remove imports to prevent the test from failing with importing non-existing files
-        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
-        fullExampleYaml = fullExampleYaml
-                .replace("\r", "")
-                .replace("import:\n    - your-configuration-YAML-file", "");
-
-        // create file to the working directory needed for the EncryptionReplacer
-        createPasswordFile("password.txt", "h4z3lc4$t");
-
-        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
-        Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
-
-        sortClientPermissionConfigs(xmlConfig);
-        sortClientPermissionConfigs(yamlConfig);
+        Config xmlConfig = getXML("hazelcast-full-example.xml");
+        Config yamlConfig = getYaml("hazelcast-full-example.yaml");
 
         String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
         String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
@@ -98,28 +94,13 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
 
     @Test
     public void testFullExampleWithAdvancedNetwork() throws IOException {
-        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
-        String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
-
-        // remove imports to prevent the test from failing with importing non-existing files
-        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
-        fullExampleYaml = fullExampleYaml
-                .replace("\r", "")
-                .replace("import:\n    - your-configuration-YAML-file", "");
-
-        // create file to the working directory needed for the EncryptionReplacer
-        createPasswordFile("password.txt", "h4z3lc4$t");
-
-        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
-        Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
+        Config xmlConfig = getXML("hazelcast-full-example.xml");
+        Config yamlConfig = getYaml("hazelcast-full-example.yaml");
 
         // enabling advanced network configuration to compare the advanced
         // network config instead of the regular network configs
         xmlConfig.getAdvancedNetworkConfig().setEnabled(true);
         yamlConfig.getAdvancedNetworkConfig().setEnabled(true);
-
-        sortClientPermissionConfigs(xmlConfig);
-        sortClientPermissionConfigs(yamlConfig);
 
         String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
         String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
@@ -134,23 +115,84 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         }
     }
 
-    static File createPasswordFile(String passwordFileName, String passwordFileContent) throws IOException {
-        File workDir = new File(".");
-        File file = new File(workDir, passwordFileName);
-        file.deleteOnExit();
+    private Config getXML(String resource) throws IOException {
+        String xml = readResourceToString(resource);
 
-        if (passwordFileContent != null && passwordFileContent.length() > 0) {
-            PrintWriter out = new PrintWriter(file);
-            try {
-                out.print(passwordFileContent);
-            } finally {
-                IOUtil.closeResource(out);
-            }
-        }
-        return file;
+        // remove imports to prevent the test from failing with importing non-existing files
+        xml = StringUtils.remove(xml, "<import resource=\"your-configuration-XML-file\"/>");
+
+        xml = replaceExampleValuesWithRealFiles(xml);
+
+        Config config = new InMemoryXmlConfig(xml);
+        sortClientPermissionConfigs(config);
+
+        return config;
     }
 
-    private void assertXmlYamlFileEquals(String filenameBase) {
+    private Config getYaml(String resource) throws IOException {
+        String yaml = readResourceToString(resource);
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        yaml = StringUtils.remove(yaml, "\r");
+        yaml = StringUtils.remove(yaml, "import:\n    - your-configuration-YAML-file");
+
+        yaml = replaceExampleValuesWithRealFiles(yaml);
+
+        Config config = new InMemoryYamlConfig(yaml);
+        sortClientPermissionConfigs(config);
+
+        return config;
+    }
+
+    /** Some parts of the example file don't actually resolve, which needs to be post-processed before inflation */
+    private String replaceExampleValuesWithRealFiles(String str) throws IOException {
+        str = replacePasswordFileWithTemporaryFile(str);
+        str = replaceUCNReferencesWithTemporaryFile(str);
+
+        return str;
+    }
+
+    /**
+     * The supplied config files contain a {@value EncryptionReplacer#PROPERTY_PASSWORD_FILE} reference to a path of
+     * {@code password.txt}, which is resolved at load-time by {@link EncryptionReplacer} - if missing, an exception is thrown.
+     * <p>
+     * This file doesn't exist within the scope of the test, especially not in the working directory - so create a temporary
+     * file, and update the reference to use that instead.
+     */
+    private static String replacePasswordFileWithTemporaryFile(String str) throws IOException {
+        final Path file = Files.createTempFile("password", ".txt");
+        file.toFile().deleteOnExit();
+
+        Files.writeString(file, "h4z3lc4$t");
+
+        return str.replace("password.txt", file.toString());
+    }
+
+    /** Replace the UCN example paths with real files (but empty) to ensure they can be inflated */
+    private String replaceUCNReferencesWithTemporaryFile(String str) throws IOException {
+        for (Path pathToReplace : new Path[] {Paths.get("/", "etc", "hazelcast", "jar.jar"),
+                Paths.get("/", "etc", "hazelcast", "jar2.jar"), Paths.get("/", "etc", "hazelcast", "jar3.jar"),
+                Paths.get("/", "etc", "hazelcast", "jarsInZip.zip")}) {
+
+            Path newPath = tempDirectory.resolve(Paths.get("/")
+                    .relativize(pathToReplace));
+
+            try {
+                Files.createDirectories(newPath.getParent());
+                Files.createFile(newPath);
+            } catch (FileAlreadyExistsException ignored) {
+            }
+
+            str = str.replace(pathToReplace.toUri()
+                    .toString(),
+                    newPath.toUri()
+                            .toString());
+        }
+
+        return str;
+    }
+
+    private static void assertXmlYamlFileEquals(String filenameBase) {
         Config xmlConfig = new ClasspathXmlConfig(filenameBase + ".xml");
         Config yamlConfig = new ClasspathYamlConfig(filenameBase + ".yaml");
 
@@ -163,10 +205,10 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
     }
 
-    private void sortClientPermissionConfigs(Config config) {
+    private static void sortClientPermissionConfigs(Config config) {
         SecurityConfig securityConfig = config.getSecurityConfig();
         Set<PermissionConfig> unsorted = securityConfig.getClientPermissionConfigs();
-        Set<PermissionConfig> sorted = new TreeSet<PermissionConfig>(new PermissionConfigComparator());
+        Set<PermissionConfig> sorted = new TreeSet<>(new PermissionConfigComparator());
         sorted.addAll(unsorted);
         securityConfig.setClientPermissionConfigs(sorted);
     }

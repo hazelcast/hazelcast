@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -33,15 +37,16 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.reduce;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
@@ -49,13 +54,33 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.asInt;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 
-final class MetadataPortableResolver implements KvMetadataResolver {
+public final class MetadataPortableResolver implements KvMetadataResolver {
+    public static final DefaultedMap<FieldType, QueryDataType> PORTABLE_TO_SQL = new DefaultedMap<>(
+            new EnumMap<>(ImmutableMap.<FieldType, QueryDataType>builder()
+                    .put(FieldType.BOOLEAN, QueryDataType.BOOLEAN)
+                    .put(FieldType.BYTE, QueryDataType.TINYINT)
+                    .put(FieldType.SHORT, QueryDataType.SMALLINT)
+                    .put(FieldType.INT, QueryDataType.INT)
+                    .put(FieldType.LONG, QueryDataType.BIGINT)
+                    .put(FieldType.FLOAT, QueryDataType.REAL)
+                    .put(FieldType.DOUBLE, QueryDataType.DOUBLE)
+                    .put(FieldType.DECIMAL, QueryDataType.DECIMAL)
+                    .put(FieldType.CHAR, QueryDataType.VARCHAR_CHARACTER)
+                    .put(FieldType.UTF, QueryDataType.VARCHAR)
+                    .put(FieldType.TIME, QueryDataType.TIME)
+                    .put(FieldType.DATE, QueryDataType.DATE)
+                    .put(FieldType.TIMESTAMP, QueryDataType.TIMESTAMP)
+                    .put(FieldType.TIMESTAMP_WITH_TIMEZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME)
+                    .put(FieldType.PORTABLE, QueryDataType.OBJECT)
+                    .build()),
+            QueryDataType.OBJECT);
 
     static final MetadataPortableResolver INSTANCE = new MetadataPortableResolver();
 
@@ -74,29 +99,50 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
-        ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+
+        PortableId portableId = getPortableId(fieldsByPath, options, isKey);
+        ClassDefinition classDefinition = serializationService.getPortableContext()
+                .lookupClassDefinition(portableId);
+
+        // Fallback option for the case, when the portable objects were not de/serialized yet
+        // and user fields were not provided by the user explicitly. In this case we try to
+        // manually create a Portable instance and register its ClassDefinition.
+        if (userFields.isEmpty() && classDefinition == null) {
+            SerializationServiceV1 ss = (SerializationServiceV1) serializationService;
+            // Try to create a Portable instance with the default constructor,
+            // register its ClassDefinition, and throw object away.
+            var tempPortableObj = ss.getPortableSerializer()
+                    .createNewPortableInstance(portableId.getFactoryId(), portableId.getClassId());
+            if (tempPortableObj != null) {
+                try {
+                    ss.getPortableContext().lookupOrRegisterClassDefinition(tempPortableObj);
+                } catch (Exception e) {
+                    // If the default constructor doesn't make Portable fields non-null,we're done:
+                    // we can't register the class, so we interrupt the execution with the exception.
+                    throw QueryException.error("Cannot create mapping for Portable type. "
+                            + "Please, provide the explicit definition for all columns.");
+                }
+                classDefinition = serializationService.getPortableContext().lookupClassDefinition(portableId);
+            }
+        }
 
         return userFields.isEmpty()
-                ? resolveFields(isKey, classDefinition, serializationService)
-                : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
+                ? resolveFields(isKey, classDefinition)
+                : resolveAndValidateFields(isKey, fieldsByPath, classDefinition);
     }
 
-    Stream<MappingField> resolveFields(
-            boolean isKey,
-            @Nullable ClassDefinition clazz,
-            InternalSerializationService ss
-    ) {
-        if (clazz == null || clazz.getFieldCount() == 0) {
+    private static Stream<MappingField> resolveFields(boolean isKey, ClassDefinition classDefinition) {
+        if (classDefinition == null || classDefinition.getFieldCount() == 0) {
             // ClassDefinition does not exist, or it is empty, map the whole value
             String name = isKey ? KEY : VALUE;
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
-        return clazz.getFieldNames().stream()
+        return classDefinition.getFieldNames().stream()
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
-                    QueryDataType type = TypesUtils.resolvePortableFieldType(clazz.getFieldType(name));
+                    QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
 
                     return new MappingField(name, type, path.toString());
                 });
@@ -104,12 +150,12 @@ final class MetadataPortableResolver implements KvMetadataResolver {
 
     private static Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
-            Map<QueryPath, MappingField> userFieldsByPath,
-            @Nullable ClassDefinition clazz
+            Map<QueryPath, MappingField> fieldsByPath,
+            @Nullable ClassDefinition classDefinition
     ) {
-        if (clazz == null) {
+        if (classDefinition == null) {
             // ClassDefinition does not exist, make sure there are no OBJECT fields
-            return userFieldsByPath.values().stream()
+            return fieldsByPath.values().stream()
                     .peek(mappingField -> {
                         QueryDataType type = mappingField.type();
                         if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
@@ -118,16 +164,16 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                     });
         }
 
-        for (String name : clazz.getFieldNames()) {
+        for (String name : classDefinition.getFieldNames()) {
             final QueryPath path = new QueryPath(name, isKey);
-            final QueryDataType type = TypesUtils.resolvePortableFieldType(clazz.getFieldType(name));
+            final QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
 
-            MappingField userField = userFieldsByPath.get(path);
+            MappingField userField = fieldsByPath.get(path);
             if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
                 throw QueryException.error("Mismatch between declared and resolved type: " + userField.name());
             }
         }
-        return userFieldsByPath.values().stream();
+        return fieldsByPath.values().stream();
     }
 
     @Override
@@ -138,17 +184,11 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
-        ClassDefinition clazz = resolveClassDefinition(isKey, options, fieldsByPath.values(), serializationService);
 
-        return resolveMetadata(isKey, resolvedFields, fieldsByPath, clazz);
-    }
+        PortableId portableId = getPortableId(fieldsByPath, options, isKey);
+        ClassDefinition classDefinition = resolveClassDefinition(portableId, getFields(fieldsByPath),
+                serializationService.getPortableContext());
 
-    private static KvMetadata resolveMetadata(
-            boolean isKey,
-            List<MappingField> resolvedFields,
-            Map<QueryPath, MappingField> fieldsByPath,
-            @Nonnull ClassDefinition clazz
-    ) {
         List<TableField> fields = new ArrayList<>();
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
@@ -162,98 +202,90 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
-                new PortableUpsertTargetDescriptor(clazz)
+                new PortableUpsertTargetDescriptor(classDefinition)
         );
     }
 
-    @Nullable
-    private static ClassDefinition findClassDefinition(
-            boolean isKey,
-            Map<String, String> options,
-            InternalSerializationService serializationService
-    ) {
-        Tuple3<Integer, Integer, Integer> settings = settings(isKey, options);
-        //noinspection ConstantConditions
-        return serializationService
-                .getPortableContext()
-                .lookupClassDefinition(settings.f0(), settings.f1(), settings.f2());
-    }
-
-    @Nonnull
+    @SuppressWarnings("ReturnCount")
     private static ClassDefinition resolveClassDefinition(
-            boolean isKey,
-            Map<String, String> options,
-            Collection<MappingField> fields,
-            InternalSerializationService serializationService
+            PortableId portableId,
+            Stream<Field> fields,
+            PortableContext context
     ) {
-        Tuple3<Integer, Integer, Integer> settings = settings(isKey, options);
-        //noinspection ConstantConditions
-        ClassDefinition classDefinition = serializationService
-                .getPortableContext()
-                .lookupClassDefinition(settings.f0(), settings.f1(), settings.f2());
+        ClassDefinition classDefinition = context.lookupClassDefinition(portableId);
         if (classDefinition != null) {
             return classDefinition;
         }
 
-        ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(settings.f0(), settings.f1(), settings.f2());
-        for (MappingField field : fields) {
-            String name = field.name();
-            QueryDataType type = field.type();
-            switch (type.getTypeFamily()) {
+        return reduce(new ClassDefinitionBuilder(portableId), fields, (schema, field) -> {
+            switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
-                    classDefinitionBuilder.addBooleanField(name);
-                    break;
+                    return schema.addBooleanField(field.name());
                 case TINYINT:
-                    classDefinitionBuilder.addByteField(name);
-                    break;
+                    return schema.addByteField(field.name());
                 case SMALLINT:
-                    classDefinitionBuilder.addShortField(name);
-                    break;
+                    return schema.addShortField(field.name());
                 case INTEGER:
-                    classDefinitionBuilder.addIntField(name);
-                    break;
+                    return schema.addIntField(field.name());
                 case BIGINT:
-                    classDefinitionBuilder.addLongField(name);
-                    break;
+                    return schema.addLongField(field.name());
                 case REAL:
-                    classDefinitionBuilder.addFloatField(name);
-                    break;
+                    return schema.addFloatField(field.name());
                 case DOUBLE:
-                    classDefinitionBuilder.addDoubleField(name);
-                    break;
+                    return schema.addDoubleField(field.name());
                 case DECIMAL:
-                    classDefinitionBuilder.addDecimalField(name);
-                    break;
+                    return schema.addDecimalField(field.name());
                 case VARCHAR:
-                    classDefinitionBuilder.addStringField(name);
-                    break;
+                    return schema.addStringField(field.name());
                 case TIME:
-                    classDefinitionBuilder.addTimeField(name);
-                    break;
+                    return schema.addTimeField(field.name());
                 case DATE:
-                    classDefinitionBuilder.addDateField(name);
-                    break;
+                    return schema.addDateField(field.name());
                 case TIMESTAMP:
-                    classDefinitionBuilder.addTimestampField(name);
-                    break;
+                    return schema.addTimestampField(field.name());
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    classDefinitionBuilder.addTimestampWithTimezoneField(name);
-                    break;
+                    return schema.addTimestampWithTimezoneField(field.name());
                 default:
                     // validated earlier, skip whole __key & this
+                    return schema;
             }
-        }
-        return classDefinitionBuilder.build();
+        }).build();
     }
 
-    private static Tuple3<Integer, Integer, Integer> settings(boolean isKey, Map<String, String> options) {
+    private static PortableId getPortableId(
+            Map<QueryPath, MappingField> fields,
+            Map<String, String> options,
+            boolean isKey
+    ) {
+        return getMetadata(fields)
+                .map(PortableId::new)
+                .orElseGet(() -> portableId(options, isKey));
+    }
+
+    public static PortableId portableId(Map<String, String> options, boolean isKey) {
         String factoryIdProperty = isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
         String classIdProperty = isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
-        String classVersionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
-        return Tuple3.tuple3(
-                asInt(options, factoryIdProperty, null),
-                asInt(options, classIdProperty, null),
-                asInt(options, classVersionProperty, 0)
-        );
+        String versionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
+
+        PortableId portableId = portableId(options, factoryIdProperty, classIdProperty, versionProperty);
+        if (portableId == null) {
+            throw QueryException.error(String.format("%s Portable ID (%s, %s and optional %s)"
+                            + " is required to create Portable-based mapping", isKey ? "Key" : "Value",
+                    factoryIdProperty, classIdProperty, versionProperty));
+        }
+        return portableId;
+    }
+
+    public static PortableId portableId(
+            Map<String, String> options,
+            String factoryIdProperty,
+            String classIdProperty,
+            String versionProperty
+    ) {
+        Integer factoryId = Optional.ofNullable(options.get(factoryIdProperty)).map(Integer::parseInt).orElse(null);
+        Integer classId = Optional.ofNullable(options.get(classIdProperty)).map(Integer::parseInt).orElse(null);
+        int version = Optional.ofNullable(options.get(versionProperty)).map(Integer::parseInt).orElse(0);
+
+        return factoryId != null && classId != null ? new PortableId(factoryId, classId, version) : null;
     }
 }

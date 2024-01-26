@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Collections.singletonMap;
@@ -56,7 +57,7 @@ public class DataConnectionConsistencyCheckerTest extends HazelcastTestSupport {
     private DataConnectionConsistencyChecker dataConnectionConsistencyChecker;
 
     private String name;
-    private final String type = "dummy";
+    private final String type = DUMMY_TYPE;
 
     private HazelcastInstance[] instances;
 
@@ -67,7 +68,7 @@ public class DataConnectionConsistencyCheckerTest extends HazelcastTestSupport {
         linkService = (DataConnectionServiceImpl) getNodeEngineImpl(instance()).getDataConnectionService();
         dataConnectionConsistencyChecker = new DataConnectionConsistencyChecker(instance(), Util.getNodeEngine(instance()));
         if (getTestMethodName().contains("NoPartitionAssignment")) {
-            // do not proceed with actions that may trigger initial parttion assignment
+            // do not proceed with actions that may trigger initial partition assignment
             return;
         }
         sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);

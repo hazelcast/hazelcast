@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
@@ -187,7 +186,7 @@ public class AwsDiscoveryStrategyTest {
         // given
         String privateIp = "192.168.1.15";
         String publicIp = "38.146.24.2";
-        given(awsClient.getAddresses()).willReturn(ImmutableMap.of(privateIp, publicIp));
+        given(awsClient.getAddresses()).willReturn(Map.of(privateIp, publicIp));
 
         // when
         Iterable<DiscoveryNode> nodes = awsDiscoveryStrategy.discoverNodes();
@@ -214,7 +213,7 @@ public class AwsDiscoveryStrategyTest {
         awsDiscoveryStrategy = new AwsDiscoveryStrategy(properties, awsClient);
 
         // 2 instances found
-        given(awsClient.getAddresses()).willReturn(ImmutableMap.of(
+        given(awsClient.getAddresses()).willReturn(Map.of(
                 "192.168.1.15", "38.146.24.2",
                 "192.168.1.16", "38.146.28.15"
         ));

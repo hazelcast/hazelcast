@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.serialization.SerializationService;
+
+import javax.annotation.Nullable;
 
 /**
  *
@@ -48,12 +51,14 @@ public class PredicateConfigHolder {
         return implementation;
     }
 
-    public PredicateConfig asPredicateConfig(SerializationService serializationService) {
+    public PredicateConfig asPredicateConfig(SerializationService serializationService, @Nullable String namespace) {
         if (className != null) {
             return new PredicateConfig(className);
         } else if (implementation != null) {
-            Predicate predicate = serializationService.toObject(implementation);
-            return new PredicateConfig(predicate);
+            return NamespaceUtil.callWithNamespace(namespace, () -> {
+                Predicate predicate = serializationService.toObject(implementation);
+                return new PredicateConfig(predicate);
+            });
         } else {
             return new PredicateConfig();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,14 +202,14 @@ public final class ExecutionServiceImpl implements ExecutionService {
             if (threadFactory != null) {
                 throw new IllegalArgumentException("Cached executor can not be used with external thread factory");
             }
-            executor = new CachedExecutorServiceDelegate(name, cachedExecutorService, poolSize, queueCapacity);
+            executor = new CachedExecutorServiceDelegate(name, cachedExecutorService, poolSize, queueCapacity, nodeEngine);
         } else if (type == ExecutorType.CONCRETE) {
             if (threadFactory == null) {
                 ClassLoader classLoader = nodeEngine.getConfigClassLoader();
                 String hzName = nodeEngine.getHazelcastInstance().getName();
                 String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
                 String threadNamePrefix = createThreadPoolName(hzName, internalName);
-                threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader);
+                threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader, nodeEngine);
             }
 
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,

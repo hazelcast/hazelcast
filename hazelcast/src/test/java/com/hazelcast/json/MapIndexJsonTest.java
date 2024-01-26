@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -275,7 +275,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
 
         List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
-            Indexes indexes = mapContainer.getIndexes(partitionId);
+            IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
             result.add(indexes.getIndex(attribute));
         }
         return result;

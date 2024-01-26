@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.deployment.MapResourceClassLoader;
+
+import javax.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -31,6 +34,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -56,6 +61,8 @@ public final class ClassLoaderUtil {
 
     private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0],
             ClassLoaderUtil.class.getClassLoader());
+
+    private static final Pattern CLASS_PATTERN = Pattern.compile("(.*)\\.class$");
 
     static {
         try {
@@ -228,9 +235,10 @@ public final class ClassLoaderUtil {
         return (T) constructor.newInstance();
     }
 
-    public static Class<?> loadClass(final ClassLoader classLoaderHint, final String className) throws ClassNotFoundException {
+    public static <T> Class<T> loadClass(final ClassLoader classLoaderHint, final String className)
+            throws ClassNotFoundException {
         isNotNull(className, "className");
-        final Class<?> primitiveClass = tryPrimitiveClass(className);
+        final Class<T> primitiveClass = tryPrimitiveClass(className);
         if (primitiveClass != null) {
             return primitiveClass;
         }
@@ -264,7 +272,7 @@ public final class ClassLoaderUtil {
         return className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY);
     }
 
-    private static Class<?> tryPrimitiveClass(String className) {
+    private static <T> Class<T> tryPrimitiveClass(String className) {
         if (className.length() <= MAX_PRIM_CLASS_NAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
             final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
             if (primitiveClass != null) {
@@ -283,8 +291,8 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static Class<?> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
-        Class<?> clazz;
+    private static <T> Class<T> tryLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+        Class<T> clazz;
         if (!CLASS_CACHE_DISABLED) {
             clazz = CLASS_CACHE.get(classLoader, className);
             if (clazz != null) {
@@ -293,11 +301,11 @@ public final class ClassLoaderUtil {
         }
 
         if (classLoader == NULL_FALLBACK_CLASSLOADER) {
-            clazz = Class.forName(className);
+            clazz = (Class<T>) Class.forName(className);
         } else if (className.startsWith("[")) {
-            clazz = Class.forName(className, false, classLoader);
+            clazz = (Class<T>) Class.forName(className, false, classLoader);
         } else {
-            clazz = classLoader.loadClass(className);
+            clazz = (Class<T>) classLoader.loadClass(className);
         }
 
         if (!CLASS_CACHE_DISABLED) {
@@ -436,10 +444,11 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private static boolean shouldBypassCache(Class clazz) {
+    private static boolean shouldBypassCache(Class<?> clazz) {
         // dynamically loaded class should not be cached here, as they are already
         // cached in the DistributedLoadingService (when cache is enabled)
-        return (clazz.getClassLoader() instanceof ClassSource);
+        return (clazz.getClassLoader() instanceof ClassSource
+                || clazz.getClassLoader() instanceof MapResourceClassLoader);
     }
 
     private static final class IrresolvableConstructor {
@@ -452,4 +461,9 @@ public final class ClassLoaderUtil {
         }
     }
 
+    @Nullable
+    public static String extractClassName(String filePath) {
+        Matcher matcher = CLASS_PATTERN.matcher(filePath.replace('/', '.'));
+        return matcher.matches() ? matcher.group(1) : null;
+    }
 }

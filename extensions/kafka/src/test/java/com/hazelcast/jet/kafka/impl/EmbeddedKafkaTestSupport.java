@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.OsHelper.isWindows;
+import static com.hazelcast.internal.tpcengine.util.OS.isWindows;
 
 class EmbeddedKafkaTestSupport extends KafkaTestSupport {
     private static final String ZK_HOST = "127.0.0.1";

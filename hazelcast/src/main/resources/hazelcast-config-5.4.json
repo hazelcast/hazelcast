@@ -153,6 +153,9 @@
         },
         "tpc": {
           "$ref": "#/definitions/TpcConfig"
+        },
+        "user-code-namespaces": {
+          "$ref": "#/definitions/UserCodeNamespacesConfig"
         }
       }
     },
@@ -900,6 +903,9 @@
           },
           "split-brain-protection-ref": {
             "type": "string"
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -921,6 +927,9 @@
           "default": 100
         },
         "split-brain-protection-ref": {
+          "type": "string"
+        },
+        "user-code-namespace": {
           "type": "string"
         }
       }
@@ -952,6 +961,9 @@
         },
         "merge-policy": {
           "$ref": "#/definitions/MergePolicy"
+        },
+        "user-code-namespace": {
+          "type": "string"
         }
       }
     },
@@ -1120,7 +1132,6 @@
                 "unit": "KILOBYTES"
               }
             },
-
             "memory-tier": {
               "type": "object",
               "description": "Memory tier.",
@@ -1573,10 +1584,14 @@
                     "description": "Name of the device for a given disk tier."
                   }
                 },
-                "required": ["enabled"]
+                "required": [
+                  "enabled"
+                ]
               }
             },
-            "required": ["enabled"]
+            "required": [
+              "enabled"
+            ]
           },
           "partition-strategy": {
             "type": "string"
@@ -1588,6 +1603,9 @@
               "$ref": "#/definitions/PartitionAttribute"
             },
             "minItems": 1
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -1647,6 +1665,9 @@
             "type": "boolean",
             "default": true,
             "description": "True if statistics gathering is enabled on the set, false otherwise."
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -1677,6 +1698,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         },
         "not": {
@@ -1727,6 +1751,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -1789,6 +1816,9 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -1932,6 +1962,9 @@
           "priority-comparator-class-name": {
             "type": "string",
             "description": "Fully-qualified comparator's class name to be used for the priority queue. If nothing is provided, then queue behaves as a FIFO queue."
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -1991,6 +2024,9 @@
           "statistics-enabled": {
             "type": "boolean",
             "default": true
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -2026,6 +2062,9 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -2283,6 +2322,9 @@
             "type": "boolean",
             "default": false,
             "description": "Disables invalidation events for each entry; but full-flush invalidation events are still enabled. Full-flush invalidation means the invalidation of events for all entries when clear is called."
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -2488,6 +2530,11 @@
           "default": 0,
           "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
         },
+        "map-limit": {
+          "type": "integer",
+          "default": 10,
+          "description": "The maximum number of CP Maps that are permitted. The default of 10 is not necessarily applicable for a wide variety of usages. Please note when defining this limit: take into consideration the maps you are to create, their capacities and the number of members their host CP groups entail. The latter is important as you will currently need memory headroom per-map, then a multiple of that map's size required for publishing snapshots, e.g. (group size - 1) * map size, per-map."
+        },
         "raft-algorithm": {
           "type": "object",
           "additionalProperties": false,
@@ -2572,6 +2619,22 @@
               }
             }
           }
+        },
+        "maps": {
+          "type": "object",
+          "description": "Configurations for CPMap instances. CPMaps can be configured with mappings under keys as their names.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max-size-mb": {
+                "type": "integer",
+                "default": 100,
+                "minimum": 1,
+                "description": "Maximum size in MB that the constituent key-value pairs of the CPMap can total."
+              }
+            }
+          }
         }
       }
     },
@@ -2624,6 +2687,9 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "user-code-namespace": {
+            "type": "string"
           }
         }
       }
@@ -2833,6 +2899,18 @@
                     "$ref": "#/definitions/CredentialsFactoryIdentity"
                   }
                 }
+              },
+              "access-control-service": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "factory-class-name": {
+                    "type": "string"
+                  },
+                  "properties": {
+                    "type": "object"
+                  }
+                }
               }
             }
           }
@@ -2914,7 +2992,9 @@
               "management",
               "job",
               "connector",
-              "sql"
+              "sql",
+              "cpmap",
+              "user-code-namespace"
             ]
           },
           "properties": {
@@ -2963,10 +3043,10 @@
           "items": {
             "type": "string"
           },
-        "deny": {
-          "type": "boolean",
-          "default": false,
-          "description": "When true, subtract/deny the permission instead of granting."
+          "deny": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, subtract/deny the permission instead of granting."
           }
         },
         "actions": {
@@ -3182,6 +3262,23 @@
         ]
       }
     },
+    "JavaSerializationFilter": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.",
+      "properties": {
+        "defaults-disabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "whitelist": {
+          "$ref": "#/definitions/ClassFilter"
+        },
+        "blacklist": {
+          "$ref": "#/definitions/ClassFilter"
+        }
+      }
+    },
     "Serialization": {
       "type": "object",
       "additionalProperties": false,
@@ -3278,21 +3375,8 @@
           "description": "If set to true, serialization system will check the class definitions error at the start of serialization process and throw a Serialization Exception with the error definition.s"
         },
         "java-serialization-filter": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.",
-          "properties": {
-            "defaults-disabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "whitelist": {
-              "$ref": "#/definitions/ClassFilter"
-            },
-            "blacklist": {
-              "$ref": "#/definitions/ClassFilter"
-            }
-          }
+          "$ref": "#/definitions/JavaSerializationFilter",
+          "description": "Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used."
         },
         "allow-override-default-serializers": {
           "type": "boolean",
@@ -4302,6 +4386,10 @@
           "type": "boolean",
           "default": false,
           "description": "Sets whether SQL Catalog persistence is enabled for the node. With SQL Catalog persistence enabled you can restart the whole cluster without losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA CONNECTIONs). The feature is implemented on top of the Hot Restart feature of Hazelcast which persists the data to disk. If enabled, you have to also configure Hot Restart. Feature is disabled by default. If you enable this option in open-source, the member will fail to start, you need Enterprise to run it and obtain a license from Hazelcast."
+        },
+        "java-reflection-filter": {
+          "$ref": "#/definitions/JavaSerializationFilter",
+          "description": "Allows to configure blacklisting and whitelisting for reflection classes when Java Reflection is used."
         }
       }
     },
@@ -5107,6 +5195,67 @@
       "required": [
         "name"
       ]
+    },
+    "UserCodeNamespacesConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Indicates whether User Code Namespaces are enabled or not."
+        },
+        "class-filter": {
+          "$ref": "#/definitions/JavaSerializationFilter",
+          "description":
+          "Allows to configure blacklisting and whitelisting by class, package or prefix.\nIf a filtered class has been blacklisted, a SecurityException will be thrown.\nIf whitelisting is enabled, either by explicit declaration under whitelist or setting defaults-disabled=false, a SecurityException will be thrown if a filtered class has not been whitelisted.\nIf defaults-disabled is set to true, the default whitelist will not be used.\nIf set to false, the default whitelist will be used. In such cases that a class name does not match any of the whitelisted classes, packages or prefixes, a SecurityException will be thrown."
+        }
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/Namespace"
+        },
+        "description": "A list of additional properties where each is a User Code Namespace configuration."
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "The configuration object for User Code Namespaces."
+    },
+    "Namespace": {
+      "type": "object",
+      "items": {
+        "$ref": "#/definitions/Resource"
+      },
+      "description": "Defines a User Code Namespace which can contain configurations for JAR files and JARs in ZIP archives."
+    },
+    "Resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Defines an object that uniquely identifies a User Code Namespace resource. If a value is not set, the URL is used as the identifier."
+        },
+        "resource-type": {
+          "enum": [
+            "JAR",
+            "JARS_IN_ZIP"
+          ],
+          "default": "JAR",
+          "description": "The resource type. Valid values are JAR or JARS_IN_ZIP."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL must be a valid URI that points to the location of the resource. This is a required property."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "resource-type",
+        "url"
+      ],
+      "description": "The base definition for a resource, which can either be a single JAR file or a ZIP archive of JAR files."
     }
   }
 }

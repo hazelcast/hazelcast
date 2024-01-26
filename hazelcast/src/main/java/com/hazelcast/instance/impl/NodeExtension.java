@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -29,6 +31,7 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -41,8 +44,10 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
@@ -398,6 +403,11 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
+     * Creates the relevant {@link CPSubsystem}.
+     */
+    CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
+
+    /**
      * Returns a JetService.
      */
     JetService getJet();
@@ -405,4 +415,17 @@ public interface NodeExtension {
     /** Returns the internal jet service backend */
     @Nullable
     JetServiceBackend getJetServiceBackend();
+
+    /**
+     * @return an instance of {@link com.hazelcast.nio.ssl.SSLEngineFactory} when TLS is enabled, {@code null} otherwise
+     * @throws java.lang.IllegalStateException if the method call is not allowed
+     */
+    SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig);
+
+    /**
+     * Retrieves the {@link UserCodeNamespaceService} provided by the implementing class.
+     *
+     * @return the {@link UserCodeNamespaceService} instance for this member.
+     */
+    UserCodeNamespaceService getNamespaceService();
 }

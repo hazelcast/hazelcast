@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCou
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
 
@@ -57,7 +57,7 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
 
     @Override
     public String getServiceName() {
-        return PNCounterService.SERVICE_NAME;
+        return SecurityInterceptorConstants.PN_COUNTER_SERVICE;
     }
 
     public Object[] getParameters() {
@@ -71,7 +71,7 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.GET_CONFIGURED_REPLICA_COUNT;
     }
 
     @Override

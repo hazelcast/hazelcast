@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,17 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NamedConfig;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -181,5 +185,17 @@ public final class ConfigUtils {
           && configName2 != null
           && configName.replace("-", "").equals(configName2.replace("-", ""));
     }
-}
 
+    @Nonnull
+    public static String resolveResourceId(String providedId, URL url) {
+        if (!StringUtil.isNullOrEmpty(providedId)) {
+            return providedId;
+        }
+        return urlToFileName(url);
+    }
+
+    private static String urlToFileName(URL url) {
+        String filename = new File(url.getPath()).getName();
+        return Preconditions.checkHasText(filename, "URL has no path: " + url);
+    }
+}

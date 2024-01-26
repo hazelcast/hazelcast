@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,8 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
     static final String MAP_NAME_PREFIX = "map";
     static final ILogger LOGGER = Logger.getLogger(MapSplitBrainStressTest.class);
 
-    final Map<HazelcastInstance, UUID> listenerRegistry = new ConcurrentHashMap<>();
-    final Map<Integer, String> mapNames = new ConcurrentHashMap<>();
+    protected final Map<HazelcastInstance, UUID> listenerRegistry = new ConcurrentHashMap<>();
+    protected final Map<Integer, String> mapNames = new ConcurrentHashMap<>();
 
     MergeLifecycleListener mergeLifecycleListener;
     int iteration = 1;
@@ -92,6 +92,10 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
         return ITERATION_COUNT;
     }
 
+    protected int mapCount() {
+        return MAP_COUNT;
+    }
+
     @Test(timeout = TEST_TIMEOUT_IN_MILLIS)
     @Override
     public void testSplitBrain() throws Exception {
@@ -103,14 +107,14 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
         LOGGER.info("Starting iteration " + iteration);
 
         if (iteration == 1) {
-            for (int mapIndex = 0; mapIndex < MAP_COUNT; mapIndex++) {
-                LOGGER.info("Filling map " + mapIndex + "/" + MAP_COUNT + " with " + ENTRY_COUNT + " entries");
+            for (int mapIndex = 0; mapIndex < mapCount(); mapIndex++) {
+                LOGGER.info("Filling map " + mapIndex + "/" + mapCount() + " with " + ENTRY_COUNT + " entries");
                 String mapName = MAP_NAME_PREFIX + "_" + (mapIndex + 1);
                 mapNames.put(mapIndex, mapName);
 
-                IMap<Integer, Integer> mapOnFirstBrain = instances[0].getMap(mapName);
+                IMap<Integer, MyPerson> mapOnFirstBrain = instances[0].getMap(mapName);
                 for (int key = 0; key < ENTRY_COUNT; key++) {
-                    mapOnFirstBrain.put(key, key);
+                    mapOnFirstBrain.put(key, new MyPerson(key));
                 }
             }
         }
@@ -139,19 +143,19 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
         int expectedClusterSize = FIRST_BRAIN_SIZE + SECOND_BRAIN_SIZE;
         assertEquals("expected cluster size " + expectedClusterSize, expectedClusterSize, instances.length);
 
-        for (int mapIndex = 0; mapIndex < MAP_COUNT; mapIndex++) {
+        for (int mapIndex = 0; mapIndex < mapCount(); mapIndex++) {
             String mapName = mapNames.get(mapIndex);
-            IMap<Integer, Integer> map = instances[0].getMap(mapName);
+            IMap<Integer, MyPerson> map = instances[0].getMap(mapName);
             int finalMapIndex = mapIndex;
             assertTrueEventually(() -> assertEquals(format("expected %d entries in map %d/%d (iteration %d)",
-                            ENTRY_COUNT, finalMapIndex, MAP_COUNT, iteration),
+                            ENTRY_COUNT, finalMapIndex, mapCount(), iteration),
                     ENTRY_COUNT, map.size()));
 
             for (int key = 0; key < ENTRY_COUNT; key++) {
-                int value = map.get(key);
+                MyPerson myPerson = map.get(key);
                 assertEquals(format("expected value %d for key %d in map %d/%d (iteration %d)",
-                                value, key, mapIndex, MAP_COUNT, iteration),
-                        key, value);
+                                myPerson.personId, key, mapIndex, mapCount(), iteration),
+                        key, myPerson.personId);
             }
         }
 

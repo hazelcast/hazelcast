@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY_ID;
@@ -38,8 +39,8 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BR
 /**
  * Contains all the ID hooks for {@link IdentifiedDataSerializable} classes used by the split-brain framework.
  * <p>
- * {@link SplitBrainMergePolicy} classes are mapped here. This factory class is used by the
- * internal serialization system to create {@link IdentifiedDataSerializable} classes without using reflection.
+ * {@link SplitBrainMergePolicy} classes are mapped here. This factory class is used by the internal serialization system to
+ * create {@link IdentifiedDataSerializable} classes without using reflection.
  *
  * @since 3.10
  */
@@ -78,106 +79,29 @@ public final class SplitBrainDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        //noinspection unchecked
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        // noinspection unchecked
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[COLLECTION_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionMergingValueImpl();
-            }
-        };
-        constructors[QUEUE_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueMergingValueImpl();
-            }
-        };
-        constructors[ATOMIC_LONG_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AtomicLongMergingValueImpl();
-            }
-        };
-        constructors[ATOMIC_REFERENCE_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AtomicReferenceMergingValueImpl();
-            }
-        };
-        constructors[MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapMergingEntryImpl();
-            }
-        };
-        constructors[CACHE_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheMergingEntryImpl();
-            }
-        };
-        constructors[MULTI_MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapMergingEntryImpl();
-            }
-        };
-        constructors[REPLICATED_MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapMergingEntryImpl();
-            }
-        };
-        constructors[RINGBUFFER_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RingbufferMergingValueImpl();
-            }
-        };
-        constructors[CARDINALITY_ESTIMATOR_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CardinalityEstimatorMergingEntry();
-            }
-        };
-        constructors[SCHEDULED_EXECUTOR_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ScheduledExecutorMergingEntryImpl();
-            }
-        };
+        constructors[COLLECTION_MERGING_VALUE] = CollectionMergingValueImpl::new;
+        constructors[QUEUE_MERGING_VALUE] = QueueMergingValueImpl::new;
+        constructors[ATOMIC_LONG_MERGING_VALUE] = AtomicLongMergingValueImpl::new;
+        constructors[ATOMIC_REFERENCE_MERGING_VALUE] = AtomicReferenceMergingValueImpl::new;
+        constructors[MAP_MERGING_ENTRY] = MapMergingEntryImpl::new;
+        constructors[CACHE_MERGING_ENTRY] = CacheMergingEntryImpl::new;
+        constructors[MULTI_MAP_MERGING_ENTRY] = MultiMapMergingEntryImpl::new;
+        constructors[REPLICATED_MAP_MERGING_ENTRY] = ReplicatedMapMergingEntryImpl::new;
+        constructors[RINGBUFFER_MERGING_ENTRY] = RingbufferMergingValueImpl::new;
+        constructors[CARDINALITY_ESTIMATOR_MERGING_ENTRY] = CardinalityEstimatorMergingEntry::new;
+        constructors[SCHEDULED_EXECUTOR_MERGING_ENTRY] = ScheduledExecutorMergingEntryImpl::new;
 
-        constructors[DISCARD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DiscardMergePolicy();
-            }
-        };
-        constructors[EXPIRATION_TIME] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ExpirationTimeMergePolicy();
-            }
-        };
-        constructors[HIGHER_HITS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HigherHitsMergePolicy();
-            }
-        };
-        constructors[HYPER_LOG_LOG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HyperLogLogMergePolicy();
-            }
-        };
-        constructors[LATEST_ACCESS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LatestAccessMergePolicy();
-            }
-        };
-        constructors[LATEST_UPDATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LatestUpdateMergePolicy();
-            }
-        };
-        constructors[PASS_THROUGH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PassThroughMergePolicy();
-            }
-        };
-        constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutIfAbsentMergePolicy();
-            }
-        };
+        constructors[DISCARD] = DiscardMergePolicy::new;
+        constructors[EXPIRATION_TIME] = ExpirationTimeMergePolicy::new;
+        constructors[HIGHER_HITS] = HigherHitsMergePolicy::new;
+        constructors[HYPER_LOG_LOG] = HyperLogLogMergePolicy::new;
+        constructors[LATEST_ACCESS] = LatestAccessMergePolicy::new;
+        constructors[LATEST_UPDATE] = LatestUpdateMergePolicy::new;
+        constructors[PASS_THROUGH] = PassThroughMergePolicy::new;
+        constructors[PUT_IF_ABSENT] = PutIfAbsentMergePolicy::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

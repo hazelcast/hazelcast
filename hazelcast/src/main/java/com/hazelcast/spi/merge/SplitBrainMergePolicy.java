@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * could throw a {@link java.lang.ClassNotFoundException}.</li>
  * </ul>
  * If you need the deserialized data you can call
- * {@link MergingValue#getValue()}
+ * {@link MergingValue#getDeserializedValue()}
  * or {@link MergingEntry#getKey()},
  * which will deserialize the data lazily.
  * <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             Record record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                    state.getOldValue(), false, state.getCallerAddress());
+                    state.getLoadedOldValueWithExpiry(), false, state.getCallerAddress(), state.getNow());
             record = recordStore.evictIfExpired(state.getKey(), state.getNow(), false) ? null : record;
             state.setOldValue(record == null ? null : record.getValue());
 

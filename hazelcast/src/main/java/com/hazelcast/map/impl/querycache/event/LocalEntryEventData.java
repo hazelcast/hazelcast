@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,9 +49,10 @@ public class LocalEntryEventData<K, V> implements EventData {
     private Data oldValueData;
     private final SerializationService serializationService;
     private final int partitionId;
+    private final String mapName;
 
-    public LocalEntryEventData(SerializationService serializationService, String source,
-                               int eventType, Object key, Object oldValue, Object value, int partitionId) {
+    public LocalEntryEventData(SerializationService serializationService, String source, int eventType,
+                               Object key, Object oldValue, Object value, int partitionId, String mapName) {
         this.serializationService = serializationService;
         this.partitionId = partitionId;
 
@@ -75,6 +76,7 @@ public class LocalEntryEventData<K, V> implements EventData {
 
         this.source = source;
         this.eventType = eventType;
+        this.mapName = mapName;
     }
 
     public V getValue() {
@@ -126,7 +128,7 @@ public class LocalEntryEventData<K, V> implements EventData {
 
     @Override
     public String getMapName() {
-        throw new UnsupportedOperationException();
+        return mapName;
     }
 
     @Override
@@ -146,7 +148,7 @@ public class LocalEntryEventData<K, V> implements EventData {
     public LocalEntryEventData<K, V> cloneWithoutValue() {
         Object key = this.key != null ? this.key : this.keyData;
         return new LocalEntryEventData<>(serializationService, source,
-                eventType, key, null, null, partitionId);
+                eventType, key, null, null, partitionId, mapName);
     }
 
     @Override
@@ -165,6 +167,7 @@ public class LocalEntryEventData<K, V> implements EventData {
                 + "eventType=" + eventType
                 + ", key=" + getKey()
                 + ", source='" + source + '\''
+                + ", mapName='" + mapName + '\''
                 + '}';
     }
 }

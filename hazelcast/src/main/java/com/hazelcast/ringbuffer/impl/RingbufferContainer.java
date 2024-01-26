@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,7 +56,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
     private static final long TTL_DISABLED = 0;
 
-    private ObjectNamespace namespace;
+    private ObjectNamespace objectNamespace;
 
     // a cached version of the wait notify key needed to wait for a change if the ringbuffer is empty
     private RingbufferWaitNotifyKey emptyRingWaitNotifyKey;
@@ -96,11 +97,11 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * {@link #init(RingbufferConfig, NodeEngine)}
      * method to complete the initialization before usage.
      *
-     * @param namespace the namespace of the ringbuffer container
+     * @param objectNamespace the {@link ObjectNamespace} of the ringbuffer container
      */
-    public RingbufferContainer(ObjectNamespace namespace, int partitionId) {
-        this.namespace = namespace;
-        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(namespace, partitionId);
+    public RingbufferContainer(ObjectNamespace objectNamespace, int partitionId) {
+        this.objectNamespace = objectNamespace;
+        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(objectNamespace, partitionId);
     }
 
     /**
@@ -141,15 +142,17 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     public void init(RingbufferConfig config, NodeEngine nodeEngine) {
         this.config = config;
         this.serializationService = nodeEngine.getSerializationService();
-        initRingbufferStore(nodeEngine.getConfigClassLoader());
+        initRingbufferStore(NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace()), nodeEngine);
     }
 
-    private void initRingbufferStore(ClassLoader configClassLoader) {
-        this.store = RingbufferStoreWrapper.create(namespace,
+    private void initRingbufferStore(ClassLoader classLoader, NodeEngine nodeEngine) {
+        this.store = RingbufferStoreWrapper.create(objectNamespace,
                 config.getRingbufferStoreConfig(),
                 config.getInMemoryFormat(),
                 serializationService,
-                configClassLoader);
+                classLoader,
+                nodeEngine,
+                config.getUserCodeNamespace());
         if (store.isEnabled()) {
             try {
                 final long storeSequence = store.getLargestSequence();
@@ -656,8 +659,19 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         return expirationPolicy;
     }
 
+    /**
+     * Deprecated since 5.4 due to ambiguity between User Code Namespaces (used in
+     * most data structures) and ObjectNamespaces not used in most data structures
+     *
+     * @return This container's {@link ObjectNamespace}
+     */
+    @Deprecated(since = "5.4")
     public ObjectNamespace getNamespace() {
-        return namespace;
+        return objectNamespace;
+    }
+
+    public ObjectNamespace getObjectNamespace() {
+        return objectNamespace;
     }
 
     @Override

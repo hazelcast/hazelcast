@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.commandline;
 
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
@@ -24,18 +24,18 @@ import java.io.PrintWriter;
 /**
  * Exception handler for processing the tool & Hazelcast related errors
  */
-class ExceptionHandler
-        implements CommandLine.IExecutionExceptionHandler {
+class ExceptionHandler implements CommandLine.IExecutionExceptionHandler {
     @Override
-    public int handleExecutionException(Exception ex, CommandLine commandLine, CommandLine.ParseResult parseResult) {
-        PrintWriter err = commandLine.getErr();
+    public int handleExecutionException(Exception exception, CommandLine commandLine, CommandLine.ParseResult parseResult) {
+        PrintWriter errorWriter = commandLine.getErr();
         CommandLine.Help.ColorScheme colorScheme = commandLine.getColorScheme();
-        if (!StringUtil.isNullOrEmpty(ex.getMessage())) {
-            err.println(colorScheme.errorText(ex.getMessage()));
-        } else {
-            ex.printStackTrace(err);
-        }
-        commandLine.usage(err, colorScheme);
+
+        // Print exception
+        String stackTrace = ExceptionUtil.toString(exception);
+        errorWriter.println(colorScheme.errorText(stackTrace));
+
+        // Print usage
+        commandLine.usage(errorWriter, colorScheme);
         return 0;
     }
 }

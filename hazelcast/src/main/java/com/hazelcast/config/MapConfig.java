@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
+public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, UserCodeNamespaceAwareConfig<MapConfig> {
 
     /**
      * The minimum number of backups
@@ -146,6 +147,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
             .setSize(DEFAULT_MAX_SIZE);
     private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
     private List<PartitioningAttributeConfig> partitioningAttributeConfigs;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public MapConfig() {
     }
@@ -185,6 +187,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
         this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
         this.partitioningAttributeConfigs = new ArrayList<>(config.getPartitioningAttributeConfigs());
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -836,6 +839,30 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link MapConfig} instance
+     * @since 5.4
+     */
+    public MapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public final boolean equals(Object o) {
@@ -931,6 +958,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (!getPartitioningAttributeConfigs().equals(that.getPartitioningAttributeConfigs())) {
             return false;
         }
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
+            return false;
+        }
 
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
@@ -966,6 +996,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + tieredStoreConfig.hashCode();
         result = 31 * result + getPartitioningAttributeConfigs().hashCode();
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 
@@ -999,6 +1030,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
                 + ", tieredStoreConfig=" + tieredStoreConfig
                 + ", partitioningAttributeConfigs=" + partitioningAttributeConfigs
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -1042,8 +1074,11 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         out.writeBoolean(perEntryStatsEnabled);
         out.writeObject(dataPersistenceConfig);
         out.writeObject(tieredStoreConfig);
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            writeNullableList(partitioningAttributeConfigs, out);
+        writeNullableList(partitioningAttributeConfigs, out);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+            out.writeString(userCodeNamespace);
         }
     }
 
@@ -1077,8 +1112,11 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         perEntryStatsEnabled = in.readBoolean();
         setDataPersistenceConfig(in.readObject());
         setTieredStoreConfig(in.readObject());
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            partitioningAttributeConfigs = readNullableList(in);
+        partitioningAttributeConfigs = readNullableList(in);
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+            userCodeNamespace = in.readString();
         }
     }
 }

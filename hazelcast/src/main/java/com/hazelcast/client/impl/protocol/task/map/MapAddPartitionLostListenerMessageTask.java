@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -79,7 +80,7 @@ public class MapAddPartitionLostListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "addPartitionLostListener";
+        return SecurityInterceptorConstants.ADD_PARTITION_LOST_LISTENER;
     }
 
     @Override
@@ -95,5 +96,10 @@ public class MapAddPartitionLostListenerMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

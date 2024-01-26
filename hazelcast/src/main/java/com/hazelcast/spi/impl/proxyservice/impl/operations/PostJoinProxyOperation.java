@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,7 +50,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
 
     @Override
     public void run() throws Exception {
-        if (proxies == null || proxies.size() <= 0) {
+        if (CollectionUtil.isEmpty(proxies)) {
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         newValue = IOUtil.readData(in);
         caller = UUIDSerializationUtil.readUUID(in);
         begin = in.readLong();
-        entryBackupProcessor = in.readObject();
+        entryBackupProcessor = callWithNamespaceAwareness(in::readObject);
         newTtl = in.readLong();
         changeExpiryOnUpdate = in.readBoolean();
     }

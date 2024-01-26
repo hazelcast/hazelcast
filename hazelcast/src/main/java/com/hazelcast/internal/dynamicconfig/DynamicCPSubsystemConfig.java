@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
@@ -95,6 +96,11 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
 
     @Override
     public CPSubsystemConfig setLockConfigs(Map<String, FencedLockConfig> lockConfigs) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CPSubsystemConfig setCPMapConfigs(Map<String, CPMapConfig> cpMapConfigs) {
         throw new UnsupportedOperationException();
     }
 

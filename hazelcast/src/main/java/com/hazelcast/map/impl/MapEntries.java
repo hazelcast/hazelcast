@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.CollectionUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -82,7 +83,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
     }
 
     public boolean isEmpty() {
-        return (keys == null || keys.size() == 0);
+        return CollectionUtil.isEmpty(keys);
     }
 
     public void clear() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Locale;
 
-import static java.nio.file.Files.readAllBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -218,8 +217,8 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
                 .setType("HZ")
                 .setShared(true);
         try {
-            byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
-            String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
+            String str = readFile();
+            String xmlString = str.replace("$CLUSTER_NAME$", clusterName);
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
             return dataConnectionConfig;
         } catch (IOException e) {
@@ -233,8 +232,8 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
                 .setType("HZ")
                 .setShared(true);
         try {
-            byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
-            String xmlString = new String(bytes, StandardCharsets.UTF_8)
+            String str = readFile();
+            String xmlString = str
                     .replace("$CLUSTER_NAME$", clusterName)
                     .replace("5701", Integer.toString(port));
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
@@ -250,8 +249,8 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
                 .setType(HazelcastDataConnection.class.getName())
                 .setShared(true);
         try {
-            byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
-            String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
+            String str = readFile();
+            String xmlString = str.replace("$CLUSTER_NAME$", clusterName);
             Path tempFile = Files.createTempFile("test_client", ".xml");
             Files.write(tempFile, xmlString.getBytes(StandardCharsets.UTF_8));
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML_PATH, tempFile.toString());
@@ -260,5 +259,9 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String readFile() throws IOException {
+        return Files.readString(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
     }
 }

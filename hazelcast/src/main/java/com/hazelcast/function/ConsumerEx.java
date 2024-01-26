@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,10 +56,7 @@ public interface ConsumerEx<T> extends Consumer<T>, Serializable, SecuredFunctio
      */
     default ConsumerEx<T> andThen(ConsumerEx<? super T> after) {
         checkNotNull(after, "after");
-        return t -> {
-            accept(t);
-            after.accept(t);
-        };
+        return new FunctionsImpl.ComposedConsumerEx<>(this, after);
     }
 
     /**

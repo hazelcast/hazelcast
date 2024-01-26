@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -29,6 +30,8 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
@@ -41,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
@@ -58,6 +62,8 @@ public final class QueryUtils {
 
     // This is an arbitrarily-chosen prefix so that data connection names don't clash with other object names
     private static final String DATA_CONNECTION_KEY_PREFIX = "57ae1d3a-d379-44cb-bb60-86b1d2dcd744-";
+
+    // TODO: tech debt: revisit and this class, move some methods to other classes.
 
     private QueryUtils() {
         // No-op.
@@ -161,6 +167,25 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
+    }
+
+    /**
+     * Check if the given type contains cycles.
+     */
+    public static boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
+        if (!discovered.add(type.getTypeName())) {
+            return true;
+        }
+
+        for (final RelDataTypeField field : type.getFieldList()) {
+            final RelDataType fieldType = field.getType();
+            if (fieldType instanceof HazelcastObjectType
+                    && containsCycles((HazelcastObjectType) fieldType, discovered)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,54 @@
 
 package com.hazelcast.map.listener;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptorAdaptor;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-@RunWith(HazelcastParallelClassRunner.class)
+import static java.util.Arrays.asList;
+
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryUpdatedListenerTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameters(name = "offload: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true},
+                {false}
+        });
+    }
+
+    @Parameterized.Parameter
+    public boolean offload;
+
     /**
      * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
      *      old value but not being considered by interceptor - Strange Behaviour</a>
      */
     @Test
     public void testOldValues() throws InterruptedException, ExecutionException {
-        final HazelcastInstance instance = createHazelcastInstanceFactory().newHazelcastInstance();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setProperty(MapServiceContext.PROP_FORCE_OFFLOAD_ALL_OPERATIONS, String.valueOf(offload));
+        final HazelcastInstance instance = createHazelcastInstanceFactory().newHazelcastInstance(config);
 
         // Create a map
         final IMap<Object, AtomicInteger> map = instance.getMap(randomMapName());
@@ -107,7 +128,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
             final Consumer<EntryUpdatedListener<Object, AtomicInteger>> listenerSetter) {
         final CompletableFuture<Integer> oldValue = new CompletableFuture<>();
         listenerSetter
-                .accept((EntryUpdatedListener<Object, AtomicInteger>) event -> oldValue.complete(event.getOldValue().get()));
+                .accept(event -> oldValue.complete(event.getOldValue().get()));
         return oldValue;
     }
 }

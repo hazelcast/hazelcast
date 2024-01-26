@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.tpcengine.util.JVM;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -32,9 +33,6 @@ import java.util.Arrays;
  * @see FutureJavaVersion
  */
 public enum JavaVersion implements JavaMajorVersion {
-    JAVA_8(8),
-    JAVA_9(9),
-    JAVA_10(10),
     JAVA_11(11),
     JAVA_12(12),
     JAVA_13(13),
@@ -44,7 +42,8 @@ public enum JavaVersion implements JavaMajorVersion {
     JAVA_17(17),
     JAVA_18(18),
     JAVA_19(19),
-    JAVA_20(20)
+    JAVA_20(20),
+    JAVA_21(21)
     ;
 
     public static final JavaMajorVersion UNKNOWN_VERSION = new UnknownVersion();
@@ -84,44 +83,13 @@ public enum JavaVersion implements JavaMajorVersion {
     }
 
     /**
-     * <pre>
-     * <= JDK 8
-     *     VNUM  := 1\.[1-9]\.[0-9](_[0-9]{2})?         Version number
-     *     PRE   := [a-zA-Z0-9]+                        Pre-release identifier
-     *     java.version
-     *           := $VNUM(-$PRE)*
-     * >= JDK 9
-     *     VNUM  := [1-9][0-9]*(\.(0|[1-9][0-9]*))*     Version number
-     *     PRE   := [a-zA-Z0-9]+                        Pre-release identifier
-     *     BUILD := 0|[1-9][0-9]*                       Build number
-     *     OPT   := [-a-zA-Z0-9\.]+                     Build information
-     *     java.version
-     *           := $VNUM(-$PRE)?\+$BUILD(-$OPT)?
-     *            | $VNUM-$PRE(-$OPT)?
-     *            | $VNUM(+-$OPT)?
-     * </pre>
-     * @see <a href="https://www.oracle.com/java/technologies/javase/versioning-naming.html">
-     *      J2SE SDK/JRE Version String Naming Convention (<= JDK 8)
      * @see <a href="https://openjdk.org/jeps/223">
-     *      JEP 223: New Version-String Scheme (>= JDK 9)
+     *      JEP 223: New Version-String Scheme
      */
     static JavaMajorVersion detectCurrentVersion() {
         ILogger logger = Logger.getLogger(JavaVersion.class);
 
-        String version = System.getProperty("java.version");
-        if (version == null) {
-            warn(logger, "java.version property is not set");
-            return UNKNOWN_VERSION;
-        }
-
-        int major;
-        try {
-            String[] components = version.split("[-+.]");
-            major = Integer.parseInt(components[components[0].equals("1") ? 1 : 0]);
-        } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
-            warn(logger, "java.version property is in unknown format: " + version);
-            return UNKNOWN_VERSION;
-        }
+        int major = JVM.getMajorVersion();
 
         if (logger.isFineEnabled()) {
             logger.fine("Detected runtime version: Java " + major);
@@ -130,11 +98,6 @@ public enum JavaVersion implements JavaMajorVersion {
         return Arrays.<JavaMajorVersion>stream(values())
                 .filter(v -> v.getMajorVersion() == major).findFirst()
                 .orElseGet(() -> new FutureJavaVersion(major));
-    }
-
-    private static void warn(ILogger logger, String message) {
-        logger.warning(message + ". You can specify argument -Djava.version=<version> "
-                + "to set the Java version when starting JVM.");
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.List;
+import java.util.Objects;
 
 public class MockExpressionEvalContext implements ExpressionEvalContext {
     InternalSerializationService ss;
@@ -45,6 +47,13 @@ public class MockExpressionEvalContext implements ExpressionEvalContext {
     @Override
     public InternalSerializationService getSerializationService() {
         return ss;
+    }
+
+    @Override
+    public ExpressionEvalContext withSerializationService(@Nonnull InternalSerializationService newService) {
+        MockExpressionEvalContext newCtx = new MockExpressionEvalContext();
+        newCtx.ss = Objects.requireNonNull(newService);
+        return newCtx;
     }
 
     @Override

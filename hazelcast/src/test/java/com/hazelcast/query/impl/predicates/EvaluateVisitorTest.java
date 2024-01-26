@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.query.impl.TypeConverters;
@@ -44,7 +44,7 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.not;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
-import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
+import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -70,12 +70,12 @@ public class EvaluateVisitorTest {
     }
 
     private EvaluateVisitor visitor = new EvaluateVisitor();
-    private Indexes indexes;
+    private IndexRegistry indexes;
 
     @SuppressWarnings("SuspiciousMethodCalls")
     @Before
     public void before() {
-        indexes = mock(Indexes.class);
+        indexes = mock(IndexRegistry.class);
 
         InternalIndex bitmapA = mock(InternalIndex.class);
         when(bitmapA.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeLong(jobId);
         out.writeLong(creationTime);
         IOUtil.writeData(out, dag);
-        out.writeUTF(dagJson);
+        out.writeString(dagJson);
         out.writeObject(config);
         out.writeObject(ownedObservables);
         ImdgUtil.writeSubject(out, subject);
@@ -130,7 +130,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         jobId = in.readLong();
         creationTime = in.readLong();
         dag = IOUtil.readData(in);
-        dagJson = in.readUTF();
+        dagJson = in.readString();
         config = in.readObject();
         ownedObservables = in.readObject();
         subject = ImdgUtil.readSubject(in);

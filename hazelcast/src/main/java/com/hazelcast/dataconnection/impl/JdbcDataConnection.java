@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.dataconnection.impl.jdbcproperties.HikariTranslator;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
-import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -53,7 +52,6 @@ import static java.util.Locale.ROOT;
  *
  * @since 5.3
  */
-@Beta
 public class JdbcDataConnection extends DataConnectionBase {
 
     public static final String OBJECT_TYPE_TABLE = "Table";

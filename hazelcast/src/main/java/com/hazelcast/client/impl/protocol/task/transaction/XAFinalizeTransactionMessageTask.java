@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -64,7 +65,7 @@ public class XAFinalizeTransactionMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.FINALIZE_REMOTE_TRANSACTION;
     }
 
     @Override
@@ -75,5 +76,11 @@ public class XAFinalizeTransactionMessageTask
     @Override
     public Permission getRequiredPermission() {
         return new TransactionPermission();
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
+        return null;
     }
 }

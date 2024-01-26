@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -84,7 +84,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
  * Test that covers basic column read operations through SQL.
  */
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlBasicTest extends SqlTestSupport {
@@ -143,7 +143,8 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initializeWithClient(2, memberConfig(), clientConfig());
+        initializeWithClientAndConfigSupplier(2,
+                () -> memberConfig(), clientConfig());
 
         member1 = instances()[0];
         member2 = instances()[1];
@@ -159,7 +160,8 @@ public class SqlBasicTest extends SqlTestSupport {
     @Test
     public void testSelect() {
         if (isPortable()) {
-            createMapping(mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID,
+                    0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
             createMapping(mapName(), keyClass(), valueClass());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.buildutils;
 
-import static java.util.Locale.ROOT;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +25,8 @@ import java.util.jar.JarOutputStream;
 
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ReproducibleResourceTransformer;
+
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 
 /**
  * Prevents duplicate copies of the Apache License.
@@ -67,10 +67,6 @@ public class HazelcastLicenseResourceTransformer implements ReproducibleResource
     @Override
     public void processResource(String resource, InputStream is, List<Relocator> relocators) throws IOException {
         processResource(resource, is, relocators, 0);
-    }
-
-    private static boolean equalsIgnoreCase(String str1, String str2) {
-        return (str1 == null || str2 == null) ? false : (str1 == str2 || str1.toLowerCase(ROOT).equals(str2.toLowerCase(ROOT)));
     }
 
     @SuppressWarnings({"checkstyle:MagicNumber"})

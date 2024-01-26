@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.internal.serialization.impl.defaultserializers.DelayQueueSt
 import com.hazelcast.internal.serialization.impl.defaultserializers.HashMapStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.HashSetStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers;
+import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.ByteBufferSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.EnumSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OptionalSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.LinkedBlockingQueueStreamSerializer;
@@ -72,6 +73,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -161,9 +163,14 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
         javaSerializerAdapter = createSerializerAdapter(
-                new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameFilter));
+                new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameSerializationFilter)
+        );
         javaExternalizableAdapter = createSerializerAdapter(
-                new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter));
+                new JavaDefaultSerializers.ExternalizableSerializer(
+                    builder.enableCompression,
+                    builder.classNameSerializationFilter
+                )
+        );
         registerConstantSerializers(builder.isCompatibility());
         registerJavaTypeSerializers(builder.isCompatibility());
 
@@ -298,6 +305,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             registerConstant(LinkedHashSet.class, new LinkedHashSetStreamSerializer());
             registerConstant(CopyOnWriteArraySet.class, new CopyOnWriteArraySetStreamSerializer());
             registerConstant(ConcurrentSkipListSet.class, new ConcurrentSkipListSetStreamSerializer());
+
             registerConstant(ArrayDeque.class, new ArrayDequeStreamSerializer());
             registerConstant(LinkedBlockingQueue.class, new LinkedBlockingQueueStreamSerializer());
             registerConstant(ArrayBlockingQueue.class, new ArrayBlockingQueueStreamSerializer());
@@ -320,6 +328,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
         safeRegister(HazelcastJsonValue.class, new HazelcastJsonValueSerializer());
+        safeRegister(ByteBuffer.class, new ByteBufferSerializer());
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions) {
@@ -410,7 +419,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private Map<Integer, ? extends PortableFactory> portableFactories = Collections.emptyMap();
         private boolean enableCompression;
         private boolean enableSharedObject;
-        private ClassNameFilter classNameFilter;
+        private ClassNameFilter classNameSerializationFilter;
         private boolean checkClassDefErrors;
 
         protected AbstractBuilder() {
@@ -447,7 +456,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         }
 
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
-            this.classNameFilter = classNameFilter;
+            this.classNameSerializationFilter = classNameFilter;
             return self();
         }
 

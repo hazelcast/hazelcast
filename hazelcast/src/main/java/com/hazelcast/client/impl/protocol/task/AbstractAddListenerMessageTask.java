@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 
 import java.util.UUID;
@@ -33,6 +34,12 @@ public abstract class AbstractAddListenerMessageTask<P>
     }
 
     @Override
+    protected void processMessage() {
+        // We always want to be Namespace-aware when adding listeners
+        NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), super::processMessage);
+    }
+
+    @Override
     protected Object processResponseBeforeSending(UUID response) {
         addDestroyAction(response);
         return response;
@@ -42,4 +49,5 @@ public abstract class AbstractAddListenerMessageTask<P>
         endpoint.addListenerDestroyAction(getServiceName(), getDistributedObjectName(), registrationId);
     }
 
+    protected abstract String getUserCodeNamespace();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
@@ -47,8 +47,8 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
     public void runInternal() {
         int partitionId = getPartitionId();
 
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        indexes.recordIndexDefinition(config);
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        indexRegistry.recordIndexDefinition(config);
     }
 
     @Override

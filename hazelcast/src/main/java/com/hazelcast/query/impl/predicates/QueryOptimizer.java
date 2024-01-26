@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 /**
  * Optimizes predicate for faster execution.
@@ -25,5 +25,5 @@ import com.hazelcast.query.impl.Indexes;
  * if no optimization has been performed.
 */
 public interface QueryOptimizer {
-    <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes);
+    <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes);
 }

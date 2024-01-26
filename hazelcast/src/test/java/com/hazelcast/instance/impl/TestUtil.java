@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static org.junit.Assert.fail;
@@ -255,7 +254,7 @@ public final class TestUtil {
     }
 
     public static byte[] byteBufferToBytes(ByteBuffer buffer) {
-        upcast(buffer).flip();
+        buffer.flip();
         byte[] requestBytes = new byte[buffer.limit()];
         buffer.get(requestBytes);
         return requestBytes;

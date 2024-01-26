@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
@@ -156,14 +157,33 @@ public final class CustomTypeFactory {
         return entryView;
     }
 
+    public static ReplicatedMapEntryView<Data, Data> createReplicatedMapEntryView(Data key, Data value, long creationTime,
+                                                                           long hits, long lastAccessTime, long lastUpdateTime,
+                                                                           long ttl) {
+        ReplicatedMapEntryView<Data, Data> entryView = new ReplicatedMapEntryView<>();
+        entryView.setKey(key);
+        entryView.setValue(value);
+        entryView.setCreationTime(creationTime);
+        entryView.setHits(hits);
+        entryView.setLastAccessTime(lastAccessTime);
+        entryView.setLastUpdateTime(lastUpdateTime);
+        entryView.setTtl(ttl);
+        return entryView;
+    }
+
     public static DefaultQueryCacheEventData createQueryCacheEventData(Data dataKey, Data dataNewValue, long sequence,
-                                                                       int eventType, int partitionId) {
+                                                                       int eventType, int partitionId, boolean isMapNameExists,
+                                                                       String mapName) {
         DefaultQueryCacheEventData eventData = new DefaultQueryCacheEventData();
         eventData.setDataKey(dataKey);
         eventData.setDataNewValue(dataNewValue);
         eventData.setSequence(sequence);
         eventData.setEventType(eventType);
         eventData.setPartitionId(partitionId);
+        if (isMapNameExists) {
+            eventData.setMapName(mapName);
+        }
+
         return eventData;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,19 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
+
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
+public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                       UserCodeNamespaceAwareConfig<ExecutorConfig> {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -48,6 +53,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
 
     private String splitBrainProtectionName;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public ExecutorConfig() {
     }
@@ -67,6 +73,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         this.queueCapacity = config.queueCapacity;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -171,6 +178,29 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link ExecutorConfig} instance
+     * @since 5.4
+     */
+    public ExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -179,6 +209,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", poolSize=" + poolSize
                 + ", queueCapacity=" + queueCapacity
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -199,6 +230,11 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeInt(queueCapacity);
         out.writeBoolean(statisticsEnabled);
         out.writeString(splitBrainProtectionName);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(userCodeNamespace);
+        }
     }
 
     @Override
@@ -208,6 +244,11 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         queueCapacity = in.readInt();
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readString();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            userCodeNamespace = in.readString();
+        }
     }
 
     @Override
@@ -234,6 +275,9 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -244,6 +288,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + queueCapacity;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 }

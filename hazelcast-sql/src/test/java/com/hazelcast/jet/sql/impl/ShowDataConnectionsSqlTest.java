@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
@@ -70,7 +71,7 @@ public class ShowDataConnectionsSqlTest extends SqlJsonTestSupport {
 
         // when & then
         List<Row> expectedRows = dlNames.stream()
-                .map(name -> new Row(name, "dummy", jsonArray("testType1", "testType2")))
+                .map(name -> new Row(name, DUMMY_TYPE, jsonArray("testType1", "testType2")))
                 .collect(toList());
         assertRowsOrdered(instance(), "show data connections", expectedRows);
         assertRowsOrdered(client(), "show data connections", expectedRows);

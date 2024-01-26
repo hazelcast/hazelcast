@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -110,7 +112,6 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("reliable topic", c1, c2, c1.getReliableTopicConfigs(), c2.getReliableTopicConfigs(),
                 new ReliableTopicConfigChecker());
         checkCompatibleConfigs("cache", c1, c2, c1.getCacheConfigs(), c2.getCacheConfigs(), new CacheSimpleConfigChecker());
-        checkCompatibleConfigs("executor", c1, c2, c1.getExecutorConfigs(), c2.getExecutorConfigs(), new ExecutorConfigChecker());
         checkCompatibleConfigs("durable executor", c1, c2, c1.getDurableExecutorConfigs(), c2.getDurableExecutorConfigs(),
                 new DurableExecutorConfigChecker());
         checkCompatibleConfigs("scheduled executor", c1, c2, c1.getScheduledExecutorConfigs(), c2.getScheduledExecutorConfigs(),
@@ -145,7 +146,8 @@ public class ConfigCompatibilityChecker {
                 new DataConnectionConfigChecker());
         checkCompatibleConfigs("tpc", c1, c2, singletonMap("", c1.getTpcConfig()),
                 singletonMap("", c2.getTpcConfig()), new TpcConfigChecker());
-
+        checkCompatibleConfigs("user-code-namespaces", c1, c2, singletonMap("", c1.getNamespacesConfig()),
+                singletonMap("", c2.getNamespacesConfig()), new UserCodeNamespacesConfigChecker());
         return true;
     }
 
@@ -720,6 +722,13 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    private static class UserCodeNamespacesConfigChecker extends ConfigChecker<UserCodeNamespacesConfig> {
+        @Override
+        boolean check(UserCodeNamespacesConfig c1, UserCodeNamespacesConfig c2) {
+            return nullSafeEqual(c1, c2);
+        }
+    }
+
 
     public static class CPSubsystemConfigChecker extends ConfigChecker<CPSubsystemConfig> {
 
@@ -741,7 +750,8 @@ public class ConfigCompatibilityChecker {
                             && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
                             && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
                             && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds()
-                            && c1.getCPMemberPriority() == c2.getCPMemberPriority();
+                            && c1.getCPMemberPriority() == c2.getCPMemberPriority()
+                            && c1.getCPMapLimit() == c2.getCPMapLimit();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;
@@ -795,6 +805,22 @@ public class ConfigCompatibilityChecker {
                     return false;
                 }
                 if (e.getValue().getLockAcquireLimit() != s2.getLockAcquireLimit()) {
+                    return false;
+                }
+            }
+
+            Map<String, CPMapConfig> maps1 = c1.getCpMapConfigs();
+
+            if (maps1.size() != c2.getCpMapConfigs().size()) {
+                return false;
+            }
+
+            for (Entry<String, CPMapConfig> e : maps1.entrySet()) {
+                CPMapConfig c2CPMapConfig = c2.findCPMapConfig(e.getKey());
+                if (c2CPMapConfig == null) {
+                    return false;
+                }
+                if (e.getValue().getMaxSizeMb() != c2CPMapConfig.getMaxSizeMb()) {
                     return false;
                 }
             }
@@ -873,7 +899,8 @@ public class ConfigCompatibilityChecker {
             }
 
             return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis()
-                    && c1.isCatalogPersistenceEnabled() == c2.isCatalogPersistenceEnabled();
+                    && c1.isCatalogPersistenceEnabled() == c2.isCatalogPersistenceEnabled()
+                    && nullSafeEqual(c1.getJavaReflectionFilterConfig(), c2.getJavaReflectionFilterConfig());
         }
 
         @Override
@@ -1731,7 +1758,15 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getUsernamePasswordIdentityConfig(), c2.getUsernamePasswordIdentityConfig())
                     && isCompatible(c1.getTokenIdentityConfig(), c2.getTokenIdentityConfig())
                     && isCompatible(c1.getKerberosIdentityConfig(), c2.getKerberosIdentityConfig())
+                    && isCompatible(c1.getAccessControlServiceConfig(), c2.getAccessControlServiceConfig())
                     ;
+        }
+
+        private static boolean isCompatible(AccessControlServiceConfig c1,
+                AccessControlServiceConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
 
         private static boolean isCompatible(UsernamePasswordIdentityConfig c1, UsernamePasswordIdentityConfig c2) {

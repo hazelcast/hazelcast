@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,7 +240,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(plane -> plane.clearConnectionsInProgress());
+        stream(planes).forEach(Plane::clearConnectionsInProgress);
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();

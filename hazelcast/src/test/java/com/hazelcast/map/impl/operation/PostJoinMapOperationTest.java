@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
         MapContainer mapContainerOnNode2 = mapService.getMapServiceContext().getMapContainer("map");
 
-        assertEquals(1, mapContainerOnNode2.getIndexes().getIndexes().length);
+        assertEquals(1, mapContainerOnNode2.getGlobalIndexRegistry().getIndexes().length);
         assertEquals(1, mapContainerOnNode2.getInterceptorRegistry().getInterceptors().size());
         assertEquals(Person.class,
                 mapContainerOnNode2.getInterceptorRegistry().getInterceptors().get(0).interceptGet("anything").getClass());

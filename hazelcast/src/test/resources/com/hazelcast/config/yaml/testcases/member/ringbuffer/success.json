@@ -19,7 +19,8 @@
           "split-brain-protection-ref": "splitBrainProtectionRuleWithThreeNodes",
           "merge-policy": {
             "class-name": "PutIfAbsentMergePolicy"
-          }
+          },
+          "user-code-namespace": "ns1"
         },
         "my-second-ringbuffer": {
           "capacity": 10000,

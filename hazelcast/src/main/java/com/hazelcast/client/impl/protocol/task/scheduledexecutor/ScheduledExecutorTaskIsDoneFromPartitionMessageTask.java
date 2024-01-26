@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -74,11 +75,17 @@ public class ScheduledExecutorTaskIsDoneFromPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return "isDone";
+        return SecurityInterceptorConstants.IS_DONE;
     }
 
     @Override
     public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        // This task is not Namespace-aware so it doesn't matter
         return null;
     }
 }

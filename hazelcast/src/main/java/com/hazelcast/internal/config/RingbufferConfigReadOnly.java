@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
+
+import javax.annotation.Nullable;
 
 public class RingbufferConfigReadOnly extends RingbufferConfig {
 
@@ -74,6 +76,11 @@ public class RingbufferConfigReadOnly extends RingbufferConfig {
 
     @Override
     public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public RingbufferConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw throwReadOnly();
     }
 

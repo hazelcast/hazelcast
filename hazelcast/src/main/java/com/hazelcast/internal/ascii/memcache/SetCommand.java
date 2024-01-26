@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 import java.nio.ByteBuffer;
 
@@ -51,7 +50,7 @@ public class SetCommand extends AbstractTextCommand {
             while (src.hasRemaining()) {
                 char c = (char) src.get();
                 if (c == '\n') {
-                    upcast(bbValue).flip();
+                    bbValue.flip();
                     return true;
                 }
             }

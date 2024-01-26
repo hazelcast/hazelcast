@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.internal.util.IterationType;
 
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -73,10 +71,6 @@ public class MapKeySetMessageTask
         return MapKeySetCodec.encodeResponse((List<Data>) response);
     }
 
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters, ActionConstants.ACTION_READ);
-    }
-
     @Override
     public String getDistributedObjectName() {
         return parameters;
@@ -84,7 +78,7 @@ public class MapKeySetMessageTask
 
     @Override
     public String getMethodName() {
-        return "keySet";
+        return SecurityInterceptorConstants.KEY_SET;
     }
 
     @Override

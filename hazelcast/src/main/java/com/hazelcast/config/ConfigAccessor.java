@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.ResourceDefinitionHolder;
 import com.hazelcast.internal.config.ServicesConfig;
+import com.hazelcast.internal.namespace.ResourceDefinition;
+import com.hazelcast.internal.namespace.impl.ResourceDefinitionImpl;
 import com.hazelcast.spi.annotation.PrivateApi;
+
+import javax.annotation.Nonnull;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * Private API for accessing configuration at runtime
@@ -44,5 +52,29 @@ public final class ConfigAccessor {
 
     public static boolean isInstanceTrackingEnabledSet(Config config) {
         return config.getInstanceTrackingConfig().isEnabledSet;
+    }
+
+    public static Map<String, UserCodeNamespaceConfig> getNamespaceConfigs(UserCodeNamespacesConfig config) {
+       return config.getNamespaceConfigs();
+    }
+
+    public static void add(UserCodeNamespaceConfig config, @Nonnull ResourceDefinitionHolder holder) {
+        config.add(new ResourceDefinitionImpl(holder));
+    }
+
+    public static Collection<ResourceDefinition> getResourceDefinitions(UserCodeNamespaceConfig nsConfig) {
+        return nsConfig.getResourceConfigs();
+    }
+
+    /**
+     * Adds Namespace directly to namespaces configuration without
+     * Broadcasting to cluster members.
+     * <p>
+     * @param namespacesConfig The namespaces configuration.
+     * @param namespaceConfig The namespace to add.
+     */
+    public static void addNamespaceConfigLocally(UserCodeNamespacesConfig namespacesConfig,
+                                                 UserCodeNamespaceConfig namespaceConfig) {
+        namespacesConfig.addNamespaceConfigLocally(namespaceConfig);
     }
 }

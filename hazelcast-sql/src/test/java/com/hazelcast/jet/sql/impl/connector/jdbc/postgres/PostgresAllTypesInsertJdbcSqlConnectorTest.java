@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,31 @@ import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.runners.Parameterized;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
 public class PostgresAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcSqlConnectorTest {
+
+    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlValue:{2}, javaValue:{3}, jdbcValue:{4}")
+    public static Collection<Object[]> parameters() {
+        // Include parameters from the parent class
+        Collection<Object[]> parentParams = AllTypesInsertJdbcSqlConnectorTest.parameters();
+
+        // Add additional parameters in the child class
+        List<Object[]> list = new ArrayList<>(parentParams);
+
+        // BPCHAR pads string with blanks up to 10 chars
+        Object[] additionalData = {"BPCHAR(10)", "VARCHAR", "'try'", "try       ", "try       "};
+        list.add(additionalData);
+
+        return list;
+    }
 
     @BeforeClass
     public static void beforeClass() {

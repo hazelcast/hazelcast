@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.usercodedeployment.impl.filter;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.filter.AlwaysApplyFilter;
 import com.hazelcast.internal.util.filter.Filter;
@@ -64,7 +63,7 @@ public class MemberProviderFilterParserTest extends HazelcastTestSupport {
     @Test
     public void givenMemberAttributeFilterIsUsed_whenMemberAttributeIsPresent_thenFilterMatches() {
         Filter<Member> memberFilter = MemberProviderFilterParser.parseMemberFilter("HAS_ATTRIBUTE:foo");
-        Map<String, String> attributes = ImmutableMap.of(
+        Map<String, String> attributes = Map.of(
                 "foo", "bar"
         );
         Member mockMember = createMockMemberWithAttributes(attributes);
@@ -74,7 +73,7 @@ public class MemberProviderFilterParserTest extends HazelcastTestSupport {
     @Test
     public void givenMemberAttributeFilterIsUsed_whenMemberAttributeIsNotPresent_thenFilterDoesNotMatch() {
         Filter<Member> memberFilter = MemberProviderFilterParser.parseMemberFilter("HAS_ATTRIBUTE:foo");
-        Map<String, String> attributes = ImmutableMap.of(
+        Map<String, String> attributes = Map.of(
                 "bar", "other"
         );
         Member mockMember = createMockMemberWithAttributes(attributes);

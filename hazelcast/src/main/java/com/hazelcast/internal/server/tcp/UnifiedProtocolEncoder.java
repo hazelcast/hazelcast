@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.ascii.TextEncoder.TEXT_ENCODER;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SIZE;
@@ -128,7 +127,7 @@ public class UnifiedProtocolEncoder
 
             return CLEAN;
         } finally {
-            upcast(dst).flip();
+            dst.flip();
         }
     }
 

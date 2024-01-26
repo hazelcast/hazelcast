@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,37 @@ package com.hazelcast.spi.merge;
 public interface MergingValue<V> extends MergingView {
 
     /**
-     * Returns the deserialized merging value.
+     * Returns the merging value in deserialized form.
+     *
+     * @implNote This method invokes deserialization of the value
+     * when called - <b>be careful not to use it internally</b>
+     * within a cluster as the member may not have information
+     * available to deserialize correctly, resulting in an
+     * {@code Exception} being raised.
      *
      * @return the deserialized merging value
+     * @deprecated since 5.4 - this method name is too ambiguous and does
+     * not convey its functionality well (it deserializes the value) - so
+     * it is being replaced by {@link #getDeserializedValue()}.
      */
-    V getValue();
+    @Deprecated
+    default V getValue() {
+        return getDeserializedValue();
+    }
+
+    /**
+     * Returns the merging value in deserialized form.
+     *
+     * @implNote This method invokes deserialization of the value
+     * when called - <b>be careful not to use it internally</b>
+     * within a cluster as the member may not have information
+     * available to deserialize correctly, resulting in an
+     * {@code Exception} being raised.
+     *
+     * @return the deserialized merging value
+     * @since 5.4
+     */
+    V getDeserializedValue();
 
     /**
      * Returns the merging value in the in-memory format of the backing data structure.

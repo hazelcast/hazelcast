@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,9 +50,13 @@ public final class UnparseUtil {
     }
 
     public static void unparseOptions(SqlWriter writer, SqlNodeList options) {
+        unparseOptions(writer, "OPTIONS", options);
+    }
+
+    public static void unparseOptions(SqlWriter writer, String prefix, SqlNodeList options) {
         if (options != null && options.size() > 0) {
             writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
+            writer.keyword(prefix);
             SqlWriter.Frame withFrame = writer.startList("(", ")");
             for (SqlNode property : options) {
                 printIndent(writer);

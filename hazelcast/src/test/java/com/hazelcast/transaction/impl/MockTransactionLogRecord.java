@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,17 +45,17 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
     }
 
     public MockTransactionLogRecord failPrepare() {
-        this.failPrepare = true;
+        failPrepare = true;
         return this;
     }
 
     public MockTransactionLogRecord failCommit() {
-        this.failCommit = true;
+        failCommit = true;
         return this;
     }
 
     public MockTransactionLogRecord failRollback() {
-        this.failRollback = true;
+        failRollback = true;
         return this;
     }
 
@@ -181,13 +181,9 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
 
         @Override
         public DataSerializableFactory createFactory() {
-            ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+            Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-            constructors[MOCK_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                public IdentifiedDataSerializable createNew(Integer arg) {
-                    return new MockTransactionLogRecord();
-                }
-            };
+            constructors[MOCK_TRANSACTION_LOG_RECORD] = MockTransactionLogRecord::new;
 
             return new ArrayDataSerializableFactory(constructors);
         }

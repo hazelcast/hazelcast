@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.lang.String.format;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -175,6 +176,29 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         NearCacheStats stats = getNearCacheStats(map);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
+    }
+
+    // https://github.com/hazelcast/hazelcast/issues/23238
+    @Test
+    public void testGetAsync_callsMapLoaderOnce() throws Exception {
+        String mapName = randomMapName();
+        Config config = newConfig();
+
+        AtomicInteger loadCount = new AtomicInteger();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+            @Override
+            public Object load(Object key) {
+                loadCount.incrementAndGet();
+                return super.load(key);
+            }
+        });
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(config, newNoInvalidationNearCacheConfig(), 1, mapName);
+        map.getAsync(1).toCompletableFuture().get();
+        assertThat(loadCount.get()).isOne();
     }
 
     @Test
@@ -1348,7 +1372,11 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig, int clusterSize) {
-        String mapName = randomMapName();
+        return getNearCachedMapFromClient(config, nearCacheConfig, clusterSize, randomMapName());
+    }
+
+    protected <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig, int clusterSize,
+                                                           String mapName) {
         hazelcastFactory.newInstances(config, clusterSize);
 
         nearCacheConfig.setName(mapName + "*");

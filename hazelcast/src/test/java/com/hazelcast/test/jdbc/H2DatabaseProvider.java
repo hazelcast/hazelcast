@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,69 @@
 
 package com.hazelcast.test.jdbc;
 
+import org.h2.jdbcx.JdbcDataSource;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class H2DatabaseProvider implements TestDatabaseProvider {
+@SuppressWarnings("rawtypes")
+public class H2DatabaseProvider extends JdbcDatabaseProvider {
 
     private static final int LOGIN_TIMEOUT = 60;
+
+    private String dbName;
 
     private String jdbcUrl;
 
     @Override
+    JdbcDatabaseContainer<?> createContainer(String dbName) {
+        throw new IllegalStateException("should not be called");
+    }
+
+    @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+        this.dbName = dbName;
+        this.jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
+    }
+
+    @Override
+    public String url() {
+        return jdbcUrl;
+    }
+
+    @Override
+    public String noAuthJdbcUrl() {
+        return jdbcUrl;
+    }
+
+    @Override
+    public DataSource createDataSource(boolean xa) {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setUrl(url());
+        dataSource.setUser(user());
+        dataSource.setPassword(password());
+
+        return dataSource;
+    }
+
+    @Override
+    public String user() {
+        return "";
+    }
+
+    @Override
+    public String password() {
+        return "";
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return dbName;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
 
@@ -47,7 +48,7 @@ public class UrlYamlConfig extends Config {
      * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public UrlYamlConfig(String url) throws IOException {
-        this(new URL(url));
+        this(URI.create(url).toURL());
     }
 
     /**
@@ -61,7 +62,7 @@ public class UrlYamlConfig extends Config {
      * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public UrlYamlConfig(String url, Properties properties) throws IOException {
-        this(new URL(url), properties);
+        this(URI.create(url).toURL(), properties);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.WanReplicationRef;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -244,6 +245,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfig<K, V> setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public CacheConfig<K, V> setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw throwReadOnly();
     }
 

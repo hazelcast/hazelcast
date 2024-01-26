@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
@@ -635,11 +636,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  properties:\n"
                 + "    prop: ${variable}";
 
-        String path = helper.givenConfigFileInWorkDir("foo.bar", configYaml).getAbsolutePath();
+        Path path = helper.givenConfigFileInWorkDir("foo.bar", configYaml).toPath().toAbsolutePath();
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");
-        Config config = new UrlYamlConfig("file:///" + path, properties);
+        Config config = new UrlYamlConfig(path.toUri().toString(), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
     }

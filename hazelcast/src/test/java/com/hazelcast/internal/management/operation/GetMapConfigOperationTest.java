@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
@@ -48,12 +49,22 @@ public class GetMapConfigOperationTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory;
     private HazelcastClientInstanceImpl client;
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
+    protected InMemoryFormat getInMemoryFormat() {
+        return InMemoryFormat.BINARY;
+    }
+
     @Before
     public void setUp() {
         factory = new TestHazelcastFactory();
 
-        Config config = smallInstanceConfig();
+        Config config = getConfig();
         MapConfig withIndex = new MapConfig("map-with-index")
+                .setInMemoryFormat(getInMemoryFormat())
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "first"));
         config.addMapConfig(withIndex);
 

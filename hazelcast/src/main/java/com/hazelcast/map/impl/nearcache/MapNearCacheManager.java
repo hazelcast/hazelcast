@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -90,10 +90,10 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     /**
      * Filters out listeners other than invalidation related ones.
      */
-    private static class InvalidationAcceptorFilter implements Function<EventRegistration, Boolean> {
+    private static class InvalidationAcceptorFilter implements Predicate<EventRegistration> {
 
         @Override
-        public Boolean apply(EventRegistration eventRegistration) {
+        public boolean test(EventRegistration eventRegistration) {
             EventFilter filter = eventRegistration.getFilter();
             return filter instanceof EventListenerFilter && filter.eval(INVALIDATION.getType());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryYamlConfig;
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
@@ -35,20 +38,22 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.UserCodeUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
@@ -60,11 +65,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("deprecation")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
-
-    private static final ILogger LOGGER = Logger.getLogger(DynamicConfigYamlGeneratorTest.class);
 
     // LICENSE KEY
 
@@ -535,6 +539,66 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
     }
 
+    @Test
+    public void testNamespacesConfig() {
+        Config config = new Config();
+        config.getNamespacesConfig().setEnabled(true);
+        config.getNamespacesConfig()
+                .addNamespaceConfig(new UserCodeNamespaceConfig("ns1")
+                        .addJar(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarId")
+                        .addJarsInZip(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarsInZipId"));
+        config.getNamespacesConfig()
+                .addNamespaceConfig(new UserCodeNamespaceConfig("ns2")
+                        .addJar(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarId-2")
+                        .addJarsInZip(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
+                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarsInZipId-2"));
+        Config actual = getNewConfigViaGenerator(config);
+        assertEquals(config.getNamespacesConfig(), actual.getNamespacesConfig());
+    }
+
+    @Test
+    public void testClassFilterConfig() {
+        ClassFilter filter = createClassFilter();
+        Map<String, Object> filterAsMap = DynamicConfigYamlGenerator.classFilterGenerator(filter);
+        assertClassFilterAsMap(filterAsMap);
+    }
+
+    private static void assertClassFilterAsMap(Map<String, Object> filterAsMap) {
+        List<String> classes = (List<String>) filterAsMap.get("class");
+        assertContains(classes, "com.acme.app.BeanComparator");
+        assertEquals(1, classes.size());
+        List<String> packages = (List<String>) filterAsMap.get("package");
+        assertContains(packages, "com.acme.app");
+        assertContains(packages, "com.acme.app.subpkg");
+        assertEquals(2, packages.size());
+        List<String> prefixes = (List<String>) filterAsMap.get("prefix");
+        assertContains(prefixes, "com.hazelcast.");
+        assertEquals(1, prefixes.size());
+    }
+
+    @Nonnull
+    private static ClassFilter createClassFilter() {
+        ClassFilter filter = new ClassFilter();
+        filter.addClasses("com.acme.app.BeanComparator");
+        filter.addPackages("com.acme.app", "com.acme.app.subpkg");
+        filter.addPrefixes("com.hazelcast.");
+        return filter;
+    }
+
+    @Test
+    public void testJavaSerializationConfig() {
+        JavaSerializationFilterConfig jsfConfig = new JavaSerializationFilterConfig();
+        jsfConfig.setDefaultsDisabled(true);
+        jsfConfig.setBlacklist(createClassFilter());
+
+        Map<String, Object> jsfAsMap = DynamicConfigYamlGenerator.javaSerializationFilterGenerator(jsfConfig);
+        assertTrue((boolean) jsfAsMap.get("defaults-disabled"));
+        assertClassFilterAsMap((Map<String, Object>) jsfAsMap.get("blacklist"));
+    }
+
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
         return getNewConfigViaGenerator(config, false);
@@ -543,7 +607,6 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
     protected Config getNewConfigViaGenerator(Config config, boolean maskSensitiveFields) {
         DynamicConfigYamlGenerator dynamicConfigYamlGenerator = new DynamicConfigYamlGenerator();
         String yaml = dynamicConfigYamlGenerator.generate(config, maskSensitiveFields);
-        LOGGER.fine("\n" + yaml);
         return new InMemoryYamlConfig(yaml);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,7 +47,7 @@ public class AbstractVisitorTest {
         for (Method method : methods) {
             Class<?> predicateType = method.getParameterTypes()[0];
             Predicate predicate = (Predicate) predicateType.newInstance();
-            Indexes indexes = mock(Indexes.class);
+            IndexRegistry indexes = mock(IndexRegistry.class);
             Object result = method.invoke(visitor, predicate, indexes);
 
             assertSame("Method " + method + " does not return identity of the original predicate."

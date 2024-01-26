@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,6 +246,8 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     ) {
         return new ProcessorSupplier() {
 
+            private static final long serialVersionUID = 1L;
+
             private transient KafkaDataConnection kafkaDataConnection;
 
             @Override
@@ -286,6 +288,8 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             boolean exactlyOnce
     ) {
         return new ProcessorSupplier() {
+
+            private static final long serialVersionUID = 1L;
 
             private transient KafkaDataConnection kafkaDataConnection;
 

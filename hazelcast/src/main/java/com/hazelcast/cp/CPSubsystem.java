@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -558,4 +558,28 @@ public interface CPSubsystem {
      */
     boolean removeGroupAvailabilityListener(UUID id);
 
+    /**
+     * Returns a proxy for a {@link CPMap}. <b>Enterprise Only</b>.
+     * <p>
+     *     If no group name is given within the {@code name} parameter, then the
+     *     {@link CPMap} instance will be created on the DEFAULT CP group. If a
+     *     group name is given, like {@code .getMap("myMap@group1")}, the given
+     *     group will be initialized first, if not initialized already, and then
+     *     the {@link CPMap} instance will be created on this group. The returned
+     *     {@link CPMap} instance offers linearizability. When a network partition
+     *     occurs, proxies that exist on the minority side of its CP group lose
+     *     availability.
+     * </p>
+     * <p>
+     *     <strong>Each call of this method performs a commit to the METADATA CP
+     *     group. Hence, callers should cache the returned proxy.</strong>
+     * </p>
+     * @param name Name of the map
+     * @return Proxy for {@link CPMap}
+     * @param <K> Key type of the map
+     * @param <V> Value type of the map
+     * @since 5.4
+     */
+    @Nonnull
+    <K, V> CPMap<K, V> getMap(@Nonnull String name);
 }

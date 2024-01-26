@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -33,7 +31,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
-    protected AsyncSocketMetrics metrics = new AsyncSocketMetrics();
+    protected final AsyncSocketMetrics metrics = new AsyncSocketMetrics();
     protected final boolean clientSide;
 
     protected AsyncSocket(boolean clientSide) {
@@ -137,10 +135,10 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract void start();
 
     /**
-     * Ensures that any scheduled IOBuffers are flushed to the socket.
+     * Ensures that any scheduled messages are flushed to the socket.
      * <p>
      * What happens under the hood is that the AsyncSocket is scheduled in the
-     * {@link Reactor} where at some point in the future the IOBuffers get written
+     * {@link Reactor} where at some point in the future the messages get written
      * to the socket.
      * <p>
      * This method is thread-safe.
@@ -150,46 +148,44 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract void flush();
 
     /**
-     * Writes a {@link IOBuffer} to this AsyncSocket without scheduling the AsyncSocket
+     * Writes a message to this AsyncSocket without scheduling the AsyncSocket
      * in the {@link Reactor}.
      * <p>
-     * This call can be used to buffer a series of IOBuffers and then call
+     * This call can be used to buffer a series of messages and then call
      * {@link #flush()} to trigger the actual writing to the socket.
      * <p>
-     * There is no guarantee that IOBuffer is actually going to be received by the caller after
-     * the AsyncSocket has accepted the IOBuffer. E.g. when the TCP/IP connection is dropped.
+     * There is no guarantee that message is actually going to be received by the caller after
+     * the AsyncSocket has accepted the message. E.g. when the TCP/IP connection is dropped.
      * <p>
      * This method is thread-safe.
      *
-     * @param buf the IOBuffer to write.
-     * @return true if the IOBuffer was accepted, false otherwise.
+     * @param msg the message to write.
+     * @return true if the msg was accepted, false otherwise.
      */
-    public abstract boolean write(IOBuffer buf);
-
-    public abstract boolean writeAll(Collection<IOBuffer> bufs);
+    public abstract boolean write(Object msg);
 
     /**
-     * Writes a {@link IOBuffer} to this AsyncSocket and flushes it. Flushing causes the AsyncSocket
+     * Writes a  message to this AsyncSocket and flushes it. Flushing causes the AsyncSocket
      * to be scheduled in the {@link Reactor}.
      * <p>
-     * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
+     * This is the same as calling {@link #write(Object)} followed by a {@link #flush()}.
      * <p>
-     * There is no guarantee that IOBuffer is actually going to be received by the caller if
-     * the AsyncSocket has accepted the IOBuffer. E.g. when the connection closes.
+     * There is no guarantee that message is actually going to be received by the caller if
+     * the AsyncSocket has accepted the message. E.g. when the connection closes.
      * <p>
      * This method is thread-safe.
      *
-     * @param buf the IOBuffer to write.
-     * @return true if the IOBuffer was accepted, false otherwise.
+     * @param msg the message to write.
+     * @return true if the msg was accepted, false otherwise.
      */
-    public abstract boolean writeAndFlush(IOBuffer buf);
+    public abstract boolean writeAndFlush(Object msg);
 
     /**
-     * Writes an {@link IOBuffer} and ensure it gets written.
+     * Writes a message.
      * <p>
      * Should only be called from the reactor-thread.
      */
-    public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
+    public abstract boolean unsafeWriteAndFlush(Object msg);
 
     /**
      * Connects asynchronously to some address.
@@ -213,5 +209,10 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     @Override
     public final String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        //if (clientSide) {
+        //    return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        //} else {
+        //    return "               " + getClass().getSimpleName() + "[" + localAddress + "<-" + remoteAddress + "]";
+        //}
     }
 }

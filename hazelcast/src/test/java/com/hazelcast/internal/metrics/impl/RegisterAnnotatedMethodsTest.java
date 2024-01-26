@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
     public class MethodWithArgument {
         @Probe(name = "method")
-        private long method(int x) {
+        private long method(@SuppressWarnings("unused") int x) {
             return 10;
         }
     }
@@ -254,8 +254,8 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
     public class CollectionMethod {
         @Probe(name = "method")
-        private Collection method() {
-            ArrayList list = new ArrayList();
+        private Collection<Integer> method() {
+            ArrayList<Integer> list = new ArrayList<>();
             for (int k = 0; k < 10; k++) {
                 list.add(k);
             }
@@ -274,8 +274,8 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
     public class MapMethod {
         @Probe(name = "method")
-        private Map method() {
-            HashMap map = new HashMap();
+        private Map<Integer, Integer> method() {
+            HashMap<Integer, Integer> map = new HashMap<>();
             for (int k = 0; k < 10; k++) {
                 map.put(k, k);
             }
@@ -294,8 +294,8 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
     public class SubclassMethod {
         @Probe(name = "method")
-        private IdentityHashMap method() {
-            IdentityHashMap map = new IdentityHashMap();
+        private IdentityHashMap<Integer, Integer> method() {
+            IdentityHashMap<Integer, Integer> map = new IdentityHashMap<>();
             for (int k = 0; k < 10; k++) {
                 map.put(k, k);
             }

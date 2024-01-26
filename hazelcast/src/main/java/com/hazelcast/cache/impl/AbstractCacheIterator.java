@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.CollectionUtil;
 
 import javax.cache.Cache;
 import java.util.Iterator;
@@ -163,7 +164,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
                 }
             }
             result = fetch();
-            if (result != null && result.size() > 0) {
+            if (CollectionUtil.isNotEmpty(result)) {
                 index = 0;
                 return true;
             }
@@ -218,7 +219,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
      * @param pointers the pointers defining the state of iteration
      */
     protected void setIterationPointers(List response, IterationPointer[] pointers) {
-        if (response != null && response.size() > 0) {
+        if (CollectionUtil.isNotEmpty(response)) {
             this.pointers = pointers;
         }
     }

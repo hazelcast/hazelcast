@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -99,11 +100,13 @@ import java.util.function.BiFunction;
 
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -218,7 +221,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig() {
-        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false);
+        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false, null);
 
         driver.getConfig().addDurableExecutorConfig(config);
 
@@ -229,7 +232,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
                 new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE),
-                ScheduledExecutorConfig.CapacityPolicy.PER_NODE, false);
+                ScheduledExecutorConfig.CapacityPolicy.PER_NODE, false, null);
 
         driver.getConfig().addScheduledExecutorConfig(config);
 
@@ -481,6 +484,19 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapConfig_throws_InvalidConfigurationException_when_tiered_store_enabled() {
+        MapConfig config = getMapConfig();
+
+        config.getTieredStoreConfig().setEnabled(true);
+
+        InvalidConfigurationException exception = assertThrows(InvalidConfigurationException.class,
+                () -> driver.getConfig().addMapConfig(config));
+
+        assertTrue(exception.getMessage().contains("Tiered store enabled map config cannot be added dynamically"));
+
+    }
+
+    @Test
     public void testSetConfig_whenItemListenersConfigured() {
         SetConfig setConfig = getSetConfig(name);
         setConfig.addItemListenerConfig(getItemListenerConfig_byImplementation());
@@ -711,7 +727,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         properties.setProperty("prop2", "val2");
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName("some-name")
-                .setType("dummy")
+                .setType(DUMMY_TYPE)
                 .setProperties(properties);
 
 

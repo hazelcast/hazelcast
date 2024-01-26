@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import org.junit.runners.model.Statement;
  * Sets or clears a property before running a test. The property will be restored once the test is finished.
  * <p>
  * Can be used for finer control of the scope of a System property.
+ * <p>
+ * Consider using {@link uk.org.webcompere.systemstubs.jupiter.SystemStub}'s
+ * {@link uk.org.webcompere.systemstubs.properties.SystemProperties}
  */
 public final class OverridePropertyRule implements TestRule {
 

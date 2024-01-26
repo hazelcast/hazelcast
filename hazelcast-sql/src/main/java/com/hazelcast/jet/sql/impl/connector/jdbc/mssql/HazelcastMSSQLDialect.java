@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.DefaultTypeResolver;
+import com.hazelcast.jet.sql.impl.connector.jdbc.TypeResolver;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastStringFunction;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlWriter;
@@ -25,10 +28,12 @@ import org.apache.calcite.sql.SqlWriter.Frame;
 import org.apache.calcite.sql.SqlWriter.FrameTypeEnum;
 import org.apache.calcite.sql.dialect.MssqlSqlDialect;
 
+import java.util.Locale;
+
 /**
  * Custom dialect for MSSQL which allows correct unparsing of MSSQL specific operators, like CONCAT
  */
-public class HazelcastMSSQLDialect extends MssqlSqlDialect {
+public class HazelcastMSSQLDialect extends MssqlSqlDialect implements TypeResolver {
 
     /**
      * Creates a HazelcastMSSQLDialect.
@@ -85,5 +90,16 @@ public class HazelcastMSSQLDialect extends MssqlSqlDialect {
             operand.unparse(writer, 0, 0);
         }
         writer.endList(frame);
+    }
+
+    @Override
+    public QueryDataType resolveType(String columnTypeName, int precision, int scale) {
+        switch (columnTypeName.toUpperCase(Locale.ROOT)) {
+            case "FLOAT":
+                return QueryDataType.DOUBLE;
+
+            default:
+                return DefaultTypeResolver.resolveType(columnTypeName, precision, scale);
+        }
     }
 }

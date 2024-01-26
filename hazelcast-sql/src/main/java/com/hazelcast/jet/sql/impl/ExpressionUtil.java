@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public final class ExpressionUtil {
     }
 
     public static class SqlRowComparator implements IdentifiedDataSerializable, ComparatorEx<JetSqlRow> {
+        private static final long serialVersionUID = 1L;
         private List<FieldCollation> fieldCollationList;
 
         public SqlRowComparator() {

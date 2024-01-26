@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,15 +38,15 @@ public class IndexImpl extends AbstractIndex {
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
             int partitionCount,
-            String mapName
-    ) {
-        super(node, config, ss, extractors, copyBehavior, stats, mapName);
+            String mapName) {
+        super(node, config, ss, extractors, copyBehavior, stats, mapName, GLOBAL_INDEX_NOOP_PARTITION_ID);
 
         partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }
 
     @Override
-    protected IndexStore createIndexStore(Node node, IndexConfig config, PerIndexStats stats, String mapName) {
+    protected IndexStore createIndexStore(Node node, IndexConfig config,
+                                          PerIndexStats stats, String mapName, int ignored) {
         switch (config.getType()) {
             case SORTED:
                 return new OrderedIndexStore(copyBehavior);

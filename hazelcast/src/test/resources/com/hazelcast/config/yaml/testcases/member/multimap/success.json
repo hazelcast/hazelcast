@@ -19,7 +19,8 @@
           "merge-policy": {
             "batch-size": 100,
             "class-name": "PutIfAbsentMergePolicy"
-          }
+          },
+          "user-code-namespace": "ns1"
         }
       }
     }

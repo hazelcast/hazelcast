@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirem
 import static com.hazelcast.internal.util.ModularJavaUtils.checkJavaInternalAccess;
 import static com.hazelcast.internal.util.ModularJavaUtils.checkPackageRequirements;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
@@ -64,8 +63,6 @@ public class ModularJavaUtilsTest {
      */
     @Test
     public void testMissingAccess() {
-        assumeTrue(JavaVersion.isAtLeast(JavaVersion.JAVA_9));
-
         ILogger logger = mock(ILogger.class);
 
         Map<String, PackageAccessRequirement[]> requirements = new HashMap<>();

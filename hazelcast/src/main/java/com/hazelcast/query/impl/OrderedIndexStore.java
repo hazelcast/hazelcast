@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
     public static final Comparator<Data> DATA_COMPARATOR_REVERSED = new DataComparator().reversed();
 
-    private static final Comparator<Comparable> SPECIAL_AWARE_COMPARATOR = (left, right) -> {
+    public static final Comparator<Comparable> SPECIAL_AWARE_COMPARATOR = (left, right) -> {
         // compare to explicit instances of special Comparables to avoid infinite loop
         // NEGATIVE_INFINITY should not be used in the index or queries
         // - the same result can be achieved by inclusive NULL or null.
@@ -325,6 +325,11 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         }
     }
 
+    @Override
+    public Comparator<Data> getKeyComparator(boolean isDescending) {
+        return isDescending ? DATA_COMPARATOR_REVERSED : DATA_COMPARATOR;
+    }
+
     /**
      * Adds entry to the given index map without copying it.
      * Needs to be invoked in a thread-safe way.
@@ -335,12 +340,8 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
         @Override
         public Object invoke(Comparable value, QueryableEntry entry) {
-            NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
-            if (records == null) {
-                records = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
-                recordMap.put(value, records);
-            }
-            return records.put(entry.getKeyData(), entry);
+            return recordMap.computeIfAbsent(value, x -> new ConcurrentSkipListMap<>(DATA_COMPARATOR)).put(entry.getKeyData(),
+                    entry);
         }
 
     }

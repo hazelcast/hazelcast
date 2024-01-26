@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionPredicateTest extends HazelcastTestSupport {
 
-    private static final int PARTITIONS = 10;
+    public static final int PARTITIONS = 10;
     private static final int ITEMS_PER_PARTITION = 20;
 
     private HazelcastInstance local;

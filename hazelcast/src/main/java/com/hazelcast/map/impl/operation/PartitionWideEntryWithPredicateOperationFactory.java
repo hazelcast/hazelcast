@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.map.EntryProcessor;
@@ -112,8 +114,15 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        entryProcessor = in.readObject();
-        predicate = in.readObject();
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        String namespace = MapService.lookupNamespace(engine, name);
+        NamespaceUtil.setupNamespace(engine, namespace);
+        try {
+            entryProcessor = in.readObject();
+            predicate = in.readObject();
+        } finally {
+            NamespaceUtil.cleanupNamespace(engine, namespace);
+        }
     }
 
     /**

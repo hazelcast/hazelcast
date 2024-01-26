@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
@@ -77,10 +78,12 @@ public final class TestOutbox implements OutboxInternal {
         allOrdinals = IntStream.range(0, edgeCapacities.length).toArray();
 
         OutboundCollector[] outstreams = new OutboundCollector[edgeCapacities.length + (snapshotCapacity > 0 ? 1 : 0)];
-        Arrays.setAll(outstreams, i ->
-                i < edgeCapacities.length
-                    ? e -> addToQueue(buckets[i], edgeCapacities[i], e)
-                    : e -> addToQueue(snapshotQueue, snapshotCapacity, deserializeSnapshotEntry((Entry<Data, Data>) e)));
+        // Intermediate variable required to workaround Eclipse bug
+        // https://github.com/hazelcast/hazelcast/pull/25652
+        IntFunction<OutboundCollector> generator = i -> i < edgeCapacities.length
+                ? e -> addToQueue(buckets[i], edgeCapacities[i], e)
+                : e -> addToQueue(snapshotQueue, snapshotCapacity, deserializeSnapshotEntry((Entry<Data, Data>) e));
+        Arrays.setAll(outstreams, generator);
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         outbox = new OutboxImpl(outstreams, snapshotCapacity > 0, new ProgressTracker(), serializationService,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public final class QueryPath implements IdentifiedDataSerializable {
         return key;
     }
 
-    public boolean isTop() {
+    public boolean isTopLevel() {
         return path == null;
     }
 

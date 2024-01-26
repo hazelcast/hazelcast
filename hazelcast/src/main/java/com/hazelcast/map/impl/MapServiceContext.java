@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     void destroyMap(String mapName);
 
+    boolean removeMapContainer(MapContainer mapContainer);
+
     void reset();
 
     /**
@@ -196,8 +198,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Extractors getExtractors(String mapName);
 
-    boolean removeMapContainer(MapContainer mapContainer);
-
     PartitioningStrategy getPartitioningStrategy(
             String mapName,
             PartitioningStrategyConfig config,
@@ -225,6 +225,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     IndexCopyBehavior getIndexCopyBehavior();
 
     boolean globalIndexEnabled();
+
+    boolean isForciblyEnabledGlobalIndex();
 
     ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat);
 
@@ -273,9 +275,4 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
         return false;
     }
-
-    /**
-     * @return {@link EventListenerCounter} object.
-     */
-    EventListenerCounter getEventListenerCounter();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,8 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheComplete
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
- * TODO add a proper JavaDoc
+ * Removes all the specified keys from the cache (partition bound).
+ * <p>{@link com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory} creates this operation.</p>
  */
 public class CacheRemoveAllOperation
         extends PartitionWideCacheOperation

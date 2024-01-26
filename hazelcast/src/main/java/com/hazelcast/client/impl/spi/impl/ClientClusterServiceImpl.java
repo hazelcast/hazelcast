@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -286,9 +286,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             events.add(new MembershipEvent(getCluster(), member, MembershipEvent.MEMBER_ADDED, currentMembers));
         }
 
-        if (events.size() != 0) {
+        if (!events.isEmpty()) {
             MemberListSnapshot snapshot = memberListSnapshot.get();
-            if (snapshot.members.values().size() != 0) {
+            if (!snapshot.members.values().isEmpty()) {
                 logger.info(membersString(snapshot));
             }
         }

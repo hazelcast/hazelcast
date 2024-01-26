@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
@@ -65,7 +66,8 @@ public class TxnLockAndGetOperation
         }
         Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null && shouldLoad) {
-            record = recordStore.loadRecordOrNull(dataKey, false, getCallerAddress());
+            record = recordStore.loadRecordOrNull(dataKey, false,
+                    getCallerAddress(), Clock.currentTimeMillis());
         }
         Data value = record == null ? null : mapServiceContext.toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());

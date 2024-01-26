@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.record.Record;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -60,6 +61,20 @@ public interface Storage<K, R> {
     R updateRecordValue(K key, R record, Object value);
 
     R get(K key);
+
+    /**
+     * Returns a record from storage by key. The record is safe to use
+     * in the scope of the callers thread so that the backing memory
+     * cannot be GCed.
+     * <p>
+     * The call is equivalent to {@link #get(Object)} by default and is
+     * overridden for TS storage.
+     * @param key the search key
+     * @return the record
+     */
+    default Record getSafe(K key) {
+        return (Record) get(key);
+    }
 
     /**
      * Gives the same result as {@link #get(Object)}, but with the

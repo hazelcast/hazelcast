@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
@@ -100,7 +99,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     final String name;
     final ManagementService managementService;
     final LifecycleServiceImpl lifecycleService;
-    final CPSubsystemImpl cpSubsystem;
+    final CPSubsystem cpSubsystem;
     final ManagedContext managedContext;
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
@@ -117,7 +116,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         // in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances
         this.userContext.putAll(config.getUserContext());
         this.node = createNode(config, nodeContext);
-        this.cpSubsystem = new CPSubsystemImpl(this);
+        this.cpSubsystem = this.node.getNodeExtension().createCPSubsystem(node.getNodeEngine());
 
         try {
             this.logger = node.getLogger(getClass().getName());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,10 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueContainsCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ContainsOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -36,7 +35,7 @@ import static java.util.Collections.singleton;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CONTAINS}
  */
 public class QueueContainsMessageTask
-        extends AbstractPartitionMessageTask<QueueContainsCodec.RequestParameters> {
+        extends AbstractQueueMessageTask<QueueContainsCodec.RequestParameters> {
 
     public QueueContainsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,12 +69,7 @@ public class QueueContainsMessageTask
 
     @Override
     public String getMethodName() {
-        return "contains";
-    }
-
-    @Override
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
+        return SecurityInterceptorConstants.CONTAINS;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -73,8 +72,8 @@ public final class StreamSocketP extends AbstractProcessor {
             LockSupport.parkNanos(MILLISECONDS.toNanos(1));
         }
         getLogger().info("Connected to socket " + hostAndPort());
-        upcast(byteBuffer).limit(0);
-        upcast(charBuffer).limit(0);
+        byteBuffer.limit(0);
+        charBuffer.limit(0);
     }
 
     @Override
@@ -98,10 +97,10 @@ public final class StreamSocketP extends AbstractProcessor {
             return;
         }
         socketDone = socketChannel.read(byteBuffer) < 0;
-        upcast(byteBuffer).flip();
-        upcast(charBuffer).clear();
+        byteBuffer.flip();
+        charBuffer.clear();
         charsetDecoder.decode(byteBuffer, charBuffer, socketDone);
-        upcast(charBuffer).flip();
+        charBuffer.flip();
         byteBuffer.compact();
         assert byteBuffer.position() < MAX_BYTES_PER_CHAR - 1 : "position=" + byteBuffer.position();
     }

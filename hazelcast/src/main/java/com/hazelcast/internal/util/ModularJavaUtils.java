@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,6 @@ public final class ModularJavaUtils {
     }
 
     public static String getHazelcastModuleName() {
-        if (!JavaVersion.isAtLeast(JavaVersion.JAVA_9)) {
-            return null;
-        }
         try {
             return getName(hazelcastModule());
         } catch (Exception e) {
@@ -63,11 +60,6 @@ public final class ModularJavaUtils {
      * Java 9 and newer.
      */
     public static void checkJavaInternalAccess(ILogger logger) {
-        if (logger == null || !JavaVersion.isAtLeast(JavaVersion.JAVA_9)) {
-            // older Java versions are fine with the reflection
-            return;
-        }
-
         Map<String, PackageAccessRequirement[]> moduleRequirements = new TreeMap<>();
         moduleRequirements.put("java.base",
                 packages(

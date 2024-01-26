@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
-import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientSettings.Builder;
@@ -49,7 +48,6 @@ import static java.util.Collections.singletonList;
  *
  * @since 5.3
  */
-@Beta
 public class MongoDataConnection extends DataConnectionBase {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketWriter;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -33,10 +34,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateBuffer;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
@@ -54,17 +57,17 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private final NioAsyncSocketOptions options;
     private final AtomicReference<Thread> flushThread = new AtomicReference<>(currentThread());
-    private final MpmcArrayQueue<IOBuffer> writeQueue;
+    private final MpmcArrayQueue writeQueue;
     private final Handler handler;
     private final SocketChannel socketChannel;
     private final NioReactor reactor;
     private final Thread eventloopThread;
     private final SelectionKey key;
-    private final IOVector ioVector = new IOVector();
-    private final boolean regularSchedule;
-    private final boolean writeThrough;
+    private final IOVector ioVector;
     private final AsyncSocketReader reader;
     private final CircularQueue localTaskQueue;
+    private final AsyncSocketWriter writer;
+    private boolean ioVectorWriteAllowed;
 
     // only accessed from eventloop thread
     private boolean started;
@@ -72,6 +75,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private boolean connecting;
     private volatile CompletableFuture<Void> connectFuture;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     NioAsyncSocket(NioAsyncSocketBuilder builder) {
         super(builder.clientSide);
 
@@ -87,13 +91,19 @@ public final class NioAsyncSocket extends AsyncSocket {
                 this.localAddress = socketChannel.getLocalAddress();
                 this.remoteAddress = socketChannel.getRemoteAddress();
             }
-            this.writeThrough = builder.writeThrough;
-            this.regularSchedule = builder.regularSchedule;
             this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
             this.handler = new Handler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.reader = builder.reader;
             reader.init(this);
+            this.writer = builder.writer;
+            if (writer != null) {
+                this.writer.init(this, writeQueue);
+                this.ioVector = null;
+            } else {
+                this.ioVector = new IOVector();
+            }
+            this.ioVectorWriteAllowed = ioVector != null;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -258,7 +268,8 @@ public final class NioAsyncSocket extends AsyncSocket {
             logger.info("Connection established " + NioAsyncSocket.this);
         }
 
-        key.interestOps(key.interestOps() | OP_READ);
+        key.interestOps(OP_READ);
+
         connectFuture.complete(null);
         connectFuture = null;
 
@@ -270,20 +281,22 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public void flush() {
         Thread currentThread = currentThread();
-        if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == eventloopThread) {
-                localTaskQueue.add(handler);
-            } else if (writeThrough) {
-                handler.run();
-            } else if (regularSchedule) {
-                // todo: return value
-                reactor.offer(handler);
-            } else {
-                key.interestOps(key.interestOps() | OP_WRITE);
-                // we need to call the select wakeup because the interest set will only take
-                // effect after a select operation.
-                reactor.wakeup();
-            }
+
+        if (flushThread.get() != null) {
+            // the socket is already flushed, we are done.
+            return;
+        }
+
+        // The socket is not flushed, so we are going to try to flush it.
+        if (!flushThread.compareAndSet(null, currentThread)) {
+            // A different thread triggered a flush, we are done.
+            return;
+        }
+
+        if (currentThread == eventloopThread) {
+            localTaskQueue.add(handler);
+        } else {
+            reactor.offer(handler);
         }
     }
 
@@ -299,52 +312,78 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(IOBuffer buf) {
-        return writeQueue.add(buf);
+    public boolean write(Object msg) {
+        checkNotNull(msg, "msg");
+
+        if (writer == null && !(msg instanceof IOBuffer)) {
+            throw new IllegalArgumentException("Message needs to be an IOBuffer if no writer is configured.");
+        }
+
+        if (writeQueue.add(msg)) {
+            return true;
+        } else {
+            // lets trigger a flush since the writeQueue is full.
+            flush();
+            return false;
+        }
     }
 
     @Override
-    public boolean writeAll(Collection<IOBuffer> bufs) {
-        return writeQueue.addAll(bufs);
-    }
-
-    @Override
-    public boolean writeAndFlush(IOBuffer buf) {
-        boolean result = write(buf);
+    public boolean writeAndFlush(Object msg) {
+        boolean result = write(msg);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(IOBuffer buf) {
-        Thread currentFlushThread = flushThread.get();
+    public boolean unsafeWriteAndFlush(Object msg) {
+        checkNotNull(msg, "msg");
+
+        if (writer == null && !(msg instanceof IOBuffer)) {
+            throw new IllegalArgumentException(
+                    "Only accepting IOBuffers if writer isn't set.");
+        }
+
         Thread currentThread = currentThread();
+        if (currentThread != eventloopThread) {
+            throw new IllegalStateException(
+                    "insideWriteAndFlush can only be made from eventloop thread, "
+                            + "found " + currentThread);
+        }
 
-        assert currentThread == eventloopThread;
+        boolean triggeredFlush;
 
-        boolean result;
+        Thread currentFlushThread = flushThread.get();
         if (currentFlushThread == null) {
-            if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.add(handler);
-                if (ioVector.offer(buf)) {
-                    result = true;
-                } else {
-                    result = writeQueue.offer(buf);
-                }
+            // the socket isn't flushed, lets try to flush it.
+            triggeredFlush = flushThread.compareAndSet(null, currentThread);
+            // At this point we know for sure that the socket was flushed; either
+            // by the current thread or by a different one.
+        } else {
+            // the socket was already flushed
+            triggeredFlush = false;
+        }
+
+        boolean offered = unsafeWrite(msg);
+
+        if (triggeredFlush && offered) {
+            reactor.execute(handler);
+        }
+
+        return offered;
+    }
+
+    private boolean unsafeWrite(Object msg) {
+        if (ioVectorWriteAllowed) {
+            if (ioVector.offer((IOBuffer) msg)) {
+                return true;
             } else {
-                result = writeQueue.offer(buf);
-            }
-        } else if (currentFlushThread == eventloopThread) {
-            if (ioVector.offer(buf)) {
-                result = true;
-            } else {
-                result = writeQueue.offer(buf);
+                ioVectorWriteAllowed = false;
+                return writeQueue.offer(msg);
             }
         } else {
-            result = writeQueue.offer(buf);
-            flush();
+            return writeQueue.offer(msg);
         }
-        return result;
     }
 
     @Override
@@ -358,12 +397,16 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final class Handler implements NioHandler, Runnable {
         private final ByteBuffer rcvBuffer;
         private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
+        private final ByteBuffer sndBuffer;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
-            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.rcvBuffer = builder.receiveBufferIsDirect
-                    ? ByteBuffer.allocateDirect(receiveBufferSize)
-                    : ByteBuffer.allocate(receiveBufferSize);
+            this.rcvBuffer = allocateBuffer(builder.directBuffers, builder.options.get(SO_RCVBUF));
+
+            if (ioVector == null) {
+                this.sndBuffer = allocateBuffer(builder.directBuffers, builder.options.get(SO_SNDBUF));
+            } else {
+                this.sndBuffer = null;
+            }
         }
 
         @Override
@@ -424,28 +467,48 @@ public final class NioAsyncSocket extends AsyncSocket {
             compactOrClear(rcvBuffer);
         }
 
+        // todo: temp notes.
+        // In netty there is logic in the NioSocketChannel.doWrite
+        // 1) all the collected messages are IOBUffers, do a writev.
+        // 2) if there is only 1 message and it an IOBuffer, then do a write
+        // 3) if at least one of the messages is a non IOBuffer, then fallback
+        // to a normal write.
         private void handleWrite() throws IOException {
-            // typically this method is called with the flushThread being set.
-            // but in case of cancellation of the key, this method is also
-            // called without the flushThread being set.
-            // So we can't do an assert flushThread!=null.
-
             metrics.incWriteEvents();
 
-            ioVector.populate(writeQueue);
+            // todo: Netty has a write spin option we need to investigate.
 
-            ByteBuffer[] srcs = ioVector.array();
-            int length = ioVector.length();
-            long written = length == 1
-                    ? socketChannel.write(srcs[0])
-                    : socketChannel.write(srcs, 0, length);
+            long bytesWritten;
+            boolean clean;
+            if (writer == null) {
+                // the writeQueue is guaranteed to have only IOBuffers
+                // if the writer isn't set.
+                ioVector.populate(writeQueue);
 
-            ioVector.compact(written);
+                if (writeQueue.isEmpty()) {
+                    ioVectorWriteAllowed = true;
+                }
 
-            metrics.incBytesWritten(written);
-            //System.out.println(NioAsyncSocket.this + " bytes written:" + written);
+                int ioVectorLength = ioVector.length();
+                ByteBuffer[] srcs = ioVector.array();
+                bytesWritten = ioVectorLength == 1
+                        ? socketChannel.write(srcs[0])
+                        : socketChannel.write(srcs, 0, ioVectorLength);
+                ioVector.compact(bytesWritten);
+                clean = ioVector.isEmpty();
+            } else {
+                boolean writerClean = writer.onWrite(sndBuffer);
+                sndBuffer.flip();
+                bytesWritten = socketChannel.write(sndBuffer);
+                boolean sndBufferClean = !sndBuffer.hasRemaining();
+                clean = writerClean && sndBufferClean;
+                compactOrClear(sndBuffer);
+            }
 
-            if (ioVector.isEmpty()) {
+            metrics.incBytesWritten(bytesWritten);
+            //System.out.println(socket + " bytes written:" + bytesWritten);
+
+            if (clean) {
                 // everything got written
                 int interestOps = key.interestOps();
 
@@ -456,10 +519,13 @@ public final class NioAsyncSocket extends AsyncSocket {
 
                 resetFlushed();
             } else {
-                // We need to register for the OP_WRITE because not everything got written
+                // not everything got written, therefor we need to register
+                // for the OP_WRITE so that we get an event as soon as space
+                // is available in the send buffer of the socket.
                 key.interestOps(key.interestOps() | OP_WRITE);
             }
         }
+
 
         // Is called when side of the socket that initiates the connect
         // gets the event that the connection is completed.

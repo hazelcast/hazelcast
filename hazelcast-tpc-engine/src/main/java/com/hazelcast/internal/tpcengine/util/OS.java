@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ package com.hazelcast.internal.tpcengine.util;
 // https://lopica.sourceforge.net/os.html
 // https://memorynotfound.com/detect-os-name-version-java/
 public final class OS {
-
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
+    private static final boolean IS_UNIX_FAMILY = isUnixFamily0(OS_NAME);
     private static final boolean IS_WINDOWS = isWindows0(OS_NAME);
     private static final boolean IS_MAC = isMac0(OS_NAME);
 
@@ -48,9 +48,13 @@ public final class OS {
         return osName.toLowerCase().startsWith("linux");
     }
 
-    static boolean isWindows0(String osName) {
+    static boolean isUnixFamily0(String osName) {
         osName = osName.toLowerCase();
-        return osName.contains("windows");
+        return IS_LINUX || osName.contains("nix") || osName.contains("aix");
+    }
+
+    static boolean isWindows0(String osName) {
+        return osName.toLowerCase().contains("windows");
     }
 
     static boolean isMac0(String osName) {
@@ -84,64 +88,43 @@ public final class OS {
         }
     }
 
-    /**
-     * Checks of the the architecture of the os is x86-64 (AMD64).
-     *
-     * @return true if x86-64, false otherwise.
-     */
+    /** @return true if the architecture of the os is x86-64 (AMD64), false otherwise. */
     @SuppressWarnings("java:S100")
     public static boolean isX86_64() {
         return IS_X86_64;
     }
 
-    /**
-     * Returns the page size (so the size of a single page in the page table).
-     *
-     * @return the page size.
-     */
+    /** @return the page size (so the size of a single page in the page table). */
     public static int pageSize() {
         return PAGE_SIZE;
     }
 
-    /**
-     * Returns {@code true} if the system is Linux.
-     *
-     * @return {@code true} if the current system is Linux.
-     */
+    /** @return {@code true} if the current system from Unix family (Unix/Linux/AIX). */
+    public static boolean isUnixFamily() {
+        return IS_UNIX_FAMILY;
+    }
+
+    /** @return {@code true} if the current system is Linux. */
     public static boolean isLinux() {
         return IS_LINUX;
     }
 
-    /**
-     * Returns the OS name ("os.name" System property).
-     *
-     * @return the OS name.
-     */
+    /** @return the OS name ("os.name" System property). */
     public static String osName() {
         return OS_NAME;
     }
 
-    /**
-     * Returns the OS version ("os.version" System property).
-     *
-     * @return the OS version.
-     */
+    /** @return the OS version ("os.version" System property). */
     public static String osVersion() {
         return OS_VERSION;
     }
 
-    /**
-     * Returns the OS arch ("os.arch" System property).
-     *
-     * @return the OS arch.
-     */
+    /** @return the OS arch ("os.arch" System property). */
     public static String osArch() {
         return OS_ARCH;
     }
 
     /**
-     * Returns the Linux kernel major version.
-     *
      * @return the Linux kernel major version or -1 if it couldn't be determined.
      * @throws IllegalStateException when the OS isn't Linux.
      */
@@ -154,8 +137,6 @@ public final class OS {
     }
 
     /**
-     * Returns the Linux kernel minor version.
-     *
      * @return the Linux kernel minor version or -1 if it couldn't be determined.
      * @throws IllegalStateException when the OS isn't Linux.
      */
@@ -167,30 +148,33 @@ public final class OS {
         return LINUX_KERNEL_MINOR_VERSION;
     }
 
-    /**
-     * Checks if the OS is 64 bit.
-     *
-     * @return true if 64 bit, false otherwise.
-     */
+    /** @return true if the OS 64 bit, false otherwise. */
     public static boolean is64bit() {
         return IS_64BIT;
     }
 
-    /**
-     * Returns {@code true} if the system is a Mac OS.
-     *
-     * @return {@code true} if the current system is Mac.
-     */
+    /** @return {@code true} if the current system is Mac OS. */
     public static boolean isMac() {
         return IS_MAC;
     }
 
-    /**
-     * Returns {@code true} if the system is a Windows.
-     *
-     * @return {@code true} if the current system is a Windows one.
-     */
+    /** @return {@code true} if the current system is a Windows one. */
     public static boolean isWindows() {
         return IS_WINDOWS;
+    }
+
+    /**
+     * Returns a file path string that replaces Windows `\\` file
+     * separators with the Unix equivalent `/` if the current machine
+     * is using Windows as its Operating System.
+     *
+     * @param path the file path string to convert
+     * @return the file path string, with file separators set to `/`
+     */
+    public static String ensureUnixSeparators(final String path) {
+        if (OS.isWindows()) {
+            return path.replace('\\', '/');
+        }
+        return path;
     }
 }

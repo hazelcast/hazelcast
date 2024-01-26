@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.junit.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRule.tryExtractTimeBound;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CAST;
@@ -126,7 +126,7 @@ public class StreamToStreamJoinPhysicalRuleTest extends OptimizerTestSupport {
 
     public Map<Integer, Map<Integer, Long>> call(RexNode expr) {
         Map<Integer, Map<Integer, Long>> map = new HashMap<>();
-        tryExtractTimeBound(expr, ImmutableSet.of(0, 2), map);
+        tryExtractTimeBound(expr, Set.of(0, 2), map);
         return map;
     }
 }

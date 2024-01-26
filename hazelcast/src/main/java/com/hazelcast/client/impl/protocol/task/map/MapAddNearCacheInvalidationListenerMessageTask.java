@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.List;
@@ -56,6 +57,11 @@ public class MapAddNearCacheInvalidationListenerMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return SecurityInterceptorConstants.ADD_NEAR_CACHE_INVALIDATION_LISTENER;
     }
 
     @Override

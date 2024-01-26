@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
+
+import java.util.Objects;
 
 /**
  * Base class for all table fields. Different backends may have additional
@@ -51,23 +53,15 @@ public class TableField {
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        TableField field = (TableField) o;
-
-        return name.equals(field.name) && type.equals(field.type) && hidden == field.hidden;
+        TableField that = (TableField) o;
+        return name.equals(that.name) && type.equals(that.type) && hidden == that.hidden;
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-
-        result = 31 * result + type.hashCode();
-        result = 31 * result + (hidden ? 1 : 0);
-
-        return result;
+        return Objects.hash(name, type, hidden);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("3bdc0db03e049877ab95fc2843901848")
+@SuppressWarnings("unused")
+@Generated("8a718068bdb658823acc11725fda4ccd")
 public final class DynamicConfigAddExecutorConfigCodec {
     //hex: 0x1B0800
     public static final int REQUEST_MESSAGE_TYPE = 1771520;
@@ -82,9 +83,20 @@ public final class DynamicConfigAddExecutorConfigCodec {
          * apply to this lock configuration's operations.
          */
         public @Nullable java.lang.String splitBrainProtectionName;
+
+        /**
+         * Name of the User Code Namespace applied to this instance.
+         */
+        public @Nullable java.lang.String userCodeNamespace;
+
+        /**
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
+         */
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int queueCapacity, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int queueCapacity, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddExecutorConfig");
@@ -97,6 +109,7 @@ public final class DynamicConfigAddExecutorConfigCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -109,6 +122,12 @@ public final class DynamicConfigAddExecutorConfigCodec {
         request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        if (iterator.hasNext()) {
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
+        } else {
+            request.isUserCodeNamespaceExists = false;
+        }
         return request;
     }
 

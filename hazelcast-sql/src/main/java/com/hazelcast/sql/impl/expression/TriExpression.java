@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,8 +83,8 @@ public abstract class TriExpression<T> implements Expression<T> {
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     @Override
     public boolean isCooperative() {
-        return operand1 == null || operand1.isCooperative()
-                && operand2 == null || operand2.isCooperative()
-                && operand3 == null || operand3.isCooperative();
+        return (operand1 == null || operand1.isCooperative())
+                && (operand2 == null || operand2.isCooperative())
+                && (operand3 == null || operand3.isCooperative());
     }
 }

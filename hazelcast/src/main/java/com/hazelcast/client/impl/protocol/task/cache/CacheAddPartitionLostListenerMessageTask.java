@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@ import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCod
 import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -57,15 +61,15 @@ public class CacheAddPartitionLostListenerMessageTask
         InternalCachePartitionLostListenerAdapter listenerAdapter =
                 new InternalCachePartitionLostListenerAdapter(listener);
         EventFilter filter = new CachePartitionLostEventFilter();
-        CacheService service = getService(CacheService.SERVICE_NAME);
+        CacheService service = getService(getServiceName());
         EventService eventService = service.getNodeEngine().getEventService();
         if (parameters.localOnly) {
             return newCompletedFuture(
-                    eventService.registerLocalListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
+                    eventService.registerLocalListener(getServiceName(), parameters.name, filter, listenerAdapter)
                                 .getId());
         }
 
-        return eventService.registerListenerAsync(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
+        return eventService.registerListenerAsync(getServiceName(), parameters.name, filter, listenerAdapter)
                            .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
@@ -81,12 +85,12 @@ public class CacheAddPartitionLostListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
     public String getMethodName() {
-        return "addCachePartitionLostListener";
+        return SecurityInterceptorConstants.ADD_PARTITION_LOST_LISTENER;
     }
 
     @Override
@@ -96,11 +100,22 @@ public class CacheAddPartitionLostListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = getUserCodeNamespace();
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        return CacheService.lookupNamespace(nodeEngine, parameters.name);
     }
 }

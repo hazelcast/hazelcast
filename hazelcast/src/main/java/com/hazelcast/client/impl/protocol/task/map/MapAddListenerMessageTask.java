@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.security.Permission;
@@ -119,11 +120,16 @@ public class MapAddListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.ADD_ENTRY_LISTENER;
     }
 
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    protected String getUserCodeNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

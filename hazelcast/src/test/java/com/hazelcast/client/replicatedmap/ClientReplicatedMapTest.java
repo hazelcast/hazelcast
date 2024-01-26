@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,16 @@
 package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,11 +35,16 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -53,9 +62,12 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -63,9 +75,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -441,6 +456,112 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         for (Entry<Integer, Integer> entry : entrySet1) {
             Integer value = findValue(entry.getKey(), testValues);
             assertEquals(value, entry.getValue());
+        }
+    }
+
+    @Test
+    public void testPutAllWithMetadataAsync() {
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(factory.newHazelcastClient());
+
+        String name = "default";
+
+        final ClientReplicatedMapProxy<Integer, Integer> map = (ClientReplicatedMapProxy) client.getReplicatedMap(name);
+
+        Map<Integer, List<ReplicatedMapEntryViewHolder>> partitionToEntryViews = new HashMap<>();
+        List<ReplicatedMapEntryViewHolder> entryViews = new ArrayList<>();
+        long creationTime = 1234;
+        long ttl = 34567;
+        long lastUpdateTime = 45678;
+        long lastAccessTime = 4553;
+        long hits = 123;
+        PartitionService partitionService = client.getPartitionService();
+        Set<Partition> partitions = partitionService.getPartitions();
+
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine2 = getNodeEngineImpl(instance2);
+        List<NodeEngineImpl> nodeEngines = Arrays.asList(nodeEngine, nodeEngine2);
+        SerializationService ss = nodeEngine.getSerializationService();
+
+        for (int i = 0; i < 10000; i++) {
+            Data key = ss.toData(i);
+            Data value = ss.toData(i);
+            int partitionId = partitionService.getPartition(key).getPartitionId();
+            if (!partitionToEntryViews.containsKey(partitionId)) {
+                partitionToEntryViews.put(partitionId, new ArrayList<>());
+            }
+            ReplicatedMapEntryViewHolder entryView = new ReplicatedMapEntryViewHolder(key, value, creationTime + i, hits + i, lastAccessTime + i,
+                    lastUpdateTime + i, ttl + i);
+            partitionToEntryViews.get(partitionId).add(entryView);
+            entryViews.add(entryView);
+        }
+        Map<NodeEngineImpl, Map<Integer, Long>> versions = new HashMap<>(2);
+
+        for (NodeEngineImpl engine : nodeEngines) {
+            ReplicatedMapService replicatedMapService = engine.getService(ReplicatedMapService.SERVICE_NAME);
+            Map<Integer, Long> versionMap = new HashMap<>();
+            for (Partition partition : partitions) {
+                int partitionId = partition.getPartitionId();
+                ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(name, false, partitionId);
+                versionMap.put(partitionId, store.getVersion());
+            }
+            versions.put(engine, versionMap);
+        }
+        map.putAllWithMetadataAsync(entryViews).join();
+        for (Partition partition : partitions) {
+            int partitionId = partition.getPartitionId();
+            List<ReplicatedMapEntryViewHolder> entryViewHolders = partitionToEntryViews.get(partitionId);
+            NodeEngineImpl partitionOwner;
+            NodeEngineImpl other;
+            if (nodeEngine.getPartitionService().getPartitionOwner(partitionId)
+                    .equals(nodeEngine.getThisAddress())) {
+                partitionOwner = nodeEngine;
+                other = nodeEngine2;
+            } else {
+                partitionOwner = nodeEngine2;
+                other = nodeEngine;
+            }
+
+            ReplicatedMapService replicatedMapService = partitionOwner.getService(ReplicatedMapService.SERVICE_NAME);
+
+            for (ReplicatedMapEntryViewHolder entryView : entryViewHolders) {
+                assertTrueEventually(() -> {
+                    ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(name, false, partitionId);
+                    ReplicatedRecord record = store.getReplicatedRecord(entryView.getKey());
+                    assertThat(record).withFailMessage("partitionId" + partitionId).isNotNull();
+                    if (inMemoryFormat == OBJECT) {
+                        assertThat(record.getValueInternal()).isEqualTo(ss.toObject(entryView.getValue()));
+                    } else {
+                        assertThat(record.getValueInternal()).isEqualTo(entryView.getValue());
+                    }
+                    assertThat(record.getCreationTime()).isEqualTo(entryView.getCreationTime());
+                    assertThat(record.getHits()).isEqualTo(entryView.getHits());
+                    assertThat(record.getLastAccessTime()).isEqualTo(entryView.getLastAccessTime());
+                    assertThat(record.getUpdateTime()).isEqualTo(entryView.getLastUpdateTime());
+                    assertThat(record.getTtlMillis()).isEqualTo(entryView.getTtlMillis());
+                    assertThat(store.getVersion()).isEqualTo(versions.get(partitionOwner).get(partitionId)
+                            + partitionToEntryViews.get(partitionId).size());
+                }, 10);
+            }
+
+            ReplicatedMapService replicatedMapService2 = other.getService(ReplicatedMapService.SERVICE_NAME);
+
+            for (ReplicatedMapEntryViewHolder entryView : entryViewHolders) {
+                assertTrueEventually(() -> {
+                    ReplicatedRecordStore store = replicatedMapService2.getReplicatedRecordStore(name, false, partitionId);
+                    ReplicatedRecord record = store.getReplicatedRecord(entryView.getKey());
+                    assertThat(record).isNotNull();
+                    if (inMemoryFormat == OBJECT) {
+                        assertThat(record.getValueInternal()).isEqualTo(ss.toObject(entryView.getValue()));
+                    } else {
+                        assertThat(record.getValueInternal()).isEqualTo(entryView.getValue());
+                    }
+                    assertThat(record.getTtlMillis()).isEqualTo(entryView.getTtlMillis());
+                    assertThat(store.getVersion()).isEqualTo(versions.get(other).get(partitionId)
+                            + partitionToEntryViews.get(partitionId).size());
+                }, 10);
+            }
         }
     }
 

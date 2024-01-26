@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -377,5 +377,33 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
             name = name.substring(TOPIC_RB_PREFIX.length());
         }
         return name;
+    }
+
+    /**
+     * Looks up the User Code Namespace Name associated with the specified map name. This starts
+     * by looking for an existing {@link RingbufferContainer} and checking its defined
+     * {@link RingbufferConfig}. If the {@link RingbufferContainer} does not exist (containers
+     * are created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param engine         {@link NodeEngine} implementation of this member for service and config lookups
+     * @param ringbufferName The name of the {@link com.hazelcast.ringbuffer.Ringbuffer} to lookup for
+     * @param partitionId    The partition ID for the Ringbuffer defined by the {@code ringbufferName}
+     * @return the {@code Namespace} Name if found, or {@code null} otherwise.
+     */
+    public static String lookupUserCodeNamespace(NodeEngine engine, String ringbufferName, int partitionId) {
+        if (engine.getNamespaceService().isEnabled()) {
+            RingbufferService service = engine.getService(SERVICE_NAME);
+            final ObjectNamespace ns = RingbufferService.getRingbufferNamespace(ringbufferName);
+            final RingbufferContainer container = service.getContainerOrNull(partitionId, ns);
+            if (container != null) {
+                return container.getConfig().getUserCodeNamespace();
+            }
+            // Manual config lookup fallback
+            RingbufferConfig config = service.getRingbufferConfig(ringbufferName);
+            if (config != null) {
+                return config.getUserCodeNamespace();
+            }
+        }
+        return null;
     }
 }

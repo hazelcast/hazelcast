@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.mongodb.client.MongoClient;
 
-import java.security.Permission;
-
 public class DbCheckingPMetaSupplierBuilder {
-    private Permission requiredPermission;
     private boolean checkResourceExistence;
     private boolean forceTotalParallelismOne;
     private String databaseName;
@@ -33,11 +30,6 @@ public class DbCheckingPMetaSupplierBuilder {
     private DataConnectionRef dataConnectionRef;
     private ProcessorSupplier processorSupplier;
     private int preferredLocalParallelism = Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
-
-    public DbCheckingPMetaSupplierBuilder withRequiredPermission(Permission requiredPermission) {
-        this.requiredPermission = requiredPermission;
-        return this;
-    }
 
     public DbCheckingPMetaSupplierBuilder withCheckResourceExistence(boolean checkResourceExistence) {
         this.checkResourceExistence = checkResourceExistence;
@@ -84,7 +76,7 @@ public class DbCheckingPMetaSupplierBuilder {
     }
 
     public DbCheckingPMetaSupplier build() {
-        return new DbCheckingPMetaSupplier(requiredPermission, checkResourceExistence, forceTotalParallelismOne,
+        return new DbCheckingPMetaSupplier(checkResourceExistence, forceTotalParallelismOne,
                 databaseName, collectionName, clientSupplier, dataConnectionRef, processorSupplier,
                 preferredLocalParallelism);
     }

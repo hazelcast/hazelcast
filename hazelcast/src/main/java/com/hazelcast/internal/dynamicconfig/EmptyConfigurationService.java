@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -230,8 +231,13 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
+    public Map<String, UserCodeNamespaceConfig> getNamespaceConfigs() {
+        return emptyMap();
+    }
+
+    @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
-        throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
+        throw new IllegalStateException("Cannot modify configuration while Hazelcast is starting.");
     }
 
     @Override

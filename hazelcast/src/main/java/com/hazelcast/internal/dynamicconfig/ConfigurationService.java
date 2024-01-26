@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -58,9 +58,6 @@ public interface ConfigurationService {
      * Registers a dynamic configurations to all cluster members.
      *
      * @param config configuration to register
-     * @throws InvalidConfigurationException when static configuration already
-     *                                       contains the same config with the
-     *                                       same name
      */
     void broadcastConfig(IdentifiedDataSerializable config);
 
@@ -389,4 +386,11 @@ public interface ConfigurationService {
      * @return registered WAN replication configurations keyed by configuration name
      */
     Map<String, WanReplicationConfig> getWanReplicationConfigs();
+
+    /**
+     * Returns all registered namespace configurations keyed by configuration name.
+     *
+     * @return Namespace configurations keyed by configuration name
+     */
+    Map<String, UserCodeNamespaceConfig> getNamespaceConfigs();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.properties.ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
@@ -54,6 +55,8 @@ public class EventRegistrationTest extends HazelcastTestSupport {
 
     @Rule
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
+    @Rule
+    public final OverridePropertyRule overridePropertyRule2 = set(ASYNC_JOIN_STRATEGY_ENABLED.getName(), "false");
     private final HazelcastInstance[] batchedMembers = new HazelcastInstance[6];
 
     @Before

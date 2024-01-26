@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -23,6 +24,7 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.AbstractClusterLoginConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -35,10 +37,12 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
+import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
@@ -80,8 +84,8 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.set
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.XmlUtil.format;
 import static java.util.Arrays.asList;
 
 /**
@@ -200,11 +204,11 @@ public class ConfigXmlGenerator {
         integrityCheckerXmlGenerator(gen, config);
         dataConnectionConfiguration(gen, config);
         tpcConfiguration(gen, config);
-
+        namespacesConfiguration(gen, config);
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();
-        return formatted ? formatXml(xmlString, INDENT) : xmlString;
+        return formatted ? format(xmlString, INDENT) : xmlString;
     }
 
     private String getOrMaskValue(String value) {
@@ -313,6 +317,10 @@ public class ConfigXmlGenerator {
             }
             kerberosIdentityGenerator(gen, c.getKerberosIdentityConfig());
             gen.close();
+        }
+        AccessControlServiceConfig acs = c.getAccessControlServiceConfig();
+        if (acs != null) {
+            factoryWithPropertiesXmlGenerator(gen, "access-control-service", acs);
         }
         gen.close();
     }
@@ -794,8 +802,13 @@ public class ConfigXmlGenerator {
     }
 
     protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
-                                                     AbstractFactoryWithPropertiesConfig<?> factoryWithProps) {
-        gen.open(elementName, "enabled", factoryWithProps != null && factoryWithProps.isEnabled());
+                                                     AbstractBaseFactoryWithPropertiesConfig<?> factoryWithProps) {
+        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig) {
+            AbstractFactoryWithPropertiesConfig cfgWithEnabled = (AbstractFactoryWithPropertiesConfig) factoryWithProps;
+            gen.open(elementName, "enabled", cfgWithEnabled.isEnabled());
+        } else {
+            gen.open(elementName);
+        }
         if (factoryWithProps != null) {
             gen.node("factory-class-name", factoryWithProps.getFactoryClassName())
                     .appendProperties(factoryWithProps.getProperties());
@@ -987,7 +1000,8 @@ public class ConfigXmlGenerator {
                 .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
                 .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
                 .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds())
-                .node("cp-member-priority", cpSubsystemConfig.getCPMemberPriority());
+                .node("cp-member-priority", cpSubsystemConfig.getCPMemberPriority())
+                .node("map-limit", cpSubsystemConfig.getCPMapLimit());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         gen.open("raft-algorithm")
@@ -1020,6 +1034,15 @@ public class ConfigXmlGenerator {
                     .close();
         }
 
+        gen.close().open("maps");
+
+        for (CPMapConfig cpMapConfig : cpSubsystemConfig.getCpMapConfigs().values()) {
+            gen.open("map")
+               .node("name", cpMapConfig.getName())
+               .node("max-size-mb", cpMapConfig.getMaxSizeMb())
+               .close();
+        }
+
         gen.close().close();
     }
 
@@ -1045,10 +1068,17 @@ public class ConfigXmlGenerator {
 
     private static void sqlConfig(XmlGenerator gen, Config config) {
         SqlConfig sqlConfig = config.getSqlConfig();
+        JavaSerializationFilterConfig filterConfig = sqlConfig.getJavaReflectionFilterConfig();
         gen.open("sql")
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
-                .node("catalog-persistence-enabled", sqlConfig.isCatalogPersistenceEnabled())
-                .close();
+                .node("catalog-persistence-enabled", sqlConfig.isCatalogPersistenceEnabled());
+        if (filterConfig != null) {
+            gen.open("java-reflection-filter", "defaults-disabled", filterConfig.isDefaultsDisabled());
+            appendFilterList(gen, "blacklist", filterConfig.getBlacklist());
+            appendFilterList(gen, "whitelist", filterConfig.getWhitelist());
+            gen.close();
+        }
+        gen.close();
     }
 
     private static void jetConfig(XmlGenerator gen, Config config) {
@@ -1240,9 +1270,53 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
+    public static void namespacesConfiguration(XmlGenerator gen, Config config) {
+        UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
+        if (userCodeNamespacesConfig == null) {
+            return;
+        }
+        gen.open("user-code-namespaces", "enabled", userCodeNamespacesConfig.isEnabled());
+        JavaSerializationFilterConfig filterConfig = userCodeNamespacesConfig.getClassFilterConfig();
+        if (filterConfig != null) {
+            gen.open("class-filter", "defaults-disabled", filterConfig.isDefaultsDisabled());
+            appendFilterList(gen, "blacklist", filterConfig.getBlacklist());
+            appendFilterList(gen, "whitelist", filterConfig.getWhitelist());
+            gen.close();
+        }
+
+        namespaceConfigurations(gen, config);
+        gen.close();
+    }
+
+    public static void namespaceConfigurations(XmlGenerator gen, Config config) {
+        Map<String, UserCodeNamespaceConfig> namespaces = config.getNamespacesConfig().getNamespaceConfigs();
+        for (Map.Entry<String, UserCodeNamespaceConfig> entry : namespaces.entrySet()) {
+            UserCodeNamespaceConfig userCodeNamespaceConfig = entry.getValue();
+            gen.open("namespace", "name", entry.getKey());
+            Collection<ResourceDefinition> resourceDefinition =  userCodeNamespaceConfig.getResourceConfigs();
+            resourceDefinition.forEach(resource -> {
+                String resourceId = resource.id();
+                gen.open(translateResourceType(resource.type()), "id", resourceId);
+                gen.node("url", resource.url());
+                gen.close();
+            });
+            gen.close();
+        }
+    }
+
+    private static String translateResourceType(ResourceType type) {
+        if (ResourceType.JAR.equals(type)) {
+            return "jar";
+        } else if (ResourceType.JARS_IN_ZIP.equals(type)) {
+            return "jars-in-zip";
+        } else {
+            throw new IllegalArgumentException("Unknown resource type: " + type);
+        }
+    }
+
     /**
-     * Utility class to build xml using a {@link StringBuilder}.
-     */
+         * Utility class to build xml using a {@link StringBuilder}.
+         */
     public static final class XmlGenerator {
 
         private static final int CAPACITY = 64;

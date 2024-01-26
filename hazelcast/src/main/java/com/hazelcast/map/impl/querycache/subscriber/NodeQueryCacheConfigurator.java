@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,10 +37,11 @@ import java.util.Map;
 public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
 
     private final Config config;
+    private final NodeEngine engine;
 
-    public NodeQueryCacheConfigurator(Config config, ClassLoader configClassLoader,
-                                      QueryCacheEventService eventService) {
-        super(configClassLoader, eventService);
+    public NodeQueryCacheConfigurator(NodeEngine engine, Config config, QueryCacheEventService eventService) {
+        super(eventService);
+        this.engine = engine;
         this.config = config;
     }
 
@@ -47,10 +50,11 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
         MapConfig mapConfig = config.getMapConfig(mapName);
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
+        ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(engine, mapConfig.getUserCodeNamespace());
 
         if (queryCacheConfig != null) {
-            setPredicateImpl(queryCacheConfig);
-            setEntryListener(mapName, cacheId, queryCacheConfig);
+            setPredicateImpl(queryCacheConfig, loader);
+            setEntryListener(mapName, cacheId, queryCacheConfig, loader);
             return queryCacheConfig;
         }
 
@@ -65,11 +69,12 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
         if (mapConfig == null) {
             return null;
         }
+        ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(engine, mapConfig.getUserCodeNamespace());
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
         if (queryCacheConfig != null) {
-            setPredicateImpl(queryCacheConfig);
-            setEntryListener(mapName, cacheId, queryCacheConfig);
+            setPredicateImpl(queryCacheConfig, loader);
+            setEntryListener(mapName, cacheId, queryCacheConfig, loader);
             return queryCacheConfig;
         }
 

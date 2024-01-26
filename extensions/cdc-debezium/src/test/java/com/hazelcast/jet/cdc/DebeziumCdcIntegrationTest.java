@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -264,6 +264,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .setProperty("database.password", "postgres")
                     .setProperty("database.dbname", "postgres")
                     .setProperty("table.whitelist", "inventory.customers")
+                    .setProperty("heartbeat.interval.ms", "1000") // this will add Heartbeat messages to the stream
                     .build();
 
             Pipeline pipeline = Pipeline.create();

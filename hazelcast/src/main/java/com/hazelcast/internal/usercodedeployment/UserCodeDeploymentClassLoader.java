@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,11 @@ package com.hazelcast.internal.usercodedeployment;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+/**
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see com.hazelcast.internal.namespace.impl.NamespaceAwareClassLoader
+ */
+@Deprecated(since = "5.4", forRemoval = true)
 public class UserCodeDeploymentClassLoader extends ClassLoader {
 
     private static final ILogger LOG = Logger.getLogger(UserCodeDeploymentClassLoader.class);

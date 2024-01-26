@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("kafka");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");
         assertThat(dataConnection.getConfig().isShared()).isTrue();
     }
 
@@ -52,7 +52,7 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("kafka");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");
         assertThat(dataConnection.getConfig().isShared()).isFalse();
     }
 }

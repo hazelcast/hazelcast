@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
@@ -631,11 +632,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        <property name=\"prop\">${variable}</property>\n"
                 + "    </properties>\n"
                 + HAZELCAST_END_TAG;
-        String path = helper.givenConfigFileInWorkDir("config-properties.xml", configXml).getAbsolutePath();
+        Path path = helper.givenConfigFileInWorkDir("config-properties.xml", configXml).toPath().toAbsolutePath();
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");
-        Config config = new UrlXmlConfig("file:///" + path, properties);
+        Config config = new UrlXmlConfig(path.toUri().toString(), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
     }

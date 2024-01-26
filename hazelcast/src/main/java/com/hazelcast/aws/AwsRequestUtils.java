@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,10 +46,9 @@ final class AwsRequestUtils {
     }
 
     static RestClient createRestClient(String url, AwsConfig awsConfig) {
-        return RestClient.create(url)
-            .withConnectTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
-            .withReadTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
-            .withRetries(awsConfig.getConnectionRetries());
+        return RestClient.create(url, awsConfig.getConnectionTimeoutSeconds())
+                         .withRequestTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
+                         .withRetries(awsConfig.getConnectionRetries());
     }
 
     static String canonicalQueryString(Map<String, String> attributes) {

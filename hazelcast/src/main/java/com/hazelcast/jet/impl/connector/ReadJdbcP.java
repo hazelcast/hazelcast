@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
@@ -29,10 +30,9 @@ import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.JdbcPropertyKeys;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.security.impl.function.SecuredFunctions;
-import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -40,13 +40,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Use {@link SourceProcessors#readJdbcP}.
@@ -64,6 +66,11 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private Traverser<? extends T> traverser;
     private int parallelism;
     private int index;
+
+    static {
+        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
+        DriverManager.getDrivers();
+    }
 
     public ReadJdbcP(
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
@@ -106,8 +113,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         // We don't know the JDBC URL yet, so only the 'jdbc:' prefix is used as permission name.
         // Additional permission check with URL retrieved from the JDBC connection metadata
         // is performed in #init(Context) method.
-        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
-                SecuredFunctions.readJdbcProcessorFn(null, newConnectionFn, resultSetFn, mapOutputFn));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                readJdbcProcessorFn(newConnectionFn, resultSetFn, mapOutputFn));
     }
 
     public static <T> ProcessorMetaSupplier supplier(
@@ -119,7 +126,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                SecuredFunctions.readJdbcProcessorFn(connectionURL,
+                readJdbcProcessorFn(
                         // Return a new connection. Connection will be closed by ReadJdbcP processor
                         context -> DriverManager.getConnection(connectionURL),
                         // Create a ResultSet. ResultSet will be closed by ReadJdbcP processor
@@ -135,8 +142,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                             }
                         },
                         mapOutputFn),
-                newUnsecureUuidString(),
-                ConnectorPermission.jdbc(connectionURL, ACTION_READ)
+                newUnsecureUuidString()
         );
     }
 
@@ -145,21 +151,63 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
 
-        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
-                SecuredFunctions.readJdbcProcessorFn(dataConnectionRef.getName(), resultSetFn, mapOutputFn));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                new ProcessorSupplier() {
+                    private static final long serialVersionUID = 1L;
+
+                    private transient JdbcDataConnection dataConnection;
+
+                    @Override
+                    public void init(@Nonnull Context context) {
+                        dataConnection = context.dataConnectionService()
+                                .getAndRetainDataConnection(dataConnectionRef.getName(), JdbcDataConnection.class);
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Collection<? extends Processor> get(int count) {
+                        return IntStream.range(0, count)
+                                .mapToObj(i -> new ReadJdbcP<T>(() -> dataConnection.getConnection(), resultSetFn, mapOutputFn))
+                                .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public void close(@Nullable Throwable error) {
+                        if (dataConnection != null) {
+                            dataConnection.release();
+                        }
+                    }
+                });
+    }
+
+    private static <T> ProcessorSupplier readJdbcProcessorFn(
+            FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return new ProcessorSupplier() {
+            private static final long serialVersionUID = 1L;
+
+            private transient Context context;
+
+            @Override
+            public void init(@Nonnull ProcessorSupplier.Context context) {
+                this.context = context;
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> newConnectionFn.apply(context), resultSetFn, mapOutputFn))
+                        .collect(Collectors.toList());
+            }
+        };
     }
 
     @Override
     protected void init(@Nonnull Context context) {
-        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
-        DriverManager.getDrivers();
         this.connection = newConnectionFn.get();
-        try {
-            String url = connection.getMetaData().getURL();
-            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_READ));
-        } catch (SQLException e) {
-            throw new HazelcastException(e);
-        }
         this.parallelism = context.totalParallelism();
         this.index = context.globalProcessorIndex();
     }

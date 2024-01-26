@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.logging.impl.InternalLoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,15 +45,17 @@ public class ClientLoggingService implements LoggingService {
     private final BuildInfo buildInfo;
     private final String instanceName;
     private final boolean detailsEnabled;
+    private final boolean shouldShutdownLoggingOnHazelcastShutdown;
     private volatile String versionMessage;
 
     public ClientLoggingService(
-            String clusterName, String loggingType, BuildInfo buildInfo, String instanceName, boolean detailsEnabled
-    ) {
+            String clusterName, String loggingType, BuildInfo buildInfo, String instanceName, boolean detailsEnabled,
+            boolean shutdownLoggingEnabled) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
         this.instanceName = instanceName;
         this.detailsEnabled = detailsEnabled;
+        this.shouldShutdownLoggingOnHazelcastShutdown = shutdownLoggingEnabled;
         updateClusterName(clusterName);
     }
 
@@ -80,6 +83,13 @@ public class ClientLoggingService implements LoggingService {
     public ILogger getLogger(@Nonnull Class clazz) {
         checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+    }
+
+    @Override
+    public void shutdown() {
+        if (shouldShutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory) {
+            ((InternalLoggerFactory) loggerFactory).shutdown();
+        }
     }
 
     private class DefaultLogger extends AbstractLogger {

@@ -1,0 +1,84 @@
+# Variables
+config = {
+"SOT_REPO" : "git@github.com:<sot_repo>.git",
+"SOT_BRANCH" : "<branch_to_sync>",
+"DESTINATION_REPO" : "git@github.com:<destination_repo>.git",
+"DESTINATION_BRANCH" : "<branch_to_sync>",
+"COMMITTER" : "Github Actions <actions@github.com>",
+"LOCAL_SOT" : "file:///usr/src/app",
+}
+
+ee_config = {
+   "PR_TRANSFORMATIONS" : [],
+   "PUSH_INCLUDE" : ["**"],
+   "PUSH_EXCLUDE" : ["hazelcast/**", ".github/workflows/mono-*", ".github/dependabot.yml"],
+}
+
+os_config = {
+    "PR_TRANSFORMATIONS" : [
+            core.move("", "hazelcast", paths = glob(["**"])),
+            core.move("hazelcast/.github", ".github", paths = glob([
+                "workflows/common-*",
+            ])),
+    ],
+    "PUSH_INCLUDE" : [
+         "hazelcast/**",
+         ".github/workflows/common-*",
+     ],
+    "PUSH_EXCLUDE" : [],
+}
+
+def add_comment_with_shadow_pr(ctx):
+   ctx.console.info("Adding comment about internal PR to the original PR")
+   pr_number = ctx.revision.labels["GITHUB_PR_NUMBER"][0]
+   for effect in ctx.effects:
+       if effect.type == "CREATED" and effect.destination_ref != None and effect.destination_ref.url != None:
+              ctx.origin.post_issue_comment(int(pr_number), "Internal PR " + effect.destination_ref.url.replace("https://github.com/","").replace("/pull/","#") + "\nInternal message only. Nothing to see here, move along")
+
+def pr_workflow(config, repo_config):
+   core.workflow(
+       name = "pr",
+       origin = git.github_pr_origin(
+           url = config["DESTINATION_REPO"],
+           branch = config["DESTINATION_BRANCH"],
+       ),
+       destination = git.github_pr_destination(
+           url = config["SOT_REPO"],
+           destination_ref = config["SOT_BRANCH"],
+           integrates = [],
+           title = "${GITHUB_PR_TITLE}",
+           update_description = True,
+           pr_branch = "imported/" + config["DESTINATION_REPO"].replace("git@github.com:", "").replace(".git", "") + "/${CONTEXT_REFERENCE}",
+       ),
+       destination_files = glob(repo_config["PUSH_INCLUDE"], exclude = repo_config["PUSH_EXCLUDE"]),
+       origin_files = glob(["**"]),
+       authoring = authoring.pass_thru(default = config["COMMITTER"]),
+       mode = "CHANGE_REQUEST",
+       set_rev_id = False,
+       transformations = [
+           metadata.squash_notes(prefix='Import of ${GITHUB_PR_URL}\n\n**Original PR description:**\n\n${GITHUB_PR_BODY}\n\nImported changes:\n\n', oldest_first = True, show_author=False),
+           metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = config["DESTINATION_REPO"].replace("git@github.com:", " ").replace(".git", "#")),
+           metadata.save_author("ORIGINAL_AUTHOR"),
+       ] + repo_config["PR_TRANSFORMATIONS"],
+       after_workflow = [add_comment_with_shadow_pr],
+   )
+
+def push_workflow(config, repo_config):
+    core.workflow(
+        name = "push",
+        origin = git.origin(
+            url = config["LOCAL_SOT"] if config["LOCAL_SOT"] else config["SOT_REPO"],
+            ref = config["SOT_BRANCH"],
+        ),
+        destination = git.github_destination(
+            url = config["DESTINATION_REPO"],
+            push = config["DESTINATION_BRANCH"],
+        ),
+        origin_files = glob(repo_config["PUSH_INCLUDE"], exclude = repo_config["PUSH_EXCLUDE"]),
+        authoring = authoring.pass_thru(default = config["COMMITTER"]),
+        mode = "ITERATIVE",
+        transformations = [
+            metadata.restore_author("ORIGINAL_AUTHOR", search_all_changes = True),
+            metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
+        ] + core.reverse(repo_config["PR_TRANSFORMATIONS"]),
+    )

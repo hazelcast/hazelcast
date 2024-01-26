@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,15 @@
 package com.hazelcast.map.impl.querycache.accumulator;
 
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.io.IOException;
 
@@ -190,7 +194,8 @@ public class AccumulatorInfo implements IdentifiedDataSerializable {
         publishable = in.readBoolean();
         coalesce = in.readBoolean();
         populate = in.readBoolean();
-        predicate = in.readObject();
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        predicate = NamespaceUtil.callWithNamespace(engine, MapService.lookupNamespace(engine, mapName), in::readObject);
     }
 
     @Override

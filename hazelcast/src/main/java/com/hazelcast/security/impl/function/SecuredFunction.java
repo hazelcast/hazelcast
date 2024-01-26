@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,13 @@ public interface SecuredFunction {
 
     /**
      * @return the list of permissions required to run this function
+     *
+     * @implNote If used, permissions should be hardcoded based on function arguments/context.
+     * It is not secure to keep {@code List<Permission>} in the function itself because
+     * it could be tampered with if the function is serialized and passed from untrusted caller.
      */
     @Nullable
     default List<Permission> permissions() {
         return null;
     }
-
 }

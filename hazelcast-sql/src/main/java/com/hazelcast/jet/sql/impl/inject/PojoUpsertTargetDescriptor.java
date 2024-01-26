@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
 import java.util.Map;
@@ -39,8 +39,9 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
     }
 
     @Override
-    public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PojoUpsertTarget(className, typeNamesByPaths);
+    public UpsertTarget create(ExpressionEvalContext evalContext) {
+        var classFilter = evalContext.getNodeEngine().getSqlService().getReflectionClassNameFilter();
+        return new PojoUpsertTarget(className, typeNamesByPaths, classFilter);
     }
 
     @Override

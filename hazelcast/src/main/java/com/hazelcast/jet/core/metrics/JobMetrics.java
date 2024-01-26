@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,16 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     @Nonnull
     public JobMetrics filter(@Nonnull String tagName, @Nonnull String tagValue) {
         return filter(MeasurementPredicates.tagValueEquals(tagName, tagValue));
+    }
+
+    /**
+     * Returns true if there is any {@link Measurement} that has the specified tag.
+     *
+     * @since 5.4
+     */
+    public boolean containsTag(@Nonnull String tagName) {
+        return metrics.values().stream().flatMap(List::stream)
+                .anyMatch(MeasurementPredicates.containsTag(tagName));
     }
 
     /**

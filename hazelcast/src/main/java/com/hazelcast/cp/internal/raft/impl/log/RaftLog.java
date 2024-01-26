@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -200,7 +200,7 @@ public final class RaftLog {
             truncated.add(logs.read(ix));
         }
         logs.setTailSequence(startSequence - 1);
-        if (truncated.size() > 0) {
+        if (!truncated.isEmpty()) {
             dirty = true;
             try {
                 store.deleteEntriesFrom(entryIndex);

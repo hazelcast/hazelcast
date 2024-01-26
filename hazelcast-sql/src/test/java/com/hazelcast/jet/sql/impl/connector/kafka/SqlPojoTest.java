@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValue;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValueDeserializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValueSerializer;
@@ -27,148 +24,113 @@ import com.hazelcast.jet.sql.impl.connector.kafka.model.JavaSerializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.Person;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
-import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlService;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
-import org.junit.AfterClass;
+import org.apache.kafka.common.serialization.Serializer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SqlPojoTest extends SqlTestSupport {
-
+public class SqlPojoTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
 
-    private static KafkaTestSupport kafkaTestSupport;
-
-    private static SqlService sqlService;
-
     @BeforeClass
-    public static void setUpClass() throws IOException {
-        Config config = smallInstanceConfig();
-        config.setProperty(ClusterProperty.SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
-        initialize(1, config);
-        sqlService = instance().getSql();
-
-        kafkaTestSupport = KafkaTestSupport.create();
-        kafkaTestSupport.createKafkaCluster();
+    public static void setup() throws Exception {
+        setup(1, null);
     }
 
-    @AfterClass
-    public static void tearDownClass() {
-        kafkaTestSupport.shutdownKafkaCluster();
+    private static <K, V> SqlMapping kafkaMapping(String name, Class<K> keyClass, Class<V> valueClass,
+                                                  Class<? extends Serializer<? super K>> keySerializerClass,
+                                                  Class<? extends Deserializer<? super K>> keyDeserializerClass,
+                                                  Class<? extends Serializer<? super V>> valueSerializerClass,
+                                                  Class<? extends Deserializer<? super V>> valueDeserializerClass) {
+        return new SqlMapping(name, KafkaSqlConnector.class)
+                .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
+                         OPTION_KEY_CLASS, keyClass.getName(),
+                         OPTION_VALUE_FORMAT, JAVA_FORMAT,
+                         OPTION_VALUE_CLASS, valueClass.getName(),
+                         "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                         "key.serializer", keySerializerClass.getCanonicalName(),
+                         "key.deserializer", keyDeserializerClass.getCanonicalName(),
+                         "value.serializer", valueSerializerClass.getCanonicalName(),
+                         "value.deserializer", valueDeserializerClass.getCanonicalName(),
+                         "auto.offset.reset", "earliest");
     }
 
     @Test
     public void test_nulls() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name, PersonId.class, Person.class,
+                        JavaSerializer.class, JavaDeserializer.class,
+                        JavaSerializer.class, JavaDeserializer.class)
+                .create();
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " VALUES (null, null)",
-                createMap(new PersonId(), new Person())
+                Map.of(new PersonId(), new Person())
         );
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(null, null))
+                List.of(new Row(null, null))
         );
     }
 
     @Test
     public void test_fieldsShadowing() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name, PersonId.class, Person.class,
+                        JavaSerializer.class, JavaDeserializer.class,
+                        JavaSerializer.class, JavaDeserializer.class)
+                .create();
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " VALUES (1, 'Alice')",
-                createMap(new PersonId(1), new Person(null, "Alice"))
+                Map.of(new PersonId(1), new Person(null, "Alice"))
         );
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(1, "Alice"))
+                List.of(new Row(1, "Alice"))
         );
     }
 
     @Test
     public void test_fieldsMapping() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_id INT EXTERNAL NAME \"__key.id\""
-                + ", value_id INT EXTERNAL NAME \"this.id\""
-                + ", name VARCHAR"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name, PersonId.class, Person.class,
+                        JavaSerializer.class, JavaDeserializer.class,
+                        JavaSerializer.class, JavaDeserializer.class)
+                .fields("key_id INT EXTERNAL NAME \"__key.id\"",
+                        "value_id INT EXTERNAL NAME \"this.id\"",
+                        "name VARCHAR")
+                .create();
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " (value_id, key_id) VALUES (2, 1)",
-                createMap(new PersonId(1), new Person(2, null))
+                Map.of(new PersonId(1), new Person(2, null))
         );
         assertRowsEventuallyInAnyOrder(
                 "SELECT  key_id, value_id FROM " + name,
-                singletonList(new Row(1, 2))
+                List.of(new Row(1, 2))
         );
     }
 
@@ -178,21 +140,10 @@ public class SqlPojoTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + to + ' '
-                + " TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + AllCanonicalTypesValue.class.getName() + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + AllCanonicalTypesValueSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + AllCanonicalTypesValueDeserializer.class.getCanonicalName() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(to, PersonId.class, AllCanonicalTypesValue.class,
+                        JavaSerializer.class, JavaDeserializer.class,
+                        AllCanonicalTypesValueSerializer.class, AllCanonicalTypesValueDeserializer.class)
+                .create();
 
         sqlService.execute("INSERT INTO " + to + "("
                 + "id"
@@ -235,7 +186,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", timestampTz"
                         + ", object"
                         + " FROM " + to,
-                singletonList(new Row(
+                List.of(new Row(
                         1,
                         "string",
                         true,
@@ -267,97 +218,65 @@ public class SqlPojoTest extends SqlTestSupport {
 
     public void test_writingToTopLevel(boolean explicit) {
         String topicName = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + topicName + "("
-                + "__key INT"
-                + (explicit ? ", this OBJECT" : "")
-                + ", name VARCHAR"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + "\n"
-                + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
-                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + IntegerSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + IntegerDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(topicName, Integer.class, Person.class,
+                        IntegerSerializer.class, IntegerDeserializer.class,
+                        JavaSerializer.class, JavaDeserializer.class)
+                .fields("__key INT")
+                .fieldsIf(explicit, "this OBJECT")
+                .fields("name VARCHAR")
+                .create();
 
         if (explicit) {
             assertThatThrownBy(() ->
                     sqlService.execute("INSERT INTO " + topicName + " VALUES(1, null, 'foo')"))
-                    .isInstanceOf(HazelcastSqlException.class)
                     .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
         }
 
         assertThatThrownBy(() ->
                 sqlService.execute("INSERT INTO " + topicName + "(__key, this) VALUES(1, null)"))
-                .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
 
         sqlService.execute("INSERT INTO " + topicName + (explicit ? "(__key, name)" : "") + " VALUES (1, 'foo')");
 
         assertRowsEventuallyInAnyOrder("SELECT __key, this, name FROM " + topicName,
-                singletonList(new Row(1, new Person(null, "foo"), "foo")));
+                List.of(new Row(1, new Person(null, "foo"), "foo")));
     }
 
     @Test
     public void test_topLevelFieldExtraction() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name, PersonId.class, Person.class,
+                        JavaSerializer.class, JavaDeserializer.class,
+                        JavaSerializer.class, JavaDeserializer.class)
+                .create();
+
         sqlService.execute("INSERT INTO " + name + " VALUES (1, 'Alice')");
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT __key, this FROM " + name,
-                singletonList(new Row(new PersonId(1), new Person(null, "Alice")))
+                List.of(new Row(new PersonId(1), new Person(null, "Alice")))
         );
     }
 
     @Test
     public void test_customType() {
-        sqlService.execute("CREATE TYPE person_type OPTIONS ('format'='java', 'javaClass'='" + Person.class.getName() + "')");
-        sqlService.execute("CREATE MAPPING m (outerField INT, person person_type) TYPE " + KafkaSqlConnector.TYPE_NAME + " OPTIONS ("
-                + "'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "',"
-                + "'auto.offset.reset'='earliest',"
-                + "'valueFormat'='java',"
-                + "'valueJavaClass'='" + ClzWithPerson.class.getName() + "',"
-                + "'value.serializer'='" + JavaSerializer.class.getName() + "',"
-                + "'value.deserializer'='" + JavaDeserializer.class.getName() + "'"
-                + ")"
-        );
+        new SqlType("person_type").create();
+        kafkaMapping("m", Integer.class, ClzWithPerson.class,
+                        IntegerSerializer.class, IntegerDeserializer.class,
+                        JavaSerializer.class, JavaDeserializer.class)
+                .fields("__key INT",
+                        "outerField INT",
+                        "person person_type")
+                .create();
 
-        sqlService.execute("insert into m values (1, (2, 'foo'))");
+        sqlService.execute("insert into m values (0, 1, (2, 'foo'))");
 
         assertRowsEventuallyInAnyOrder("select outerField, (person).id, (person).name from m",
             rows(3, 1, 2, "foo"));
     }
 
-    public static class ClzWithPerson implements Serializable {
-        public int outerField;
-        public Person person;
-    }
-
     private static String createRandomTopic() {
-        String topicName = "t_" + randomString().replace('-', '_');
-        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
-        return topicName;
+        return createRandomTopic(INITIAL_PARTITION_COUNT);
     }
 
     private static void assertTopicEventually(String name, String sql, Map<PersonId, Person> expected) {
@@ -369,5 +288,11 @@ public class SqlPojoTest extends SqlTestSupport {
                 JavaDeserializer.class,
                 JavaDeserializer.class
         );
+    }
+
+    public static class ClzWithPerson implements Serializable {
+        @SuppressWarnings("unused")
+        public int outerField;
+        public Person person;
     }
 }

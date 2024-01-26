@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 /**
  * The client Engine.
@@ -156,9 +157,9 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     void onClientAcquiredResource(UUID uuid);
 
-    void addBackupListener(UUID clientUUID, Consumer<Long> backupListener);
+    void addBackupListener(UUID clientUUID, LongConsumer backupListener);
 
-    boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener);
+    boolean deregisterBackupListener(UUID clientUUID, LongConsumer backupListener);
 
     void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId);
 

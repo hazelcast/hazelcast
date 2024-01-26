@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,18 +40,15 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
  * @see QueryCacheConfigurator
  */
 public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfigurator {
-
-    private final ClassLoader configClassLoader;
     private final QueryCacheEventService eventService;
 
-    public AbstractQueryCacheConfigurator(ClassLoader configClassLoader, QueryCacheEventService eventService) {
-        this.configClassLoader = configClassLoader;
+    public AbstractQueryCacheConfigurator(QueryCacheEventService eventService) {
         this.eventService = eventService;
     }
 
-    protected void setEntryListener(String mapName, String cacheId, QueryCacheConfig config) {
+    protected void setEntryListener(String mapName, String cacheId, QueryCacheConfig config, ClassLoader loader) {
         for (EntryListenerConfig listenerConfig : config.getEntryListenerConfigs()) {
-            MapListener listener = getListener(listenerConfig);
+            MapListener listener = getListener(listenerConfig, loader);
             if (listener != null) {
                 EventFilter filter = new EntryEventFilter(null, listenerConfig.isIncludeValue());
                 eventService.addListener(mapName, cacheId, listener, filter);
@@ -59,24 +56,23 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
         }
     }
 
-    protected void setPredicateImpl(QueryCacheConfig config) {
+    protected void setPredicateImpl(QueryCacheConfig config, ClassLoader loader) {
         PredicateConfig predicateConfig = config.getPredicateConfig();
         if (predicateConfig.getImplementation() != null) {
             return;
         }
-        Predicate predicate = getPredicate(predicateConfig);
+        Predicate predicate = getPredicate(predicateConfig, loader);
         if (predicate == null) {
             return;
         }
         predicateConfig.setImplementation(predicate);
     }
 
-    private Predicate getPredicate(PredicateConfig predicateConfig) {
+    private Predicate getPredicate(PredicateConfig predicateConfig, ClassLoader loader) {
 
         if (!isNullOrEmpty(predicateConfig.getClassName())) {
             try {
-                return ClassLoaderUtil
-                        .newInstance(configClassLoader, predicateConfig.getClassName());
+                return ClassLoaderUtil.newInstance(loader, predicateConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -90,14 +86,13 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
         return null;
     }
 
-    private <T extends EventListener> T getListener(ListenerConfig listenerConfig) {
+    private <T extends EventListener> T getListener(ListenerConfig listenerConfig, ClassLoader loader) {
         T listener = null;
         if (listenerConfig.getImplementation() != null) {
             listener = (T) listenerConfig.getImplementation();
         } else if (listenerConfig.getClassName() != null) {
             try {
-                return ClassLoaderUtil
-                        .newInstance(configClassLoader, listenerConfig.getClassName());
+                return ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

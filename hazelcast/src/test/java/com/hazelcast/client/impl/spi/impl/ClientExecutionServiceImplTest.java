@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class ClientExecutionServiceImplTest {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         HazelcastProperties properties = new HazelcastProperties(new Config());
         ClientLoggingService loggingService = new ClientLoggingService(
-                name, "jdk", BuildInfoProvider.getBuildInfo(), name, true
+                name, "jdk", BuildInfoProvider.getBuildInfo(), name, true, false
         );
 
         executionService = new ClientExecutionServiceImpl(name, classLoader, properties, loggingService);

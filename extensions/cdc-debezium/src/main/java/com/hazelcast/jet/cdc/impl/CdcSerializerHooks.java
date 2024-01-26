@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,11 +61,11 @@ public class CdcSerializerHooks {
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
                     out.writeString(record.operation().code());
-                    out.writeUTF(record.getKeyJson());
+                    out.writeString(record.getKeyJson());
                     RecordPart oldValue = record.oldValue();
-                    out.writeUTF(oldValue == null ? null : oldValue.toJson());
+                    out.writeString(oldValue == null ? null : oldValue.toJson());
                     RecordPart newValue = record.newValue();
-                    out.writeUTF(newValue == null ? null : newValue.toJson());
+                    out.writeString(newValue == null ? null : newValue.toJson());
                     out.writeString(record.table());
                     out.writeString(record.schema());
                     out.writeString(record.database());

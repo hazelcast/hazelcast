@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.usercodedeployment;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.usercodedeployment.impl.ClassData;
 import com.hazelcast.internal.usercodedeployment.impl.ClassDataProvider;
@@ -38,6 +39,11 @@ import static com.hazelcast.internal.usercodedeployment.impl.filter.MemberProvid
 import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static java.lang.String.format;
 
+/**
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see UserCodeNamespaceService
+ */
+@Deprecated(since = "5.4", forRemoval = true)
 public final class UserCodeDeploymentService implements ManagedService {
 
     public static final String SERVICE_NAME = "user-code-deployment-service";

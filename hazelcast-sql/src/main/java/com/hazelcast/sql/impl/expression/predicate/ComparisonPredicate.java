@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public final class ComparisonPredicate extends BiExpression<Boolean> {
     }
 
     public static ComparisonPredicate create(Expression<?> left, Expression<?> right, ComparisonMode comparisonMode) {
-        assert left.getType().equals(right.getType());
+        assert left.getType().getTypeFamily() == right.getType().getTypeFamily();
         return new ComparisonPredicate(left, right, comparisonMode);
     }
 

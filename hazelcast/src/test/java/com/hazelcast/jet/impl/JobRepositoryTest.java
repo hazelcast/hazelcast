@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.net.URL;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -124,25 +124,25 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void when_jobJarUploadFails_then_jobResourcesCleanedUp() throws Exception {
-        jobConfig.addJar(new URL("http://site/nonexistent"));
+        jobConfig.addJar(URI.create("http://site/nonexistent").toURL());
         testResourceCleanup();
     }
 
     @Test
     public void when_jobZipUploadFails_then_jobResourcesCleanedUp() throws Exception {
-        jobConfig.addJarsInZip(new URL("http://site/nonexistent"));
+        jobConfig.addJarsInZip(URI.create("http://site/nonexistent").toURL());
         testResourceCleanup();
     }
 
     @Test
     public void when_jobClasspathResourceUploadFails_then_jobResourcesCleanedUp() throws Exception {
-        jobConfig.addClasspathResource(new URL("http://site/nonexistent"));
+        jobConfig.addClasspathResource(URI.create("http://site/nonexistent").toURL());
         testResourceCleanup();
     }
 
     @Test
     public void when_jobFileUploadFails_then_jobResourcesCleanedUp() throws Exception {
-        jobConfig.attachFile(new URL("http://site/nonexistent"));
+        jobConfig.attachFile(URI.create("http://site/nonexistent").toURL());
         testResourceCleanup();
     }
 

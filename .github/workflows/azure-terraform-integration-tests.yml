@@ -32,14 +32,6 @@ jobs:
         )
       )
     steps:
-      - name: Setup JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: 11
-          architecture: x64
-          distribution: adopt
-          cache: 'maven'
-
       - name: Decide which ref to checkout
         id: decide-ref
         run: |
@@ -50,10 +42,24 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{steps.decide-ref.outputs.ref}}
 
+      - name: Read Java Config
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: java-config
+        with:
+          config: ${{ github.workspace }}/.github/java-config.yml
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ steps.java-config.outputs['java-version'] }}
+          distribution: ${{ steps.java-config.outputs['distribution'] }}
+          architecture: x64
+          cache: 'maven'
+  
       - name: Build hazelcast jar
         run: |
           ./mvnw -T 4 -B -V -e clean package \

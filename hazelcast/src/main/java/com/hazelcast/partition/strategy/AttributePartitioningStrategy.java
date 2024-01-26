@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,11 @@ import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.JsonGetter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serializable;
 
 @SerializableByConvention
 public final class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
@@ -49,10 +47,8 @@ public final class AttributePartitioningStrategy implements PartitioningStrategy
             result = extractFromGenericRecord((InternalGenericRecord) key);
         } else if (key instanceof HazelcastJsonValue) {
             result = extractFromJson(key);
-        } else if (key instanceof DataSerializable || key instanceof Serializable) {
+        } else  {
             result = extractFromPojo(key);
-        } else {
-            throw new HazelcastException("Cannot extract attributes from the key");
         }
 
         return PartitioningStrategyUtil.constructAttributeBasedKey(result);

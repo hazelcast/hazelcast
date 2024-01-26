@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -37,6 +38,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -48,6 +50,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_BYTE_BUFFER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OPTIONAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
@@ -57,11 +60,11 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OFFSETDATETIME;
 import static java.lang.Math.max;
 
-
+@SuppressWarnings({"NullableProblems", "rawtypes"})
 public final class JavaDefaultSerializers {
+    private JavaDefaultSerializers() { }
 
-    public static final class JavaSerializer extends SingletonSerializer<Object> {
-
+    public static final class JavaSerializer implements StreamSerializer<Object> {
         private final boolean shared;
         private final boolean gzipEnabled;
         private final ClassNameFilter classFilter;
@@ -140,8 +143,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
-
+    public static final class ExternalizableSerializer implements StreamSerializer<Externalizable> {
         private final boolean gzipEnabled;
         private final ClassNameFilter classFilter;
 
@@ -219,7 +221,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
+    public static final class BigIntegerSerializer implements StreamSerializer<BigInteger> {
         /** Determines if ser-de should conform the 3.x format */
         private final boolean isCompatibility;
 
@@ -245,8 +247,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class BigDecimalSerializer extends SingletonSerializer<BigDecimal> {
-
+    public static final class BigDecimalSerializer implements StreamSerializer<BigDecimal> {
         final BigIntegerSerializer bigIntegerSerializer;
         /** Determines if ser-de should conform the 3.x format */
         final boolean isCompatibility;
@@ -274,7 +275,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class DateSerializer extends SingletonSerializer<Date> {
+    public static final class DateSerializer implements StreamSerializer<Date> {
         /** Determines if ser-de should conform the 3.x format */
         private final boolean isCompatibility;
 
@@ -300,7 +301,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class LocalDateSerializer extends SingletonSerializer<LocalDate> {
+    public static final class LocalDateSerializer implements StreamSerializer<LocalDate> {
 
         @Override
         public int getTypeId() {
@@ -318,7 +319,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class LocalTimeSerializer extends SingletonSerializer<LocalTime> {
+    public static final class LocalTimeSerializer implements StreamSerializer<LocalTime> {
 
         @Override
         public int getTypeId() {
@@ -336,7 +337,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class LocalDateTimeSerializer extends SingletonSerializer<LocalDateTime> {
+    public static final class LocalDateTimeSerializer implements StreamSerializer<LocalDateTime> {
 
         @Override
         public int getTypeId() {
@@ -354,7 +355,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class OffsetDateTimeSerializer extends SingletonSerializer<OffsetDateTime> {
+    public static final class OffsetDateTimeSerializer implements StreamSerializer<OffsetDateTime> {
 
         @Override
         public int getTypeId() {
@@ -372,7 +373,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class ClassSerializer extends SingletonSerializer<Class> {
+    public static final class ClassSerializer implements StreamSerializer<Class> {
         /** Determines if ser-de should conform the 3.x format */
         private final boolean isCompatibility;
 
@@ -402,7 +403,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class OptionalSerializer extends SingletonSerializer<Optional> {
+    public static final class OptionalSerializer implements StreamSerializer<Optional> {
 
         @Override
         public int getTypeId() {
@@ -430,7 +431,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class EnumSerializer extends SingletonSerializer<Enum> {
+    public static final class EnumSerializer implements StreamSerializer<Enum> {
 
         @Override
         public int getTypeId() {
@@ -440,13 +441,13 @@ public final class JavaDefaultSerializers {
         @Override
         public void write(ObjectDataOutput out, Enum obj) throws IOException {
             String name = obj.getDeclaringClass().getName();
-            out.writeUTF(name);
-            out.writeUTF(obj.name());
+            out.writeString(name);
+            out.writeString(obj.name());
         }
 
         @Override
         public Enum read(ObjectDataInput in) throws IOException {
-            String clazzName = in.readUTF();
+            String clazzName = in.readString();
             Class clazz;
             try {
                 clazz = ClassLoaderUtil.loadClass(in.getClassLoader(), clazzName);
@@ -454,12 +455,17 @@ public final class JavaDefaultSerializers {
                 throw new HazelcastSerializationException("Failed to deserialize enum: " + clazzName, e);
             }
 
-            String name = in.readUTF();
+            String name = in.readString();
             return Enum.valueOf(clazz, name);
         }
     }
 
-    public static final class HazelcastJsonValueSerializer extends SingletonSerializer<HazelcastJsonValue> {
+    public static final class HazelcastJsonValueSerializer implements StreamSerializer<HazelcastJsonValue> {
+
+        @Override
+        public int getTypeId() {
+            return JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+        }
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
@@ -470,21 +476,29 @@ public final class JavaDefaultSerializers {
         public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
             return new HazelcastJsonValue(in.readString());
         }
+    }
+
+    public static final class ByteBufferSerializer implements ByteArraySerializer<ByteBuffer> {
 
         @Override
         public int getTypeId() {
-            return JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+            return JAVA_DEFAULT_BYTE_BUFFER;
         }
-    }
-
-    private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
 
         @Override
-        public void destroy() {
+        public byte[] write(ByteBuffer buffer) throws IOException {
+            if (buffer.hasArray() && buffer.arrayOffset() == 0 && buffer.limit() == buffer.capacity()) {
+                return buffer.array();
+            }
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            return bytes;
         }
-    }
 
-    private JavaDefaultSerializers() {
+        @Override
+        public ByteBuffer read(byte[] buffer) throws IOException {
+            return ByteBuffer.wrap(buffer);
+        }
     }
 
     /**
@@ -535,5 +549,4 @@ public final class JavaDefaultSerializers {
             def.end();
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,6 +220,19 @@ public final class SerializationUtil {
         assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
     }
 
+    public static <V> void writeMapStringKey(@Nonnull Map<String, V> map, ObjectDataOutput out) throws IOException {
+        int size = map.size();
+        out.writeInt(size);
+
+        int k = 0;
+        for (Map.Entry<String, V> entry : map.entrySet()) {
+            out.writeString(entry.getKey());
+            out.writeObject(entry.getValue());
+            k++;
+        }
+        assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
+    }
+
     /**
      * Reads a map written by {@link #writeNullableMap(Map, ObjectDataOutput)}. The map itself
      * may be {@code null}. No guarantee is provided about the type of Map returned or its suitability
@@ -246,6 +259,18 @@ public final class SerializationUtil {
         Map<K, V> map = createHashMap(size);
         for (int i = 0; i < size; i++) {
             K key = in.readObject();
+            V value = in.readObject();
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Nonnull
+    public static <V> Map<String, V> readMapStringKey(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        Map<String, V> map = createHashMap(size);
+        for (int i = 0; i < size; i++) {
+            String key = in.readString();
             V value = in.readObject();
             map.put(key, value);
         }

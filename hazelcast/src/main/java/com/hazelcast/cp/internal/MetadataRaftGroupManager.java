@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -864,7 +864,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             return false;
         }
 
-        if (schedule.getChanges().size() > 0) {
+        if (!schedule.getChanges().isEmpty()) {
             return false;
         }
 
@@ -1028,7 +1028,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         logger.info("Added new " + member + ". New active CP members list: " + newMembers);
 
         List<CPGroupMembershipChange> changes = getGroupMembershipChangesForNewMember(member);
-        if (changes.size() > 0) {
+        if (!changes.isEmpty()) {
             membershipChangeSchedule = MembershipChangeSchedule.forJoiningMember(singletonList(commitIndex), member, changes);
             if (logger.isFineEnabled()) {
                 logger.fine("CP group rebalancing is triggered for " + member + ", changes: " + membershipChangeSchedule);
@@ -1064,7 +1064,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         raftService.updateInvocationManagerMembers(getMetadataGroupId().getSeed(), commitIndex, activeMembers);
-        raftService.updateMissingMembers();
+        raftService.updateMissingMembers(activeMembers);
         broadcastActiveCPMembers();
         sendMembershipEvents(currentMembers, members);
     }

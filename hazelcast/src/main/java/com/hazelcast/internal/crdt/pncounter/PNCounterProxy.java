@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.internal.crdt.pncounter.PNCounterService.SERVICE_NAME;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.cloneAndReset;
 
 /**
  * Member proxy implementation for a {@link PNCounter}.
@@ -199,9 +200,10 @@ public class PNCounterProxy extends AbstractDistributedObject<PNCounterService> 
         } catch (HazelcastException e) {
             logger.fine("Exception occurred while invoking operation on target " + target + ", choosing different target", e);
             if (excludedAddresses == EMPTY_ADDRESS_LIST) {
-                excludedAddresses = new ArrayList<Address>();
+                excludedAddresses = new ArrayList<>();
             }
             excludedAddresses.add(target);
+            operation = cloneAndReset(operation, getNodeEngine().getSerializationService());
             return invokeInternal(operation, excludedAddresses, e);
         }
     }

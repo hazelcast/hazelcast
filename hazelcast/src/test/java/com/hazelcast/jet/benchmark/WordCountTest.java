@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,7 @@ public class WordCountTest extends JetTestSupport implements Serializable {
 
         dag.edge(between(source, mapReduce))
            .edge(between(mapReduce, combineLocal))
-           .edge(between(combineLocal, combineGlobal).distributed().allToOne("ALL"))
+           .edge(between(combineLocal, combineGlobal).distributed().allToOne())
            .edge(between(combineGlobal, sink));
 
         benchmark("jet", () -> instance.getJet().newJob(dag).join());

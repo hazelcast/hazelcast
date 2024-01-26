@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,19 +35,17 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Collection;
 
@@ -79,44 +77,47 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
     public void testMapRemoveFailingBackupShouldNotLeadToStaleDataWhenReadBackupIsEnabled() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final String mapName = randomMapName();
-        final String key = "2";
-        final String value = "value2";
-        Config config = getConfig();
-        config.getSerializationConfig().addDataSerializableFactory(100, new Factory());
-        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
-        config.setProperty(MapServiceContext.PROP_FORCE_OFFLOAD_ALL_OPERATIONS, String.valueOf(offload));
-        config.getMapConfig(mapName).setReadBackupData(true);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig());
+
         final NodeEngine nodeEngine = getNodeEngineImpl(hz1);
         final IMap<Object, Object> map1 = hz1.getMap(mapName);
         final IMap<Object, Object> map2 = hz2.getMap(mapName);
         MapProxyImpl<Object, Object> mock1 = (MapProxyImpl<Object, Object>) spy(map1);
-        when(mock1.remove(anyString())).then(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object object = invocation.getArguments()[0];
-                final Data key = nodeEngine.toData(object);
-                RemoveOperation operation = new RemoveOperation(mapName, key);
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                operation.setThreadId(ThreadUtil.getThreadId());
-                OperationService operationService = nodeEngine.getOperationService();
-                InternalCompletableFuture<Data> f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false).invoke();
-                Data result = f.get();
-                return nodeEngine.toObject(result);
-            }
+        when(mock1.remove(anyString())).then(invocation -> {
+            Object object = invocation.getArguments()[0];
+            final Data key1 = nodeEngine.toData(object);
+            RemoveOperation operation = new RemoveOperation(mapName, key1);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key1);
+            operation.setThreadId(ThreadUtil.getThreadId());
+            OperationService operationService = nodeEngine.getOperationService();
+            InternalCompletableFuture<Data> f
+                    = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .setResultDeserialized(false).invoke();
+            Data result = f.get();
+            return nodeEngine.toObject(result);
         });
+
+        final String key = "2";
+        final String value = "value2";
 
         mock1.put(key, value);
         mock1.remove(key);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map1.get(key));
-                assertNull(map2.get(key));
-            }
+        assertTrueEventually(() -> {
+            assertNull(map1.get(key));
+            assertNull(map2.get(key));
         }, 30);
+    }
+
+    @NotNull
+    protected Config getConfig() {
+        Config config = super.getConfig();
+        config.getSerializationConfig().addDataSerializableFactory(100, new Factory());
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
+        config.setProperty(MapServiceContext.PROP_FORCE_OFFLOAD_ALL_OPERATIONS, String.valueOf(offload));
+        config.getMapConfig("default").setReadBackupData(true);
+        return config;
     }
 
     private static class Factory implements DataSerializableFactory {

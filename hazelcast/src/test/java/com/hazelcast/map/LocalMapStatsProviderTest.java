@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,19 +91,23 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
         IMap<Object, Object> map1 = hzLite.getMap(MAP_NAME);
         map1.put("myKey", "myValue");
 
-        // Collect metrics from the Lite member
-        MetricsRegistry metricsRegistry = getNode(hzLite).getNodeEngine().getMetricsRegistry();
-        MapPutCountMetricsCollector metricsCollector = new MapPutCountMetricsCollector();
-        metricsRegistry.collect(metricsCollector);
-
         // Confirm 1 putCount metric was collected for the Lite member
-        assertEquals(1, metricsCollector.totalCollected.get());
+        assertMapPutCountMetric(hzLite, 1);
+        // Confirm no putCount metric was collected for the full member
+        assertMapPutCountMetric(hzFull, 0);
 
         // Destroy the map and ensure metrics are cleaned up
         map1.destroy();
         MapService mapService = getNode(hzLite).getNodeEngine().getService(MapService.SERVICE_NAME);
         LocalMapStatsProvider statsProvider = mapService.getMapServiceContext().getLocalMapStatsProvider();
         assertFalse(statsProvider.hasLocalMapStatsImpl(MAP_NAME));
+    }
+
+    private void assertMapPutCountMetric(HazelcastInstance instance, int expected) {
+        MetricsRegistry metricsRegistry = getNode(instance).getNodeEngine().getMetricsRegistry();
+        MapPutCountMetricsCollector metricsCollector = new MapPutCountMetricsCollector();
+        metricsRegistry.collect(metricsCollector);
+        assertEquals(expected, metricsCollector.totalCollected.get());
     }
 
     private Config createMetricsBasedConfig() {

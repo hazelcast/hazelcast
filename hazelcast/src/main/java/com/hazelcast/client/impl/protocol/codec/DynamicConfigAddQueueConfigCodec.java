@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("1160479908728cdeaab92ece9d39e7dd")
+@SuppressWarnings("unused")
+@Generated("f4b5fe8dff91e3c428c630e89783d937")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -122,13 +123,24 @@ public final class DynamicConfigAddQueueConfigCodec {
         public @Nullable java.lang.String priorityComparatorClassName;
 
         /**
+         * Name of the User Code Namespace applied to this instance.
+         */
+        public @Nullable java.lang.String userCodeNamespace;
+
+        /**
          * True if the priorityComparatorClassName is received from the client, false otherwise.
          * If this is false, priorityComparatorClassName has the default value for its type.
          */
         public boolean isPriorityComparatorClassNameExists;
+
+        /**
+         * True if the userCodeNamespace is received from the client, false otherwise.
+         * If this is false, userCodeNamespace has the default value for its type.
+         */
+        public boolean isUserCodeNamespaceExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String priorityComparatorClassName) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String priorityComparatorClassName, @Nullable java.lang.String userCodeNamespace) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -149,6 +161,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         CodecUtil.encodeNullable(clientMessage, queueStoreConfig, QueueStoreConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
         CodecUtil.encodeNullable(clientMessage, priorityComparatorClassName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, userCodeNamespace, StringCodec::encode);
         return clientMessage;
     }
 
@@ -172,6 +185,12 @@ public final class DynamicConfigAddQueueConfigCodec {
             request.isPriorityComparatorClassNameExists = true;
         } else {
             request.isPriorityComparatorClassNameExists = false;
+        }
+        if (iterator.hasNext()) {
+            request.userCodeNamespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isUserCodeNamespaceExists = true;
+        } else {
+            request.isUserCodeNamespaceExists = false;
         }
         return request;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -32,10 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_READONE}
+ * {@link com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec#REQUEST_MESSAGE_TYPE}
  */
 public class RingbufferReadOneMessageTask
-        extends AbstractPartitionMessageTask<RingbufferReadOneCodec.RequestParameters> {
+        extends AbstractRingbufferMessageTask<RingbufferReadOneCodec.RequestParameters> {
 
     public RingbufferReadOneMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -68,12 +67,7 @@ public class RingbufferReadOneMessageTask
 
     @Override
     public String getMethodName() {
-        return "readOne";
-    }
-
-    @Override
-    public String getServiceName() {
-        return RingbufferService.SERVICE_NAME;
+        return SecurityInterceptorConstants.READ_ONE;
     }
 
     @Override

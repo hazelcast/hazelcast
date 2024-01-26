@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
@@ -74,7 +75,7 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "addDistributedObjectListener";
+        return SecurityInterceptorConstants.ADD_DISTRIBUTED_OBJECT_LISTENER;
     }
 
     @Override

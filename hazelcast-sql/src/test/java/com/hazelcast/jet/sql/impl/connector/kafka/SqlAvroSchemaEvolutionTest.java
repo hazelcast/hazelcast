@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.google.common.collect.Lists;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.generic.GenericRecordBuilder;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,7 +30,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
@@ -41,6 +38,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroTest.ID_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroTest.NAME_SCHEMA;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.copyOf;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -61,9 +59,9 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
     @Parameters(name = "{0}, updateMapping=[{1}]")
     public static Iterable<Object[]> parameters() {
-        return Lists.cartesianProduct(
+        return parameters(
                 asList("TopicNameStrategy", "TopicRecordNameStrategy", "RecordNameStrategy"),
-                asList(false, true)).stream().map(List::toArray).collect(toList());
+                asList(false, true));
     }
 
     @Parameter(0)
@@ -106,7 +104,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
     }
 
     private SqlMapping kafkaMapping() {
-        return new SqlMapping(name, KafkaSqlConnector.TYPE_NAME).options(
+        return new SqlMapping(name, KafkaSqlConnector.class).options(
                 OPTION_KEY_FORMAT, AVRO_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT,
                 "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
@@ -167,7 +165,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
         if (topicNameStrategy && !updateMapping) {
             // insert record against mapping's schema
-            assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob')"))
+            assertThatThrownBy(() -> insertRecord(29, "Bob"))
                     .hasMessageContaining("Error serializing Avro message");
         } else {
             insertAndAssertRecords();
@@ -177,8 +175,8 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
     @Test
     public void test_useSpecificSchema() throws SchemaRegistryException {
         // create initial schema
-        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA);
+        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA).getId();
+        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA).getId();
 
         kafkaMapping()
             .fields("id INT EXTERNAL NAME \"__key.id\"",
@@ -208,16 +206,16 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
     private int insertInitialRecordAndAlterSchema() throws SchemaRegistryException {
         // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
+        insertRecord(13, "Alice");
         assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
 
         // alter schema externally
         int valueSchemaId;
         if (topicNameStrategy) {
-            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SSN_SCHEMA);
+            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SSN_SCHEMA).getId();
             assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
         } else {
-            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName + "2", NAME_SSN_SCHEMA2);
+            valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName + "2", NAME_SSN_SCHEMA2).getId();
             assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
             assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName + "2"));
         }
@@ -228,21 +226,17 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         int fields = updateMapping ? 3 : 2;
 
         // insert record against mapping's schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob'" + (fields == 3 ? ", 123456789)" : ")"));
+        insertRecord(copyOf(row(29, "Bob", 123456789L), fields));
 
         // insert record against old schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
-                new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
+        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 31), createRecord(NAME_SCHEMA, "Carol"));
 
         // insert record against new schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
-                new GenericRecordBuilder(topicNameStrategy ? NAME_SSN_SCHEMA : NAME_SSN_SCHEMA2)
-                        .set("name", "Dave").set("ssn", 123456789L).build());
+        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 47),
+                createRecord(topicNameStrategy ? NAME_SSN_SCHEMA : NAME_SSN_SCHEMA2, "Dave", 123456789L));
 
         // insert record against mapping's schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin'" + (fields == 3 ? ", 987654321)" : ")"));
+        insertRecord(copyOf(row(53, "Erin", 987654321L), fields));
 
         if (topicNameStrategy) {
             assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(valueSubjectName));
@@ -261,7 +255,11 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         };
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                Arrays.stream(records).map(record -> new Row(Arrays.copyOf(record, fields))).collect(toList())
+                Arrays.stream(records).map(record -> new Row(copyOf(record, fields))).collect(toList())
         );
+    }
+
+    private void insertRecord(Object... values) {
+        insertLiterals(instance(), name, values);
     }
 }

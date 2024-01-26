@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.cardinality.impl.operations;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorContainer;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -26,8 +27,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Map;
-
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class ReplicationOperation
         extends Operation
@@ -68,21 +67,11 @@ public class ReplicationOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(migrationData.size());
-        for (Map.Entry<String, CardinalityEstimatorContainer> entry : migrationData.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(migrationData, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int mapSize = in.readInt();
-        migrationData = createHashMap(mapSize);
-        for (int i = 0; i < mapSize; i++) {
-            String name = in.readString();
-            CardinalityEstimatorContainer newCont = in.readObject();
-            migrationData.put(name, newCont);
-        }
+        migrationData = SerializationUtil.readMapStringKey(in);
     }
 }

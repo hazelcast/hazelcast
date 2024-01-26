@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,8 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY_ID;
@@ -134,241 +135,55 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[COLLECTION_MERGE_BACKUP + 1];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[COLLECTION_MERGE_BACKUP + 1];
 
-        constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionAddOperation();
-            }
-        };
-        constructors[COLLECTION_ADD_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionAddBackupOperation();
-            }
-        };
-        constructors[LIST_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListAddOperation();
-            }
-        };
-        constructors[LIST_GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListGetOperation();
-            }
-        };
-        constructors[COLLECTION_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionRemoveOperation();
-            }
-        };
-        constructors[COLLECTION_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionRemoveBackupOperation();
-            }
-        };
-        constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionSizeOperation();
-            }
-        };
-        constructors[COLLECTION_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionClearOperation();
-            }
-        };
-        constructors[COLLECTION_CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionClearBackupOperation();
-            }
-        };
-        constructors[LIST_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListSetOperation();
-            }
-        };
-        constructors[LIST_SET_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListSetBackupOperation();
-            }
-        };
-        constructors[LIST_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListRemoveOperation();
-            }
-        };
-        constructors[LIST_INDEX_OF] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListIndexOfOperation();
-            }
-        };
-        constructors[COLLECTION_CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionContainsOperation();
-            }
-        };
-        constructors[COLLECTION_ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionAddAllOperation();
-            }
-        };
-        constructors[COLLECTION_ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionAddAllBackupOperation();
-            }
-        };
-        constructors[LIST_ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListAddAllOperation();
-            }
-        };
-        constructors[LIST_SUB] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListSubOperation();
-            }
-        };
-        constructors[COLLECTION_COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionCompareAndRemoveOperation();
-            }
-        };
-        constructors[COLLECTION_GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionGetAllOperation();
-            }
-        };
-        constructors[COLLECTION_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionEventFilter();
-            }
-        };
-        constructors[COLLECTION_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionEvent();
-            }
-        };
-        constructors[COLLECTION_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionItem();
-            }
-        };
+        constructors[COLLECTION_ADD] = CollectionAddOperation::new;
+        constructors[COLLECTION_ADD_BACKUP] = CollectionAddBackupOperation::new;
+        constructors[LIST_ADD] = ListAddOperation::new;
+        constructors[LIST_GET] = ListGetOperation::new;
+        constructors[COLLECTION_REMOVE] = CollectionRemoveOperation::new;
+        constructors[COLLECTION_REMOVE_BACKUP] = CollectionRemoveBackupOperation::new;
+        constructors[COLLECTION_SIZE] = CollectionSizeOperation::new;
+        constructors[COLLECTION_CLEAR] = CollectionClearOperation::new;
+        constructors[COLLECTION_CLEAR_BACKUP] = CollectionClearBackupOperation::new;
+        constructors[LIST_SET] = ListSetOperation::new;
+        constructors[LIST_SET_BACKUP] = ListSetBackupOperation::new;
+        constructors[LIST_REMOVE] = ListRemoveOperation::new;
+        constructors[LIST_INDEX_OF] = ListIndexOfOperation::new;
+        constructors[COLLECTION_CONTAINS] = CollectionContainsOperation::new;
+        constructors[COLLECTION_ADD_ALL] = CollectionAddAllOperation::new;
+        constructors[COLLECTION_ADD_ALL_BACKUP] = CollectionAddAllBackupOperation::new;
+        constructors[LIST_ADD_ALL] = ListAddAllOperation::new;
+        constructors[LIST_SUB] = ListSubOperation::new;
+        constructors[COLLECTION_COMPARE_AND_REMOVE] = CollectionCompareAndRemoveOperation::new;
+        constructors[COLLECTION_GET_ALL] = CollectionGetAllOperation::new;
+        constructors[COLLECTION_EVENT_FILTER] = CollectionEventFilter::new;
+        constructors[COLLECTION_EVENT] = CollectionEvent::new;
+        constructors[COLLECTION_ITEM] = CollectionItem::new;
 
-
-        constructors[COLLECTION_RESERVE_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionReserveAddOperation();
-            }
-        };
-        constructors[COLLECTION_RESERVE_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionReserveRemoveOperation();
-            }
-        };
-        constructors[COLLECTION_TXN_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionTxnAddOperation();
-            }
-        };
-        constructors[COLLECTION_TXN_ADD_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionTxnAddBackupOperation();
-            }
-        };
-        constructors[COLLECTION_TXN_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionTxnRemoveOperation();
-            }
-        };
-        constructors[COLLECTION_TXN_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionTxnRemoveBackupOperation();
-            }
-        };
-        constructors[COLLECTION_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionPrepareOperation();
-            }
-        };
-        constructors[COLLECTION_PREPARE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionPrepareBackupOperation();
-            }
-        };
-        constructors[COLLECTION_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionRollbackOperation();
-            }
-        };
-        constructors[COLLECTION_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionRollbackBackupOperation();
-            }
-        };
-        constructors[TX_COLLECTION_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxCollectionItem();
-            }
-        };
-        constructors[TX_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionTransactionRollbackOperation();
-            }
-        };
-        constructors[LIST_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListReplicationOperation();
-            }
-        };
-        constructors[SET_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetReplicationOperation();
-            }
-        };
-        constructors[COLLECTION_IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionIsEmptyOperation();
-            }
-        };
-        constructors[TXN_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionCommitOperation();
-            }
-        };
-        constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionCommitBackupOperation();
-            }
-        };
-        constructors[SET_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetContainer();
-            }
-        };
-        constructors[LIST_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListContainer();
-            }
-        };
-        constructors[COLLECTION_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionTransactionLogRecord();
-            }
-        };
-        constructors[QUEUE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueTransactionLogRecord();
-            }
-        };
-        constructors[COLLECTION_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionMergeOperation();
-            }
-        };
-        constructors[COLLECTION_MERGE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionMergeBackupOperation();
-            }
-        };
+        constructors[COLLECTION_RESERVE_ADD] = CollectionReserveAddOperation::new;
+        constructors[COLLECTION_RESERVE_REMOVE] = CollectionReserveRemoveOperation::new;
+        constructors[COLLECTION_TXN_ADD] = CollectionTxnAddOperation::new;
+        constructors[COLLECTION_TXN_ADD_BACKUP] = CollectionTxnAddBackupOperation::new;
+        constructors[COLLECTION_TXN_REMOVE] = CollectionTxnRemoveOperation::new;
+        constructors[COLLECTION_TXN_REMOVE_BACKUP] = CollectionTxnRemoveBackupOperation::new;
+        constructors[COLLECTION_PREPARE] = CollectionPrepareOperation::new;
+        constructors[COLLECTION_PREPARE_BACKUP] = CollectionPrepareBackupOperation::new;
+        constructors[COLLECTION_ROLLBACK] = CollectionRollbackOperation::new;
+        constructors[COLLECTION_ROLLBACK_BACKUP] = CollectionRollbackBackupOperation::new;
+        constructors[TX_COLLECTION_ITEM] = TxCollectionItem::new;
+        constructors[TX_ROLLBACK] = CollectionTransactionRollbackOperation::new;
+        constructors[LIST_REPLICATION] = ListReplicationOperation::new;
+        constructors[SET_REPLICATION] = SetReplicationOperation::new;
+        constructors[COLLECTION_IS_EMPTY] = CollectionIsEmptyOperation::new;
+        constructors[TXN_COMMIT] = CollectionCommitOperation::new;
+        constructors[TXN_COMMIT_BACKUP] = CollectionCommitBackupOperation::new;
+        constructors[SET_CONTAINER] = SetContainer::new;
+        constructors[LIST_CONTAINER] = ListContainer::new;
+        constructors[COLLECTION_TRANSACTION_LOG_RECORD] = CollectionTransactionLogRecord::new;
+        constructors[QUEUE_TRANSACTION_LOG_RECORD] = QueueTransactionLogRecord::new;
+        constructors[COLLECTION_MERGE] = CollectionMergeOperation::new;
+        constructors[COLLECTION_MERGE_BACKUP] = CollectionMergeBackupOperation::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

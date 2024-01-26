@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -297,10 +297,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
     private void assertLocalPortsOpen(int... ports) {
         for (int port : ports) {
-            Socket socket = new Socket();
-            try {
+            try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress("127.0.0.1", port));
-                socket.close();
             } catch (IOException e) {
                 fail("Failed to connect to port " + port + ": " + e.getMessage());
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,15 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        // Namespace inherited from PartitionWideEntryOperation
         predicate = in.readObject();
+        // We need to handle Namespace cleanup as the end of the line class
+        super.afterReadInternal();
+    }
+
+    @Override
+    protected void afterReadInternal() {
+        // No-op to avoid Namespace cleanup in parent class
     }
 
     @Override

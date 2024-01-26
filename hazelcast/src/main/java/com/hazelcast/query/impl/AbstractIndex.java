@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,6 +32,7 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -73,18 +75,20 @@ public abstract class AbstractIndex implements InternalIndex {
             Extractors extractors,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            String mapName) {
+            String mapName,
+            int partitionId) {
         this.config = config;
         this.components = IndexUtils.getComponents(config);
         this.ordered = config.getType() == IndexType.SORTED;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
-        this.indexStore = createIndexStore(node, config, stats, mapName);
+        this.indexStore = createIndexStore(node, config, stats, mapName, partitionId);
         this.stats = stats;
     }
 
-    protected abstract IndexStore createIndexStore(Node node, IndexConfig config, PerIndexStats stats, String mapName);
+    protected abstract IndexStore createIndexStore(Node node, IndexConfig config,
+                                                   PerIndexStats stats, String mapName, int partitionId);
 
     @Override
     public String getName() {
@@ -298,6 +302,11 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public PerIndexStats getPerIndexStats() {
         return stats;
+    }
+
+    @Override
+    public Comparator<Data> getKeyComparator(boolean isDescending) {
+        return indexStore.getKeyComparator(isDescending);
     }
 
     @Override

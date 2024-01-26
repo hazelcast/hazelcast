@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.InstanceTrackingConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -55,11 +57,14 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -92,6 +97,8 @@ import static org.junit.Assert.assertTrue;
 public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGeneratorTest.class);
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
@@ -725,8 +732,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         RealmConfig realmConfig = new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig()
                 .setRoleSeparator(":")
                 .addUser("test", "1234", "monitor", "hazelcast")
-                .addUser("dev", "secret", "root")
-        );
+                .addUser("dev", "secret", "root"))
+            .setAccessControlServiceConfig(new AccessControlServiceConfig()
+                .setFactoryClassName("com.acme.access.ACSFactory").setProperty("decisionFile", "/opt/acl.xml"));
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
@@ -1130,6 +1138,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addLockConfig(new FencedLockConfig("lock1", 1))
                 .addLockConfig(new FencedLockConfig("lock1", 2));
 
+        config.getCPSubsystemConfig()
+              .addCPMapConfig(new CPMapConfig("map1", 50))
+              .addCPMapConfig(new CPMapConfig("map2", 25));
+
+        config.getCPSubsystemConfig().setCPMapLimit(30);
 
         CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getCPSubsystemConfig(),
@@ -1176,11 +1189,16 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         config.getSqlConfig().setStatementTimeoutMillis(30L);
         config.getSqlConfig().setCatalogPersistenceEnabled(true);
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        filterConfig.getWhitelist().addClasses("com.foo.bar.MyClass");
+        filterConfig.getBlacklist().addPackages("magic.collection.of.code");
+        config.getSqlConfig().setJavaReflectionFilterConfig(filterConfig);
 
         SqlConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSqlConfig();
 
         assertEquals(config.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
         assertEquals(config.getSqlConfig().isCatalogPersistenceEnabled(), generatedConfig.isCatalogPersistenceEnabled());
+        assertEquals(config.getSqlConfig().getJavaReflectionFilterConfig(), generatedConfig.getJavaReflectionFilterConfig());
     }
 
     @Test
@@ -1523,6 +1541,33 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEnabled(true);
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
         assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
+    }
+
+    @Test
+    public void testNamespacesConfig() throws IOException {
+        File tempJar = tempFolder.newFile("tempJar.jar");
+        try (FileOutputStream out = new FileOutputStream(tempJar)) {
+            out.write(new byte[]{0x50, 0x4B, 0x03, 0x04});
+        }
+        File tempJarZip = tempFolder.newFile("tempZip.zip");
+
+        Config expectedConfig = new Config();
+        UserCodeNamespaceConfig userCodeNamespaceConfig = new UserCodeNamespaceConfig();
+        userCodeNamespaceConfig.setName("test-namespace");
+        userCodeNamespaceConfig.addJar(tempJar.toURI().toURL(), "temp-jar");
+        userCodeNamespaceConfig.addJarsInZip(tempJarZip.toURI().toURL(), "temp-zip");
+        UserCodeNamespacesConfig userCodeNamespacesConfig = new UserCodeNamespacesConfig();
+        userCodeNamespacesConfig.addNamespaceConfig(userCodeNamespaceConfig);
+        userCodeNamespacesConfig.setEnabled(true);
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        filterConfig.getWhitelist().addClasses("com.foo.bar.MyClass");
+        filterConfig.getBlacklist().addPackages("magic.collection.of.code");
+        userCodeNamespacesConfig.setClassFilterConfig(filterConfig);
+        expectedConfig.setNamespacesConfig(userCodeNamespacesConfig);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getNamespacesConfig(), actualConfig.getNamespacesConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

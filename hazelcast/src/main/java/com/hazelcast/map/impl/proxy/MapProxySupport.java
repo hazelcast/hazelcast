@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -271,9 +272,9 @@ abstract class MapProxySupport<K, V>
     public void initialize() {
         initializeListeners();
         if (getNodeEngine().isStartCompleted()) {
-            initializeIndexes();
+            indexAllNodesData();
         } else {
-            initializeLocalIndexes();
+            indexLocalNodeData();
         }
         initializeMapStoreLoad();
     }
@@ -318,8 +319,9 @@ abstract class MapProxySupport<K, V>
         String className = listenerConfig.getClassName();
         if (className != null) {
             try {
-                ClassLoader configClassLoader = getNodeEngine().getConfigClassLoader();
-                return ClassLoaderUtil.newInstance(configClassLoader, className);
+                ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(),
+                        mapConfig.getUserCodeNamespace());
+                return ClassLoaderUtil.newInstance(classLoader, className);
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -329,13 +331,13 @@ abstract class MapProxySupport<K, V>
         return null;
     }
 
-    private void initializeIndexes() {
+    private void indexAllNodesData() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndex(index);
         }
     }
 
-    private void initializeLocalIndexes() {
+    private void indexLocalNodeData() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndexInternal(index, true);
         }
@@ -717,7 +719,7 @@ abstract class MapProxySupport<K, V>
                         SERVICE_NAME,
                         operation,
                         partitionService.getPartitionIdSet(
-                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                            partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
                         )
                 );
             } else {
@@ -1311,7 +1313,7 @@ abstract class MapProxySupport<K, V>
                         SERVICE_NAME,
                         operation,
                         partitionService.getPartitionIdSet(
-                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                            partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
                         )
                 );
             } else {
@@ -1420,7 +1422,7 @@ abstract class MapProxySupport<K, V>
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             PartitionIdSet partitionIds = partitionService.getPartitionIdSet(
-                partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
             );
             final Target t = target;
             boolean allAlwaysFalsePredicate = partitionIds.stream().allMatch(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -52,18 +53,16 @@ public class PreconditionsTest {
 
     // =====================================================
 
+    @SuppressWarnings("deprecation")
     @Test
     public void checkNotNull_whenNull() {
         String msg = "Can't be null";
 
-        try {
-            Preconditions.checkNotNull(null, msg);
-            fail();
-        } catch (NullPointerException expected) {
-            assertEquals(msg, expected.getMessage());
-        }
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> Preconditions.checkNotNull(null, msg));
+        assertEquals(msg, exception.getMessage());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void checkNotNull_whenNotNull() {
         Object o = "foobar";
@@ -273,55 +272,55 @@ public class PreconditionsTest {
     }
 
     @Test
-    public void test_checkInstanceOf() throws Exception {
+    public void test_checkInstanceOf() {
         Number value = checkInstanceOf(Number.class, Integer.MAX_VALUE, "argumentName");
         assertEquals("Returned value should be " + Integer.MAX_VALUE, Integer.MAX_VALUE, value);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkInstanceOf_whenSuppliedObjectIsNotInstanceOfExpectedType() throws Exception {
+    public void test_checkInstanceOf_whenSuppliedObjectIsNotInstanceOfExpectedType() {
         checkInstanceOf(Integer.class, BigInteger.ONE, "argumentName");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkInstanceOf_withNullType() throws Exception {
+    public void test_checkInstanceOf_withNullType() {
         checkInstanceOf(null, Integer.MAX_VALUE, "argumentName");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkInstanceOf_withNullObject() throws Exception {
+    public void test_checkInstanceOf_withNullObject() {
         checkInstanceOf(Number.class, null, "argumentName");
     }
 
     @Test
-    public void test_checkNotInstanceOf() throws Exception {
+    public void test_checkNotInstanceOf() {
         BigInteger value = checkNotInstanceOf(Integer.class, BigInteger.ONE, "argumentName");
         assertEquals("Returned value should be equal to BigInteger.ONE", BigInteger.ONE, value);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkNotInstanceOf_whenSuppliedObjectIsInstanceOfExpectedType() throws Exception {
+    public void test_checkNotInstanceOf_whenSuppliedObjectIsInstanceOfExpectedType() {
         checkNotInstanceOf(Integer.class, Integer.MAX_VALUE, "argumentName");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkNotInstanceOf_withNullType() throws Exception {
+    public void test_checkNotInstanceOf_withNullType() {
         checkNotInstanceOf(null, BigInteger.ONE, "argumentName");
     }
 
     @Test
-    public void test_checkNotInstanceOf_withNullObject() throws Exception {
+    public void test_checkNotInstanceOf_withNullObject() {
         Object value = checkNotInstanceOf(Integer.class, null, "argumentName");
         assertNull(value);
     }
 
     @Test
-    public void test_checkFalse_whenFalse() throws Exception {
+    public void test_checkFalse_whenFalse() {
         checkFalse(false, "comparison cannot be true");
     }
 
     @Test
-    public void test_checkFalse_whenTrue() throws Exception {
+    public void test_checkFalse_whenTrue() {
         String errorMessage = "foobar";
         try {
             checkFalse(true, errorMessage);
@@ -332,12 +331,12 @@ public class PreconditionsTest {
     }
 
     @Test
-    public void test_checkTrue_whenTrue() throws Exception {
+    public void test_checkTrue_whenTrue() {
         checkTrue(true, "must be true");
     }
 
     @Test
-    public void test_checkTrue_whenFalse() throws Exception {
+    public void test_checkTrue_whenFalse() {
         String errorMessage = "foobar";
         try {
             checkTrue(false, errorMessage);
@@ -348,7 +347,7 @@ public class PreconditionsTest {
     }
 
     @Test
-    public void test_checkFalse() throws Exception {
+    public void test_checkFalse() {
         try {
             checkFalse(Boolean.FALSE, "comparison cannot be true");
         } catch (Exception e) {
@@ -357,17 +356,17 @@ public class PreconditionsTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkFalse_whenComparisonTrue() throws Exception {
+    public void test_checkFalse_whenComparisonTrue() {
         checkFalse(Boolean.TRUE, "comparison cannot be true");
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void test_hasNextThrowsException_whenEmptyIteratorGiven() throws Exception {
+    public void test_hasNextThrowsException_whenEmptyIteratorGiven() {
         checkHasNext(Collections.emptyList().iterator(), "");
     }
 
     @Test
-    public void test_hasNextReturnsIterator_whenNonEmptyIteratorGiven() throws Exception {
+    public void test_hasNextReturnsIterator_whenNonEmptyIteratorGiven() {
         Iterator<Integer> iterator = Arrays.asList(1, 2).iterator();
         assertEquals(iterator, checkHasNext(iterator, ""));
     }

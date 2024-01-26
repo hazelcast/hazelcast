@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,19 +111,20 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                 return;
             }
 
-            for (int i = 0; i < result.size(); i++) {
-                ReliableTopicMessage message = result.get(i);
-                try {
-                    listener.storeSequence(result.getSequence(i));
-                    listener.onMessage(toMessage(message));
-                } catch (Throwable t) {
-                    if (terminate(t)) {
-                        cancel();
-                        return;
+            runWithNamespaceAwareness(() -> {
+                for (int i = 0; i < result.size(); i++) {
+                    ReliableTopicMessage message = result.get(i);
+                    try {
+                        listener.storeSequence(result.getSequence(i));
+                        listener.onMessage(toMessage(message));
+                    } catch (Throwable t) {
+                        if (terminate(t)) {
+                            cancel();
+                            return;
+                        }
                     }
                 }
-
-            }
+            });
 
             sequence = result.getNextSequenceToReadFrom();
             next();
@@ -136,6 +137,8 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
             }
         }
     }
+
+    protected abstract void runWithNamespaceAwareness(Runnable runnable);
 
     private Message<E> toMessage(ReliableTopicMessage m) {
         Member member = getMember(m);
@@ -241,6 +244,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         if (readRingBufferCompletionStage != null) {
             readRingBufferCompletionStage.toCompletableFuture().cancel(true);
         }
+        listener.onCancel();
     }
 
     private boolean terminate(Throwable failure) {

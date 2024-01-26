@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,6 +243,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         return serviceName;
     }
 
+    @SuppressWarnings("java:S4973")
     @SuppressFBWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
         // If the name of the service is the same as the name already provided, the call is skipped.
@@ -383,6 +384,11 @@ public abstract class Operation implements DataSerializable, Tenantable {
                     + " then attempted to set %d, then observed %d. %s", c, newId, callId, this));
         }
         onSetCallId(newId);
+    }
+
+    // Accessed using OperationAccessor
+    final void resetCallId() {
+        CALL_ID.set(this, 0);
     }
 
     /**

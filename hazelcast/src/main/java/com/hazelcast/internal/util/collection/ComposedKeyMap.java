@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,7 @@ public class ComposedKeyMap<K1, K2, V> {
         checkNotNull(key2, "Key2 cannot be null");
         checkNotNull(value, "Value cannot be null");
 
-        Map<K2, V> innerMap = backingMap.get(key1);
-        if (innerMap == null) {
-            innerMap = new HashMap<K2, V>();
-            backingMap.put(key1, innerMap);
-        }
+        Map<K2, V> innerMap = backingMap.computeIfAbsent(key1, x -> new HashMap<>());
         return innerMap.put(key2, value);
     }
 

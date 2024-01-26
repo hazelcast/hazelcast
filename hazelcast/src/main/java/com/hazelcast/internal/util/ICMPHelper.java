@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package com.hazelcast.internal.util;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResourcesAsStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.is32bitJVM;
-import static com.hazelcast.internal.util.OsHelper.OS;
-import static com.hazelcast.internal.util.OsHelper.isUnixFamily;
+import static com.hazelcast.internal.tpcengine.util.OS.osName;
+import static com.hazelcast.internal.tpcengine.util.OS.isUnixFamily;
 
 /**
  * Helper class that uses JNI to check whether the JVM process has enough permission to create raw-sockets.
@@ -46,24 +46,20 @@ public final class ICMPHelper {
     }
 
     private static String extractBundledLib() {
-        InputStream src = null;
-        try {
-            src = getFileFromResourcesAsStream(getBundledLibraryPath());
+        try (InputStream src = getFileFromResourcesAsStream(getBundledLibraryPath())) {
             File dest = File.createTempFile("hazelcast-libicmp-helper-", ".so");
 
-            copy(src, dest);
+            Files.copy(src, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             return dest.getAbsolutePath();
         } catch (Throwable t) {
             throw rethrow(t);
-        } finally {
-            closeResource(src);
         }
     }
 
     private static String getBundledLibraryPath() {
         if (!isUnixFamily()) {
-            throw new IllegalStateException("ICMP not supported in this platform: " + OS);
+            throw new IllegalStateException("ICMP not supported in this platform: " + osName());
         }
 
         return is32bitJVM()

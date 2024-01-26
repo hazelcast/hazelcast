@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,6 +160,22 @@ public class EdgeTest {
 
         // When
         e.allToOne("key");
+        final Partitioner partitioner = e.getPartitioner();
+        assertNotNull(partitioner);
+
+        // Then
+        assertSame(RoutingPolicy.PARTITIONED, e.getRoutingPolicy());
+        assertEquals(partitioner.getPartition(17, mockPartitionCount), partitioner.getPartition(13, mockPartitionCount));
+    }
+
+    @Test
+    public void whenAllToOneDontCare_thenAlwaysSamePartition() {
+        // Given
+        final Edge e = Edge.from(a);
+        final int mockPartitionCount = 100;
+
+        // When
+        e.allToOne();
         final Partitioner partitioner = e.getPartitioner();
         assertNotNull(partitioner);
 

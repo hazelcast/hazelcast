@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.Serializable;
 
 /**
@@ -31,6 +32,7 @@ import java.io.Serializable;
  *
  * @param <T> the return type of this expression.
  */
+@ThreadSafe
 public interface Expression<T> extends IdentifiedDataSerializable, Serializable {
     /**
      * Evaluates this expression, guaranteeing that this is a top-level call.

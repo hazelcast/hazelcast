@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -370,7 +370,7 @@ public class HashJoinPTest extends JetTestSupport {
     }
 
     @SafeVarargs
-    private static <K, V> Map<K, Object> toMap(Tuple2<K, Object>... entries) {
+    private static <K> Map<K, Object> toMap(Tuple2<K, Object>... entries) {
         return Stream.of(entries).collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
     }
 

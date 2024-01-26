@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
+import javax.annotation.Nonnull;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
@@ -152,7 +153,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE MAPPING", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE MAPPING", timeout);
-            return planExecutor.execute(this);
+            return planExecutor.execute(this, ssc);
         }
     }
 
@@ -414,19 +415,15 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class DropIndexPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
-        private final PlanExecutor planExecutor;
 
         DropIndexPlan(
                 PlanKey planKey,
                 String name,
-                boolean ifExists,
-                PlanExecutor planExecutor
+                boolean ifExists
         ) {
             super(planKey);
-
             this.name = name;
             this.ifExists = ifExists;
-            this.planExecutor = planExecutor;
         }
 
         String name() {
@@ -536,7 +533,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             if (!infiniteRows) {
                 SqlPlanImpl.ensureNoneGuaranteesForBatchJob(jobConfig);
             }
-            return planExecutor.execute(this, arguments);
+            return planExecutor.execute(this, arguments, ssc);
         }
     }
 
@@ -1018,15 +1015,18 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class ExplainStatementPlan extends SqlPlanImpl {
         private final PhysicalRel rel;
         private final PlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         ExplainStatementPlan(
                 PlanKey planKey,
                 PhysicalRel rel,
+                List<Permission> permissions,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
             this.rel = rel;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         public PhysicalRel getRel() {
@@ -1044,7 +1044,12 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+        public void checkPermissions(SqlSecurityContext context) {
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoTimeout("EXPLAIN", timeout);
             return planExecutor.execute(this);
         }
@@ -1062,6 +1067,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         // map of per-table partition pruning candidates, structured as
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
         private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
+        private final boolean analyzed;
+        private final JobConfig analyzeJobConfig;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
@@ -1074,7 +1081,10 @@ abstract class SqlPlanImpl extends SqlPlan {
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
-                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
+                final boolean analyzed,
+                final JobConfig analyzeJobConfig
+        ) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1086,6 +1096,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
+            this.analyzed = analyzed;
+            this.analyzeJobConfig = analyzeJobConfig;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1110,7 +1122,9 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public boolean isCacheable() {
-            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
+            // Do not cache ANALYZE plan to give always the most up-to-date result
+            // and avoid race conditions due to shared, mutable analyzeJobConfig instance.
+            return !isAnalyzed() && !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
         }
 
         @Override
@@ -1120,6 +1134,14 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public Map<String, List<Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
             return partitionStrategyCandidates;
+        }
+
+        public boolean isAnalyzed() {
+            return analyzed;
+        }
+
+        public JobConfig analyzeJobConfig() {
+            return analyzeJobConfig;
         }
 
         @Override
@@ -1148,7 +1170,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final boolean infiniteRows;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final boolean analyzed;
+        private final JobConfig analyzeJobConfig;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         DmlPlan(
                 Operation operation,
                 PlanKey planKey,
@@ -1158,8 +1183,9 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String query,
                 boolean infiniteRows,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
-        ) {
+                List<Permission> permissions,
+                boolean analyzed,
+                JobConfig analyzeJobConfig) {
             super(planKey);
 
             this.operation = operation;
@@ -1170,6 +1196,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.infiniteRows = infiniteRows;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.analyzed = analyzed;
+            this.analyzeJobConfig = analyzeJobConfig;
         }
 
         Operation getOperation() {
@@ -1194,12 +1222,22 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public boolean isCacheable() {
-            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
+            // Do not cache ANALYZE plan to give always the most up-to-date result
+            // and avoid race conditions due to shared, mutable analyzeJobConfig instance.
+            return !isAnalyzed() && !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
         }
 
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
             return context.isValid(objectKeys);
+        }
+
+        public boolean isAnalyzed() {
+            return analyzed;
+        }
+
+        public JobConfig analyzeJobConfig() {
+            return analyzeJobConfig;
         }
 
         @Override
@@ -1303,7 +1341,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, queryId, arguments, timeout);
+            return planExecutor.execute(this, queryId, arguments, timeout, ssc);
         }
     }
 
@@ -1377,7 +1415,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1432,7 +1470,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
             permissions.forEach(context::checkPermission);
         }
 
@@ -1443,7 +1481,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1525,7 +1563,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1600,7 +1638,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 

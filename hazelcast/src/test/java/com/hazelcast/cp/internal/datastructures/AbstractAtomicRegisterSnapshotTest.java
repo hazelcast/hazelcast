@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.internal.DummyOp;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
+import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +42,11 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
 
     @Before
     public void setup() {
+        setLicense();
         instances = newInstances(3);
+    }
+
+    protected void setLicense() {
     }
 
     protected CPSubsystem getCPSubsystem() {
@@ -49,8 +56,6 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
     protected abstract CPGroupId getGroupId();
 
     protected abstract T setAndGetInitialValue();
-
-    protected abstract T readValue();
 
     protected abstract RaftOp getQueryRaftOp();
 
@@ -65,11 +70,14 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
     public void test_snapshot() throws Exception {
         T initialValue = setAndGetInitialValue();
 
-        // force snapshot
+        RaftNodeImpl leaderNode = getLeaderNode(instances, getGroupId());
+        // force snapshot by adding dummy entries to the RaftLog
         for (int i = 0; i < SNAPSHOT_THRESHOLD; i++) {
-            T v = readValue();
-            assertEquals(initialValue, v);
+            leaderNode.replicate(new DummyOp()).joinInternal();
         }
+
+        SnapshotEntry snapshotEntry = leaderNode.state().log().snapshot();
+        assertGreaterOrEquals("snapshot size", snapshotEntry.index(), SNAPSHOT_THRESHOLD);
 
         // shutdown the last instance
         instances[instances.length - 1].shutdown();
@@ -78,7 +86,7 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
         instance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
                 .toCompletableFuture().get();
 
-        // Read from local CP member, which should install snapshot after promotion.
+        // Read from local CP member, which should install snapshot after promotion, that should contain the initial value
         assertTrueEventually(() -> {
             InternalCompletableFuture<Object> future = queryLocally(instance);
             try {
@@ -95,6 +103,10 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
             T value = getValue(future);
             assertEquals(initialValue, value);
         }, 5);
+
+        RaftNodeImpl raftNode = getRaftNode(instance, getGroupId());
+        SnapshotEntry newNodeSnapshotEntry = raftNode.state().log().snapshot();
+        assertGreaterOrEquals("snapshot size", newNodeSnapshotEntry.index(), SNAPSHOT_THRESHOLD);
     }
 
     protected T getValue(InternalCompletableFuture<Object> future) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -283,7 +283,7 @@ public abstract class AbstractDataStreamIntegrationTest<O extends ObjectDataOutp
         String s1 = "Vim is a text editor that is upwards compatible to Vi. It can be used to edit all kinds of plain text.";
         String s2 = "簡単なものから複雑なものまで、具体的な例を使って説明しています。本のように最初から順を追って読んでください。";
         String[] arr = new String[] {s1, s2};
-        out.writeUTFArray(arr);
+        out.writeStringArray(arr);
 
         ObjectDataInput in = getDataInputFromOutput();
         assertArrayEquals(arr, in.readStringArray());

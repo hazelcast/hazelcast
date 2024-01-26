@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,17 @@ abstract class AbstractMapPartitionMessageTask<P> extends AbstractPartitionMessa
     }
 
     protected final MapOperationProvider getMapOperationProvider(String mapName) {
-        MapService mapService = getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapServiceContext mapServiceContext = getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(mapName);
+    }
+
+    protected MapServiceContext getMapServiceContext() {
+        MapService mapService = getService(MapService.SERVICE_NAME);
+        return mapService.getMapServiceContext();
+    }
+
+    @Override
+    protected final String getUserCodeNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
     }
 }

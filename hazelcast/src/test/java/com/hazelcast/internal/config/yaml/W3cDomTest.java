@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import static com.hazelcast.internal.config.yaml.EmptyNamedNodeMap.emptyNamedNodeMap;
@@ -40,7 +41,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
- * A modified copy of the of the main test case of {@link YamlTest} that
+ * A modified copy of the main test case of {@link YamlTest} that
  * verifies the behavior of the W3C DOM adapters' supported methods.
  * <p>
  * These tests utilize that we work with the node adapters with which we
@@ -52,9 +53,11 @@ public class W3cDomTest extends HazelcastTestSupport {
     private static final int NOT_EXISTING = 42;
 
     @Test
-    public void testW3cDomAdapter() {
-        InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map-extended.yaml");
-        YamlNode yamlRoot = YamlLoader.load(inputStream, "root-map");
+    public void testW3cDomAdapter() throws IOException {
+        YamlNode yamlRoot;
+        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map-extended.yaml")) {
+            yamlRoot = YamlLoader.load(inputStream, "root-map");
+        }
         Node domRoot = W3cDomUtil.asW3cNode(yamlRoot);
 
         NamedNodeMap rootAttributes = domRoot.getAttributes();

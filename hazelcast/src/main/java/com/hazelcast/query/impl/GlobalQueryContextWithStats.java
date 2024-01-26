@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,7 +40,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
     private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<>(8);
 
     @Override
-    void attachTo(Indexes indexes, int ownedPartitionCount) {
+    void attachTo(IndexRegistry indexes, int ownedPartitionCount) {
         super.attachTo(indexes, ownedPartitionCount);
         for (QueryTrackingIndex trackedIndex : trackedIndexes) {
             trackedIndex.resetPerQueryStats();
@@ -55,16 +57,12 @@ public class GlobalQueryContextWithStats extends QueryContext {
 
     @Override
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
+        InternalIndex delegate = indexRegistry.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
         }
 
-        QueryTrackingIndex trackingIndex = knownIndexes.get(pattern);
-        if (trackingIndex == null) {
-            trackingIndex = new QueryTrackingIndex();
-            knownIndexes.put(pattern, trackingIndex);
-        }
+        QueryTrackingIndex trackingIndex = knownIndexes.computeIfAbsent(pattern, x -> new QueryTrackingIndex());
 
         trackingIndex.attachTo(delegate);
         trackedIndexes.add(trackingIndex);
@@ -179,6 +177,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
                     from, fromInclusive, to, toInclusive, descending);
             hasQueries = true;
             return result;
+        }
+
+        @Override
+        public Comparator<Data> getKeyComparator(boolean isDescending) {
+            return delegate.getKeyComparator(isDescending);
         }
 
         @Override

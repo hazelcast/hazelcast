@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -43,7 +44,7 @@ public class OnJoinRegistrationOperation extends Operation implements Identified
 
     @Override
     public void run() throws Exception {
-        if (registrations == null || registrations.size() <= 0) {
+        if (CollectionUtil.isEmpty(registrations)) {
             return;
         }
 

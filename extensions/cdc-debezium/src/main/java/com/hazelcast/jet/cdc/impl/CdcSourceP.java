@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +100,11 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     private boolean snapshotInProgress;
     private ILogger logger;
 
+    static {
+        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
+        DriverManager.getDrivers();
+    }
+
     public CdcSourceP(
             @Nonnull Properties properties,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
@@ -112,9 +117,6 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
-        DriverManager.getDrivers();
-
         String name = getName(properties);
         this.logger = context.logger();
 
@@ -250,7 +252,11 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private SourceTask startNewTask() {
-        logger.info("starting new task with config: " + taskConfig);
+        if (taskConfig.containsKey("name")) {
+            logger.info("starting new task: " + taskConfig.get("name"));
+        } else {
+            logger.info("starting new task");
+        }
         SourceTask task = newInstance(connector.taskClass().getName(), "task");
         task.initialize(new JetSourceTaskContext());
 

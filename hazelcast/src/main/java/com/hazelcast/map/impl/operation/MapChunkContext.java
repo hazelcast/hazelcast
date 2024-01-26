@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.MapIndexInfo;
 
 import java.util.HashSet;
@@ -144,21 +144,21 @@ public class MapChunkContext {
     public final MapIndexInfo createMapIndexInfo() {
         MapContainer mapContainer = recordStore.getMapContainer();
         Set<IndexConfig> indexConfigs = new HashSet<>();
-        if (mapContainer.isGlobalIndexEnabled()) {
+        if (mapContainer.shouldUseGlobalIndex()) {
             // global-index
-            final Indexes indexes = mapContainer.getIndexes();
-            for (Index index : indexes.getIndexes()) {
+            final IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+            for (Index index : indexRegistry.getIndexes()) {
                 indexConfigs.add(index.getConfig());
             }
-            indexConfigs.addAll(indexes.getIndexDefinitions());
+            indexConfigs.addAll(indexRegistry.getIndexDefinitions());
         } else {
             // partitioned-index
-            final Indexes indexes = mapContainer.getIndexes(partitionId);
-            if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
-                for (Index index : indexes.getIndexes()) {
+            final IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+            if (indexRegistry != null && indexRegistry.haveAtLeastOneIndexOrDefinition()) {
+                for (Index index : indexRegistry.getIndexes()) {
                     indexConfigs.add(index.getConfig());
                 }
-                indexConfigs.addAll(indexes.getIndexDefinitions());
+                indexConfigs.addAll(indexRegistry.getIndexDefinitions());
             }
         }
         return new MapIndexInfo(mapName)

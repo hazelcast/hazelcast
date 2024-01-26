@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,6 @@ import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -414,11 +413,10 @@ public class MetricsTest extends JetTestSupport {
         JobMetricsChecker jobMetricsChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobMetricsChecker.assertSummedMetricValue("total", generatedItems));
 
-        String instanceName = instance.getName();
         long sum = 0;
         int availableProcessors = config.getJetConfig().getCooperativeThreadCount();
         for (int i = 0; i < availableProcessors; i++) {
-            JmxMetricsChecker jmxMetricsChecker = new JmxMetricsChecker(instanceName, job,
+            JmxMetricsChecker jmxMetricsChecker = JmxMetricsChecker.forExecution(instance, job,
                     "vertex=fused(filter, map)", "procType=TransformP", "proc=" + i, "user=true");
             long attributeValue = jmxMetricsChecker.getMetricValue("total");
             sum += attributeValue;
@@ -442,23 +440,29 @@ public class MetricsTest extends JetTestSupport {
                         .setProcessingGuarantee(EXACTLY_ONCE)
                         .setSnapshotIntervalMillis(100));
         assertJobStatusEventually(job, RUNNING);
-        JobMetrics[] metrics = {null};
-        assertTrueEventually(() -> assertNotEquals(0, (metrics[0] = job.getMetrics()).metrics().size()));
+        JobMetrics metrics = assertJobHasExecutionMetricsEventually(job);
 
-        assertSourceSinkTags(metrics[0], "src", true, true, false);
-        assertSourceSinkTags(metrics[0], "mid", true, false, false);
-        assertSourceSinkTags(metrics[0], "sink", true, false, true);
+        assertSourceSinkTags(metrics, "src", true, true, false);
+        assertSourceSinkTags(metrics, "mid", true, false, false);
+        assertSourceSinkTags(metrics, "sink", true, false, true);
 
-        // restart after a snapshot so that the job will restart from a snapshot. Check the source/sink tags afterwards.
+        // Restart after a snapshot, so that the job will restart from a snapshot. Check the source/sink tags afterward.
         waitForFirstSnapshot(new JobRepository(instance), job.getId(), 10, true);
         job.restart();
 
         assertJobStatusEventually(job, RUNNING);
-        assertTrueEventually(() -> assertNotEquals(0, (metrics[0] = job.getMetrics()).metrics().size()));
+        metrics = assertJobHasExecutionMetricsEventually(job);
 
-        assertSourceSinkTags(metrics[0], "src", false, true, false);
-        assertSourceSinkTags(metrics[0], "mid", false, false, false);
-        assertSourceSinkTags(metrics[0], "sink", false, false, true);
+        assertSourceSinkTags(metrics, "src", false, true, false);
+        assertSourceSinkTags(metrics, "mid", false, false, false);
+        assertSourceSinkTags(metrics, "sink", false, false, true);
+    }
+
+    private JobMetrics assertJobHasExecutionMetricsEventually(Job job) {
+        JobMetrics[] metrics = {null};
+        assertTrueEventually(() ->
+                assertTrue((metrics[0] = job.getMetrics()).containsTag(MetricTags.EXECUTION)));
+        return metrics[0];
     }
 
     private void assertSourceSinkTags(JobMetrics metrics, String vertexName, boolean beforeRestart,

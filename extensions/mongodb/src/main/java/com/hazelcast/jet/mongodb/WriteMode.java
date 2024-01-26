@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,11 @@
  */
 package com.hazelcast.jet.mongodb;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Defines allowed operations.
  *
  * @since 5.3
  */
-@Beta
 public enum WriteMode {
     /**
      * Items will be inserted to MongoDB; in case of ID clash, error will be thrown.

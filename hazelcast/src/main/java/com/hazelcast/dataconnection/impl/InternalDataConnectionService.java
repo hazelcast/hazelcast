@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,11 @@ public interface InternalDataConnectionService extends DataConnectionService {
      * @return DataConnection implementation class
      */
     Class<? extends DataConnection> classForDataConnectionType(String type);
+
+    /**
+     * Returns type name with normalized casing.
+     */
+    String normalizedTypeName(String typeName);
 
     /**
      * Close this DataConnectionService, should be called only on member shutdown.

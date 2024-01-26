@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,7 @@ public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
                 throw new IllegalArgumentException("Not enough metadata information is provided. "
                         + "Node name information must be provided with NODE_AWARE partition group.");
             }
-            MemberGroup group = groups.get(nodeInfo);
-            if (group == null) {
-                group = new DefaultMemberGroup();
-                groups.put(nodeInfo, group);
-            }
+            MemberGroup group = groups.computeIfAbsent(nodeInfo, x -> new DefaultMemberGroup());
             group.addMember(member);
         }
         return new HashSet<>(groups.values());

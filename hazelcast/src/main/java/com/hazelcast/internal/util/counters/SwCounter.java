@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,24 +22,51 @@ import java.lang.invoke.VarHandle;
 /**
  * A {@link Counter} that is made to be used by a single writing thread.
  * <p>
- * It makes use of the opaque read/writes to provide a lower overhead than a volatile write. Volatile write is
- * pretty expensive. On the X86 is causes subsequent loads to wait till the store in the store buffer has been
- * written to the coherent cache. And this can take some time because it could be that a whole bunch of cache
- * lines need to be invalidated and this can add a lot of latency to those loads. Opaque doesn't provide any
- * ordering guarantees with respect to other variables. It is atomic and coherent and it is super well suited for
- * progress indicators like performance counters. Opaque is primary
+ * It makes use of the opaque read/writes to provide a lower overhead than a
+ * volatile read/write. Volatile reads/writes can be pretty expensive. If a
+ * volatile write is followed by a volatile read to a different variable, then
+ * on the X86 it causes that read and all subsequent reads to stall till the
+ * stores in the store buffer has been written to the coherent cache. And this can
+ * take some time because it could be that there one or more stores in the store buffer
+ * (on Skylake the store buffer can contain 50+ stores) each of these stores
+ * needs to wait for the cache line to be successfully invalidated on the other CPUs.
+ * And this can add a lot of latency to those loads and any instruction depending
+ * on the loaded values; so you can end up with a core idling because few instructions
+ * are ready for execution. Since there are roughly 10 LFBs (Line Fill Buffers)
+ * on modern Intel processor at most 10 cache lines can be invalidated in parallel.
+ * <p/>
+ * On platforms with a more relaxed memory model like ARM or RISC-V, volatile
+ * imposes additional memory fences that are not needed to update a counter if
+ * you don't care for coherence.
+ * <p/>
+ * Unlike volatile, opaque doesn't provide any ordering guarantees with respect
+ * to other variables. The only thing the counter provides is coherence and
+ * not consistency.
+ * <p/>
+ * Opaque provides:
+ * <ol>
+ *     <li>atomicity: so no torn reads/writes</li>
+ *     <li>coherence: (1) you don't go back reading an older version after you read a
+ *     newer values and (2) cores will not disagree upon the order of writes to a
+ *     single variable)
+ *     </li>
+ * </ol>
+ * And therefore is super well suited for progress indicators like performance
+ * counters.
  * <p>
  * This counter does not provide padding to prevent false sharing.
  * <p>
- * One might wonder why not use the AtomicLong.inc. The problem here is that AtomicLong requires a full fence,
- * so there is waiting for store and load buffers to be drained. This is more expensive.
- * <p>
- * One might also wonder why not use the following:
- * <pre>
- *     atomicLong.lazySet(atomicLong.get()+1)
- * </pre>
- * This causes a lot of syntactic noise due to lack of abstraction.
- * A counter.inc() gives a better clue what the intent is.
+ * The design of the Counter object is stale. The problem is that it creates
+ * a wrapper object for every field and if there are many fields that needs to
+ * be monitored, it creates a lot of overhead including pressure on the cache,
+ * indirection etc. It is better to make some metrics object where in a
+ * single object there are multiple primitive fields with some form of progress
+ * behavior and use VarHandles for opaque updates. If an object would have 5
+ * SwCounter, with the current design it would require 5 SwCounter objects,
+ * but with a metrics object, you just need 1 object. The TPC engine already
+ * switched to this design.
+ * See {@link com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics}
+ * for an example.
  */
 public final class SwCounter implements Counter {
 
@@ -79,7 +106,6 @@ public final class SwCounter implements Counter {
     public static SwCounter newSwCounter(long initialValue) {
         return new SwCounter(initialValue);
     }
-
 
     @Override
     public long inc() {

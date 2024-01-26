@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,12 @@ public class KafkaConnectSourcesTest {
     @Test
     public void should_fail_when_no_name_property() {
         Properties properties = new Properties();
-        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
+        assertThatThrownBy(() -> connect(properties, TestUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'name' is required");
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
     public void should_fail_when_no_projectionFn() {
         Properties properties = new Properties();
@@ -53,23 +54,11 @@ public class KafkaConnectSourcesTest {
                 .hasMessage("projectionFn is required");
     }
 
-
-    @Test
-    public void should_fail_when_tasks_max_property_set() {
-        Properties properties = new Properties();
-        properties.setProperty("name", "some-name");
-        properties.setProperty("connector.class", "some-name");
-        properties.setProperty("tasks.max", "1");
-        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Property 'tasks.max' not allowed. Use setLocalParallelism(1) in the pipeline instead");
-    }
-
     @Test
     public void should_fail_when_no_connector_class_property() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
-        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
+        assertThatThrownBy(() -> connect(properties, TestUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'connector.class' is required");
     }

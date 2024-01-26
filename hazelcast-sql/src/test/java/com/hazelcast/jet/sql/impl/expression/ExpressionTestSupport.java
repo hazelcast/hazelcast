@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         }
     }
 
-    protected static String signatureErrorFunction(String functionName, SqlColumnType... columnTypes) {
+    protected static String signatureErrorFunction(String functionName, Object... columnTypes) {
         TestCase.assertNotNull(columnTypes);
 
         StringJoiner joiner = new StringJoiner(", ");

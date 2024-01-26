@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
@@ -40,7 +40,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -60,6 +60,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {"VARCHAR(100)", "VARCHAR", "'dummy'", "dummy"},
+                {"CHAR(3)", "VARCHAR", "'try'", "try"},
                 {"BOOLEAN", "BOOLEAN", "TRUE", true},
                 {"TINYINT", "TINYINT", "1", (byte) 1},
                 {"SMALLINT", "SMALLINT", "2", (short) 2},
@@ -87,7 +88,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         String tableName = randomTableName();
 
         createTable(tableName, "table_column " + type);
-        executeJdbc("INSERT INTO " + tableName + " VALUES(" + value + ")");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(" + value + ")");
 
         String mappingName = "mapping_" + randomName();
         execute("CREATE MAPPING " + mappingName
@@ -100,10 +101,28 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
 
-        assertRowsAnyOrder("SELECT * FROM " + mappingName + " WHERE table_column = ?",
+        assertRowsAnyOrder("SELECT table_column FROM " + mappingName + " WHERE table_column = ?",
                 newArrayList(expected),
                 new Row(expected)
         );
     }
 
+    @Test
+    public void resolveMappingType() throws Exception {
+        String tableName = randomTableName();
+
+        createTable(tableName, "table_column " + type);
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(" + value + ")");
+
+        String mappingName = "mapping_" + randomName();
+        execute("CREATE MAPPING " + mappingName
+                + " EXTERNAL NAME " + tableName
+                + " DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        assertRowsAnyOrder("SELECT data_type FROM information_schema.columns WHERE table_name = ?",
+                newArrayList(mappingName),
+                new Row(mappingType)
+        );
+    }
 }

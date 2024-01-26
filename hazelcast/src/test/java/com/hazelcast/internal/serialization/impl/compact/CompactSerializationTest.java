@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,7 @@ public class CompactSerializationTest {
                 .hasMessageContaining("Invalid field name");
     }
 
+    @Test
     public void testSerializerRegistration_withDuplicateClasses() {
         SerializationConfig config = new SerializationConfig();
         assertThatThrownBy(() -> {

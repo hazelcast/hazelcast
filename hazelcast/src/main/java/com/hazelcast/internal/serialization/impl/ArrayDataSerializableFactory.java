@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.VersionAwareConstructorFunction;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
-import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public final class ArrayDataSerializableFactory implements VersionedDataSerializableFactory {
+import java.util.function.Supplier;
 
-    private final ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors;
+public final class ArrayDataSerializableFactory implements DataSerializableFactory {
+
+    private final Supplier<IdentifiedDataSerializable>[] constructors;
     private final int len;
 
-    public ArrayDataSerializableFactory(ConstructorFunction<Integer, IdentifiedDataSerializable>[] ctorArray) {
+    public ArrayDataSerializableFactory(Supplier<IdentifiedDataSerializable>[] ctorArray) {
         if (ctorArray != null && ctorArray.length > 0) {
             len = ctorArray.length;
-            constructors = new ConstructorFunction[len];
+            constructors = new Supplier[len];
             System.arraycopy(ctorArray, 0, constructors, 0, len);
         } else {
             throw new IllegalArgumentException("ConstructorFunction array cannot be null");
@@ -44,33 +43,13 @@ public final class ArrayDataSerializableFactory implements VersionedDataSerializ
     @Nullable
     public IdentifiedDataSerializable create(int typeId) {
         if (typeId >= 0 && typeId < len) {
-            ConstructorFunction<Integer, IdentifiedDataSerializable> factory = constructors[typeId];
-            return factory != null ? factory.createNew(typeId) : null;
+            Supplier<IdentifiedDataSerializable> factory = constructors[typeId];
+            return factory != null ? factory.get() : null;
         }
         return null;
     }
 
-    @Override
-    @Nullable
-    public IdentifiedDataSerializable create(int typeId,
-                                             Version clusterVersion,
-                                             Version wanProtocolVersion) {
-        if (typeId >= 0 && typeId < len) {
-            ConstructorFunction<Integer, IdentifiedDataSerializable> factory = constructors[typeId];
-            if (factory == null) {
-                return null;
-            }
-            if (factory instanceof VersionAwareConstructorFunction) {
-                return ((VersionAwareConstructorFunction<Integer, IdentifiedDataSerializable>) factory)
-                        .createNew(typeId, clusterVersion, wanProtocolVersion);
-            } else {
-                return factory.createNew(typeId);
-            }
-        }
-        return null;
-    }
-
-    public void mergeConstructors(@Nonnull ConstructorFunction<Integer, IdentifiedDataSerializable>[] ctorArray) {
+    public void mergeConstructors(@Nonnull Supplier<IdentifiedDataSerializable>[] ctorArray) {
         if (constructors.length < ctorArray.length) {
             throw new IllegalArgumentException("Too many constructors");
         }

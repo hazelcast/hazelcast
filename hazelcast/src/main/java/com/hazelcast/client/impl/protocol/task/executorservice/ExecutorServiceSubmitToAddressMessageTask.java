@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,14 @@ import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ExecutorServicePermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.security.auth.Subject;
@@ -52,7 +55,9 @@ public class ExecutorServiceSubmitToAddressMessageTask
         Data callableData = parameters.callable;
         if (securityContext != null) {
             Subject subject = endpoint.getSubject();
-            Object taskObject = serializationService.toObject(parameters.callable);
+            Object taskObject = NamespaceUtil.callWithNamespace(nodeEngine,
+                    DistributedExecutorService.lookupNamespace(nodeEngine, parameters.name),
+                    () -> serializationService.toObject(parameters.callable));
             Callable callable;
             if (taskObject instanceof Runnable) {
                 callable = securityContext.createSecureCallable(subject, (Runnable) taskObject);
@@ -89,13 +94,19 @@ public class ExecutorServiceSubmitToAddressMessageTask
     }
 
     @Override
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = DistributedExecutorService.lookupNamespace(nodeEngine, parameters.name);
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
     }
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.SUBMIT_TO_ADDRESS;
     }
 
     @Override

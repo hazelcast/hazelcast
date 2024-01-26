@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,18 +24,18 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.SortedMap;
 
 /**
  * Builder that will be used when cloning {@link DeserializedGenericRecord}s.
  */
 public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilder {
-    private final TreeMap<String, Object> objects;
+    private final SortedMap<String, Object> objects;
     private final Schema schema;
     private final Set<String> overwrittenFields;
     private boolean built;
 
-    public DeserializedGenericRecordCloner(Schema schema, TreeMap<String, Object> objects) {
+    public DeserializedGenericRecordCloner(Schema schema, SortedMap<String, Object> objects) {
         this.objects = objects;
         this.overwrittenFields = new HashSet<>();
         this.schema = schema;

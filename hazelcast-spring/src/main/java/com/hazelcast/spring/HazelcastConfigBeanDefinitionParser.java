@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
@@ -117,12 +119,14 @@ import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AccessControlServiceConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -138,10 +142,13 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.namespace.impl.ResourceDefinitionImpl;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.ResourceConfig;
+import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
@@ -159,6 +166,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -168,6 +179,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigUtils.matches;
+import static com.hazelcast.internal.config.ConfigUtils.resolveResourceId;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -177,6 +190,9 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.jet.config.ResourceType.JAR;
+import static com.hazelcast.jet.config.ResourceType.JARS_IN_ZIP;
+import static java.lang.Boolean.parseBoolean;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -390,6 +406,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDataConnection(node);
                     } else if ("tpc".equals(nodeName)) {
                         handleTpc(node);
+                    } else if ("user-code-namespaces".equals(nodeName)) {
+                        handleNamespaces(node);
                     }
                 }
             }
@@ -548,7 +566,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder cpSubsystemConfigBuilder = createBeanBuilder(CPSubsystemConfig.class);
 
             fillValues(node, cpSubsystemConfigBuilder, "raftAlgorithm", "semaphores", "locks", "cpMemberCount",
-                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority");
+                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority", "maps");
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -565,6 +583,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ManagedMap<String, AbstractBeanDefinition> locks = new ManagedMap<>();
                     handleFencedLocks(locks, child);
                     cpSubsystemConfigBuilder.addPropertyValue("LockConfigs", locks);
+                } else if ("maps".equals(nodeName)) {
+                    ManagedMap<String, AbstractBeanDefinition> maps = new ManagedMap<>();
+                    handleCpMaps(maps, child);
+                    cpSubsystemConfigBuilder.addPropertyValue("CpMapConfigs", maps);
                 } else {
                     String value = getTextContent(child).trim();
                     if ("cp-member-count".equals(nodeName)) {
@@ -610,6 +632,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 AbstractBeanDefinition beanDefinition = lockConfigBuilder.getBeanDefinition();
                 String name = (String) beanDefinition.getPropertyValues().get("name");
                 locks.put(name, beanDefinition);
+            }
+        }
+
+        private void handleCpMaps(ManagedMap<String, AbstractBeanDefinition> maps, Node node) {
+            for (Node child : childElements(node)) {
+                BeanDefinitionBuilder cpMapConfigBuilder = createBeanBuilder(CPMapConfig.class);
+                fillValues(child, cpMapConfigBuilder);
+                AbstractBeanDefinition beanDefinition = cpMapConfigBuilder.getBeanDefinition();
+                String name = (String) beanDefinition.getPropertyValues().get("name");
+                maps.put(name, beanDefinition);
             }
         }
 
@@ -732,6 +764,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     replicatedMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, replicatedMapConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    replicatedMapConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             replicatedMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
@@ -1093,11 +1127,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleExecutor(Node node) {
-            createAndFillListedBean(node, ExecutorConfig.class, "name", executorManagedMap);
+            BeanDefinitionBuilder builder = createAndFillListedBean(node, ExecutorConfig.class, "name", executorManagedMap);
+
+            for (Node n : childElements(node)) {
+                if ("user-code-namespace".equals(cleanNodeName(n))) {
+                    builder.addPropertyValue("userCodeNamespace", getTextContent(n));
+                }
+            }
         }
 
         public void handleDurableExecutor(Node node) {
-            createAndFillListedBean(node, DurableExecutorConfig.class, "name", durableExecutorManagedMap);
+            BeanDefinitionBuilder builder = createAndFillListedBean(node, DurableExecutorConfig.class, "name",
+                    durableExecutorManagedMap);
+
+            for (Node n : childElements(node)) {
+                if ("user-code-namespace".equals(cleanNodeName(n))) {
+                    builder.addPropertyValue("userCodeNamespace", getTextContent(n));
+                }
+            }
         }
 
         public void handleScheduledExecutor(Node node) {
@@ -1108,6 +1155,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String name = cleanNodeName(n);
                 if ("merge-policy".equals(name)) {
                     handleMergePolicyConfig(n, builder);
+                } else if ("user-code-namespace".equals(name)) {
+                    builder.addPropertyValue("userCodeNamespace", getTextContent(n));
                 }
             }
         }
@@ -1173,6 +1222,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
                     builder.addPropertyValue("messageListenerConfigs", listeners);
+                } else if ("user-code-namespace".equals(cleanNodeName(childNode))) {
+                    builder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             reliableTopicManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
@@ -1189,6 +1240,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ringbufferConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, ringbufferConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    ringbufferConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             ringbufferManagedMap.put(getAttribute(node, "name"), ringbufferConfigBuilder.getBeanDefinition());
@@ -1222,6 +1275,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     queueConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, queueConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    queueConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             queueManagedMap.put(name, queueConfigBuilder.getBeanDefinition());
@@ -1279,6 +1334,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     listConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, listConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    listConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             listManagedMap.put(name, listConfigBuilder.getBeanDefinition());
@@ -1298,6 +1355,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     setConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, setConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    setConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             setManagedMap.put(name, setConfigBuilder.getBeanDefinition());
@@ -1369,6 +1428,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleTieredStoreConfig(mapConfigBuilder, childNode);
                 } else if ("partition-attributes".equals(nodeName)) {
                     handlePartitionAttributes(mapConfigBuilder, childNode);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    mapConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
@@ -1554,6 +1615,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleEventJournalConfig(cacheConfigBuilder, childNode);
                 } else if ("merkle-tree".equals(nodeName)) {
                     handleMerkleTreeConfig(cacheConfigBuilder, childNode);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    cacheConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());
@@ -1786,6 +1849,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     multiMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, multiMapConfigBuilder);
+                } else if ("user-code-namespace".equals(nodeName)) {
+                    multiMapConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             multiMapManagedMap.put(name, multiMapConfigBuilder.getBeanDefinition());
@@ -1809,6 +1874,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("multi-threading-enabled".equals(cleanNodeName(childNode))) {
                     String multiThreadingEnabled = getTextContent(childNode);
                     topicConfigBuilder.addPropertyValue("multiThreadingEnabled", multiThreadingEnabled);
+                } else if ("user-code-namespace".equals(cleanNodeName(childNode))) {
+                    topicConfigBuilder.addPropertyValue("userCodeNamespace", getTextContent(childNode));
                 }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
@@ -1859,9 +1926,23 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleIdentity(child, realmConfigBuilder);
                 } else if ("authentication".equals(nodeName)) {
                     handleAuthentication(child, realmConfigBuilder);
+                } else if ("access-control-service".equals(nodeName)) {
+                    handleAccessControlService(child, realmConfigBuilder);
                 }
             }
             return beanDefinition;
+        }
+
+        private void handleAccessControlService(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            BeanDefinitionBuilder builder = createBeanBuilder(AccessControlServiceConfig.class);
+            fillValues(node, builder);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, builder);
+                }
+            }
+            realmConfigBuilder.addPropertyValue("accessControlServiceConfig", builder.getBeanDefinition());
         }
 
         private void handleAuthentication(Node node, BeanDefinitionBuilder realmConfigBuilder) {
@@ -2385,6 +2466,86 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             configBuilder.addPropertyValue("tpcConfig", builder.getBeanDefinition());
         }
+
+        private void handleNamespaces(Node node) {
+            BeanDefinitionBuilder namespacesBuilder = createBeanBuilder(UserCodeNamespacesConfig.class);
+
+            if (!parseBoolean(getAttribute(node, "enabled"))) {
+                namespacesBuilder.addPropertyValue("enabled", false);
+                configBuilder.addPropertyValue("namespacesConfig", namespacesBuilder.getBeanDefinition());
+                return;
+            }
+
+            ManagedMap<String, BeanDefinition> namespaces = new ManagedMap<>();
+            for (Node child : childElements(node)) {
+                if ("class-filter".equals(cleanNodeName(child))) {
+                    handleJavaSerializationFilter(child, namespacesBuilder, "classFilterConfig");
+                } else if ("namespace".equals(cleanNodeName(child))) {
+                    handleNamespace(child, namespaces);
+                }
+            }
+
+            namespacesBuilder.addConstructorArgValue(true);
+            namespacesBuilder.addConstructorArgValue(namespaces);
+            configBuilder.addPropertyValue("namespacesConfig", namespacesBuilder.getBeanDefinition());
+        }
+
+        private void handleNamespace(Node node, ManagedMap<String, BeanDefinition> namespaces) {
+            String name = getAttribute(node, "name");
+            BeanDefinitionBuilder namespaceConfigBuilder = createBeanBuilder(UserCodeNamespaceConfig.class);
+
+            ManagedMap<String, BeanDefinition> resources = new ManagedMap<>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("jar".equals(nodeName)) {
+                    handleNamespaceResource(child, JAR, resources);
+                } else if ("jars-in-zip".equals(nodeName)) {
+                    handleNamespaceResource(child, JARS_IN_ZIP, resources);
+                }
+            }
+
+            namespaceConfigBuilder.addConstructorArgValue(name);
+            namespaceConfigBuilder.addConstructorArgValue(resources);
+
+            namespaces.put(name, namespaceConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleNamespaceResource(Node node, ResourceType type, ManagedMap<String, BeanDefinition> resources) {
+            BeanDefinitionBuilder resourceConfigBuilder = createBeanBuilder(ResourceConfig.class);
+            BeanDefinitionBuilder resourceDefBuilder = createBeanBuilder(ResourceDefinitionImpl.class);
+
+            String resourceId = getAttribute(node, "id");
+            URL url = getNamespaceResourceUrl(node);
+
+            // Add ID and ResourceType as constructor arguments
+            resourceConfigBuilder.addConstructorArgValue(url);
+            resourceConfigBuilder.addConstructorArgValue(resourceId);
+            resourceConfigBuilder.addConstructorArgValue(type);
+            BeanDefinition resourceConfigBeanDef = resourceConfigBuilder.getBeanDefinition();
+
+            resourceDefBuilder.addConstructorArgValue(resourceConfigBeanDef);
+
+            // User supplied ID may be null, in which case object construction may
+            // resolve the ID from the URL.
+            String resolvedId = resolveResourceId(resourceId, url);
+            resources.put(resolvedId, resourceDefBuilder.getBeanDefinition());
+        }
+
+        private URL getNamespaceResourceUrl(Node node) {
+            URL url = null;
+            for (Node n : childElements(node)) {
+                if (matches(cleanNodeName(n), "url")) {
+                    try {
+                        url = new URI(getTextContent(n)).toURL();
+                        break;
+                    } catch (MalformedURLException | URISyntaxException e) {
+                        throw new InvalidConfigurationException("Malformed resource URL", e);
+                    }
+                }
+            }
+            return url;
+        }
+
         private void handlePartitionAttributes(final BeanDefinitionBuilder mapConfigBuilder, Node node) {
             final ManagedList<BeanDefinition> partitioningAttributeConfigs = new ManagedList<>();
             for (Node attributeNode : childElements(node)) {

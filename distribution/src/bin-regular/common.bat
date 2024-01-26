@@ -48,13 +48,12 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 FOR /F "tokens=* USEBACKQ" %%F IN (`CALL "%RUN_JAVA%" -cp "%HAZELCAST_HOME%\lib\*" com.hazelcast.internal.util.JavaVersion`) DO SET JAVA_VERSION=%%F
 
 IF %JAVA_VERSION% GEQ 9 (
-    SET JAVA_OPTS=%JAVA_OPTS%^
-        --add-modules java.se^
-        --add-exports java.base/jdk.internal.ref=ALL-UNNAMED^
-        --add-opens java.base/java.lang=ALL-UNNAMED^
-        --add-opens java.base/sun.nio.ch=ALL-UNNAMED^
-        --add-opens java.management/sun.management=ALL-UNNAMED^
-        --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+    SET JAVA_OPTS=%JAVA_OPTS%%=%--add-modules java.se^
+ --add-exports java.base/jdk.internal.ref=ALL-UNNAMED^
+ --add-opens java.base/java.lang=ALL-UNNAMED^
+ --add-opens java.base/sun.nio.ch=ALL-UNNAMED^
+ --add-opens java.management/sun.management=ALL-UNNAMED^
+ --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
 
     FOR /F "tokens=2 delims== USEBACKQ" %%A IN (`CALL "%RUN_JAVA%" -XshowSettings:properties -version 2^>^&1 ^| findstr /c:"java.vm.name"`) DO SET VM_NAME=%%A
 
@@ -67,6 +66,8 @@ IF %JAVA_VERSION% GEQ 9 (
     	set JAVA_OPTS=%JAVA_OPTS% --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED
     )
 )
+REM Disable the log4j2 shutdown hook, otherwise log lines during node shutdown might be lost
+set JAVA_OPTS=%JAVA_OPTS% -Dlog4j.shutdownHookEnabled=false -Dhazelcast.logging.shutdown=true
 
 :: HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
 if "x%HAZELCAST_CONFIG%" == "x" (
@@ -86,9 +87,7 @@ if "x%HAZELCAST_CONFIG%" == "x" (
     echo HAZELCAST_CONFIG is set, using configuration file at '!HAZELCAST_CONFIG!'
 )
 
-set JAVA_OPTS=%JAVA_OPTS%^
-    -Dhazelcast.config="%HAZELCAST_HOME%\!HAZELCAST_CONFIG!"
-
+set JAVA_OPTS=%JAVA_OPTS% -Dhazelcast.config="%HAZELCAST_HOME%\!HAZELCAST_CONFIG!"
 :: classpath
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*;%HAZELCAST_HOME%\bin\user-lib;%HAZELCAST_HOME%\bin\user-lib\*;%CLASSPATH%"

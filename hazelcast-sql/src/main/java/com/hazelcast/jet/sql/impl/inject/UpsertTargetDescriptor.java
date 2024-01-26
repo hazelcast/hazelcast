@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 public interface UpsertTargetDescriptor extends DataSerializable {
 
-    UpsertTarget create(InternalSerializationService serializationService);
+    UpsertTarget create(ExpressionEvalContext expressionEvalContext);
+
+    default Object getSchema() {
+        return null;
+    }
 }

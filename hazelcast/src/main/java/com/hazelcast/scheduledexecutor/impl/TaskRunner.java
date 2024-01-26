@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.scheduledexecutor.StatefulTask;
@@ -75,6 +76,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
         }
         beforeRun();
         try {
+            NamespaceUtil.setupNamespace(container.getNodeEngine(), container.getUserCodeNamespace());
             V result = original.call();
             if (SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
                 resolution = new ScheduledTaskResult(result);
@@ -95,6 +97,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
                     creationTime = Clock.currentTimeMillis();
                 }
             }
+            NamespaceUtil.cleanupNamespace(container.getNodeEngine(), container.getUserCodeNamespace());
         }
     }
 
@@ -114,7 +117,9 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
         Map snapshot = descriptor.getState();
         if (original instanceof StatefulTask && !snapshot.isEmpty()) {
-            ((StatefulTask) original).load(snapshot);
+            NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getUserCodeNamespace(), () -> {
+                ((StatefulTask) original).load(snapshot);
+            });
         }
 
         initialized = true;
@@ -137,7 +142,9 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
             Map state = new HashMap();
             if (original instanceof StatefulTask) {
-                ((StatefulTask) original).save(state);
+                NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getUserCodeNamespace(), () -> {
+                    ((StatefulTask) original).save(state);
+                });
             }
             container.publishTaskState(taskName, state, statistics.snapshot(), resolution);
         } catch (Exception ex) {

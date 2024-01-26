@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -46,7 +46,7 @@ public abstract class VisitorTestSupport {
     /**
      * @return the indexes available to the visitor being tested.
      */
-    protected abstract Indexes getIndexes();
+    protected abstract IndexRegistry getIndexes();
 
     protected static void assertEqualPredicate(EqualPredicate expected, Predicate actual) {
         assertTrue(actual instanceof EqualPredicate);

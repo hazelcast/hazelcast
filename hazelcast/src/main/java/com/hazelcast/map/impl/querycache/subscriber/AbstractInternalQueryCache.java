@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.TruePredicate;
@@ -48,7 +48,7 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
-import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
+import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -65,7 +65,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final String cacheId;
     protected final String cacheName;
     protected final IMap delegate;
-    protected final Indexes indexes;
+    protected final IndexRegistry indexRegistry;
     protected final QueryCacheContext context;
     protected final QueryCacheConfig queryCacheConfig;
     protected final QueryCacheRecordStore recordStore;
@@ -89,22 +89,22 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         // We are not using injected index provider since we're not supporting off-heap indexes in CQC due
         // to threading incompatibility. If we injected the IndexProvider from the MapServiceContext
         // the EE side would create HD indexes which is undesired.
-        this.indexes = Indexes.newBuilder(null, mapName, ss, COPY_ON_READ, queryCacheConfig.getInMemoryFormat())
+        this.indexRegistry = IndexRegistry.newBuilder(null, mapName, ss, COPY_ON_READ, queryCacheConfig.getInMemoryFormat())
                 .partitionCount(context.getPartitionCount())
                 .build();
 
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
         this.extractors = Extractors.newBuilder(ss).build();
-        this.recordStore = new DefaultQueryCacheRecordStore(ss, indexes,
+        this.recordStore = new DefaultQueryCacheRecordStore(ss, indexRegistry,
                 queryCacheConfig, getEvictionListener(), extractors);
 
-        assert indexes.isGlobal();
+        assert indexRegistry.isGlobal();
 
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             IndexConfig indexConfig0 = getNormalizedIndexConfig(indexConfig);
 
-            indexes.addOrGetIndex(indexConfig0);
+            indexRegistry.addOrGetIndex(indexConfig0);
         }
     }
 
@@ -216,7 +216,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     private boolean tryQueryOverIndexes(Predicate predicate, BiConsumer biConsumer) {
-        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexRegistry.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query == null) {
             return false;
         }
@@ -298,7 +298,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     @Override
     public void clear() {
-        indexes.destroyIndexes();
+        indexRegistry.destroyIndexes();
         recordStore.clear();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
 import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.getById;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -38,7 +40,8 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 /**
  * Configuration options for the {@link IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
+public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                                UserCodeNamespaceAwareConfig<ScheduledExecutorConfig> {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -75,6 +78,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     private boolean statisticsEnabled = true;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public ScheduledExecutorConfig() {
     }
@@ -84,16 +88,17 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity,
-                                   int poolSize, boolean statisticsEnabled) {
+                                   int poolSize, boolean statisticsEnabled, @Nullable String userCodeNamespace) {
         this(name, durability, capacity, poolSize, null,
-                new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY, statisticsEnabled);
+                new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY, statisticsEnabled, userCodeNamespace);
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize,
                                    String splitBrainProtectionName,
                                    MergePolicyConfig mergePolicyConfig,
                                    CapacityPolicy capacityPolicy,
-                                   boolean statisticsEnabled) {
+                                   boolean statisticsEnabled,
+                                   @Nullable String userCodeNamespace) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
@@ -102,13 +107,14 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
         this.statisticsEnabled = statisticsEnabled;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
         this(config.getName(), config.getDurability(), config.getCapacity(),
                 config.getPoolSize(), config.getSplitBrainProtectionName(),
                 new MergePolicyConfig(config.getMergePolicyConfig()), config.getCapacityPolicy(),
-                config.isStatisticsEnabled());
+                config.isStatisticsEnabled(), config.getUserCodeNamespace());
     }
 
     /**
@@ -281,6 +287,30 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link ScheduledExecutorConfig} instance
+     * @since 5.4
+     */
+    public ScheduledExecutorConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
@@ -292,6 +322,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -315,6 +346,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         out.writeObject(mergePolicyConfig);
         out.writeByte(capacityPolicy.getId());
         out.writeBoolean(statisticsEnabled);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(userCodeNamespace);
+        }
     }
 
     @Override
@@ -327,6 +363,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         mergePolicyConfig = in.readObject();
         capacityPolicy = getById(in.readByte());
         statisticsEnabled = in.readBoolean();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            userCodeNamespace = in.readString();
+        }
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
@@ -362,6 +403,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -375,6 +419,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 

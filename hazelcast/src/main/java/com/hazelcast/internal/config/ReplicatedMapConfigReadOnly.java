@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
@@ -61,6 +62,11 @@ public class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
 
     @Override
     public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public ReplicatedMapConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
         throw throwReadOnly();
     }
 

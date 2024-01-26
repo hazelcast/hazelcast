@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.internal.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.internal.nio.IOUtil.rename;
 import static com.hazelcast.internal.nio.IOUtil.toFileName;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.nio.ByteBuffer.allocate;
@@ -277,18 +276,18 @@ public class NearCachePreloader<K> {
             return;
         }
         fos.write(buf.array());
-        upcast(buf).position(0);
+        buf.position(0);
     }
 
     private void flushLocalBuffer(FileChannel outChannel) throws IOException {
         if (buf.position() == 0) {
             return;
         }
-        upcast(buf).flip();
+        buf.flip();
         while (buf.hasRemaining()) {
             outChannel.write(buf);
         }
-        upcast(buf).clear();
+        buf.clear();
     }
 
     private static String getFilename(String directory, String nearCacheName) {

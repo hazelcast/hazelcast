@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public final class EventPublisherHelper {
         Object oldValue = getOldValue(oldRecord);
 
         LocalEntryEventData eventData = createLocalEntryEventData(cacheId, dataKey, dataNewValue, oldValue,
-                eventType.getType(), -1, context);
+                eventType.getType(), -1, context, mapName);
         eventService.publish(mapName, cacheId, eventData, dataKey.hashCode(), extractors);
     }
 
@@ -103,7 +103,7 @@ public final class EventPublisherHelper {
         QueryCacheEventService eventService = getQueryCacheEventService(context);
 
         LocalCacheWideEventData eventData
-                = new LocalCacheWideEventData(cacheId, eventType.getType(), numberOfEntriesAffected);
+                = new LocalCacheWideEventData(cacheId, eventType.getType(), numberOfEntriesAffected, mapName);
 
         eventService.publish(mapName, cacheId, eventData, cacheId.hashCode(), queryCache.getExtractors());
     }
@@ -114,9 +114,10 @@ public final class EventPublisherHelper {
 
     private static LocalEntryEventData createLocalEntryEventData(String cacheId, Data dataKey, Data dataNewValue,
                                                                  Object oldValue, int eventType,
-                                                                 int partitionId, QueryCacheContext context) {
+                                                                 int partitionId, QueryCacheContext context, String mapName) {
         SerializationService serializationService = context.getSerializationService();
-        return new LocalEntryEventData(serializationService, cacheId, eventType, dataKey, oldValue, dataNewValue, partitionId);
+        return new LocalEntryEventData(serializationService, cacheId, eventType, dataKey, oldValue, dataNewValue,
+                partitionId, mapName);
     }
 
     private static QueryCacheEventService getQueryCacheEventService(QueryCacheContext context) {
@@ -131,7 +132,7 @@ public final class EventPublisherHelper {
 
         eventService.publish(mapName, cacheId,
                 createLocalEntryEventData(cacheId, null, null, null,
-                        EventLostEvent.EVENT_TYPE, partitionId, context), orderKey, extractors);
+                        EventLostEvent.EVENT_TYPE, partitionId, context, mapName), orderKey, extractors);
     }
 
     public static IMapEvent createIMapEvent(EventData eventData, EventFilter filter, Member member,

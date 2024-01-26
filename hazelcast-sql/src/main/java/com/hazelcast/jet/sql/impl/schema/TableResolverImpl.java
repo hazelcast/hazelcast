@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,10 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -128,8 +130,8 @@ public class TableResolverImpl implements TableResolver {
 
     // region mapping
 
-    public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists) {
-        Mapping resolved = resolveMapping(mapping);
+    public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists, SqlSecurityContext securityContext) {
+        Mapping resolved = resolveMapping(mapping, securityContext);
 
         String name = resolved.name();
         if (ifNotExists) {
@@ -142,7 +144,7 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
-    private Mapping resolveMapping(Mapping mapping) {
+    private Mapping resolveMapping(Mapping mapping, SqlSecurityContext securityContext) {
         Map<String, String> options = mapping.options();
         String type = mapping.connectorType();
         String dataConnection = mapping.dataConnection();
@@ -158,14 +160,23 @@ public class TableResolverImpl implements TableResolver {
                 ? connector.defaultObjectType()
                 : mapping.objectType();
         checkNotNull(objectType, "objectType cannot be null");
+
+        SqlExternalResource externalResource = new SqlExternalResource(
+                mapping.externalName(),
+                mapping.dataConnection(),
+                connector.typeName(),
+                objectType,
+                options
+        );
+
+        List<Permission> permissions = connector.permissionsForResolve(externalResource, nodeEngine);
+        for (Permission permission : permissions) {
+            securityContext.checkPermission(permission);
+        }
+
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
-                new SqlExternalResource(
-                        mapping.externalName(),
-                        mapping.dataConnection(),
-                        connector.typeName(),
-                        objectType,
-                        options),
+                externalResource,
                 mapping.fields()
         );
 

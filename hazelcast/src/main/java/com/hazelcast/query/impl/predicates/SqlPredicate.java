@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -165,7 +165,7 @@ public class SqlPredicate
         SqlParser parser = new SqlParser();
         List<String> sqlTokens = parser.toPrefix(paramSql);
         List<Object> tokens = new ArrayList<>(sqlTokens);
-        if (tokens.size() == 0) {
+        if (tokens.isEmpty()) {
             throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
@@ -306,7 +306,7 @@ public class SqlPredicate
     }
 
     private void setOrAdd(List tokens, int position, Predicate predicate) {
-        if (tokens.size() == 0) {
+        if (tokens.isEmpty()) {
             tokens.add(predicate);
         } else {
             tokens.set(position, predicate);
@@ -386,7 +386,7 @@ public class SqlPredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
+    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate target = predicate;
         if (predicate instanceof VisitablePredicate) {
             target = ((VisitablePredicate) predicate).accept(visitor, indexes);

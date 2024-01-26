@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         return currentVersion;
     }
 
-    private Portable createNewPortableInstance(int factoryId, int classId) {
+    public Portable createNewPortableInstance(int factoryId, int classId) {
         final PortableFactory portableFactory = factories.get(factoryId);
         if (portableFactory == null) {
             return null;

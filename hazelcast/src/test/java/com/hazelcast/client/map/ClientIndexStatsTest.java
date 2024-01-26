@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.monitor.impl.LocalIndexStatsImpl;
+import com.hazelcast.internal.monitor.impl.PartitionedIndexStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.map.IMap;
@@ -29,7 +29,7 @@ import com.hazelcast.map.LocalIndexStatsTest;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -136,7 +136,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         LocalMapStats stats1 = map1.getLocalMapStats();
         LocalMapStats stats2 = map2.getLocalMapStats();
 
-        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        List<IndexRegistry> allIndexes = new ArrayList<IndexRegistry>();
         allIndexes.addAll(getAllIndexes(map1));
         allIndexes.addAll(getAllIndexes(map2));
 
@@ -148,13 +148,13 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         combinedStats.setIndexedQueryCount(stats1.getIndexedQueryCount());
 
         assertEquals(stats1.getIndexStats().size(), stats2.getIndexStats().size());
-        Map<String, LocalIndexStatsImpl> combinedIndexStatsMap = new HashMap<String, LocalIndexStatsImpl>();
+        Map<String, PartitionedIndexStatsImpl> combinedIndexStatsMap = new HashMap<String, PartitionedIndexStatsImpl>();
         for (Map.Entry<String, LocalIndexStats> indexEntry : stats1.getIndexStats().entrySet()) {
             LocalIndexStats indexStats1 = indexEntry.getValue();
             LocalIndexStats indexStats2 = stats2.getIndexStats().get(indexEntry.getKey());
             assertNotNull(indexStats2);
 
-            LocalIndexStatsImpl combinedIndexStats = new LocalIndexStatsImpl();
+            PartitionedIndexStatsImpl combinedIndexStats = new PartitionedIndexStatsImpl();
             assertEquals(indexStats1.getHitCount(), indexStats2.getHitCount());
             combinedIndexStats.setHitCount(indexStats1.getHitCount());
 
@@ -165,7 +165,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
 
             long totalHitCount = 0;
             double totalNormalizedHitCardinality = 0.0;
-            for (Indexes indexes : allIndexes) {
+            for (IndexRegistry indexes : allIndexes) {
                 PerIndexStats perIndexStats = indexes.getIndex(indexEntry.getKey()).getPerIndexStats();
                 totalHitCount += perIndexStats.getHitCount();
                 totalNormalizedHitCardinality += perIndexStats.getTotalNormalizedHitCardinality();

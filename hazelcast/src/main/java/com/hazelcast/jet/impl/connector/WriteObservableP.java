@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
         private final String observableName;
 
         public Supplier(String observableName) {
-            super(null);
+            super(null, null);
             this.observableName = observableName;
         }
 

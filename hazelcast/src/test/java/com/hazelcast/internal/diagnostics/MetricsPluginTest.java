@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,15 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
 
     private MetricsPlugin plugin;
     private MetricsRegistry metricsRegistry;
+    private Diagnostics diagnostics;
 
     @Before
     public void setup() {
@@ -52,6 +55,13 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         metricsRegistry = nodeEngineImpl.getMetricsRegistry();
         plugin = new MetricsPlugin(nodeEngineImpl);
         plugin.onStart();
+
+        diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
+    }
+
+    @After
+    public void teardown() {
+        cleanupDiagnosticFiles(diagnostics);
     }
 
     @Test

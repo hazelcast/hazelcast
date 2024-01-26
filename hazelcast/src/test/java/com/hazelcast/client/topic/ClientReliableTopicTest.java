@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -99,15 +98,11 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
+        assertTrue(listener.onCancelCalled);
         topic.publish("1");
 
         // it should not receive any events.
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, listener.objects.size());
-            }
-        });
+        assertTrueDelayed5sec(() -> assertEquals(0, listener.objects.size()));
     }
 
     @Test
@@ -131,12 +126,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         topic.publish("1");
 
         // it should not receive any events.
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, listener.objects.size());
-            }
-        });
+        assertTrueDelayed5sec(() -> assertEquals(0, listener.objects.size()));
     }
 
     // ============================================
@@ -149,12 +139,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         final String msg = "foobar";
         topic.publish(msg);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(listener.objects, msg);
-            }
-        });
+        assertTrueEventually(() -> assertContains(listener.objects, msg));
     }
 
     @Test
@@ -163,7 +148,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
-        final List<String> items = new ArrayList<String>();
+        final List<String> items = new ArrayList<>();
         for (int k = 0; k < 5; k++) {
             items.add("" + k);
         }
@@ -172,12 +157,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
             topic.publish(item);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(items, Arrays.asList(listener.objects.toArray()));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(items, Arrays.asList(listener.objects.toArray())));
     }
 
     @Test
@@ -191,19 +171,16 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         topic.publish(messageStr);
         final long afterPublishTime = Clock.currentTimeMillis();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.messages.size());
-                Message<String> message = listener.messages.get(0);
+        assertTrueEventually(() -> {
+            assertEquals(1, listener.messages.size());
+            Message<String> message = listener.messages.get(0);
 
-                assertEquals(messageStr, message.getMessageObject());
-                assertNull(message.getPublishingMember());
+            assertEquals(messageStr, message.getMessageObject());
+            assertNull(message.getPublishingMember());
 
-                long actualPublishTime = message.getPublishTime();
-                assertTrue(actualPublishTime >= beforePublishTime);
-                assertTrue(actualPublishTime <= afterPublishTime);
-            }
+            long actualPublishTime = message.getPublishTime();
+            assertTrue(actualPublishTime >= beforePublishTime);
+            assertTrue(actualPublishTime <= afterPublishTime);
         });
     }
 
@@ -216,25 +193,18 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         topic.publish("2");
         topic.publish("3");
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(5);
-                topic.publish("4");
-                topic.publish("5");
-                topic.publish("6");
-            }
+        spawn((Runnable) () -> {
+            sleepSeconds(5);
+            topic.publish("4");
+            topic.publish("5");
+            topic.publish("6");
         });
 
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(asList("4", "5", "6"), Arrays.asList(listener.objects.toArray()));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(asList("4", "5", "6"), Arrays.asList(listener.objects.toArray())));
+        assertFalse(listener.onCancelCalled);
     }
 
     @Test
@@ -242,11 +212,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         ITopic topic = client.getReliableTopic(randomString());
         int messageCount = 10;
         final CountDownLatch latch = new CountDownLatch(messageCount);
-        MessageListener listener = new MessageListener() {
-            public void onMessage(Message message) {
-                latch.countDown();
-            }
-        };
+        MessageListener listener = message -> latch.countDown();
         topic.addMessageListener(listener);
 
         for (int i = 0; i < messageCount; i++) {
@@ -259,9 +225,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     public void testRemoveListener() {
         ITopic topic = client.getReliableTopic(randomString());
 
-        MessageListener listener = new MessageListener() {
-            public void onMessage(Message message) {
-            }
+        MessageListener listener = message -> {
         };
         UUID id = topic.addMessageListener(listener);
 
@@ -303,12 +267,9 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         ITopic<Object> reliableTopic = member2.getReliableTopic(topicName);
 
         //kill the the owner member, while messages are coming
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sleepMillis(1);
-                ownerMember.shutdown();
-            }
+        new Thread(() -> {
+            sleepMillis(1);
+            ownerMember.shutdown();
         }).start();
 
         for (int i = 0; i < publishCount; i++) {
@@ -317,5 +278,22 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         assertOpenEventually(messageArrived);
         TestCase.assertTrue(topic.removeMessageListener(id));
+    }
+
+    @Test
+    public void testOnCancelCalledWhenExceptionOccurs() {
+        ITopic topic = client.getReliableTopic(randomString());
+        ReliableMessageListenerMock listener = new ReliableMessageListenerMock() {
+            @Override
+            public void onMessage(Message message) {
+                throw new RuntimeException("This exception should cause onCancel method to be called!");
+            }
+        };
+
+        topic.addMessageListener(listener);
+
+        topic.publish("foo");
+
+        assertTrueEventually(() -> assertTrue(listener.onCancelCalled));
     }
 }

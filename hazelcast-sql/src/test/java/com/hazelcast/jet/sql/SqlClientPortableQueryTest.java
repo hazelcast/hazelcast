@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,7 +142,7 @@ public class SqlClientPortableQueryTest extends SqlTestSupport {
         SqlResult rows = client.getSql().execute("SELECT id FROM test WHERE child = ?", expected);
 
         SqlRow row = Iterators.getOnlyElement(rows.iterator());
-        assertEquals(new Integer(10), row.getObject("id"));
+        assertEquals(Integer.valueOf(10), row.getObject("id"));
     }
 
     @Test

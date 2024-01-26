@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public final class AddressHelper {
 
     private static Addresses toAddresses(List<Address> addressList) {
         Addresses result = new Addresses();
-        if (addressList.size() > 0) {
+        if (!addressList.isEmpty()) {
             result.primary().add(addressList.remove(0));
             result.secondary().addAll(addressList);
         }

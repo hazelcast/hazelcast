@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
@@ -41,7 +42,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link IQueue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
+public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Versioned,
+                                    UserCodeNamespaceAwareConfig<QueueConfig> {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -74,6 +76,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private String priorityComparatorClassName;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public QueueConfig() {
     }
@@ -95,6 +98,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.priorityComparatorClassName = config.priorityComparatorClassName;
+        this.userCodeNamespace = config.userCodeNamespace;
     }
 
     /**
@@ -371,6 +375,30 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link QueueConfig} instance
+     * @since 5.4
+     */
+    public QueueConfig setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "QueueConfig{"
@@ -384,6 +412,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", priorityComparatorClassName=" + priorityComparatorClassName
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -410,6 +439,11 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
         out.writeString(priorityComparatorClassName);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(userCodeNamespace);
+        }
     }
 
     @Override
@@ -425,6 +459,11 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
         priorityComparatorClassName = in.readString();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            userCodeNamespace = in.readString();
+        }
     }
 
     @Override
@@ -447,13 +486,14 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
                 && Objects.equals(queueStoreConfig, that.queueStoreConfig)
                 && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
                 && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
-                && Objects.equals(priorityComparatorClassName, that.priorityComparatorClassName);
+                && Objects.equals(priorityComparatorClassName, that.priorityComparatorClassName)
+                && Objects.equals(userCodeNamespace, that.userCodeNamespace);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
                 queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig,
-                priorityComparatorClassName);
+                priorityComparatorClassName, userCodeNamespace);
     }
 }

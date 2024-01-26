@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,8 @@ final class MappingHelper {
                     .stream(result.spliterator(), false)
                     .map(row -> {
                         String name = row.getObject("column_name");
-                        SqlColumnType type = SqlColumnType.valueOf(row.getObject("data_type"));
+                        String typeString = ((String) row.getObject("data_type")).replaceAll(" ", "_");
+                        SqlColumnType type = SqlColumnType.valueOf(typeString);
                         boolean isNullable = Boolean.parseBoolean(row.getObject("is_nullable"));
                         return new SqlColumnMetadata(name, type, isNullable);
                     })

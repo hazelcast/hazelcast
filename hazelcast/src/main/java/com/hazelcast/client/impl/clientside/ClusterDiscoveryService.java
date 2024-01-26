@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.core.LifecycleService;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -43,11 +43,11 @@ public class ClusterDiscoveryService {
         this.lifecycleService = lifecycleService;
     }
 
-    public boolean tryNextCluster(BiFunction<CandidateClusterContext, CandidateClusterContext, Boolean> function) {
+    public boolean tryNextCluster(BiPredicate<CandidateClusterContext, CandidateClusterContext> function) {
         int tryCount = 0;
         while (lifecycleService.isRunning() && tryCount++ < maxTryCount) {
             for (int i = 0; i < candidateClusters.size(); i++) {
-                if (function.apply(current(), next())) {
+                if (function.test(current(), next())) {
                     return true;
                 }
             }

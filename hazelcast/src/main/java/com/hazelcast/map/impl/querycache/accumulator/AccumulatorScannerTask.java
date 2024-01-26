@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,11 +132,7 @@ public class AccumulatorScannerTask implements Runnable {
                 partitionAccumulators = new HashMap<>();
             }
 
-            Queue<Accumulator> accumulators = partitionAccumulators.get(partitionId);
-            if (accumulators == null) {
-                accumulators = new ArrayDeque<>();
-                partitionAccumulators.put(partitionId, accumulators);
-            }
+            Queue<Accumulator> accumulators = partitionAccumulators.computeIfAbsent(partitionId, x -> new ArrayDeque<>());
             accumulators.add(accumulator);
         }
 

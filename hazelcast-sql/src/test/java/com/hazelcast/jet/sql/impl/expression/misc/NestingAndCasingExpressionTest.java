@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -544,6 +544,12 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_MAX() {
         check(sql("MAX(?) || MAX(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_MOD() {
+        check(sql("MOD(?, 2) || MOD(?, 2)"), 1L, 1L);
+        check(sql("MOD(2, ?) || MOD(2, ?)"), 1L, 1L);
     }
 
     @Test

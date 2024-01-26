@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,8 @@ public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
 
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig("map").addQueryCacheConfig(
-                new QueryCacheConfig().setName("query-cache").setPredicateConfig(new PredicateConfig(Predicates.alwaysTrue()))
+                new QueryCacheConfig().setName("query-cache")
+                                      .setPredicateConfig(new PredicateConfig(Predicates.alwaysTrue()))
                                       .addIndexConfig(indexConfig));
         config.addMapConfig(mapConfig);
 
@@ -55,8 +56,8 @@ public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = instance.getMap("map");
         final DefaultQueryCache<Object, Object> cache = (DefaultQueryCache<Object, Object>) map.getQueryCache("query-cache");
 
-        assertNotNull(cache.indexes.getIndex(indexConfig.getName()));
-        assertTrue(cache.indexes.getIndex(indexConfig.getName()).isOrdered());
+        assertNotNull(cache.indexRegistry.getIndex(indexConfig.getName()));
+        assertTrue(cache.indexRegistry.getIndex(indexConfig.getName()).isOrdered());
     }
 
 }

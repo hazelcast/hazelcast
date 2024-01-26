@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -78,7 +79,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.RootCauseMatcher.getRootCause;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
@@ -91,7 +95,6 @@ import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.lang.String.format;
 import static java.util.Collections.nCopies;
@@ -727,7 +730,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         // this is designed to fail when member deserializes the execution plan while executing
         // the InitOperation
-        dag.newVertex("faulty", (ProcessorMetaSupplier) addresses -> address -> new NotDeserializableProcessorSupplier());
+        dag.newVertex("faulty", (ProcessorMetaSupplier) addresses ->
+                address -> new NotDeserializableProcessorSupplier().original());
 
         // Then
         // we can't assert the exception class. Sometimes the HazelcastSerializationException is wrapped
@@ -770,7 +774,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(job::join)
                 .hasMessageContaining(useLightJob
                         // `checkSerializable` isn't used for light jobs
-                        ? "Failed to serialize 'com.hazelcast.jet.impl.execution.init.ExecutionPlan'"
+                        ? "Failed to serialize 'com.hazelcast.jet.impl.operation.InitExecutionOperation'"
                         : "ProcessorSupplier in vertex 'v'\" must be serializable");
     }
 
@@ -1276,9 +1280,20 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private static class NotDeserializableProcessorSupplier implements ProcessorSupplier {
+        private transient boolean original = false;
+
+        NotDeserializableProcessorSupplier original() {
+            original = true;
+            return this;
+        }
+
         @Nonnull
         @Override
         public Collection<? extends Processor> get(int count) {
+            if (original) {
+                // do not fail if we are on serialization-free path (local execution of light job)
+                return IntStream.range(0, count).mapToObj(i -> new ExpectNothingP()).collect(Collectors.toList());
+            }
             throw new UnsupportedOperationException("should not get here");
         }
 

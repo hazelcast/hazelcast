@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 /**
@@ -34,7 +34,7 @@ import java.util.function.Function;
  */
 public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
 
-    private static final BiFunction<Object, Object, Object> MERGE_FN = (o, n) -> {
+    private static final BinaryOperator<Object> MERGE_FN = (o, n) -> {
         if (o instanceof HashJoinArrayList) {
             ((HashJoinArrayList) o).add(n);
             return o;

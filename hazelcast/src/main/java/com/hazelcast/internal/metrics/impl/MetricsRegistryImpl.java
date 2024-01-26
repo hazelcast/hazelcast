@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -324,6 +324,20 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         if (!set) {
             reusableData.destroy();
         }
+    }
+
+    @Override
+    public void collectDynamicMetrics(MetricsCollector collector, Set<DynamicMetricsProvider> metricsProviders) {
+        checkNotNull(collector, "collector can't be null");
+
+        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(
+                this::loadSourceMetadata,
+                this::lookupMetricValueCatcher,
+                collector,
+                minimumLevel,
+                null
+        );
+        collectionCycle.collectDynamicMetrics(metricsProviders);
     }
 
     private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {

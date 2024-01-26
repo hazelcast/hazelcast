@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import javax.security.auth.Subject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -263,6 +264,15 @@ public final class ImdgUtil {
         @Override
         public R applyEx(T t) {
             return wrapped.apply(t);
+        }
+
+        @Nullable
+        @Override
+        public List<Permission> permissions() {
+            if (wrapped instanceof FunctionEx) {
+                return ((FunctionEx<T, R>) wrapped).permissions();
+            }
+            return null;
         }
     }
 }

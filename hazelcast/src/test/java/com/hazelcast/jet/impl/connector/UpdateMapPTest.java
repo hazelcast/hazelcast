@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class UpdateMapPTest extends JetTestSupport {
 
     private static final int COUNT_PER_KEY = 16;
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter
     public int asyncLimit;
 
     @Parameterized.Parameter(1)

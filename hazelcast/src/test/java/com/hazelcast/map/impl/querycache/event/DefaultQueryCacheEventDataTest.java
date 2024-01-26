@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -49,6 +50,7 @@ public class DefaultQueryCacheEventDataTest {
     private static final Data DATA_KEY = mock(Data.class);
     private static final Data DATA_OLD_VALUE = mock(Data.class);
     private static final Data DATA_NEW_VALUE = mock(Data.class);
+    private static final String MAP_NAME = randomMapName();
 
     private SerializationService serializationService;
 
@@ -64,6 +66,7 @@ public class DefaultQueryCacheEventDataTest {
     private DefaultQueryCacheEventData queryCacheEventDataOtherDataNewValue;
     private DefaultQueryCacheEventData queryCacheEventDataOtherDataOldValue;
     private DefaultQueryCacheEventData queryCacheEventDataOtherSerializationService;
+    private DefaultQueryCacheEventData queryCacheEventDataOtherMapName;
 
     @Before
     public void setUp() throws Exception {
@@ -100,6 +103,9 @@ public class DefaultQueryCacheEventDataTest {
 
         queryCacheEventDataOtherSerializationService = new DefaultQueryCacheEventData();
         queryCacheEventDataOtherSerializationService.setSerializationService(serializationService);
+
+        queryCacheEventDataOtherMapName = new DefaultQueryCacheEventData();
+        queryCacheEventDataOtherMapName.setMapName(MAP_NAME);
     }
 
     @Test
@@ -170,14 +176,17 @@ public class DefaultQueryCacheEventDataTest {
         assertEquals(42, queryCacheEventData.getEventType());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetSource() {
-        queryCacheEventData.getSource();
+    @Test
+    public void testMapName() {
+        assertNull(queryCacheEventData.getMapName());
+
+        queryCacheEventData.setMapName("mapName");
+        assertEquals("mapName", queryCacheEventData.getMapName());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testGetMapName() {
-        queryCacheEventData.getMapName();
+    public void testGetSource() {
+        queryCacheEventData.getSource();
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -210,6 +219,7 @@ public class DefaultQueryCacheEventDataTest {
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherDataOldValue);
 
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherSerializationService);
+        assertNotEquals(queryCacheEventData, queryCacheEventDataOtherMapName);
     }
 
     @Test
@@ -230,15 +240,17 @@ public class DefaultQueryCacheEventDataTest {
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherDataOldValue.hashCode());
 
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherSerializationService.hashCode());
+        assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherMapName.hashCode());
     }
 
     @Test
-    public void testCopyConstructor() throws Exception {
+    public void testCopyConstructor() {
         DefaultQueryCacheEventData actual = new DefaultQueryCacheEventData();
         actual.setPartitionId(1);
         actual.setEventType(2);
         actual.setKey(3);
         actual.setValue(4);
+        actual.setMapName(MAP_NAME);
 
         DefaultQueryCacheEventData copied = new DefaultQueryCacheEventData(actual);
 

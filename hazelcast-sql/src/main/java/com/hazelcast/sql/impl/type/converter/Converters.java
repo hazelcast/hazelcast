@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import java.util.TreeMap;
 /**
  * Utility methods for converters.
  */
-@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class Converters {
     /** Synthetic maximum number of converters to prevent an accidental bug which will generate too big array. */
     private static final int MAX_CONVERTER_COUNT = 100;
@@ -69,6 +68,8 @@ public final class Converters {
         if (res == null) {
             if (Calendar.class.isAssignableFrom(clazz)) {
                 res = CalendarConverter.INSTANCE;
+            } else if (Map.class.isAssignableFrom(clazz)) {
+                res = MapConverter.INSTANCE;
             } else {
                 res = ObjectConverter.INSTANCE;
             }
@@ -203,7 +204,7 @@ public final class Converters {
         return res;
     }
 
-    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:ReturnCount"})
+    @SuppressWarnings({"NPathComplexity", "ReturnCount"})
     private static Class<?> getPrimitiveClass(Class<?> targetClass) {
         if (targetClass == Boolean.class) {
             return boolean.class;

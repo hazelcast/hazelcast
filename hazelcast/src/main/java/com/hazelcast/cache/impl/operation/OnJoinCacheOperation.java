@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,14 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 
@@ -34,6 +38,7 @@ import java.util.List;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 /**
  * Operation executed on joining members so they become aware of {@link CacheConfig}s dynamically created via
@@ -42,7 +47,7 @@ import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
  * resolve a race between the {@link CacheConfig} becoming available in the joining member and creation of a
  * {@link com.hazelcast.cache.ICache} proxy.
  */
-public class OnJoinCacheOperation extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
+public class OnJoinCacheOperation extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState, Versioned {
 
     private List<CacheConfig> configs = new ArrayList<CacheConfig>();
 
@@ -85,6 +90,10 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
         super.writeInternal(out);
         out.writeInt(configs.size());
         for (CacheConfig config : configs) {
+            // RU_COMPAT_5_3
+            if (out.getVersion().isGreaterOrEqual(V5_4)) {
+                out.writeString(config.getUserCodeNamespace());
+            }
             out.writeObject(config);
         }
     }
@@ -93,8 +102,15 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int confSize = in.readInt();
+        // Configs can contain listener configs, which need User Code Namespace awareness
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
         for (int i = 0; i < confSize; i++) {
-            CacheConfig config = in.readObject();
+            String namespace = null;
+            // RU_COMPAT_5_3
+            if (in.getVersion().isGreaterOrEqual(V5_4)) {
+                namespace = in.readString();
+            }
+            CacheConfig config = NamespaceUtil.callWithNamespace(engine, namespace, in::readObject);
             configs.add(config);
         }
     }

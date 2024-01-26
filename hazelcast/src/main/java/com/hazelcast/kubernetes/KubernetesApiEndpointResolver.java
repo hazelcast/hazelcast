@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.internal.util.HostnameUtil.getLocalHostname;
 
@@ -110,13 +110,13 @@ class KubernetesApiEndpointResolver
     }
 
     private Address createAddress(KubernetesClient.EndpointAddress address,
-                                  Function<KubernetesClient.EndpointAddress, Integer> portResolver) {
+            ToIntFunction<KubernetesClient.EndpointAddress> portResolver) {
         if (address == null) {
             return null;
         }
         String ip = address.getIp();
         InetAddress inetAddress = mapAddress(ip);
-        int port = portResolver.apply(address);
+        int port = portResolver.applyAsInt(address);
         return new Address(inetAddress, port);
     }
 

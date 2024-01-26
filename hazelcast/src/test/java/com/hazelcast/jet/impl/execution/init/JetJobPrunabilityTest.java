@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Consumer", consumerPms);
-        dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne(""));
+        dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne());
 
         var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
         assertThat(analysisResult.allPartitionsRequired).isFalse();
@@ -136,7 +136,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Printer", consumerPms);
-        dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne(""));
+        dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne());
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePartitionId));
@@ -247,7 +247,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     }
 
     private static int allToOnePartitionId() {
-        return instance().getPartitionService().getPartition("").getPartitionId();
+        return 1;
     }
 
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ public class MappingColumnsTable extends InfoSchemaTable {
                         field.externalName(),
                         i + 1,
                         String.valueOf(true),
-                        field.type().getTypeFamily().name()
+                        field.type().getTypeFamily().toString()
                 };
                 rows.add(row);
             }

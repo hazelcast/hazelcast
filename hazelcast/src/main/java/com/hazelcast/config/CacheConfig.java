@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,18 @@ import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
@@ -52,6 +56,7 @@ import java.util.Set;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -63,7 +68,8 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Versioned {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Versioned,
+                                                                            UserCodeNamespaceAwareConfig<CacheConfig<K, V>> {
 
     private String name;
     private String managerPrefix;
@@ -87,6 +93,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * Full-flush invalidation means the invalidation of events for all entries when clear is called.
      */
     private boolean disablePerEntryInvalidationEvents;
+    private @Nullable String userCodeNamespace = DEFAULT_NAMESPACE;
 
     public CacheConfig() {
     }
@@ -125,6 +132,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
             this.serializationService = config.serializationService;
             this.classLoader = config.classLoader;
+            this.userCodeNamespace = config.userCodeNamespace;
         }
     }
 
@@ -161,6 +169,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         this.dataPersistenceConfig = new DataPersistenceConfig(simpleConfig.getDataPersistenceConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
+        this.userCodeNamespace = simpleConfig.getUserCodeNamespace();
     }
 
     private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
@@ -507,6 +516,32 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         return this;
     }
 
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
+    }
+
+    /**
+     * Associates the provided Namespace Name with this structure for {@link ClassLoader} awareness.
+     * <p>
+     * The behaviour of setting this to {@code null} is outlined in the documentation for
+     * {@link UserCodeNamespaceAwareConfig#DEFAULT_NAMESPACE}.
+     *
+     * @param userCodeNamespace The ID of the Namespace to associate with this structure.
+     * @return the updated {@link ExecutorConfig} instance
+     * @since 5.4
+     */
+    public CacheConfig<K, V> setUserCodeNamespace(@Nullable String userCodeNamespace) {
+        this.userCodeNamespace = userCodeNamespace;
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
@@ -545,6 +580,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
 
         out.writeObject(merkleTreeConfig);
         out.writeObject(dataPersistenceConfig);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeString(userCodeNamespace);
+        }
     }
 
     private void writePartitionLostListenerConfigs(ObjectDataOutput out)
@@ -607,6 +647,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
 
         merkleTreeConfig = in.readObject();
         setDataPersistenceConfig(in.readObject());
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            userCodeNamespace = in.readString();
+        }
     }
 
     private void readPartitionLostListenerConfigs(ObjectDataInput in)
@@ -626,6 +671,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (managerPrefix != null ? managerPrefix.hashCode() : 0);
         result = 31 * result + (uriString != null ? uriString.hashCode() : 0);
+        result = 31 * result + (userCodeNamespace != null ? userCodeNamespace.hashCode() : 0);
         return result;
     }
 
@@ -648,6 +694,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         if (!Objects.equals(uriString, that.uriString)) {
             return false;
         }
+        if (!Objects.equals(userCodeNamespace, that.userCodeNamespace)) {
+            return false;
+        }
 
         return super.equals(o);
     }
@@ -663,6 +712,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
                 + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", merkleTreeConfig=" + merkleTreeConfig
+                + ", userCodeNamespace=" + userCodeNamespace
                 + '}';
     }
 
@@ -761,19 +811,23 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         target.setWriteThrough(isWriteThrough());
         target.setClassLoader(classLoader);
         target.serializationService = serializationService;
+        target.setUserCodeNamespace(getUserCodeNamespace());
         return target;
     }
 
-    private void copyListeners(CacheSimpleConfig simpleConfig)
-            throws Exception {
+    private void copyListeners(CacheSimpleConfig simpleConfig) throws Exception {
+        // This method can be invoked by clients, in which case we don't need Namespace context
+        //  (and we don't have a NodeEngine instance available for use anyway)
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContextOrNull();
+        ClassLoader loader = engine != null ? NamespaceUtil.getClassLoaderForNamespace(engine, userCodeNamespace) : null;
         for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
             if (simpleListener.getCacheEntryListenerFactory() != null) {
-                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
+                listenerFactory = ClassLoaderUtil.newInstance(loader, simpleListener.getCacheEntryListenerFactory());
             }
             if (simpleListener.getCacheEntryEventFilterFactory() != null) {
-                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
+                filterFactory = ClassLoaderUtil.newInstance(loader, simpleListener.getCacheEntryEventFilterFactory());
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();

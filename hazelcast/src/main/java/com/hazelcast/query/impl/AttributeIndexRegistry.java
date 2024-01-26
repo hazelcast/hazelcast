@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -52,8 +54,11 @@ public class AttributeIndexRegistry {
      * there is no more than one writer at any given time.
      *
      * @param index the index to register.
-     * @see Indexes#addOrGetIndex
+     * @see IndexRegistry#addOrGetIndex
      */
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     public void register(InternalIndex index) {
         String[] components = index.getComponents();
         String attribute = components[0];
@@ -265,6 +270,11 @@ public class AttributeIndexRegistry {
                 boolean toInclusive,
                 boolean descending
         ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Comparator<Data> getKeyComparator(boolean isDescending) {
             throw new UnsupportedOperationException("Should not be called");
         }
 

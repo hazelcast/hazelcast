@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,10 +54,9 @@ import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
-import static com.hazelcast.jet.sql.SqlTestSupport.setupCompactTypesForNestedQuery;
 import static com.hazelcast.jet.sql.SqlTestSupport.rows;
-import static com.hazelcast.jet.sql.SqlTestSupport.setupPortableTypesForNestedQuery;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.setupCompactTypesForNestedQuery;
+import static com.hazelcast.jet.sql.impl.type.PortableNestedFieldsTest.setupPortableTypesForNestedQuery;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -73,7 +72,6 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlLazyDeserializationTest {
-
     private final SqlLazyDeserializationTestInstanceFactory mockInstanceFactory
             = new SqlLazyDeserializationTestInstanceFactory();
 
@@ -86,7 +84,6 @@ public class SqlLazyDeserializationTest {
     public void before() {
         final Config config = new Config();
         config.getJetConfig().setEnabled(true);
-        config.setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
 
         SerializationConfig serializationConfig = config.getSerializationConfig();
         ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)

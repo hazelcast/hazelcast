@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 public class AddFlakeIdGeneratorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters> {
@@ -57,7 +58,7 @@ public class AddFlakeIdGeneratorConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addFlakeIdGeneratorConfig";
+        return SecurityInterceptorConstants.ADD_FLAKE_ID_GENERATOR_CONFIG;
     }
 
     @Override

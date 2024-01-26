@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.DUMMY_TYPE;
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +47,7 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
     private static final String TEST_CONFIG = "test-config";
     private static final String TEST_DYNAMIC_CONFIG = "test-dynamic-config";
     private static final String TEST_VIA_SERVICE_CONFIG = "test-via-service-config";
-    public static final String DUMMY_DATA_CONNECTION_TYPE = "DUMMY";
+    public static final String DUMMY_DATA_CONNECTION_TYPE = DUMMY_TYPE;
 
     private final Config config = smallInstanceConfig();
     private final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
@@ -403,7 +404,7 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
     @Test
     public void should_return_data_connection_type() {
         String type = dataConnectionService.typeForDataConnection(TEST_CONFIG);
-        assertThat(type).isEqualTo("dummy");
+        assertThat(type).isEqualTo(DUMMY_TYPE);
     }
 
     @Test

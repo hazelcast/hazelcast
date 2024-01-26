@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -99,7 +99,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
+    @Category(NightlyTest.class)
     public void destroyRepeatedly() {
         for (int rep = 0; rep < 1_000; ++rep) {
             createFillAndDestroyMap();
@@ -133,7 +133,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {
+    protected void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {
         MapServiceContext context = getMapServiceContext(instance);
         int partitionCount = getPartitionCount(instance);
 

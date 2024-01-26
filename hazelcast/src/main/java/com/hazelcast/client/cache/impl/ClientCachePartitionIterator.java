@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.internal.util.CollectionUtil;
 
 public class ClientCachePartitionIterator<K, V> extends ClientCacheIterator<K, V> {
 
@@ -33,7 +34,7 @@ public class ClientCachePartitionIterator<K, V> extends ClientCacheIterator<K, V
             return false;
         }
         result = fetch();
-        if (result != null && result.size() > 0) {
+        if (CollectionUtil.isNotEmpty(result)) {
             index = 0;
             return true;
         }

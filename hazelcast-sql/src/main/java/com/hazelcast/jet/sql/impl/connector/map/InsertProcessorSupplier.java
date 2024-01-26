@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
@@ -32,6 +30,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
@@ -54,8 +53,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     private String mapName;
     private KvProjector.Supplier projectorSupplier;
-
-    private transient InternalSerializationService serializationService;
+    private transient ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
     private InsertProcessorSupplier() {
@@ -68,7 +66,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     @Override
     public void init(@Nonnull Context context) {
-        serializationService = ((Contexts.ProcSupplierCtx) context).serializationService();
+        this.evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -76,7 +74,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
     public Collection<? extends Processor> get(int count) {
         assert count == 1;
 
-        return singletonList(new InsertP(mapName, projectorSupplier.get(serializationService)));
+        return singletonList(new InsertP(mapName, projectorSupplier.get(evalContext)));
     }
 
     @Override

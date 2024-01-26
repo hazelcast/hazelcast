@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class CompactSchemaReplicatorTest extends HazelcastTestSupport {
         executionService = mock(ExecutionService.class);
         when(executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR))
                 .thenReturn(new CachedExecutorServiceDelegate("test", new ForkJoinPool(3),
-                        8, 1000));
+                        8, 1000, null));
         when(clusterService.getMembers()).thenReturn(Collections.emptySet());
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getClusterService()).thenReturn(clusterService);

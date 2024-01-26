@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e0cfd3d62087c5eb788f58fb0524f73d")
+@SuppressWarnings("unused")
+@Generated("fada8c70699c625eaa0bcc7ded300145")
 public final class AddressCodec {
     private static final int PORT_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PORT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

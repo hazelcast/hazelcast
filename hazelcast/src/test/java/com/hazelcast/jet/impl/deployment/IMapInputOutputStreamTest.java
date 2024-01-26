@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,20 +91,20 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
     @Test
     public void test_writeOutOfBounds_then_throwsException() throws IOException {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
-        IMapOutputStream outputStream = new IMapOutputStream(map, "test");
-
-        expectedException.expect(IndexOutOfBoundsException.class);
-        outputStream.write(new byte[] {1}, 5, 5);
+        try (IMapOutputStream outputStream = new IMapOutputStream(map, "test")) {
+            expectedException.expect(IndexOutOfBoundsException.class);
+            outputStream.write(new byte[]{1}, 5, 5);
+        }
     }
 
     @Test
     public void test_readOutOfBounds_then_throwsException() throws IOException {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
         map.put("test", new byte[] {0, 0, 0, 4});
-        IMapInputStream inputStream = new IMapInputStream(map, "test");
-
-        expectedException.expect(IndexOutOfBoundsException.class);
-        System.out.println(inputStream.read(new byte[] {1}, 5, 5));
+        try (IMapInputStream inputStream = new IMapInputStream(map, "test")) {
+            expectedException.expect(IndexOutOfBoundsException.class);
+            System.out.println(inputStream.read(new byte[]{1}, 5, 5));
+        }
     }
 
     @Test

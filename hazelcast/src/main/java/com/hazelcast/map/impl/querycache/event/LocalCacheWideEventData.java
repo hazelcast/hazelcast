@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,13 @@ public class LocalCacheWideEventData implements EventData {
     private final String source;
     private final int eventType;
     private final int numberOfEntriesAffected;
+    private final String mapName;
 
-    public LocalCacheWideEventData(String source, int eventType, int numberOfEntriesAffected) {
+    public LocalCacheWideEventData(String source, int eventType, int numberOfEntriesAffected, String mapName) {
         this.source = source;
         this.eventType = eventType;
         this.numberOfEntriesAffected = numberOfEntriesAffected;
+        this.mapName = mapName;
     }
 
     public int getNumberOfEntriesAffected() {
@@ -56,7 +58,7 @@ public class LocalCacheWideEventData implements EventData {
 
     @Override
     public String getMapName() {
-        throw new UnsupportedOperationException();
+        return mapName;
     }
 
     @Override
@@ -85,6 +87,7 @@ public class LocalCacheWideEventData implements EventData {
                 + "eventType=" + eventType
                 + ", source='" + source + '\''
                 + ", numberOfEntriesAffected=" + numberOfEntriesAffected
+                + ", mapName=" + mapName
                 + '}';
     }
 }

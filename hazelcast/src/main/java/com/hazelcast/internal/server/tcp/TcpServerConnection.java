@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,7 +242,9 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public int hashCode() {
-        return Objects.hash(acceptorSide, connectionId);
+        int result = acceptorSide ? 1231 : 1237;
+        result = 31 * result + connectionId;
+        return result;
     }
 
     @Override

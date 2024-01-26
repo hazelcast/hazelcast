@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.security.Permission;
@@ -83,6 +84,12 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        String namespace = getUserCodeNamespace();
+        return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+    }
+
     private class ClientMapListener extends MapListenerAdapter<Object, Object> {
 
         @Override
@@ -121,4 +128,9 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
     protected abstract ClientMessage encodeEvent(Data keyData, Data newValueData,
                                                  Data oldValueData, Data meringValueData,
                                                  int type, UUID uuid, int numberOfEntriesAffected);
+
+    @Override
+    protected String getUserCodeNamespace() {
+        return MapService.lookupNamespace(nodeEngine, getDistributedObjectName());
+    }
 }

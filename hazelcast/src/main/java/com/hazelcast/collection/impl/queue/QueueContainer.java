@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -973,7 +974,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         String comparatorClassName = config.getPriorityComparatorClassName();
         if (!isNullOrEmpty(comparatorClassName)) {
             try {
-                ClassLoader classloader = config.getClass().getClassLoader();
+                ClassLoader classloader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
                 Comparator<?> comparator = ClassLoaderUtil.newInstance(classloader, comparatorClassName);
                 return new PriorityQueue<>(new ForwardingQueueItemComparator<>(comparator));
             } catch (Exception e) {
@@ -996,7 +997,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         // To initialize backupMap when itemQueue has items,
         // we first nullify backupMap.
         Queue<QueueItem> itemQueue = this.itemQueue;
-        if (!CollectionUtil.isEmpty(itemQueue)
+        if (CollectionUtil.isNotEmpty(itemQueue)
                 && MapUtil.isNullOrEmpty(backupMap)) {
             backupMap = null;
         }
@@ -1057,7 +1058,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
         // init QueueStore
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        ClassLoader classLoader = nodeEngine.getConfigClassLoader();
 
         // in case we need to create a priority queue
         // we recreate the queue using the items that are currently a LinkedList
@@ -1068,7 +1068,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
             itemQueue = copy;
         }
 
-        this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
+        // Use Namespace specific class loader if available
+        ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
+        this.store = QueueStoreWrapper.create(nodeEngine, name, storeConfig, serializationService,
+                classLoader, config.getUserCodeNamespace());
 
         if (isPriorityQueue && store.isEnabled() && store.getMemoryLimit() < Integer.MAX_VALUE) {
             logger.warning("The queue '" + name + "' has both a comparator class and a store memory limit set. "

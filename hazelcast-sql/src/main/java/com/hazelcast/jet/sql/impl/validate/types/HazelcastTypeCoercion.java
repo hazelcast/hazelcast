@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,9 +241,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return customTypesCoercion(source, target, ((SqlCall) rowElement).operand(0), scope);
         }
 
-        if (HazelcastTypeUtils.isHzObjectType(source)) {
-            return HazelcastTypeUtils.extractHzObjectType(source).getTypeName()
-                    .equals(HazelcastTypeUtils.extractHzObjectType(target).getTypeName());
+        if (source instanceof HazelcastObjectType) {
+            return ((HazelcastObjectType) source).getTypeName()
+                    .equals(((HazelcastObjectType) target).getTypeName());
         }
 
         assert rowElement instanceof SqlCall : "Row Element must be an SqlCall";

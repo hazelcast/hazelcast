@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -39,7 +38,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
@@ -52,7 +50,6 @@ public class PartitionContainer {
     private final MapService mapService;
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, RecordStore> maps;
-    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = name -> {
         RecordStore recordStore = createRecordStore(name);
@@ -106,9 +103,8 @@ public class PartitionContainer {
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
         int partitionId = getPartitionId();
 
-        if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
-            indexes.putIfAbsent(name, indexesForMap);
+        if (!mapContainer.shouldUseGlobalIndex()) {
+            mapContainer.createIndexRegistry(false, partitionId);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
         recordStore.init();
@@ -117,10 +113,6 @@ public class PartitionContainer {
 
     public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
-    }
-
-    public ConcurrentMap<String, Indexes> getIndexes() {
-        return indexes;
     }
 
     public Collection<RecordStore> getAllRecordStores() {
@@ -167,7 +159,7 @@ public class PartitionContainer {
         return maps.get(mapName);
     }
 
-    public void destroyMap(MapContainer mapContainer) {
+    public final void destroyMap(MapContainer mapContainer) {
         // Mark map container destroyed before the underlying
         // data structures are destroyed. We need this to
         // ensure that every reader that observed non-destroyed
@@ -177,7 +169,7 @@ public class PartitionContainer {
         mapContainer.onBeforeDestroy();
 
         String name = mapContainer.getName();
-        RecordStore recordStore = maps.get(name);
+        RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
             // this call also clears and disposes Indexes for that partition
             recordStore.destroy();
@@ -192,25 +184,11 @@ public class PartitionContainer {
             clearLockStore(name);
         }
 
-        // getting rid of Indexes object in case it has been initialized
-        indexes.remove(name);
-
-        destroyMapContainer(mapContainer);
-        mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+        MapServiceContext mapServiceContext = mapService.mapServiceContext;
+        mapServiceContext.removeMapContainer(mapContainer);
+        mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
     }
 
-    /**
-     * @return {@code true} if destruction is successful, otherwise
-     * return {@code false} if it is already destroyed.
-     */
-    public boolean destroyMapContainer(MapContainer mapContainer) {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        if (mapServiceContext.removeMapContainer(mapContainer)) {
-            mapContainer.onDestroy();
-            return true;
-        }
-        return false;
-    }
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
@@ -258,34 +236,10 @@ public class PartitionContainer {
                 .stream()
                 .filter(entry -> replicaIndex == -1
                         || lesserBackupMapsThenWithContainer(replicaIndex).test(entry.getValue()))
-                .forEach(entry -> cleanUpMap(entry.getKey()));
+                .forEach(entry -> cleanUpMap(entry.getKey(), entry.getValue()));
     }
 
-    protected void cleanUpMap(String mapName) {
+    protected void cleanUpMap(String mapName, MapContainer mapContainer) {
         // overridden in enterprise
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-    // IMPORTANT: never use directly! use MapContainer.getIndex() instead.
-    // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
-    // By using this method in the context of global index an exception will be thrown.
-    // -------------------------------------------------------------------------------------------------------------
-    Indexes getIndexes(String name) {
-        Indexes ixs = indexes.get(name);
-        if (ixs == null) {
-            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-            MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-            if (mapContainer.isGlobalIndexEnabled()) {
-                throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
-            }
-            int partitionId = getPartitionId();
-
-            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
-            ixs = indexes.putIfAbsent(name, indexesForMap);
-            if (ixs == null) {
-                ixs = indexesForMap;
-            }
-        }
-        return ixs;
     }
 }

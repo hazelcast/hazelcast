@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public class RealmConfig {
 
     private AuthenticationConfig authenticationConfig = DefaultAuthenticationConfig.INSTANCE;
     private IdentityConfig identityConfig;
+    private AccessControlServiceConfig accessControlServiceConfig;
 
     public JaasAuthenticationConfig getJaasAuthenticationConfig() {
         return getIfType(authenticationConfig, JaasAuthenticationConfig.class);
@@ -138,6 +139,32 @@ public class RealmConfig {
         return this;
     }
 
+    /**
+     * Returns configured {@link AccessControlServiceConfig}.
+     *
+     * @see #setAccessControlServiceConfig(AccessControlServiceConfig)
+     * @return configured {@link AccessControlServiceConfig} instance
+     */
+    public AccessControlServiceConfig getAccessControlServiceConfig() {
+        return accessControlServiceConfig;
+    }
+
+    /**
+     * Sets the access control service configuration. An Access control service can be used by components that don't support
+     * Hazelcast's build-in permission system or which need to allow authorization plug-in mechanism.
+     * <p>
+     * Access control service is RBAC based and allows implementing custom authentication and authorization mechanisms using
+     * custom state descriptions (authentication and authorization context objects). A successful authentication returns list of
+     * role names. Role names are used (provided as a parameter) when authorization is executed.
+     *
+     * @param accessControlServiceConfig {@link AccessControlServiceConfig} to be configured in this security realm
+     * @return this config
+     */
+    public RealmConfig setAccessControlServiceConfig(AccessControlServiceConfig accessControlServiceConfig) {
+        this.accessControlServiceConfig = accessControlServiceConfig;
+        return this;
+    }
+
     public boolean isAuthenticationConfigured() {
         return authenticationConfig != null && authenticationConfig != DefaultAuthenticationConfig.INSTANCE;
     }
@@ -159,7 +186,7 @@ public class RealmConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(authenticationConfig, identityConfig);
+        return Objects.hash(authenticationConfig, identityConfig, accessControlServiceConfig);
     }
 
     @Override
@@ -175,14 +202,18 @@ public class RealmConfig {
         }
         RealmConfig other = (RealmConfig) obj;
         return Objects.equals(authenticationConfig, other.authenticationConfig)
-                && Objects.equals(identityConfig, other.identityConfig);
+                && Objects.equals(identityConfig, other.identityConfig)
+                && Objects.equals(accessControlServiceConfig, other.accessControlServiceConfig)
+                ;
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("RealmConfig [authenticationConfig=").append(authenticationConfig).append(", identityConfig=")
-                .append(identityConfig).append("]");
+        builder.append("RealmConfig [authenticationConfig=").append(authenticationConfig)
+                .append(", identityConfig=").append(identityConfig)
+                .append(", accessControlServiceConfig=").append(accessControlServiceConfig)
+                .append("]");
         return builder.toString();
     }
 

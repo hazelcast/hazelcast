@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.ringbuffer;
 
+import com.hazelcast.spi.annotation.NamespacesSupported;
+
 import java.util.Properties;
 
 /**
@@ -24,6 +26,7 @@ import java.util.Properties;
  * @param <T> type of the ringbuffer items
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface RingbufferStoreFactory<T> {
 
     RingbufferStore<T> newRingbufferStore(String name, Properties properties);

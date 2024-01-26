@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -296,6 +296,16 @@ public interface MetricsRegistry {
      * @throws NullPointerException if collector is null.
      */
     void collect(MetricsCollector collector);
+
+    /**
+     * Collects metrics for specific providers.
+     *
+     * @param collector the collector that consumes the metrics collected
+     * @param metricsProviders specific metrics providers
+     *
+     * @throws NullPointerException if collector is null.
+     */
+    void collectDynamicMetrics(MetricsCollector collector, Set<DynamicMetricsProvider> metricsProviders);
 
     /**
      * For each object that implements {@link StaticMetricsProvider} the

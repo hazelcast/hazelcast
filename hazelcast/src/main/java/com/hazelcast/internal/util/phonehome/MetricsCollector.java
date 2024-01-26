@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.instance.impl.Node;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.function.BiConsumer;
 
@@ -82,7 +83,7 @@ interface MetricsCollector {
         HttpURLConnection conn = null;
         boolean response;
         try {
-            URL url = new URL(urlStr);
+            URL url = URI.create(urlStr).toURL();
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(TIMEOUT);
             conn.setReadTimeout(TIMEOUT);

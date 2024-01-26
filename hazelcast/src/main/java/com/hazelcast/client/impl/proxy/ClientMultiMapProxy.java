@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,11 +151,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
             Data keyData = entry.getKey();
             int partitionId = partitionService.getPartitionId(keyData);
-            Collection<Map.Entry<Data, Collection<Data>>> partition = entryMap.get(partitionId);
-            if (partition == null) {
-                partition = new ArrayList<>();
-                entryMap.put(partitionId, partition);
-            }
+            Collection<Map.Entry<Data, Collection<Data>>> partition = entryMap.computeIfAbsent(partitionId,
+                    x -> new ArrayList<>());
 
             partition.add(new AbstractMap.SimpleEntry<>(keyData, entry.getValue()));
         }

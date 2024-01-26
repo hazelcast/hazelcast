@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,18 @@ public final class BufferUtil {
         }
     }
 
-     public static void put(ByteBuffer dst, ByteBuffer src) {
+    /**
+     * Allocates a new {@link ByteBuffer}.
+     *
+     * @param direct if the ByteBuffer should be a direct ByteBuffer.
+     * @param capacity the capacity of the ByteBuffer to allocate
+     * @return the allocated ByteBuffer.
+     */
+    public static ByteBuffer allocateBuffer(boolean direct, int capacity) {
+        return direct ? ByteBuffer.allocateDirect(capacity) : ByteBuffer.allocate(capacity);
+    }
+
+    public static void put(ByteBuffer dst, ByteBuffer src) {
         if (src.remaining() <= dst.remaining()) {
             // there is enough space in the dst buffer to copy the src
             dst.put(src);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -483,7 +483,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         }
     }
 
-    class HandleBiFunction<U, R> implements BiFunction<ClientMessage, Throwable, R> {
+    class HandleBiFunction<R> implements BiFunction<ClientMessage, Throwable, R> {
         private final BiFunction<? super V, Throwable, R> delegate;
 
         HandleBiFunction(@Nonnull BiFunction<? super V, Throwable, R> delegate) {

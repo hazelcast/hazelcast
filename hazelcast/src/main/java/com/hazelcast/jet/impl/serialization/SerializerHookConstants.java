@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public final class SerializerHookConstants {
     public static final int QUERY_ENTRY = -327;
     public static final int DEFERRED_MAP = -328;
     public static final int AVRO_UTF8 = -329;
+    public static final int AVRO_GENERIC_CONTAINER = -330;
 
     public static final int CDC_RECORD = -340;
     public static final int CDC_RECORD_PART = -341;

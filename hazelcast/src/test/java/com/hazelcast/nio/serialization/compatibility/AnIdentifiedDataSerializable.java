@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,7 +154,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         dataOutput.writeFloatArray(floats);
         dataOutput.writeIntArray(ints);
         dataOutput.writeLongArray(longs);
-        dataOutput.writeUTFArray(strings);
+        dataOutput.writeStringArray(strings);
 
         dataOutput.writeBooleanArray(booleansNull);
         dataOutput.writeByteArray(bytesNull);
@@ -164,7 +164,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         dataOutput.writeFloatArray(floatsNull);
         dataOutput.writeIntArray(intsNull);
         dataOutput.writeLongArray(longsNull);
-        dataOutput.writeUTFArray(stringsNull);
+        dataOutput.writeStringArray(stringsNull);
 
         byteSize = (byte) bytes.length;
         dataOutput.write(byteSize);

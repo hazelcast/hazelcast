@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
 
 /**
  * Listener to be notified about various events in {@link ClusterWideConfigurationService}
@@ -36,12 +37,20 @@ public interface DynamicConfigListener {
      *
      * @param configObject
      */
-    void onConfigRegistered(MapConfig configObject);
+    void onConfigRegistered(MapConfig configObject, UserCodeNamespaceConfig ns);
 
     /**
      * Called when a new {@link com.hazelcast.config.CacheSimpleConfig} object is created locally.
      *
      * @param configObject
      */
-    void onConfigRegistered(CacheSimpleConfig configObject);
+    void onConfigRegistered(CacheSimpleConfig configObject, UserCodeNamespaceConfig ns);
+
+    /**
+     * Called when a {@link com.hazelcast.config.UserCodeNamespaceConfig} object is created locally.
+     *
+     * @param configObject
+     */
+    void onConfigRegistered(UserCodeNamespaceConfig configObject);
+
 }

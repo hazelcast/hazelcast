@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
+import com.hazelcast.internal.util.collection.DefaultedMap;
+import com.hazelcast.internal.util.collection.DefaultedMap.DefaultedMapBuilder;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
@@ -34,23 +37,44 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.collect;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 
-final class MetadataCompactResolver implements KvMetadataResolver {
-
+public final class MetadataCompactResolver implements KvMetadataResolver {
     static final MetadataCompactResolver INSTANCE = new MetadataCompactResolver();
 
-    private MetadataCompactResolver() {
-    }
+    private static final DefaultedMap<QueryDataTypeFamily, FieldKind> SQL_TO_COMPACT = new DefaultedMapBuilder<>(
+            new EnumMap<>(ImmutableMap.<QueryDataTypeFamily, FieldKind>builder()
+                    .put(QueryDataTypeFamily.BOOLEAN, FieldKind.NULLABLE_BOOLEAN)
+                    .put(QueryDataTypeFamily.TINYINT, FieldKind.NULLABLE_INT8)
+                    .put(QueryDataTypeFamily.SMALLINT, FieldKind.NULLABLE_INT16)
+                    .put(QueryDataTypeFamily.INTEGER, FieldKind.NULLABLE_INT32)
+                    .put(QueryDataTypeFamily.BIGINT, FieldKind.NULLABLE_INT64)
+                    .put(QueryDataTypeFamily.REAL, FieldKind.NULLABLE_FLOAT32)
+                    .put(QueryDataTypeFamily.DOUBLE, FieldKind.NULLABLE_FLOAT64)
+                    .put(QueryDataTypeFamily.DECIMAL, FieldKind.DECIMAL)
+                    .put(QueryDataTypeFamily.VARCHAR, FieldKind.STRING)
+                    .put(QueryDataTypeFamily.TIME, FieldKind.TIME)
+                    .put(QueryDataTypeFamily.DATE, FieldKind.DATE)
+                    .put(QueryDataTypeFamily.TIMESTAMP, FieldKind.TIMESTAMP)
+                    .put(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, FieldKind.TIMESTAMP_WITH_TIMEZONE)
+                    .put(QueryDataTypeFamily.OBJECT, FieldKind.COMPACT)
+                    .build()))
+            .orElseThrow(type -> new IllegalArgumentException("Compact format does not allow " + type + " data type"));
+
+    private MetadataCompactResolver() { }
 
     @Override
     public Stream<String> supportedFormats() {
@@ -67,19 +91,15 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for Compact format");
         }
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
-        String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
-        String typeName = options.get(typeNameProperty);
+        // Check if the compact type name is specified
+        getCompactTypeName(fieldsByPath, options, isKey);
 
-        if (typeName == null) {
-            throw QueryException.error("Unable to resolve table metadata. Missing '" + typeNameProperty + "' option");
-        }
-
-        Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
-        return fields.entrySet().stream()
+        return fieldsByPath.entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
-                    if (path.getPath() == null) {
+                    if (path.isTopLevel()) {
                         throw QueryException.error("Cannot use the '" + path + "' field with Compact serialization");
                     }
                     QueryDataType type = entry.getValue().type();
@@ -99,8 +119,7 @@ final class MetadataCompactResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
-        String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
-        String typeName = options.get(typeNameProperty);
+        String typeName = getCompactTypeName(fieldsByPath, options, isKey);
 
         List<TableField> fields = new ArrayList<>(fieldsByPath.size());
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
@@ -112,7 +131,7 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
-        Schema schema = resolveSchema(typeName, fieldsByPath);
+        Schema schema = resolveSchema(typeName, getFields(fieldsByPath));
 
         return new KvMetadata(
                 fields,
@@ -121,49 +140,27 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         );
     }
 
-    private Schema resolveSchema(String typeName, Map<QueryPath, MappingField> fields) {
-        SchemaWriter schemaWriter = new SchemaWriter(typeName);
-        for (Entry<QueryPath, MappingField> entry : fields.entrySet()) {
-            String name = entry.getKey().getPath();
-            QueryDataType type = entry.getValue().type();
-            schemaWriter.addField(new FieldDescriptor(name, resolveToCompactKind(type.getTypeFamily())));
-        }
-        return schemaWriter.build();
+    private static Schema resolveSchema(String typeName, Stream<Field> fields) {
+        return collect(new SchemaWriter(typeName), fields, (schema, field) ->
+                schema.addField(new FieldDescriptor(field.name(),
+                        SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily())))
+        ).build();
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static FieldKind resolveToCompactKind(QueryDataTypeFamily type) {
-        switch (type) {
-            case BOOLEAN:
-                return FieldKind.NULLABLE_BOOLEAN;
-            case TINYINT:
-                return FieldKind.NULLABLE_INT8;
-            case SMALLINT:
-                return FieldKind.NULLABLE_INT16;
-            case INTEGER:
-                return FieldKind.NULLABLE_INT32;
-            case BIGINT:
-                return FieldKind.NULLABLE_INT64;
-            case REAL:
-                return FieldKind.NULLABLE_FLOAT32;
-            case DOUBLE:
-                return FieldKind.NULLABLE_FLOAT64;
-            case DECIMAL:
-                return FieldKind.DECIMAL;
-            case VARCHAR:
-                return FieldKind.STRING;
-            case TIME:
-                return FieldKind.TIME;
-            case DATE:
-                return FieldKind.DATE;
-            case TIMESTAMP:
-                return FieldKind.TIMESTAMP;
-            case TIMESTAMP_WITH_TIME_ZONE:
-                return FieldKind.TIMESTAMP_WITH_TIMEZONE;
-            case OBJECT:
-                return FieldKind.COMPACT;
-            default:
-                throw new IllegalArgumentException("Compact format does not allow " + type + " data type");
+    private static String getCompactTypeName(
+            Map<QueryPath, MappingField> fields,
+            Map<String, String> options,
+            boolean isKey
+    ) {
+        return getMetadata(fields).orElseGet(() -> compactTypeName(options, isKey));
+    }
+
+    public static String compactTypeName(Map<String, String> options, boolean isKey) {
+        String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
+        String typeName = options.get(typeNameProperty);
+        if (typeName == null) {
+            throw QueryException.error(typeNameProperty + " is required to create Compact-based mapping");
         }
+        return typeName;
     }
 }

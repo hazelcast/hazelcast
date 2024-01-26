@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,11 +40,11 @@ import static org.mockito.Mockito.withSettings;
 public class FlatteningVisitorTest {
 
     private FlatteningVisitor visitor;
-    private Indexes indexes;
+    private IndexRegistry indexes;
 
     @Before
     public void setUp() {
-        indexes = mock(Indexes.class);
+        indexes = mock(IndexRegistry.class);
         visitor = new FlatteningVisitor();
     }
 

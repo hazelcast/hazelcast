@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 /**
  * Rule based optimizer. It chains {@link Visitor}s to rewrite query.
@@ -31,7 +31,7 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
     private final Visitor evaluateVisitor = new EvaluateVisitor();
 
     @SuppressWarnings("unchecked")
-    public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes) {
+    public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes) {
         Predicate optimized = predicate;
         if (optimized instanceof VisitablePredicate) {
             optimized = ((VisitablePredicate) optimized).accept(flatteningVisitor, indexes);

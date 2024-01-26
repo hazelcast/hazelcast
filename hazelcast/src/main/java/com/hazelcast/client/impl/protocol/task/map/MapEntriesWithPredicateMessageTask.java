@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,7 +76,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "entrySet";
+        return SecurityInterceptorConstants.ENTRY_SET;
     }
 
 }

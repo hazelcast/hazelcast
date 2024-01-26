@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ascii.MemcacheTextDecoder;
 import com.hazelcast.internal.nio.ascii.RestApiTextDecoder;
-
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 import java.nio.ByteBuffer;
 
@@ -60,7 +58,7 @@ public class TextHandshakeDecoder
         // we need to restore whatever is read
         ByteBuffer src = this.src;
         ByteBuffer dst = (ByteBuffer) inboundHandlers[0].src();
-        upcast(src).flip();
+        src.flip();
         dst.put(src);
     }
 }

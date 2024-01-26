@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
@@ -30,6 +29,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.checkEquals;
+import static com.hazelcast.jet.sql.SqlTestSupport.createExpressionEvalContext;
+import static com.hazelcast.jet.sql.SqlTestSupport.serializeAndCheck;
 import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.EQUALS;
 import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.GREATER_THAN;
 import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.LESS_THAN;
@@ -41,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ComparisonPredicateTest extends SqlTestSupport {
+public class ComparisonPredicateTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test

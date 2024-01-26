@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.NodeEngine;
 
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 
 /**
@@ -27,7 +27,7 @@ import java.util.function.Function;
  */
 public class NonStopInvalidator extends Invalidator {
 
-    public NonStopInvalidator(String serviceName, Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+    public NonStopInvalidator(String serviceName, Predicate<EventRegistration> eventFilter, NodeEngine nodeEngine) {
         super(serviceName, eventFilter, nodeEngine);
     }
 

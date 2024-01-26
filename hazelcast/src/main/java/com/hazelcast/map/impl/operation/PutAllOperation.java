@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.operation.steps.PutAllOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -85,7 +86,7 @@ public class PutAllOperation extends MapOperation
         }
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled();
+        hasWanReplication = mapContainer.getWanContext().isWanReplicationEnabled();
         hasBackups = hasBackups();
         hasInvalidation = mapContainer.hasInvalidationListener();
 
@@ -246,7 +247,7 @@ public class PutAllOperation extends MapOperation
         List toBackupList = new ArrayList(backupPairs.size());
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
-            Record record = recordStore.getRecord(dataKey);
+            Record record = ((DefaultRecordStore) recordStore).getRecordSafe(dataKey);
             if (record != null) {
                 toBackupList.add(dataKey);
                 toBackupList.add(backupPairs.get(i + 1));

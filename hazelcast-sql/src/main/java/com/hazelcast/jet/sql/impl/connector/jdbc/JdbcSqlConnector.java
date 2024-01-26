@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,25 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.DatabaseDialect;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
+import com.hazelcast.jet.sql.impl.connector.jdbc.oracle.HazelcastOracleDialect;
+import com.hazelcast.jet.sql.impl.connector.jdbc.postgres.HazelcastPostgresDialect;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -51,6 +56,7 @@ import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -59,9 +65,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.GettersProvider.GETTERS;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Objects.requireNonNull;
 
@@ -93,55 +101,74 @@ public class JdbcSqlConnector implements SqlConnector {
         }
         ExternalJdbcTableName.validateExternalName(externalResource.externalName());
 
-        Map<String, DbField> dbFields = readDbFields(nodeEngine.getDataConnectionService(),
-                externalResource.dataConnection(), externalResource.externalName());
+        JdbcDataConnection dataConnection = nodeEngine.getDataConnectionService().getAndRetainDataConnection(
+                externalResource.dataConnection(), JdbcDataConnection.class);
+        try (Connection connection = dataConnection.getConnection()) {
+            TypeResolver typeResolver = typeResolver(connection);
 
-        List<MappingField> resolvedFields = new ArrayList<>();
-        if (userFields.isEmpty()) {
-            for (DbField dbField : dbFields.values()) {
-                MappingField mappingField = new MappingField(
-                        dbField.columnName,
-                        resolveType(dbField.columnTypeName)
-                );
-                mappingField.setPrimaryKey(dbField.primaryKey);
-                resolvedFields.add(mappingField);
-            }
-        } else {
-            for (MappingField f : userFields) {
-                if (f.externalName() != null) {
-                    DbField dbField = dbFields.get(f.externalName());
-                    if (dbField == null) {
-                        throw QueryException.error("Could not resolve field with external name " + f.externalName());
-                    }
-                    validateType(f, dbField);
-                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName(),
-                            dbField.columnTypeName);
-                    mappingField.setPrimaryKey(dbField.primaryKey);
-                    resolvedFields.add(mappingField);
-                } else {
-                    DbField dbField = dbFields.get(f.name());
-                    if (dbField == null) {
-                        throw QueryException.error("Could not resolve field with name " + f.name());
-                    }
-                    validateType(f, dbField);
-                    MappingField mappingField = new MappingField(f.name(), f.type());
+            Map<String, DbField> dbFields = readDbFields(connection, externalResource.externalName());
+
+            List<MappingField> resolvedFields = new ArrayList<>();
+            if (userFields.isEmpty()) {
+                for (DbField dbField : dbFields.values()) {
+                    MappingField mappingField = new MappingField(
+                            dbField.columnName,
+                            typeResolver.resolveType(dbField.columnTypeName, dbField.precision, dbField.scale)
+                    );
                     mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
                 }
+            } else {
+                for (MappingField f : userFields) {
+                    if (f.externalName() != null) {
+                        DbField dbField = dbFields.get(f.externalName());
+                        if (dbField == null) {
+                            throw QueryException.error("Could not resolve field with external name " + f.externalName());
+                        }
+                        validateType(typeResolver, f, dbField);
+                        MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName(),
+                                dbField.columnTypeName);
+                        mappingField.setPrimaryKey(dbField.primaryKey);
+                        resolvedFields.add(mappingField);
+                    } else {
+                        DbField dbField = dbFields.get(f.name());
+                        if (dbField == null) {
+                            throw QueryException.error("Could not resolve field with name " + f.name());
+                        }
+                        validateType(typeResolver, f, dbField);
+                        MappingField mappingField = new MappingField(f.name(), f.type());
+                        mappingField.setPrimaryKey(dbField.primaryKey);
+                        resolvedFields.add(mappingField);
+                    }
+                }
             }
+            return resolvedFields;
+        } catch (SQLException e) {
+            throw new HazelcastSqlException("Could not resolve and validate fields", e);
+        } finally {
+            dataConnection.release();
         }
-        return resolvedFields;
+    }
+
+    static TypeResolver typeResolver(Connection connection) {
+        try {
+            SqlDialect dialect = resolveDialect(connection.getMetaData());
+            if (dialect instanceof TypeResolver) {
+                return (TypeResolver) dialect;
+            } else {
+                return DefaultTypeResolver::resolveType;
+            }
+        } catch (SQLException e) {
+            throw new HazelcastSqlException("Could not create type resolver", e);
+        }
     }
 
     private Map<String, DbField> readDbFields(
-            DataConnectionService dataConnectionService,
-            String dataConnectionName,
+            Connection connection,
             String[] externalName
     ) {
-        JdbcDataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(
-                dataConnectionName, JdbcDataConnection.class);
 
-        try (Connection connection = dataConnection.getConnection()) {
+        try {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
             ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName, databaseMetaData);
@@ -151,9 +178,7 @@ public class JdbcSqlConnector implements SqlConnector {
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception exception) {
             throw new HazelcastException("Could not execute readDbFields for table "
-                    + quoteCompoundIdentifier(externalName), exception);
-        } finally {
-            dataConnection.release();
+                                         + quoteCompoundIdentifier(externalName), exception);
         }
     }
 
@@ -218,9 +243,13 @@ public class JdbcSqlConnector implements SqlConnector {
                 null)) {
             while (resultSet.next()) {
                 String columnTypeName = resultSet.getString("TYPE_NAME");
+                int precision = resultSet.getInt("COLUMN_SIZE");
+                int scale = resultSet.getInt("DECIMAL_DIGITS");
                 String columnName = resultSet.getString("COLUMN_NAME");
                 fields.put(columnName,
                         new DbField(columnTypeName,
+                                precision,
+                                scale,
                                 columnName,
                                 pkColumns.contains(columnName)
                         ));
@@ -231,11 +260,11 @@ public class JdbcSqlConnector implements SqlConnector {
         return fields;
     }
 
-    private void validateType(MappingField field, DbField dbField) {
-        QueryDataType type = resolveType(dbField.columnTypeName);
+    private void validateType(TypeResolver typeResolver, MappingField field, DbField dbField) {
+        QueryDataType type = typeResolver.resolveType(dbField.columnTypeName, dbField.precision, dbField.scale);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                    + " does not match db type " + type.getTypeFamily());
+                                            + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -273,7 +302,7 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
-    private static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
+    static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
         String dataConnectionName = table.getDataConnectionName();
         JdbcDataConnection dataConnection = context
                 .getNodeEngine()
@@ -297,9 +326,35 @@ public class JdbcSqlConnector implements SqlConnector {
                 return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
             case MICROSOFT_SQL_SERVER:
                 return new HazelcastMSSQLDialect(SqlDialects.createContext(databaseMetaData));
+            case POSTGRESQL:
+                return new HazelcastPostgresDialect(SqlDialects.createContext(databaseMetaData));
+            case ORACLE:
+                return new HazelcastOracleDialect(SqlDialects.createContext(databaseMetaData));
             default:
                 return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
         }
+    }
+
+    @Nonnull
+    @Override
+    public VertexWithInputConfig nestedLoopReader(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nonnull JetJoinInfo joinInfo) {
+
+        JdbcTable jdbcTable = context.getTable();
+
+        String namePrefix = "nestedLoopReader(" + jdbcTable.getExternalNameList() + ")";
+        DAG dag = context.getDag();
+        Vertex vertex = dag.newUniqueVertex(
+                namePrefix,
+                JdbcJoiner.createJoinProcessorSupplier(
+                        joinInfo,
+                        context, predicate, projection
+                )
+        );
+        return new VertexWithInputConfig(vertex.localParallelism(1));
     }
 
     @Nonnull
@@ -329,7 +384,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                 table.getDataConnectionName(),
                                 builder.query(),
                                 builder.parameterPositions(),
-                                dialect.getClass().getSimpleName()
+                                builder.converters()
                         ))
         );
     }
@@ -501,72 +556,6 @@ public class JdbcSqlConnector implements SqlConnector {
         return vertexWithInputConfig.vertex();
     }
 
-    /**
-     * Convert the column type received from database to QueryDataType. QueryDataType represents the data types that
-     * can be used in Hazelcast's distributed queries
-     */
-    @SuppressWarnings("ReturnCount")
-    private static QueryDataType resolveType(String columnTypeName) {
-        switch (columnTypeName.toUpperCase()) {
-            case "BOOLEAN":
-            case "BOOL":
-            case "BIT":
-                return QueryDataType.BOOLEAN;
-
-            case "VARCHAR":
-            case "CHARACTER VARYING":
-            case "TEXT":
-                return QueryDataType.VARCHAR;
-
-            case "TINYINT":
-                return QueryDataType.TINYINT;
-
-            case "SMALLINT":
-            case "INT2":
-                return QueryDataType.SMALLINT;
-
-            case "INT":
-            case "INT4":
-            case "INTEGER":
-                return QueryDataType.INT;
-
-            case "INT8":
-            case "BIGINT":
-                return QueryDataType.BIGINT;
-
-            case "DECIMAL":
-            case "NUMERIC":
-                return QueryDataType.DECIMAL;
-
-            case "REAL":
-            case "FLOAT":
-            case "FLOAT4":
-                return QueryDataType.REAL;
-
-            case "DOUBLE":
-            case "DOUBLE PRECISION":
-            case "FLOAT8":
-                return QueryDataType.DOUBLE;
-
-            case "DATE":
-                return QueryDataType.DATE;
-
-            case "TIME":
-                return QueryDataType.TIME;
-
-            case "TIMESTAMP":
-            case "DATETIME":
-                return QueryDataType.TIMESTAMP;
-
-            case "TIMESTAMP WITH TIME ZONE":
-            case "DATETIMEOFFSET":
-                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-
-            default:
-                throw new IllegalArgumentException("Unsupported column type: " + columnTypeName);
-        }
-    }
-
     private static boolean isMySQL(DatabaseMetaData databaseMetaData) throws SQLException {
         return getProductName(databaseMetaData).equals("MYSQL");
     }
@@ -578,11 +567,15 @@ public class JdbcSqlConnector implements SqlConnector {
     private static class DbField {
 
         final String columnTypeName;
+        final int precision;
+        final int scale;
         final String columnName;
         final boolean primaryKey;
 
-        DbField(String columnTypeName, String columnName, boolean primaryKey) {
+        DbField(String columnTypeName, int precision, int scale, String columnName, boolean primaryKey) {
             this.columnTypeName = requireNonNull(columnTypeName);
+            this.precision = precision;
+            this.scale = scale;
             this.columnName = requireNonNull(columnName);
             this.primaryKey = primaryKey;
         }
@@ -590,10 +583,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                    "name='" + columnName + '\'' +
-                    ", typeName='" + columnTypeName + '\'' +
-                    ", primaryKey=" + primaryKey +
-                    '}';
+                   "name='" + columnName + '\'' +
+                   ", typeName='" + columnTypeName + '\'' +
+                   ", primaryKey=" + primaryKey +
+                   '}';
         }
     }
 
@@ -619,8 +612,8 @@ public class JdbcSqlConnector implements SqlConnector {
             } else if (externalName.length == 3) {
                 if (isMySQL(databaseMetaData)) {
                     throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                            + ", external name for MySQL must have either 1 or 2 components "
-                            + "(catalog and relation)");
+                                               + ", external name for MySQL must have either 1 or 2 components "
+                                               + "(catalog and relation)");
                 }
                 catalog = externalName[0];
                 schema = externalName[1];
@@ -635,9 +628,32 @@ public class JdbcSqlConnector implements SqlConnector {
             // External name must have at least 1 and at most 3 components
             if (externalName.length == 0 || externalName.length > 3) {
                 throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                        + ", external name for Jdbc must have either 1, 2 or 3 components "
-                        + "(catalog, schema and relation)");
+                                           + ", external name for Jdbc must have either 1, 2 or 3 components "
+                                           + "(catalog, schema and relation)");
             }
         }
     }
+
+    public static BiFunctionEx<ResultSet, Integer, ?>[] prepareValueGettersFromMetadata(
+            TypeResolver typeResolver,
+            ResultSet rs,
+            Function<Integer, FunctionEx<? super Object, ?>> converterFn) throws SQLException {
+
+        ResultSetMetaData metaData = rs.getMetaData();
+
+        BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
+        for (int j = 0; j < metaData.getColumnCount(); j++) {
+            String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
+            int precision = metaData.getPrecision(j + 1);
+            int scale = metaData.getScale(j + 1);
+            QueryDataType resolvedType = typeResolver.resolveType(type, precision, scale);
+
+            valueGetters[j] = GETTERS.getOrDefault(
+                    resolvedType,
+                    (resultSet, n) -> rs.getObject(n)
+            ).andThen(converterFn.apply(j));
+        }
+        return valueGetters;
+    }
+
 }

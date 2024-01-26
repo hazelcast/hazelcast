@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,17 +31,18 @@ import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
-import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchKeysOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation;
+import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation.MetaDataResponse;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.cache.impl.operation.CacheFetchKeysOperation;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
@@ -72,12 +73,14 @@ import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOpera
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.management.operation.GetCacheEntryViewEntryProcessor;
+import com.hazelcast.internal.management.operation.GetCacheEntryViewEntryProcessor.CacheBrowserEntryView;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY_ID;
@@ -163,78 +166,82 @@ public final class CacheDataSerializerHook
 
     private static final int LEN = CACHE_CONFIG + 1;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    // squid:S1612 https://github.com/hazelcast/hazelcast/issues/25834
+    @SuppressWarnings("squid:S1612")
+    @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[GET] = arg -> new CacheGetOperation();
-        constructors[CONTAINS_KEY] = arg -> new CacheContainsKeyOperation();
-        constructors[PUT] = arg -> new CachePutOperation();
-        constructors[PUT_IF_ABSENT] = arg -> new CachePutIfAbsentOperation();
-        constructors[REMOVE] = arg -> new CacheRemoveOperation();
-        constructors[GET_AND_REMOVE] = arg -> new CacheGetAndRemoveOperation();
-        constructors[REPLACE] = arg -> new CacheReplaceOperation();
-        constructors[GET_AND_REPLACE] = arg -> new CacheGetAndReplaceOperation();
-        constructors[PUT_BACKUP] = arg -> new CachePutBackupOperation();
-        constructors[PUT_ALL_BACKUP] = arg -> new CachePutAllBackupOperation();
-        constructors[REMOVE_BACKUP] = arg -> new CacheRemoveBackupOperation();
-        constructors[SIZE] = arg -> new CacheSizeOperation();
-        constructors[SIZE_FACTORY] = arg -> new CacheSizeOperationFactory();
-        constructors[CLEAR_FACTORY] = arg -> new CacheClearOperationFactory();
-        constructors[GET_ALL] = arg -> new CacheGetAllOperation();
-        constructors[GET_ALL_FACTORY] = arg -> new CacheGetAllOperationFactory();
-        constructors[LOAD_ALL] = arg -> new CacheLoadAllOperation();
-        constructors[LOAD_ALL_FACTORY] = arg -> new CacheLoadAllOperationFactory();
-        constructors[EXPIRY_POLICY] = arg -> new HazelcastExpiryPolicy();
-        constructors[KEY_ITERATOR] = arg -> new CacheFetchKeysOperation();
-        constructors[KEY_ITERATION_RESULT] = arg -> new CacheKeysWithCursor();
-        constructors[ENTRY_PROCESSOR] = arg -> new CacheEntryProcessorOperation();
-        constructors[CLEAR_RESPONSE] = arg -> new CacheClearResponse();
-        constructors[GET_CONFIG] = arg -> new CacheGetConfigOperation();
-        constructors[MANAGEMENT_CONFIG] = arg -> new CacheManagementConfigOperation();
-        constructors[LISTENER_REGISTRATION] = arg -> new CacheListenerRegistrationOperation();
-        constructors[DESTROY_CACHE] = arg -> new CacheDestroyOperation();
-        constructors[CACHE_EVENT_DATA] = arg -> new CacheEventDataImpl();
-        constructors[CACHE_EVENT_DATA_SET] = arg -> new CacheEventSet();
-        constructors[BACKUP_ENTRY_PROCESSOR] = arg -> new CacheBackupEntryProcessorOperation();
-        constructors[CLEAR] = arg -> new CacheClearOperation();
-        constructors[CLEAR_BACKUP] = arg -> new CacheClearBackupOperation();
-        constructors[REMOVE_ALL] = arg -> new CacheRemoveAllOperation();
-        constructors[REMOVE_ALL_BACKUP] = arg -> new CacheRemoveAllBackupOperation();
-        constructors[REMOVE_ALL_FACTORY] = arg -> new CacheRemoveAllOperationFactory();
-        constructors[PUT_ALL] = arg -> new CachePutAllOperation();
-        constructors[ENTRY_ITERATOR] = arg -> new CacheFetchEntriesOperation();
-        constructors[ENTRY_ITERATION_RESULT] = arg -> new CacheEntriesWithCursor();
-        constructors[CACHE_PARTITION_LOST_EVENT_FILTER] = arg -> new CachePartitionLostEventFilter();
-        constructors[DEFAULT_CACHE_ENTRY_VIEW] = arg -> new DefaultCacheEntryView();
-        constructors[CACHE_REPLICATION] = arg -> new CacheReplicationOperation();
-        constructors[CACHE_POST_JOIN] = arg -> new OnJoinCacheOperation();
-        constructors[CACHE_DATA_RECORD] = arg -> new CacheDataRecord();
-        constructors[CACHE_OBJECT_RECORD] = arg -> new CacheObjectRecord();
-        constructors[CACHE_PARTITION_EVENT_DATA] = arg -> new CachePartitionEventData();
-        constructors[CACHE_INVALIDATION_METADATA] = arg -> new CacheGetInvalidationMetaDataOperation();
-        constructors[CACHE_INVALIDATION_METADATA_RESPONSE] = arg -> new CacheGetInvalidationMetaDataOperation.MetaDataResponse();
-        constructors[CACHE_ASSIGN_AND_GET_UUIDS] = arg -> new CacheAssignAndGetUuidsOperation();
-        constructors[CACHE_ASSIGN_AND_GET_UUIDS_FACTORY] = arg -> new CacheAssignAndGetUuidsOperationFactory();
-        constructors[CACHE_NEAR_CACHE_STATE_HOLDER] = arg -> new CacheNearCacheStateHolder();
-        constructors[CACHE_EVENT_LISTENER_ADAPTOR] = arg -> new CacheEventListenerAdaptor();
-        constructors[EVENT_JOURNAL_SUBSCRIBE_OPERATION] = arg -> new CacheEventJournalSubscribeOperation();
-        constructors[EVENT_JOURNAL_READ_OPERATION] = arg -> new CacheEventJournalReadOperation<>();
-        constructors[EVENT_JOURNAL_DESERIALIZING_CACHE_EVENT] = arg -> new DeserializingEventJournalCacheEvent<>();
-        constructors[EVENT_JOURNAL_INTERNAL_CACHE_EVENT] = arg -> new InternalEventJournalCacheEvent();
-        constructors[EVENT_JOURNAL_READ_RESULT_SET] = arg -> new CacheEventJournalReadResultSetImpl<>();
-        constructors[PRE_JOIN_CACHE_CONFIG] = arg -> new PreJoinCacheConfig();
-        constructors[CACHE_BROWSER_ENTRY_VIEW] = arg -> new GetCacheEntryViewEntryProcessor.CacheBrowserEntryView();
-        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = arg -> new GetCacheEntryViewEntryProcessor();
-        constructors[MERGE_FACTORY] = arg -> new CacheMergeOperationFactory();
-        constructors[MERGE] = arg -> new CacheMergeOperation();
-        constructors[ADD_CACHE_CONFIG_OPERATION] = arg -> new AddCacheConfigOperation();
-        constructors[SET_EXPIRY_POLICY] = arg -> new CacheSetExpiryPolicyOperation();
-        constructors[SET_EXPIRY_POLICY_BACKUP] = arg -> new CacheSetExpiryPolicyBackupOperation();
-        constructors[EXPIRE_BATCH_BACKUP] = arg -> new CacheExpireBatchBackupOperation();
-        constructors[CACHE_CONFIG] = arg -> new CacheConfig<>();
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
+        constructors[GET] = () -> new CacheGetOperation();
+        constructors[CONTAINS_KEY] = () -> new CacheContainsKeyOperation();
+        constructors[PUT] = () -> new CachePutOperation();
+        constructors[PUT_IF_ABSENT] = () -> new CachePutIfAbsentOperation();
+        constructors[REMOVE] = () -> new CacheRemoveOperation();
+        constructors[GET_AND_REMOVE] = () -> new CacheGetAndRemoveOperation();
+        constructors[REPLACE] = () -> new CacheReplaceOperation();
+        constructors[GET_AND_REPLACE] = () -> new CacheGetAndReplaceOperation();
+        constructors[PUT_BACKUP] = () -> new CachePutBackupOperation();
+        constructors[PUT_ALL_BACKUP] = () -> new CachePutAllBackupOperation();
+        constructors[REMOVE_BACKUP] = () -> new CacheRemoveBackupOperation();
+        constructors[SIZE] = () -> new CacheSizeOperation();
+        constructors[SIZE_FACTORY] = () -> new CacheSizeOperationFactory();
+        constructors[CLEAR_FACTORY] = () -> new CacheClearOperationFactory();
+        constructors[GET_ALL] = () -> new CacheGetAllOperation();
+        constructors[GET_ALL_FACTORY] = () -> new CacheGetAllOperationFactory();
+        constructors[LOAD_ALL] = () -> new CacheLoadAllOperation();
+        constructors[LOAD_ALL_FACTORY] = () -> new CacheLoadAllOperationFactory();
+        constructors[EXPIRY_POLICY] = () -> new HazelcastExpiryPolicy();
+        constructors[KEY_ITERATOR] = () -> new CacheFetchKeysOperation();
+        constructors[KEY_ITERATION_RESULT] = () -> new CacheKeysWithCursor();
+        constructors[ENTRY_PROCESSOR] = () -> new CacheEntryProcessorOperation();
+        constructors[CLEAR_RESPONSE] = () -> new CacheClearResponse();
+        constructors[GET_CONFIG] = () -> new CacheGetConfigOperation();
+        constructors[MANAGEMENT_CONFIG] = () -> new CacheManagementConfigOperation();
+        constructors[LISTENER_REGISTRATION] = () -> new CacheListenerRegistrationOperation();
+        constructors[DESTROY_CACHE] = () -> new CacheDestroyOperation();
+        constructors[CACHE_EVENT_DATA] = () -> new CacheEventDataImpl();
+        constructors[CACHE_EVENT_DATA_SET] = () -> new CacheEventSet();
+        constructors[BACKUP_ENTRY_PROCESSOR] = () -> new CacheBackupEntryProcessorOperation();
+        constructors[CLEAR] = () -> new CacheClearOperation();
+        constructors[CLEAR_BACKUP] = () -> new CacheClearBackupOperation();
+        constructors[REMOVE_ALL] = () -> new CacheRemoveAllOperation();
+        constructors[REMOVE_ALL_BACKUP] = () -> new CacheRemoveAllBackupOperation();
+        constructors[REMOVE_ALL_FACTORY] = () -> new CacheRemoveAllOperationFactory();
+        constructors[PUT_ALL] = () -> new CachePutAllOperation();
+        constructors[ENTRY_ITERATOR] = () -> new CacheFetchEntriesOperation();
+        constructors[ENTRY_ITERATION_RESULT] = () -> new CacheEntriesWithCursor();
+        constructors[CACHE_PARTITION_LOST_EVENT_FILTER] = () -> new CachePartitionLostEventFilter();
+        constructors[DEFAULT_CACHE_ENTRY_VIEW] = () -> new DefaultCacheEntryView();
+        constructors[CACHE_REPLICATION] = () -> new CacheReplicationOperation();
+        constructors[CACHE_POST_JOIN] = () -> new OnJoinCacheOperation();
+        constructors[CACHE_DATA_RECORD] = () -> new CacheDataRecord();
+        constructors[CACHE_OBJECT_RECORD] = () -> new CacheObjectRecord();
+        constructors[CACHE_PARTITION_EVENT_DATA] = () -> new CachePartitionEventData();
+        constructors[CACHE_INVALIDATION_METADATA] = () -> new CacheGetInvalidationMetaDataOperation();
+        constructors[CACHE_INVALIDATION_METADATA_RESPONSE] = () -> new MetaDataResponse();
+        constructors[CACHE_ASSIGN_AND_GET_UUIDS] = () -> new CacheAssignAndGetUuidsOperation();
+        constructors[CACHE_ASSIGN_AND_GET_UUIDS_FACTORY] = () -> new CacheAssignAndGetUuidsOperationFactory();
+        constructors[CACHE_NEAR_CACHE_STATE_HOLDER] = () -> new CacheNearCacheStateHolder();
+        constructors[CACHE_EVENT_LISTENER_ADAPTOR] = () -> new CacheEventListenerAdaptor<>();
+        constructors[EVENT_JOURNAL_SUBSCRIBE_OPERATION] = () -> new CacheEventJournalSubscribeOperation();
+        constructors[EVENT_JOURNAL_READ_OPERATION] = () -> new CacheEventJournalReadOperation<>();
+        constructors[EVENT_JOURNAL_DESERIALIZING_CACHE_EVENT] = () -> new DeserializingEventJournalCacheEvent<>();
+        constructors[EVENT_JOURNAL_INTERNAL_CACHE_EVENT] = () -> new InternalEventJournalCacheEvent();
+        constructors[EVENT_JOURNAL_READ_RESULT_SET] = () -> new CacheEventJournalReadResultSetImpl<>();
+        constructors[PRE_JOIN_CACHE_CONFIG] = () -> new PreJoinCacheConfig<>();
+        constructors[CACHE_BROWSER_ENTRY_VIEW] = () -> new CacheBrowserEntryView();
+        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = () -> new GetCacheEntryViewEntryProcessor();
+        constructors[MERGE_FACTORY] = () -> new CacheMergeOperationFactory();
+        constructors[MERGE] = () -> new CacheMergeOperation();
+        constructors[ADD_CACHE_CONFIG_OPERATION] = () -> new AddCacheConfigOperation();
+        constructors[SET_EXPIRY_POLICY] = () -> new CacheSetExpiryPolicyOperation();
+        constructors[SET_EXPIRY_POLICY_BACKUP] = () -> new CacheSetExpiryPolicyBackupOperation();
+        constructors[EXPIRE_BATCH_BACKUP] = () -> new CacheExpireBatchBackupOperation();
+        constructors[CACHE_CONFIG] = () -> new CacheConfig<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

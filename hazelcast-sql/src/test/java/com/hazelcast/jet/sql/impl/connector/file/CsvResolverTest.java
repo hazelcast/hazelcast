@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,14 +37,15 @@ public class CsvResolverTest {
     @Test
     public void test_resolveFields() {
         // given
-        Set<String> headers = ImmutableSet.of("field1", "field2");
+        Set<String> headers = Set.of("field1", "field2");
 
         // when
         List<MappingField> fields = CsvResolver.resolveFields(headers);
 
         // then
-        assertThat(fields).hasSize(2);
-        assertThat(fields.get(0)).isEqualTo(new MappingField("field1", QueryDataType.VARCHAR));
-        assertThat(fields.get(1)).isEqualTo(new MappingField("field2", QueryDataType.VARCHAR));
+        assertThat(fields)
+                .hasSize(2)
+                .contains(new MappingField("field1", QueryDataType.VARCHAR))
+                .contains(new MappingField("field2", QueryDataType.VARCHAR));
     }
 }

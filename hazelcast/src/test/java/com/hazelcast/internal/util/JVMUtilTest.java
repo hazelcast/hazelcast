@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import java.lang.management.ManagementFactory;
+
+import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,6 +66,36 @@ public class JVMUtilTest extends HazelcastTestSupport {
     @Test
     public void testIsObjectLayoutCompressedOopsOrNull() {
         JVMUtil.isObjectLayoutCompressedOopsOrNull();
+    }
+
+    @Test
+    public void testGetPid() {
+       long legacyPidResult = getPidLegacy();
+
+       assumeThat(legacyPidResult).isNotEqualTo(-1);
+       assertEquals(legacyPidResult, JVMUtil.getPid());
+    }
+
+    /**
+     * Returns the process ID. The algorithm does not guarantee it will be able
+     * to get the correct process ID, in which case it returns {@code -1}.
+     */
+    private static long getPidLegacy() {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+
+        if (name == null) {
+            return -1;
+        }
+        int separatorIndex = name.indexOf("@");
+        if (separatorIndex < 0) {
+            return -1;
+        }
+        String potentialPid = name.substring(0, separatorIndex);
+        try {
+            return Long.parseLong(potentialPid);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     // Prints the size of object reference as calculated by JVMUtil.

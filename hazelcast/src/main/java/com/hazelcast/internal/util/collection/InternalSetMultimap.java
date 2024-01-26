@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,11 +54,7 @@ public class InternalSetMultimap<K, V> {
         checkNotNull(key, "Key cannot be null");
         checkNotNull(value, "Value cannot be null");
 
-        Set<V> values = backingMap.get(key);
-        if (values == null) {
-            values = new HashSet<V>();
-            backingMap.put(key, values);
-        }
+        Set<V> values = backingMap.computeIfAbsent(key, x -> new HashSet<>());
         values.add(value);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,9 +175,11 @@ public class ClientConfigTest {
         assertFalse(tpcConfig.isEnabled());
 
         tpcConfig.setEnabled(true);
+        tpcConfig.setConnectionCount(10);
         config.setTpcConfig(tpcConfig);
 
-        assertTrue(config.getTpcConfig().isEnabled());
+        assertTrue(tpcConfig.isEnabled());
+        assertEquals(tpcConfig.getConnectionCount(), 10);
         assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
     }
 }

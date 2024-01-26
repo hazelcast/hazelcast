@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.crdt.pncounter.operations.AddOperation;
 import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -80,7 +80,7 @@ public class PNCounterAddMessageTask extends AbstractTargetMessageTask<RequestPa
 
     @Override
     public String getServiceName() {
-        return PNCounterService.SERVICE_NAME;
+        return SecurityInterceptorConstants.PN_COUNTER_SERVICE;
     }
 
     public Object[] getParameters() {
@@ -94,7 +94,7 @@ public class PNCounterAddMessageTask extends AbstractTargetMessageTask<RequestPa
 
     @Override
     public String getMethodName() {
-        return "get";
+        return SecurityInterceptorConstants.ADD;
     }
 
     @Override

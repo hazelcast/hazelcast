@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.query.Predicate;
@@ -34,11 +36,9 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -53,8 +53,8 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 @SuppressWarnings("checkstyle:methodcount")
 public class State {
 
-    private final RecordStore recordStore;
-    private final MapOperation operation;
+    private volatile RecordStore recordStore;
+    private volatile MapOperation operation;
 
     // fields coming from operation
     private int partitionId = UNSET;
@@ -81,12 +81,13 @@ public class State {
     private volatile boolean changeExpiryOnUpdate = true;
     private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
+    private volatile BiTuple<Object, Long> loadedOldValueWithExpiry;
     private volatile Object newValue;
     private volatile Object result;
     private volatile Collection<Data> keysToLoad = Collections.emptyList();
-    private volatile Map loadedKeyValuePairs = Collections.emptyMap();
+    private volatile List loadedKeyAndOldValueWithExpiryPairs = Collections.emptyList();
     private volatile Collection<Data> keys;
-    private volatile ArrayList<Record> records;
+    private volatile List<Record> records;
     private volatile EntryProcessor entryProcessor;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
@@ -103,15 +104,15 @@ public class State {
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
     private volatile Consumer backupOpAfterRun;
+    private volatile int sizeBefore;
+    private volatile int sizeAfter;
 
     public State(RecordStore recordStore, MapOperation operation) {
-        this.recordStore = recordStore;
-        this.operation = operation;
+        init(recordStore, operation);
     }
 
     public State(State state) {
-        this.recordStore = state.getRecordStore();
-        this.operation = state.getOperation();
+        init(state.getRecordStore(), state.getOperation());
 
         setTtl(state.getTtl())
                 .setMaxIdle(state.getMaxIdle())
@@ -125,6 +126,11 @@ public class State {
                 .setEntryProcessor(state.getEntryProcessor())
                 .setCallerAddress(state.getCallerAddress())
                 .setPartitionId(state.getPartitionId());
+    }
+
+    public void init(RecordStore recordStore, MapOperation operation) {
+        this.recordStore = recordStore;
+        this.operation = operation;
     }
 
     public RecordStore getRecordStore() {
@@ -156,8 +162,17 @@ public class State {
     }
 
     public State setOldValue(Object oldValue) {
-        this.oldValue = oldValue;
+        this.oldValue = ((DefaultRecordStore) recordStore)
+                .copyToHeapWhenNeeded(oldValue);
         return this;
+    }
+
+    public BiTuple<Object, Long> getLoadedOldValueWithExpiry() {
+        return loadedOldValueWithExpiry;
+    }
+
+    public void setLoadedOldValueWithExpiry(BiTuple<Object, Long> loadedOldValueWithExpiry) {
+        this.loadedOldValueWithExpiry = loadedOldValueWithExpiry;
     }
 
     public State setRecordExistsInMemory(boolean recordExistsInMemory) {
@@ -305,8 +320,9 @@ public class State {
         this.stopExecution = stopExecution;
     }
 
-    public void setResult(Object result) {
+    public State setResult(Object result) {
         this.result = result;
+        return this;
     }
 
     public Object getResult() {
@@ -330,7 +346,7 @@ public class State {
         return keys;
     }
 
-    public void setRecords(ArrayList<Record> records) {
+    public void setRecords(List<Record> records) {
         this.records = records;
     }
 
@@ -343,16 +359,18 @@ public class State {
         return this;
     }
 
-    public State setLoadedKeyValuePairs(Map loadedKeyValuePairs) {
-        this.loadedKeyValuePairs = loadedKeyValuePairs;
+    // list of key+bituple(oldValue, expiry)
+    public State setLoadedKeyAndOldValueWithExpiryPairs(List loadedKeyAndOldValueWithExpiryPairs) {
+        this.loadedKeyAndOldValueWithExpiryPairs = loadedKeyAndOldValueWithExpiryPairs;
         return this;
     }
 
-    public Map getLoadedKeyValuePairs() {
-        return loadedKeyValuePairs;
+    // list of loaded key + bituple(oldValue, expiry)
+    public List loadedKeyAndOldValueWithExpiryPairs() {
+        return loadedKeyAndOldValueWithExpiryPairs;
     }
 
-    public ArrayList<Record> getRecords() {
+    public List<Record> getRecords() {
         return records;
     }
 
@@ -513,4 +531,21 @@ public class State {
     public Consumer getBackupOpAfterRun() {
         return backupOpAfterRun;
     }
+
+    public int getSizeBefore() {
+        return sizeBefore;
+    }
+
+    public void setSizeBefore(int sizeBefore) {
+        this.sizeBefore = sizeBefore;
+    }
+
+    public int getSizeAfter() {
+        return sizeAfter;
+    }
+
+    public void setSizeAfter(int sizeAfter) {
+        this.sizeAfter = sizeAfter;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY_ID;
@@ -61,108 +62,28 @@ public final class AggregatorDataSerializerHook implements DataSerializerHook {
     @SuppressWarnings("unchecked")
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[BIG_DECIMAL_AVG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BigDecimalAverageAggregator();
-            }
-        };
-        constructors[BIG_DECIMAL_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BigDecimalSumAggregator();
-            }
-        };
-        constructors[BIG_INT_AVG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BigIntegerAverageAggregator();
-            }
-        };
-        constructors[BIG_INT_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BigIntegerSumAggregator();
-            }
-        };
-        constructors[COUNT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CountAggregator();
-            }
-        };
-        constructors[DISTINCT_VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DistinctValuesAggregator();
-            }
-        };
-        constructors[DOUBLE_AVG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DoubleAverageAggregator();
-            }
-        };
-        constructors[DOUBLE_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DoubleSumAggregator();
-            }
-        };
-        constructors[FIXED_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FixedSumAggregator();
-            }
-        };
-        constructors[FLOATING_POINT_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FloatingPointSumAggregator();
-            }
-        };
-        constructors[INT_AVG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IntegerAverageAggregator();
-            }
-        };
-        constructors[INT_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IntegerSumAggregator();
-            }
-        };
-        constructors[LONG_AVG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LongAverageAggregator();
-            }
-        };
-        constructors[LONG_SUM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LongSumAggregator();
-            }
-        };
-        constructors[MAX] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MaxAggregator();
-            }
-        };
-        constructors[MIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MinAggregator();
-            }
-        };
-        constructors[NUMBER_AVG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NumberAverageAggregator();
-            }
-        };
-        constructors[MAX_BY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MaxByAggregator();
-            }
-        };
-        constructors[MIN_BY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MinByAggregator();
-            }
-        };
-        constructors[CANONICALIZING_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CanonicalizingHashSet();
-            }
-        };
+        constructors[BIG_DECIMAL_AVG] = BigDecimalAverageAggregator::new;
+        constructors[BIG_DECIMAL_SUM] = BigDecimalSumAggregator::new;
+        constructors[BIG_INT_AVG] = BigIntegerAverageAggregator::new;
+        constructors[BIG_INT_SUM] = BigIntegerSumAggregator::new;
+        constructors[COUNT] = CountAggregator::new;
+        constructors[DISTINCT_VALUES] = DistinctValuesAggregator::new;
+        constructors[DOUBLE_AVG] = DoubleAverageAggregator::new;
+        constructors[DOUBLE_SUM] = DoubleSumAggregator::new;
+        constructors[FIXED_SUM] = FixedSumAggregator::new;
+        constructors[FLOATING_POINT_SUM] = FloatingPointSumAggregator::new;
+        constructors[INT_AVG] = IntegerAverageAggregator::new;
+        constructors[INT_SUM] = IntegerSumAggregator::new;
+        constructors[LONG_AVG] = LongAverageAggregator::new;
+        constructors[LONG_SUM] = LongSumAggregator::new;
+        constructors[MAX] = MaxAggregator::new;
+        constructors[MIN] = MinAggregator::new;
+        constructors[NUMBER_AVG] = NumberAverageAggregator::new;
+        constructors[MAX_BY] = MaxByAggregator::new;
+        constructors[MIN_BY] = MinByAggregator::new;
+        constructors[CANONICALIZING_SET] = CanonicalizingHashSet::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

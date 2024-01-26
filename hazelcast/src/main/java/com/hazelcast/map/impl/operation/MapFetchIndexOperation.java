@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
@@ -125,14 +124,14 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     public static InternalIndex getInternalIndex(@Nonnull MapContainer mapContainer,
                                                  @Nonnull String mapName,
                                                  @Nonnull String indexName) {
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
                     + "\" of the IMap \"" + mapName + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
                     + "\" is set to \"true\")");
         }
 
-        InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
+        InternalIndex index = mapContainer.getGlobalIndexRegistry().getIndex(indexName);
         if (index == null) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
         }
@@ -153,10 +152,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 logger.finest("Processing pointer: " + pointer);
             }
 
-            Comparator<Data> comparator = pointer.isDescending()
-                    ? OrderedIndexStore.DATA_COMPARATOR_REVERSED
-                    : OrderedIndexStore.DATA_COMPARATOR;
-
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
@@ -165,6 +160,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
                 // Skip until the entry last read
                 if (lastEntryKeyData != null) {
+                    Comparator<Data> comparator = index.getKeyComparator(pointer.isDescending());
                     while (keyEntries.hasNext()) {
                         QueryableEntry<?, ?> entry = keyEntries.next();
 

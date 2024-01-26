@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,8 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
-import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
-import com.hazelcast.sql.impl.type.converter.CalendarConverter;
-import com.hazelcast.sql.impl.type.converter.CharacterConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
-import com.hazelcast.sql.impl.type.converter.DateConverter;
-import com.hazelcast.sql.impl.type.converter.InstantConverter;
-import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
-import com.hazelcast.sql.impl.type.converter.StringConverter;
-import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -35,7 +26,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL;
-import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
@@ -47,19 +37,15 @@ import static com.hazelcast.sql.impl.type.QueryDataType.ROW;
 import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP;
-import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR;
-import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_DATE;
-import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_INSTANT;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
 import static com.hazelcast.sql.impl.type.QueryDataType.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
-import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
 
 /**
  * Utility methods for SQL data types.
  * <p>
- * Length descriptions are generated using https://github.com/openjdk/jol.
+ * Length descriptions are generated using
+ * <a href="https://github.com/openjdk/jol">Java Object Layout (JOL)</a>.
  */
 public final class QueryDataTypeUtils {
     /**
@@ -196,94 +182,15 @@ public final class QueryDataTypeUtils {
      */
     public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_UP);
 
-    private QueryDataTypeUtils() {
-        // No-op.
-    }
+    private QueryDataTypeUtils() { }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
     public static QueryDataType resolveTypeForClass(Class<?> clazz) {
         Converter converter = Converters.getConverter(clazz);
-
-        QueryDataTypeFamily typeFamily = converter.getTypeFamily();
-
-        switch (typeFamily) {
-            case VARCHAR:
-                if (converter == StringConverter.INSTANCE) {
-                    return VARCHAR;
-                } else {
-                    assert converter == CharacterConverter.INSTANCE;
-
-                    return VARCHAR_CHARACTER;
-                }
-
-            case BOOLEAN:
-                return BOOLEAN;
-
-            case TINYINT:
-                return TINYINT;
-
-            case SMALLINT:
-                return SMALLINT;
-
-            case INTEGER:
-                return INT;
-
-            case BIGINT:
-                return BIGINT;
-
-            case DECIMAL:
-                if (converter == BigDecimalConverter.INSTANCE) {
-                    return DECIMAL;
-                } else {
-                    assert converter == BigIntegerConverter.INSTANCE;
-
-                    return DECIMAL_BIG_INTEGER;
-                }
-
-            case REAL:
-                return REAL;
-
-            case DOUBLE:
-                return DOUBLE;
-
-            case DATE:
-                return DATE;
-
-            case TIME:
-                return TIME;
-
-            case TIMESTAMP:
-                return TIMESTAMP;
-
-            case TIMESTAMP_WITH_TIME_ZONE:
-                if (converter == DateConverter.INSTANCE) {
-                    return TIMESTAMP_WITH_TZ_DATE;
-                } else if (converter == CalendarConverter.INSTANCE) {
-                    return TIMESTAMP_WITH_TZ_CALENDAR;
-                } else if (converter == InstantConverter.INSTANCE) {
-                    return TIMESTAMP_WITH_TZ_INSTANT;
-                } else if (converter == OffsetDateTimeConverter.INSTANCE) {
-                    return TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-                } else {
-                    assert converter == ZonedDateTimeConverter.INSTANCE;
-
-                    return TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
-                }
-
-            case OBJECT:
-            case MAP:
-                return OBJECT;
-
-            case NULL:
-                return NULL;
-
-            case JSON:
-                return JSON;
-            case ROW:
-                return ROW;
-            default:
-                throw new IllegalArgumentException("Unexpected class: " + clazz);
+        QueryDataType type = QueryDataType.resolveForConverter(converter);
+        if (type == null) {
+            throw new IllegalArgumentException("Unexpected class: " + clazz);
         }
+        return type;
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.cache.impl;
+
+import com.hazelcast.internal.util.CollectionUtil;
 
 /**
  * Iterator for iterating cache entries in a single partition.
@@ -41,7 +43,7 @@ public class CachePartitionIterator<K, V> extends CacheIterator<K, V> {
             return false;
         }
         result = fetch();
-        if (result != null && result.size() > 0) {
+        if (CollectionUtil.isNotEmpty(result)) {
             index = 0;
             return true;
         }

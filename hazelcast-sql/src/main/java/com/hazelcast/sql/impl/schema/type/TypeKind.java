@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ public enum TypeKind {
     NONE(0),
     JAVA(1),
     PORTABLE(2),
-    COMPACT(3);
+    COMPACT(3),
+    AVRO(4);
 
     private final int value;
 

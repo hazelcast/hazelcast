@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -24,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Converter for {@link QueryDataTypeFamily#NULL NULL} type.
@@ -120,8 +123,22 @@ public final class NullConverter extends Converter {
     }
 
     @Override
-    public Object convertToSelf(Converter converter, Object value) {
+    public Map<?, ?> asMap(Object val) {
         throw new UnsupportedOperationException("must never be called");
     }
 
+    @Override
+    public HazelcastJsonValue asJson(Object val) {
+        throw new UnsupportedOperationException("must never be called");
+    }
+
+    @Override
+    public RowValue asRow(Object val) {
+        throw new UnsupportedOperationException("must never be called");
+    }
+
+    @Override
+    public Object convertToSelf(Converter converter, Object value) {
+        throw new UnsupportedOperationException("must never be called");
+    }
 }

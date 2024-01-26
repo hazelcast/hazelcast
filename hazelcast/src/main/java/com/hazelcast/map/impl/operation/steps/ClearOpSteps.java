@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,50 +22,64 @@ import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.Iterator;
+import java.util.Map;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.operation.steps.UtilSteps.FINAL_STEP;
+import static com.hazelcast.map.impl.operation.steps.engine.StepSupplier.injectCustomStepsToOperation;
 
 public enum ClearOpSteps implements IMapOpStep {
 
     CLEAR_MEMORY() {
         @Override
         public void runStep(State state) {
-            DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
+            RecordStore recordStore = state.getRecordStore();
             if (recordStore == null) {
-                state.setResult(0);
                 return;
             }
             recordStore.checkIfLoaded();
 
-            ArrayList<Data> keys = new ArrayList<>();
-            ArrayList<Record> records = new ArrayList<>();
-            // we don't remove locked keys. These are clearable records.
-            recordStore.forEach(new BiConsumer<>() {
-                final Set<Data> lockedKeySet = recordStore.getLockStore().getLockedKeys();
+            state.setSizeBefore(recordStore.size());
 
-                @Override
-                public void accept(Data dataKey, Record record) {
-                    if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                        keys.add(recordStore.isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
+            boolean tieredStorageEnabled = recordStore.isTieredStorageEnabled();
+            ArrayList<Data> keys = new ArrayList<>(BATCH_SIZE);
+            ArrayList<Record> records = tieredStorageEnabled ? null : new ArrayList<>(BATCH_SIZE);
+            Iterator<Map.Entry<Data, Record>> iterator = recordStore.iterator();
+
+            while (iterator.hasNext()) {
+                Map.Entry<Data, Record> entry = iterator.next();
+                Data dataKey = entry.getKey();
+                Record record = entry.getValue();
+
+                // skip locked keys
+                if (!recordStore.isLocked(dataKey)) {
+                    keys.add(tieredStorageEnabled ? toHeapData(dataKey) : dataKey);
+                    if (!tieredStorageEnabled) {
                         records.add(record);
                     }
-
                 }
-            }, false);
+
+                if (keys.size() == BATCH_SIZE) {
+                    // Batch filling is completed
+                    break;
+                }
+            }
 
             state.setKeys(keys);
-            state.setRecords(records);
+            if (!tieredStorageEnabled) {
+                state.setRecords(records);
+            }
         }
 
         @Override
         public Step nextStep(State state) {
             return state.getRecordStore() == null
-                    ? UtilSteps.FINAL_STEP : ClearOpSteps.CLEAR_MAP_STORE;
+                    ? FINAL_STEP : ClearOpSteps.CLEAR_MAP_STORE;
         }
     },
 
@@ -93,16 +107,26 @@ public enum ClearOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
-            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(), state.getRecords(), false);
+            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(),
+                    state.getRecords(), false);
             if (removedKeyCount > 0) {
                 recordStore.updateStatsOnRemove(Clock.currentTimeMillis());
             }
-            state.setResult(removedKeyCount);
+            state.setResult(((Integer) state.getResult()) + removedKeyCount);
         }
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.FINAL_STEP;
+            RecordStore recordStore = state.getRecordStore();
+            int currentSize = recordStore.size();
+            int lockedSize = recordStore.getLockedEntryCount();
+
+            // setSizeAfter to previous size to prevent forced compaction
+            // we let force compaction only before going FINAL_STEP.
+            boolean loopingToClear = currentSize - lockedSize > 0;
+            state.setSizeAfter(loopingToClear ? state.getSizeBefore() : currentSize);
+            Step injectBeforeStep = loopingToClear ? CLEAR_MEMORY : FINAL_STEP;
+            return injectCustomStepsToOperation(state.getOperation(), injectBeforeStep);
         }
     };
 

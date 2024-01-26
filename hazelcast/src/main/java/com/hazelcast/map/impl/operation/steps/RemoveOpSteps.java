@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,7 @@ public enum RemoveOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
-            Object oldValue = recordStore.loadValueOf(state.getKey());
-
+            Object oldValue = recordStore.loadValueOfKey(state.getKey(), state.getNow());
             state.setOldValue(oldValue);
         }
 
@@ -106,8 +105,8 @@ public enum RemoveOpSteps implements IMapOpStep {
             if (record == null) {
                 return;
             }
-            recordStore.removeRecord0(state.getKey(), record, false);
             recordStore.onStore(record);
+            recordStore.removeRecord0(state.getKey(), record, false);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
-    private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats =
+    private final ConcurrentMap<String, PartitionedIndexStatsImpl> mutableIndexStats =
             new ConcurrentHashMap<>();
     private final Map<String, LocalIndexStats> indexStats = Collections.unmodifiableMap(mutableIndexStats);
     private final LocalReplicationStatsImpl replicationStats = new LocalReplicationStatsImpl();
@@ -461,7 +461,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
      *
      * @param indexStats the per-index stats to set.
      */
-    public void setIndexStats(Map<String, LocalIndexStatsImpl> indexStats) {
+    public void setIndexStats(Map<String, PartitionedIndexStatsImpl> indexStats) {
         this.mutableIndexStats.clear();
         if (indexStats != null) {
             this.mutableIndexStats.putAll(indexStats);
@@ -520,9 +520,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
         for (Map.Entry<String, OnDemandIndexStats> freshIndexEntry : freshIndexStats.entrySet()) {
             String indexName = freshIndexEntry.getKey();
-            LocalIndexStatsImpl indexStats = mutableIndexStats.get(indexName);
+            PartitionedIndexStatsImpl indexStats = mutableIndexStats.get(indexName);
             if (indexStats == null) {
-                indexStats = new LocalIndexStatsImpl();
+                indexStats = new PartitionedIndexStatsImpl();
                 indexStats.setAllFrom(freshIndexEntry.getValue());
                 mutableIndexStats.putIfAbsent(indexName, indexStats);
             } else {

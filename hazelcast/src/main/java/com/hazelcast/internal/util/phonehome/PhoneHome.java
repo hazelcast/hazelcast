@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class PhoneHome {
         HttpURLConnection conn = null;
         OutputStreamWriter writer = null;
         try {
-            URL url = new URL(basePhoneHomeUrl);
+            URL url = URI.create(basePhoneHomeUrl).toURL();
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(TIMEOUT);
             conn.setReadTimeout(TIMEOUT);

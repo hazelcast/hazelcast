@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.map.impl.MapContainer;
@@ -32,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -228,16 +230,33 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
         private final Query query;
         private final QueryFuture future;
         private final QueryRunner queryRunner;
+        private final boolean tStore;
 
         QueryTaskFactory(Query query, QueryRunner queryRunner, QueryFuture future) {
             this.query = query;
             this.queryRunner = queryRunner;
             this.future = future;
+            MapContainer mapContainer = getMapServiceContext().getMapContainer(name);
+            this.tStore = mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
         }
 
         @Override
         public Object create(int partitionId) {
-            return new QueryTask(query, queryRunner, partitionId, future);
+            if (tStore) {
+                Operation operation = new QueryLocalPartitionOperation(query);
+                operation.setPartitionId(partitionId);
+                operation.setNodeEngine(getNodeEngine());
+                operation.setOperationResponseHandler((op, response) -> {
+                    if (response instanceof Throwable) {
+                        future.completeExceptionally((Throwable) response);
+                    } else {
+                        future.addResult(op.getPartitionId(), (Result) response);
+                    }
+                });
+                return operation;
+            } else {
+                return new QueryTask(query, queryRunner, partitionId, future);
+            }
         }
     }
 
@@ -265,8 +284,10 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             }
 
             String mapName = query.getMapName();
-            queryRunner.beforeOperation(partitionId, mapName);
+            String namespace = MapService.lookupNamespace(getNodeEngine(), mapName);
+            NamespaceUtil.setupNamespace(getNodeEngine(), namespace);
             try {
+                queryRunner.beforeOperation(partitionId, mapName);
                 Result result
                         = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
                 future.addResult(partitionId, result);
@@ -274,6 +295,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 future.completeExceptionally(ex);
             } finally {
                 queryRunner.afterOperation(partitionId, mapName);
+                NamespaceUtil.cleanupNamespace(getNodeEngine(), namespace);
             }
         }
     }
@@ -312,4 +334,29 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             }
         }
     }
+
+    private static final class QueryLocalPartitionOperation extends QueryPartitionOperation {
+
+        @SuppressWarnings("unused")
+        QueryLocalPartitionOperation() {
+            throw new UnsupportedOperationException("should not be serialized");
+        }
+
+        QueryLocalPartitionOperation(Query query) {
+            super(query);
+        }
+
+        @Override
+        protected void runInternal() {
+            IPartition partition = getNodeEngine().getPartitionService().getPartition(getPartitionId());
+            if (!partition.isLocal()) {
+                // result is null
+                return;
+            }
+
+            super.runInternal();
+        }
+
+    }
+
 }

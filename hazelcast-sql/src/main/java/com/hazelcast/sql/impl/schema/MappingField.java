@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,10 @@ public class MappingField implements IdentifiedDataSerializable {
     }
 
     /**
-     * The external name of a field. For example, in case of IMap or Kafka,
-     * it always starts with `__key` or `this`.
+     * Returns what is specified after {@code EXTERNAL NAME} keyword in the corresponding
+     * SQL mapping column. The interpretation of <em>external name</em> is up to the connector.
+     * For example, in IMap and Kafka, the external name is fully-qualified: it starts with
+     * {@code __key.} or {@code this.}.
      */
     public String externalName() {
         return (String) properties.get(EXTERNAL_NAME);

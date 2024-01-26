@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 Hazelcast Inc.
+  ~ Copyright 2024 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -51,22 +51,31 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <configuration>
-                    <!--
-                    hazelcast-mapstore doesn't have any dependencies which should be included,
-                    no need for jar-with-dependencies
-                    -->
-                    <shadedArtifactAttached>false</shadedArtifactAttached>
-                    <relocations>
-                        <relocation>
+                <executions>
+                    <execution>
+                        <id>jar-with-dependencies</id>
+                        <phase>${shade.jar-with-dependencies.phase}</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration combine.self="override">
                             <!--
-                            We need to relocate our usage of org.apache.calcite to the location used in hazelcast-sql
+                            hazelcast-mapstore doesn't have any dependencies which should be included,
+                            no need for jar-with-dependencies
                             -->
-                            <pattern>org.apache.calcite</pattern>
-                            <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
-                        </relocation>
-                    </relocations>
-                </configuration>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <relocations>
+                                <relocation>
+                                    <!--
+                                    We need to relocate our usage of org.apache.calcite to the location used in hazelcast-sql
+                                    -->
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -115,7 +124,6 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
             <scope>test</scope>
         </dependency>
         <!--MySQL-->
@@ -128,7 +136,6 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
         <!--MSSQL-->
@@ -141,7 +148,19 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>${mssql.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!--Oracle-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oracle-xe</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${oracle.version}</version>
             <scope>test</scope>
         </dependency>
         <!--MariaDB-->
@@ -154,7 +173,7 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.2</version>
             <scope>test</scope>
         </dependency>
 

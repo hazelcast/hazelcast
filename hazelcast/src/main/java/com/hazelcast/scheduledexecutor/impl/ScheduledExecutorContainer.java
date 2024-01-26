@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -91,17 +92,19 @@ public class ScheduledExecutorContainer {
      */
     private final CapacityPermit permit;
     private final ExecutorStats executorStats;
+    private final @Nullable String userCodeNamespace;
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine, CapacityPermit permit,
-                               int durability, boolean statisticsEnabled) {
-        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>(), statisticsEnabled);
+                               int durability, boolean statisticsEnabled, @Nullable String userCodeNamespace) {
+        this(name, partitionId, nodeEngine, permit, durability, new ConcurrentHashMap<>(), statisticsEnabled, userCodeNamespace);
     }
 
     ScheduledExecutorContainer(String name, int partitionId,
                                NodeEngine nodeEngine,
                                CapacityPermit permit, int durability,
                                ConcurrentMap<String, ScheduledTaskDescriptor> tasks,
-                               boolean statisticsEnabled) {
+                               boolean statisticsEnabled,
+                               @Nullable String userCodeNamespace) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -113,6 +116,7 @@ public class ScheduledExecutorContainer {
         this.statisticsEnabled = statisticsEnabled;
         DistributedScheduledExecutorService service = nodeEngine.getService(SERVICE_NAME);
         this.executorStats = service.getExecutorStats();
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     public ExecutorStats getExecutorStats() {
@@ -260,6 +264,11 @@ public class ScheduledExecutorContainer {
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    @Nullable
+    public String getUserCodeNamespace() {
+        return userCodeNamespace;
     }
 
     public ScheduledTaskHandler offprintHandler(String taskName) {

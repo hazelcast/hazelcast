@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 /**
  * Base class for all visitors. It returns the original predicate without touching.
@@ -26,37 +26,37 @@ import com.hazelcast.query.impl.Indexes;
 public abstract class AbstractVisitor implements Visitor {
 
     @Override
-    public Predicate visit(EqualPredicate predicate, Indexes indexes) {
+    public Predicate visit(EqualPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 
     @Override
-    public Predicate visit(NotEqualPredicate predicate, Indexes indexes) {
+    public Predicate visit(NotEqualPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 
     @Override
-    public Predicate visit(AndPredicate predicate, Indexes indexes) {
+    public Predicate visit(AndPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 
     @Override
-    public Predicate visit(OrPredicate predicate, Indexes indexes) {
+    public Predicate visit(OrPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 
     @Override
-    public Predicate visit(NotPredicate predicate, Indexes indexes) {
+    public Predicate visit(NotPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 
     @Override
-    public Predicate visit(InPredicate predicate, Indexes indexes) {
+    public Predicate visit(InPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 
     @Override
-    public Predicate visit(BetweenPredicate predicate, Indexes indexes) {
+    public Predicate visit(BetweenPredicate predicate, IndexRegistry indexes) {
         return predicate;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,11 @@ import com.hazelcast.map.impl.operation.steps.MergeOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.MapMergeResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
@@ -129,7 +130,7 @@ public class MergeOperation extends MapOperation
         checkMergePolicy(mapContainer, mergePolicy);
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled()
+        hasWanReplication = mapContainer.getWanContext().isWanReplicationEnabled()
                 && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
         hasInvalidation = mapContainer.hasInvalidationListener();
@@ -191,8 +192,8 @@ public class MergeOperation extends MapOperation
 
     public Queue<InternalIndex> beginIndexMarking() {
         int partitionId = getPartitionId();
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
 
         Queue<InternalIndex> notIndexedPartitions = new LinkedList<>();
         for (InternalIndex internalIndex : indexesSnapshot) {
@@ -327,7 +328,7 @@ public class MergeOperation extends MapOperation
         final boolean hasNonWanReplicatedKeys = localNonWanReplicatedKeys != null;
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
-            Record record = recordStore.getRecord(dataKey);
+            Record record = ((DefaultRecordStore) recordStore).getRecordSafe(dataKey);
             if (record != null) {
                 toBackupList.add(dataKey);
                 toBackupList.add(backupPairs.get(i + 1));

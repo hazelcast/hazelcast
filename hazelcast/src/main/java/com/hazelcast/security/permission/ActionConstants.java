@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
@@ -31,6 +32,7 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.impl.MapService;
@@ -67,6 +69,7 @@ public final class ActionConstants {
     public static final String ACTION_AGGREGATE = "aggregate";
     public static final String ACTION_PROJECTION = "projection";
     public static final String ACTION_USER_CODE_DEPLOY = "deploy";
+    public static final String ACTION_USE = "use";
 
     public static final String ACTION_SUBMIT = "submit";
     public static final String ACTION_CANCEL = "cancel";
@@ -80,6 +83,7 @@ public final class ActionConstants {
     public static final String LISTENER_MIGRATION = "migration";
 
     // SQL-specific actions
+    public static final String ACTION_VIEW_MAPPING = "view-mapping";
     public static final String ACTION_CREATE_VIEW = "create-view";
     public static final String ACTION_DROP_VIEW = "drop-view";
     public static final String ACTION_CREATE_TYPE = "create-type";
@@ -117,6 +121,8 @@ public final class ActionConstants {
         PERMISSION_FACTORY_MAP.put(JetServiceBackend.SERVICE_NAME, (name, actions) -> new JobPermission(actions));
         PERMISSION_FACTORY_MAP.put(InternalSqlService.SERVICE_NAME, SqlPermission::new);
         PERMISSION_FACTORY_MAP.put(DistributedScheduledExecutorService.SERVICE_NAME, ScheduledExecutorPermission::new);
+        PERMISSION_FACTORY_MAP.put(CPMapServiceUtil.SERVICE_NAME, CPMapPermission::new);
+        PERMISSION_FACTORY_MAP.put(UserCodeNamespaceService.SERVICE_NAME, UserCodeNamespacePermission::new);
     }
 
     private ActionConstants() {

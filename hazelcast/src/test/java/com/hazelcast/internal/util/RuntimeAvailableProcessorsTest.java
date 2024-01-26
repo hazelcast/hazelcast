@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ import static org.junit.Assert.assertEquals;
 public class RuntimeAvailableProcessorsTest {
 
     @Test
-    public void getAvailableProcessors_withoutOverride() throws Exception {
+    public void getAvailableProcessors_withoutOverride() {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         assertEquals(availableProcessors, RuntimeAvailableProcessors.get());
     }
 
     @Test
-    public void getAvailableProcessors_withOverride() throws Exception {
+    public void getAvailableProcessors_withOverride() {
         int customAvailableProcessors = 1234;
         RuntimeAvailableProcessors.override(customAvailableProcessors);
         try {

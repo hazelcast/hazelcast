@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,16 +55,10 @@ import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.mergeMapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.mergeRemoteMapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.updateRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
@@ -95,7 +89,7 @@ public final class Sinks {
      * The default local parallelism for this source is specified inside the
      * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
-     * @param sinkName user-friendly sink name
+     * @param sinkName     user-friendly sink name
      * @param metaSupplier the processor meta-supplier
      */
     @Nonnull
@@ -113,11 +107,11 @@ public final class Sinks {
      * The default local parallelism for this source is specified inside the
      * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
-     * @param sinkName user-friendly sink name
-     * @param metaSupplier the processor meta-supplier
+     * @param sinkName       user-friendly sink name
+     * @param metaSupplier   the processor meta-supplier
      * @param partitionKeyFn key extractor function for partitioning edges to
-     *     sink. It must be stateless and {@linkplain Processor#isCooperative()
-     *     cooperative}.
+     *                       sink. It must be stateless and {@linkplain Processor#isCooperative()
+     *                       cooperative}.
      */
     @Nonnull
     public static <T> Sink<T> fromProcessor(
@@ -190,8 +184,10 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
 
     ) {
-        return new SinkImpl<>("mapSink(" + mapName + ')',
-                writeMapP(mapName, toKeyFn, toValueFn), toKeyFn);
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .toKeyFn(toKeyFn)
+                .toValueFn(toValueFn)
+                .build();
     }
 
     /**
@@ -243,6 +239,25 @@ public final class Sinks {
     }
 
     /**
+     * The same as the {@link #remoteMap(String, ClientConfig)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @param mapName           the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteMap(@Nonnull String mapName,
+                                                     @Nonnull DataConnectionRef dataConnectionRef) {
+        return remoteMap(mapName, dataConnectionRef, Entry::getKey, Entry::getValue);
+    }
+
+    /**
      * Returns a sink that uses the supplied functions to extract the key
      * and value with which to put to a Hazelcast {@code IMap} in a remote
      * cluster identified by the supplied {@code ClientConfig}.
@@ -266,9 +281,70 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        return fromProcessor("remoteMapSink(" + mapName + ')',
-                writeRemoteMapP(mapName, clientConfig, toKeyFn, toValueFn),
-                toKeyFn);
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .toKeyFn(toKeyFn)
+                .toValueFn(toValueFn)
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMap(String, ClientConfig, FunctionEx, FunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @param mapName           the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMap(
+            @Nonnull String mapName,
+            DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
+    ) {
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .dataConnectionRef(dataConnectionRef)
+                .toKeyFn(toKeyFn)
+                .toValueFn(toValueFn)
+                .build();
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom file sink for the Pipeline API. See javadoc of methods in
+     * {@link MapSinkBuilder} for more details.
+     *
+     * @param mapName name of the map to sink into, must not be null
+     * @param <T> type of the incoming items
+     * @param <K> type of the key extracted from each item
+     * @param <V> type fo the value extracted from each item
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> MapSinkBuilder<T, K, V> mapBuilder(String mapName) {
+        return new MapSinkBuilder<>(mapName);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom file sink for the Pipeline API. See javadoc of methods in
+     * {@link MapSinkBuilder} for more details.
+     *
+     * @param mapName name of the map to sink into, must not be null
+     * @param <E> type of the incoming items
+     * @param <K> type of the key extracted from each item
+     * @param <V> type fo the value extracted from each item
+     * @since 5.4
+     */
+    @Nonnull
+    public static <E, K, V, R> MapSinkEntryProcessorBuilder<E, K, V, R> mapEntryProcessorBuilder(String mapName) {
+        return new MapSinkEntryProcessorBuilder<>(mapName);
     }
 
     /**
@@ -285,13 +361,13 @@ public final class Sinks {
      * V newValue = toValueFn.apply(item);
      * V resolved = (oldValue == null)
      *            ? newValue
-                  : mergeFn.apply(oldValue, newValue);
+     * : mergeFn.apply(oldValue, newValue);
      * if (value == null)
      *     map.remove(key);
      * else
      *     map.put(key, value);
      * </pre>
-     *
+     * <p>
      * This sink supports exactly-once processing only if the
      * supplied merge function performs <i>idempotent updates</i>, i.e.,
      * it satisfies the rule
@@ -312,9 +388,9 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <T> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param <T>       input item type
+     * @param <K>       key type
+     * @param <V>       value type
      */
     @Nonnull
     public static <T, K, V> Sink<T> mapWithMerging(
@@ -323,8 +399,11 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
-        return new SinkImpl<>("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), toKeyFn);
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .toKeyFn(toKeyFn)
+                .toValueFn(toValueFn)
+                .mergeFn(mergeFn)
+                .build();
     }
 
     /**
@@ -341,7 +420,7 @@ public final class Sinks {
      * V newValue = toValueFn.apply(item);
      * V resolved = (oldValue == null)
      *            ? newValue
-                  : mergeFn.apply(oldValue, newValue);
+     * : mergeFn.apply(oldValue, newValue);
      * if (value == null)
      *     map.remove(key);
      * else
@@ -372,9 +451,9 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <T> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param <T>       input item type
+     * @param <K>       key type
+     * @param <V>       value type
      */
     @Nonnull
     public static <T, K, V> Sink<T> mapWithMerging(
@@ -384,6 +463,39 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return mapWithMerging(map.getName(), toKeyFn, toValueFn, mergeFn);
+    }
+
+    /**
+     * Convenience for {@link #remoteMapWithMerging} with {@link Entry} as
+     * input item.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        return remoteMapWithMerging(mapName, clientConfig, Entry::getKey, entryValue(), mergeFn);
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithMerging(String, ClientConfig, BinaryOperatorEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        return remoteMapWithMerging(mapName, dataConnectionRef, Entry::getKey, entryValue(), mergeFn);
     }
 
     /**
@@ -401,9 +513,39 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
-        return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
-                mergeRemoteMapP(mapName, clientConfig, toKeyFn, toValueFn, mergeFn),
-                toKeyFn);
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .toKeyFn(toKeyFn)
+                .toValueFn(toValueFn)
+                .mergeFn(mergeFn)
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithMerging(String, ClientConfig, FunctionEx, FunctionEx, BinaryOperatorEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMapWithMerging(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .dataConnectionRef(dataConnectionRef)
+                .toKeyFn(toKeyFn)
+                .toValueFn(toValueFn)
+                .mergeFn(mergeFn)
+                .build();
     }
 
     /**
@@ -430,19 +572,6 @@ public final class Sinks {
         return mapWithMerging(map.getName(), mergeFn);
     }
 
-    /**
-     * Convenience for {@link #remoteMapWithMerging} with {@link Entry} as
-     * input item.
-     */
-    @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull BinaryOperatorEx<V> mergeFn
-    ) {
-        return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
-                mergeRemoteMapP(mapName, clientConfig, Entry::getKey, entryValue(), mergeFn));
-    }
 
     /**
      * Returns a sink that uses the supplied key-extracting and value-updating
@@ -461,7 +590,7 @@ public final class Sinks {
      * else
      *     map.put(key, newValue);
      * </pre>
-     *
+     * <p>
      * This sink supports exactly-once processing only if the
      * supplied update function performs <i>idempotent updates</i>, i.e., it
      * satisfies the rule {@code updateFn.apply(v, e).equals(v)} for any
@@ -490,8 +619,10 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
-        return new SinkImpl<>("mapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, toKeyFn, updateFn), toKeyFn);
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .toKeyFn(toKeyFn)
+                .updateFn(updateFn)
+                .build();
     }
 
     /**
@@ -561,9 +692,36 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
-        return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
-                updateRemoteMapP(mapName, clientConfig, toKeyFn, updateFn),
-                toKeyFn);
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .toKeyFn(toKeyFn)
+                .updateFn(updateFn)
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithUpdating(String, ClientConfig, BiFunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMapWithUpdating(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+    ) {
+        return Sinks.<T, K, V>mapBuilder(mapName)
+                .dataConnectionRef(dataConnectionRef)
+                .toKeyFn(toKeyFn)
+                .updateFn(updateFn)
+                .build();
     }
 
     /**
@@ -600,9 +758,35 @@ public final class Sinks {
             @Nonnull ClientConfig clientConfig,
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
-        //noinspection Convert2MethodRef (provokes a javac 9 bug)
-        return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
-                updateRemoteMapP(mapName, clientConfig, (Entry<K, V> e) -> e.getKey(), updateFn));
+        return Sinks.<E, K, V>mapBuilder(mapName)
+                .clientConfig(clientConfig)
+                .toKeyFn(Entry::getKey)
+                .updateFn(updateFn)
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithUpdating(String, ClientConfig, BiFunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V, E extends Entry<K, V>> Sink<E> remoteMapWithUpdating(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
+    ) {
+        return Sinks.<E, K, V>mapBuilder(mapName)
+                .dataConnectionRef(dataConnectionRef)
+                .toKeyFn(Entry::getKey)
+                .updateFn(updateFn)
+                .build();
     }
 
     /**
@@ -615,9 +799,10 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        return fromProcessor("mapWithEntryProcessorSink(" + mapName + ')',
-                updateMapP(mapName, toKeyFn, toEntryProcessorFn),
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**
@@ -653,15 +838,15 @@ public final class Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param maxParallelAsyncOps  maximum number of simultaneous entry
-     *                             processors affecting the map
-     * @param mapName  name of the map
-     * @param toKeyFn  function that extracts the key from the input item
-     * @param toEntryProcessorFn function that returns the {@code EntryProcessor}
-     *                           to apply to the key
-     * @param <E> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param maxParallelAsyncOps maximum number of simultaneous entry
+     *                            processors affecting the map
+     * @param mapName             name of the map
+     * @param toKeyFn             function that extracts the key from the input item
+     * @param toEntryProcessorFn  function that returns the {@code EntryProcessor}
+     *                            to apply to the key
+     * @param <E>                 input item type
+     * @param <K>                 key type
+     * @param <V>                 value type
      */
     @Nonnull
     public static <E, K, V, R> Sink<E> mapWithEntryProcessor(
@@ -670,9 +855,11 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        return fromProcessor("mapWithEntryProcessorSink(" + mapName + ')',
-                updateMapP(maxParallelAsyncOps, mapName, toKeyFn, toEntryProcessorFn),
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .maxParallelAsyncOps(maxParallelAsyncOps)
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**
@@ -741,9 +928,35 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
-                updateRemoteMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn),
-                toKeyFn);
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .clientConfig(clientConfig)
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithEntryProcessor(String, ClientConfig, FunctionEx, FunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    public static <E, K, V, R> Sink<E> remoteMapWithEntryProcessor(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        return Sinks.<E, K, V, R>mapEntryProcessorBuilder(mapName)
+                .dataConnectionName(dataConnectionRef)
+                .toKeyFn(toKeyFn)
+                .toEntryProcessorFn(toEntryProcessorFn)
+                .build();
     }
 
     /**
@@ -760,7 +973,7 @@ public final class Sinks {
     @Nonnull
     public static <T extends Entry> Sink<T> cache(@Nonnull String cacheName) {
         //noinspection Convert2MethodRef (provokes a javac 9 bug)
-        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), en -> en.getKey());
+        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), Entry::getKey);
     }
 
     /**
@@ -849,7 +1062,7 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                SecuredFunctions.reliableTopicFn(reliableTopicName))
+                        SecuredFunctions.reliableTopicFn(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
                 .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
                 .build();
@@ -890,7 +1103,8 @@ public final class Sinks {
      * @since Jet 4.0
      */
     @Nonnull
-    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
+    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName,
+                                                  @Nonnull ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig); //conversion needed for serializability
         return SinkBuilder
                 .sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
@@ -917,11 +1131,11 @@ public final class Sinks {
      * <p>
      * The default local parallelism for this sink is 1.
      *
-     * @param host the host to connect to
-     * @param port the target port
+     * @param host       the host to connect to
+     * @param port       the target port
      * @param toStringFn a function to convert received items to string. It
-     *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param charset charset used to convert the string to bytes
+     *                   must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param charset    charset used to convert the string to bytes
      */
     @Nonnull
     public static <T> Sink<T> socket(
@@ -967,9 +1181,9 @@ public final class Sinks {
      * directory is used for all files, on all cluster members. That directory
      * can be a shared in a network - each processor creates globally unique
      * file names.
-     *
+     * <p>
      * <h3>Fault tolerance</h3>
-     *
+     * <p>
      * If the job is running in <i>exactly-once</i> mode, Jet writes the items
      * to temporary files (ending with a {@value
      * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When Jet commits a snapshot,
@@ -991,12 +1205,12 @@ public final class Sinks {
      * files, the job might have processed more transactions on the remaining
      * members and will not commit the temporary files on the resurrected
      * member.
-     *
+     * <p>
      * <h3>File name structure</h3>
      * <pre>{@code
      * [<date>-]<global processor index>[-<sequence>][".tmp"]
      * }</pre>
-     *
+     * <p>
      * Description (parts in {@code []} are optional):
      * <ul>
      *     <li>{@code <date>}: the current date and time, see {@link
@@ -1019,7 +1233,7 @@ public final class Sinks {
      * </ul>
      *
      * <h3>Notes</h3>
-     *
+     * <p>
      * The target directory is not deleted before the job start. If file names
      * clash, they are appended to. This is needed to ensure at-least-once
      * behavior. In exactly-once mode the file names never clash thanks to the
@@ -1073,9 +1287,9 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      *
      * @param toStringFn a function that returns a string representation of a
-     *     stream item. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param <T> stream item type
+     *                   stream item. It must be stateless and {@linkplain
+     *                   Processor#isCooperative() cooperative}.
+     * @param <T>        stream item type
      */
     @Nonnull
     public static <T> Sink<T> logger(@Nonnull FunctionEx<? super T, String> toStringFn) {
@@ -1105,9 +1319,9 @@ public final class Sinks {
      * not an instance of {@code jakarta.jms.Message}, the sink wraps {@code
      * item.toString()} into a {@link jakarta.jms.TextMessage}.
      *
-     * @param queueName the name of the queue
+     * @param queueName       the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *     must be stateless.
+     *                        must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsQueue(
@@ -1162,9 +1376,9 @@ public final class Sinks {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. For
-     *      exactly-once the factory must implement {@link
-     *      jakarta.jms.XAConnectionFactory}. It must be stateless.
-     * @param <T> type of the items the sink accepts
+     *                        exactly-once the factory must implement {@link
+     *                        jakarta.jms.XAConnectionFactory}. It must be stateless.
+     * @param <T>             type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsQueueBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier) {
@@ -1178,13 +1392,13 @@ public final class Sinks {
      *                 .destinationName(topicName)
      *                 .build();
      * }</pre>
-     *
+     * <p>
      * See {@link #jmsTopicBuilder(SupplierEx)} for more details.
      *
-     * @param topicName the name of the queue
+     * @param topicName       the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. For
-     *      exactly-once the factory must implement {@link
-     *      jakarta.jms.XAConnectionFactory}. It must be stateless.
+     *                        exactly-once the factory must implement {@link
+     *                        jakarta.jms.XAConnectionFactory}. It must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsTopic(
@@ -1236,8 +1450,8 @@ public final class Sinks {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *     must be stateless.
-     * @param <T> type of the items the sink accepts
+     *                        must be stateless.
+     * @param <T>             type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsTopicBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier) {
@@ -1253,7 +1467,7 @@ public final class Sinks {
      *             .bindFn(bindFn)
      *             .build();
      * }</pre>
-     *
+     * <p>
      * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
@@ -1304,7 +1518,7 @@ public final class Sinks {
      *              .jdbcUrl(jdbcUrl)
      *              .build()
      * }</pre>
-     *
+     * <p>
      * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
@@ -1346,14 +1560,14 @@ public final class Sinks {
      * <b>Commit behavior</b>
      * <p>
      * The commit behavior depends on the job guarantee:<ul>
-     *     <li><b>Exactly-once:</b> XA transactions will be used to commit the
-     *     work in phase two of the snapshot, that is after all other vertices
-     *     in the job have performed the snapshot. Very small state will be
-     *     saved to snapshot.
+     * <li><b>Exactly-once:</b> XA transactions will be used to commit the
+     * work in phase two of the snapshot, that is after all other vertices
+     * in the job have performed the snapshot. Very small state will be
+     * saved to snapshot.
      *
-     *     <li><b>At-least-once or no guarantee:</b> Records will be committed
-     *     in batches. A batch is created from records that are readily available
-     *     at the sink.
+     * <li><b>At-least-once or no guarantee:</b> Records will be committed
+     * in batches. A batch is created from records that are readily available
+     * at the sink.
      * </ul>
      * <p>
      * If the job is in exactly-once mode, the overhead in the database and the

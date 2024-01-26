@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
@@ -76,7 +77,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Parameters(name = "inMemoryFormat: {0}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][] {
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT}
         });
@@ -217,31 +218,31 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testPut_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.put("key", "val2"));
     }
 
     @Test
     public void testPutWithTtl() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.put("key", "val2", 10, TimeUnit.SECONDS));
     }
 
     @Test
     public void testPutWithMaxIdle_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.put("key", "val2", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS));
     }
 
     @Test
     public void testPutAsync_returnValue() throws ExecutionException, InterruptedException {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.putAsync("key", "val2").toCompletableFuture().get());
     }
 
     @Test
     public void testPutIfAbsent_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.putIfAbsent("key", "val2"));
     }
 
@@ -255,37 +256,37 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testRemove_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.remove("key"));
     }
 
     @Test
     public void testRemoveIfSame_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertTrue(map.remove("key", "val"));
     }
 
     @Test
     public void testRemoveAsync_returnValue() throws ExecutionException, InterruptedException {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.removeAsync("key").toCompletableFuture().get());
     }
 
     @Test
     public void testDeleteAsync_returnsTrue() throws ExecutionException, InterruptedException {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertTrue(map.deleteAsync("key").toCompletableFuture().get());
     }
 
     @Test
     public void testReplace_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", map.replace("key", "val2"));
     }
 
     @Test
     public void testReplaceIfSame_returnValue() {
-        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertTrue(map.replace("key", "val", "val2"));
     }
 
@@ -432,8 +433,9 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         Config config = mapServiceContext.getNodeEngine().getConfig();
         MapContainer mapContainer = new MapContainer("anyName", config, mapServiceContext);
         Data key = mapServiceContext.toData("key");
-        DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0, mock(MapKeyLoader.class), mock(ILogger.class)) ;
-        assertNull(recordStore.loadRecordOrNull(key, false, null));
+        DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0,
+                mock(MapKeyLoader.class), mock(ILogger.class));
+        assertNull(recordStore.loadRecordOrNull(key, false, null, Clock.currentTimeMillis()));
     }
 
     private void assumeNoTieredStorageConfigured() {

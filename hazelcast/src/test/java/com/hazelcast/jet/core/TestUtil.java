@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
@@ -27,18 +27,15 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.Assert.assertEquals;
 
@@ -81,7 +78,7 @@ public final class TestUtil {
 
         if (!found) {
             assertEquals("expected exception not found in causes chain", expected.toString(),
-                    ExceptionUtil.stackTraceToString(caught));
+                    ExceptionUtil.toString(caught));
         }
     }
 
@@ -94,14 +91,6 @@ public final class TestUtil {
     @Nonnull
     public static ProcessorMetaSupplier throttle(@Nonnull ProcessorMetaSupplier wrapped, long itemsPerSecond) {
         return new WrappingProcessorMetaSupplier(wrapped, p -> new ThrottleWrappedP(p, itemsPerSecond));
-    }
-
-    /**
-     * Create {@code HashSet} from a list of items.
-     */
-    @Nonnull
-    public static <T> Set<T> set(T ... foo) {
-        return new HashSet<>(asList(foo));
     }
 
     /**

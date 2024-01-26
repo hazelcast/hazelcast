@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
@@ -69,7 +68,7 @@ public class InsertProcessorTest extends SqlTestSupport {
     @Test
     public void test_multiInsert() {
         executeInsert(asList(jetRow(1, 1), jetRow(2, 2)), singletonList(jetRow(2L)));
-        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 1, 2, 2));
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(Map.of(1, 1, 2, 2));
     }
 
     @Test

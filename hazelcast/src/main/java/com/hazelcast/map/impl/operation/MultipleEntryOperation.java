@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ public class MultipleEntryOperation extends MapOperation
 
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
+        // Namespace awareness already in place from MapOperation#beforeRun
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
@@ -143,7 +144,7 @@ public class MultipleEntryOperation extends MapOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        entryProcessor = in.readObject();
+        entryProcessor = callWithNamespaceAwareness(in::readObject);
         int size = in.readInt();
         keys = createHashSet(size);
         for (int i = 0; i < size; i++) {

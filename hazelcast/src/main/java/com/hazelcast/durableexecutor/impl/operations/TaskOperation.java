@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,8 +46,9 @@ public class TaskOperation extends AbstractDurableExecutorOperation implements B
 
     @Override
     public void run() throws Exception {
-        callable = getNodeEngine().toObject(callableData);
         DurableExecutorContainer executorContainer = getExecutorContainer();
+        callable = NamespaceUtil.callWithNamespace(getNodeEngine(), executorContainer.getUserCodeNamespace(),
+                () -> getNodeEngine().toObject(callableData));
         sequence = executorContainer.execute(callable);
     }
 

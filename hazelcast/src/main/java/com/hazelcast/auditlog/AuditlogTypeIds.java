@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,10 @@ public final class AuditlogTypeIds {
      * Event type ID: Clusters merged.
      */
     public static final String CLUSTER_MERGE = "HZ-0606";
+    /**
+     * Event type ID: Data member demoted.
+     */
+    public static final String CLUSTER_DEMOTE_MEMBER = "HZ-0607";
 
     // Member events
     /**

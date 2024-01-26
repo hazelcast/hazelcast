@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,16 +180,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        return doExportSnapshot(name, true);
-    }
-
-    @Override
-    public JobStateSnapshot exportSnapshot(String name) {
-        return doExportSnapshot(name, false);
-    }
-
-    private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+    protected JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         checkNotLightJob("export snapshot");
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {

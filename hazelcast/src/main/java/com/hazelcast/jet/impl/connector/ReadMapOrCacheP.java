@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.cluster.Versions;
@@ -314,7 +315,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,
             IdentifiedDataSerializable, Versioned {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
         private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
@@ -394,27 +395,32 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
     }
 
+    /**
+     * Create a processor that uses a remote cluster as source
+     */
     static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
+        private final String dataConnectionName;
         private final String clientXml;
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
-
         private transient HazelcastClientProxy client;
         private transient int totalParallelism;
         private transient int baseIndex;
 
         RemoteProcessorSupplier(
-                @Nonnull String clientXml,
+                @Nullable String dataConnectionName,
+                @Nullable String clientXml,
                 @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
+            this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
             this.readerSupplier = readerSupplier;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
+            client = (HazelcastClientProxy) createRemoteClient(context);
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }
@@ -437,6 +443,23 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                         return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds);
                     })
                     .collect(Collectors.toList());
+        }
+
+        private HazelcastInstance createRemoteClient(ProcessorSupplier.Context context) {
+            // The order is important.
+            // If dataConnectionConfig is specified prefer it to clientXml
+            if (dataConnectionName != null) {
+                HazelcastDataConnection hazelcastDataConnection = context
+                        .dataConnectionService()
+                        .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+                try {
+                    return hazelcastDataConnection.getClient();
+                } finally {
+                    hazelcastDataConnection.release();
+                }
+            } else {
+                return newHazelcastClient(asClientConfig(clientXml));
+            }
         }
     }
 

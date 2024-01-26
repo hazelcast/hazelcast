@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.portable.PortableHook;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
@@ -658,15 +659,11 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         }
 
         private byte[] loadBytecodeFromParent(String className) {
-            String resource = className.replace('.', '/').concat(".class");
-            try (InputStream is = parent.getResourceAsStream(resource)) {
-                if (is != null) {
-                    return is.readAllBytes();
-                }
+            try {
+                return ReflectionUtils.getClassContent(className, parent);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            return null;
         }
     }
 

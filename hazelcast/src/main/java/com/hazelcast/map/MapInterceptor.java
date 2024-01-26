@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.io.Serializable;
 
@@ -33,6 +34,7 @@ import java.io.Serializable;
  * communication, so changing an implementation's binary format will render it
  * incompatible with its previous versions.
  */
+@NamespacesSupported
 @BinaryInterface
 public interface MapInterceptor extends Serializable {
 

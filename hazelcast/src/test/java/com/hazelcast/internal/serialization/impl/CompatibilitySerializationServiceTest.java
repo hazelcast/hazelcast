@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -95,7 +94,7 @@ public class CompatibilitySerializationServiceTest {
         try (InputStream is = new FileInputStream(useBigEndian
                 ? "src/test/resources/testHz3Object"
                 : "src/test/resources/testHz3ObjectLittleEndian")) {
-            byte[] payload = IOUtils.toByteArray(is);
+            byte[] payload = is.readAllBytes();
             return new HeapData(payload);
         }
     }

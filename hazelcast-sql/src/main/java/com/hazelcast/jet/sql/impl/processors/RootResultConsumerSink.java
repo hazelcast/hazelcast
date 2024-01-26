@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,7 +38,6 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -95,7 +95,7 @@ public final class RootResultConsumerSink implements Processor {
             rootResultConsumer.ensureNotDone();
         } catch (QueryException e) {
             if (e.getCode() == CANCELLED_BY_USER) {
-                throw new CancellationException();
+                throw new CancellationByUserException();
             }
             throw e;
         }
@@ -108,7 +108,7 @@ public final class RootResultConsumerSink implements Processor {
             rootResultConsumer.consume(inbox);
         } catch (QueryException e) {
             if (e.getCode() == CANCELLED_BY_USER) {
-                throw new CancellationException();
+                throw new CancellationByUserException();
             }
             throw e;
         }
@@ -133,9 +133,9 @@ public final class RootResultConsumerSink implements Processor {
     public static ProcessorMetaSupplier rootResultConsumerSink(
             Address initiatorAddress,
             Expression<?> limitExpression,
-            Expression<?> offsetExpression
-    ) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(new Supplier(limitExpression, offsetExpression));
+            Expression<?> offsetExpression) {
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(
+                new Supplier(limitExpression, offsetExpression));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
     }
 

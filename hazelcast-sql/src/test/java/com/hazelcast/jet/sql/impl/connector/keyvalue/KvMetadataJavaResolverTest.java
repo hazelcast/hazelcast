@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.QueryException;
@@ -54,7 +53,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void test_resolvePrimitiveField(boolean key, String path) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
@@ -70,7 +69,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_renamesPrimitiveField_then_throws(boolean key, String path) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
@@ -90,7 +89,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_typeMismatchBetweenPrimitiveDeclaredAndSchemaField_then_throws(boolean key, String path) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
@@ -110,7 +109,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_userDeclaresPrimitiveAdditionalField_then_throws(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
@@ -130,7 +129,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void test_resolvePrimitiveMetadata(boolean key, String path) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
@@ -155,7 +154,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void test_resolveObjectFields(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
@@ -171,7 +170,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_userDeclaresObjectField_then_itsNameHasPrecedenceOverResolvedOne(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
@@ -192,7 +191,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_userDeclaresFields_then_fieldsFromClassNotAdded(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
@@ -213,7 +212,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_typeMismatchBetweenObjectDeclaredAndSchemaField_then_throws(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
@@ -233,7 +232,7 @@ public class KvMetadataJavaResolverTest {
             "false"
     })
     public void when_noKeyOrThisPrefixInExternalName_then_usesValue(boolean key) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Object.class.getName()
         );
@@ -261,7 +260,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void when_userDeclaresObjectDuplicateExternalName_then_throws(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
@@ -284,7 +283,7 @@ public class KvMetadataJavaResolverTest {
             "false, this"
     })
     public void test_resolveMetadata(boolean key, String prefix) {
-        Map<String, String> options = ImmutableMap.of(
+        Map<String, String> options = Map.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
@@ -304,7 +303,7 @@ public class KvMetadataJavaResolverTest {
         assertThat(metadata.getUpsertTargetDescriptor())
                 .isEqualToComparingFieldByField(new PojoUpsertTargetDescriptor(
                         Type.class.getName(),
-                        ImmutableMap.of("field", int.class.getName())
+                        Map.of("field", int.class.getName())
                 ));
     }
 

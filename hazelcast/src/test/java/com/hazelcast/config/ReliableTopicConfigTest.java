@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE;
@@ -34,10 +35,10 @@ import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_STATISTICS_ENABLE
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_TOPIC_OVERLOAD_POLICY;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.topic.TopicOverloadPolicy.DISCARD_NEWEST;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
@@ -54,6 +55,19 @@ public class ReliableTopicConfigTest {
         assertEquals("foo", config.getName());
         assertEquals(DEFAULT_TOPIC_OVERLOAD_POLICY, config.getTopicOverloadPolicy());
         assertEquals(DEFAULT_STATISTICS_ENABLED, config.isStatisticsEnabled());
+    }
+
+    @Test
+    public void testConstructorWithEmptyName() {
+        ReliableTopicConfig config = new ReliableTopicConfig("");
+        assertTrue(config.getName().isEmpty());
+    }
+
+    @Test
+    public void testSetEmptyName() {
+        ReliableTopicConfig config = new ReliableTopicConfig("abc");
+        config.setName("");
+        assertTrue(config.getName().isEmpty());
     }
 
     @Test
@@ -150,7 +164,7 @@ public class ReliableTopicConfigTest {
         ListenerConfig listenerConfig = new ListenerConfig("foobar");
         config.addMessageListenerConfig(listenerConfig);
 
-        assertEquals(asList(listenerConfig), config.getMessageListenerConfigs());
+        assertEquals(List.of(listenerConfig), config.getMessageListenerConfigs());
     }
 
     // ==================== setExecutor =============================
@@ -190,31 +204,31 @@ public class ReliableTopicConfigTest {
         try {
             readOnly.setExecutor(null);
             fail();
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException ignored) {
         }
 
         try {
             readOnly.setReadBatchSize(3);
             fail();
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException ignored) {
         }
 
         try {
             readOnly.setStatisticsEnabled(true);
             fail();
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException ignored) {
         }
 
         try {
             readOnly.addMessageListenerConfig(new ListenerConfig("foobar"));
             fail();
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException ignored) {
         }
 
         try {
             readOnly.setTopicOverloadPolicy(null);
             fail();
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException ignored) {
         }
     }
 
@@ -225,7 +239,7 @@ public class ReliableTopicConfigTest {
         String s = config.toString();
 
         assertEquals("ReliableTopicConfig{name='foo', topicOverloadPolicy=BLOCK, executor=null,"
-                + " readBatchSize=10, statisticsEnabled=true, listenerConfigs=[]}", s);
+                + " readBatchSize=10, statisticsEnabled=true, listenerConfigs=[], userCodeNamespace=null}", s);
     }
 
     @Test

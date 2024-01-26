@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -164,13 +165,13 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         }
 
         PredicateConfig that = (PredicateConfig) o;
-        if (className != null ? !className.equals(that.className) : that.className != null) {
+        if (!Objects.equals(className, that.className)) {
             return false;
         }
-        if (sql != null ? !sql.equals(that.sql) : that.sql != null) {
+        if (!Objects.equals(sql, that.sql)) {
             return false;
         }
-        return !(implementation != null ? !implementation.equals(that.implementation) : that.implementation != null);
+        return Objects.equals(implementation, that.implementation);
     }
 
     @Override

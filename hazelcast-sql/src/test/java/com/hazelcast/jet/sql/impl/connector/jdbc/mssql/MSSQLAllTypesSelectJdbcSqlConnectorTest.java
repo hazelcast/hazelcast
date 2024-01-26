@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 import static org.assertj.core.api.Assumptions.assumeThat;
-
 
 @Category(NightlyTest.class)
 public class MSSQLAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbcSqlConnectorTest {

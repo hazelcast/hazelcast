@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,25 @@
 
 package com.hazelcast.nio;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -97,10 +100,14 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
         }
 
         // now the context class loader is reset back, new instance should fail
-        try {
-            ClassLoaderUtil.newInstance(null, "mock.Class");
-            fail("call did not fail, class probably incorrectly returned from CONSTRUCTOR_CACHE");
-        } catch (ClassNotFoundException expected) { }
+        Assert.assertThrows("call did not fail, class probably incorrectly returned from CONSTRUCTOR_CACHE",
+                ClassNotFoundException.class, () -> ClassLoaderUtil.newInstance(null, "mock.Class"));
+    }
+
+    @Test
+    public void testExtractClassName() {
+        assertEquals("org.me.package.MyClass", ClassLoaderUtil.extractClassName("org/me/package/MyClass.class"));
+        assertNull(ClassLoaderUtil.extractClassName("path/to/my/File.txt"));
     }
 
     private static class ExtendingClassImplementingSubInterface extends DirectlyImplementingSubInterfaceInterface {

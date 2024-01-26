@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferStoreConfig;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -44,7 +45,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
 
-    private final ObjectNamespace namespace;
+    private final ObjectNamespace objectNamespace;
+    private final NodeEngine nodeEngine;
+    private final String userCodeNamespace;
     private boolean enabled;
 
     /**
@@ -54,8 +57,10 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     private RingbufferStore store;
     private SerializationService serializationService;
 
-    private RingbufferStoreWrapper(ObjectNamespace namespace) {
-        this.namespace = namespace;
+    private RingbufferStoreWrapper(ObjectNamespace objectNamespace, NodeEngine nodeEngine, String userCodeNamespace) {
+        this.objectNamespace = objectNamespace;
+        this.nodeEngine = nodeEngine;
+        this.userCodeNamespace = userCodeNamespace;
     }
 
     /**
@@ -78,17 +83,20 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     public static RingbufferStoreWrapper create(ObjectNamespace namespace,
                                                 RingbufferStoreConfig storeConfig,
                                                 InMemoryFormat inMemoryFormat, SerializationService serializationService,
-                                                ClassLoader classLoader) {
+                                                ClassLoader classLoader,
+                                                NodeEngine nodeEngine,
+                                                String userCodeNamespace) {
         checkNotNull(namespace, "namespace should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
-        final RingbufferStoreWrapper storeWrapper = new RingbufferStoreWrapper(namespace);
+        final RingbufferStoreWrapper storeWrapper = new RingbufferStoreWrapper(namespace, nodeEngine, userCodeNamespace);
         storeWrapper.serializationService = serializationService;
         if (storeConfig == null || !storeConfig.isEnabled()) {
             return storeWrapper;
         }
         // create ring buffer store.
-        final RingbufferStore ringbufferStore = createRingbufferStore(namespace, storeConfig, classLoader);
+        final RingbufferStore ringbufferStore = createRingbufferStore(namespace, storeConfig, classLoader,
+                nodeEngine, userCodeNamespace);
         if (ringbufferStore != null) {
             storeWrapper.enabled = storeConfig.isEnabled();
             storeWrapper.inMemoryFormat = inMemoryFormat;
@@ -99,12 +107,14 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
 
     private static RingbufferStore createRingbufferStore(ObjectNamespace namespace,
                                                          RingbufferStoreConfig storeConfig,
-                                                         ClassLoader classLoader) {
+                                                         ClassLoader classLoader,
+                                                         NodeEngine nodeEngine,
+                                                         String userCodeNamespace) {
         // 1. Try to create store from `store impl.` class.
         RingbufferStore store = getRingbufferStore(storeConfig, classLoader);
         // 2. Try to create store from `store factory impl.` class.
         if (store == null) {
-            store = getRingbufferStoreFactory(namespace, storeConfig, classLoader);
+            store = getRingbufferStoreFactory(namespace, storeConfig, classLoader, nodeEngine, userCodeNamespace);
         }
         return store;
     }
@@ -116,8 +126,11 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
         return getOrInstantiate(storeConfig.getStoreImplementation(), classLoader, storeConfig.getClassName());
     }
 
-    private static RingbufferStore getRingbufferStoreFactory(ObjectNamespace namespace,
-                                                             RingbufferStoreConfig storeConfig, ClassLoader classLoader) {
+    private static RingbufferStore getRingbufferStoreFactory(ObjectNamespace objectNamespace,
+                                                             RingbufferStoreConfig storeConfig,
+                                                             ClassLoader classLoader,
+                                                             NodeEngine nodeEngine,
+                                                             String userCodeNamespace) {
         if (storeConfig == null) {
             return null;
         }
@@ -125,7 +138,13 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
         final String className = storeConfig.getFactoryClassName();
 
         final RingbufferStoreFactory factory = getOrInstantiate(implementation, classLoader, className);
-        return factory == null ? null : factory.newRingbufferStore(namespace.getObjectName(), storeConfig.getProperties());
+        if (factory == null) {
+            return null;
+        }
+
+        // The factory does not get a ClassLoader param, so we need to wrap creation in NS awareness here
+        return NamespaceUtil.callWithNamespace(nodeEngine, userCodeNamespace, () ->
+                factory.newRingbufferStore(objectNamespace.getObjectName(), storeConfig.getProperties()));
     }
 
     private static <T> T getOrInstantiate(T instance, ClassLoader classLoader, String className) {
@@ -156,42 +175,46 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
             return;
         }
 
-        this.store = new LatencyTrackingRingbufferStore(store, storeLatencyPlugin, namespace);
+        this.store = new LatencyTrackingRingbufferStore(store, storeLatencyPlugin, objectNamespace);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void store(long sequence, Data value) {
-        final Object actualValue;
-        if (isBinaryFormat()) {
-            // WARNING: we can't pass original byte array to the user
-            actualValue = Arrays.copyOf(value.toByteArray(), value.totalSize());
-        } else {
-            // here we deserialize the object again (the first time is in the actual ring buffer).
-            // if we are certain that the user cannot abuse the object, we can provide him with a reference to the
-            // stored value
-            actualValue = serializationService.toObject(value);
-        }
-        store.store(sequence, actualValue);
+        NamespaceUtil.runWithNamespace(nodeEngine, userCodeNamespace, () -> {
+            final Object actualValue;
+            if (isBinaryFormat()) {
+                // WARNING: we can't pass original byte array to the user
+                actualValue = Arrays.copyOf(value.toByteArray(), value.totalSize());
+            } else {
+                // here we deserialize the object again (the first time is in the actual ring buffer).
+                // if we are certain that the user cannot abuse the object, we can provide him with a reference to the
+                // stored value
+                actualValue = serializationService.toObject(value);
+            }
+            store.store(sequence, actualValue);
+        });
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void storeAll(long firstItemSequence, Data[] items) {
-        final Object[] storedItems = new Object[items.length];
-        for (int i = 0; i < items.length; i++) {
-            final Data value = items[i];
-            if (isBinaryFormat()) {
-                // more defensive copying in the case of binary format
-                storedItems[i] = Arrays.copyOf(value.toByteArray(), value.totalSize());
-            } else {
-                // in the case of object format we have again deserialization. We could possibly pass the user the reference
-                // to the item in the RB store if it is safe
-                storedItems[i] = serializationService.toObject(value);
-            }
+        NamespaceUtil.runWithNamespace(nodeEngine, userCodeNamespace, () -> {
+            final Object[] storedItems = new Object[items.length];
+            for (int i = 0; i < items.length; i++) {
+                final Data value = items[i];
+                if (isBinaryFormat()) {
+                    // more defensive copying in the case of binary format
+                    storedItems[i] = Arrays.copyOf(value.toByteArray(), value.totalSize());
+                } else {
+                    // in the case of object format we have again deserialization. We could possibly pass the user the reference
+                    // to the item in the RB store if it is safe
+                    storedItems[i] = serializationService.toObject(value);
+                }
 
-        }
-        store.storeAll(firstItemSequence, storedItems);
+            }
+            store.storeAll(firstItemSequence, storedItems);
+        });
     }
 
     private boolean isBinaryFormat() {
@@ -200,16 +223,18 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
 
     @Override
     public Data load(long sequence) {
-        final Object val = store.load(sequence);
-        if (val == null) {
-            return null;
-        }
+        return NamespaceUtil.callWithNamespace(nodeEngine, userCodeNamespace, () -> {
+            final Object val = store.load(sequence);
+            if (val == null) {
+                return null;
+            }
 
-        if (isBinaryFormat()) {
-            byte[] dataBuffer = (byte[]) val;
-            return new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
-        }
-        return serializationService.toData(val);
+            if (isBinaryFormat()) {
+                byte[] dataBuffer = (byte[]) val;
+                return new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
+            }
+            return serializationService.toData(val);
+        });
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class TestObject implements DataSerializable {
         out.writeLong(l);
         out.writeFloat(f);
         out.writeDouble(d);
-        out.writeUTF(s);
+        out.writeString(s);
 
         out.writeObject(list);
         out.writeObject(set);
@@ -88,7 +88,7 @@ public class TestObject implements DataSerializable {
         l = in.readLong();
         f = in.readFloat();
         d = in.readDouble();
-        s = in.readUTF();
+        s = in.readString();
 
         list = in.readObject();
         set = in.readObject();

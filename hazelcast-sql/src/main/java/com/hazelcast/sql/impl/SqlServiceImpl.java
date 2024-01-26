@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -48,6 +49,7 @@ import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
 import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
+import static java.util.Objects.isNull;
 
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
@@ -77,6 +79,8 @@ public class SqlServiceImpl implements InternalSqlService {
     private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
     private final Counter sqlStreamingQueriesExecuted = MwCounter.newMwCounter();
 
+    private final ReflectionClassNameFilter reflectionClassNameFilter;
+
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
@@ -85,6 +89,8 @@ public class SqlServiceImpl implements InternalSqlService {
         long queryTimeout = nodeEngine.getConfig().getSqlConfig().getStatementTimeoutMillis();
         assert queryTimeout >= 0L;
         this.queryTimeout = queryTimeout;
+        var reflectionConfig = nodeEngine.getConfig().getSqlConfig().getJavaReflectionFilterConfig();
+        this.reflectionClassNameFilter = isNull(reflectionConfig) ? null : new ReflectionClassNameFilter(reflectionConfig);
     }
 
     public void start() {
@@ -132,6 +138,11 @@ public class SqlServiceImpl implements InternalSqlService {
         }
     }
 
+    @Override
+    public ReflectionClassNameFilter getReflectionClassNameFilter() {
+        return reflectionClassNameFilter;
+    }
+
     public SqlInternalService getInternalService() {
         return internalService;
     }
@@ -164,14 +175,20 @@ public class SqlServiceImpl implements InternalSqlService {
         return execute(statement, NoOpSqlSecurityContext.INSTANCE);
     }
 
+    @Nonnull
+    @Override
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext) {
         return execute(statement, securityContext, null);
     }
 
+    @Nonnull
+    @Override
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId) {
         return execute(statement, securityContext, queryId, false);
     }
 
+    @Nonnull
+    @Override
     public SqlResult execute(
             @Nonnull SqlStatement statement,
             SqlSecurityContext securityContext,

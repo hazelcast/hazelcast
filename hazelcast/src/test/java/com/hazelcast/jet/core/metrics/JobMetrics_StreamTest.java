@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WIT
 import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobMetrics_StreamTest extends TestInClusterSupport {
@@ -99,7 +99,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
         job.suspend();
 
         assertJobStatusEventually(job, SUSPENDED);
-        assertTrue(job.getMetrics().metrics().isEmpty());
+        assertFalse(job.getMetrics().containsTag(MetricTags.EXECUTION));
 
         putIntoMap(map, 1, 1);
         job.resume();

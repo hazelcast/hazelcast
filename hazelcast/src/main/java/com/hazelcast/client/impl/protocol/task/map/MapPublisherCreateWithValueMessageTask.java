@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryResult;
@@ -33,6 +34,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -64,7 +67,9 @@ public class MapPublisherCreateWithValueMessageTask
     protected Object call() throws Exception {
         ClusterService clusterService = clientEngine.getClusterService();
         Collection<MemberImpl> members = clusterService.getMemberImpls();
-        List<Future> snapshotFutures = createPublishersAndGetSnapshotOf(members);
+        List<Future> snapshotFutures = NamespaceUtil.callWithNamespace(nodeEngine,
+                MapService.lookupNamespace(nodeEngine, parameters.mapName),
+                () -> createPublishersAndGetSnapshotOf(members));
         return fetchMapSnapshotFrom(snapshotFutures);
     }
 
@@ -98,8 +103,8 @@ public class MapPublisherCreateWithValueMessageTask
             Object result;
             try {
                 result = future.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
             }
             if (result == null) {
                 continue;
@@ -139,7 +144,7 @@ public class MapPublisherCreateWithValueMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters.mapName, ActionConstants.ACTION_LISTEN);
     }
 
     @Override

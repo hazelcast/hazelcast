@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -52,7 +53,6 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -72,7 +72,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         encoder.src(() -> reference.getAndSet(null));
 
         ByteBuffer buffer = ByteBuffer.allocate(1000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -83,7 +83,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -105,7 +105,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         encoder.src(() -> reference.getAndSet(null));
 
         ByteBuffer buffer = ByteBuffer.allocate(1000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -116,7 +116,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -147,7 +147,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         encoder.src(() -> reference.getAndSet(null));
 
         ByteBuffer buffer = ByteBuffer.allocate(1000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -158,7 +158,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -190,9 +190,14 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         members.add(new MemberImpl(address2, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         UUID uuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
+        List<Integer> tpcPorts = new ArrayList<>();
+        tpcPorts.add(701);
+        tpcPorts.add(702);
+        byte[] tpcToken = new byte[64];
+        new Random().nextBytes(tpcToken);
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId, true);
+                uuid, (byte) 1, "3.12", 271, clusterId, true, tpcPorts, tpcToken);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -200,7 +205,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         encoder.src(() -> reference.getAndSet(null));
 
         ByteBuffer buffer = ByteBuffer.allocate(1000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -211,7 +216,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -231,6 +236,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
         assertEquals(true, parameters.failoverSupported);
+        assertEquals(tpcPorts, parameters.tpcPorts);
+        assertArrayEquals(tpcToken, parameters.tpcToken);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {
@@ -265,7 +272,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         encoder.src(() -> reference.getAndSet(null));
 
         ByteBuffer buffer = ByteBuffer.allocate(1000);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -276,7 +283,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -315,7 +322,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         });
 
         ByteBuffer buffer = ByteBuffer.allocate(200);
-        upcast(buffer).flip();
+        buffer.flip();
         encoder.dst(buffer);
 
         HandlerStatus result = encoder.onWrite();
@@ -326,7 +333,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessageRef::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
-        upcast(buffer).position(buffer.limit());
+        buffer.position(buffer.limit());
 
         decoder.src(buffer);
         decoder.onRead();
@@ -354,7 +361,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         return message;
     }
 
-    private HeapData randomData() {
+    public static HeapData randomData() {
         Random random = new Random();
         byte[] key = new byte[100];
         random.nextBytes(key);

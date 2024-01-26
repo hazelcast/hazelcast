@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.projection;
 
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.annotation.NamespacesSupported;
 
 import java.io.Serializable;
 
@@ -41,6 +42,7 @@ import java.io.Serializable;
  * @since 3.8
  */
 @FunctionalInterface
+@NamespacesSupported
 public interface Projection<I, O> extends Serializable {
 
     /**

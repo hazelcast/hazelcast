@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperati
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -78,19 +79,18 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         checkCollectionConfig(config, nodeEngine.getSplitBrainMergePolicyProvider());
 
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
+        final ClassLoader classLoader = NamespaceUtil.getClassLoaderForNamespace(nodeEngine, config.getUserCodeNamespace());
+
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
             if (listener == null && itemListenerConfig.getClassName() != null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), itemListenerConfig.getClassName());
+                    listener = ClassLoaderUtil.newInstance(classLoader, itemListenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
             if (listener != null) {
-                if (listener instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-                }
                 addItemListener(listener, itemListenerConfig.isIncludeValue());
             }
         }
@@ -227,6 +227,9 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         checkNotNull(listener, "Null listener is not allowed!");
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+        if (listener instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
         final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
         return registration.getId();
     }

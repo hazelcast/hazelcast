@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ public class SqlCreateType extends SqlCreate {
         SqlCreateType t = new SqlCreateType(
                 identifier(CATALOG, SCHEMA_NAME_PUBLIC, type.name()),
                 nodeList(type.getFields(), f -> new SqlTypeColumn(
-                        identifier(f.getName()), new SqlDataType(f.getQueryDataType(), SqlParserPos.ZERO), SqlParserPos.ZERO)),
+                        identifier(f.getName()), new SqlDataType(f.getType(), SqlParserPos.ZERO), SqlParserPos.ZERO)),
                 reconstructOptions(type.options()),
                 true, false, SqlParserPos.ZERO);
 

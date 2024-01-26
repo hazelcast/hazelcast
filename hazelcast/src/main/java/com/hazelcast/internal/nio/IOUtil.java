@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -52,6 +53,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.NetworkChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -62,7 +64,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -83,10 +84,11 @@ import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.String.format;
+import static java.nio.channels.FileChannel.open;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.nio.file.StandardOpenOption.READ;
 
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
         "checkstyle:ClassDataAbstractionCoupling"})
@@ -122,7 +124,7 @@ public final class IOUtil {
         if (bb.hasRemaining()) {
             bb.compact();
         } else {
-            upcast(bb).clear();
+            bb.clear();
         }
     }
 
@@ -317,10 +319,12 @@ public final class IOUtil {
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
+            @Override
             public void write(int b) {
                 dst.put((byte) b);
             }
 
+            @Override
             public void write(byte[] bytes, int off, int len) {
                 dst.put(bytes, off, len);
             }
@@ -329,6 +333,7 @@ public final class IOUtil {
 
     public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
+            @Override
             public int read() {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -336,6 +341,7 @@ public final class IOUtil {
                 return src.get() & 0xff;
             }
 
+            @Override
             public int read(byte[] bytes, int off, int len) {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -367,7 +373,7 @@ public final class IOUtil {
         int n = Math.min(src.remaining(), dst.remaining());
         int srcPosition = src.position();
         dst.put(src.array(), srcPosition, n);
-        upcast(src).position(srcPosition + n);
+        src.position(srcPosition + n);
         return n;
     }
 
@@ -391,7 +397,7 @@ public final class IOUtil {
         int n = Math.min(src.remaining(), dst.remaining());
         int dstPosition = dst.position();
         src.get(dst.array(), dstPosition, n);
-        upcast(dst).position(dstPosition + n);
+        dst.position(dstPosition + n);
         return n;
     }
 
@@ -399,10 +405,12 @@ public final class IOUtil {
         if (input.length == 0) {
             return new byte[0];
         }
-        int len = Math.max(input.length / 10, 10);
+        // 60% of the original length
+        int len = (int) (input.length * 0.6);
+        len = Math.max(len, 10);
 
         Deflater compressor = new Deflater();
-        compressor.setLevel(Deflater.BEST_SPEED);
+        compressor.setLevel(Deflater.DEFAULT_COMPRESSION);
         compressor.setInput(input);
         compressor.finish();
         ByteArrayOutputStream bos = new ByteArrayOutputStream(len);
@@ -448,21 +456,6 @@ public final class IOUtil {
             closeable.close();
         } catch (Exception e) {
             LOGGER.finest("closeResource failed", e);
-        }
-    }
-
-    public static void closeResources(Collection<? extends Closeable> collection) {
-        if (collection == null) {
-            return;
-        }
-        for (Closeable closeable : collection) {
-            if (closeable != null) {
-                try {
-                    closeable.close();
-                } catch (IOException e) {
-                    LOGGER.finest("closeResource failed", e);
-                }
-            }
         }
     }
 
@@ -544,7 +537,7 @@ public final class IOUtil {
             return;
         }
         try {
-            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(path, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.delete(file);
@@ -703,37 +696,6 @@ public final class IOUtil {
             copyDirectory(source, target);
         } else {
             copyFile(source, target, -1);
-        }
-    }
-
-    /**
-     * Deep copies source to target. If target doesn't exist, this will fail with {@link HazelcastException}.
-     * <p>
-     * The source is only accessed here, but not managed. It's the responsibility of the caller to release
-     * any resources held by the source.
-     *
-     * @param source the source
-     * @param target the destination
-     * @throws HazelcastException if the target doesn't exist
-     */
-    public static void copy(InputStream source, File target) {
-        if (!target.exists()) {
-            throw new HazelcastException("The target file doesn't exist " + target.getAbsolutePath());
-        }
-
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(target);
-            byte[] buff = new byte[8192];
-
-            int length;
-            while ((length = source.read(buff)) > 0) {
-                out.write(buff, 0, length);
-            }
-        } catch (Exception e) {
-            throw new HazelcastException("Error occurred while copying InputStream", e);
-        } finally {
-            closeResource(out);
         }
     }
 
@@ -938,6 +900,35 @@ public final class IOUtil {
         return options.contains(IOUtil.JDK_NET_TCP_KEEPCOUNT)
                 && options.contains(IOUtil.JDK_NET_TCP_KEEPIDLE)
                 && options.contains(IOUtil.JDK_NET_TCP_KEEPINTERVAL);
+    }
+
+
+    /**
+     * Fsyncs a directory on Linux and MacOSX. On Windows, this method does nothing.
+     * <p>
+     * @param dir the directory to fsync.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static void fsyncDir(Path dir) throws IOException {
+        // If the file is a directory we have to open read-only.
+        if (OS.isWindows()) {
+            // opening a directory on Windows fails, directories can not be fsynced there
+            if (!Files.exists(dir)) {
+                // yet do not suppress trying to fsync directories that do not exist
+                throw new NoSuchFileException(dir.toString());
+            }
+            return;
+        }
+        try (FileChannel file = open(dir, READ)) {
+            try {
+                file.force(true);
+            } catch (final IOException e) {
+                assert !(OS.isLinux() || OS.isMac())
+                        : "On Linux and MacOSX fsyncing a directory should not throw IOException, "
+                        + "we just don't want to rely on that in production (undocumented). Got: "
+                        + e;
+            }
+        }
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

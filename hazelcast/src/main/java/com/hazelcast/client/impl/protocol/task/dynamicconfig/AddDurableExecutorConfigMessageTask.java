@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,11 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
+
+import java.security.Permission;
 
 public class AddDurableExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddDurableExecutorConfigCodec.RequestParameters> {
@@ -49,21 +54,27 @@ public class AddDurableExecutorConfigMessageTask
         boolean statsEnabled = !parameters.isStatisticsEnabledExists
                 || parameters.statisticsEnabled;
 
-        DurableExecutorConfig config = new DurableExecutorConfig(parameters.name, parameters.poolSize,
-                parameters.durability, parameters.capacity, statsEnabled);
-        return config;
+        return new DurableExecutorConfig(parameters.name, parameters.poolSize, parameters.durability, parameters.capacity,
+                statsEnabled, parameters.isUserCodeNamespaceExists ? parameters.userCodeNamespace : null);
     }
 
     @Override
     public String getMethodName() {
-        return "addDurableExecutorConfig";
+        return SecurityInterceptorConstants.ADD_DURABLE_EXECUTOR_CONFIG;
+    }
+
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         DurableExecutorConfig durableExecutorConfig = (DurableExecutorConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getDurableExecutorConfigs(),
-                durableExecutorConfig.getName(), durableExecutorConfig);
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(
+                nodeConfig.getStaticConfig().getDurableExecutorConfigs(), durableExecutorConfig.getName(),
+                durableExecutorConfig);
     }
 }

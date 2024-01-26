@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 
 public abstract class AsyncHazelcastWriterP implements Processor {
 
-    protected static final int MAX_PARALLEL_ASYNC_OPS_DEFAULT = 1000;
+    public static final int MAX_PARALLEL_ASYNC_OPS_DEFAULT = 1000;
 
     private final ILogger logger = Logger.getLogger(AsyncHazelcastWriterP.class);
     private final int maxParallelAsyncOps;

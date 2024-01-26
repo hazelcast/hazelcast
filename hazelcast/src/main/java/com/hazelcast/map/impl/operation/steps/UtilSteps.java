@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.StepResponseUtil;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+
+import java.util.function.Consumer;
 
 public enum UtilSteps implements IMapOpStep {
 
@@ -60,7 +63,13 @@ public enum UtilSteps implements IMapOpStep {
             operation.disposeDeferredBlocks();
 
             if (operation instanceof BackupOperation) {
-                state.getBackupOpAfterRun().accept(operation);
+                // it can be possible that some operations marked
+                // as BackupOperation but does not have backup.
+                // see EvictBatchBackupOperation
+                Consumer backupOpAfterRun = state.getBackupOpAfterRun();
+                if (backupOpAfterRun != null) {
+                    backupOpAfterRun.accept(operation);
+                }
             }
         }
 
@@ -127,8 +136,13 @@ public enum UtilSteps implements IMapOpStep {
     DIRECT_RUN_STEP {
         @Override
         public void runStep(State state) {
+            RecordStore recordStore = state.getRecordStore();
+            state.setSizeBefore(recordStore.size());
+
             MapOperation op = state.getOperation();
             op.runInternalDirect();
+
+            state.setSizeAfter(recordStore.size());
         }
 
         @Override

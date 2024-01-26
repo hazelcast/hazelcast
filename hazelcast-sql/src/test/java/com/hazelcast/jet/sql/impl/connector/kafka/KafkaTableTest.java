@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaTable.KafkaPlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -25,6 +24,8 @@ import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -58,7 +59,7 @@ public class KafkaTableTest {
                 name1,
                 topic1,
                 ImmutableList.of(new TableField(field1, QueryDataType.INT, false)),
-                ImmutableMap.of("key", value1)
+                Map.of("key", value1)
         );
         KafkaPlanObjectKey k2 = new KafkaPlanObjectKey(
                 schema2,

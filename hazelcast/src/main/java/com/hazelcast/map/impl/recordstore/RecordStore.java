@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,7 +241,7 @@ public interface RecordStore<R extends Record> {
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
      * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
      */
-    Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress);
+    Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress, long now);
 
     /**
      * Puts key-value pair to map which is the result of a load from map store operation on backup.
@@ -266,7 +266,7 @@ public interface RecordStore<R extends Record> {
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
      * @see com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation
      */
-    Object putFromLoadBackup(Data key, Object value, long expirationTime);
+    Object putFromLoadBackup(Data key, Object value, long expirationTime, long now);
 
     /**
      * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
@@ -318,6 +318,9 @@ public interface RecordStore<R extends Record> {
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
     void forEach(BiConsumer<Data, Record> consumer, boolean backup, boolean includeExpiredRecords);
+
+    void forEach(BiConsumer<Data, Record> consumer, boolean backup, boolean includeExpiredRecords,
+                 boolean noCaching);
 
     Iterator<Map.Entry<Data, Record>> iterator();
 
@@ -503,7 +506,7 @@ public interface RecordStore<R extends Record> {
 
     R createRecord(Data key, Object value, long now);
 
-    R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
+    R loadRecordOrNull(Data key, boolean backup, Address callerAddress, long now);
 
     /**
      * This can be used to release unused resources.
@@ -681,6 +684,6 @@ public interface RecordStore<R extends Record> {
     boolean isTieredStorageEnabled();
 
     default void disposeOnSplitBrainHeal() {
-        // no-op
+        getMapContainer().onDestroy();
     }
 }

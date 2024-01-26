@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PROJECTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PROJECTION_DS_FACTORY_ID;
@@ -43,23 +44,11 @@ public final class ProjectionDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[SINGLE_ATTRIBUTE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SingleAttributeProjection();
-            }
-        };
-        constructors[MULTI_ATTRIBUTE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiAttributeProjection();
-            }
-        };
-        constructors[IDENTITY_PROJECTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return IdentityProjection.INSTANCE;
-            }
-        };
+        constructors[SINGLE_ATTRIBUTE] = SingleAttributeProjection::new;
+        constructors[MULTI_ATTRIBUTE] = MultiAttributeProjection::new;
+        constructors[IDENTITY_PROJECTION] = () -> IdentityProjection.INSTANCE;
 
         return new ArrayDataSerializableFactory(constructors);
     }

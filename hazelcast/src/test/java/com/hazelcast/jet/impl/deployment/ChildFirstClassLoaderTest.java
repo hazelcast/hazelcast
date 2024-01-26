@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -87,21 +86,27 @@ public class ChildFirstClassLoaderTest {
 
     @Test
     public void urlsMustNotBeNullNorEmpty() {
-        assertThatThrownBy(() -> new ChildFirstClassLoader(null, ClassLoader.getSystemClassLoader()))
+        assertThatThrownBy(() -> {
+            try (ChildFirstClassLoader ignored = new ChildFirstClassLoader(null, ClassLoader.getSystemClassLoader())) {
+            }
+        })
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[0], ClassLoader.getSystemClassLoader()))
+        assertThatThrownBy(() -> {
+            try (ChildFirstClassLoader ignored = new ChildFirstClassLoader(new URL[0], ClassLoader.getSystemClassLoader())) {
+            }
+        })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void parentMustNotBeNull() {
-        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[]{new URL("file:///somefile.jar")}, null))
+        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[]{Paths.get("somefile.jar").toUri().toURL()}, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void canLoadClassFromParentClassLoader() throws Exception {
-        cl = new ChildFirstClassLoader(new URL[]{new URL("file:///somefile.jar")}, ChildFirstClassLoader.class.getClassLoader());
+        cl = new ChildFirstClassLoader(new URL[]{Paths.get("somefile.jar").toUri().toURL()}, ChildFirstClassLoader.class.getClassLoader());
 
         Class<?> clazz = cl.loadClass(ChildFirstClassLoaderTest.class.getName());
         assertThat(clazz).isSameAs(this.getClass());
@@ -248,7 +253,7 @@ public class ChildFirstClassLoaderTest {
                 throw new IllegalArgumentException("Resource with name " + name +
                         " could not be found in classloader " + cl);
             }
-            return IOUtils.toString(is, UTF_8);
+            return new String(is.readAllBytes(), UTF_8);
         }
     }
 }

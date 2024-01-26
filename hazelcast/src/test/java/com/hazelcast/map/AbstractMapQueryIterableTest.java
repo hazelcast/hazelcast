@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -255,16 +255,16 @@ public abstract class AbstractMapQueryIterableTest extends HazelcastTestSupport 
         }
     }
 
-    private static class TestProjection implements Projection<Entry<String, String>, String> {
+    public static class TestProjection implements Projection<Entry<String, String>, String> {
         @Override
         public String transform(Entry<String, String> input) {
             return "dummy" + input.getValue();
         }
     }
 
-    private static class GetValueProjection<T> implements Projection<Entry<String, T>, T> {
+    public static class GetValueProjection<K, V> implements Projection<Entry<K, V>, V> {
         @Override
-        public T transform(Entry<String, T> input) {
+        public V transform(Entry<K, V> input) {
             return input.getValue();
         }
     }

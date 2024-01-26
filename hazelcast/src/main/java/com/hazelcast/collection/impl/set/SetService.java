@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,5 +163,36 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
     @Override
     public LocalSetStatsImpl getLocalCollectionStats(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localCollectionStatsConstructorFunction);
+    }
+
+    /**
+     * Looks up the User Code Namespace name associated with the specified set name. This starts
+     * by looking for an existing {@link SetContainer} and checking its defined
+     * {@link SetConfig}. If the {@link SetContainer} does not exist (containers are
+     * created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param setName The name of the {@link com.hazelcast.collection.ISet} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine engine, String setName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            SetService service = engine.getService(SERVICE_NAME);
+            return service.lookupNamespace(setName);
+        }
+        return null;
+    }
+
+    @Override
+    protected String lookupNamespace(String setName) {
+        SetContainer container = containerMap.get(setName);
+        if (container != null) {
+            return container.getConfig().getUserCodeNamespace();
+        }
+        SetConfig config = nodeEngine.getConfig().findSetConfig(setName);
+        if (config != null) {
+            return config.getUserCodeNamespace();
+        }
+        return null;
     }
 }

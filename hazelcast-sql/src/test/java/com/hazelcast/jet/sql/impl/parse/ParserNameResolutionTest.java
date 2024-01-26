@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.TestTableResolver;
 import com.hazelcast.sql.impl.QueryException;
@@ -57,7 +56,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParserNameResolutionTest extends SqlTestSupport {
+public class ParserNameResolutionTest {
     private static OptimizerContext context;
 
     private static final String BAD_CATALOG = "badCatalog";
@@ -79,7 +78,6 @@ public class ParserNameResolutionTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
         context = createContext();
     }
 
@@ -229,8 +227,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 name -> null,
-                NoOpSqlSecurityContext.INSTANCE
-        );
+                null,
+                NoOpSqlSecurityContext.INSTANCE);
     }
 
     private static <E> E last(E[] array) {

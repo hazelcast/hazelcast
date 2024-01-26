@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
@@ -43,6 +44,13 @@ public interface TestDatabaseProvider {
     default String noAuthJdbcUrl() {
         throw new RuntimeException("Not supported");
     }
+
+    /**
+     * Returns url used to connect to this database.
+     *
+     * It's the same value as the return value of {@link #createDatabase(String)}
+     */
+    String url();
 
     /**
      * A username to authenticate
@@ -77,16 +85,25 @@ public interface TestDatabaseProvider {
      */
     void shutdown();
 
+    default String dataConnectionType() {
+        return "Jdbc";
+    }
+
     /**
      * Quote individual parts of a compound identifier and concat with `.` delimiter
      */
-    default String quote(String[] parts) {
+    default String quote(String... parts) {
         return Arrays.stream(parts)
                      .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
                      .collect(joining("."));
     };
 
-    default String createSchemaQuery(String schemaName) {
-        return "CREATE SCHEMA IF NOT EXISTS " + schemaName;
+    default Properties properties() {
+        Properties properties = new Properties();
+        properties.setProperty("jdbcUrl", noAuthJdbcUrl());
+        return properties;
     }
+
+    TestDatabaseRecordProvider recordProvider();
+
 }

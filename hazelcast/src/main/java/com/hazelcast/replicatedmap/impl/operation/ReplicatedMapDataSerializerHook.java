@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY_ID;
@@ -61,8 +63,9 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int RECORD_MIGRATION_INFO = 24;
     public static final int MERGE_FACTORY = 25;
     public static final int MERGE = 26;
-
-    private static final int LEN = MERGE + 1;
+    public static final int PUT_ALL_WITH_METADATA = 27;
+    public static final int ENTRY_VIEW_HOLDER = 28;
+    private static final int LEN = ENTRY_VIEW_HOLDER + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -77,33 +80,35 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     }
 
     private static DataSerializableFactory createFactoryInternal() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[CLEAR] = arg -> new ClearOperation();
-        constructors[ENTRY_VIEW] = arg -> new ReplicatedMapEntryView();
-        constructors[REPLICATE_UPDATE] = arg -> new ReplicateUpdateOperation();
-        constructors[REPLICATE_UPDATE_TO_CALLER] = arg -> new ReplicateUpdateToCallerOperation();
-        constructors[PUT_ALL] = arg -> new PutAllOperation();
-        constructors[PUT] = arg -> new PutOperation();
-        constructors[REMOVE] = arg -> new RemoveOperation();
-        constructors[SIZE] = arg -> new SizeOperation();
-        constructors[VERSION_RESPONSE_PAIR] = arg -> new VersionResponsePair();
-        constructors[GET] = arg -> new GetOperation();
-        constructors[CHECK_REPLICA_VERSION] = arg -> new CheckReplicaVersionOperation();
-        constructors[CONTAINS_KEY] = arg -> new ContainsKeyOperation();
-        constructors[CONTAINS_VALUE] = arg -> new ContainsValueOperation();
-        constructors[ENTRY_SET] = arg -> new EntrySetOperation();
-        constructors[EVICTION] = arg -> new EvictionOperation();
-        constructors[IS_EMPTY] = arg -> new IsEmptyOperation();
-        constructors[KEY_SET] = arg -> new KeySetOperation();
-        constructors[REPLICATION] = arg -> new ReplicationOperation();
-        constructors[REQUEST_MAP_DATA] = arg -> new RequestMapDataOperation();
-        constructors[SYNC_REPLICATED_DATA] = arg -> new SyncReplicatedMapDataOperation();
-        constructors[VALUES] = arg -> new ValuesOperation();
-        constructors[CLEAR_OP_FACTORY] = arg -> new ClearOperationFactory();
-        constructors[PUT_ALL_OP_FACTORY] = arg -> new PutAllOperationFactory();
-        constructors[RECORD_MIGRATION_INFO] = arg -> new RecordMigrationInfo();
-        constructors[MERGE_FACTORY] = arg -> new MergeOperationFactory();
-        constructors[MERGE] = arg -> new MergeOperation();
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
+        constructors[CLEAR] = ClearOperation::new;
+        constructors[ENTRY_VIEW] = ReplicatedMapEntryView::new;
+        constructors[REPLICATE_UPDATE] = ReplicateUpdateOperation::new;
+        constructors[REPLICATE_UPDATE_TO_CALLER] = ReplicateUpdateToCallerOperation::new;
+        constructors[PUT_ALL] = PutAllOperation::new;
+        constructors[PUT] = PutOperation::new;
+        constructors[REMOVE] = RemoveOperation::new;
+        constructors[SIZE] = SizeOperation::new;
+        constructors[VERSION_RESPONSE_PAIR] = VersionResponsePair::new;
+        constructors[GET] = GetOperation::new;
+        constructors[CHECK_REPLICA_VERSION] = CheckReplicaVersionOperation::new;
+        constructors[CONTAINS_KEY] = ContainsKeyOperation::new;
+        constructors[CONTAINS_VALUE] = ContainsValueOperation::new;
+        constructors[ENTRY_SET] = EntrySetOperation::new;
+        constructors[EVICTION] = EvictionOperation::new;
+        constructors[IS_EMPTY] = IsEmptyOperation::new;
+        constructors[KEY_SET] = KeySetOperation::new;
+        constructors[REPLICATION] = ReplicationOperation::new;
+        constructors[REQUEST_MAP_DATA] = RequestMapDataOperation::new;
+        constructors[SYNC_REPLICATED_DATA] = SyncReplicatedMapDataOperation::new;
+        constructors[VALUES] = ValuesOperation::new;
+        constructors[CLEAR_OP_FACTORY] = ClearOperationFactory::new;
+        constructors[PUT_ALL_OP_FACTORY] = PutAllOperationFactory::new;
+        constructors[RECORD_MIGRATION_INFO] = RecordMigrationInfo::new;
+        constructors[MERGE_FACTORY] = MergeOperationFactory::new;
+        constructors[MERGE] = MergeOperation::new;
+        constructors[PUT_ALL_WITH_METADATA] = PutAllWithMetadataOperation::new;
+        constructors[ENTRY_VIEW_HOLDER] = ReplicatedMapEntryViewHolder::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

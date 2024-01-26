@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,11 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         }
     }
 
+    @Nonnull
+    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
+        return newJobInt(newJobId(), dag, config, subject, false);
+    }
+
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
         return newJobInt(newJobId(), dag, config, false);
@@ -130,6 +135,11 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     @Nonnull
     public Job newJob(long jobId, @Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         return newJobInt(jobId, pipeline, config, false);
+    }
+
+    @Nonnull
+    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
+        return newJobInt(jobId, dag, config, subject, false);
     }
 
     private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nonnull JobConfig config, boolean isLightJob) {
@@ -166,9 +176,9 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                 "JobConfig.initialSnapshotName not supported for light jobs");
     }
 
-    private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+    private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config, @Nullable Subject subject) {
         if (config.getName() == null) {
-            return newJobInt(newJobId(), jobDefinition, config, false);
+            return newJobInt(newJobId(), jobDefinition, config, subject, false);
         } else {
             while (true) {
                 Job job = getJob(config.getName());
@@ -179,7 +189,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                     }
                 }
                 try {
-                    return newJobInt(newJobId(), jobDefinition, config, false);
+                    return newJobInt(newJobId(), jobDefinition, config, subject, false);
                 } catch (JobAlreadyExistsException e) {
                     logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
@@ -187,14 +197,19 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         }
     }
 
+    @Nonnull
+    public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
+        return newJobIfAbsent((Object) dag, config, subject);
+    }
+
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJobIfAbsent((Object) dag, config);
+        return newJobIfAbsent((Object) dag, config, null);
     }
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobIfAbsent((Object) pipeline, config);
+        return newJobIfAbsent((Object) pipeline, config, null);
     }
 
     @Nonnull @Override

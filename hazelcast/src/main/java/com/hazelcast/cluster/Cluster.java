@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,6 +111,21 @@ public interface Cluster {
      * @since 3.9
      */
     void promoteLocalLiteMember();
+
+    /**
+     * Demotes the local data member to a lite member.
+     * When this method returns, both {@link #getLocalMember()} and {@link #getMembers()}
+     * reflect the demotion.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
+     *
+     * @throws IllegalStateException when member is not a data member or mastership claim is in progress
+     *                               or local member cannot be identified as a member of the cluster
+     *                               or cluster state doesn't allow migrations/repartitioning
+     *                               or the member is the only data member in the cluster.
+     * @since 5.4
+     */
+    void demoteLocalDataMember();
 
     /**
      * Returns the cluster-wide time in milliseconds.

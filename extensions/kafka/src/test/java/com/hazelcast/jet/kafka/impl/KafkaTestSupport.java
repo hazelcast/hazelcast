@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -265,7 +265,8 @@ public abstract class KafkaTestSupport {
         return schemaRegistryServer.getURI();
     }
 
-    public int registerSchema(String subject, Schema schema) throws SchemaRegistryException {
+    public io.confluent.kafka.schemaregistry.client.rest.entities.Schema registerSchema(String subject, Schema schema)
+            throws SchemaRegistryException {
         return schemaRegistry.register(subject, new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(
                 subject, -1, -1, AvroSchema.TYPE, emptyList(), schema.toString()));
     }

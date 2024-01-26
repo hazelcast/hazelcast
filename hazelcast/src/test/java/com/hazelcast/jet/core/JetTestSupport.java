@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -98,6 +99,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     /**
      * This is needed to finish tests which got stuck in @Before, @BeforeClass, @After or @AfterClass method.
+     * Note that this rule applies to entire test execution (all methods with all parameters),
+     * not only to individual methods contrary to what might be expected from {@link Timeout} javadoc.
+     * This is caused by ordering of standard rules with respect to our custom rules.
      */
     @ClassRule
     public static Timeout globalTimeout = Timeout.seconds(15 * 60);
@@ -146,18 +150,20 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                     ditchJob(job, instances.toArray(new HazelcastInstance[0]));
                 }
 
-                JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
-                        .getNodeEngine()
-                        .<JetServiceBackend>getService(SERVICE_NAME)
-                        .getJobClassLoaderService();
+                if (instance instanceof HazelcastInstanceImpl) {
+                    JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
+                            .getNodeEngine()
+                            .<JetServiceBackend>getService(SERVICE_NAME)
+                            .getJobClassLoaderService();
 
-                Map<Long, ?> classLoaders = jobClassLoaderService.getClassLoaders();
-                // The classloader cleanup is done asynchronously in some cases, wait up to 10s
-                for (int i = 0; i < 100 && !classLoaders.isEmpty(); i++) {
-                    sleepMillis(100);
-                }
-                for (Entry<Long, ?> entry : classLoaders.entrySet()) {
-                    leakedClassloaders.put(entry.getKey(), entry.toString());
+                    Map<Long, ?> classLoaders = jobClassLoaderService.getClassLoaders();
+                    // The classloader cleanup is done asynchronously in some cases, wait up to 10s
+                    for (int i = 0; i < 100 && !classLoaders.isEmpty(); i++) {
+                        sleepMillis(100);
+                    }
+                    for (Entry<Long, ?> entry : classLoaders.entrySet()) {
+                        leakedClassloaders.put(entry.getKey(), entry.toString());
+                    }
                 }
             }
         }
@@ -346,6 +352,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance instance) {
         return Accessors.getNodeEngineImpl(instance);
+    }
+
+    public static InternalDataConnectionService getDataConnectionService(HazelcastInstance instance) {
+        return Accessors.getNodeEngineImpl(instance).getDataConnectionService();
     }
 
     public Map<Address, int[]> getPartitionAssignment(HazelcastInstance instance) {

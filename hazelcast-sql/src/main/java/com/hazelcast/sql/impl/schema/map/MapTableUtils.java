@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,11 +75,11 @@ public final class MapTableUtils {
     public static List<MapTableIndex> getPartitionedMapIndexes(MapContainer mapContainer, List<TableField> fields) {
         Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
 
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             return Collections.emptyList();
         }
 
-        InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
+        InternalIndex[] indexes = mapContainer.getGlobalIndexRegistry().getIndexes();
 
         if (indexes == null || indexes.length == 0) {
             return Collections.emptyList();

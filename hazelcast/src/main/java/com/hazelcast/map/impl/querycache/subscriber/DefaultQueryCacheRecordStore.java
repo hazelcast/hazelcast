@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecordFactory;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -49,7 +49,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
 
     private static final int DEFAULT_CACHE_CAPACITY = 1000;
 
-    private final Indexes indexes;
+    private final IndexRegistry indexRegistry;
     private final QueryCacheRecordHashMap cache;
     private final EvictionOperator evictionOperator;
     private final QueryCacheRecordFactory recordFactory;
@@ -59,13 +59,13 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private final boolean serializeKeys;
 
     DefaultQueryCacheRecordStore(InternalSerializationService ss,
-                                 Indexes indexes,
+                                 IndexRegistry indexRegistry,
                                  QueryCacheConfig config, EvictionListener listener,
                                  Extractors extractors) {
         this.cache = new QueryCacheRecordHashMap(ss, DEFAULT_CACHE_CAPACITY);
         this.ss = ss;
         this.recordFactory = getRecordFactory(config.getInMemoryFormat());
-        this.indexes = indexes;
+        this.indexRegistry = indexRegistry;
         this.evictionOperator = new EvictionOperator(cache, config, listener, ss.getClassLoader());
         this.extractors = extractors;
         EvictionConfig evictionConfig = config.getEvictionConfig();
@@ -152,25 +152,25 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
      */
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord,
                            CachedQueryEntry newEntry, CachedQueryEntry oldEntry) {
-        if (indexes.haveAtLeastOneIndex()) {
+        if (indexRegistry.haveAtLeastOneIndex()) {
             Object currentValue = currentRecord.getValue();
             QueryEntry queryEntry = new QueryEntry(ss, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
             newEntry.init(keyData, currentValue);
             oldEntry.init(keyData, oldValue);
-            indexes.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
+            indexRegistry.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
         }
     }
 
     private void saveIndex(Object queryCacheKey, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
-        if (indexes.haveAtLeastOneIndex()) {
+        if (indexRegistry.haveAtLeastOneIndex()) {
             Data keyData = ss.toData(queryCacheKey);
             Object currentValue = currentRecord.getValue();
             QueryEntry queryEntry = new QueryEntry(ss, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
             CachedQueryEntry newEntry = new CachedQueryEntry(ss, keyData, currentValue, extractors);
             CachedQueryEntry oldEntry = new CachedQueryEntry(ss, keyData, oldValue, extractors);
-            indexes.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
+            indexRegistry.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
         }
     }
 
@@ -190,8 +190,8 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     private void removeIndex(Object queryCacheKey, Object value) {
-        if (indexes.haveAtLeastOneIndex()) {
-            indexes.removeEntry(ss.toData(queryCacheKey), value, Index.OperationSource.USER);
+        if (indexRegistry.haveAtLeastOneIndex()) {
+            indexRegistry.removeEntry(ss.toData(queryCacheKey), value, Index.OperationSource.USER);
         }
     }
 
@@ -228,7 +228,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     public int clear() {
         int removedEntryCount = cache.size();
         cache.clear();
-        indexes.clearAll();
+        indexRegistry.clearAll();
         return removedEntryCount;
     }
 

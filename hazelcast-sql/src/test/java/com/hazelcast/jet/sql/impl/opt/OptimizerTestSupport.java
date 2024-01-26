@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -46,6 +47,7 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -125,11 +127,14 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     private static OptimizerContext context(HazelcastSchema schema, QueryDataType... parameterTypes) {
+        SqlServiceImpl sql = (SqlServiceImpl) (instance().getSql());
+        HepProgram subqueryRewriterProgram = sql.getOptimizer().getSubqueryRewriterProgram();
         OptimizerContext context = OptimizerContext.create(
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
                 name -> null,
+                subqueryRewriterProgram,
                 NoOpSqlSecurityContext.INSTANCE
         );
 

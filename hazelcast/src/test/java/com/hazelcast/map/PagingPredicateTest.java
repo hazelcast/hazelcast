@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,8 +172,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     @Test
     public void testPagingWithFilteringAndComparator() {
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);
-        PagingPredicate<Integer, Integer> predicate
-                = Predicates.pagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
+        PagingPredicate<Integer, Integer> predicate =
+                Predicates.pagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 8, 7, 6, 5, 4);

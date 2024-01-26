@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static java.util.Collections.sort;
  */
 public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
-    private static final String JVM_ARGS = "java.vm.args";
+    static final String JVM_ARGS = "java.vm.args";
 
     private final List keys = new ArrayList();
     private String inputArgs;

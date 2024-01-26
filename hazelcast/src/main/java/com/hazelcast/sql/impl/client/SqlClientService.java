@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.collection.ReadOptimizedLruCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -295,11 +296,15 @@ public class SqlClientService implements SqlService {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
+            Throwable cause = null;
+            if (sqlError.isCauseStackTraceExists()) {
+                cause = new Exception(sqlError.getCauseStackTrace());
+            }
             throw new HazelcastSqlException(
                     sqlError.getOriginatingMemberId(),
                     sqlError.getCode(),
                     sqlError.getMessage(),
-                    null,
+                    cause,
                     sqlError.getSuggestion()
             );
         } else {
@@ -452,7 +457,7 @@ public class SqlClientService implements SqlService {
             return null;
         }
 
-        if (statement.getParameters().size() == 0) {
+        if (statement.getParameters().isEmpty()) {
             return null;
         }
 

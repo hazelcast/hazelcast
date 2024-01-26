@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,12 @@ public class ToHeapDataConverterTest {
     }
 
     @Test
-    public void whenNull() throws Exception {
+    public void whenNull() {
         Data data = ToHeapDataConverter.toHeapData(null);
         assertNull(data);
     }
 
-    class AnotherDataImpl implements Data {
+    static class AnotherDataImpl implements Data {
 
         @Override
         public byte[] toByteArray() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,22 @@ import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR;
+import static java.lang.Integer.getInteger;
 
 /**
  * {@link Step} specialized for {@link
  * com.hazelcast.map.IMap} operations.
  */
 public interface IMapOpStep extends Step<State> {
+
+    /**
+     * The batch size of records handled in bulk operations.
+     */
+    int DEFAULT_BATCH_SIZE = 10_000;
+
+    String PROP_BULK_OP_BATCH_SIZE = "hazelcast.map.ops.engine.batch.size";
+
+    int BATCH_SIZE = getInteger(PROP_BULK_OP_BATCH_SIZE, DEFAULT_BATCH_SIZE);
 
     /**
      * Decides when to offload based on configured map-store type.

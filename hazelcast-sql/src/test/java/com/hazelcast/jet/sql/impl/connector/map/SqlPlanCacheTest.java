@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("SELECT * FROM map ORDER BY id");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        mapContainer(map).getIndexes().destroyIndexes();
+        mapContainer(map).getGlobalIndexRegistry().destroyIndexes();
         map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
 
         assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());

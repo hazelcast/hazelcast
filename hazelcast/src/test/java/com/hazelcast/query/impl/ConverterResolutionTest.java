@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,13 +43,13 @@ public class ConverterResolutionTest {
 
     private InternalSerializationService serializationService;
     private Extractors extractors;
-    private Indexes indexes;
+    private IndexRegistry indexes;
 
     @Before
     public void before() {
         serializationService = new DefaultSerializationServiceBuilder().build();
         extractors = Extractors.newBuilder(serializationService).build();
-        indexes = Indexes.newBuilder(null, "test", serializationService,
+        indexes = IndexRegistry.newBuilder(null, "test", serializationService,
                 IndexCopyBehavior.COPY_ON_READ, DEFAULT_IN_MEMORY_FORMAT).extractors(extractors).build();
     }
 

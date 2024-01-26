@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListIndexOfOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -31,10 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_INDEXOF}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListIndexOfMessageTask
-        extends AbstractPartitionMessageTask<ListIndexOfCodec.RequestParameters> {
+        extends AbstractListMessageTask<ListIndexOfCodec.RequestParameters> {
 
     public ListIndexOfMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -72,7 +72,7 @@ public class ListIndexOfMessageTask
 
     @Override
     public String getMethodName() {
-        return "indexOf";
+        return SecurityInterceptorConstants.INDEX_OF;
     }
 
     @Override

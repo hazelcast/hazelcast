@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.serialization;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
@@ -53,8 +52,8 @@ public class DelegatingSerializationServiceTest {
     @Test
     public void when_triesToRegisterSerializerWithNegativeTypeId_then_Fails() {
         // Given
-        Map<Class<?>, Serializer> serializers = ImmutableMap.of(
-                Object.class, new StreamSerializer<Object>() {
+        Map<Class<?>, Serializer> serializers = Map.of(
+                Object.class, new StreamSerializer<>() {
                     @Override
                     public int getTypeId() {
                         return -1;
@@ -80,7 +79,7 @@ public class DelegatingSerializationServiceTest {
     @Test
     public void when_triesToRegisterTwoSerializersWithSameTypeId_then_Fails() {
         // Given
-        Map<Class<?>, Serializer> serializers = ImmutableMap.of(
+        Map<Class<?>, Serializer> serializers = Map.of(
                 int.class, new ValueSerializer(),
                 long.class, new ValueSerializer()
         );
@@ -122,14 +121,14 @@ public class DelegatingSerializationServiceTest {
     public void when_multipleTypeSerializersRegistered_then_localHasPrecedence() {
         // Given
         Serializer serializer = new ValueSerializer();
-        Map<Class<?>, Serializer> serializers = ImmutableMap.of(Byte.class, serializer);
+        Map<Class<?>, Serializer> serializers = Map.of(Byte.class, serializer);
 
         DelegatingSerializationService service = new DelegatingSerializationService(serializers, DELEGATE);
 
         // When
         // Then
         assertThat(service.serializerFor(TYPE_ID).getImpl()).isEqualTo(serializer);
-        assertThat(service.serializerFor(Byte.valueOf((byte) 1), false).getImpl()).isEqualTo(serializer);
+        assertThat(service.serializerFor((byte) 1, false).getImpl()).isEqualTo(serializer);
     }
 
     @Test

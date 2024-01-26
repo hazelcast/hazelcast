@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
@@ -390,7 +390,7 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Nullable
-    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, Function<Integer, T[]> constructor,
+    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, IntFunction<T[]> constructor,
                                          Reader<ObjectDataInput, T> reader) throws IOException {
         int currentPos = in.position();
         try {

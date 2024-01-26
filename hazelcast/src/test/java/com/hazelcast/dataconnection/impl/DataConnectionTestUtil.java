@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Properties;
 
 public final class DataConnectionTestUtil {
+
+    public static final String DUMMY_TYPE = "DUMMY";
 
     private DataConnectionTestUtil() {
     }
@@ -109,7 +111,7 @@ public final class DataConnectionTestUtil {
 
         @Override
         public String type() {
-            return "DUMMY";
+            return DUMMY_TYPE;
         }
 
         @Override

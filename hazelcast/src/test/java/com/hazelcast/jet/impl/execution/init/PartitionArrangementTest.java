@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -29,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
+import java.util.Map;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -58,7 +59,7 @@ public class PartitionArrangementTest {
         a2 = new Address("1.2.3.4", 2);
 
         a = new PartitionArrangement(
-                ImmutableMap.of(
+                Map.of(
                         a0, new int[]{0, 3, 6},
                         a1, new int[]{2, 4},
                         a2, new int[]{1, 5}),

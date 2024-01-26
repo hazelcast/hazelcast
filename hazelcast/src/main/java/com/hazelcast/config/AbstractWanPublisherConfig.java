@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -125,12 +126,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        int size = properties.size();
-        out.writeInt(size);
-        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(properties, out);
         out.writeString(className);
         out.writeObject(implementation);
         out.writeString(publisherId);

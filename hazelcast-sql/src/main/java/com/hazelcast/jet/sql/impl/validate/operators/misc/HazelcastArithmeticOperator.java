@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
         return SqlMonotonicity.NOT_MONOTONIC;
     }
 
-    private static final class ArithmeticTypeInference implements SqlReturnTypeInference {
+    public static final class ArithmeticTypeInference implements SqlReturnTypeInference {
         @Override
         public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
             assert opBinding.getOperandCount() == 2;

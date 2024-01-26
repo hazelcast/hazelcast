@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.UserCodeNamespacesConfig;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +29,11 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * When enabled client sends configured classes to cluster.
  * This simplifies deployment as you do not have to deploy your domain classes into classpath of all
  * cluster members.
+ *
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see UserCodeNamespacesConfig
  */
+@Deprecated(since = "5.4", forRemoval = true)
 public class ClientUserCodeDeploymentConfig {
 
     private boolean enabled;

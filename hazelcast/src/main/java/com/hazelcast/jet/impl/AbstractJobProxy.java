@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -81,9 +82,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     // that needs this field we initialize in it superclass constructor.
     protected final Subject subject;
 
+    protected final ILogger logger;
+
     private final long jobId;
     private volatile String name = NOT_LOADED;
-    private final ILogger logger;
     private final C container;
 
     /**
@@ -190,7 +192,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     /**
      * Returns the string {@code <jobId> (name <jobName>)} without risking
      * triggering of lazy-loading of JobConfig: if we don't have it, it will
-     * say {@code name ??}. If we have it and it is null, it will say {@code
+     * say {@code name ??}. If we have it, and it is null, it will say {@code
      * name ''}.
      */
     @SuppressWarnings({"StringEquality", "java:S4973"})
@@ -272,6 +274,16 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         terminate(TerminationMode.SUSPEND_GRACEFUL);
     }
 
+    @Override
+    public JobStateSnapshot exportSnapshot(String name) {
+        return doExportSnapshot(name, false);
+    }
+
+    @Override
+    public JobStateSnapshot cancelAndExportSnapshot(String name) {
+        return doExportSnapshot(name, true);
+    }
+
     private void terminate(TerminationMode mode) {
         if (mode != TerminationMode.CANCEL_FORCEFUL) {
             checkNotLightJob(mode.toString());
@@ -291,7 +303,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                         // it can happen that we enqueued the submit operation, but the master handled
                         // the terminate op before the submit op and doesn't yet know about the job. But
                         // it can be that the job already completed, we don't know. We'll look at the submit
-                        // future, if it's done, the job is done. Otherwise we'll retry - the job will eventually
+                        // future, if it's done, the job is done. Otherwise, we'll retry - the job will eventually
                         // start or complete.
                         // This scenario is possible only on the client or lite member. On normal member,
                         // the submit op is executed directly.
@@ -371,6 +383,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      * #getConfig()} to reflect the changes); otherwise, the operation fails.
      */
     protected abstract JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig);
+
+    protected abstract JobStateSnapshot doExportSnapshot(String name, boolean cancelJob);
 
     /**
      * Associates the specified listener to this job.
@@ -496,7 +510,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
         private void retryAction(Throwable t) {
             try {
-                // calling for the side-effect of throwing ISE if master not known
+                // calling for the side effect of throwing ISE if master not known
                 masterId();
             } catch (IllegalStateException e) {
                 // job data will be cleaned up eventually by the coordinator

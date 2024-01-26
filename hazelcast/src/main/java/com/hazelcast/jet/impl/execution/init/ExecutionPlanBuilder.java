@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,12 +54,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -301,12 +302,12 @@ public final class ExecutionPlanBuilder {
 
     private static List<EdgeDef> toEdgeDefs(
             List<Edge> edges, EdgeConfig defaultEdgeConfig,
-            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
+            ToIntFunction<Edge> oppositeVtxId, boolean isJobDistributed
     ) {
         List<EdgeDef> list = new ArrayList<>(edges.size());
         for (Edge edge : edges) {
             list.add(new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),
-                    oppositeVtxId.apply(edge), isJobDistributed));
+                    oppositeVtxId.applyAsInt(edge), isJobDistributed));
         }
         return list;
     }
@@ -348,19 +349,40 @@ public final class ExecutionPlanBuilder {
         int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
 
-        // By default, partition pruning won't be applied, and for this code path
-        // it is guaranteed to be only partition assignment loop.
-        for (int partitionId : dataPartitions == null ? range(0, partitionCount) : dataPartitions) {
-            Address address = partitionService.getPartitionOwnerOrWait(partitionId);
-            MemberInfo member = membersByAddress.get(address);
+        if (dataPartitions == null) {
+            // By default, partition pruning won't be applied, and for this code path
+            // it is guaranteed to be only partition assignment loop.
+            for (int partitionId = 0; partitionId < partitionCount; ++partitionId) {
+                Address address = partitionService.getPartitionOwnerOrWait(partitionId);
+                MemberInfo member = membersByAddress.get(address);
 
-            if (member == null) {
-                // if the partition owner isn't in the current memberList, assign to one of the other members in
-                // round-robin fashion
-                member = memberList.get(memberIndex++ % memberList.size());
+                if (member == null) {
+                    // if the partition owner isn't in the current memberList, assign to one of the other members in
+                    // round-robin fashion
+                    member = memberList.get(memberIndex++ % memberList.size());
+                }
+                partitionsForMember.computeIfAbsent(member, ignored -> new FixedCapacityIntArrayList(partitionCount))
+                        .add(partitionId);
             }
-            partitionsForMember.computeIfAbsent(member, ignored -> new FixedCapacityIntArrayList(partitionCount))
-                    .add(partitionId);
+        } else {
+            // We want to avoid boxing Integer partitionId over and over again
+            // at least in the basic case when partition pruning is not used
+            // and using IntStream.range() would be slower than pure for loop.
+            // Such boxing generates many allocations for simple queries because
+            // even with default partition count (271) not all ids are cached by JVM.
+            // The loop body is the same as in the other branch but it is hard to refactor.
+            for (int partitionId : dataPartitions) {
+                Address address = partitionService.getPartitionOwnerOrWait(partitionId);
+                MemberInfo member = membersByAddress.get(address);
+
+                if (member == null) {
+                    // if the partition owner isn't in the current memberList, assign to one of the other members in
+                    // round-robin fashion
+                    member = memberList.get(memberIndex++ % memberList.size());
+                }
+                partitionsForMember.computeIfAbsent(member, ignored -> new FixedCapacityIntArrayList(partitionCount))
+                        .add(partitionId);
+            }
         }
 
         if (dataPartitions != null) {

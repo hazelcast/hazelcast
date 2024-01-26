@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import java.nio.charset.StandardCharsets;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class RestValue implements IdentifiedDataSerializable {
@@ -74,14 +73,14 @@ public class RestValue implements IdentifiedDataSerializable {
         if (contentType == null) {
             contentTypeStr = "unknown-content-type";
         } else {
-            contentTypeStr = bytesToString(contentType);
+            contentTypeStr = new String(contentType, StandardCharsets.UTF_8);
         }
 
         String valueStr;
         if (value == null) {
             valueStr = "value.length=0";
         } else if (contentTypeStr.contains("text")) {
-            valueStr = "value=\"" + bytesToString(value) + "\"";
+            valueStr = "value=\"" + new String(value, StandardCharsets.UTF_8) + "\"";
         } else {
             valueStr = "value.length=" + value.length;
         }

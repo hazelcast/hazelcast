@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,17 +37,25 @@ public interface FieldDefinition {
     int getIndex();
 
     /**
-     * @return class ID of this field's class
-     */
-    int getClassId();
-
-    /**
      * @return factory ID of this field's class
      */
     int getFactoryId();
 
     /**
+     * @return class ID of this field's class
+     */
+    int getClassId();
+
+    /**
      * @return version of this field's class
      */
     int getVersion();
+
+    /**
+     * @return portable ID of this field's class
+     * @since 5.4
+     */
+    default PortableId getPortableId() {
+        return new PortableId(getFactoryId(), getClassId(), getVersion());
+    }
 }

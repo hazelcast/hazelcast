@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,13 +62,17 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private ProcessingGuarantee processingGuarantee = NONE;
     private long maxProcessorAccumulatedRecords = Long.MAX_VALUE;
     private boolean isLightJob;
-    private Map<Address, int[]> partitionAssignment = Collections.unmodifiableMap(new HashMap<Address, int[]>() {{
-        try {
-            put(new Address("1.2.3.4", 1), new int[]{0});
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+    private Map<Address, int[]> partitionAssignment = Collections.unmodifiableMap(new HashMap<>() {
+        private static final long serialVersionUID = 1L;
+
+        {
+            try {
+                put(new Address("1.2.3.4", 1), new int[]{0});
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
         }
-    }});
+    });
     private ClassLoader classLoader;
 
     @Nonnull

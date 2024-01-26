@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -43,16 +44,17 @@ import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
 import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 
 /**
- * Fetches by query a batch of items from a single partition ID for a map.
- * The query is run by the query engine which means it supports projections
- * and filtering.
+ * Fetches by query a batch of items from a single partition ID for a map. The query is run by the query engine which means it
+ * supports projections and filtering.
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, Projection, Predicate)
  * @since 3.9
  */
-public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTask<MapFetchWithQueryCodec.RequestParameters> {
+public class MapFetchWithQueryMessageTask
+        extends AbstractMapPartitionMessageTask<MapFetchWithQueryCodec.RequestParameters> {
     public MapFetchWithQueryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
@@ -105,7 +107,7 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
 
     @Override
     public String getMethodName() {
-        return "iterator";
+        return SecurityInterceptorConstants.ITERATOR_FETCH_WITH_QUERY;
     }
 
     @Override

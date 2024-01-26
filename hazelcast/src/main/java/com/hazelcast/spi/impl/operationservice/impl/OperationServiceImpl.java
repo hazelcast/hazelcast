@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,7 +187,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         this.operationExecutor = new OperationExecutorImpl(
                 properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getNodeExtension(), hzName, configClassLoader, nodeEngine.getTpcServerBootstrap());
+                nodeEngine, node.getNodeExtension(), hzName, configClassLoader, nodeEngine.getTpcServerBootstrap());
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),

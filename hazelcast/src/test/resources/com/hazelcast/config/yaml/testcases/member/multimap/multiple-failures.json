@@ -20,7 +20,8 @@
           "merge-policy": {
             "batch-size": -1,
             "class-name": "NonExistentPolicy"
-          }
+          },
+          "user-code-namespace": []
         }
       }
     }
@@ -119,8 +120,15 @@
         "causingExceptions": [],
         "keyword": "enum",
         "message": "INVALID is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/Multimap/additionalProperties/properties/user-code-namespace",
+        "pointerToViolation": "#/hazelcast/multimap/default/user-code-namespace",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
       }
     ],
-    "message": "11 schema violations found"
+    "message": "12 schema violations found"
   }
 }

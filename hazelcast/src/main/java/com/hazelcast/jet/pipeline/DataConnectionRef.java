@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Serializable;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents a reference to the data connection, used with
@@ -29,7 +30,6 @@ import java.io.Serializable;
  *
  * @since 5.2
  */
-@Beta
 public class DataConnectionRef implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -37,7 +37,7 @@ public class DataConnectionRef implements Serializable {
     private final String name;
 
     public DataConnectionRef(String name) {
-        this.name = name;
+        this.name = requireNonNull(name);
     }
 
     /**
@@ -48,6 +48,14 @@ public class DataConnectionRef implements Serializable {
      */
     public static DataConnectionRef dataConnectionRef(String name) {
         return new DataConnectionRef(name);
+    }
+
+    /**
+     * If the name parameter is null, this method returns null.
+     * Otherwise, it behaves identically to {@link #dataConnectionRef(String)}.
+     */
+    public static DataConnectionRef nullableDataConnectionRef(String name) {
+        return name == null ? null : dataConnectionRef(name);
     }
 
     public String getName() {

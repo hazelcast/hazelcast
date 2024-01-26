@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -179,7 +179,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             long jobId,
             long executionId,
             @Nonnull SnapshotContext snapshotContext,
-            ConcurrentHashMap<String, File> tempDirectories,
+            ConcurrentMap<String, File> tempDirectories,
             InternalSerializationService jobSerializationService
     ) {
         this.nodeEngine = nodeEngine;
@@ -442,7 +442,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @SuppressWarnings("rawtypes")
     private CompletableFuture<?> initProcSuppliers(
             long jobId,
-            ConcurrentHashMap<String, File> tempDirectories,
+            ConcurrentMap<String, File> tempDirectories,
             InternalSerializationService jobSerializationService
     ) {
         CompletableFuture[] futures = new CompletableFuture[vertices.length];
@@ -504,10 +504,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private static Collection<? extends Processor> createProcessors(VertexDef vertexDef, int parallelism) {
-        final Collection<? extends Processor> processors = vertexDef.processorSupplier().get(parallelism);
+        ProcessorSupplier processorSupplier = vertexDef.processorSupplier();
+        final Collection<? extends Processor> processors = processorSupplier.get(parallelism);
         if (processors.size() != parallelism) {
             throw new JetException("ProcessorSupplier failed to return the requested number of processors." +
-                    " Requested: " + parallelism + ", returned: " + processors.size());
+                                   " Requested: " + parallelism + ", returned: " + processors.size());
         }
         return processors;
     }

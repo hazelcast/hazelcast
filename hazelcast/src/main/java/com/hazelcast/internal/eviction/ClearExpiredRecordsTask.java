@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 import static com.hazelcast.internal.eviction.ToBackupSender.newToBackupSender;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
@@ -99,7 +100,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                 newBackupExpiryOpFilter(), nodeEngine);
     }
 
-    protected BiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
+    protected BiPredicate<Integer, Integer> newBackupExpiryOpFilter() {
         return (partitionId, replicaIndex) -> {
             IPartition partition = partitionService.getPartition(partitionId);
             return partition.getReplicaAddress(replicaIndex) != null;
@@ -282,7 +283,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     }
 
     private BiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
-        return (recordStore, expiredKeys) -> newBackupExpiryOp(recordStore, expiredKeys);
+        return this::newBackupExpiryOp;
     }
 
     public final void sendQueuedExpiredKeys(T container) {

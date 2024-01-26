@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
@@ -60,12 +59,9 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
-import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
-import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -74,7 +70,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -93,12 +88,11 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
-import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
@@ -114,10 +108,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -136,13 +128,11 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
-import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -183,8 +173,8 @@ public class PlanExecutor {
         logger = nodeEngine.getLogger(getClass());
     }
 
-    SqlResult execute(CreateMappingPlan plan) {
-        catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists());
+    SqlResult execute(CreateMappingPlan plan, SqlSecurityContext ssc) {
+        catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists(), ssc);
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -202,12 +192,13 @@ public class PlanExecutor {
         }
 
         // checks if type is correct
-        dlService.classForDataConnectionType(plan.type());
+        String normalizedTypeName = dlService.normalizedTypeName(plan.type());
+        dlService.classForDataConnectionType(normalizedTypeName);
 
         boolean added = dataConnectionCatalog.createDataConnection(
                 new DataConnectionCatalogEntry(
                         plan.name(),
-                        plan.type().toLowerCase(Locale.ROOT),
+                        normalizedTypeName,
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),
@@ -236,9 +227,9 @@ public class PlanExecutor {
 
     SqlResult execute(CreateIndexPlan plan) {
         MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
-        if (!mapContainer.isGlobalIndexEnabled()) {
-            // for local indexes checking existence is more complicated
-            // and SQL cannot yet use local indexes
+        if (!mapContainer.shouldUseGlobalIndex()) {
+            // for partitioned indexes checking existence is more complicated
+            // and SQL cannot yet use partitioned indexes
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
                     + "\" on the IMap \"" + plan.mapName() + "\" because it would not be global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
@@ -249,7 +240,7 @@ public class PlanExecutor {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
-            if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
+            if (mapContainer.getGlobalIndexRegistry().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
         }
@@ -284,7 +275,7 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
+    SqlResult execute(CreateJobPlan plan, List<Object> arguments, SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         boolean isStreamingJob = plan.isInfiniteRows();
         JobConfig jobConfig = plan.getJobConfig()
@@ -294,10 +285,13 @@ public class PlanExecutor {
         if (!jobConfig.isSuspendOnFailure()) {
             jobConfig.setSuspendOnFailure(isStreamingJob);
         }
+
+        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
+
         if (plan.isIfNotExists()) {
-            hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
+            jet.newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
         } else {
-            hazelcastInstance.getJet().newJob(plan.getExecutionPlan().getDag(), jobConfig);
+            jet.newJob(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
@@ -307,6 +301,7 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
+
         assert plan.getDeltaConfig() != null || plan.getOperation() != null;
         if (plan.getDeltaConfig() != null) {
             try {
@@ -520,14 +515,15 @@ public class PlanExecutor {
                       long timeout,
                       @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
                 args,
-                serializationService,
-                Util.getNodeEngine(hazelcastInstance));
+                hazelcastInstance,
+                Util.getSerializationService(hazelcastInstance),
+                ssc
+        );
 
-        JobConfig jobConfig = new JobConfig()
-                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+        JobConfig jobConfig = plan.isAnalyzed() ? plan.analyzeJobConfig() : new JobConfig();
+        jobConfig.setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
@@ -546,7 +542,9 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
+            Job job = plan.isAnalyzed()
+                    ? jet.newJob(jobId, plan.getDag(), jobConfig, ssc.subject())
+                    : jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
 
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
@@ -578,27 +576,36 @@ public class PlanExecutor {
                       long timeout,
                       @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = new JobConfig()
-                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+        JobConfig jobConfig = plan.isAnalyzed() ? plan.analyzeJobConfig() : new JobConfig();
+        jobConfig.setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Job job = jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
+        Job job = plan.isAnalyzed()
+                ? jet.newJob(plan.getDag(), jobConfig, ssc.subject())
+                : jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapSelectPlan plan,
+                      QueryId queryId,
+                      List<Object> arguments,
+                      long timeout,
+                      @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
                 args,
+                hazelcastInstance,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance));
+                ssc
+        );
+
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
@@ -622,12 +629,15 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
                 args,
+                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                ssc
+        );
+
         List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
         if (!entries.isEmpty()) {
             assert entries.size() == 1;
@@ -646,12 +656,15 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
-    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
                 args,
+                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                ssc
+        );
+
         Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .putAllAsync(entries)
@@ -660,27 +673,33 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
                 args,
+                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                ssc
+        );
+
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
-                .submitToKey(key, plan.updaterSupplier().get(arguments))
+                .submitToKey(key, plan.updaterSupplier().get(UntrustedExpressionEvalContext.from(evalContext)))
                 .toCompletableFuture();
         await(future, timeout);
         directIMapQueriesExecuted.getAndIncrement();
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
-    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
                 args,
+                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                ssc
+        );
+
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
@@ -693,85 +712,8 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateTypePlan plan) {
-        if (!nodeEngine.getProperties().getBoolean(SQL_CUSTOM_TYPES_ENABLED)) {
-            throw QueryException.error("Experimental feature of creating custom types isn't enabled. To enable, set "
-                    + SQL_CUSTOM_TYPES_ENABLED + " to true");
-        }
-        final String format = plan.options().get(SqlConnector.OPTION_FORMAT);
-        final Type type;
-
-        if (SqlConnector.PORTABLE_FORMAT.equals(format)) {
-            final Integer factoryId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID))
-                    .map(Integer::parseInt)
-                    .orElse(null);
-            final Integer classId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID))
-                    .map(Integer::parseInt)
-                    .orElse(null);
-            final Integer version = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION))
-                    .map(Integer::parseInt)
-                    .orElse(0);
-
-            if (factoryId == null || classId == null) {
-                throw QueryException.error("FactoryID and ClassID are required for Portable Types");
-            }
-
-            final ClassDefinition existingClassDef = getSerializationService(hazelcastInstance).getPortableContext()
-                    .lookupClassDefinition(factoryId, classId, version);
-
-            if (existingClassDef != null) {
-                type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, catalog);
-            } else {
-                if (plan.columns().isEmpty()) {
-                    throw QueryException.error("The given FactoryID/ClassID/Version combination not known to the member. " +
-                            "You need to provide column list for this type");
-                }
-
-                type = new Type();
-                type.setName(plan.name());
-                type.setKind(TypeKind.PORTABLE);
-                type.setPortableFactoryId(factoryId);
-                type.setPortableClassId(classId);
-                type.setPortableVersion(version);
-                type.setFields(new ArrayList<>());
-
-                for (int i = 0; i < plan.columns().size(); i++) {
-                    final TypeDefinitionColumn planColumn = plan.columns().get(i);
-                    type.getFields().add(new Type.TypeField(planColumn.name(), planColumn.dataType()));
-                }
-            }
-        } else if (SqlConnector.COMPACT_FORMAT.equals(format)) {
-            if (plan.columns().isEmpty()) {
-                throw QueryException.error("Column list is required to create Compact-based Types");
-            }
-            type = new Type();
-            type.setKind(TypeKind.COMPACT);
-            type.setName(plan.name());
-            final List<Type.TypeField> typeFields = plan.columns().stream()
-                    .map(typeColumn -> new Type.TypeField(typeColumn.name(), typeColumn.dataType()))
-                    .collect(Collectors.toList());
-            type.setFields(typeFields);
-
-            final String compactTypeName = plan.option(SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME);
-            if (compactTypeName == null || compactTypeName.isEmpty()) {
-                throw QueryException.error("Compact Type Name must not be empty for Compact-based Types.");
-            }
-            type.setCompactTypeName(compactTypeName);
-        } else if (SqlConnector.JAVA_FORMAT.equals(format)) {
-            final Class<?> typeClass;
-            try {
-                typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
-            } catch (Exception e) {
-                throw QueryException.error("Unable to load class: '"
-                        + plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS) + "'", e);
-            }
-
-            type = TypesUtils.convertJavaClassToType(plan.name(), plan.columns(), typeClass);
-        } else {
-            throw QueryException.error("Unsupported type format: " + format);
-        }
-
+        final Type type = new Type(plan.name(), plan.columns(), plan.options());
         catalog.createType(type, plan.replace(), plan.ifNotExists());
-
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -831,7 +773,7 @@ public class PlanExecutor {
                 partitions.add(partitionId);
             }
         }
-        return allVariantsValid && partitions.size() > 0 ? partitions : emptySet();
+        return allVariantsValid && !partitions.isEmpty() ? partitions : emptySet();
     }
 
     // package-private for test purposes

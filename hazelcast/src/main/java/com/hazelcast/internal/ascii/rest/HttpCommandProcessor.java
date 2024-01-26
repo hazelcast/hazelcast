@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
@@ -43,7 +43,6 @@ import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 
@@ -171,21 +170,18 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
      * @param command            the HTTP post command
      * @param expectedParamCount the number of parameters expected in the command
      * @return the decoded params
-     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
-     *                                      named character encoding is not supported
      * @throws HttpBadRequestException      in case the command did not contain at least {@code expectedParamCount}
      *                                      parameters
      */
     private static @Nonnull
-    String[] decodeParams(HttpPostCommand command, int expectedParamCount)
-            throws UnsupportedEncodingException {
+    String[] decodeParams(HttpPostCommand command, int expectedParamCount) {
         byte[] data = command.getData();
         if (data == null) {
             throw new HttpBadRequestException(
                     "This endpoint expects at least " + expectedParamCount + " parameters");
         }
 
-        String[] encoded = bytesToString(data).split("&", expectedParamCount);
+        String[] encoded = new String(data, StandardCharsets.UTF_8).split("&", expectedParamCount);
         String[] decoded = new String[encoded.length];
 
         if (encoded.length < expectedParamCount) {
@@ -194,13 +190,12 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
         }
 
         for (int i = 0; i < expectedParamCount; i++) {
-            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
+            decoded[i] = URLDecoder.decode(encoded[i], StandardCharsets.UTF_8);
         }
         return decoded;
     }
 
-    protected String[] decodeParamsAndAuthenticate(HttpPostCommand cmd, int expectedParamCount)
-            throws UnsupportedEncodingException {
+    protected String[] decodeParamsAndAuthenticate(HttpPostCommand cmd, int expectedParamCount) {
         String[] params = decodeParams(cmd, expectedParamCount);
         if (!authenticate(cmd, params[0], params[1])) {
             throw new HttpForbiddenException();
@@ -210,22 +205,19 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
 
     /**
      * Checks if the request is valid. If Hazelcast Security is not enabled,
-     * then only the given user name is compared to cluster name in node
-     * configuration. Otherwise member JAAS authentication (member login module
+     * then only the given username is compared to cluster name in node
+     * configuration. Otherwise, member JAAS authentication (member login module
      * stack) is used to authenticate the command.
      *
      * @param command  the HTTP request
      * @param userName URL-encoded username
      * @param pass     URL-encoded password
      * @return if the request has been successfully authenticated
-     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but named character encoding
-     *                                      is not supported
      */
     private boolean authenticate(@Nonnull HttpPostCommand command,
                                  @Nullable String userName,
-                                 @Nullable String pass)
-            throws UnsupportedEncodingException {
-        String decodedName = userName != null ? URLDecoder.decode(userName, "UTF-8") : null;
+                                 @Nullable String pass) {
+        String decodedName = userName != null ? URLDecoder.decode(userName, StandardCharsets.UTF_8) : null;
         SecurityContext securityContext = getNode().getNodeExtension().getSecurityContext();
         String clusterName = getNode().getConfig().getClusterName();
         if (securityContext == null) {
@@ -234,7 +226,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
             }
             return clusterName.equals(decodedName);
         }
-        String decodedPass = pass != null ? URLDecoder.decode(pass, "UTF-8") : null;
+        String decodedPass = pass != null ? URLDecoder.decode(pass, StandardCharsets.UTF_8) : null;
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(decodedName, decodedPass);
         Boolean passed = Boolean.FALSE;
         try {

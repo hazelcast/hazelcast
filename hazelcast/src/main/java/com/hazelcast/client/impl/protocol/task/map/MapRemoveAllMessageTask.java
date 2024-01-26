@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -42,31 +45,37 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
 
     public MapRemoveAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        setNamespaceAware();
     }
 
     @Override
     protected void processMessage() {
+        predicate = NamespaceUtil.callWithNamespace(nodeEngine, MapService.lookupNamespace(nodeEngine, parameters.name),
+                () -> serializationService.toObject(parameters.predicate));
         if (!(predicate instanceof PartitionPredicate)) {
             super.processMessage();
             return;
         }
-        PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-        OperationFactory operationFactory = createOperationFactory();
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
 
-        CompletableFuture<Map<Integer, Object>> future = operationService
-            .invokeOnPartitionsAsync(
-                getServiceName(),
-                operationFactory,
-                nodeEngine.getPartitionService().getPartitionIdSet(partitionPredicate.getPartitionKeys())
-            );
-        future.whenCompleteAsync((response, throwable) -> {
-            if (throwable == null) {
-                sendResponse(reduce(response));
-            } else {
-                handleProcessingFailure(throwable);
-            }
-        }, CALLER_RUNS);
+        NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), () -> {
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            OperationFactory operationFactory = createOperationFactory();
+            OperationServiceImpl operationService = nodeEngine.getOperationService();
+
+            CompletableFuture<Map<Integer, Object>> future = operationService
+                    .invokeOnPartitionsAsync(
+                            getServiceName(),
+                            operationFactory,
+                            nodeEngine.getPartitionService().getPartitionIdSet(partitionPredicate.getPartitionKeys())
+                    );
+            future.whenCompleteAsync((response, throwable) -> {
+                if (throwable == null) {
+                    sendResponse(reduce(response));
+                } else {
+                    handleProcessingFailure(throwable);
+                }
+            }, CALLER_RUNS);
+        });
     }
 
     @Override
@@ -85,9 +94,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
 
     @Override
     protected MapRemoveAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        MapRemoveAllCodec.RequestParameters parameters = MapRemoveAllCodec.decodeRequest(clientMessage);
-        predicate = serializationService.toObject(parameters.predicate);
-        return parameters;
+        return MapRemoveAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -112,7 +119,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeAll";
+        return SecurityInterceptorConstants.REMOVE_ALL;
     }
 
     @Override

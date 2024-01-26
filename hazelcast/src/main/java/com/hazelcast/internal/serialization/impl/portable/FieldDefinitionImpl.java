@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,36 +22,36 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 @SerializableByConvention(PUBLIC_API)
 public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
-
     private int index;
     private String fieldName;
     private FieldType type;
-    private int factoryId;
-    private int classId;
-    private int version;
+    private PortableId portableId;
 
     @SuppressWarnings("unused")
-    private FieldDefinitionImpl() {
-    }
+    private FieldDefinitionImpl() { }
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
         this(index, fieldName, type, 0, 0, version);
     }
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version) {
-        this.type = type;
-        this.fieldName = fieldName;
+        this(index, fieldName, type, new PortableId(factoryId, classId, version));
+    }
+
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, PortableId portableId) {
         this.index = index;
-        this.factoryId = factoryId;
-        this.classId = classId;
-        this.version = version;
+        this.fieldName = fieldName;
+        this.type = type;
+        this.portableId = portableId;
     }
 
     @Override
@@ -71,17 +71,17 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
 
     @Override
     public int getFactoryId() {
-        return factoryId;
+        return portableId.getFactoryId();
     }
 
     @Override
     public int getClassId() {
-        return classId;
+        return portableId.getClassId();
     }
 
     @Override
     public int getVersion() {
-        return version;
+        return portableId.getVersion();
     }
 
     @Override
@@ -89,9 +89,7 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
         out.writeInt(index);
         out.writeString(fieldName);
         out.writeByte(type.getId());
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(version);
+        portableId.writeData(out);
     }
 
     @Override
@@ -99,9 +97,8 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
         index = in.readInt();
         fieldName = in.readString();
         type = FieldType.get(in.readByte());
-        factoryId = in.readInt();
-        classId = in.readInt();
-        version = in.readInt();
+        portableId = new PortableId();
+        portableId.readData(in);
     }
 
     @Override
@@ -113,35 +110,16 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
-        if (index != that.index) {
-            return false;
-        }
-        if (factoryId != that.factoryId) {
-            return false;
-        }
-        if (classId != that.classId) {
-            return false;
-        }
-        if (version != that.version) {
-            return false;
-        }
-        if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) {
-            return false;
-        }
-        return type == that.type;
+        return index == that.index
+                && Objects.equals(fieldName, that.fieldName)
+                && type == that.type
+                && portableId.equals(that.portableId);
     }
 
     @Override
     public int hashCode() {
-        int result = index;
-        result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + factoryId;
-        result = 31 * result + classId;
-        result = 31 * result + version;
-        return result;
+        return Objects.hash(index, fieldName, type, portableId);
     }
 
     @Override
@@ -150,9 +128,9 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
                 + "index=" + index
                 + ", fieldName='" + fieldName + '\''
                 + ", type=" + type
-                + ", factoryId=" + factoryId
-                + ", classId=" + classId
-                + ", version=" + version
+                + ", factoryId=" + portableId.getFactoryId()
+                + ", classId=" + portableId.getClassId()
+                + ", version=" + portableId.getVersion()
                 + '}';
     }
 }

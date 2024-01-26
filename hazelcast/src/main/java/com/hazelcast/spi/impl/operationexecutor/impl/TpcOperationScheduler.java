@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Scheduler;
 
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
 /**
  * The Scheduler for TPC. So each reactor contains an partition-operation thread
@@ -30,12 +30,16 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  */
 public class TpcOperationScheduler implements Scheduler {
 
-    private final int batchSize;
+    private static final int TIME_SLICE_US_DEFAULT = 500;
+    private static final String TIME_SLICE_US_NAME = "hazelcast.internal.tpc.timeSliceUs";
+
     private TpcPartitionOperationThread operationThread;
     private OperationQueue queue;
+    private final long timeSliceNs;
 
-    public TpcOperationScheduler(int batchSize) {
-        this.batchSize = checkPositive("batchSize", batchSize);
+    public TpcOperationScheduler() {
+        long timeSliceUs = Integer.getInteger(TIME_SLICE_US_NAME, TIME_SLICE_US_DEFAULT);
+        this.timeSliceNs = MICROSECONDS.toNanos(timeSliceUs);
     }
 
     @Override
@@ -50,9 +54,10 @@ public class TpcOperationScheduler implements Scheduler {
     public boolean tick() {
         final TpcPartitionOperationThread operationThread0 = operationThread;
         final OperationQueue queue0 = queue;
-        final int batchSize0 = batchSize;
+        final long timeSliceNs0 = timeSliceNs;
 
-        for (int k = 0; k < batchSize0; k++) {
+        long startNs = System.nanoTime();
+        do {
             if (operationThread0.isShutdown()) {
                 return false;
             }
@@ -63,7 +68,7 @@ public class TpcOperationScheduler implements Scheduler {
             }
 
             operationThread0.process(task);
-        }
+        } while (System.nanoTime() - startNs < timeSliceNs0);
 
         return !queue0.isEmpty();
     }

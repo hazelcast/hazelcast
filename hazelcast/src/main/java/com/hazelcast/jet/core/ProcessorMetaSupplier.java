@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -333,6 +333,8 @@ public interface ProcessorMetaSupplier extends Serializable {
     ) {
         Vertex.checkLocalParallelism(preferredLocalParallelism);
         return new ProcessorMetaSupplier() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public int preferredLocalParallelism() {
                 return preferredLocalParallelism;
@@ -441,7 +443,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier forceTotalParallelismOne(@Nonnull ProcessorSupplier supplier) {
-        return forceTotalParallelismOne(supplier, newUnsecureUuidString(), null);
+        return new SpecificMemberPms(supplier, null);
     }
 
     /**
@@ -481,6 +483,8 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey, @Nullable Permission permission
     ) {
         return new ProcessorMetaSupplier() {
+            private static final long serialVersionUID = 1L;
+
             private transient Address ownerAddress;
 
             @Override
@@ -574,7 +578,8 @@ public interface ProcessorMetaSupplier extends Serializable {
 
     /**
      * A meta-supplier that will only use the given {@code ProcessorSupplier}
-     * on a node with given {@link Address}.
+     * on a node with given {@link Address} or random member if address is not given.
+     * Additionally, it ensures that total parallelism is 1.
      */
     @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
     @SerializableByConvention
@@ -586,7 +591,7 @@ public interface ProcessorMetaSupplier extends Serializable {
         public SpecificMemberPms() {
         }
 
-        protected SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
+        protected SpecificMemberPms(ProcessorSupplier supplier, @Nullable Address memberAddress) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
         }
@@ -603,10 +608,13 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            if (!addresses.contains(memberAddress)) {
+            if (memberAddress != null && !addresses.contains(memberAddress)) {
                 throw new JetException("Cluster does not contain the required member: " + memberAddress);
             }
-            return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+            Address memberAddressToUse = memberAddress != null
+                    ? memberAddress
+                    : addresses.get(RandomPicker.getInt(addresses.size()));
+            return addr -> addr.equals(memberAddressToUse) ? supplier : new ExpectNothingProcessorSupplier();
         }
 
         @Override

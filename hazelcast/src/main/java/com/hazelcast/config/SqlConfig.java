@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,9 @@ public class SqlConfig {
 
     /** Whether persistence is enabled or not, false by default. */
     private boolean catalogPersistenceEnabled;
+
+    /** Restricting the use of reflections through the utilization of black and white lists. */
+    private JavaSerializationFilterConfig javaReflectionFilterConfig;
 
     /**
      * Gets the timeout in milliseconds that is applied to statements without an explicit timeout.
@@ -94,6 +97,23 @@ public class SqlConfig {
         return this;
     }
 
+    /**
+     * @return the reflection filter, the configuration of restrictions on class usage in SQL mapping and UDT.
+     */
+    public JavaSerializationFilterConfig getJavaReflectionFilterConfig() {
+        return javaReflectionFilterConfig;
+    }
+
+    /**
+     * Allows to configure reflection protection filter.
+     * Enable the configuration of restrictions on class usage in SQL mapping and UDT.
+     *
+     * @param JavaSerializationFilterConfig the filter config to set (may be {@code null})
+     */
+    public void setJavaReflectionFilterConfig(JavaSerializationFilterConfig javaReflectionFilterConfig) {
+        this.javaReflectionFilterConfig = javaReflectionFilterConfig;
+    }
+
     @Override
     public String toString() {
         return "SqlConfig{"
@@ -112,11 +132,12 @@ public class SqlConfig {
         }
         SqlConfig sqlConfig = (SqlConfig) o;
         return statementTimeoutMillis == sqlConfig.statementTimeoutMillis
-                && catalogPersistenceEnabled == sqlConfig.catalogPersistenceEnabled;
+                && catalogPersistenceEnabled == sqlConfig.catalogPersistenceEnabled
+                && Objects.equals(javaReflectionFilterConfig, sqlConfig.javaReflectionFilterConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(statementTimeoutMillis, catalogPersistenceEnabled);
+        return Objects.hash(statementTimeoutMillis, catalogPersistenceEnabled, javaReflectionFilterConfig);
     }
 }

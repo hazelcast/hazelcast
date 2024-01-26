@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,9 +41,10 @@ public class ScheduledExecutorMemberOwnedContainer
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
     ScheduledExecutorMemberOwnedContainer(String name, CapacityPermit permit,
-                                          NodeEngine nodeEngine, boolean statisticsEnabled) {
+                                          NodeEngine nodeEngine, boolean statisticsEnabled,
+                                          @Nullable String namespace) {
         super(name, -1, nodeEngine, permit, MEMBER_DURABILITY,
-                new ConcurrentHashMap<>(), statisticsEnabled);
+                new ConcurrentHashMap<>(), statisticsEnabled, namespace);
     }
 
     @Override

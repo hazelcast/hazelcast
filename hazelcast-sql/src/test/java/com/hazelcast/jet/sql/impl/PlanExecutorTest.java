@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,11 +112,11 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
         CreateMappingPlan plan = new CreateMappingPlan(planKey(), mapping, replace, ifNotExists, planExecutor);
 
         // when
-        SqlResult result = planExecutor.execute(plan);
+        SqlResult result = planExecutor.execute(plan, null);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);
-        verify(catalog).createMapping(mapping, replace, ifNotExists);
+        verify(catalog).createMapping(mapping, replace, ifNotExists, null);
     }
 
     @Test
@@ -150,7 +150,9 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
                 null,
                 false,
                 planExecutor,
-                Collections.emptyList()
+                Collections.emptyList(),
+                false,
+                null
         );
 
         given(hazelcastInstance.getJet()).willReturn(jetInstance);

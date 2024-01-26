@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
 
     // This method was extracted in order to capture the wildcard parameter A.
     @SuppressWarnings("rawtypes")
-    private <T1, T2, K, A, R> StreamStage<WindowResult<R>> attachAggregate3(
+    private <T1, T2, A, R> StreamStage<WindowResult<R>> attachAggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, ? extends R> aggrOp

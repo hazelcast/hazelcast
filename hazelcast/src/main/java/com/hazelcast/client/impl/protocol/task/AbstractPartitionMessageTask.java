@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,14 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.security.Permission;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -31,8 +35,26 @@ public abstract class AbstractPartitionMessageTask<P>
         extends AbstractAsyncMessageTask<P, Object>
         implements PartitionSpecificRunnable {
 
+    private boolean namespaceAware;
     protected AbstractPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    /**
+     * Used to mark the inheriting task as Namespace-aware
+     */
+    protected final void setNamespaceAware() {
+        this.namespaceAware = true;
+    }
+
+    @Override
+    protected void processMessage() {
+        // Providing Namespace awareness here covers calls in #beforeProcess() as well as #processInternal()
+        if (namespaceAware) {
+            NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), super::processMessage);
+        } else {
+            super.processMessage();
+        }
     }
 
     @Override
@@ -49,9 +71,18 @@ public abstract class AbstractPartitionMessageTask<P>
         op.setCallerUuid(endpoint.getUuid());
         return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), op, getPartitionId())
                          .setResultDeserialized(false).invoke();
+    }
 
+    @Override
+    public final Permission getUserCodeNamespacePermission() {
+        if (namespaceAware) {
+            String namespace = getUserCodeNamespace();
+            return namespace != null ? new UserCodeNamespacePermission(namespace, ActionConstants.ACTION_USE) : null;
+        }
+        return null;
     }
 
     protected abstract Operation prepareOperation();
 
+    protected abstract String getUserCodeNamespace();
 }

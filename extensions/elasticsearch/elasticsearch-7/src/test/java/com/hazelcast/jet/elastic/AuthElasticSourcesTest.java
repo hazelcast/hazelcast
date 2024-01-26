@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
     @Test
     public void given_clientWithWrongPassword_whenReadFromElasticSource_thenFailWithAuthenticationException() {
         ElasticsearchContainer container = ElasticSupport.secureElastic.get();
-        String containerIp = container.getContainerIpAddress();
+        String containerIp = container.getHost();
         Integer port = container.getMappedPort(PORT);
 
         Pipeline p = Pipeline.create();
@@ -84,7 +84,7 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
     @Test
     public void given_clientWithoutAuthentication_whenReadFromElasticSource_then_failWithAuthenticationException() {
         ElasticsearchContainer container = ElasticSupport.secureElastic.get();
-        String containerIp = container.getContainerIpAddress();
+        String containerIp = container.getHost();
         Integer port = container.getMappedPort(PORT);
 
         Pipeline p = Pipeline.create();

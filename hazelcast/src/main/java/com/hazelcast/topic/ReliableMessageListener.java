@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,4 +105,11 @@ public interface ReliableMessageListener<E> extends MessageListener<E> {
      * {@code false} if it should keep on running.
      */
     boolean isTerminal(Throwable failure);
+
+    /**
+     * Called when the ReliableMessageListener is cancelled. This can happen
+     * when the listener is unregistered or cancelled due to an exception or during shutdown.
+     */
+    default void onCancel() {
+    }
 }

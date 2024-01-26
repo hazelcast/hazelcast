@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -34,7 +33,7 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -52,13 +51,13 @@ import static java.util.stream.Collectors.toMap;
 
 public final class UpdatingEntryProcessor
         implements EntryProcessor<Object, Object, Long>, DataSerializable,
-        HazelcastInstanceAware, SerializationServiceAware {
+        NodeAware, SerializationServiceAware {
 
     private KvRowProjector.Supplier rowProjectorSupplier;
     private Projector.Supplier valueProjectorSupplier;
     private List<Object> arguments;
 
-    private transient HazelcastInstance hzInstance;
+    private transient Node node;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
 
@@ -69,10 +68,12 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments) {
+            UntrustedExpressionEvalContext evalContext) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
-        this.arguments = arguments;
+        this.evalContext = evalContext;
+        this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        this.arguments = evalContext.getArguments();
     }
 
     @Override
@@ -92,17 +93,17 @@ public final class UpdatingEntryProcessor
     }
 
     @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.hzInstance = hazelcastInstance;
+    public void setNode(Node node) {
+        assert this.node == null || this.node == node : "Unexpected change of Node instance";
+        this.node = node;
     }
 
     @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new ExpressionEvalContextImpl(
-                arguments,
-                (InternalSerializationService) serializationService,
-                Util.getNodeEngine(hzInstance));
-        this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        assert evalContext == null || evalContext.getSerializationService() == serializationService
+                : "Unexpected change of serialization service";
+        assert node != null : "setNode should be called before setSerializationService";
+        initContext((InternalSerializationService) serializationService);
     }
 
     @Override
@@ -186,8 +187,13 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(List<Object> arguments) {
-            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments);
+
+        /*
+        No context is initialized during post-deserialization in the backup process.
+        To ensure consistency with the backup procedure, an untrusted context is utilized in this situation as well.
+        */
+        public EntryProcessor<Object, Object, Long> get(UntrustedExpressionEvalContext eec) {
+            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
 
         @Override
@@ -201,5 +207,15 @@ public final class UpdatingEntryProcessor
             rowProjectorSupplier = in.readObject();
             valueProjectorSupplier = in.readObject();
         }
+    }
+
+    private void initContext(InternalSerializationService iss) {
+        if (evalContext != null) {
+            // already created. setSerializationService might be invoked multiple times.
+            return;
+        }
+
+        this.evalContext = new UntrustedExpressionEvalContext(arguments, iss, node.getNodeEngine());
+        this.extractors = Extractors.newBuilder(iss).build();
     }
 }

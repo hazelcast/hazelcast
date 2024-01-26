@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,16 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
@@ -84,7 +83,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     @Override
     public HandlerStatus onRead() throws Exception {
-        upcast(src).flip();
+        src.flip();
         try {
             while (src.hasRemaining()) {
                 doRead(src);
@@ -147,14 +146,14 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
         }
 
         ByteBuffer newBuffer = ByteBuffer.allocate(capacity);
-        upcast(commandLineBuffer).flip();
+        commandLineBuffer.flip();
         newBuffer.put(commandLineBuffer);
         commandLineBuffer = newBuffer;
     }
 
     private void reset() {
         command = null;
-        upcast(commandLineBuffer).clear();
+        commandLineBuffer.clear();
         commandLineRead = false;
     }
 
@@ -166,9 +165,9 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
+            result = new String(bb.array(), 0, bb.position(), StandardCharsets.UTF_8);
         }
-        upcast(bb).clear();
+        bb.clear();
         return result;
     }
 

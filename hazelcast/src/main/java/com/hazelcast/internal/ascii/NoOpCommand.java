@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package com.hazelcast.internal.ascii;
 
 import java.nio.ByteBuffer;
-
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import java.nio.charset.StandardCharsets;
 
 public class NoOpCommand extends AbstractTextCommand {
 
@@ -44,6 +43,6 @@ public class NoOpCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "NoOpCommand {" + bytesToString(response.array()) + "}";
+        return "NoOpCommand {" + new String(response.array(), StandardCharsets.UTF_8) + "}";
     }
 }

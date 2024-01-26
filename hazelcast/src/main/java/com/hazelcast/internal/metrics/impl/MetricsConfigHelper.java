@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
@@ -119,7 +119,7 @@ public final class MetricsConfigHelper {
                 "ClientMetricsConfig.collectionFrequencySeconds", logger);
     }
 
-    private static void tryOverride(HazelcastProperty property, Function<String, String> getPropertyValueFn,
+    private static void tryOverride(HazelcastProperty property, UnaryOperator<String> getPropertyValueFn,
                                     Consumer<String> setterFn, Supplier<String> getterFn, String configOverridden,
                                     ILogger logger) {
         String propertyValue = getPropertyValueFn.apply(property.getName());

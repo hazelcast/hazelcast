@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.module;
 import java.io.Serializable;
 
 public class Pojo implements Serializable {
-    private Integer f0;
-    private Integer f1;
-    private Integer f2;
+    protected Integer f0;
+    protected Integer f1;
+    protected Integer f2;
 
     public Pojo() {
     }

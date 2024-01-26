@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -172,11 +171,9 @@ public final class LightMasterContext {
                     coordinationService.jobInvocationObservers.forEach(obs ->
                             obs.onLightJobInvocation(jobId, participants, dag, jobConfig));
 
-                    Function<ExecutionPlan, Operation> operationCtor = plan -> {
-                        Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-                        return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion,
-                                participants, serializedPlan, true);
-                    };
+                    Function<ExecutionPlan, Operation> operationCtor = plan ->
+                            InitExecutionOperation.forLightJob(jobId, jobId, membersView.getVersion(), coordinatorVersion,
+                                    participants, plan);
 
                     mc.invokeOnParticipants(operationCtor,
                             responses -> mc.finalizeJob(mc.findError(responses)),

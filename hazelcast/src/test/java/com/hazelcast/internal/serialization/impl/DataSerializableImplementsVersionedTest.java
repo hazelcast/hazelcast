@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.nio.DataReader;
 import com.hazelcast.internal.nio.DataWriter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -74,15 +76,22 @@ public class DataSerializableImplementsVersionedTest {
 
     @Test
     public void testIdentifiedDataSerializableForVersionedInterface() throws Exception {
-        for (Class<? extends IdentifiedDataSerializable> idsClass : idsClasses) {
-            System.out.println(idsClass.getSimpleName());
+        // Since this test will instantiate User Code Namespace applicable functions, we need
+        //     to provide NodeEngine context or else Namespace lookups will fail
+        NodeEngineThreadLocalContext.declareNodeEngineReference(mock(NodeEngine.class));
+        try {
+            for (Class<? extends IdentifiedDataSerializable> idsClass : idsClasses) {
+                System.out.println(idsClass.getSimpleName());
 
-            IdentifiedDataSerializable identifiedDataSerializable = getInstance(idsClass);
-            if (identifiedDataSerializable == null) {
-                continue;
+                IdentifiedDataSerializable identifiedDataSerializable = getInstance(idsClass);
+                if (identifiedDataSerializable == null) {
+                    continue;
+                }
+
+                checkInstanceOfVersion(idsClass, identifiedDataSerializable);
             }
-
-            checkInstanceOfVersion(idsClass, identifiedDataSerializable);
+        } finally {
+            NodeEngineThreadLocalContext.destroyNodeEngineReference();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.internal.util.collection.ArrayUtils;
 import java.nio.ByteOrder;
 
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
+
+import com.hazelcast.internal.tpcengine.util.OS;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public final class AlignmentUtil {
@@ -84,7 +86,6 @@ public final class AlignmentUtil {
     }
 
     public static boolean isUnalignedAccessAllowed() {
-        String currentArchitecture = System.getProperty("os.arch");
-        return ArrayUtils.contains(ARCHITECTURES_KNOWN_TO_ALLOW_UNALIGNED_ACCESS, currentArchitecture);
+        return ArrayUtils.contains(ARCHITECTURES_KNOWN_TO_ALLOW_UNALIGNED_ACCESS, OS.osArch());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,10 @@ interface KubernetesApiProvider {
         }
         if (ports.size() == 1) {
             JsonValue port = ports.get(0);
-            return port.asObject().get("port").asInt();
+            JsonValue servicePort = port.asObject().get("port");
+            if (servicePort != null && servicePort.isNumber()) {
+                return servicePort.asInt();
+            }
         }
         return null;
     }
@@ -105,5 +108,13 @@ interface KubernetesApiProvider {
         } else {
             return jsonValue.toString();
         }
+    }
+
+    static String extractTargetRefName(JsonValue endpointAddressJson) {
+        JsonValue targetRef = endpointAddressJson.asObject().get("targetRef");
+        if (targetRef == null || targetRef.isNull()) {
+            return null;
+        }
+        return targetRef.asObject().get("name").asString();
     }
 }

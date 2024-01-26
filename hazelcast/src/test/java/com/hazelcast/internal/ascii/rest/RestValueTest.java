@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import java.nio.charset.StandardCharsets;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static org.junit.Assert.assertEquals;
 
@@ -42,7 +42,7 @@ public class RestValueTest extends HazelcastTestSupport {
         restValue.setContentType(PAYLOAD);
 
         assertEquals(PAYLOAD, restValue.getContentType());
-        assertContains(restValue.toString(), "contentType='" + bytesToString(PAYLOAD));
+        assertContains(restValue.toString(), "contentType='" + new String(PAYLOAD, StandardCharsets.UTF_8));
     }
 
     @Test

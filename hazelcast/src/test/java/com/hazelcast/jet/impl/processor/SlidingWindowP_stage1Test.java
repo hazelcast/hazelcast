@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ public class SlidingWindowP_stage1Test {
                 .expectOutput(singletonList(wm(16)));
     }
 
-    private static <V> KeyedWindowResult<Long, LongAccumulator> frame(long ts, long value) {
+    private static KeyedWindowResult<Long, LongAccumulator> frame(long ts, long value) {
         return new KeyedWindowResult<>(ts - 4, ts, KEY, new LongAccumulator(value));
     }
 }

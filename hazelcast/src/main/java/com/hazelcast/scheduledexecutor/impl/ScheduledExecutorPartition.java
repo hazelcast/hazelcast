@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
             }
             ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
             return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
-                    newPermitFor(name, service, config), config.getDurability(), config.isStatisticsEnabled());
+                    newPermitFor(name, service, config), config.getDurability(), config.isStatisticsEnabled(),
+                    config.getUserCodeNamespace());
         };
     }
 

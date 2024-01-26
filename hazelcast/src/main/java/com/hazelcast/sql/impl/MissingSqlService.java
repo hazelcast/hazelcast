@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
@@ -27,10 +30,12 @@ import java.util.UUID;
 
 public class MissingSqlService implements InternalSqlService {
 
-    private UUID localMemberId;
+    private final UUID localMemberId;
+    private final boolean isJetEnabled;
 
-    public MissingSqlService(UUID localMemberId) {
+    public MissingSqlService(UUID localMemberId, boolean isJetEnabled) {
         this.localMemberId = localMemberId;
+        this.isJetEnabled = isJetEnabled;
     }
 
     @Nonnull
@@ -92,7 +97,15 @@ public class MissingSqlService implements InternalSqlService {
         throw throwDisabled();
     }
 
+    @Override
+    public ReflectionClassNameFilter getReflectionClassNameFilter() {
+        throw throwDisabled();
+    }
+
     private RuntimeException throwDisabled() {
+        if (!isJetEnabled) {
+            throw new JetDisabledException(Util.JET_IS_DISABLED_MESSAGE);
+        }
         throw new HazelcastSqlException(
                 localMemberId,
                 SqlErrorCode.GENERIC,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -56,6 +57,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public abstract void testConfigurationURL() throws Exception;
@@ -118,7 +122,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void readSetConfig();
 
     @Test
-    public abstract void readReliableTopic();
+    public abstract void readReliableTopicConfig();
+
+    @Test
+    public abstract void readTopicConfig();
 
     @Test
     public abstract void readRingbuffer();
@@ -388,6 +395,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testJavaSerializationFilter();
 
     @Test
+    public abstract void testJavaReflectionFilter();
+
+    @Test
     public abstract void testCompactSerialization_serializerRegistration();
 
     @Test
@@ -454,7 +464,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testConfigPermission();
 
     @Test
-    public abstract void testAllPermissionsCovered();
+    public abstract void testAllPermissionsCovered() throws IOException;
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testCacheConfig_withNativeInMemoryFormat_failsFastInOSS();
@@ -728,6 +738,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testPartitioningAttributeConfigs();
+
+    @Test
+    public abstract void testNamespaceConfigs() throws IOException;
 
     protected abstract Config buildAuditlogConfig();
 

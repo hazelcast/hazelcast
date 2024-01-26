@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,7 +170,12 @@ public class ClusterViewListenerService {
 
         ArrayList<MemberInfo> memberInfos = new ArrayList<>();
         for (MemberInfo member : members) {
-            memberInfos.add(new MemberInfo(clientAddressOf(member.getAddress()), member.getUuid(), member.getAttributes(),
+            Address address = clientAddressOf(member.getAddress());
+            // Ignore any member without a CLIENT endpoint qualifier configured
+            if (address == null) {
+                continue;
+            }
+            memberInfos.add(new MemberInfo(address, member.getUuid(), member.getAttributes(),
                     member.isLiteMember(), member.getVersion(), member.getAddressMap()));
         }
         return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos);

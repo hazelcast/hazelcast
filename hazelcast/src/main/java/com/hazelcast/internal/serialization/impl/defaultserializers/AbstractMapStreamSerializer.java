@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.defaultserializers;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -30,15 +31,7 @@ abstract class AbstractMapStreamSerializer<MapType extends Map> implements Strea
 
     @Override
     public void write(ObjectDataOutput out, MapType map) throws IOException {
-        int size = map.size();
-        out.writeInt(size);
-        if (size > 0) {
-            for (Object entryObject : map.entrySet()) {
-                Map.Entry entry = (Map.Entry) entryObject;
-                out.writeObject(entry.getKey());
-                out.writeObject(entry.getValue());
-            }
-        }
+        SerializationUtil.writeMap(map, out);
     }
 
     MapType deserializeEntries(ObjectDataInput in, int size, MapType result) throws IOException {

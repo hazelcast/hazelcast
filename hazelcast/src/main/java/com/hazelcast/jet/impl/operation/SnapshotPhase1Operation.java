@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
         super.writeInternal(out);
         out.writeLong(executionId);
         out.writeLong(snapshotId);
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeInt(flags);
     }
 
@@ -122,7 +122,7 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
         super.readInternal(in);
         executionId = in.readLong();
         snapshotId = in.readLong();
-        mapName = in.readUTF();
+        mapName = in.readString();
         flags = in.readInt();
     }
 
@@ -201,7 +201,7 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
             out.writeLong(numBytes);
             out.writeLong(numKeys);
             out.writeLong(numChunks);
-            out.writeUTF(error);
+            out.writeString(error);
         }
 
         @Override
@@ -209,7 +209,7 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
             numBytes = in.readLong();
             numKeys = in.readLong();
             numChunks = in.readLong();
-            error = in.readUTF();
+            error = in.readString();
         }
     }
 }

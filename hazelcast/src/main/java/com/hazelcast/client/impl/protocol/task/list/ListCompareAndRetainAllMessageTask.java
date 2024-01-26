@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListCompareAndRetainAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndRemoveOperation;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -36,7 +36,7 @@ import java.util.HashSet;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_COMPAREANDRETAINALL}
  */
 public class ListCompareAndRetainAllMessageTask
-        extends AbstractPartitionMessageTask<ListCompareAndRetainAllCodec.RequestParameters> {
+        extends AbstractListMessageTask<ListCompareAndRetainAllCodec.RequestParameters> {
 
     public ListCompareAndRetainAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -75,7 +75,7 @@ public class ListCompareAndRetainAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "retainAll";
+        return SecurityInterceptorConstants.RETAIN_ALL;
     }
 
     @Override

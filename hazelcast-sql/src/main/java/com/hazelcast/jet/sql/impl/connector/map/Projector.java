@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ class Projector {
             return new Projector(
                     paths,
                     types,
-                    descriptor.create(evalContext.getSerializationService()),
+                    descriptor.create(evalContext),
                     projection,
                     evalContext
             );

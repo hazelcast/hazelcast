@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,20 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
-import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverter;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.lang.reflect.Field;
@@ -64,20 +64,20 @@ public final class UpsertTargetUtils {
         );
 
         for (int i = 0; i < type.getObjectFields().size(); i++) {
-            final QueryDataType.QueryDataTypeField typeField = type.getObjectFields().get(i);
+            final QueryDataTypeField typeField = type.getObjectFields().get(i);
             final boolean isRowValueField = rowValue.getValues().get(i) instanceof RowValue;
             final Object fieldValue = isRowValueField
-                    ? convertRowToJavaType(rowValue.getValues().get(i), typeField.getDataType())
+                    ? convertRowToJavaType(rowValue.getValues().get(i), typeField.getType())
                     : rowValue.getValues().get(i);
             Method setter = ReflectionUtils.findPropertySetter(targetClass, typeField.getName());
 
-            ToConverter toConverter = ToConverters.getToConverter(typeField.getDataType());
+            ToConverter toConverter = ToConverters.getToConverter(typeField.getType());
             if (setter != null) {
                 if (fieldValue == null && setter.getParameterTypes()[0].isPrimitive()) {
                     throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + setter);
                 }
                 try {
-                    if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                    if (typeField.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                         setter.invoke(result, fieldValue);
                     } else {
                         setter.invoke(result, toConverter.convert(fieldValue));
@@ -97,7 +97,7 @@ public final class UpsertTargetUtils {
                 if (fieldValue == null && field.getType().isPrimitive()) {
                     throw QueryException.error("Cannot set NULL to a primitive field: " + field);
                 }
-                if (typeField.getDataType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                if (typeField.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                     field.set(result, fieldValue);
                 } else {
                     field.set(result, toConverter.convert(fieldValue));
@@ -110,10 +110,10 @@ public final class UpsertTargetUtils {
         return result;
     }
 
-    public static GenericRecord convertRowToCompactType(RowValue rowValue, QueryDataType targetDataType) {
-        final GenericRecordBuilder recordBuilder = GenericRecordBuilder.compact(targetDataType.getObjectTypeMetadata());
+    public static GenericRecord convertRowToCompactType(RowValue rowValue, QueryDataType targetType) {
+        final GenericRecordBuilder recordBuilder = GenericRecordBuilder.compact(targetType.getObjectTypeMetadata());
 
-        setCompactFields(rowValue, targetDataType, recordBuilder);
+        setCompactFields(rowValue, targetType, recordBuilder);
 
         return recordBuilder.build();
     }
@@ -183,7 +183,7 @@ public final class UpsertTargetUtils {
                     break;
                 case PORTABLE:
                     if (value instanceof RowValue) {
-                        final QueryDataType fieldQDT = queryDataType.getObjectFields().get(i).getDataType();
+                        final QueryDataType fieldQDT = queryDataType.getObjectFields().get(i).getType();
                         final ClassDefinition fieldClassDefinition = toPortableClassDefinition(fieldQDT);
                         final GenericRecordBuilder fieldBuilder = GenericRecordBuilder.portable(fieldClassDefinition);
 
@@ -203,15 +203,15 @@ public final class UpsertTargetUtils {
     }
 
     public static ClassDefinition toPortableClassDefinition(final QueryDataType queryDataType) {
-        final Tuple3<Integer, Integer, Integer> ids = TypesUtils
-                .decodePortableId(queryDataType.getObjectTypeMetadata());
-        final ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ids.f0(), ids.f1(), ids.f2());
+        final PortableId portableId = new PortableId(queryDataType.getObjectTypeMetadata());
+        final ClassDefinitionBuilder builder = new ClassDefinitionBuilder(portableId);
 
         for (int i = 0; i < queryDataType.getObjectFields().size(); i++) {
-            final String name = queryDataType.getObjectFields().get(i).getName();
-            final QueryDataType type = queryDataType.getObjectFields().get(i).getDataType();
+            final QueryDataTypeField field = queryDataType.getObjectFields().get(i);
+            final String name = field.getName();
+            final QueryDataType fieldType = field.getType();
 
-            switch (type.getTypeFamily()) {
+            switch (fieldType.getTypeFamily()) {
                 case BOOLEAN:
                     builder.addBooleanField(name);
                     break;
@@ -252,21 +252,13 @@ public final class UpsertTargetUtils {
                     builder.addTimestampWithTimezoneField(name);
                     break;
                 case OBJECT:
-                    if (type.isCustomType()) {
-                        final Tuple3<Integer, Integer, Integer> portableFieldIds =
-                                TypesUtils.decodePortableId(type.getObjectTypeMetadata());
-                        builder.addField(new FieldDefinitionImpl(
-                                i,
-                                name,
-                                FieldType.PORTABLE,
-                                portableFieldIds.f0(),
-                                portableFieldIds.f1(),
-                                portableFieldIds.f2()
-                        ));
+                    if (fieldType.isCustomType()) {
+                        final PortableId fieldId = new PortableId(fieldType.getObjectTypeMetadata());
+                        builder.addField(new FieldDefinitionImpl(i, name, FieldType.PORTABLE, fieldId));
                     }
                     break;
                 default:
-                    throw QueryException.error("Unsupported Nested Fields Portable data type: " + type);
+                    throw QueryException.error("Unsupported Nested Fields Portable data type: " + fieldType);
             }
         }
 
@@ -275,13 +267,13 @@ public final class UpsertTargetUtils {
 
     private static void setCompactFields(
             final RowValue rowValue,
-            final QueryDataType targetDataType,
+            final QueryDataType targetType,
             final GenericRecordBuilder recordBuilder
     ) {
-        for (int i = 0; i < targetDataType.getObjectFields().size(); i++) {
-            final QueryDataType.QueryDataTypeField field = targetDataType.getObjectFields().get(i);
+        for (int i = 0; i < targetType.getObjectFields().size(); i++) {
+            final QueryDataTypeField field = targetType.getObjectFields().get(i);
             final Object fieldValue = rowValue.getValues().get(i);
-            switch (field.getDataType().getTypeFamily()) {
+            switch (field.getType().getTypeFamily()) {
                 case VARCHAR:
                     recordBuilder.setString(field.getName(), (String) fieldValue);
                     break;
@@ -326,8 +318,8 @@ public final class UpsertTargetUtils {
                         recordBuilder.setGenericRecord(field.getName(), null);
                     } else {
                         final GenericRecordBuilder nestedRecordBuilder = GenericRecordBuilder
-                                .compact(field.getDataType().getObjectTypeMetadata());
-                        setCompactFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
+                                .compact(field.getType().getObjectTypeMetadata());
+                        setCompactFields((RowValue) fieldValue, field.getType(), nestedRecordBuilder);
                         recordBuilder.setGenericRecord(field.getName(), nestedRecordBuilder.build());
                     }
                     break;
@@ -337,7 +329,7 @@ public final class UpsertTargetUtils {
                 case JSON:
                 case ROW:
                 default:
-                    throw QueryException.error("Unsupported upsert type: " + field.getDataType());
+                    throw QueryException.error("Unsupported upsert type: " + field.getType());
             }
         }
     }

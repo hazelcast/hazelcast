@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPMapConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,6 +31,8 @@ import java.io.ByteArrayInputStream;
 
 import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test cases specific only to YAML based configuration. The cases not
@@ -108,6 +112,30 @@ public class YamlOnlyConfigBuilderTest {
 
         assertThatThrownBy(() -> buildConfig(yaml))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/instance-name"));
+    }
+
+    @Test
+    public void testCPMapConfig() {
+        String yaml = ""
+                              + "hazelcast:\n"
+                              + "  cp-subsystem:\n"
+                              + "    maps:\n"
+                              + "      map1:\n"
+                              + "        max-size-mb: 50\n"
+                              + "      map2:\n"
+                              + "        max-size-mb: 25";
+        Config config = buildConfig(yaml);
+        assertNotNull(config);
+        CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
+        assertEquals(2, cpSubsystemConfig.getCpMapConfigs().size());
+        CPMapConfig map1Expected = new CPMapConfig("map1", 50);
+        CPMapConfig map1Actual = cpSubsystemConfig.findCPMapConfig(map1Expected.getName());
+        assertNotNull(map1Actual);
+        assertEquals(map1Expected, map1Actual);
+        CPMapConfig map2Expected = new CPMapConfig("map2", 25);
+        CPMapConfig map2Actual = cpSubsystemConfig.findCPMapConfig(map2Expected.getName());
+        assertNotNull(map2Actual);
+        assertEquals(map2Expected, map2Actual);
     }
 
     private Config buildConfig(String yaml) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -89,7 +89,7 @@ public class NotPredicateTest {
     @Test
     public void accept_whenNullPredicate_thenReturnItself() {
         Visitor mockVisitor = createPassthroughVisitor();
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
 
         NotPredicate notPredicate = new NotPredicate(null);
         NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
@@ -100,7 +100,7 @@ public class NotPredicateTest {
     @Test
     public void accept_whenPredicateChangedOnAccept_thenReturnAndNewNotPredicate() {
         Visitor mockVisitor = createPassthroughVisitor();
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
 
         Predicate transformed = mock(Predicate.class);
         Predicate predicate = createMockVisitablePredicate(transformed);

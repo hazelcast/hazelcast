@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map on the member it's called on.
  */
-@Generated("a7beeb55cd8dab3e402694dc70335c11")
+@SuppressWarnings("unused")
+@Generated("9d4c4efdd2534bcab8fce8245cf9a0bc")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -150,7 +151,7 @@ public final class MCGetMapConfigCodec {
         public java.lang.String mergePolicy;
 
         /**
-         * Global indexs of the map.
+         * Global indexes of the map.
          */
         public java.util.List<com.hazelcast.config.IndexConfig> globalIndexes;
 

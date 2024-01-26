@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,8 +107,8 @@ public class JobClassLoaderService {
                     if (!jetConfig.isResourceUploadEnabled()) {
                         jobClassLoader = new JetDelegatingClassLoader(parent);
                     } else {
-                        jobClassLoader = new JetClassLoader(nodeEngine, parent, config.getName(), jobId,
-                                jobRepository);
+                        jobClassLoader = new JetClassLoader(nodeEngine.getLogger(JetClassLoader.class),
+                                parent, config.getName(), jobId, jobRepository);
                     }
 
                     Map<String, ClassLoader> processorCls = createProcessorClassLoaders(

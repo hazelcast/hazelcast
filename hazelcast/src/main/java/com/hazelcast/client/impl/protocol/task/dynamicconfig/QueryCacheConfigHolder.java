@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,9 +49,9 @@ public class QueryCacheConfigHolder {
 
     public QueryCacheConfigHolder(int batchSize, int bufferSize, int delaySeconds, boolean includeValue,
                                   boolean populate, boolean coalesce, String inMemoryFormat, String name,
-                                  PredicateConfigHolder predicateConfigHolder,
-                                  EvictionConfigHolder evictionConfigHolder, List<ListenerConfigHolder> listenerConfigs,
-                                  List<IndexConfig> indexConfigs, boolean serializeKeysExist, boolean serializeKeys) {
+                                  PredicateConfigHolder predicateConfigHolder, EvictionConfigHolder evictionConfigHolder,
+                                  List<ListenerConfigHolder> listenerConfigs, List<IndexConfig> indexConfigs,
+                                  boolean serializeKeysExist, boolean serializeKeys) {
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.delaySeconds = delaySeconds;
@@ -172,7 +172,7 @@ public class QueryCacheConfigHolder {
         return serializeKeys;
     }
 
-    public QueryCacheConfig asQueryCacheConfig(SerializationService serializationService) {
+    public QueryCacheConfig asQueryCacheConfig(SerializationService serializationService, String namespace) {
         QueryCacheConfig config = new QueryCacheConfig();
         config.setBatchSize(batchSize);
         config.setBufferSize(bufferSize);
@@ -182,7 +182,7 @@ public class QueryCacheConfigHolder {
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             List<EntryListenerConfig> entryListenerConfigs = new ArrayList<>(listenerConfigs.size());
             for (ListenerConfigHolder holder : listenerConfigs) {
-                entryListenerConfigs.add(holder.asListenerConfig(serializationService));
+                entryListenerConfigs.add(holder.asListenerConfig(serializationService, namespace));
             }
             config.setEntryListenerConfigs(entryListenerConfigs);
         } else {
@@ -192,7 +192,7 @@ public class QueryCacheConfigHolder {
         config.setInMemoryFormat(InMemoryFormat.valueOf(inMemoryFormat));
         config.setIndexConfigs(indexConfigs == null ? new ArrayList<>() : indexConfigs);
         config.setName(name);
-        config.setPredicateConfig(predicateConfigHolder.asPredicateConfig(serializationService));
+        config.setPredicateConfig(predicateConfigHolder.asPredicateConfig(serializationService, namespace));
         config.setPopulate(populate);
         if (serializeKeysExist) {
             config.setSerializeKeys(serializeKeys);

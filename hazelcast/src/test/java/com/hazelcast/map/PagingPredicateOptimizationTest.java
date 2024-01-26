@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.predicates.InPredicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
@@ -40,7 +40,7 @@ public class PagingPredicateOptimizationTest extends HazelcastTestSupport {
     @Test
     public void testInnerPredicateOptimization() {
         RuleBasedQueryOptimizer optimizer = new RuleBasedQueryOptimizer();
-        Indexes indexes = mock(Indexes.class);
+        IndexRegistry indexes = mock(IndexRegistry.class);
 
         Predicate[] orPredicates = new Predicate[10];
         for (int i = 0; i < orPredicates.length; ++i) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -541,7 +542,7 @@ abstract class CacheProxySupport<K, V>
 
         List<Throwable> throwables = FutureUtil.waitUntilAllResponded(futures);
 
-        if (throwables.size() > 0) {
+        if (!throwables.isEmpty()) {
             throw rethrow(throwables.get(0));
         }
     }
@@ -576,8 +577,9 @@ abstract class CacheProxySupport<K, V>
             listener = (T) listenerConfig.getImplementation();
         } else if (listenerConfig.getClassName() != null) {
             try {
-                listener = ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
-                        listenerConfig.getClassName());
+                ClassLoader loader = NamespaceUtil.getClassLoaderForNamespace(getNodeEngine(),
+                        cacheConfig.getUserCodeNamespace());
+                listener = ClassLoaderUtil.newInstance(loader, listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

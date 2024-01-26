@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class JsonSerializerHooks {
                 public void write(ObjectDataOutput out, DeferredMap deferredMap) throws IOException {
                     out.writeInt(deferredMap.size());
                     for (Map.Entry<String, Object> entry : deferredMap.entrySet()) {
-                        out.writeUTF(entry.getKey());
+                        out.writeString(entry.getKey());
                         out.writeObject(entry.getValue());
                     }
                 }
@@ -63,7 +63,7 @@ class JsonSerializerHooks {
                     int size = in.readInt();
                     DeferredMap deferredMap = new DeferredMap(false, size);
                     for (int i = 0; i < size; i++) {
-                        deferredMap.put(in.readUTF(), in.readObject());
+                        deferredMap.put(in.readString(), in.readObject());
                     }
                     return deferredMap;
                 }

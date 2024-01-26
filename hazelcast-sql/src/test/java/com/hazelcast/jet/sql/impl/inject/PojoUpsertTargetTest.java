@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +31,11 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -43,7 +49,8 @@ public class PojoUpsertTargetTest {
                         "intField", int.class.getName(),
                         "longField", long.class.getName(),
                         "stringField", String.class.getName()
-                )
+                ),
+                null
         );
         UpsertInjector intFieldInjector = target.createInjector("intField", QueryDataType.INT);
         UpsertInjector longFieldInjector = target.createInjector("longField", QueryDataType.BIGINT);
@@ -62,7 +69,8 @@ public class PojoUpsertTargetTest {
     public void when_injectNullValueWithPrimitiveField_then_throws() {
         UpsertTarget target = new PojoUpsertTarget(
                 Pojo.class.getName(),
-                ImmutableMap.of("intField", int.class.getName())
+                ImmutableMap.of("intField", int.class.getName()),
+                null
         );
         UpsertInjector injector = target.createInjector("intField", QueryDataType.INT);
 
@@ -76,7 +84,8 @@ public class PojoUpsertTargetTest {
     public void when_injectNullValueWithPrimitiveSetter_then_throws() {
         UpsertTarget target = new PojoUpsertTarget(
                 Pojo.class.getName(),
-                ImmutableMap.of("longField", long.class.getName())
+                ImmutableMap.of("longField", long.class.getName()),
+                null
         );
         UpsertInjector injector = target.createInjector("longField", QueryDataType.BIGINT);
 
@@ -90,7 +99,8 @@ public class PojoUpsertTargetTest {
     public void when_injectNonExistingPropertyValue_then_throws() {
         UpsertTarget target = new PojoUpsertTarget(
                 Object.class.getName(),
-                ImmutableMap.of("field", int.class.getName())
+                ImmutableMap.of("field", int.class.getName()),
+                null
         );
         UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
 
@@ -105,7 +115,8 @@ public class PojoUpsertTargetTest {
     public void when_injectNonExistingPropertyNullValue_then_succeeds() {
         UpsertTarget target = new PojoUpsertTarget(
                 Object.class.getName(),
-                ImmutableMap.of("field", int.class.getName())
+                ImmutableMap.of("field", int.class.getName()),
+                null
         );
         UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
 
@@ -114,6 +125,37 @@ public class PojoUpsertTargetTest {
         Object pojo = target.conclude();
 
         assertThat(pojo).isNotNull();
+    }
+
+    @Test
+    public void when_filterThrowsException_then_init_failed() {
+        var expected = new SecurityException("failed");
+        var filter = mock(ReflectionClassNameFilter.class);
+        doThrow(expected)
+                .when(filter)
+                .filter(anyString());
+
+        assertThatThrownBy(
+                () -> new PojoUpsertTarget(
+                        Object.class.getName(),
+                        ImmutableMap.of("field", int.class.getName()),
+                        filter
+                )
+        ).isEqualTo(expected);
+    }
+
+    @Test
+    public void when_filterPassed_then_init_succcess() {
+        var filter = mock(ReflectionClassNameFilter.class);
+
+        UpsertTarget target = new PojoUpsertTarget(
+                Object.class.getName(),
+                ImmutableMap.of("field", int.class.getName()),
+                filter
+        );
+        target.init();
+
+        verify(filter).filter(eq(Object.class.getName()));
     }
 
     @SuppressWarnings("unused")

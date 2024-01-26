@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,33 +18,42 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.MariaDBContainer;
 
-public class MariaDBDatabaseProvider implements TestDatabaseProvider {
+import javax.sql.CommonDataSource;
+import java.util.Arrays;
+
+import static java.util.stream.Collectors.joining;
+
+public class MariaDBDatabaseProvider extends JdbcDatabaseProvider<MariaDBContainer<?>> {
 
     public static final String TEST_MARIADB_VERSION = System.getProperty("test.mariadb.version", "10.3");
 
-    private static final int LOGIN_TIMEOUT = 120;
-
-    private MariaDBContainer<?> container;
 
     @Override
-    public String createDatabase(String dbName) {
-        container = new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
-                .withDatabaseName(dbName)
-                .withUsername("user")
-                .withUrlParam("user", "user")
-                .withUrlParam("password", "test");
+    public CommonDataSource createDataSource(boolean xa) {
+        throw new RuntimeException("Not supported");
+    }
 
-        container.start();
-        String jdbcUrl = container.getJdbcUrl();
-        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
-        return jdbcUrl;
+    @SuppressWarnings("resource")
+    @Override
+    MariaDBContainer<?> createContainer(String dbName) {
+        return new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
+                .withDatabaseName(dbName)
+                .withUsername(user())
+                .withUrlParam("user", user())
+                .withUrlParam("password", password());
     }
 
     @Override
-    public void shutdown() {
-        if (container != null) {
-            container.stop();
-            container = null;
-        }
+    public String user() {
+        return "user";
+    }
+
+
+    @Override
+    public String quote(String[] parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                     .collect(joining("."));
+
     }
 }

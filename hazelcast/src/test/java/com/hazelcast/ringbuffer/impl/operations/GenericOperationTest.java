@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class GenericOperationTest extends HazelcastTestSupport {
 
         op.run();
         Long result = op.getResponse();
-        assertEquals(new Long(ringbufferContainer.size()), result);
+        assertEquals(Long.valueOf(ringbufferContainer.size()), result);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class GenericOperationTest extends HazelcastTestSupport {
 
         op.run();
         Long result = op.getResponse();
-        assertEquals(new Long(CAPACITY), result);
+        assertEquals(Long.valueOf(CAPACITY), result);
     }
 
     @Test
@@ -108,7 +108,7 @@ public class GenericOperationTest extends HazelcastTestSupport {
 
         op.run();
         Long result = op.getResponse();
-        assertEquals(new Long(CAPACITY - 2), result);
+        assertEquals(Long.valueOf(CAPACITY - 2), result);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class GenericOperationTest extends HazelcastTestSupport {
 
         op.run();
         Long result = op.getResponse();
-        assertEquals(new Long(ringbufferContainer.tailSequence()), result);
+        assertEquals(Long.valueOf(ringbufferContainer.tailSequence()), result);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class GenericOperationTest extends HazelcastTestSupport {
 
         op.run();
         Long result = op.getResponse();
-        assertEquals(new Long(ringbufferContainer.headSequence()), result);
+        assertEquals(Long.valueOf(ringbufferContainer.headSequence()), result);
     }
 
     private GenericOperation getGenericOperation(byte operation) {

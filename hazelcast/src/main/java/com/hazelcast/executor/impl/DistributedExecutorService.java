@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
+import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
@@ -38,6 +39,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
@@ -121,10 +123,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
         Processor processor;
         if (task instanceof Runnable) {
-            processor = new Processor(name, uuid, (Runnable) task, op, cfg.isStatisticsEnabled());
+            processor = new Processor(name, uuid, (Runnable) task, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
+        } else if (task instanceof Callable) {
+            processor = new Processor(name, uuid, (Callable<?>) task, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
         } else {
-            processor = new Processor(name, uuid, (Callable) task, op, cfg.isStatisticsEnabled());
+            throw new IllegalArgumentException(task.getClass().getName());
         }
+
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
@@ -239,11 +244,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         private final String taskToString;
         private final long creationTime = Clock.currentTimeMillis();
         private final boolean statisticsEnabled;
+        private final @Nullable String namespace;
 
         private Processor(String name, UUID uuid,
                           @Nonnull Callable callable,
                           Operation op,
-                          boolean statisticsEnabled) {
+                          boolean statisticsEnabled,
+                          @Nullable String namespace) {
             //noinspection unchecked
             super(callable);
             this.name = name;
@@ -251,11 +258,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             this.taskToString = String.valueOf(callable);
             this.op = op;
             this.statisticsEnabled = statisticsEnabled;
+            this.namespace = namespace;
         }
 
         private Processor(String name, UUID uuid,
                           @Nonnull Runnable runnable,
-                          Operation op, boolean statisticsEnabled) {
+                          Operation op, boolean statisticsEnabled,
+                          @Nullable String namespace) {
             //noinspection unchecked
             super(runnable, null);
             this.name = name;
@@ -263,6 +272,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             this.taskToString = String.valueOf(runnable);
             this.op = op;
             this.statisticsEnabled = statisticsEnabled;
+            this.namespace = namespace;
         }
 
         @Override
@@ -273,6 +283,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             }
             Object result = null;
             try {
+                NamespaceUtil.setupNamespace(nodeEngine, namespace);
                 super.run();
                 if (!isCancelled()) {
                     result = get();
@@ -290,6 +301,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                         executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
                     }
                 }
+                NamespaceUtil.cleanupNamespace(nodeEngine, namespace);
             }
         }
 
@@ -317,4 +329,22 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
     }
 
+    /**
+     * Looks up the User Code Namespace name associated with the specified executor name. This is done
+     * by checking this service's config caches, and falling back to the Node's config tree.
+     *
+     * @param engine       {@link NodeEngine} implementation of this member for service and config lookups
+     * @param executorName The name of the {@link com.hazelcast.core.IExecutorService} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine engine, String executorName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            DistributedExecutorService service = engine.getService(SERVICE_NAME);
+            ExecutorConfig config = service.getOrFindExecutorConfig(executorName);
+            if (config != null) {
+                return config.getUserCodeNamespace();
+            }
+        }
+        return null;
+    }
 }

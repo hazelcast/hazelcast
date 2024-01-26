@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,11 +46,11 @@ import static org.mockito.Mockito.when;
 public class RangeVisitorTest extends VisitorTestSupport {
 
     private RangeVisitor visitor;
-    private Indexes indexes;
+    private IndexRegistry indexes;
 
     @Before
     public void before() {
-        indexes = mock(Indexes.class);
+        indexes = mock(IndexRegistry.class);
         when(indexes.getConverter("age")).thenReturn(INTEGER_CONVERTER);
         when(indexes.getConverter("name")).thenReturn(STRING_CONVERTER);
         when(indexes.getConverter("noConverter")).thenReturn(null);
@@ -157,7 +157,7 @@ public class RangeVisitorTest extends VisitorTestSupport {
     }
 
     @Override
-    protected Indexes getIndexes() {
+    protected IndexRegistry getIndexes() {
         return indexes;
     }
 

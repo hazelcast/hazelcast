@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,11 @@ public class ClientTestSupport extends HazelcastTestSupport {
         }
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
+    }
+
+    public static void forceDisconnectFromServer(final HazelcastInstance client, UUID memberUUID) {
+        ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+        connectionManager.getConnection(memberUUID).close("close", null);
     }
 
     public static void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {

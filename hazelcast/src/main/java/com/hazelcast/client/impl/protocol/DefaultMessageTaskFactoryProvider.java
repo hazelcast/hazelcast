@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListene
 import com.hazelcast.client.impl.protocol.codec.ClientSendAllSchemasCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTpcAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
@@ -120,6 +121,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGenerator
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
@@ -135,9 +137,6 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
@@ -169,6 +168,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCForceCloseCPSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
@@ -328,6 +328,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
@@ -440,13 +441,11 @@ import com.hazelcast.client.impl.protocol.task.AddPartitionLostListenerMessageTa
 import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask;
+import com.hazelcast.client.impl.protocol.task.ClientTpcAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationCustomCredentialsMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalTpcAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
@@ -500,6 +499,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGenerator
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMultiMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddUserCodeNamespaceConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddPNCounterConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddQueueConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddReliableTopicConfigMessageTask;
@@ -551,6 +551,7 @@ import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMe
 import com.hazelcast.client.impl.protocol.task.management.ChangeWanReplicationStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.CheckWanConsistencyMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ClearWanQueuesMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ForceCloseCPSessionTask;
 import com.hazelcast.client.impl.protocol.task.management.GetCPMembersMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetClusterMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
@@ -714,6 +715,7 @@ import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapGetMes
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapIsEmptyMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapKeySetMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapPutAllMessageTask;
+import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapPutMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapRemoveEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapRemoveMessageTask;
@@ -1081,6 +1083,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReplicatedMapAddEntryListenerMessageTask(cm, node, con));
         factories.put(ReplicatedMapKeySetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReplicatedMapKeySetMessageTask(cm, node, con));
+        factories.put(ReplicatedMapPutAllWithMetadataCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReplicatedMapPutAllWithMetadataMessageTask(cm, node, con));
     }
 
     private void initializeLongRegisterClientTaskFactories() {
@@ -1533,12 +1537,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
         factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
-        factories.put(ExperimentalAuthenticationCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ExperimentalAuthenticationMessageTask(cm, node, con));
-        factories.put(ExperimentalAuthenticationCustomCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ExperimentalAuthenticationCustomCredentialsMessageTask(cm, node, con));
-        factories.put(ExperimentalTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ExperimentalTpcAuthenticationMessageTask(cm, node, con));
+        factories.put(ClientTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ClientTpcAuthenticationMessageTask(cm, node, con));
     }
 
     private void initializeQueueTaskFactories() {
@@ -1682,6 +1682,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddDataConnectionConfigMessageTask(cm, node, con));
         factories.put(DynamicConfigAddWanReplicationConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddWanReplicationConfigTask(cm, node, con));
+        factories.put(DynamicConfigAddUserCodeNamespaceConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new AddUserCodeNamespaceConfigMessageTask(cm, node, con));
     }
 
     private void initializeFlakeIdGeneratorTaskFactories() {
@@ -1867,6 +1869,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReloadConfigMessageTask(cm, node, con));
         factories.put(MCUpdateConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
+        factories.put(MCForceCloseCPSessionCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ForceCloseCPSessionTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {

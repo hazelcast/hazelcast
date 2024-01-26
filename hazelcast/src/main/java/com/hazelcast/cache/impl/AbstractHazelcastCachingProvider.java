@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,11 +121,8 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
         Properties managerProperties = properties == null ? new Properties() : properties;
         synchronized (cacheManagers) {
-            Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
-            if (cacheManagersByURI == null) {
-                cacheManagersByURI = new HashMap<URI, AbstractHazelcastCacheManager>();
-                cacheManagers.put(managerClassLoader, cacheManagersByURI);
-            }
+            Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI = cacheManagers.computeIfAbsent(managerClassLoader,
+                    x -> new HashMap<>());
             AbstractHazelcastCacheManager cacheManager = cacheManagersByURI.get(managerURI);
             if (cacheManager == null || cacheManager.isClosed()) {
                 try {

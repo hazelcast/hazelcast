@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
-import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
+import com.hazelcast.jet.impl.operation.GetLocalExecutionMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
@@ -213,7 +213,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                 case GET_JOB_METRICS_OP:
                     return new GetJobMetricsOperation();
                 case GET_LOCAL_JOB_METRICS_OP:
-                    return new GetLocalJobMetricsOperation();
+                    return new GetLocalExecutionMetricsOperation();
                 case SNAPSHOT_PHASE2_OPERATION:
                     return new SnapshotPhase2Operation();
                 case WRITE_FILE_P_FILE_ID:

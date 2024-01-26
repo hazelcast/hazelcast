@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,17 +22,18 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
+import com.hazelcast.spi.utils.RetryUtils;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
-    private final EndpointResolver endpointResolver;
+    private static final int DNS_RETRY = 5;
 
+    private final EndpointResolver endpointResolver;
     private final Map<String, String> memberMetadata = new HashMap<>();
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties,
@@ -113,8 +114,8 @@ final class HazelcastKubernetesDiscoveryStrategy
                 return null;
             }
             try {
-                return InetAddress.getByName(address);
-            } catch (UnknownHostException e) {
+                return RetryUtils.retry(() -> InetAddress.getByName(address), DNS_RETRY);
+            } catch (Exception e) {
                 logger.warning("Address '" + address + "' could not be resolved");
             }
             return null;

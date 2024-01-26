@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.client.impl.protocol.task.list;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListIteratorCodec;
 import com.hazelcast.client.impl.protocol.codec.ListListIteratorCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -36,7 +36,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_LISTITERATOR}
  */
 public class ListListIteratorMessageTask
-        extends AbstractPartitionMessageTask<ListListIteratorCodec.RequestParameters> {
+        extends AbstractListMessageTask<ListListIteratorCodec.RequestParameters> {
 
     public ListListIteratorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -77,7 +77,7 @@ public class ListListIteratorMessageTask
 
     @Override
     public String getMethodName() {
-        return "listIterator";
+        return SecurityInterceptorConstants.LIST_ITERATOR;
     }
 
     @Override

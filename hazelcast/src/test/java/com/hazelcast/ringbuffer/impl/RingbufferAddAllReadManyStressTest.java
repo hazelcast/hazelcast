@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                         return;
                     }
 
-                    assertEquals(new Long(seq), item);
+                    assertEquals(Long.valueOf(seq), item);
 
                     long currentTimeMs = currentTimeMillis();
                     if (lastLogMs + SECONDS.toMillis(5) < currentTimeMs) {

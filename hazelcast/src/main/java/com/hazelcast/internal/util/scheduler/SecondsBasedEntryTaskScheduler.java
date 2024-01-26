@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,13 +103,11 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
                 }
                 keys.put(key, keyScheduler);
             }
-            ScheduledGroup group = groups.get(second);
-            if (group == null) {
+            ScheduledGroup group = groups.computeIfAbsent(second, x -> {
                 Runnable groupExecutor = () -> executeGroup(second);
-                ScheduledFuture executorFuture = taskScheduler.schedule(groupExecutor, delaySeconds, TimeUnit.SECONDS);
-                group = new ScheduledGroup(second, executorFuture);
-                groups.put(second, group);
-            }
+                ScheduledFuture<?> executorFuture = taskScheduler.schedule(groupExecutor, delaySeconds, TimeUnit.SECONDS);
+                return new ScheduledGroup(second, executorFuture);
+            });
             return keyScheduler.schedule(entry, group);
         }
     }

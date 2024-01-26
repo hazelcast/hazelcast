@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.test.Accessors.getNode;
@@ -58,7 +58,7 @@ public class BackupListenerLeakTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.shutdown();
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
+        Map<UUID, LongConsumer> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 
@@ -74,7 +74,7 @@ public class BackupListenerLeakTest {
 
         connectionManager.reset();
 
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
+        Map<UUID, LongConsumer> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(1, backupListeners.size()));
     }
 }

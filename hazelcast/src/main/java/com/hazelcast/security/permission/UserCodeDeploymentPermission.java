@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,11 @@ package com.hazelcast.security.permission;
 
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 
+/**
+ * @deprecated since 5.4, "User Code Deployment" is replaced by the "User Code Namespaces" feature
+ * @see UserCodeNamespacePermission
+ */
+@Deprecated(since = "5.4", forRemoval = true)
 public class UserCodeDeploymentPermission extends InstancePermission {
 
     private static final int DEPLOY = 4;

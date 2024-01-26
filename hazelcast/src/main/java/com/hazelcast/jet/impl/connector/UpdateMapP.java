@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
 
     private final BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
-    private final BiFunction<Object, Object, Object> remappingFunction =
+    private final BinaryOperator<Object> remappingFunction =
             (o, n) -> ApplyFnEntryProcessor.append(o, (Data) n);
 
     public UpdateMapP(HazelcastInstance instance,

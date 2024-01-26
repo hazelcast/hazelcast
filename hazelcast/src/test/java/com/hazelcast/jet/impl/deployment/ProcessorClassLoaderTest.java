@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,14 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.util.LoggingUtil;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
@@ -50,14 +54,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ProcessorClassLoaderTest extends JetTestSupport {
-
+    private static final ILogger LOGGER = Logger.getLogger(ProcessorClassLoaderTest.class);
     private static final String SOURCE_NAME = "test-source";
 
     private HazelcastInstance member;
@@ -72,16 +77,16 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
         jarFile = File.createTempFile("source_", ".jar");
         JarUtil.createJarFile(
                 "target/test-classes/",
-                newArrayList(
-                        classToPath(TestProcessor.ResourceReader.class),
-                        classToPath(TestProcessor.TestProcessorMetaSupplier.class),
-                        classToPath(TestProcessor.TestProcessorSupplier.class),
-                        classToPath(TestProcessor.class),
-                        classToPath(SourceWithClassLoader.class)
-                ),
+                Stream.of(
+                        TestProcessor.ResourceReader.class,
+                        TestProcessor.TestProcessorMetaSupplier.class,
+                        TestProcessor.TestProcessorSupplier.class,
+                        TestProcessor.class,
+                        SourceWithClassLoader.class
+                ).map(ReflectionUtils::toClassResourceId).collect(Collectors.toList()),
                 jarFile.getAbsolutePath()
         );
-        System.out.println(jarFile);
+        LoggingUtil.logFinest(LOGGER, "%s", jarFile);
 
         resourcesJarFile = File.createTempFile("resources_", ".jar");
         JarUtil.createResourcesJarFile(resourcesJarFile);
@@ -89,10 +94,6 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
         // Setup the path for custom lib directory, this is by default set to `custom-lib` directory in hazelcast
         // distribution zip
         System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
-    }
-
-    private static String classToPath(Class<?> clazz) {
-        return clazz.getName().replace(".", "/") + ".class";
     }
 
     @AfterClass

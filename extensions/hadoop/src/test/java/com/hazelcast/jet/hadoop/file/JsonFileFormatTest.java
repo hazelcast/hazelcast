@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.jet.hadoop.file;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
@@ -41,11 +40,11 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
         assertItemsInSource(source,
                 collected -> assertThat(collected).usingRecursiveFieldByFieldElementComparator()
                                                   .containsOnly(
-                                                          ImmutableMap.of(
+                                                          Map.of(
                                                                   "name", "Frantisek",
                                                                   "favoriteNumber", 7
                                                           ),
-                                                          ImmutableMap.of(
+                                                          Map.of(
                                                                   "name", "Ali",
                                                                   "favoriteNumber", 42
                                                           )

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.TypeConverters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -45,7 +45,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 public class RangeVisitor extends AbstractVisitor {
 
     @Override
-    public Predicate visit(AndPredicate predicate, Indexes indexes) {
+    public Predicate visit(AndPredicate predicate, IndexRegistry indexes) {
         Predicate[] predicates = predicate.predicates;
         Ranges ranges = null;
 
@@ -60,7 +60,7 @@ public class RangeVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(BetweenPredicate predicate, Indexes indexes) {
+    public Predicate visit(BetweenPredicate predicate, IndexRegistry indexes) {
         TypeConverter converter = indexes.getConverter(predicate.attributeName);
         if (converter == null) {
             return predicate;
@@ -82,7 +82,7 @@ public class RangeVisitor extends AbstractVisitor {
         }
     }
 
-    private static Ranges intersect(Predicate[] predicates, int predicateIndex, Ranges ranges, Indexes indexes) {
+    private static Ranges intersect(Predicate[] predicates, int predicateIndex, Ranges ranges, IndexRegistry indexes) {
         Predicate predicate = predicates[predicateIndex];
 
         if (predicate instanceof FalsePredicate) {
@@ -120,7 +120,7 @@ public class RangeVisitor extends AbstractVisitor {
         return !rangePredicate.getAttribute().contains("[any]");
     }
 
-    private static Range intersect(RangePredicate predicate, Range range, Indexes indexes) {
+    private static Range intersect(RangePredicate predicate, Range range, IndexRegistry indexes) {
         if (range == null) {
             TypeConverter converter = indexes.getConverter(predicate.getAttribute());
             if (converter == null) {

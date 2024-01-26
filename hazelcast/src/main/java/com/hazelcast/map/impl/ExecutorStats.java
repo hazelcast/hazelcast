@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 
 /**
@@ -40,7 +41,7 @@ public final class ExecutorStats {
     public ExecutorStats() {
     }
 
-    public ConcurrentHashMap<String, LocalExecutorStatsImpl> getStatsMap() {
+    public ConcurrentMap<String, LocalExecutorStatsImpl> getStatsMap() {
         return statsMap;
     }
 

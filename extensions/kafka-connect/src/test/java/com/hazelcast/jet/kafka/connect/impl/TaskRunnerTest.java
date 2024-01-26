@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ public class TaskRunnerTest {
         for (SourceRecord sourceRecord : taskRunner.poll()) {
             taskRunner.commitRecord(sourceRecord);
         }
-        State snapshot = taskRunner.createSnapshot();
+        State snapshot = taskRunner.copyState();
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(2);
@@ -138,7 +138,7 @@ public class TaskRunnerTest {
 
     @Test
     public void should_restore_snapshot() {
-        State initialSnapshot = taskRunner.createSnapshot();
+        State initialSnapshot = taskRunner.copyState();
         assertThat(initialSnapshot).isEqualTo(new State(new HashMap<>()));
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
@@ -146,9 +146,9 @@ public class TaskRunnerTest {
         partitionsToOffset.put(sourceRecord.sourcePartition(), sourceRecord.sourceOffset());
         State stateToRestore = new State(partitionsToOffset);
 
-        taskRunner.restoreSnapshot(stateToRestore);
+        taskRunner.restoreState(stateToRestore);
 
-        State snapshot = taskRunner.createSnapshot();
+        State snapshot = taskRunner.copyState();
         assertThat(snapshot).isEqualTo(new State(partitionsToOffset));
     }
 

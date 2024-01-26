@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,14 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.ClassRule;
+import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.test.OverridePropertyRule.set;
 
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlIndexSmallFetchSizeTest extends SqlIndexTest {
     // Simulate index with many identical indexed values using existing test data
     // by redefining "many": "many" means > FETCH_SIZE_HINT.

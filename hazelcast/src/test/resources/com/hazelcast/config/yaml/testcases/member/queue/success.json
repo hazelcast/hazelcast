@@ -28,6 +28,7 @@
             "class-name": "PutIfAbsentMergePolicy"
           },
           "priority-comparator-class-name":  "MyComparator",
+          "user-code-namespace": "ns1"
         }
       }
     }

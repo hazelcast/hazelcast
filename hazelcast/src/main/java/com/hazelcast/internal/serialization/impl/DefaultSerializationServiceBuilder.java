@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected HazelcastInstance hazelcastInstance;
     protected CompactSerializationConfig compactSerializationConfig;
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
-    protected ClassNameFilter classNameFilter;
+    protected ClassNameFilter classNameSerializationFilter;
+
     protected SchemaService schemaService;
     protected boolean isCompatibility;
 
@@ -124,7 +125,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         allowUnsafe = config.isAllowUnsafe();
         allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
-        classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        classNameSerializationFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
         compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
@@ -300,7 +301,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withEnableCompression(enableCompression)
                     .withEnableSharedObject(enableSharedObject)
                     .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
-                    .withClassNameFilter(classNameFilter)
+                    .withClassNameFilter(classNameSerializationFilter)
                     .withCheckClassDefErrors(checkClassDefErrors)
                     .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
                     .withCompactSerializationConfig(compactSerializationConfig)
@@ -324,7 +325,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
             Object value = entry.getValue();
             Serializer serializer;
             if (value instanceof SerializerHook) {
-                serializer = ((SerializerHook) value).createSerializer();
+                serializer = ((SerializerHook) value).createSerializer(ss);
             } else {
                 serializer = (Serializer) value;
             }

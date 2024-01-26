@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
@@ -26,12 +27,14 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.core.TestProcessors.Identity;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -60,6 +63,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_JOB_IS_SUSPENDABLE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -102,6 +106,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void setup() {
         TestProcessors.reset(TOTAL_PARALLELISM);
     }
+
     @Before
     public void after() {
         TestProcessors.assertNoErrorsInProcessors();
@@ -788,6 +793,63 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void given_suspensionIsForbidden_when_suspendJob_then_jobIsCanceled() {
+        // Given
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
+
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // When
+        assertJobStatusEventually(job, RUNNING);
+        job.suspend();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationByUserException.class);
+    }
+
+    @Test
+    public void given_suspensionIsForbidden_when_restartJob_then_jobIsCanceled() {
+        // Given
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
+
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // When
+        assertJobStatusEventually(job, RUNNING);
+        job.restart();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationByUserException.class);
+    }
+
+    @Test
+    public void given_suspensionIsForbidden_when_changedClusterStateToPassive_then_jobIsCanceled() {
+        // Given
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig().setArgument(KEY_JOB_IS_SUSPENDABLE, false);
+
+        // When
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // Then
+        assertJobStatusEventually(job, RUNNING);
+        instance().getCluster().changeClusterState(ClusterState.PASSIVE);
+        instance().getCluster().changeClusterState(ClusterState.ACTIVE);
+
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
+    }
+
+    @Test
     public void when_namedJobCancelledAndJoined_then_newJobWithSameNameCanBeSubmitted() {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
@@ -1091,6 +1153,23 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but FAILED");
     }
 
+    @Test
+    public void given_suspensionIsForbidden_when_tryUpdatingJobConfig_then_updateIsFailed() {
+        // Given
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setArgument(JobConfigArguments.KEY_JOB_IS_SUSPENDABLE, false);
+
+
+        // When
+        Job job = instance().getJet().newJob(dag, jobConfig);
+
+        // Then
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
+                .hasMessageContaining("is not suspendable, can't perform `updateJobConfig()`");
+    }
+
     // ### Tests for light jobs
 
     @Test
@@ -1213,7 +1292,8 @@ public class JobTest extends SimpleTestInClusterSupport {
             output.writeInt(value.value);
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Value read(ObjectDataInput input) throws IOException {
             return new Value(input.readInt());
         }

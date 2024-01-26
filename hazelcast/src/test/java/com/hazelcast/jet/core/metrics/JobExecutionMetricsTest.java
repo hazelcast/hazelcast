@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
-        JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
+        JmxMetricsChecker jmxChecker = JmxMetricsChecker.forExecution(instance(), job);
 
         jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
         jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
@@ -82,7 +82,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
-        JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
+        JmxMetricsChecker jmxChecker = JmxMetricsChecker.forExecution(instance(), job);
 
         long executionStartTime = jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
         jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
@@ -105,7 +105,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
-        JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
+        JmxMetricsChecker jmxChecker = JmxMetricsChecker.forExecution(instance(), job);
 
         long executionStartTime = jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
         jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);

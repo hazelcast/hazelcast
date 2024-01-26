@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,10 +72,8 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
-        return new LocalProcessorMetaSupplier<
-                InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
-                new LocalCacheReaderFunction(cacheName)
-        ) {
+        return new LocalProcessorMetaSupplier<>(new LocalCacheReaderFunction(cacheName)) {
+            private static final long serialVersionUID = 1L;
             @Override
             public Permission getRequiredPermission() {
                 return new CachePermission(cacheName, ACTION_CREATE, ACTION_READ);
@@ -86,6 +84,8 @@ public final class HazelcastReaders {
     public static class LocalCacheReaderFunction implements BiFunctionEx<HazelcastInstance,
             InternalSerializationService, ReadMapOrCacheP.Reader<InternalCompletableFuture<CacheEntriesWithCursor>,
             CacheEntriesWithCursor, Entry<Data, Data>>>, IdentifiedDataSerializable {
+        private static final long serialVersionUID = 1L;
+
         private String cacheName;
 
         public LocalCacheReaderFunction() {
@@ -129,12 +129,15 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteCacheReaderFunction(cacheName));
+        return new RemoteProcessorSupplier<>(null, clientXml, new RemoteCacheReaderFunction(cacheName));
     }
 
     public static class RemoteCacheReaderFunction implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, CacheIterateEntriesCodec.ResponseParameters,
                     Entry<Data, Data>>>, IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
+
         private String cacheName;
 
         public RemoteCacheReaderFunction() {
@@ -174,6 +177,8 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<>(new LocalMapReaderFunction(mapName)) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
@@ -184,6 +189,7 @@ public final class HazelcastReaders {
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
             ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
+        private static final long serialVersionUID = 1L;
         private String mapName;
 
         public LocalMapReaderFunction() {
@@ -229,9 +235,11 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(predicate), "predicate");
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
-        return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
+        return new LocalProcessorMetaSupplier<>(
                 new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
         ) {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
@@ -242,6 +250,8 @@ public final class HazelcastReaders {
     public static class LocalMapQueryReaderFunction<K, V, T> implements BiFunctionEx<HazelcastInstance,
             InternalSerializationService, ReadMapOrCacheP.Reader<InternalCompletableFuture<ResultSegment>,
             ResultSegment, QueryResultRow>>, IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
 
         private String mapName;
         private Predicate<? super K, ? super V> predicate;
@@ -288,18 +298,12 @@ public final class HazelcastReaders {
         }
     }
 
-    @Nonnull
-    public static ProcessorSupplier readRemoteMapSupplier(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig
-    ) {
-        String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapReaderFunction(mapName));
-    }
-
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
+
         private String mapName;
 
         public RemoteMapReaderFunction() {
@@ -336,24 +340,27 @@ public final class HazelcastReaders {
         }
     }
 
+    /**
+     * Create a ProcessorSupplier for a remote map in another cluster
+     */
     @Nonnull
-    public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
-    ) {
-        checkSerializable(Objects.requireNonNull(predicate), "predicate");
-        checkSerializable(Objects.requireNonNull(projection), "projection");
-
-        String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapQueryReaderFunction<>(mapName, predicate,
-                projection));
+    public static <T, K, V> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceConfiguration<K, V, T> config) {
+        String clientXml = ImdgUtil.asXmlString(config.getClientConfig());
+        if (config.hasPredicate()) {
+            var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
+                    config.getName(), config.getPredicate(), config.getProjection());
+            return new RemoteProcessorSupplier<>(config.getDataConnectionName(), clientXml, readerSupplier);
+        } else {
+            var readerSupplier = new RemoteMapReaderFunction(config.getName());
+            return new RemoteProcessorSupplier<>(config.getDataConnectionName(), clientXml, readerSupplier);
+        }
     }
 
     public static class RemoteMapQueryReaderFunction<K, V, T> implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchWithQueryCodec.ResponseParameters, Data>>,
             IdentifiedDataSerializable {
+
+        private static final long serialVersionUID = 1L;
 
         private String mapName;
         private Predicate<? super K, ? super V> predicate;

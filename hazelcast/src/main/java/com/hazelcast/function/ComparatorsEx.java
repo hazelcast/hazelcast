@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ final class ComparatorsEx {
     @BinaryInterface
     private static final class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
             return left.compareTo(right);
@@ -47,6 +49,8 @@ final class ComparatorsEx {
     @BinaryInterface
     private static final class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
             return right.compareTo(left);
@@ -64,6 +68,7 @@ final class ComparatorsEx {
 
     @BinaryInterface
     public static final class NullComparator<T> implements ComparatorEx<T> {
+        private static final long serialVersionUID = 1L;
         private final boolean isNullFirst;
 
         @SuppressWarnings("unchecked")

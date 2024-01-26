@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -57,7 +56,7 @@ public class PacketEncoderTest extends HazelcastTestSupport {
     public void whenPacketFullyWritten() {
         final Packet packet = new Packet(serializationService.toBytes("foobar"));
         ByteBuffer dst = ByteBuffer.allocate(1000);
-        upcast(dst).flip();
+        dst.flip();
 
         PacketSupplier src = new PacketSupplier();
         src.queue.add(packet);
@@ -78,7 +77,7 @@ public class PacketEncoderTest extends HazelcastTestSupport {
     public void whenNotEnoughSpace() {
         final Packet packet = new Packet(serializationService.toBytes(new byte[2000]));
         ByteBuffer dst = ByteBuffer.allocate(1000);
-        upcast(dst).flip();
+        dst.flip();
 
         PacketSupplier src = new PacketSupplier();
         src.queue.add(packet);

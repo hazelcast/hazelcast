@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.internal.util.collection.InternalListMultiMap;
 
 import java.util.List;
@@ -48,7 +48,7 @@ public class OrToInVisitor extends AbstractVisitor {
     private static final int MINIMUM_NUMBER_OF_OR_TO_REPLACE = 5;
 
     @Override
-    public Predicate visit(OrPredicate orPredicate, Indexes indexes) {
+    public Predicate visit(OrPredicate orPredicate, IndexRegistry indexes) {
         Predicate[] originalInnerPredicates = orPredicate.predicates;
         if (originalInnerPredicates == null || originalInnerPredicates.length < MINIMUM_NUMBER_OF_OR_TO_REPLACE) {
             return orPredicate;

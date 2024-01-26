@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package com.hazelcast.map.impl.operation.steps;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
@@ -32,7 +30,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
@@ -77,13 +74,14 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             Collection<Data> keysToLoad = state.getKeysToLoad();
-            Map loadedKeyValuePairs = state.getRecordStore().getMapDataStore().loadAll(keysToLoad);
-            state.setLoadedKeyValuePairs(loadedKeyValuePairs);
+            DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
+            List keyBiTupleList = recordStore.loadMultipleKeys(keysToLoad);
+            state.setLoadedKeyAndOldValueWithExpiryPairs(keyBiTupleList);
         }
 
         @Override
         public Step nextStep(State state) {
-            return state.getLoadedKeyValuePairs().isEmpty()
+            return state.loadedKeyAndOldValueWithExpiryPairs().isEmpty()
                     ? MultipleEntryOpSteps.PROCESS : MultipleEntryOpSteps.ON_LOAD_ALL;
         }
     },
@@ -92,21 +90,11 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
-            MapContainer mapContainer = recordStore.getMapContainer();
-            MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-
             // create record for loaded records.
-            Map<Object, Object> loadedKeyValuePairs = state.getLoadedKeyValuePairs();
-            for (Map.Entry<Object, Object> entry : loadedKeyValuePairs.entrySet()) {
-                Object key = entry.getKey();
-                Object value = entry.getValue();
-                if (key == null || value == null) {
-                    continue;
-                }
-
-                ((DefaultRecordStore) recordStore)
-                        .onLoadRecord(mapServiceContext.toData(key), value, false, state.getCallerAddress());
-            }
+            List loadedKeyAndOldValueWithExpiryPairs = state.loadedKeyAndOldValueWithExpiryPairs();
+            ((DefaultRecordStore) recordStore)
+                    .putAndGetLoadedEntries(loadedKeyAndOldValueWithExpiryPairs,
+                            state.getCallerAddress(), state.getNow());
         }
 
         @Override
@@ -118,7 +106,7 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
     PROCESS() {
         @Override
         public void runStep(State state) {
-            RecordStore recordStore = state.getRecordStore();
+            DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
 
             List<State> toStore = new ArrayList<>();
             List<State> toRemove = new ArrayList<>();
@@ -137,7 +125,7 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
                 State singleKeyState = new State(state);
                 singleKeyState
                         .setKey(key)
-                        .setOldValue(record == null ? null : record.getValue())
+                        .setOldValue(record == null ? null : recordStore.copyToHeapWhenNeeded(record.getValue()))
                         .setEntryOperator(operator(state.getOperation(),
                                 state.getEntryProcessor(), state.getPredicate()));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,9 @@ public enum ConfigSections {
     JOIN("join", false),
     TCP_IP("tcp-ip", false),
     DATA_CONNECTION("data-connection", true),
-    TPC("tpc", false);
+    TPC("tpc", false),
+    USER_CODE_NAMESPACES("user-code-namespaces", false),
+    USER_CODE_NAMESPACE("namespace", true);
 
     final boolean multipleOccurrence;
     private final String name;

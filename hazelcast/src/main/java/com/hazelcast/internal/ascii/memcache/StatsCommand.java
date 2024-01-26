@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class StatsCommand extends AbstractTextCommand {
@@ -79,7 +78,7 @@ public class StatsCommand extends AbstractTextCommand {
         putLong(DECR_HITS, stats.getDecrHits());
         putLong(DECR_MISSES, stats.getDecrMisses());
         response.put(TextCommandConstants.END);
-        upcast(response).flip();
+        response.flip();
     }
 
     private void putInt(byte[] name, int value) {

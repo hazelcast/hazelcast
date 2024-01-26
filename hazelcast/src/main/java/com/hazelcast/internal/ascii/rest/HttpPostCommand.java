@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import com.hazelcast.internal.util.StringUtil;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
@@ -75,7 +75,7 @@ public class HttpPostCommand extends HttpCommand {
         }
         if (complete) {
             if (data != null) {
-                upcast(data).flip();
+                data.flip();
             }
         }
         return complete;
@@ -147,7 +147,7 @@ public class HttpPostCommand extends HttpCommand {
         if (b == CARRIAGE_RETURN) {
             readLF(src);
         } else {
-            upcast(src).position(src.position() - 1);
+            src.position(src.position() - 1);
         }
     }
 
@@ -168,9 +168,9 @@ public class HttpPostCommand extends HttpCommand {
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
+            result = new String(bb.array(), 0, bb.position(), StandardCharsets.UTF_8);
         }
-        upcast(bb).clear();
+        bb.clear();
         return result;
     }
 
@@ -224,7 +224,7 @@ public class HttpPostCommand extends HttpCommand {
         int capacity = lineBuffer.capacity() << 1;
 
         ByteBuffer newBuffer = ByteBuffer.allocate(capacity);
-        upcast(lineBuffer).flip();
+        lineBuffer.flip();
         newBuffer.put(lineBuffer);
         lineBuffer = newBuffer;
     }

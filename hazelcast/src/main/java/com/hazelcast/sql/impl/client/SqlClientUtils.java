@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.CoreQueryUtils;
 
@@ -30,6 +31,7 @@ public final class SqlClientUtils {
         // No-op.
     }
 
+    // Encode the exception as SqlError
     public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
         HazelcastSqlException sqlException = CoreQueryUtils.toPublicException(exception, localMemberId);
 
@@ -38,7 +40,9 @@ public final class SqlClientUtils {
                 sqlException.getMessage(),
                 sqlException.getOriginatingMemberId(),
                 sqlException.getSuggestion() != null,
-                sqlException.getSuggestion()
+                sqlException.getSuggestion(),
+                true,
+                ExceptionUtil.toString(exception)
         );
     }
 }

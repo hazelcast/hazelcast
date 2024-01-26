@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,6 +30,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.UntrustedExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
@@ -69,7 +71,13 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = ExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context)
+                // IMap updates will be executed in partition thread
+                // and might be executed on local or remote instance.
+                // Remote execution will not be able to use Jet job classloader,
+                // so for consistency also local execution should not use it.
+                .withSerializationService(Util.getSerializationService(context.hazelcastInstance()));
+
     }
 
     @Nonnull
@@ -96,7 +104,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             assert row.getFieldCount() == 1;
             keys.add(row.get(0));
         }
-        return map.submitToKeys(keys, updaterSupplier.get(evalContext.getArguments()))
+        return map.submitToKeys(keys, updaterSupplier.get(UntrustedExpressionEvalContext.from(evalContext)))
                 .toCompletableFuture()
                 .thenApply(m -> Traversers.empty());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
@@ -65,6 +66,7 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -267,7 +269,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
             return;
         }
 
-        mapServiceContext.getEventListenerCounter().incCounter(mapName);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.increaseInvalidationListenerCount();
     }
 
     @Override
@@ -277,7 +280,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
             return;
         }
 
-        mapServiceContext.getEventListenerCounter().decCounter(mapName);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.decreaseInvalidationListenerCount();
     }
 
     public int getMigrationStamp() {
@@ -298,6 +302,12 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         int partitionId = partitionService.getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
+
+        if (recordStore.isTieredStorageEnabled()) {
+            // We don't support expiry feature and the getRecordOrNull
+            // is done exclusively for this feature support.
+            return;
+        }
         boolean owner = partitionService.isPartitionOwner(partitionId);
         recordStore.beforeOperation();
         try {
@@ -404,5 +414,51 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     @Override
     public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, Collection<ServiceNamespace> namespace) {
         return migrationAwareService.newChunkSupplier(event, namespace);
+    }
+
+    /**
+     * Looks up the User Code Namespace name associated with the specified map name. This starts
+     * by looking for an existing {@link MapContainer} and checking its defined
+     * {@link MapConfig}. If the {@link MapContainer} does not exist (containers are
+     * created lazily), then fallback to checking the Node's config tree directly.
+     *
+     * @param engine  {@link NodeEngine} implementation of this member for service and config lookups
+     * @param mapName The name of the {@link com.hazelcast.map.IMap} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(@Nonnull NodeEngine engine, @Nonnull String mapName) {
+        if (engine.getNamespaceService().isEnabled()) {
+            MapService mapService = engine.getService(MapService.SERVICE_NAME);
+            MapContainer container = mapService.getMapServiceContext().getExistingMapContainer(mapName);
+            if (container != null) {
+                return container.getMapConfig().getUserCodeNamespace();
+            }
+            // Fallback to config lookup
+            MapConfig mapConfig = engine.getConfig().getMapConfigOrNull(mapName);
+            if (mapConfig != null) {
+                return mapConfig.getUserCodeNamespace();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the given namespace is referenced by a hot restart enabled
+     * map configuration.
+     *
+     * @param engine the node engine.
+     * @param namespace  the namespace.
+     * @return {@code true} if the namespace is referenced by a hot restart
+     * enabled data structure, {@code false} otherwise.
+     */
+    public static boolean isNamespaceReferencedWithHotRestart(@Nonnull NodeEngine engine, @Nonnull String namespace) {
+        return engine
+                .getConfig()
+                .getMapConfigs()
+                .values()
+                .stream()
+                .filter(cacheConfig -> cacheConfig.getDataPersistenceConfig().isEnabled())
+                .map(MapConfig::getUserCodeNamespace)
+                .anyMatch(namespace::equals);
     }
 }

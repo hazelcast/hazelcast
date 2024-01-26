@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public abstract class AbstractCollectionMergingValueImpl<V, T extends AbstractCo
     }
 
     @Override
-    public Collection<V> getValue() {
+    public Collection<V> getDeserializedValue() {
         Collection<Object> deserializedValues = new ArrayList<>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));

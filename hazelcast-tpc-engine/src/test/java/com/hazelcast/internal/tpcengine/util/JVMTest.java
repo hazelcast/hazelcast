@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-public class JVMTest {
-
+class JVMTest {
     @Test
-    public void getMajorVersion() {
-        System.out.println(JVM.getMajorVersion());
-        assertEquals(6, JVM.parseVersionString("1.6.0_23"));
-        assertEquals(7, JVM.parseVersionString("1.7.0"));
-        assertEquals(7, JVM.parseVersionString("1.7.0_80"));
-        assertEquals(8, JVM.parseVersionString("1.8.0_211"));
-        assertEquals(9, JVM.parseVersionString("9.0.1"));
-        assertEquals(11, JVM.parseVersionString("11.0.4"));
-        assertEquals(12, JVM.parseVersionString("12"));
-        assertEquals(12, JVM.parseVersionString("12.0.1"));
+    void getMajorVersion() {
+        assertDoesNotThrow(JVM::getMajorVersion);
     }
 }

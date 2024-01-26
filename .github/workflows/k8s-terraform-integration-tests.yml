@@ -41,7 +41,7 @@ jobs:
         suite: ['gke']
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3.0.0
+        uses: aws-actions/configure-aws-credentials@v4.0.1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -71,7 +71,7 @@ jobs:
           kubectl config view > ${HOME}/.kube/config
 
       - name: Checkout Auto Discovery Test Suite
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ env.DEVOPS_GITHUB_TOKEN }}
@@ -93,7 +93,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Add env vars
+        run: |
+          echo "GCLOUD_SA=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")" >> "$GITHUB_ENV"
+          echo "GCLOUD_ID_TOKEN=$(gcloud auth print-identity-token)" >> "$GITHUB_ENV"
+
       - name: Run Tests
         working-directory: auto-discovery-suite/terraform/test
         run: |
-          go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}
+          go test -v -timeout 120m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}

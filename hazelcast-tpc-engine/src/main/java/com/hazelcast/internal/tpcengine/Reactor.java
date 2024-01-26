@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.internal.util.ThreadAffinityHelper;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.BitSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -321,6 +322,64 @@ public abstract class Reactor implements Executor {
      * This method is thread-safe.
      */
     public abstract void wakeup();
+
+    /**
+     * Executes a Callable on the Reactor and returns a CompletableFuture with
+     * its content.
+     * <p/>
+     * Warning: This method is very inefficient because it creates a lot of
+     * litter. It should not be run too frequent because performance will tank.
+     *
+     * @param callable the Callable to submit
+     * @param <E> the type of the callable
+     * @return the CompletableFuture that is linked to the callable.
+     */
+    public final <E> CompletableFuture<E> submit(Callable<E> callable) {
+        CompletableFuture future = new CompletableFuture();
+        Runnable task = () -> {
+            try {
+                future.complete(callable.call());
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        };
+
+        if (!offer(task)) {
+            future.completeExceptionally(new RejectedExecutionException("Task " + callable.toString()
+                    + " rejected from " + this));
+        }
+
+        return future;
+    }
+
+    /**
+     * Executes a Callable on the Reactor and returns a CompletableFuture with
+     * its content.
+     * <p/>
+     * Warning: This method is very inefficient because it creates a lot of litter.
+     * It should not be run too frequent because performance will tank.
+     *
+     * @param cmd the command to submit.
+     * @return a CompletableFuture that is linked to the cmd.
+     */
+    public final CompletableFuture<Void> submit(Runnable cmd) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Runnable task = () -> {
+            try {
+                cmd.run();
+                future.complete(null);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        };
+
+        if (!offer(task)) {
+            future.completeExceptionally(new RejectedExecutionException("Task " + cmd.toString()
+                    + " rejected from " + this));
+        }
+
+        return future;
+    }
 
     @Override
     public void execute(Runnable command) {

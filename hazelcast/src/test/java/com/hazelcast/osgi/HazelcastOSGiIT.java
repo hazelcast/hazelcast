@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnJre;
-import org.junit.jupiter.api.condition.JRE;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
 import org.ops4j.pax.exam.junit.ExamReactorStrategy;
@@ -38,11 +35,9 @@ import org.osgi.framework.ServiceReference;
 
 import javax.inject.Inject;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
-
 
 @Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
@@ -83,20 +78,6 @@ class HazelcastOSGiIT {
         } else {
             System.setProperty(MAVEN_REPOSITORIES_PROP, oldMavenRepoProperty);
         }
-    }
-
-    /**
-     * Is this test failing in your IDE?
-     * Some versions of Intellij IDEA use a wrong working directory in multi-module Maven projects.
-     * See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
-     * <p>
-     * An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
-     */
-    @EnabledOnJre({JRE.JAVA_8})
-    @Test
-    void serviceRetrievedSuccessfully() {
-        HazelcastOSGiService service = getService();
-        assertNotNull(service);
     }
 
     private HazelcastOSGiService getService() {

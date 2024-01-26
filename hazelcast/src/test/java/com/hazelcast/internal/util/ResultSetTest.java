@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -54,7 +54,7 @@ public class ResultSetTest {
 
     @Test
     public void testSize_whenNotEmpty() {
-        List<Map.Entry> entries = new ArrayList<Map.Entry>();
+        List<Map.Entry> entries = new ArrayList<>();
         entries.add(new MapEntrySimple(null, null));
         ResultSet resultSet = new ResultSet(entries, IterationType.KEY);
         assertEquals(1, resultSet.size());
@@ -77,7 +77,7 @@ public class ResultSetTest {
 
     @Test
     public void testIterator_whenNotEmpty_IterationType_Key() {
-        List<Map.Entry> entries = new ArrayList<Map.Entry>();
+        List<Map.Entry> entries = new ArrayList<>();
         MapEntrySimple entry = new MapEntrySimple("key", "value");
         entries.add(entry);
         ResultSet resultSet = new ResultSet(entries, IterationType.KEY);
@@ -88,7 +88,7 @@ public class ResultSetTest {
 
     @Test
     public void testIterator_whenNotEmpty_IterationType_Value() {
-        List<Map.Entry> entries = new ArrayList<Map.Entry>();
+        List<Map.Entry> entries = new ArrayList<>();
         MapEntrySimple entry = new MapEntrySimple("key", "value");
         entries.add(entry);
         ResultSet resultSet = new ResultSet(entries, IterationType.VALUE);
@@ -99,7 +99,7 @@ public class ResultSetTest {
 
     @Test
     public void testIterator_whenNotEmpty_IterationType_Entry() {
-        List<Map.Entry> entries = new ArrayList<Map.Entry>();
+        List<Map.Entry> entries = new ArrayList<>();
         MapEntrySimple entry = new MapEntrySimple("key", "value");
         entries.add(entry);
         ResultSet resultSet = new ResultSet(entries, IterationType.ENTRY);

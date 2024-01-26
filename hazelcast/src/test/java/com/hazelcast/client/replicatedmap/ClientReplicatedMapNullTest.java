@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.replicatedmap;
 
+import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.AbstractReplicatedMapNullTest;
@@ -24,11 +25,12 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 /**
- * Member implementation for basic map methods nullability tests
+ * Client implementation for basic replicated map methods nullability tests
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -46,6 +48,11 @@ public class ClientReplicatedMapNullTest extends AbstractReplicatedMapNullTest {
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void testPutAllWithMetadata_nullability() {
+        assertThrowsNPE(m -> ((ClientReplicatedMapProxy) m).putAllWithMetadataAsync(null));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.RowValue;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY_ID;
@@ -43,8 +44,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int TYPE_FIELD = 64;
     public static final int ROW_VALUE = 66;
     public static final int QUERY_DATA_TYPE_FIELD = 67;
+    public static final int PREDEFINED_QUERY_DATA_TYPE_BASE = 68;
+    /**
+     * There can be at most {@value com.hazelcast.sql.impl.type.converter.Converters#MAX_CONVERTER_COUNT}
+     * predefined QueryDataType's. Currently, there are 26 of them.
+     */
+    public static final int PREDEFINED_QUERY_DATA_TYPE_END = 167;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int LEN = PREDEFINED_QUERY_DATA_TYPE_END + 1;
 
     @Override
     public int getFactoryId() {
@@ -54,10 +61,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     @SuppressWarnings("unchecked")
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[QUERY_ID] = arg -> new QueryId();
-        constructors[ROW_VALUE] = arg -> new RowValue();
+        constructors[QUERY_ID] = QueryId::new;
+        constructors[ROW_VALUE] = RowValue::new;
 
         // other constructors are added in JetSqlSerializerHook.afterFactoriesCreated()
 

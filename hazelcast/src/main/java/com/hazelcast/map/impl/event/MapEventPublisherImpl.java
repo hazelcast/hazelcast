@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
+        SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanContext().getWanMergePolicy();
         WanMapAddOrUpdateEvent event = new WanMapAddOrUpdateEvent(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }
@@ -129,7 +129,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     protected void publishWanEvent(String mapName, InternalWanEvent event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         DelegatingWanScheme wanReplicationPublisher
-                = mapContainer.getWanReplicationDelegate();
+                = mapContainer.getWanContext().getWanReplicationDelegate();
         if (isOwnedPartition(event.getKey())) {
             wanReplicationPublisher.publishReplicationEvent(event);
         } else {

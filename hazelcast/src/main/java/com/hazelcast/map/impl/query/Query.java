@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.internal.namespace.NamespaceUtil;
+import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,6 +31,8 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.annotation.NamespacesSupported;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -38,6 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
  */
 // RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
+@NamespacesSupported
 public class Query implements IdentifiedDataSerializable, Versioned {
 
     private String mapName;
@@ -151,11 +157,19 @@ public class Query implements IdentifiedDataSerializable, Versioned {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.mapName = in.readString();
-        this.predicate = in.readObject();
-        this.iterationType = IterationType.getById(in.readByte());
-        this.aggregator = in.readObject();
-        this.projection = in.readObject();
-        this.partitionIdSet = in.readObject();
+
+        NodeEngine engine = NodeEngineThreadLocalContext.getNodeEngineThreadLocalContext();
+        String namespace = MapService.lookupNamespace(engine, mapName);
+        NamespaceUtil.setupNamespace(engine, namespace);
+        try {
+            this.predicate = in.readObject();
+            this.iterationType = IterationType.getById(in.readByte());
+            this.aggregator = in.readObject();
+            this.projection = in.readObject();
+            this.partitionIdSet = in.readObject();
+        } finally {
+            NamespaceUtil.cleanupNamespace(engine, namespace);
+        }
     }
 
     public static final class QueryBuilder {

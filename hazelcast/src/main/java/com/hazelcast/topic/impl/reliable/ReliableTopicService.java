@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,5 +113,24 @@ public class ReliableTopicService implements ManagedService, RemoteService,
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, RELIABLE_TOPIC_PREFIX, getStats());
+    }
+
+    /**
+     * Looks up the User Code Namespace name associated with the specified reliable topic name. This is done
+     * by checking the Node's config tree directly.
+     *
+     * @param nodeEngine {@link NodeEngine} implementation of this member for service and config lookups
+     * @param topicName  The name of the reliable {@link com.hazelcast.topic.ITopic} to lookup for
+     * @return the Namespace Name if found, or {@code null} otherwise.
+     */
+    public static String lookupNamespace(NodeEngine nodeEngine, String topicName) {
+        if (nodeEngine.getNamespaceService().isEnabled()) {
+            // No regular containers available, fallback to config
+            ReliableTopicConfig topicConfig = nodeEngine.getConfig().findReliableTopicConfig(topicName);
+            if (topicConfig != null) {
+                return topicConfig.getUserCodeNamespace();
+            }
+        }
+        return null;
     }
 }

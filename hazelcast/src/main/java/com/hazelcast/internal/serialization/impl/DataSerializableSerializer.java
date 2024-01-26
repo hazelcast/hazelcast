@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
+import com.hazelcast.nio.serialization.impl.VersionedIdentifiedDataSerializable;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -248,7 +249,9 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
             out.writeInt(ds.getFactoryId());
-            out.writeInt(ds.getClassId());
+            out.writeInt(ds instanceof VersionedIdentifiedDataSerializable
+                    ? ((VersionedIdentifiedDataSerializable) ds).getClassId(version)
+                    : ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
                 out.writeString(((TypedDataSerializable) obj).getClassType().getName());

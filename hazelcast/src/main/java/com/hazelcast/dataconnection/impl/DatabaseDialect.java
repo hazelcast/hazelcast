@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ public enum DatabaseDialect {
 
     MICROSOFT_SQL_SERVER,
 
+    ORACLE,
+
     OTHER;
 
     public static DatabaseDialect resolveDialect(DatabaseMetaData databaseMetaData) throws SQLException {
@@ -49,6 +51,9 @@ public enum DatabaseDialect {
 
             case "MICROSOFT SQL SERVER":
                 return MICROSOFT_SQL_SERVER;
+
+            case "ORACLE":
+                return ORACLE;
 
             default:
                 return OTHER;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ public class PartitionQueryContextWithStats extends QueryContext {
      *
      * @param indexes the indexes to construct the new query context for.
      */
-    public PartitionQueryContextWithStats(Indexes indexes) {
+    public PartitionQueryContextWithStats(IndexRegistry indexes) {
         super(indexes, 1);
     }
 
     @Override
-    void attachTo(Indexes indexes, int ownedPartitionCount) {
-        assert indexes == this.indexes;
+    void attachTo(IndexRegistry indexes, int ownedPartitionCount) {
+        assert indexes == this.indexRegistry;
         assert ownedPartitionCount == 1 && this.ownedPartitionCount == 1;
         for (PerIndexStats stats : trackedStats) {
             stats.resetPerQueryStats();
@@ -56,7 +56,7 @@ public class PartitionQueryContextWithStats extends QueryContext {
 
     @Override
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex index = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
+        InternalIndex index = indexRegistry.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (index == null) {
             return null;
         }

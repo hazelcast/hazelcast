@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
-
-import java.security.Permission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 public class MapAggregateMessageTask
         extends DefaultMapAggregateMessageTask<MapAggregateCodec.RequestParameters> {
@@ -50,10 +47,6 @@ public class MapAggregateMessageTask
         return MapAggregateCodec.encodeResponse(data);
     }
 
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_AGGREGATE);
-    }
-
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
@@ -61,7 +54,7 @@ public class MapAggregateMessageTask
 
     @Override
     public String getMethodName() {
-        return "aggregate";
+        return SecurityInterceptorConstants.AGGREGATE;
     }
 
     @Override

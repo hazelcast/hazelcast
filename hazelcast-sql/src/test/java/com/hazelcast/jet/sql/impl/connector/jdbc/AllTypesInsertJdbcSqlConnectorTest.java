@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2024 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
@@ -38,12 +38,12 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.util.List;
 
-import static org.assertj.core.util.Lists.newArrayList;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -66,6 +66,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {"VARCHAR(10)", "VARCHAR", "'dummy'", "dummy", "dummy"},
+                {"CHAR(3)", "VARCHAR", "'try'", "try", "try"},
                 {"BOOLEAN", "BOOLEAN", "TRUE", true, true},
                 {"TINYINT", "TINYINT", "1", 1, 1},
                 {"SMALLINT", "SMALLINT", "2", 2, 2},
@@ -107,12 +108,11 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
-        assertJdbcRowsAnyOrder(tableName,
-                newArrayList(Integer.class, jdbcValue.getClass()),
-                new Row(0, jdbcValue),
-                new Row(1, jdbcValue)
+        assertJdbcQueryRowsAnyOrder("SELECT " + databaseProvider.quote("table_column")
+                        + " FROM " + databaseProvider.quote(tableName),
+                List.of(jdbcValue.getClass()),
+                new Row(jdbcValue),
+                new Row(jdbcValue)
         );
     }
-
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -48,10 +47,9 @@ import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -86,14 +84,12 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testCacheCreation()
-            throws InterruptedException {
+    public void testCacheCreation() {
         testCacheCreation(instanceCachingProvider, liteCachingProvider);
     }
 
     @Test
-    public void testCacheCreationFromLiteMember()
-            throws InterruptedException {
+    public void testCacheCreationFromLiteMember() {
         testCacheCreation(liteCachingProvider, instanceCachingProvider);
     }
 
@@ -104,17 +100,13 @@ public class BasicCacheLiteMemberTest
 
         assertNull(cacheManager.getCache(cacheName));
 
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                CacheManager cm2 = providerToValidate.getCacheManager();
-                assertNotNull(cm2.getCache(cacheName));
-            }
+        assertTrueEventually(() -> {
+            CacheManager cm2 = providerToValidate.getCacheManager();
+            assertNotNull(cm2.getCache(cacheName));
         });
     }
 
@@ -123,7 +115,7 @@ public class BasicCacheLiteMemberTest
             throws InterruptedException {
         CacheManager cacheManager = liteCachingProvider.getCacheManager();
 
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
 
@@ -134,15 +126,14 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testCompletion()
-            throws InterruptedException {
+    public void testCompletion() {
 
         CacheManager cacheManager = liteCachingProvider.getCacheManager();
 
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
-        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
+        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<>();
         MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
-                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                new MutableCacheEntryListenerConfiguration<>(
                         FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
@@ -152,33 +143,15 @@ public class BasicCacheLiteMemberTest
         Integer key1 = 1;
         String value1 = "value1";
         instanceCache.put(key1, value1);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(1, listener.created.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.created.get()));
         Integer key2 = 2;
         String value2 = "value2";
         instanceCache.put(key2, value2);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(2, listener.created.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(2, listener.created.get()));
 
         instanceCache.remove(key1);
         instanceCache.remove(key2);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(2, listener.removed.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(2, listener.removed.get()));
     }
 
     @Test
@@ -190,18 +163,7 @@ public class BasicCacheLiteMemberTest
         final Cache c2 = cacheManager2.getCache("c1");
         c1.put("key", "value");
         cacheManager.destroyCache("c1");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                try {
-                    c2.get("key");
-                    fail("get should throw IllegalStateException");
-                } catch (IllegalStateException e) {
-                    //ignored as expected
-                }
-            }
-        });
+        assertTrueEventually(() -> assertThrows(IllegalStateException.class, () -> c2.get("key")));
     }
 
     @Test
@@ -214,13 +176,7 @@ public class BasicCacheLiteMemberTest
         c1.put("key", "value");
         c2.put("key", "value");
         cacheManager.close();
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                c2.get("key");
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> c2.get("key"), 10);
     }
 
 
@@ -239,7 +195,7 @@ public class BasicCacheLiteMemberTest
         @Override
         public void onCreated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+            for (CacheEntryEvent<? extends K, ? extends V> ignored : cacheEntryEvents) {
                 created.incrementAndGet();
             }
         }
@@ -247,7 +203,7 @@ public class BasicCacheLiteMemberTest
         @Override
         public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+            for (CacheEntryEvent<? extends K, ? extends V> ignored : cacheEntryEvents) {
                 expired.incrementAndGet();
             }
         }
@@ -263,7 +219,7 @@ public class BasicCacheLiteMemberTest
         @Override
         public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+            for (CacheEntryEvent<? extends K, ? extends V> ignored : cacheEntryEvents) {
                 updated.incrementAndGet();
             }
         }

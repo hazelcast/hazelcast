@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,18 @@
 package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.instance.impl.BootstrappedJetProxy;
+import com.hazelcast.instance.impl.executejar.jetservicedecorator.memberside.BootstrapJobDecorator;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
 
 /**
- * The state is about running a jet job, and it stored in a ThreadLocal object
+ * This class' state holds {@link ExecuteJobParameters parameters} used by Jet jobs.
+ * State is thread-local,so this proxy can be used by multiple threads.
  */
 public class MemberJetProxy<M> extends BootstrappedJetProxy<M> {
     private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal =
@@ -49,5 +55,33 @@ public class MemberJetProxy<M> extends BootstrappedJetProxy<M> {
     @Override
     public void removeExecuteJobParameters() {
         executeJobParametersThreadLocal.remove();
+    }
+
+    @Nonnull
+    @Override
+    public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        Job job = super.newJob(pipeline, config);
+        return new BootstrapJobDecorator(job);
+    }
+
+    @Nonnull
+    @Override
+    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
+        Job job = super.newJob(dag, config);
+        return new BootstrapJobDecorator(job);
+    }
+
+    @Nonnull
+    @Override
+    public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        Job job = super.newJobIfAbsent(pipeline, config);
+        return new BootstrapJobDecorator(job);
+    }
+
+    @Nonnull
+    @Override
+    public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
+        Job job = super.newJobIfAbsent(dag, config);
+        return new BootstrapJobDecorator(job);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,12 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
+import java.security.Permission;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -56,21 +60,30 @@ public class AddReliableTopicConfigMessageTask
         config.setExecutor(executor);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             config.setMessageListenerConfigs(
-                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
+                    (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs, parameters.userCodeNamespace));
+        }
+        if (parameters.isUserCodeNamespaceExists) {
+            config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
         return config;
     }
 
     @Override
     public String getMethodName() {
-        return "addReliableTopicConfig";
+        return SecurityInterceptorConstants.ADD_RELIABLE_TOPIC_CONFIG;
+    }
+
+    @Override
+    public Permission getUserCodeNamespacePermission() {
+        return parameters.userCodeNamespace != null
+                ? new UserCodeNamespacePermission(parameters.userCodeNamespace, ActionConstants.ACTION_USE) : null;
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
         ReliableTopicConfig reliableTopicConfig = (ReliableTopicConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getReliableTopicConfigs(),
-                reliableTopicConfig.getName(), reliableTopicConfig);
+        return DynamicConfigurationAwareConfig.checkStaticConfigDoesNotExist(
+                nodeConfig.getStaticConfig().getReliableTopicConfigs(), reliableTopicConfig.getName(), reliableTopicConfig);
     }
 }
