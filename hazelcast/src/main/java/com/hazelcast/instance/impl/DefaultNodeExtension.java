@@ -145,11 +145,11 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension {
     private static final String PLATFORM_LOGO
-            = "\t@@   @@@    @@@    @@@@@@@@   @@@@@@@  @@      @@@@@@@    @@@     @@@@@  @@@@@@@\n"
-            + "\t@@   @@@   \\@@@@       @@@             @@     @@         \\@@@@   @@        @@   \n"
-            + "\t@@@@@@@@  \\ \\ @@      @@@   @@@@@@@@@  @@    @@@        \\ \\ @@    @@@@@    @@   \n"
-            + "\t@@   @@@  0\\   @@    @@@               @@     @@        0\\   @@       @@   @@   \n"
-            + "\t@@   @@@ 000   @@@ @@@@@@@@   @@@@@@@  @@@@@@  @@@@@@@ 000   @@@  @@@@@    @@   ";
+            = "\to    o     o     o---o   o--o o      o---o     o     o----o o--o--o\n"
+            + "\t|    |    / \\       /         |     /         / \\    |         |   \n"
+            + "\to----o       o     o   o----o |    o             o   o----o    |   \n"
+            + "\t|    |  *     \\   /           |     \\       *     \\       |    |   \n"
+            + "\to    o *       o o---o   o--o o----o o---o *       o o----o    o   ";
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.";
 
