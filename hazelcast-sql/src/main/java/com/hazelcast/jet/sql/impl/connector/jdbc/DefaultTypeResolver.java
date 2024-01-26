@@ -43,6 +43,7 @@ public class DefaultTypeResolver {
             case "CHARACTER VARYING":
             case "TEXT":
             case "VARCHAR2":
+            case "CHAR":
             case "CHARACTER":
                 return QueryDataType.VARCHAR;
 
