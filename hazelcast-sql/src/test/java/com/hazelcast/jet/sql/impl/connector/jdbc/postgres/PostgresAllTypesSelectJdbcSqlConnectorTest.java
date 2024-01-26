@@ -22,12 +22,32 @@ import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.runners.Parameterized;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
 public class PostgresAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbcSqlConnectorTest {
 
+    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, value:{2}, expected:{3}")
+    public static Collection<Object[]> parameters() {
+        // Include parameters from the parent class
+        Collection<Object[]> parentParams = AllTypesSelectJdbcSqlConnectorTest.parameters();
+
+        // Add additional parameters in the child class
+        List<Object[]> list = new ArrayList<>(parentParams);
+
+        // BPCHAR pads string with blanks up to 10 chars
+        Object[] additionalData = {"BPCHAR(10)", "VARCHAR", "'try '", "try       "};
+        list.add(additionalData);
+
+        return list;
+
+    }
     @BeforeClass
     public static void beforeClass() {
         initialize(new PostgresDatabaseProvider());
