@@ -31,7 +31,13 @@ import static java.lang.Integer.MAX_VALUE;
  */
 public enum FieldType {
 
+    /**
+     *  @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     *  Serialization will be removed as of version 7.0.
+     */
+    @Deprecated(since = "5.4", forRemoval = true)
     PORTABLE(0, MAX_VALUE),
+
     BYTE(1, BYTE_SIZE_IN_BYTES),
     BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES),
     CHAR(3, CHAR_SIZE_IN_BYTES),
@@ -41,7 +47,14 @@ public enum FieldType {
     FLOAT(7, FLOAT_SIZE_IN_BYTES),
     DOUBLE(8, DOUBLE_SIZE_IN_BYTES),
     UTF(9, MAX_VALUE),
+
+    /**
+     *  @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     *  Serialization will be removed as of version 7.0.
+     */
+    @Deprecated(since = "5.4", forRemoval = true)
     PORTABLE_ARRAY(10, MAX_VALUE),
+
     BYTE_ARRAY(11, MAX_VALUE),
     BOOLEAN_ARRAY(12, MAX_VALUE),
     CHAR_ARRAY(13, MAX_VALUE),

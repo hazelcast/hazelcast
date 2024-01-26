@@ -21,7 +21,11 @@ package com.hazelcast.nio.serialization;
  *
  * @see com.hazelcast.nio.serialization.Portable
  * @see com.hazelcast.nio.serialization.VersionedPortable
+ *
+ * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable Serialization
+ * will be removed as of version 7.0.
  */
+@Deprecated(since = "5.4", forRemoval = true)
 @FunctionalInterface
 public interface PortableFactory {
 

@@ -111,7 +111,11 @@ public interface Data {
      * false otherwise.
      *
      * @return true if source object is <code>Portable</code>, false otherwise.
+     *
+     * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     * Serialization will be removed as of version 7.0.
      */
+    @Deprecated(since = "5.4", forRemoval = true)
     boolean isPortable();
 
     /**

@@ -39,8 +39,11 @@ import java.io.IOException;
  * @see com.hazelcast.nio.serialization.DataSerializable
  * @see com.hazelcast.nio.serialization.IdentifiedDataSerializable
  * @see com.hazelcast.config.SerializationConfig
+ *
+ * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable Serialization
+ * will be removed as of version 7.0.
  */
-
+@Deprecated(since = "5.4", forRemoval = true)
 public interface Portable {
 
     /**

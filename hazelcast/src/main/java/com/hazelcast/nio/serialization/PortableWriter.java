@@ -30,7 +30,11 @@ import java.time.OffsetDateTime;
 /**
  * Provides means for writing portable fields to binary data in the form of java primitives,
  * arrays of java primitives, nested portable fields and arrays of portable fields.
+ *
+ * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable Serialization
+ * will be removed as of version 7.0.
  */
+@Deprecated(since = "5.4", forRemoval = true)
 public interface PortableWriter {
 
     /**

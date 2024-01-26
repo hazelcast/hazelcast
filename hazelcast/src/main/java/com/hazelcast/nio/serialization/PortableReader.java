@@ -31,7 +31,11 @@ import java.util.Set;
 /**
  * Provides means for reading portable fields from binary data in the form of java primitives,
  * arrays of java primitives, nested portable fields and array of portable fields.
+ *
+ * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable Serialization
+ * will be removed as of version 7.0.
  */
+@Deprecated(since = "5.4", forRemoval = true)
 public interface PortableReader {
 
     /**

@@ -41,13 +41,22 @@ public enum FieldKind {
 
     /**
      * Supported only for {@link Portable}. Not applicable to {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     *
+     * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     * Serialization will be removed as of version 7.0.
      */
+    @Deprecated(since = "5.4", forRemoval = false)
     CHAR(5),
 
     /**
      * Supported only for {@link Portable}. Not applicable to {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     *
+     * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     * Serialization will be removed as of version 7.0.
      */
+    @Deprecated(since = "5.4", forRemoval = false)
     ARRAY_OF_CHAR(6),
+
     INT16(7),
     ARRAY_OF_INT16(8),
     INT32(9),
@@ -83,12 +92,20 @@ public enum FieldKind {
 
     /**
      * Supported only for {@link Portable}. Not applicable to {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     *
+     * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     * Serialization will be removed as of version 7.0.
      */
+    @Deprecated(since = "5.4", forRemoval = true)
     PORTABLE(31),
 
     /**
      * Supported only for {@link Portable}. Not applicable to Compact{@link com.hazelcast.config.CompactSerializationConfig}
+     *
+     * @deprecated Portable Serialization has been deprecated. We recommend you use Compact Serialization as Portable
+     * Serialization will be removed as of version 7.0.
      */
+    @Deprecated(since = "5.4", forRemoval = true)
     ARRAY_OF_PORTABLE(32),
 
     /**
