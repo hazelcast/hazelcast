@@ -281,9 +281,7 @@ in-depth details about how to install Hazelcast and an overview of the features.
 
 You can use the following channels for getting help with Hazelcast:
 
-* [Hazelcast mailing list](http://groups.google.com/group/hazelcast)
-* [Slack](https://slack.hazelcast.com/) for chatting with the
-  development team and other Hazelcast users.
+* [Slack](https://slack.hazelcast.com/)
 * [Stack Overflow](https://stackoverflow.com/tags/hazelcast)
 
 ## How to Contribute
