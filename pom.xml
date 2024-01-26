@@ -139,7 +139,7 @@
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.31.2</activemq-artemis.version>
-        <assertj.version>3.25.1</assertj.version>
+        <assertj.version>3.25.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.11</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
