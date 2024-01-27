@@ -170,8 +170,7 @@ public class IMapSqlConnector implements SqlConnector {
         if ((container != null && container.getMapConfig().getTieredStoreConfig().isEnabled()) &&
                 !nodeEngine.getProperties().getBoolean(SQL_TSTORE_ENABLED)) {
             return new BadTable(schemaName, mappingName, TYPE_NAME,
-                    new HazelcastException("Querying Tiered Storage IMap via SQL is an experimental feature. " +
-                            "Enable 'hazelcast.sql.tstore.enabled' cluster property to use it."));
+                    new HazelcastException("Querying Tiered Storage via SQL is not supported."));
         }
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);

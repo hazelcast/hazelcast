@@ -187,6 +187,7 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
+
         config.setProperty("hazelcast.logging.type", "log4j2");
         config.getMetricsConfig().setEnabled(false);
         config.getJetConfig().setEnabled(false);
@@ -974,7 +975,7 @@ public abstract class HazelcastTestSupport {
     public static void assertSizeEventually(final int expectedSize, final Collection<?> collection,
                                             long timeoutSeconds) {
         assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:"
-                        + collection, expectedSize, collection.size()), timeoutSeconds);
+                + collection, expectedSize, collection.size()), timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Supplier<Collection<?>> collectionSupplier) {
@@ -1620,6 +1621,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Returns raw byte[] of supplied file.
+     *
      * @param testFile the file to get bytes from.
      * @return the raw byte contents.
      */
