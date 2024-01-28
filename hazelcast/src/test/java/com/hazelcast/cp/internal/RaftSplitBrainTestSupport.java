@@ -42,6 +42,7 @@ public abstract class RaftSplitBrainTestSupport extends SplitBrainTestSupport {
 
     @Override
     protected Config config() {
+        setLicense();
         Config config = super.config();
         config.getCPSubsystemConfig()
                 .setCPMemberCount(getCPMemberCount())
@@ -53,6 +54,9 @@ public abstract class RaftSplitBrainTestSupport extends SplitBrainTestSupport {
                     .setSessionTimeToLiveSeconds(5);
         }
         return config;
+    }
+
+    protected void setLicense() {
     }
 
     protected int getGroupSize() {
