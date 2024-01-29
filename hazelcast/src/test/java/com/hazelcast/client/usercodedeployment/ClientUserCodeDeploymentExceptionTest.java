@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.UserCodeUtil;
-import com.hazelcast.test.annotation.NamespaceTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.FilteringClassLoader;
@@ -49,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("removal")
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, NamespaceTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();

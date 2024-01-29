@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.NamespaceTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -51,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Assert;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, NamespaceTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobConfigTest extends JetTestSupport {
     @Test
     public void when_setName_thenReturnsName() {
