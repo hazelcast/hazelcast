@@ -786,6 +786,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return values;
     }
 
+    protected static Object[][] rows(Object[]... rows) {
+        return rows;
+    }
+
     /**
      * Inserts the specified record into the given mapping by converting values
      * into string and using row syntax {@code (...)} for nested fields.

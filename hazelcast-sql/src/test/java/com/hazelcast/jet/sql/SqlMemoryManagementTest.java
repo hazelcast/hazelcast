@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
@@ -135,7 +136,27 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_maxAccumulatedRecordsCountIsExceededWhileS2SJoin_then_throws() {
+    public void when_maxAccumulatedRecordsCountIsExceededWhileS2SJoin_throws() {
+        when_maxAccumulatedRecordsCountIsExceededWhileS2SJoin_then_throws(
+                rows(row(1L)),
+                rows(row(1L), row(1L)));
+
+    }
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededOnFirstEdgeWhileS2SJoin_throws() {
+        when_maxAccumulatedRecordsCountIsExceededWhileS2SJoin_then_throws(
+                rows(row(1L), row(1L), row(1L)),
+                rows());
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededOnSecondEdgeWhileS2SJoin_throws() {
+        when_maxAccumulatedRecordsCountIsExceededWhileS2SJoin_then_throws(
+                rows(),
+                rows(row(1L), row(1L), row(1L)));
+    }
+
+    private void when_maxAccumulatedRecordsCountIsExceededWhileS2SJoin_then_throws(Object[][] rows1, Object[][] rows2) {
         String left = randomName();
         String right = randomName();
         TestStreamSqlConnector.create(
@@ -143,9 +164,7 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
                 left,
                 singletonList("ts"),
                 singletonList(BIGINT),
-                row(1L),
-                row(1L),
-                row(1L)
+                rows1
         );
 
         TestStreamSqlConnector.create(
@@ -153,9 +172,7 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
                 right,
                 singletonList("ts"),
                 singletonList(BIGINT),
-                row(1L),
-                row(1L),
-                row(1L)
+                rows2
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
@@ -163,7 +180,13 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + right + ", DESCRIPTOR(ts), 10))");
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM s1 JOIN s2 ON s2.ts = s1.ts").iterator().next())
-                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+        // In rare cases, if data from s1 and s2 are interleaved, one joined row may be emitted before
+        // AccumulationLimitExceededException is thrown. That is, items can be processed in the following
+        // order: (1) item from s1, item from s2 -> emits joined row, (2) item from s1 -> exceeds limit.
+        // This also seems to depend on whether the items are processed by the coordinator (emits before
+        // failure) or non-coordinator (exception seems to be first).
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM s1 JOIN s2 ON s2.ts = s1.ts")
+                .stream().limit(MAX_PROCESSOR_ACCUMULATED_RECORDS).collect(Collectors.toList())
+        ).hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 }
