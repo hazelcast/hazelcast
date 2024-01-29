@@ -11,9 +11,6 @@
 
     <artifactId>jdk17-tests</artifactId>
     <description>Tests compiled with JDK17, to test e.g. records.</description>
-    <properties>
-        <jdk.version>17</jdk.version>
-    </properties>
 
     <dependencies>
         <dependency>

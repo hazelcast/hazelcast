@@ -293,7 +293,7 @@ marked as good first issue for some guidance.
 
 ### Building From Source
 
-Building Hazelcast requires at minimum JDK 11. Pull the latest source from the
+Building Hazelcast requires at minimum JDK 17. Pull the latest source from the
 repository and use Maven install (or package) to build:
 
 ```bash
