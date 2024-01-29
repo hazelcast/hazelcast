@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaTable.KafkaPlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -27,9 +28,12 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(JUnitParamsRunner.class)
 public class KafkaTableTest {
@@ -71,5 +75,47 @@ public class KafkaTableTest {
 
         assertThat(k1.equals(k2)).isEqualTo(expected);
         assertThat(k1.hashCode() == k2.hashCode()).isEqualTo(expected);
+    }
+
+    @SuppressWarnings("unused")
+    private Object[] preferredLocalParallelisms() {
+        return new Object[]{
+            new Object[]{"-2", -2, false},
+            new Object[]{"-1", -1, false},
+            new Object[]{"0", 0, false},
+            new Object[]{"1", 1, false},
+            new Object[]{"2", 2, false},
+            new Object[]{"not-an-int", null, true},
+            new Object[]{"3.14159", null, true},
+        };
+    }
+
+    @Test
+    @Parameters(method = "preferredLocalParallelisms")
+    public void when_preferredLocalParallelism_isDefined_then_parseInt(String plp, Integer expected, boolean shouldThrow) {
+        KafkaTable table = new KafkaTable(
+                null, null, null, null, null, null, null,
+                Map.of(OPTION_PREFERRED_LOCAL_PARALLELISM, plp),
+                null, null, null, null, null
+        );
+
+        if (shouldThrow) {
+            assertThatThrownBy(() -> table.preferredLocalParallelism())
+                    .isInstanceOf(NumberFormatException.class);
+        } else {
+            assertThat(table.preferredLocalParallelism()).isEqualTo(expected);
+        }
+    }
+
+    @Test
+    public void when_preferredLocalParallelism_isNotDefined_then_useDefault() {
+        KafkaTable table = new KafkaTable(
+                null, null, null, null, null, null, null,
+                emptyMap(),
+                null, null, null, null, null
+        );
+
+        assertThat(table.preferredLocalParallelism())
+                .isEqualTo(StreamKafkaP.PREFERRED_LOCAL_PARALLELISM);
     }
 }
