@@ -84,9 +84,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -961,11 +963,20 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertCompletesEventually(final Future<?> future) {
-        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
+        assertCompletesEventually(future, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void assertCompletesEventually(final Future<?> future, long timeoutSeconds) {
-        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()), timeoutSeconds);
+        try {
+            future.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (ExecutionException | RuntimeException e) {
+            LOGGER.finest(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            fail(String.format("Future has not completed - %s", e));
+        }
     }
 
     public static void assertSizeEventually(int expectedSize, Collection<?> collection) {
