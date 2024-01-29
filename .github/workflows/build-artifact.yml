@@ -66,7 +66,7 @@ jobs:
         uses: pietrobolcato/action-read-yaml@1.1.0
         id: java-config
         with:
-          config: ${{ github.workspace }}/.github/java-config.yml
+          config: ${{steps.decide-ref.outputs.ref}}/.github/java-config.yml
   
       - name: Setup JDK
         uses: actions/setup-java@v4
