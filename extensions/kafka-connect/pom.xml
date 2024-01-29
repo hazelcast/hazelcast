@@ -216,7 +216,7 @@
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
             <!-- Driver 5.x requires JDK 17 -->
-            <version>4.4.13</version>
+            <version>5.17.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Redis-->
