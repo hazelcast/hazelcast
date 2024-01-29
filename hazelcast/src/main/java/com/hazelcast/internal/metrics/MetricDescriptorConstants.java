@@ -583,11 +583,25 @@ public final class MetricDescriptorConstants {
 
     // ===[TSTORE]======================================================
     public static final String TSTORE_DEVICE_DISCRIMINATOR_NAME = "name";
-    public static final String TSTORE_DEVICE_USED_SPACE = "tstore.device.usedSpace";
-    public static final String TSTORE_DEVICE_FREE_SPACE = "tstore.device.freeSpace";
-    public static final String TSTORE_DEVICE_MAX_SPACE = "tstore.device.maxSpace";
-    public static final String TSTORE_DEVICE_USAGE = "tstore.device.usage";
-    public static final String TSTORE_HLOG_LENGTH = "tstore.hlog.length";
+    // system-wide device metrics
+    public static final String TSTORE_DEVICE_SYS_USED = "tstore.device.sys.used";
+    public static final String TSTORE_DEVICE_SYS_FREE = "tstore.device.sys.free";
+    public static final String TSTORE_DEVICE_SYS_CAPACITY = "tstore.device.sys.capacity";
+
+    // tstore-wide device metrics
+    public static final String TSTORE_DEVICE_TS_USED = "tstore.device.ts.used";
+    public static final String TSTORE_DEVICE_TS_FREE = "tstore.device.ts.free";
+    public static final String TSTORE_DEVICE_TS_CAPACITY = "tstore.device.ts.capacity";
+
+    // per-data-source (e.g. IMap) device metrics
+    public static final String TSTORE_DEVICE_DS_USED = "tstore.device.ds.used";
+
+    // per node device metrics
+    public static final String TSTORE_DEVICE_NODE_USED = "tstore.device.node.used";
+
+    public static final String TSTORE_HLOG_DS_LENGTH = "tstore.hlog.ds.length";
+    public static final String TSTORE_HLOG_TS_LENGTH = "tstore.hlog.ts.length";
+
     public static final String TSTORE_HLOG_AGGREGATED_COUNT = "tstore.hlog.aggregated.count";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
