@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.serialization.compact.record;
+package com.hazelcast.internal.serialization.impl.compact.record;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;

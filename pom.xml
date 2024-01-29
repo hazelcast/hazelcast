@@ -209,7 +209,6 @@
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
-            --illegal-access=deny
         </javaModuleArgs>
     </properties>
     <licenses>
@@ -475,13 +474,6 @@
                                 </requireJavaVersion>
                                 <enforceBytecodeVersion>
                                     <maxJdkVersion>${jdk.version}</maxJdkVersion>
-                                    <ignoreClasses>
-                                        <!--
-                                        Classes from org:mongodb:bson-record-codec to map record to bson.
-                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
-                                        -->
-                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>
-                                    </ignoreClasses>
                                 </enforceBytecodeVersion>
                             </rules>
                         </configuration>
@@ -1525,7 +1517,6 @@
                     --add-opens java.base/java.lang=${hazelcast.module.name}
                     --add-opens java.management/sun.management=${hazelcast.module.name}
                     --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
-                    --illegal-access=deny
                 </javaModuleArgs>
             </properties>
         </profile>

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
-import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -339,13 +338,11 @@ public class FormatterTest {
         check(1234.56, f, "1,234.56 $", US);
         check(1234.56, f, "1.234,56 ₺", TR);
 
-        if (JavaVersion.isAtLeast(JavaVersion.JAVA_17)) {
-            Locale fr_CH = new Locale("fr", "CH");
-            f = forNumbers("FM9G999D99");
-            check(1234.56, f, "1 234,56", fr_CH);
-            f = forNumbers("FM9G999D99 CR");
-            check(1234.56, f, "1 234.56 CHF", fr_CH);
-        }
+        Locale fr_CH = new Locale("fr", "CH");
+        f = forNumbers("FM9G999D99");
+        check(1234.56, f, "1 234,56", fr_CH);
+        f = forNumbers("FM9G999D99 CR");
+        check(1234.56, f, "1 234.56 CHF", fr_CH);
     }
 
     @Test

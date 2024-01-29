@@ -16,7 +16,6 @@
 
 package com.hazelcast.buildutils;
 
-import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -96,9 +95,7 @@ public class HazelcastManifestTransformerTest {
         verify(os).putNextEntry(any(JarEntry.class));
         verify(os, atLeastOnce()).write(anyInt());
         verify(os, atLeastOnce()).flush();
-        if (JavaVersion.isAtLeast(JavaVersion.JAVA_13)) {
-            verify(os, atLeastOnce()).write(any(byte[].class), anyInt(), anyInt());
-        }
+        verify(os, atLeastOnce()).write(any(byte[].class), anyInt(), anyInt());
         verifyNoMoreInteractions(os);
     }
 }
