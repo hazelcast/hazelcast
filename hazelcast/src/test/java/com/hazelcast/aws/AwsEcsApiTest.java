@@ -34,7 +34,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -157,8 +156,8 @@ public class AwsEcsApiTest {
 
         // then
         assertEquals(2, result.size());
-        assertThat(result.stream().map(Task::getPrivateAddress).collect(Collectors.toList())).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
-        assertThat(result.stream().map(Task::getAvailabilityZone).collect(Collectors.toList())).containsExactlyInAnyOrder("eu-central-1a", "eu-central-1a");
+        assertThat(result.stream().map(Task::getPrivateAddress)).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
+        assertThat(result.stream().map(Task::getAvailabilityZone)).containsExactlyInAnyOrder("eu-central-1a", "eu-central-1a");
     }
 
     @Test
@@ -178,7 +177,7 @@ public class AwsEcsApiTest {
         assertTrue(exception.getMessage().contains(errorMessage));
     }
 
-    private void stubDescribeTasks(Map<String, String> taskArnToIp, String cluster) {
+    private static void stubDescribeTasks(Map<String, String> taskArnToIp, String cluster) {
         JsonArray tasksJson = new JsonArray();
         taskArnToIp.keySet().forEach(tasksJson::add);
         String requestBody = new JsonObject()
@@ -212,11 +211,11 @@ public class AwsEcsApiTest {
                 .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
                 .withHeader("Accept-Encoding", equalTo("identity"))
                 .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-                .withRequestBody(equalToJson(requestBody))
+                .withRequestBody(equalToJson(requestBody, true, false))
                 .willReturn(aResponse().withStatus(200).withBody(responseBody)));
     }
 
-    private void stubListTasks(String cluster, String familyName) {
+    private static void stubListTasks(String cluster, String familyName) {
         JsonObject requestBody = new JsonObject();
         requestBody.add("cluster", cluster);
         if (!StringUtil.isNullOrEmptyAfterTrim(familyName)) {
