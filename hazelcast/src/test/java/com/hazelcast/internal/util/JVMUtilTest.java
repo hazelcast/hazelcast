@@ -44,11 +44,6 @@ public class JVMUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIs32bitJVM() {
-        JVMUtil.is32bitJVM();
-    }
-
-    @Test
     public void testIsCompressedOops() {
         JVMUtil.isCompressedOops();
     }

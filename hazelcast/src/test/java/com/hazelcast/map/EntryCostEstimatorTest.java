@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.tpcengine.util.JVM;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -31,10 +32,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import wiremock.org.apache.commons.lang3.BooleanUtils;
 
 import java.util.Collection;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -48,11 +49,8 @@ public class EntryCostEstimatorTest extends HazelcastTestSupport {
     public boolean perEntryStatsEnabled;
 
     @Parameterized.Parameters(name = "perEntryStatsEnabled:{0}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {true},
-                {false},
-        });
+    public static Collection<? extends Object> parameters() {
+        return BooleanUtils.values();
     }
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -63,7 +61,7 @@ public class EntryCostEstimatorTest extends HazelcastTestSupport {
     // values represent the cost when
     // perEntryStatsEnabled is false(default value).
     private static int getExpectedCostInBytes(boolean perEntryStatsEnabled) {
-        if (JVMUtil.is32bitJVM() && JVMUtil.isCompressedOops()) {
+        if (JVM.is32bit() && JVMUtil.isCompressedOops()) {
             return perEntryStatsEnabled ? 140 : 116;
         }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.tpcengine.util.JVM;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.management.MBeanServer;
@@ -37,16 +38,20 @@ public final class JVMUtil {
     /**
      * Defines the costs for a reference in Bytes.
      */
-    public static final int REFERENCE_COST_IN_BYTES = is32bitJVM() || isCompressedOops() ? 4 : 8;
-    public static final int OBJECT_HEADER_SIZE = is32bitJVM() ? 8 : (isCompressedOops() ? 12 : 16);
+    public static final int REFERENCE_COST_IN_BYTES = JVM.is32bit() || isCompressedOops() ? 4 : 8;
+    public static final int OBJECT_HEADER_SIZE;
 
-    private JVMUtil() {
+    static {
+        if (JVM.is32bit()) {
+            OBJECT_HEADER_SIZE = 8;
+        } else if (isCompressedOops()) {
+            OBJECT_HEADER_SIZE = 12;
+        } else {
+            OBJECT_HEADER_SIZE = 16;
+        }
     }
 
-    public static boolean is32bitJVM() {
-        // sun.arch.data.model is available on Oracle, Zing and (most probably) IBM JVMs
-        String architecture = System.getProperty("sun.arch.data.model");
-        return architecture != null && architecture.equals("32");
+    private JVMUtil() {
     }
 
     // not private for testing
