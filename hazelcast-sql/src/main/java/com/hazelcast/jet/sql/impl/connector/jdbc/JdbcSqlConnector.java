@@ -510,6 +510,7 @@ public class JdbcSqlConnector implements SqlConnector {
             case "VARCHAR":
             case "CHARACTER VARYING":
             case "TEXT":
+            case "CHAR":
             case "CHARACTER":
             case "BPCHAR":
                 return QueryDataType.VARCHAR;
