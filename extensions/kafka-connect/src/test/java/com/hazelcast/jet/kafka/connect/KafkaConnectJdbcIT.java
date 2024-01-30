@@ -51,6 +51,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
@@ -219,13 +220,9 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
         // There are some items in the list. The job is running
         assertTrueEventually(() -> assertTrue(sinkList.size() > 10));
 
-        // Add one more member to  cluster
+        // Add one more member to  cluster. Job is going to auto-scale
         HazelcastInstance hazelcastInstance2 = createHazelcastInstances(config, 1)[0];
         assertClusterSizeEventually(2, hazelcastInstance1, hazelcastInstance2);
-
-        // Restarting the job will distribute the processors
-        job.restart();
-        // Do not call job.join(). It blocks forever for some reason
 
         // We should see more items in the list
         assertTrueEventually(() -> assertTrue(sinkList.size() >= 2 * ITEM_COUNT));
@@ -288,8 +285,12 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
              Statement stmt = conn.createStatement()
         ) {
             for (int i = 0; i < ITEM_COUNT; i++) {
-                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')", i, i));
+                String sql = String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')", i, i);
+                stmt.addBatch(sql);
             }
+            int[] ints = stmt.executeBatch();
+            boolean allMatch = Arrays.stream(ints).allMatch(i -> i == 1);
+            assertTrue(allMatch);
         }
     }
 
