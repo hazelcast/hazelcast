@@ -36,17 +36,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Allows iteration over ReplicatedMapEntryViewHolder objects. The changes happened during the iteration may not be included in the iterated EntryViews. This method
  * will throw an exception if there is no replicated record store with the given replicated map name and partition id. This method will consume some memory in the 
- * member with the default timeout of 300 seconds that is reset after each fetch. Iterating completely or timing out will release the resource.
+ * member with the default timeout of 300 seconds that is reset after each fetch. Sending endEntryViewIteration or timing out will release the resource.
  */
 @SuppressWarnings("unused")
-@Generated("569a1baac1d8e181361a2e37027188ee")
+@Generated("fa8c094c19b38c78c3983088bf539aa3")
 public final class ReplicatedMapFetchEntryViewsCodec {
     //hex: 0x0D1400
     public static final int REQUEST_MESSAGE_TYPE = 857088;
     //hex: 0x0D1401
     public static final int RESPONSE_MESSAGE_TYPE = 857089;
     private static final int REQUEST_CURSOR_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_PARTITION_ID_FIELD_OFFSET = REQUEST_CURSOR_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_NEW_ITERATION_FIELD_OFFSET = REQUEST_CURSOR_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_PARTITION_ID_FIELD_OFFSET = REQUEST_NEW_ITERATION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_SIZE_FIELD_OFFSET = REQUEST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_CURSOR_ID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
@@ -64,9 +65,17 @@ public final class ReplicatedMapFetchEntryViewsCodec {
         public java.lang.String name;
 
         /**
-         * The identifier of the last fetched page. Initially null and then returned by this API. 
+         * The identifier of the last fetched page. Send a random UUID while sending the first fetchEntryViews
+         * request to start iteration. Also don't forget to set newIteration to true. Then, use the returned
+         * UUIDs in response to feed this parameter and progress iteration.
          */
-        public @Nullable java.util.UUID cursorId;
+        public java.util.UUID cursorId;
+
+        /**
+         * Set this true if you are creating a new iteration via fetchEntryViews. fetchEntryViews can also be 
+         * used to fetch new pages of an existing iteration. In that case, set this to false. 
+         */
+        public boolean newIteration;
 
         /**
          * The partition ID of the partition that the EntryViews belong to.
@@ -79,7 +88,7 @@ public final class ReplicatedMapFetchEntryViewsCodec {
         public int batchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.UUID cursorId, int partitionId, int batchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID cursorId, boolean newIteration, int partitionId, int batchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ReplicatedMap.FetchEntryViews");
@@ -87,6 +96,7 @@ public final class ReplicatedMapFetchEntryViewsCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_CURSOR_ID_FIELD_OFFSET, cursorId);
+        encodeBoolean(initialFrame.content, REQUEST_NEW_ITERATION_FIELD_OFFSET, newIteration);
         encodeInt(initialFrame.content, REQUEST_PARTITION_ID_FIELD_OFFSET, partitionId);
         encodeInt(initialFrame.content, REQUEST_BATCH_SIZE_FIELD_OFFSET, batchSize);
         clientMessage.add(initialFrame);
@@ -99,6 +109,7 @@ public final class ReplicatedMapFetchEntryViewsCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.cursorId = decodeUUID(initialFrame.content, REQUEST_CURSOR_ID_FIELD_OFFSET);
+        request.newIteration = decodeBoolean(initialFrame.content, REQUEST_NEW_ITERATION_FIELD_OFFSET);
         request.partitionId = decodeInt(initialFrame.content, REQUEST_PARTITION_ID_FIELD_OFFSET);
         request.batchSize = decodeInt(initialFrame.content, REQUEST_BATCH_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
@@ -109,24 +120,24 @@ public final class ReplicatedMapFetchEntryViewsCodec {
     public static class ResponseParameters {
 
         /**
-         * A unique string which is used to fetch new pages.
+         * A UUID which is used to fetch new pages.
          */
         public java.util.UUID cursorId;
 
         /**
-         * A list of EntryViews. Null means end of iteration. 
+         * A list of EntryViews. If the page includes less items than the batchSize, it means the iteration has ended.
          */
-        public @Nullable java.util.List<com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder> entryViews;
+        public java.util.List<com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder> entryViews;
     }
 
-    public static ClientMessage encodeResponse(java.util.UUID cursorId, @Nullable java.util.Collection<com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder> entryViews) {
+    public static ClientMessage encodeResponse(java.util.UUID cursorId, java.util.Collection<com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder> entryViews) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, RESPONSE_CURSOR_ID_FIELD_OFFSET, cursorId);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encodeNullable(clientMessage, entryViews, ReplicatedMapEntryViewHolderCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, entryViews, ReplicatedMapEntryViewHolderCodec::encode);
         return clientMessage;
     }
 
@@ -135,7 +146,7 @@ public final class ReplicatedMapFetchEntryViewsCodec {
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.cursorId = decodeUUID(initialFrame.content, RESPONSE_CURSOR_ID_FIELD_OFFSET);
-        response.entryViews = ListMultiFrameCodec.decodeNullable(iterator, ReplicatedMapEntryViewHolderCodec::decode);
+        response.entryViews = ListMultiFrameCodec.decode(iterator, ReplicatedMapEntryViewHolderCodec::decode);
         return response;
     }
 }

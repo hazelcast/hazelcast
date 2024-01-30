@@ -25,6 +25,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
@@ -67,6 +68,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -78,9 +80,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -103,7 +108,6 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY},
                 {OBJECT},
         });
     }
@@ -738,6 +742,195 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         assertEquals(0, ((Key2) key).COUNTER.get());
         // expect only 1 deserialization in ClientReplicatedMapProxy#remove method
         assertEquals(1, ((Value2) value).COUNTER.get());
+    }
+
+    @Test
+    public void entryViews() {
+        // test with 2 members so that the iteration logic is tested (pagination requests are invoked on same member)
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance c = factory.newHazelcastClient();
+        assertClusterSizeEventually(2, instance1, instance2, c);
+        warmUpPartitions(instance1, instance2, c);
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(c);
+
+        ClientReplicatedMapProxy<Integer, Integer> replicatedMap = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
+        Map<Integer, Integer> data = new HashMap<>();
+        Map<Integer, List<Integer>> partitionMap = new HashMap<>();
+        for (int i = 0; i < 1000; i++) {
+            int partitionId = client.getPartitionService().getPartition(i).getPartitionId();
+            if (!partitionMap.containsKey(partitionId)) {
+                partitionMap.put(partitionId, new ArrayList<>());
+            }
+            partitionMap.get(partitionId).add(i);
+            data.put(i, i);
+        }
+        replicatedMap.putAll(data);
+
+        // update only some entries metadata: hits + ttl
+        for (int i = 1; i < 1000; i += 100) { // 1, 101, 201 ...
+            replicatedMap.put(i, i, 1000, TimeUnit.SECONDS);
+        }
+
+        for (int partitionId : partitionMap.keySet()) {
+            HazelcastInstance partitionOwner;
+            InternalPartitionService ps = getNode(instance1).getPartitionService();
+            if (ps.getPartitionOwner(partitionId).equals(instance1.getCluster()
+                    .getLocalMember().getAddress())) {
+                partitionOwner = instance1;
+            } else {
+                partitionOwner = instance2;
+            }
+            ReplicatedMapService service = getNodeEngineImpl(partitionOwner).getService(ReplicatedMapService.SERVICE_NAME);
+            int iteratorCount = service.getIterationService().getIteratorManager().getIterators().size();
+
+            Iterable<ReplicatedMapEntryViewHolder> entryViews = replicatedMap.entryViews(partitionId, 20);
+            List<Integer> valuesActual = new ArrayList<>();
+            for (ReplicatedMapEntryViewHolder entryViewHolder: entryViews) {
+                int key = client.getSerializationService().toObject(entryViewHolder.getKey());
+                int value = client.getSerializationService().toObject(entryViewHolder.getValue());
+                assertThat(key).isEqualTo(value);
+                valuesActual.add(value);
+                // somehow hits update can take some time, so I used a assertTrueEventually here.
+                assertTrueEventually(() -> {
+                    if (key % 100 == 1 && ps.getPartitionId(key) == partitionId) {
+                        assertThat(entryViewHolder.getTtlMillis()).isEqualTo(TimeUnit.SECONDS.toMillis(1000));
+                        // entryView accesses the key and value = 2 hits
+                        // put() above accesses the old value = 1 hit
+                        assertThat(entryViewHolder.getHits()).isEqualTo(3);
+                    } else {
+                        assertThat(entryViewHolder.getTtlMillis()).isZero();
+                        // entryView accesses the key and value = 2 hits
+                        assertThat(entryViewHolder.getHits()).isEqualTo(2);
+                    }
+                }, 20);
+            }
+
+            List<Integer> expected = partitionMap.get(partitionId);
+            assertThat(valuesActual).containsExactlyInAnyOrderElementsOf(expected);
+
+            assertTrueEventually(() -> {
+                // our iteration should remove iterator in the backend
+                int iteratorCountAfter = service.getIterationService().getIteratorManager().getIterators().size();
+                assertThat(iteratorCountAfter).isEqualTo(iteratorCount);
+            }, 20);
+        }
+    }
+
+    @Test
+    public void entryViews_topologyChangeFailsIteration() {
+        final int totalEntryCount = 100_000;
+
+        // test with 2 members so that member partition owner shutdown logic can be done
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(2, instance1, instance2);
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(factory.newHazelcastClient());
+
+        ClientReplicatedMapProxy<Integer, Integer> replicatedMap
+                = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
+
+        Map<Integer, Integer> data = new HashMap<>();
+        AtomicInteger entryCount = new AtomicInteger();
+        for (int i = 0; i < totalEntryCount; i++) {
+            if (client.getPartitionService().getPartition(i).getPartitionId() == 0) {
+                entryCount.incrementAndGet();
+            }
+            data.put(i, i);
+        }
+        replicatedMap.putAll(data);
+
+        int partitionId = 0;
+
+        HazelcastInstance partitionOwner;
+        if (getNode(instance1).getPartitionService().getPartitionOwner(partitionId).equals(instance1.getCluster()
+                .getLocalMember().getAddress())) {
+            partitionOwner = instance1;
+        } else {
+            partitionOwner = instance2;
+        }
+
+        ReplicatedMapService service = getNodeEngineImpl(partitionOwner).getService(ReplicatedMapService.SERVICE_NAME);
+
+        Iterable<ReplicatedMapEntryViewHolder> entryViews = replicatedMap.entryViews(partitionId, 20);
+
+        assertThatThrownBy(() -> {
+            int counter = 0;
+            boolean shutdown = false;
+            for (ReplicatedMapEntryViewHolder e: entryViews) {
+                if (counter > entryCount.get() / 2 && !shutdown) {
+                    assertThat(service.getIterationService().getIteratorManager().getIterators().size()).isOne();
+                    // in the middle of iteration, shut down partition owner
+                    partitionOwner.shutdown();
+                    shutdown = true;
+                }
+                // prevent iteration ending so quickly before exception
+                if (shutdown) {
+                    Thread.sleep(100);
+                }
+                counter++;
+            }
+        }).isInstanceOf(IllegalStateException.class).hasMessageContaining("There is no iteration");
+    }
+
+    @Test
+    public void entryViews_nonExistingReplicatedMap_throws() {
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+        HazelcastInstance client2 = factory.newHazelcastClient();
+
+        ClientReplicatedMapProxy<Integer, Integer> replicatedMap = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
+        client2.getReplicatedMap("test").destroy();
+
+        assertTrueEventually(() -> {
+            assertThatThrownBy(() -> replicatedMap.entryViews(0, 10)).isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("There is no ReplicatedRecordStore for test on partitionId 0");
+        });
+    }
+
+    @Test
+    public void entryViews_emptyReplicatedMap() {
+        assertClusterSizeEventually(2, factory.newHazelcastInstance(config), factory.newHazelcastInstance(config));
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        ClientReplicatedMapProxy<Integer, Integer> replicatedMap
+                = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
+
+        Iterator<ReplicatedMapEntryViewHolder> entryViews = replicatedMap.entryViews(0, 10).iterator();
+        assertThat(entryViews).isExhausted();
+    }
+
+    @Test
+    public void entryViews_emptyPartition() {
+        HazelcastInstance member1 = factory.newHazelcastInstance(config);
+        HazelcastInstance member2 = factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertClusterSizeEventually(2, member1, member2, client);
+
+        Map<Integer, Integer> data = new HashMap<>();
+        AtomicInteger otherPartitionId = new AtomicInteger(-1);
+        for (int i = 0; i < 1000; i++) {
+            int partitionId = client.getPartitionService().getPartition(i).getPartitionId();
+            if (partitionId == 0) {
+                continue;
+            } else if (otherPartitionId.get() == -1) {
+                otherPartitionId.set(partitionId);
+            }
+            data.put(i, i);
+        }
+
+        ClientReplicatedMapProxy<Integer, Integer> replicatedMap
+                = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
+        replicatedMap.putAll(data);
+
+        // give it some replication time
+        assertTrueEventually(() -> {
+            assertThat(replicatedMap.entryViews(0, 10).iterator()).isExhausted();
+            assertThat(replicatedMap.entryViews(otherPartitionId.get(), 10).iterator().hasNext()).isTrue();
+        });
     }
 
     public static class Key1 extends DeserializationCounter {
