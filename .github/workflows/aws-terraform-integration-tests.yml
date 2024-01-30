@@ -1,4 +1,4 @@
-name: aws-tests
+name: AWS Discovery Plugin Tests
 
 on:
   workflow_dispatch:

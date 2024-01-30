@@ -1,4 +1,4 @@
-name: k8s-tests
+name: Kubernetes Discovery Plugin Tests
 
 on:
   workflow_dispatch:
