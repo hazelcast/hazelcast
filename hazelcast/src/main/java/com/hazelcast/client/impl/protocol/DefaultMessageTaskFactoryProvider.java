@@ -322,7 +322,9 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryLi
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEndEntryViewIterationCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapFetchEntryViewsCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
@@ -708,7 +710,9 @@ import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapAddNea
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapClearMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapContainsKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapContainsValueMessageTask;
+import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapEndEntryViewIterationMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapEntrySetMessageTask;
+import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapFetchEntryViewsMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapGetMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapIsEmptyMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapKeySetMessageTask;
@@ -1083,6 +1087,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReplicatedMapKeySetMessageTask(cm, node, con));
         factories.put(ReplicatedMapPutAllWithMetadataCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReplicatedMapPutAllWithMetadataMessageTask(cm, node, con));
+        factories.put(ReplicatedMapFetchEntryViewsCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReplicatedMapFetchEntryViewsMessageTask(cm, node, con));
+        factories.put(ReplicatedMapEndEntryViewIterationCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReplicatedMapEndEntryViewIterationMessageTask(cm, node, con));
     }
 
     private void initializeLongRegisterClientTaskFactories() {

@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapFetchEntryViewsCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
@@ -43,6 +44,7 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.map.impl.iterator.ClientReplicatedMapEntryViewIterator;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
@@ -54,6 +56,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
@@ -529,6 +532,30 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         return resultFuture;
+    }
+
+    /**
+     * Fetches the {@link ReplicatedMapEntryViewHolder}s in a single partition by doing multiple
+     * remote calls. This API sends the invocations to the partition owner.
+     * Changes during the iteration is not guaranteed to be included.
+     * <p>
+     * If the partition owner changes during iteration, the iteration will fail
+     * with a {@link IllegalStateException} stating that there is no iteration with
+     * the provided cursor id.
+     * <p>
+     * @param partitionId The partition id to fetch entry views from
+     * @param fetchSize The maximum amount of entry views to fetch in one remote call
+     * @return an iterator of entry views that'll fetch new pages during iteration
+     */
+    public Iterable<ReplicatedMapEntryViewHolder> entryViews(int partitionId, int fetchSize) {
+        UUID iteratorId = UuidUtil.newUnsecureUUID();
+        ClientMessage message = ReplicatedMapFetchEntryViewsCodec.encodeRequest(name, iteratorId, true,
+                partitionId, fetchSize);
+        ClientMessage responseMessage = invokeOnPartition(message, partitionId);
+        ReplicatedMapFetchEntryViewsCodec.ResponseParameters response =
+                ReplicatedMapFetchEntryViewsCodec.decodeResponse(responseMessage);
+        return () -> new ClientReplicatedMapEntryViewIterator(name, partitionId, iteratorId, response.cursorId,
+                response.entryViews, fetchSize, getContext());
     }
 
     private void registerInvalidationListener() {
