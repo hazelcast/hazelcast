@@ -28,7 +28,7 @@ public class JsonGetterContextCache {
     public JsonGetterContextCache(int maxContexts, int cleanupRemoveAtLeastItems) {
         this.maxContexts = maxContexts;
         this.cleanupRemoveAtLeastItems = cleanupRemoveAtLeastItems;
-        this.internalCache = new SampleableConcurrentHashMap<String, JsonGetterContext>(maxContexts);
+        this.internalCache = new SampleableConcurrentHashMap<>(maxContexts);
     }
 
     /**

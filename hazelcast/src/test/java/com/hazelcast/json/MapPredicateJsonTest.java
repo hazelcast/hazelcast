@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -474,6 +475,28 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testRejectMultidimensionalAndNestedArrayInQueryPath() {
+        JsonObject value1 = Json.object();
+        JsonObject innerObject = Json.object()
+                .add("s1", 1001)
+                .add("s2", 1002)
+                .add("nestedNumbers", Json.array(9, 8, 7));
+        JsonArray array1 = Json.array();
+        array1.add(1).add(2).add(innerObject).add(3).add(4).add(20);
+        value1.add("numbers", array1);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        putJsonString(map, "one", value1);
+
+        assertThatThrownBy(() -> map.values(Predicates.greaterThan("numbers[any][any]", 20)))
+                .as("Multidimensional arrays should return user-friendly exception")
+                .hasMessageContaining("Nested arrays in JSON paths are not supported");
+        assertThatThrownBy(() -> map.values(Predicates.greaterThan("numbers[any].nestedNumbers[any]", 20)))
+                .as("Nested arrays should return user-friendly exception")
+                .hasMessageContaining("Nested arrays in JSON paths are not supported");
+    }
+
+    @Test
     public void testSkipsScalarValuesInCaseOfAnyAndAttributeName() {
         JsonArray array1 = Json.array(new int[]{1, 2, 3, 5000});
         JsonArray array2 = Json.array(new int[]{1, 5000, 3, 5});
@@ -514,6 +537,47 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(1, vals.size());
         assertTrue(vals.contains(p1));
     }
+
+    @Test
+    public void testMatches_whenAnyAndAttributeName_afterInnerArray() {
+        JsonArray innerArray = Json.array("one", "two");
+        JsonArray outerArray = Json.array()
+                .add(Json.object().add("innerArray", innerArray))
+                .add(Json.object().add("one", 1))
+                .add(Json.object().add("two", 2))
+                .add(Json.object().add("three", 3));
+
+        JsonValue object = Json.object().add("outerArray", outerArray)
+                .add("id", 171);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        HazelcastJsonValue p1 = putJsonString(map, "one", object);
+
+        Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("outerArray[any].one", 1));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
+    }
+
+    @Test
+    public void testMatches_whenAnyAndAttributeName_afterInnerArrayOfObjects() {
+        JsonArray innerArray = Json.array().add(Json.object().add("one", 5).add("whatever", false));
+        JsonArray outerArray = Json.array()
+                .add(Json.object().add("innerArray", innerArray))
+                .add(Json.object().add("one", 1))
+                .add(Json.object().add("two", 2))
+                .add(Json.object().add("three", 3));
+
+        JsonValue object = Json.object().add("outerArray", outerArray)
+                .add("id", 171);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        HazelcastJsonValue p1 = putJsonString(map, "one", object);
+
+        Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("outerArray[any].one", 1));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
+    }
+
 
     @Test
     public void testJsonValueIsJustANumber() {

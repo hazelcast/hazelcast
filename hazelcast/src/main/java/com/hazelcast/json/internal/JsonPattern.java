@@ -23,7 +23,7 @@ import java.util.List;
  * A JsonPattern is a structure that represents a logical path to a
  * terminal value in a Json object. A logical path is a series of numbers
  * that defines the location of a specific item within their parent.
- * If an item is within an object, than the corresponding number is the
+ * If an item is within an object, then the corresponding number is the
  * order of that item within the object. If an item is within an array,
  * then the corresponding number is the index of that item within the
  * array.
@@ -74,7 +74,7 @@ public class JsonPattern {
     }
 
     /**
-     * Marks this pattern as having "any" keyword. It is upto the user
+     * Marks this pattern as having "any" keyword. It is up to the user
      * how to use this information.
      * See {@link #hasAny()}
      */

@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -214,9 +215,17 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testArrayWithNestedField_when_last_field_array() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        Long maxLongValue = map.aggregate(Aggregators.longMax(
+        // some aggregations do not care if the path points to scalar or object
+        long count = map.aggregate(Aggregators.count(
                 "nestedArray[any].nestedArrayObject.secondary"));
-        assertNull(maxLongValue);
+        assertEquals(OBJECT_COUNT, count);
+
+        // but other work only for scalar
+        assertThatThrownBy(() -> map.aggregate(Aggregators.longMax(
+                "nestedArray[any].nestedArrayObject.secondary")))
+                .isInstanceOf(ClassCastException.class);
+        // Message assertion is not possible due to OmitStackTraceInFastThrow,
+        // the message should be "com.hazelcast.internal.json.NonTerminalJsonValue cannot be cast to class java.lang.Comparable"
     }
 
     @Test
@@ -233,6 +242,27 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         Long sum = map.aggregate(Aggregators.longSum("list[any].secondLevelItem.thirdLevelItem"));
 
         assertEquals(6L, sum.longValue());
+
+        Long countNotScalar = map.aggregate(Aggregators.count("list[any].secondLevelItem"));
+        assertEquals(3L, countNotScalar.longValue());
+    }
+
+    @Test
+    public void test_nested_json_different_levels() {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(nestedJsonStringDifferentNesting()));
+        Long sum = map.aggregate(Aggregators.longSum("list[any].secondLevelItem.thirdLevelItem"));
+
+        assertEquals(1L, sum.longValue());
+    }
+
+    @Test
+    public void test_nested_json_same_object_nested() {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(nestedJsonStringNestingOfTheSameObject()));
+        Long sum = map.aggregate(Aggregators.longSum("list[any].secondLevelItem.thirdLevelItem"));
+
+        assertEquals(3L, sum.longValue());
     }
 
     private static String nestedJsonString() {
@@ -251,6 +281,51 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
                 + "    {\n"
                 + "      \"secondLevelItem\": {\n"
                 + "        \"thirdLevelItem\": 3\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+    }
+
+    private static String nestedJsonStringDifferentNesting() {
+        return "{\n"
+                + "  \"list\": [\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"thirdLevelItem\": 1\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "        \"thirdLevelItem\": 2\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"twoAndAHalfLevelItem\": {\n"
+                + "          \"thirdLevelItem\": 3\n"
+                + "        }\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+    }
+
+    private static String nestedJsonStringNestingOfTheSameObject() {
+        return "{\n"
+                + "  \"list\": [\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"thirdLevelItem\": 1\n"
+                + "      },\n"
+                // the object is nested so should not match `secondLevelItem.thirdLevelItem` path
+                + "      \"additionallyNested\": {\n"
+                + "        \"secondLevelItem\": {\n"
+                + "          \"thirdLevelItem\": 200\n"
+                + "        }\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"thirdLevelItem\": 2\n"
                 + "      }\n"
                 + "    }\n"
                 + "  ]\n"

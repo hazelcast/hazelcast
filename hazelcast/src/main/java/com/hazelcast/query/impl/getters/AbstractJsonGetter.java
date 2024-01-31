@@ -132,7 +132,7 @@ public abstract class AbstractJsonGetter extends Getter {
 
                 } else {
                     // non array case
-                    if (!findAttribute(parser, pathCursor, false)) {
+                    if (!findAttribute(parser, pathCursor)) {
                         return null;
                     }
                 }
@@ -209,8 +209,7 @@ public abstract class AbstractJsonGetter extends Getter {
      * @return {@code true} if given attribute name exists in the current object
      * @throws IOException
      */
-    private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor,
-                                  boolean multiValue) throws IOException {
+    private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor) throws IOException {
         JsonToken token = parser.getCurrentToken();
         if (token != START_OBJECT) {
             return false;
@@ -220,11 +219,13 @@ public abstract class AbstractJsonGetter extends Getter {
             if (token == JsonToken.END_OBJECT) {
                 return false;
             }
-            if (pathCursor.getCurrent().equals(parser.getCurrentName())) {
+            if (token == JsonToken.FIELD_NAME && pathCursor.getCurrent().equals(parser.getCurrentName())) {
                 // current token matched, advance to next token before returning
                 parser.nextToken();
                 return true;
-            } else if (!multiValue) {
+            } else if (token.isStructStart()) {
+                // we want to match attributes, skip nested structures
+                // (in particular the ones that are values of other attributes)
                 parser.skipChildren();
             }
         }
@@ -248,75 +249,110 @@ public abstract class AbstractJsonGetter extends Getter {
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private MultiResult getMultiValue(JsonParser parser,
                                       JsonPathCursor pathCursor) throws IOException {
+        // consume [any] from cursor
         pathCursor.getNext();
+        // stack for cursor state and backtracking
+        int initialState = pathCursor.saveState();
         MultiResult<Object> multiResult = new MultiResult<>();
 
         JsonToken currentToken = parser.currentToken();
         if (currentToken != JsonToken.START_ARRAY) {
             return null;
         }
-        while (true) {
-            currentToken = parser.nextToken();
-            if (currentToken == JsonToken.END_ARRAY) {
+        while ((currentToken = parser.nextToken()) != JsonToken.END_ARRAY) {
+            if (currentToken == null) {
+                // EOF, probably malformed JSON. Ignore as we may already have some results.
                 break;
             }
+
+            // here we are always on the level of the original array
             if (pathCursor.getCurrent() == null) {
+                // We want scalar values directly from the array.
+                // Note that this is an exception to the rule: predicate that ends with array like `someArray[any]`
+                // skips non-scalars instead or returning NonTerminalJsonValue.
                 if (currentToken.isScalarValue()) {
                     multiResult.add(convertJsonTokenToValue(parser));
                 } else {
                     parser.skipChildren();
                 }
             } else {
+                // we want attribute of an object contained in the array
+                // nested arrays currently are not supported in paths and ignored in JSON.
                 if (currentToken == START_OBJECT) {
+                    boolean found = true;
+                    // this can be thought of as number of START_OBJECT tokens consumed
+                    // without consuming matching END_OBJECT because we are still in the middle of the object.
+                    int subpathElementsMatched = 0;
                     do {
-                        if (!findAttribute(parser, pathCursor, true)) {
+                        if (pathCursor.isArray()) {
+                            throw new UnsupportedOperationException("Nested arrays in JSON paths are not supported");
+                        }
+
+                        if (!findAttribute(parser, pathCursor)) {
+                            // if not found, findAttribute ends at the end of the object, but it may be a nested object
+                            found = false;
                             break;
                         }
 
-                        if ((parser.currentToken() != START_OBJECT && !pathCursor.hasNext())
-                                || pathCursor.getNext() == null) {
-                            addToMultiResult(multiResult, parser);
-                            break;
+                        // we are one level deeper if we found an attribute
+                        subpathElementsMatched++;
+                    } while (pathCursor.getNext() != null);
+
+                    if (found) {
+                        // Be consistent with single value (getValue) - return NonTerminalJsonValue if applicable.
+                        // See comment above about scalars directly from the array.
+                        multiResult.add(convertJsonTokenToValue(parser));
+                        if (!parser.currentToken().isScalarValue()) {
+                            // skip current object which was returned as NonTerminalJsonValue
+                            parser.skipChildren();
                         }
-                    } while (true);
+                    }
+
+                    // jump out of current outer array element to be ready for next iteration.
+                    // even if we found path, we do not try to find it again in the same object - duplicates are ignored
+                    for (int unnestCounter = 0; unnestCounter < subpathElementsMatched; ++unnestCounter) {
+                        advanceToTheEndOfCurrentObject(parser);
+                    }
+
+                    // Restore pathCursor for next search.
+                    // Note that previous attempt might have ended early.
+                    pathCursor.restoreState(initialState);
                 } else if (currentToken == JsonToken.START_ARRAY) {
+                    if (pathCursor.isArray()) {
+                        // user-friendly error
+                        throw new UnsupportedOperationException("Nested arrays in JSON paths are not supported");
+                    }
                     parser.skipChildren();
                 }
             }
         }
+
         return multiResult;
     }
 
-    private static void addToMultiResult(MultiResult<Object> multiResult,
-                                         JsonParser parser) throws IOException {
-        if (parser.currentToken().isScalarValue()) {
-            multiResult.add(convertJsonTokenToValue(parser));
-        }
-        while (parser.getCurrentToken() != JsonToken.END_OBJECT) {
-            if (parser.currentToken().isStructStart()) {
+    private static void advanceToTheEndOfCurrentObject(JsonParser parser) throws IOException {
+        JsonToken currentToken;
+        while ((currentToken = parser.nextToken()) != JsonToken.END_OBJECT) {
+            if (currentToken == null) {
+                // EOF, probably malformed JSON. Ignore as we may already have some results.
+                break;
+            }
+            if (currentToken.isStructStart()) {
                 parser.skipChildren();
             }
-            parser.nextToken();
         }
     }
 
     private static Object convertJsonTokenToValue(JsonParser parser) throws IOException {
         int token = parser.currentTokenId();
-        switch (token) {
-            case JsonTokenId.ID_STRING:
-                return parser.getValueAsString();
-            case JsonTokenId.ID_NUMBER_INT:
-                return parser.getLongValue();
-            case JsonTokenId.ID_NUMBER_FLOAT:
-                return parser.getValueAsDouble();
-            case JsonTokenId.ID_TRUE:
-                return true;
-            case JsonTokenId.ID_FALSE:
-                return false;
-            case JsonTokenId.ID_NULL:
-                return null;
-            default:
-                return NonTerminalJsonValue.INSTANCE;
-        }
+        return switch (token) {
+            case JsonTokenId.ID_STRING -> parser.getValueAsString();
+            case JsonTokenId.ID_NUMBER_INT -> parser.getLongValue();
+            case JsonTokenId.ID_NUMBER_FLOAT -> parser.getValueAsDouble();
+            case JsonTokenId.ID_TRUE -> true;
+            case JsonTokenId.ID_FALSE -> false;
+            case JsonTokenId.ID_NULL -> null;
+            default -> NonTerminalJsonValue.INSTANCE;
+        };
     }
 }
