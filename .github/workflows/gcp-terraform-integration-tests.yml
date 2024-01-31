@@ -18,8 +18,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      GCP_KEY_FILE: ${{ secrets.GCP_KEY_FILE }}
     runs-on: ubuntu-latest
     if: >-
       github.repository_owner == 'hazelcast' && 
@@ -29,6 +27,8 @@ jobs:
           github.event.label.name == 'run-discovery-tests' 
         )
       )
+    env:
+      AWS_REGION: us-east-1
     steps:
       - name: Decide which ref to checkout
         id: decide-ref
@@ -76,10 +76,28 @@ jobs:
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
           cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+  
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            GKE_SA_KEY,CN/GKE_SA_KEY
+  
+      - name: Authenticate to GCP
+        uses: 'google-github-actions/auth@v2.0.1'
+        with:
+          credentials_json: ${{ env.GKE_SA_KEY }}
+
       - name: Create GCP credentials file
         run: |
           touch gcp_key_file.json
-          echo $GCP_KEY_FILE > ~/gcp_key_file.json
+          echo $GKE_SA_KEY > ~/gcp_key_file.json
 
       - name : Set-up Terraform
         uses: hashicorp/setup-terraform@v2.0.0

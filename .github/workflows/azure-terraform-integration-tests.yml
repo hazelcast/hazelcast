@@ -18,11 +18,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
     runs-on: ubuntu-latest
     if: >-
       github.repository_owner == 'hazelcast' && 
@@ -32,6 +27,8 @@ jobs:
           github.event.label.name == 'run-discovery-tests' 
         )
       )
+    env:
+      AWS_REGION: us-east-1
     steps:
       - name: Decide which ref to checkout
         id: decide-ref
@@ -78,6 +75,24 @@ jobs:
             -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
           cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            AZURE_CREDENTIALS,CN/AZURE_CREDENTIALS
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
 
       - name : Set-up Terraform
         uses: hashicorp/setup-terraform@v2.0.0
