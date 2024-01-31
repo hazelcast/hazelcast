@@ -59,6 +59,7 @@ public final class ProxyRegistry {
         INTERNAL_OBJECTS_PREFIXES.add(INTERNAL_JET_OBJECTS_PREFIX);
         INTERNAL_OBJECTS_PREFIXES.add("__mc.");
         INTERNAL_OBJECTS_PREFIXES.add("__sql.");
+        INTERNAL_OBJECTS_PREFIXES.add("__ts.");
     }
 
     private final ProxyServiceImpl proxyService;
