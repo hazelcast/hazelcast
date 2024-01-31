@@ -22,13 +22,14 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -87,12 +88,14 @@ public class HazelcastCloudDiscovery {
         httpsConnection.setRequestMethod("GET");
         httpsConnection.setConnectTimeout(connectionTimeoutInMillis);
         httpsConnection.setReadTimeout(connectionTimeoutInMillis);
-        httpsConnection.setRequestProperty("Accept-Charset", "UTF-8");
+        httpsConnection.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.name());
         httpsConnection.connect();
         checkCertificate(httpsConnection);
         checkError(httpsConnection);
-        InputStream inputStream = httpsConnection.getInputStream();
-        return parseJsonResponse(Json.parse(readInputStream(inputStream)), tpcEnabled);
+
+        try (Reader reader = new InputStreamReader(httpsConnection.getInputStream(), StandardCharsets.UTF_8)) {
+            return parseJsonResponse(Json.parse(reader), tpcEnabled);
+        }
     }
 
     private void checkCertificate(HttpURLConnection connection) throws IOException, CertificateException {
@@ -137,6 +140,7 @@ public class HazelcastCloudDiscovery {
                     parseTpcPortMapping(tpcPort.asObject(), publicAddr.getHost(), privateAddr.getHost(), privateToPublic);
                 }
             } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
 
@@ -162,17 +166,6 @@ public class HazelcastCloudDiscovery {
         return new Address(scopedHostName, addressHolder.getPort());
     }
 
-    private static String readInputStream(InputStream is) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-        String line;
-        StringBuilder response = new StringBuilder();
-        while ((line = in.readLine()) != null) {
-            response.append(line);
-        }
-        in.close();
-        return response.toString();
-    }
-
     private static void checkError(HttpURLConnection httpConnection) throws IOException {
         int responseCode = httpConnection.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -187,7 +180,7 @@ public class HazelcastCloudDiscovery {
     }
 
     private static String readFrom(InputStream stream) {
-        Scanner scanner = (new Scanner(stream, "UTF-8")).useDelimiter("\\A");
+        Scanner scanner = (new Scanner(stream, StandardCharsets.UTF_8)).useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : "";
     }
 
