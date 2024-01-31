@@ -759,6 +759,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param ttlUnit time unit for the TTL
      * @return CompletionStage from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key or value is null
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      * @see CompletionStage
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
@@ -846,6 +848,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param maxIdleUnit time unit for the Max-Idle
      * @return CompletionStage from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      * @see CompletionStage
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
@@ -1018,6 +1022,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * operation to complete or register callbacks to be invoked
      * upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      * @see CompletionStage
      */
     CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
@@ -1099,6 +1105,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * operation to complete or register callbacks to be invoked
      * upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      * @see CompletionStage
      */
     CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value,
@@ -1309,6 +1317,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param ttlUnit time unit for the TTL
      * @return old value of the entry
      * @throws NullPointerException if the specified key or value is {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     V put(@Nonnull K key, @Nonnull V value,
           long ttl, @Nonnull TimeUnit ttlUnit);
@@ -1376,6 +1386,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     V put(@Nonnull K key, @Nonnull V value,
           long ttl, @Nonnull TimeUnit ttlUnit,
@@ -1407,6 +1419,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *                means map config default)
      * @param ttlUnit time unit for the TTL
      * @throws NullPointerException if the specified key or value is {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     void putTransient(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
@@ -1448,6 +1462,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param maxIdleUnit time unit for the Max-Idle
      * @throws NullPointerException if the specified {@code key}, {@code value}, {@code ttlUnit} or
      *                              {@code maxIdleUnit} are {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     void putTransient(@Nonnull K key, @Nonnull V value,
                       long ttl, @Nonnull TimeUnit ttlUnit,
@@ -1539,6 +1555,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @return old value of the entry
      * @throws NullPointerException if the specified {@code key} or {@code value}
      *                              is {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     V putIfAbsent(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
@@ -1605,6 +1623,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @return old value of the entry
      * @throws NullPointerException if the specified {@code key}, {@code value}, {@code ttlUnit} or
      *                              {@code maxIdleUnit} are {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     V putIfAbsent(@Nonnull K key, @Nonnull V value,
                   long ttl, @Nonnull TimeUnit ttlUnit,
@@ -1754,6 +1774,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *                means map config default)
      * @param ttlUnit time unit for the TTL
      * @throws NullPointerException if the specified key or value is {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     void set(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
@@ -1808,6 +1830,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
+     * @throws UnsupportedOperationException if the underlying map storage doesn't
+     *         support TTL-based expiration (all in-memory storages support it).
      */
     void set(@Nonnull K key, @Nonnull V value,
              long ttl, @Nonnull TimeUnit ttlUnit,
