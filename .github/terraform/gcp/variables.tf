@@ -1,10 +1,10 @@
 # ID of the project you want to use
 variable "project_id" {
-  type    = string
+  type = string
 }
 
 variable "region" {
-  type = string
+  type    = string
   default = "us-central1"
 }
 
@@ -24,7 +24,7 @@ variable "gcp_ssh_user" {
 }
 
 variable "hazelcast_mancenter_version" {
-  type    = string
+  type = string
 }
 
 variable "gcp_instance_type" {
@@ -33,19 +33,19 @@ variable "gcp_instance_type" {
 }
 
 variable "gcp_label_key" {
-  type = string
+  type    = string
   default = "integration-test"
 }
 
 variable "gcp_label_value" {
-  type = string
+  type    = string
   default = "terraform"
 }
 
 variable "hazelcast_path" {
-  type    = string
+  type = string
 }
 
 variable "gcp_key_file" {
-  type    = string
+  type = string
 }

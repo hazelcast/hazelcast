@@ -65,6 +65,7 @@ resource "google_service_account" "service_account" {
 resource "random_id" "id" {
   byte_length = 8
 }
+
 resource "google_project_iam_custom_role" "discovery_role" {
   role_id     = "HazelcastGcpIntegrationTest${random_id.id.hex}"
   title       = "Discovery Role for hazelcast Integration tests"
@@ -78,14 +79,12 @@ resource "google_project_iam_member" "project" {
   member     = "serviceAccount:${google_service_account.service_account.email}"
 }
 
-
 ########## NETWORK - SUBNETWORK - FIREWALL - PUBLIC IP ##################
 
 resource "google_compute_network" "vpc" {
   name                    = "${random_pet.prefix.id}-vpc"
   auto_create_subnetworks = false
 }
-
 
 resource "google_compute_subnetwork" "vpc_subnet" {
   name          = "${random_pet.prefix.id}-subnet"
@@ -124,7 +123,7 @@ resource "google_compute_instance" "hazelcast_member" {
   zone                      = var.zone
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-1804-lts"
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }
 
@@ -189,6 +188,8 @@ resource "google_compute_instance" "hazelcast_member" {
     inline = [
       "cd /home/${var.gcp_ssh_user}",
       "chmod 0755 start_gcp_hazelcast_member.sh",
+      "sudo apt-get -qq update > /dev/null",
+      "sudo apt-get -y -qq install openjdk-17-jdk openjdk-17-jre > /dev/null",
       "./start_gcp_hazelcast_member.sh  ${var.gcp_label_key} ${var.gcp_label_value} ",
       "sleep 5",
     ]
@@ -207,7 +208,6 @@ resource "null_resource" "verify_members" {
     private_key = tls_private_key.ssh.private_key_pem
   }
 
-
   provisioner "remote-exec" {
     inline = [
       "cd /home/${var.gcp_ssh_user}",
@@ -216,7 +216,6 @@ resource "null_resource" "verify_members" {
       "./verify_member_count.sh  ${var.member_count}",
     ]
   }
-
 }
 
 ############## HAZELCAST MANAGEMENT CENTER #######################
@@ -228,7 +227,7 @@ resource "google_compute_instance" "hazelcast_mancenter" {
   zone                      = var.zone
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-1804-lts"
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }
 
@@ -286,7 +285,9 @@ resource "google_compute_instance" "hazelcast_mancenter" {
     inline = [
       "cd /home/${var.gcp_ssh_user}",
       "chmod 0755 start_gcp_hazelcast_management_center.sh",
-      "./start_gcp_hazelcast_management_center.sh ${var.hazelcast_mancenter_version} ${var.gcp_label_key} ${var.gcp_label_value} ",
+      "sudo apt-get -qq update > /dev/null",
+      "sudo apt-get -y -qq install openjdk-17-jdk openjdk-17-jre > /dev/null",
+      "./start_gcp_hazelcast_management_center.sh ${var.hazelcast_mancenter_version}",
       "sleep 5",
     ]
   }
