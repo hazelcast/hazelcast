@@ -35,11 +35,53 @@ public class HazelcastPostgresDialect extends PostgresqlSqlDialect implements Ty
     }
 
     @Override
+    @SuppressWarnings("ReturnCount")
     public QueryDataType resolveType(String columnTypeName, int precision, int scale) {
-        if (columnTypeName.toUpperCase(Locale.ROOT).equals("BPCHAR")) {
-            return QueryDataType.VARCHAR;
-        }
-        return DefaultTypeResolver.resolveType(columnTypeName, precision, scale);
-    }
+        switch (columnTypeName.toUpperCase(Locale.ROOT)) {
+            case "BOOL":
+            case "BIT":
+                return QueryDataType.BOOLEAN;
 
+            case "BPCHAR":
+            case "VARCHAR":
+            case "TEXT":
+                return QueryDataType.VARCHAR;
+
+            case "INT2":
+            case "SMALLSERIAL":
+                return QueryDataType.SMALLINT;
+
+            case "INT4":
+            case "SERIAL":
+                return QueryDataType.INT;
+
+            case "INT8":
+            case "BIGSERIAL":
+                return QueryDataType.BIGINT;
+
+            case "NUMERIC":
+                return QueryDataType.DECIMAL;
+
+            case "FLOAT4":
+                return QueryDataType.REAL;
+
+            case "FLOAT8":
+                return QueryDataType.DOUBLE;
+
+            case "DATE":
+                return QueryDataType.DATE;
+
+            case "TIME":
+                return QueryDataType.TIME;
+
+            case "TIMESTAMP":
+                return QueryDataType.TIMESTAMP;
+
+            case "TIMESTAMPTZ":
+                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+
+            default:
+                return DefaultTypeResolver.resolveType(columnTypeName, precision, scale);
+        }
+    }
 }
