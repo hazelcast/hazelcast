@@ -44,6 +44,7 @@ import com.hazelcast.client.impl.protocol.task.schema.SendAllSchemasMessageTask;
 import com.hazelcast.client.impl.protocol.task.schema.SendSchemaMessageTask;
 import com.hazelcast.cp.internal.client.AddCPGroupAvailabilityListenerMessageTask;
 import com.hazelcast.cp.internal.client.AddCPMembershipListenerMessageTask;
+import com.hazelcast.cp.internal.client.CPSubsystemGetCPGroupIdsMessageTask;
 import com.hazelcast.cp.internal.client.RemoveCPGroupAvailabilityListenerMessageTask;
 import com.hazelcast.cp.internal.client.RemoveCPMembershipListenerMessageTask;
 import com.hazelcast.cp.internal.datastructures.spi.client.CreateRaftGroupMessageTask;
@@ -94,6 +95,7 @@ public class MessageTaskSecurityTest {
         skip(CacheFetchNearCacheInvalidationMetadataTask.class, "Internal task used by RepairingTask");
         skip(ClientStatisticsMessageTask.class, "Client statistics collection task");
         skip(GetDistributedObjectsMessageTask.class, "Gets proxies");
+        skip(CPSubsystemGetCPGroupIdsMessageTask.class, "Gets names of CP objects");
         skip(MapAddListenerMessageTask.class, "Permissions checked by subsequent MapPublisherCreate* tasks");
         skip(MapFetchNearCacheInvalidationMetadataTask.class, "Internal task used by RepairingTask");
         skip(MapMadePublishableMessageTask.class, "Internal task used by RepairingTask");

@@ -19,6 +19,8 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -31,7 +33,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+
 import static com.hazelcast.cp.internal.CPSubsystemImpl.CPMAP_LICENSE_MESSAGE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -189,4 +194,25 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         Throwable t = assertThrows(UnsupportedOperationException.class, () -> instance.getCPSubsystem().getMap("myMap"));
         assertEquals(CPMAP_LICENSE_MESSAGE, t.getMessage());
     }
+
+    @Test
+    public void testGetCPGroupIdsWhenSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        CPSubsystem cp = instance.getCPSubsystem();
+
+        cp.getAtomicLong("long");
+        cp.getAtomicLong("long@group1");
+        cp.getAtomicLong("long@group2");
+
+        Collection<CPGroupId> cpGroupIds = cp.getCPGroupIds();
+        assertThat(cpGroupIds).extracting(CPGroupId::getName)
+                .containsExactlyInAnyOrder("METADATA", "default", "group1", "group2");
+    }
+
 }

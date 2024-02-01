@@ -22,14 +22,14 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.cp.event.CPGroupAvailabilityListener;
-import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
@@ -46,6 +46,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -174,6 +175,16 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
         throw new UnsupportedOperationException(CPMAP_LICENSE_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Collection<CPGroupId> getCPGroupIds() {
+        try {
+            return getCPSubsystemManagementService().getCPGroupIds().toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new HazelcastException("Could not retrieve CP group ids", e);
+        }
     }
 
     /*

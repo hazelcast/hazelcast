@@ -17,14 +17,20 @@
 package com.hazelcast.client.cp.internal;
 
 import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddMembershipListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemGetCPGroupIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveMembershipListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
@@ -52,12 +58,15 @@ import com.hazelcast.internal.util.Clock;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.CPSubsystemImpl.CPMAP_LICENSE_MESSAGE;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -152,6 +161,25 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
         throw new UnsupportedOperationException(CPMAP_LICENSE_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Collection<CPGroupId> getCPGroupIds() {
+        ClientMessage clientMessage = CPSubsystemGetCPGroupIdsCodec.encodeRequest();
+        ClientInvocation invocation = new ClientInvocation(
+                (HazelcastClientInstanceImpl) context.getHazelcastInstance(),
+                clientMessage, null
+        );
+        ClientInvocationFuture future = invocation.invoke();
+        try {
+            return future.thenApplyAsync(cm ->
+                    List.<CPGroupId>copyOf(CPSubsystemGetCPGroupIdsCodec.decodeResponse(cm)),
+                    CALLER_RUNS
+            ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new HazelcastException("Could not retrieve CP group ids", e);
+        }
     }
 
     private static class CPMembershipEventHandler extends CPSubsystemAddMembershipListenerCodec.AbstractEventHandler

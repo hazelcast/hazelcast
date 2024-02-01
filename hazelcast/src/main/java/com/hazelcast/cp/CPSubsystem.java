@@ -30,8 +30,10 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -582,4 +584,14 @@ public interface CPSubsystem {
      */
     @Nonnull
     <K, V> CPMap<K, V> getMap(@Nonnull String name);
+
+    /**
+     * Returns all active CP group ids.
+     *
+     * @since 5.4
+     */
+    @Beta
+    @Nonnull
+    Collection<CPGroupId> getCPGroupIds();
+
 }
