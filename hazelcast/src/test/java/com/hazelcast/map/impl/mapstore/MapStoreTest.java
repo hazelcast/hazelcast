@@ -1045,6 +1045,19 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1, mapStore.getLoadCount());
     }
 
+    /**
+     * Regression test for https://github.com/hazelcast/hazelcast/issues/26239
+     */
+    @Test
+    public void nullMapStoreConfigIsAllowed() {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getMapConfig("test").setMapStoreConfig(null);
+        HazelcastInstance member = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = member.getMap("test");
+        map.put(1, 2);
+        assertEquals(2, (int) map.get(1));
+    }
+
     @Test
     public void testMapListener_containsOldValue_afterPutAll() {
         Config config = newConfig(new SimpleMapStore<Integer, Integer>());

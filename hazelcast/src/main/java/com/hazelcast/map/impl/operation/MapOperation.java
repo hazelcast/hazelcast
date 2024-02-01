@@ -126,7 +126,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         // check if mapStoreOffloadEnabled is true for this operation
         mapStoreOffloadEnabled = metWithCommonOffloadConditions
                 && (mapServiceContext.isForceOffloadEnabled()
-                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()));
+                    || (mapStoreConfig != null && mapStoreConfig.isOffload() && hasMapStoreImplementation()));
 
         // check if tieredStoreOffloadEnabled for this operation
         tieredStoreOffloadEnabled = metWithCommonOffloadConditions
