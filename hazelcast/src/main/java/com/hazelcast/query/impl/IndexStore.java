@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -185,6 +184,14 @@ public interface IndexStore {
      */
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(@Nonnull Comparable value, boolean descending);
 
+    default Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            @Nonnull Comparable value,
+            boolean descending,
+            Data lastEntryKeyData
+    )  {
+        throw new IllegalStateException("Not implemented");
+    }
+
     /**
      * Scan all records, including NULL.
      *
@@ -224,6 +231,13 @@ public interface IndexStore {
                                                         @Nonnull Comparable value,
                                                         boolean descending);
 
+    default Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(@Nonnull Comparison comparison,
+                                                                @Nonnull Comparable value,
+                                                                boolean descending,
+                                                                Data lastEntryKeyData) {
+        throw new IllegalStateException("Not implemented");
+    }
+
     /**
      * Returns records in given range. Both bounds must be given, however they may be {@link AbstractIndex#NULL}.
      * <p>
@@ -256,6 +270,17 @@ public interface IndexStore {
             boolean toInclusive,
             boolean descending
     );
+
+    default Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            @Nonnull Comparable from,
+            boolean fromInclusive,
+            @Nonnull Comparable to,
+            boolean toInclusive,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        throw new IllegalStateException("Not implemented");
+    }
 
     /**
      * Obtains entries that have indexed attribute value equal to the given
@@ -303,11 +328,4 @@ public interface IndexStore {
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
 
-    /**
-     * @param isDescending is the index used in descending order.
-     * @return comparator ordering IMap keys stored for given index key.
-     */
-    default Comparator<Data> getKeyComparator(boolean isDescending) {
-        throw new UnsupportedOperationException("Key comparator is not available for this type of index");
-    }
 }

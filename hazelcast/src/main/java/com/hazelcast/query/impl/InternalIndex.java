@@ -17,11 +17,8 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.recordstore.CustomStepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
-
-import java.util.Comparator;
 
 /**
  * Provides the private index API.
@@ -127,10 +124,4 @@ public interface InternalIndex extends Index {
     default CustomStepAwareStorage getCustomStepAwareStorage() {
         return null;
     }
-
-    /**
-     * @param isDescending whether the index is used in descending order.
-     * @return comparator ordering IMap keys stored for given index key
-     */
-    Comparator<Data> getKeyComparator(boolean isDescending);
 }

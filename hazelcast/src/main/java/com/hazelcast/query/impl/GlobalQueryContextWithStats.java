@@ -19,11 +19,9 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -177,11 +175,6 @@ public class GlobalQueryContextWithStats extends QueryContext {
                     from, fromInclusive, to, toInclusive, descending);
             hasQueries = true;
             return result;
-        }
-
-        @Override
-        public Comparator<Data> getKeyComparator(boolean isDescending) {
-            return delegate.getKeyComparator(isDescending);
         }
 
         @Override

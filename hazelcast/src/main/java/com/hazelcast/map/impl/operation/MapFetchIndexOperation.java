@@ -43,7 +43,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -158,23 +157,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 @SuppressWarnings({"rawtypes"})
                 Iterator<QueryableEntry> keyEntries = indexKeyEntries.getEntries();
 
-                // Skip until the entry last read
-                if (lastEntryKeyData != null) {
-                    Comparator<Data> comparator = index.getKeyComparator(pointer.isDescending());
-                    while (keyEntries.hasNext()) {
-                        QueryableEntry<?, ?> entry = keyEntries.next();
-
-                        int comparison = comparator.compare(entry.getKeyData(), lastEntryKeyData);
-                        if (comparison >= 0) {
-                            if (comparison > 0 && isInPartitionSet(entry, partitionIdSet, partitionCount)) {
-                                entries.add(entry);
-                                lastEntryKeyData = entry.getKeyData();
-                            }
-                            break;
-                        }
-                    }
-                }
-
                 // Read and add until size limit is reached or iterator ends
                 while (keyEntries.hasNext() && entries.size() < sizeLimit) {
                     QueryableEntry<?, ?> entry = keyEntries.next();
@@ -184,13 +166,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     }
                 }
 
-                if (!keyEntries.hasNext()) {
-                    lastEntryKeyData = null;
-                }
+                boolean moreDataWithCurrentKey = keyEntries.hasNext();
 
                 if (entries.size() >= sizeLimit) {
                     IndexIterationPointer[] newPointers;
-                    boolean moreDataWithCurrentKey = lastEntryKeyData != null;
+
                     if (moreDataWithCurrentKey || entryIterator.hasNext()) {
                         Comparable<?> currentIndexKey = indexKeyEntries.getIndexKey();
                         newPointers = new IndexIterationPointer[pointers.length - i];
@@ -203,7 +183,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                                 pointer.isDescending() ? currentIndexKey : pointer.getTo(),
                                 pointer.isDescending() ? moreDataWithCurrentKey : pointer.isToInclusive(),
                                 pointer.isDescending(),
-                                lastEntryKeyData
+                                moreDataWithCurrentKey ? lastEntryKeyData : null
                         );
 
                         if (logger.isFinestEnabled()) {
@@ -219,7 +199,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 }
             }
         }
-
         return new MapFetchIndexOperationResult(entries, new IndexIterationPointer[0]);
     }
 
@@ -235,14 +214,19 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     // this case may be the last stage of range scan when we have only single value left.
                     // In the implementation we get point predicate but we have to keep the order of keys
                     // as was used in previous iterations of scans, and range scans obey descending flag.
-                    entryIterator = index.getSqlRecordIteratorBatch(pointer.getFrom(), pointer.isDescending());
+                    entryIterator = index.getSqlRecordIteratorBatch(
+                            pointer.getFrom(),
+                            pointer.isDescending(),
+                            pointer.getLastEntryKeyData()
+                    );
                 } else {
                     entryIterator = index.getSqlRecordIteratorBatch(
                             pointer.getFrom(),
                             pointer.isFromInclusive(),
                             pointer.getTo(),
                             pointer.isToInclusive(),
-                            pointer.isDescending()
+                            pointer.isDescending(),
+                            pointer.getLastEntryKeyData()
                     );
                 }
 
@@ -250,14 +234,16 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 entryIterator = index.getSqlRecordIteratorBatch(
                         pointer.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER,
                         pointer.getFrom(),
-                        pointer.isDescending()
+                        pointer.isDescending(),
+                        pointer.getLastEntryKeyData()
                 );
             }
         } else if (pointer.getTo() != null) {
             entryIterator = index.getSqlRecordIteratorBatch(
                     pointer.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS,
                     pointer.getTo(),
-                    pointer.isDescending()
+                    pointer.isDescending(),
+                    pointer.getLastEntryKeyData()
             );
         } else {
             // unconstrained scan

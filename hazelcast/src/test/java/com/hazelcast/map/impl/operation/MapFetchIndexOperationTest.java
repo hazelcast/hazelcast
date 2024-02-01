@@ -95,8 +95,6 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     private HazelcastInstance instance;
     private Config config;
 
-    private IMap<String, Person> map;
-
     @Parameterized.Parameter
     public boolean descending;
 
@@ -112,7 +110,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         config = getConfig();
         instance = factory.newHazelcastInstance(config);
 
-        map = instance.getMap(mapName);
+        IMap<String, Person> map = instance.getMap(mapName);
 
         map.addIndex(new IndexConfig(IndexType.SORTED, "age").setName(orderedIndexName));
         map.addIndex(new IndexConfig(IndexType.HASH, "age").setName(hashIndexName));
@@ -171,6 +169,43 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 new Person("person10", 45, "Dep4"),
                 new Person("person11", 45, "Dep5")
         ));
+    }
+
+    @Test
+    public void lastEntryNotExists() throws ExecutionException, InterruptedException {
+        PartitionIdSet partitions = getLocalPartitions(instance);
+
+        IndexIterationPointer[] pointers = new IndexIterationPointer[1];
+        SerializationService ss = getNodeEngineImpl(instance).getSerializationService();
+
+        var value = ss.toData("person8");
+
+        pointers[0] = IndexIterationPointer.create(45, true, 66, true, descending, value);
+
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
+
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
+
+        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+        List<Person> expected = descending
+                ? Arrays.asList(
+                new Person("person1", 45, "Dep1"),
+                new Person("person4", 45, "Dep2"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5"),
+                new Person("person3", 60, "Dep1")
+        )
+                : Arrays.asList(
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5"),
+                new Person("person3", 60, "Dep1")
+        );
+        assertResultSorted(result, expected);
     }
 
     @Test

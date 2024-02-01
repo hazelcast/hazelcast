@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
@@ -130,13 +131,31 @@ public interface Index {
     Set<QueryableEntry> evaluate(Predicate predicate);
 
     /**
-     * @param value         value
-     * @param descending    whether the entries should come in the descending order.
-     *                      {@code true} means a descending order,
-     *                      {@code false} means an ascending order.
+     * @param value      value
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
      * @return iterator over index entries that are equal to the given value
      */
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending);
+
+    /**
+     * @param value            value
+     * @param descending       whether the entries should come in the descending order.
+     *                         {@code true} means a descending order,
+     *                         {@code false} means an ascending order.
+     * @param lastEntryKeyData the starting point for iteration is determined by the key of the object.
+     * @return iterator over index entries that are equal to the given value.
+     * Iteration starts from the next element after lastEntryKeyData.
+     */
+    default Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable value,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        throw new IllegalStateException("Not implemented");
+    }
+
 
     /**
      * Scans all entries, including NULL.
@@ -150,7 +169,7 @@ public interface Index {
 
     /**
      * @param comparison comparison type
-     * @param value value
+     * @param value      value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
@@ -159,16 +178,34 @@ public interface Index {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
 
     /**
-     *
-     * @param from lower bound
+     * @param comparison       comparison type
+     * @param value            value
+     * @param descending       whether the entries should come in the descending order.
+     *                         {@code true} means a descending order,
+     *                         {@code false} means an ascending order.
+     * @param lastEntryKeyData the starting point for iteration is determined by the key of the object
+     * @return iterator over index entries that are matching the given comparions type and value.
+     * Iteration starts from the next element after lastEntryKeyData.
+     */
+    default Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparison comparison,
+            Comparable value,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        throw new IllegalStateException("Not implemented");
+    }
+
+    /**
+     * @param from          lower bound
      * @param fromInclusive lower bound inclusive flag
-     * @param to upper bound
-     * @param toInclusive upper bound inclusive flag
-     * @param descending whether the entries should come in the descending order.
-     *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.
+     * @param to            upper bound
+     * @param toInclusive   upper bound inclusive flag
+     * @param descending    whether the entries should come in the descending order.
+     *                      {@code true} means a descending order,
+     *                      {@code false} means an ascending order.
      * @return iterator over index entries matching the given range in batches
-     *         grouped by the index value
+     * grouped by the index value
      */
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
@@ -177,6 +214,29 @@ public interface Index {
             boolean toInclusive,
             boolean descending
     );
+
+    /**
+     * @param from             lower bound
+     * @param fromInclusive    lower bound inclusive flag
+     * @param to               upper bound
+     * @param toInclusive      upper bound inclusive flag
+     * @param descending       whether the entries should come in the descending order.
+     *                         {@code true} means a descending order,
+     *                         {@code false} means an ascending order.
+     * @param lastEntryKeyData the starting point for iteration is determined by the key of the object
+     * @return iterator over index entries matching the given range in batches
+     * grouped by the index value. Iteration starts from the next element after lastEntryKeyData.
+     */
+    default Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        throw new IllegalStateException("Not implemented");
+    }
 
     /**
      * Produces a result set containing entries whose attribute values are equal

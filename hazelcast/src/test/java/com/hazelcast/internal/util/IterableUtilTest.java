@@ -22,12 +22,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -133,5 +137,86 @@ public class IterableUtilTest {
         Iterator<Integer> iterator = IterableUtil.asReadOnlyIterator(numbers.iterator());
 
         assertTrue(iterator == IterableUtil.asReadOnlyIterator(iterator));
+    }
+
+    @Test
+    public void elementNotFound() {
+        var list = List.of(1, 2, 3, 4, 5, 6);
+        var actual = IterableUtil.skipFirst(list.iterator(), v -> v > 30);
+        assertThatThrownBy(actual::next).isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    public void skipFirst() {
+        var list = List.of(1, 2, 3, 4, 5, 6);
+        var actual = IterableUtil.skipFirst(list.iterator(), v -> v > 3);
+        var expected = List.of(4, 5, 6);
+        assertIteratorsEquals(expected, actual);
+    }
+
+    @Test
+    public void skipFirstAll() {
+        var list = List.of(1, 2, 3, 4, 5, 6);
+        var actual = IterableUtil.skipFirst(list.iterator(), v -> v > 0);
+        assertIteratorsEquals(list, actual);
+    }
+
+    @Test
+    public void skipFirstNone() {
+        var list = List.of(1, 2, 3, 4, 5, 6);
+        var actual = IterableUtil.skipFirst(list.iterator(), v -> v > 10);
+        assertIteratorsEquals(Collections.emptyList(), actual);
+    }
+
+    @Test
+    public void skipFirstEmptyCollection() {
+        var actual = IterableUtil.skipFirst(Collections.emptyIterator(), v -> false);
+        assertIteratorsEquals(Collections.emptyList(), actual);
+    }
+
+    @Test
+    public void skipFirstNullIterator() {
+        assertThatThrownBy(() -> IterableUtil.skipFirst(null, (i) -> false))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("iterator cannot be null.");
+    }
+
+    @Test
+    public void prependNullToEmptyIterator() {
+        var actual = IterableUtil.prepend(null, Collections.emptyIterator());
+        assertIteratorsEquals(Collections.emptyList(), actual);
+    }
+
+    @Test
+    public void prependNullIterator() {
+        assertThatThrownBy(() -> IterableUtil.prepend(null, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("iterator cannot be null.");
+    }
+
+    @Test
+    public void prependNullElement() {
+        List<Integer> list = List.of(1, 2, 3);
+        var actual = IterableUtil.prepend(null, list.iterator());
+        assertIteratorsEquals(list, actual);
+    }
+
+    @Test
+    public void prependEmptyIterator() {
+        var actual = IterableUtil.prepend(1, Collections.emptyIterator());
+        assertIteratorsEquals(List.of(1), actual);
+    }
+
+    @Test
+    public void prepend() {
+        List<Integer> list = List.of(1, 2, 3);
+        var actual = IterableUtil.prepend(0, list.iterator());
+        assertIteratorsEquals(List.of(0, 1, 2, 3), actual);
+    }
+
+    private <T> void assertIteratorsEquals(List<T> expected, Iterator<T> actual) {
+        List<T> result = new ArrayList<>();
+        actual.forEachRemaining(result::add);
+        assertThat(result).isEqualTo(expected);
     }
 }

@@ -32,7 +32,6 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -185,6 +184,19 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable value,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(convert(value), descending, lastEntryKeyData);
+    }
+
+    @Override
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
         if (converter == null) {
             return emptyIterator();
@@ -204,6 +216,20 @@ public abstract class AbstractIndex implements InternalIndex {
 
     @Override
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparison comparison,
+            Comparable value,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(comparison, convert(value), descending, lastEntryKeyData);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
             Comparable to,
@@ -215,6 +241,29 @@ public abstract class AbstractIndex implements InternalIndex {
         }
 
         return indexStore.getSqlRecordIteratorBatch(convert(from), fromInclusive, convert(to), toInclusive, descending);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending,
+            Data lastEntryKeyData
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(
+                convert(from),
+                fromInclusive,
+                convert(to),
+                toInclusive,
+                descending,
+                lastEntryKeyData
+        );
     }
 
     @Override
@@ -302,11 +351,6 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public PerIndexStats getPerIndexStats() {
         return stats;
-    }
-
-    @Override
-    public Comparator<Data> getKeyComparator(boolean isDescending) {
-        return indexStore.getKeyComparator(isDescending);
     }
 
     @Override
