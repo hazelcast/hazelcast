@@ -18,6 +18,9 @@ package com.hazelcast.config.rest;
 
 import com.hazelcast.spi.annotation.Beta;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 /**
  * This class allows controlling the Hazelcast REST API feature.
  *
@@ -27,6 +30,8 @@ import com.hazelcast.spi.annotation.Beta;
 public class RestConfig {
 
     private static final int DEFAULT_PORT = 8443;
+    private static final int DEFAULT_DURATION_MINUTES = 15;
+    private static final Duration DEFAULT_DURATION = Duration.of(DEFAULT_DURATION_MINUTES, ChronoUnit.MINUTES);
 
     /**
      * Indicates whether the RestConfig is enabled.
@@ -37,6 +42,16 @@ public class RestConfig {
      * The port number for the Rest API server endpoint.
      */
     private int port = DEFAULT_PORT;
+
+    /**
+     * The name of the Rest security realm which should be already configured.
+     */
+    private String securityRealm;
+
+    /**
+     * Duration for a token to remain valid.
+     */
+    private Duration tokenValidityDuration = DEFAULT_DURATION;
 
     /**
      * Default constructor for RestConfig.
@@ -85,12 +100,50 @@ public class RestConfig {
     }
 
     /**
+     * Gets the name of the Rest security realm.
+     *
+     * @return the name of the realm.
+     */
+    public String getSecurityRealm() {
+        return securityRealm;
+    }
+
+    /**
+     * Sets the name of the Rest security realm.
+     *
+     * @param securityRealm the name of the realm. This should be an already defined valid security realm.
+     */
+    public void setSecurityRealm(String securityRealm) {
+        this.securityRealm = securityRealm;
+    }
+
+    /**
+     * Gets the token validity duration.
+     *
+     * @return the duration for which the token is valid.
+     */
+    public Duration getTokenValidityDuration() {
+        return tokenValidityDuration;
+    }
+
+    /**
+     * Sets the expiration duration for jwt token.
+     *
+     * @param tokenValidityDuration the duration for which the token should be valid.
+     * @warning This resolution for tokenValidityDuration can not be more than a second.
+     */
+    public void setTokenValidityDuration(Duration tokenValidityDuration) {
+        this.tokenValidityDuration = tokenValidityDuration;
+    }
+
+    /**
      * Returns a string representation of the RestConfig.
      *
      * @return a string representation of the RestConfig.
      */
     @Override
     public String toString() {
-        return "RestConfig{enabled=" + enabled + ", port=" + port + '}';
+        return "RestConfig{enabled=" + enabled + ", port=" + port + ", securityRealm='" + securityRealm + '\''
+                + ", tokenValidityDuration=" + tokenValidityDuration + '}';
     }
 }
