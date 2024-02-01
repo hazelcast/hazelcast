@@ -488,7 +488,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    // Postgres + MySQL : Test that table in another DB exists
+    // Postgres + MySQL : Check if table that exists in another database is not accessible
     @Test
     public void createMappingFails_tableExistInAnotherDatabase_externalNameOnlyTableName() throws SQLException {
         assumeThat(databaseProvider)
@@ -502,12 +502,12 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // Create table on first DB
         createTable(tableName);
 
+        // Create a new DB
         String newDBName = "db1";
         executeJdbc("CREATE DATABASE " + newDBName);
 
-        // Add a new DB
-        String newDbUrl = dbConnectionUrl.replace("com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport",
-                newDBName);
+        // Create new data connection
+        String newDbUrl = urlForDatabaseName(newDBName);
 
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", newDbUrl);
@@ -520,7 +520,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         .setProperties(properties)
         );
 
-        // Create mapping to new DB. Table does not exist on new DB, and we should get an exception
+        // Create mapping to new DB using new data connection. Table does not exist on new DB, and we should get an exception
         assertThatThrownBy(() -> execute(
                 "CREATE MAPPING " + tableName + " EXTERNAL NAME " + tableName + " ("
                         + " id INT, "
@@ -533,7 +533,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 .hasMessageContaining("Could not execute readDbFields for table");
     }
 
-    // Postgres : Test that table in another DB and explicit schema name exists
+    // Postgres : Check if table that exists in another database is not accessible
     @Test
     public void createMappingFails_tableExistInAnotherDatabase_externalNameFullName() throws SQLException {
         assumeThat(databaseProvider)
@@ -546,12 +546,12 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // Create table on first DB
         createTable(tableName);
 
+        // Create a new DB
         String newDBName = "db2";
         executeJdbc("CREATE DATABASE " + newDBName);
 
-        // Add a new DB
-        String newDbUrl = dbConnectionUrl.replace("com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport",
-                newDBName);
+        // Create new data connection
+        String newDbUrl = urlForDatabaseName(newDBName);
 
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", newDbUrl);
@@ -564,7 +564,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         .setProperties(properties)
         );
 
-        // Create mapping to new DB. Table does not exist on new DB, and we should get an exception
+        // Create mapping to new DB using new data connection. Table does not exist on new DB, and we should get an exception
         assertThatThrownBy(() -> execute(
                 "CREATE MAPPING " + tableName + " EXTERNAL NAME " + newDBName + ".public." + tableName + " ("
                         + " id INT, "

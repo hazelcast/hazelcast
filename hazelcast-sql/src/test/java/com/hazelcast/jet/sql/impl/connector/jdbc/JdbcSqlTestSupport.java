@@ -92,6 +92,13 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
+    /**
+     * Return url for the database for the existing container
+     */
+    protected static String urlForDatabaseName(String databaseName) {
+        return dbConnectionUrl.replace(JdbcSqlTestSupport.class.getSimpleName(), databaseName);
+    }
+
     @Nonnull
     protected static String randomTableName() {
         return "table_" + randomName();
