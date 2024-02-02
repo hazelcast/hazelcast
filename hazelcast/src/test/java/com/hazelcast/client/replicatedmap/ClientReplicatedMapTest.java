@@ -109,6 +109,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {OBJECT},
+                {BINARY}
         });
     }
 
@@ -826,8 +827,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         // test with 2 members so that member partition owner shutdown logic can be done
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        assertClusterSizeEventually(2, instance1, instance2);
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(factory.newHazelcastClient());
+        assertClusterSizeEventually(2, instance1, instance2, client);
 
         ClientReplicatedMapProxy<Integer, Integer> replicatedMap
                 = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
@@ -876,18 +877,20 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void entryViews_nonExistingReplicatedMap_throws() {
-        factory.newHazelcastInstance(config);
+    public void entryViews_destroyedReplicatedMap_throws() {
         factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient();
-        HazelcastInstance client2 = factory.newHazelcastClient();
+        String mapName = "test";
+        int partitionId = 0;
+        ClientReplicatedMapProxy<Integer, Integer> clientReplicatedMapProxy = (ClientReplicatedMapProxy<Integer, Integer>)
+            client.<Integer, Integer>getReplicatedMap(mapName);
 
-        ClientReplicatedMapProxy<Integer, Integer> replicatedMap = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
-        client2.getReplicatedMap("test").destroy();
+        clientReplicatedMapProxy.destroy();
 
         assertTrueEventually(() -> {
-            assertThatThrownBy(() -> replicatedMap.entryViews(0, 10)).isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("There is no ReplicatedRecordStore for test on partitionId 0");
+            assertThatThrownBy(() -> clientReplicatedMapProxy.entryViews(partitionId, 10))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("There is no ReplicatedRecordStore for test on partitionId " + partitionId);
         });
     }
 
@@ -895,12 +898,16 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     public void entryViews_emptyReplicatedMap() {
         assertClusterSizeEventually(2, factory.newHazelcastInstance(config), factory.newHazelcastInstance(config));
         HazelcastInstance client = factory.newHazelcastClient();
+        ClientReplicatedMapProxy<Integer, Integer> replicatedMap = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
 
-        ClientReplicatedMapProxy<Integer, Integer> replicatedMap
-                = (ClientReplicatedMapProxy) client.getReplicatedMap("test");
-
-        Iterator<ReplicatedMapEntryViewHolder> entryViews = replicatedMap.entryViews(0, 10).iterator();
-        assertThat(entryViews).isExhausted();
+        assertTrueEventually(() -> {
+            try {
+                Iterator<ReplicatedMapEntryViewHolder> entryViews = replicatedMap.entryViews(0, 10).iterator();
+                assertThat(entryViews).isExhausted();
+            } catch (IllegalStateException ignored) {
+                throw new AssertionError();
+            }
+        });
     }
 
     @Test
