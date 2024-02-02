@@ -61,6 +61,13 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredF
     }
 
     /**
+     * Enforces that the return type is FunctionEx, to be used to wrap some expressions without casting.
+     */
+    static <V, R> FunctionEx<V, R> unchecked(FunctionEx<V, R> function) {
+        return function::apply;
+    }
+
+    /**
      * {@code Serializable} variant of {@link Function#compose(Function)
      * java.util.function.Function#compose(Function)}.
      * @param <V> the type of input to the {@code before} function, and to the
