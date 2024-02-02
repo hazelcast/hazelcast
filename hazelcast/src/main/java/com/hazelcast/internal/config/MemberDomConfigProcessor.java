@@ -2738,7 +2738,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         if (url != null) {
             nsConfig.addJar(url, id);
         } else {
-            throw new InvalidConfigurationException("Path for jars-in-zip is missing");
+            throw new InvalidConfigurationException("Path for jar is missing");
         }
     }
 
