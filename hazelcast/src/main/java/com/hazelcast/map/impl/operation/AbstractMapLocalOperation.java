@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -33,6 +34,10 @@ abstract class AbstractMapLocalOperation extends MapOperation {
 
     AbstractMapLocalOperation(String name) {
         super(name);
+    }
+
+    AbstractMapLocalOperation(MapContainer mapContainer) {
+        super(mapContainer);
     }
 
     @Override

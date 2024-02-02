@@ -37,7 +37,7 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
 
     public MapPartitionDestroyOperation(PartitionContainer partitionContainer,
                                         MapContainer mapContainer) {
-        super(mapContainer.getName());
+        super(mapContainer);
         this.createRecordStoreOnDemand = false;
         this.partitionContainer = partitionContainer;
         this.mapContainer = mapContainer;

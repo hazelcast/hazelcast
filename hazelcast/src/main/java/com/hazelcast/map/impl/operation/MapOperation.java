@@ -103,6 +103,11 @@ public abstract class MapOperation extends AbstractNamedOperation
         this.name = name;
     }
 
+    public MapOperation(MapContainer mapContainer) {
+        super(mapContainer.getName());
+        this.mapContainer = mapContainer;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public final void beforeRun() throws Exception {
@@ -144,7 +149,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     public boolean checkMapExists() {
         try {
             recordStore = getRecordStoreOrNull();
-            mapContainer = getMapContainerOrNull();
+            mapContainer = mapContainer == null ? getMapContainerOrNull() : mapContainer;
             if (mapContainer == null) {
                 logNoSuchMapExists();
                 return false;

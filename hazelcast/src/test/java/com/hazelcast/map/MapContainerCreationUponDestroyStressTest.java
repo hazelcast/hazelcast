@@ -28,21 +28,37 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({NightlyTest.class})
 public class MapContainerCreationUponDestroyStressTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter(0)
+    public boolean forceOffload;
+
+    @Parameterized.Parameters(name = "forceOffload: {0}")
+    public static Collection<Object[]> data() {
+        return asList(new Object[][]{
+                {false},
+                {true}
+        });
+    }
 
     private static final int PARTITION_COUNT = 271;
 
@@ -116,6 +132,9 @@ public class MapContainerCreationUponDestroyStressTest extends HazelcastTestSupp
 
     private IMap<Long, Long> getIMap(String mapName) {
         Config config = new Config();
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(),
+                String.valueOf(forceOffload));
+
         MapConfig mapConfig = config.getMapConfig(mapName);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);

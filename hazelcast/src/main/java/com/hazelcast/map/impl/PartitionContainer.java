@@ -173,9 +173,6 @@ public class PartitionContainer {
         if (recordStore != null) {
             // this call also clears and disposes Indexes for that partition
             recordStore.destroy();
-            // Remove record store from the maps after destroy since it could be accessed by
-            // mutation observers.
-            maps.remove(name);
         } else {
             // It can be that, map is used only for locking,
             // because of that RecordStore is not created.
@@ -188,7 +185,6 @@ public class PartitionContainer {
         mapServiceContext.removeMapContainer(mapContainer);
         mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
     }
-
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
