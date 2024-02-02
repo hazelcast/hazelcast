@@ -25,8 +25,7 @@ pushd ${HOME}/lib
     cp -R hazelcast-management-center-*/* ./
 popd
  
-lib/bin/hz-mc conf cluster add --client-config=${HOME}/hazelcast-client.yaml \
-                       >> $LOG_DIR/mancenter.conf.stdout.log 2>> $LOG_DIR/mancenter.conf.stderr.log
+lib/bin/hz-mc conf cluster add --client-config=${HOME}/hazelcast-client.yaml >> $LOG_DIR/mancenter.conf.stdout.log 2>> $LOG_DIR/mancenter.conf.stderr.log
 
 nohup lib/bin/hz-mc start >> $LOG_DIR/mancenter.stdout.log 2>> $LOG_DIR/mancenter.stderr.log &
 

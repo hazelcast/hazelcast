@@ -9,12 +9,17 @@ variable "member_count" {
 }
 
 variable "hazelcast_mancenter_version" {
-  type    = string
+  type = string
 }
 
 variable "azure_ssh_user" {
   type    = string
   default = "ubuntu"
+}
+
+variable "azure_resource_group_name" {
+  type    = string
+  default = "operator-test"
 }
 
 variable "azure_instance_type" {
@@ -33,5 +38,5 @@ variable "azure_tag_value" {
 }
 
 variable "hazelcast_path" {
-  type    = string
+  type = string
 }

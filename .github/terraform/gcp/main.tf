@@ -188,9 +188,7 @@ resource "google_compute_instance" "hazelcast_member" {
     inline = [
       "cd /home/${var.gcp_ssh_user}",
       "chmod 0755 start_gcp_hazelcast_member.sh",
-      "sudo apt-get -qq update > /dev/null",
-      "sudo apt-get -y -qq install openjdk-17-jdk openjdk-17-jre > /dev/null",
-      "./start_gcp_hazelcast_member.sh  ${var.gcp_label_key} ${var.gcp_label_value} ",
+      "./start_gcp_hazelcast_member.sh",
       "sleep 5",
     ]
   }
@@ -285,8 +283,6 @@ resource "google_compute_instance" "hazelcast_mancenter" {
     inline = [
       "cd /home/${var.gcp_ssh_user}",
       "chmod 0755 start_gcp_hazelcast_management_center.sh",
-      "sudo apt-get -qq update > /dev/null",
-      "sudo apt-get -y -qq install openjdk-17-jdk openjdk-17-jre > /dev/null",
       "./start_gcp_hazelcast_management_center.sh ${var.hazelcast_mancenter_version}",
       "sleep 5",
     ]

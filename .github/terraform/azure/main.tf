@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "= 2.23.0"
+      version = "= 3.87.0"
     }
   }
   required_version = ">= 0.13"
@@ -38,12 +38,13 @@ data "template_file" "hazelcast_client" {
 data "template_file" "cloud_init" {
   template = file("${path.module}/cloud-init.yaml")
 }
+
 data "template_cloudinit_config" "config" {
   gzip          = true
   base64_encode = true
   part {
     content_type = "text/cloud-config"
-    content      = "${data.template_file.cloud_init.rendered}"
+    content      = data.template_file.cloud_init.rendered
   }
 }
 
@@ -58,24 +59,18 @@ resource "local_file" "private_key" {
   file_permission = "0600"
 }
 
-# Create a resource group
-resource "azurerm_resource_group" "rg" {
-  name     = "${random_pet.prefix.id}_rg"
-  location = var.location
-}
-
 # Create virtual network
 resource "azurerm_virtual_network" "vnet" {
   name                = "${random_pet.prefix.id}_vnet"
   address_space       = ["10.0.0.0/16"]
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.azure_resource_group_name
 }
 
 # Create subnet
 resource "azurerm_subnet" "subnet" {
   name                 = "${random_pet.prefix.id}_subnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = var.azure_resource_group_name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
@@ -85,20 +80,18 @@ resource "azurerm_public_ip" "publicip" {
   count               = var.member_count + 1
   name                = "${random_pet.prefix.id}_publicip_${count.index}"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.azure_resource_group_name
   allocation_method   = "Static"
 }
-
 
 data "azurerm_subscription" "primary" {}
 
 # Create user assigned managed identity
 resource "azurerm_user_assigned_identity" "hazelcast_reader" {
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.azure_resource_group_name
   location            = var.location
   name                = "${random_pet.prefix.id}_reader_identity"
 }
-
 
 resource "azurerm_role_definition" "reader" {
   name  = "${random_pet.prefix.id}_reader_role_definition"
@@ -116,12 +109,12 @@ resource "azurerm_role_definition" "reader" {
   ]
 }
 
-
 #Assign role to the user assigned managed identity
 resource "azurerm_role_assignment" "reader" {
-  scope              = data.azurerm_subscription.primary.id
-  principal_id       = azurerm_user_assigned_identity.hazelcast_reader.principal_id
-  role_definition_id = azurerm_role_definition.reader.id
+  scope                = data.azurerm_subscription.primary.id
+  principal_id         = azurerm_user_assigned_identity.hazelcast_reader.principal_id
+  role_definition_name = azurerm_role_definition.reader.name
+  depends_on           = [azurerm_role_definition.reader]
 }
 
 # Create network interface(s)
@@ -129,7 +122,7 @@ resource "azurerm_network_interface" "nic" {
   count               = var.member_count + 1
   name                = "${random_pet.prefix.id}_nic_${count.index}"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.azure_resource_group_name
 
   tags = {
     "${var.azure_tag_key}" = var.azure_tag_value
@@ -148,13 +141,13 @@ resource "azurerm_linux_virtual_machine" "hazelcast_member" {
   count                 = var.member_count
   name                  = "${random_pet.prefix.id}-member-${count.index}"
   location              = var.location
-  resource_group_name   = azurerm_resource_group.rg.name
+  resource_group_name   = var.azure_resource_group_name
   network_interface_ids = [azurerm_network_interface.nic[count.index].id]
   size                  = var.azure_instance_type
   admin_username        = var.azure_ssh_user
 
   os_disk {
-    name                 = "OsDisk_${count.index}"
+    name                 = "${random_pet.prefix.id}_osdisk_${count.index}"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
@@ -168,17 +161,15 @@ resource "azurerm_linux_virtual_machine" "hazelcast_member" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
     version   = "latest"
   }
-
 
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.hazelcast_reader.id]
   }
-
 
   connection {
     host        = azurerm_public_ip.publicip[count.index].ip_address
@@ -221,7 +212,7 @@ resource "azurerm_linux_virtual_machine" "hazelcast_member" {
     inline = [
       "cd /home/${var.azure_ssh_user}",
       "chmod 0755 start_azure_hazelcast_member.sh",
-      "./start_azure_hazelcast_member.sh  ${var.azure_tag_key} ${var.azure_tag_value} ",
+      "./start_azure_hazelcast_member.sh",
       "sleep 5",
     ]
   }
@@ -250,18 +241,17 @@ resource "null_resource" "verify_members" {
   }
 }
 
-
 # Create Hazelcast Management Center
 resource "azurerm_linux_virtual_machine" "hazelcast_mancenter" {
   name                  = "${random_pet.prefix.id}-mancenter"
   location              = var.location
-  resource_group_name   = azurerm_resource_group.rg.name
+  resource_group_name   = var.azure_resource_group_name
   network_interface_ids = [azurerm_network_interface.nic[var.member_count].id]
   size                  = "Standard_B1ms"
   admin_username        = var.azure_ssh_user
 
   os_disk {
-    name                 = "OsDisk"
+    name                 = "${random_pet.prefix.id}_osdisk_mancenter"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
@@ -275,17 +265,15 @@ resource "azurerm_linux_virtual_machine" "hazelcast_mancenter" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
     version   = "latest"
   }
-
 
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.hazelcast_reader.id]
   }
-
 
   connection {
     host        = azurerm_public_ip.publicip[var.member_count].ip_address
@@ -321,11 +309,10 @@ resource "azurerm_linux_virtual_machine" "hazelcast_mancenter" {
     inline = [
       "cd /home/${var.azure_ssh_user}",
       "chmod 0755 start_azure_hazelcast_management_center.sh",
-      "./start_azure_hazelcast_management_center.sh ${var.hazelcast_mancenter_version} ${var.azure_tag_key} ${var.azure_tag_value} ",
+      "./start_azure_hazelcast_management_center.sh ${var.hazelcast_mancenter_version}",
     ]
   }
 }
-
 
 resource "null_resource" "verify_mancenter" {
 
@@ -338,7 +325,6 @@ resource "null_resource" "verify_mancenter" {
     agent       = false
     private_key = tls_private_key.ssh.private_key_pem
   }
-
 
   provisioner "remote-exec" {
     inline = [

@@ -1,5 +1,6 @@
 member_count                = "2"
 location                    = "central us"
+azure_resource_group_name   = "operator-test"
 azure_instance_type         = "Standard_B1ms"
 azure_tag_key               = "integration-test"
 azure_tag_value             = "terraform"

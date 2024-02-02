@@ -94,10 +94,15 @@ jobs:
         with:
           creds: ${{ env.AZURE_CREDENTIALS }}
 
-      - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v2.0.0
-        with:
-          terraform_version: 1.1.8
+      - name: Set Azure ServicePrincipal authentication env vars
+        run: |
+          export ARM_CLIENT_ID=$(echo $AZURE_CREDENTIALS | jq -r .clientId)
+          export ARM_CLIENT_SECRET=$(echo $AZURE_CREDENTIALS | jq -r .clientSecret)
+          export ARM_SUBSCRIPTION_ID=$(echo $AZURE_CREDENTIALS | jq -r .subscriptionId)
+          export ARM_TENANT_ID=$(echo $AZURE_CREDENTIALS | jq -r .tenantId)
+
+      - name: Set-up Terraform
+        uses: hashicorp/setup-terraform@v3.0.0
 
       - name: Terraform Init
         working-directory: .github/terraform/azure
