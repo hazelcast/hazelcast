@@ -22,6 +22,9 @@
 
 <suppressions>
 
+    <!-- Exclude all package-info.java files and all files that need any specific headers -->
+    <suppress checks="RegexpHeader" files="package-info.java"/>
+    <suppress checks="RegexpHeader" files="com.hazelcast.internal.hotrestart.impl.gc.ChunkPriorityQueue.java"/>
     <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
@@ -425,6 +428,8 @@
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sources.java"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sinks.java"/>
+    <suppress checks="OuterTypeNumber"
+              files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]internal[\\/]hotrestart[\\/]impl[\\/]di[\\/]DiContainerTest"/>
 
     <!-- Class name checks for client messages -->
     <suppress checks="TypeName"
@@ -447,4 +452,24 @@
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet"/>
 
     <suppress checks="" files="target[\\/]generated-sources"/>
+
+    <!-- Javadoc suppressions -->
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>
+
+    <!-- Hot restart module -->
+    <suppress checks="VisibilityModifier|InnerAssignment"
+              files="com[\\/]hazelcast[\\/]internal[\\/]hotrestart[\\/]impl"/>
+    <suppress checks="FileLength"
+              files="com[\\/]hazelcast[\\/]internal[\\/]hotrestart[\\/]cluster[\\/]ClusterMetadataManager\.java"/>
+    <suppress checks="OuterTypeNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]AbstractConcurrentArrayQueue\.java"/>
+  
+    <!-- BPlusTree -->
+    <suppress checks="FileLength" files="HDBPlusTree.java"/>
+
+    <!-- TieredStore -->
+    <suppress checks="FileLength" files="HybridLogImpl.java"/>
+    <suppress checks="FileLength" files="Index.java"/>
+
+    <suppress checks="HideUtilityClassConstructor" files="com.hazelcast.internal.rest.HazelcastRestSpringApplication"/>
 </suppressions>

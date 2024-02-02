@@ -55,7 +55,7 @@
 
     <!-- Activation here is needed for IntelliJ CheckstyleIDEA plugin -->
     <module name="SuppressionFilter">
-        <property name="file" value="${main.basedir}/checkstyle/suppressions.xml"/>
+        <property name="file" value="${checkstyle.suppressions.file}"/>
     </module>
 
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
@@ -101,7 +101,7 @@
 
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
-    <module name="Header">
+    <module name="RegexpHeader">
         <property name="headerFile" value="${checkstyle.header.file}"/>
         <property name="fileExtensions" value="java"/>
     </module>
