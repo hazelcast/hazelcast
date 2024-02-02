@@ -66,6 +66,14 @@ public interface TestDatabaseRecordProvider {
         assertRows(objectName, List.of(row));
     }
 
+    default void assertRows(String objectName, List<Class<?>> columnType, List<List<Object>> rows) {
+        assertRows(objectName, rows);
+    }
+
+    default void assertRow(String objectName, List<Class<?>> columnType, List<Object> row) {
+        assertRows(objectName, columnType, List.of(row));
+    }
+
     class ObjectSpec {
         public final String name;
         public final List<Column> columns;

@@ -92,5 +92,33 @@ public class OracleUpsertQueryBuilderTest {
                         + "INSERT (\"field1\", \"field2\") VALUES(SOURCE.\"field1\", SOURCE.\"field2\")"
         );
     }
+
+    /*
+     * This test covers the case where there is a primary key in the dbFieldNames
+     * which should be omitted in the UPDATE SET clause.
+     * It also covers the case where the primary key is in the last position
+     * of the dbFieldNames list which caused a redundant comma after the last assignment previously.
+     * We shouldn't get a comma after TARGET."field1" = SOURCE."field1".
+     */
+    @Test
+    public void queryWhenPKPresentInDbFieldNames() {
+        when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
+        when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
+        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "pk1"));
+        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1"));
+
+        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
+        String result = builder.query();
+        assertThat(result).isEqualTo(
+                "MERGE INTO \"table1\" TARGET "
+                        + "USING (SELECT ? as \"field1\", ? as \"pk1\" FROM dual) "
+                        + "SOURCE ON (TARGET.\"pk1\" = SOURCE.\"pk1\") "
+                        + "WHEN MATCHED THEN "
+                        + "UPDATE SET "
+                        + "TARGET.\"field1\" = SOURCE.\"field1\" "
+                        + "WHEN NOT MATCHED THEN "
+                        + "INSERT (\"field1\", \"pk1\") VALUES(SOURCE.\"field1\", SOURCE.\"pk1\")"
+        );
+    }
 }
 

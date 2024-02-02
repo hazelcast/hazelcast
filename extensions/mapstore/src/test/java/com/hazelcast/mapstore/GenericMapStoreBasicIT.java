@@ -205,6 +205,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(0, "name-0")
         );
     }
@@ -221,6 +222,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(0, "name-0")
         );
     }
@@ -238,6 +240,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(0, "updated")
         );
     }
@@ -260,6 +263,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.store(0, person);
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(0, "updated")
         );
     }
@@ -279,7 +283,9 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         }
         mapStore.storeAll(people);
 
-        objectProvider.assertRows(mapName, List.of(
+        objectProvider.assertRows(mapName,
+                newArrayList(Integer.class, String.class),
+                List.of(
                 asList(0, "name-0"),
                 asList(1, "name-1"),
                 asList(2, "name-2"),
@@ -307,6 +313,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.delete(0);
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(1, "name-1")
         );
     }
@@ -324,6 +331,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.delete(0);
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(1, "name-1")
         );
     }
@@ -337,6 +345,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.deleteAll(newArrayList(0, 1));
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(2, "name-2")
         );
     }
@@ -354,6 +363,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.deleteAll(newArrayList(0));
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(1, "name-1")
         );
     }
@@ -367,6 +377,7 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.deleteAll(newArrayList());
 
         objectProvider.assertRow(mapName,
+                newArrayList(Integer.class, String.class),
                 asList(0, "name-0")
         );
     }
@@ -412,7 +423,10 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("INSERT INTO " + mapName + " (id, name) VALUES(0, 'name-0')");
+            stmt.execute(String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
+                    databaseProvider.quote(mapName),
+                    databaseProvider.quote("id"),
+                    databaseProvider.quote("name")));
         }
 
         Properties properties = new Properties();
@@ -428,7 +442,9 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStore.store(1, person);
 
 
-        objectProvider.assertRows(mapName, List.of(
+        objectProvider.assertRows(mapName,
+                newArrayList(Integer.class, String.class, String.class),
+                List.of(
                 asList(0, "name-0", "def"),
                 asList(1, "name-1", "def")
         ));
@@ -442,7 +458,10 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("INSERT INTO " + mapName + " (id, name) VALUES(0, 'name-0')");
+            stmt.execute(String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
+                    databaseProvider.quote(mapName),
+                    databaseProvider.quote("id"),
+                    databaseProvider.quote("name")));
         }
 
         Properties properties = new Properties();
@@ -456,7 +475,9 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         mapStoreSingleColAsValue.store(1, name);
 
 
-        objectProvider.assertRows(mapName, List.of(
+        objectProvider.assertRows(mapName,
+                newArrayList(Integer.class, String.class, String.class),
+                List.of(
                 asList(0, "name-0", "def"),
                 asList(1, "name-1", "def")
         ));
@@ -470,7 +491,10 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("INSERT INTO " + mapName + " (id, name) VALUES(0, 'name-0')");
+            stmt.execute(String.format("INSERT INTO %s (%s, %s) VALUES(0, 'name-0')",
+                    databaseProvider.quote(mapName),
+                    databaseProvider.quote("id"),
+                    databaseProvider.quote("name")));
         }
 
         Properties properties = new Properties();
@@ -484,7 +508,9 @@ public class GenericMapStoreBasicIT extends GenericMapLoaderTest {
                 .build();
         mapStore.store(1, person);
 
-        objectProvider.assertRows(mapName, List.of(
+        objectProvider.assertRows(mapName,
+                newArrayList(Integer.class, String.class, String.class),
+                List.of(
                 asList(0, "name-0", "def"),
                 asList(1, "name-1", "def")
         ));

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.Column.col;
 import static com.hazelcast.test.jdbc.TestDatabaseRecordProvider.ColumnType.INT;
@@ -83,11 +84,11 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
         }
     }
 
-    private String pk(Column c) {
+    protected String pk(Column c) {
         return c.primaryKey ? " PRIMARY KEY" : "";
     }
 
-    private String resolveType(ColumnType type) {
+    protected String resolveType(ColumnType type) {
         switch (type) {
             case INT: return "INT";
             case STRING: return "VARCHAR(100)";
@@ -95,7 +96,7 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
         }
     }
 
-    private String createSql(String objectName, String... columns) {
+    protected String createSql(String objectName, String... columns) {
         return "CREATE TABLE " + objectName + " (" + String.join(", ", columns) + ")";
     }
 
@@ -137,6 +138,12 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
     }
 
+    @Override
+    public void assertRows(String tableName, List<Class<?>> columnType, List<List<Object>> rows) {
+        List<List<Object>> actualRows = jdbcRows("SELECT * FROM " + tableName, databaseProvider.url(), columnType);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
+    }
+
     public static List<List<Object>> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
         List<List<Object>> rows = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(connectionUrl);
@@ -160,7 +167,13 @@ public class JdbcObjectProvider implements TestDatabaseRecordProvider {
     }
 
     public void createTable(String tableName, String... columns) {
-        String sql = "CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")";
+        String sql = "CREATE TABLE " + databaseProvider.quote(tableName) + " ("
+                + Stream.of(columns)
+                .map(s -> {
+                    int spaceIndex = s.indexOf(' ');
+                    return databaseProvider.quote(s.substring(0, spaceIndex)) + s.substring(spaceIndex);
+                }).collect(joining(", "))
+                + ")";
         try (Connection conn = DriverManager.getConnection(databaseProvider.url());
              Statement stmt = conn.createStatement()
         ) {

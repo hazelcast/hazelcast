@@ -66,6 +66,7 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         sb.append("SET ");
         List<String> pkList = jdbcTable.getPrimaryKeyList();
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
+        boolean needsDelimiter = false;
         while (it.hasNext()) {
             String dbFieldName = it.next();
             // Oracle doesn't allow updating the values referenced in the ON clause i.e. the primary keys
@@ -73,14 +74,14 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
             if (pkList.contains(dbFieldName)) {
                 continue;
             }
-
+            if (needsDelimiter) {
+                sb.append(", ");
+            }
             sb.append("TARGET.");
             dialect.quoteIdentifier(sb, dbFieldName);
             sb.append(" = SOURCE.");
             dialect.quoteIdentifier(sb, dbFieldName);
-            if (it.hasNext()) {
-                sb.append(", ");
-            }
+            needsDelimiter = true;
         }
         sb.append(" WHEN NOT MATCHED THEN INSERT ");
         appendFieldNames(sb, jdbcTable.dbFieldNames());
