@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, NightlyTest.class})
-public class KafkaConnectMongoDbIntegrationTest extends JetTestSupport {
+public class KafkaConnectMongoDbIT extends JetTestSupport {
     private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
     private static MongoDBContainer mongoContainer;
     private static MongoClient mongoClient;
