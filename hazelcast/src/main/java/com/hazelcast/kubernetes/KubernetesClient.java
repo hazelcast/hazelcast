@@ -16,7 +16,6 @@
 
 package com.hazelcast.kubernetes;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
@@ -35,7 +34,6 @@ import com.hazelcast.spi.utils.RetryUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -934,11 +932,7 @@ class KubernetesClient {
 
         String formatStsListUrl() {
             String fieldSelectorValue = String.format("metadata.name=%s", stsName);
-            try {
-                fieldSelectorValue = URLEncoder.encode(fieldSelectorValue, StandardCharsets.UTF_8.name());
-            } catch (UnsupportedEncodingException e) {
-                throw new HazelcastException(e);
-            }
+            fieldSelectorValue = URLEncoder.encode(fieldSelectorValue, StandardCharsets.UTF_8);
             return String.format("%s/apis/apps/v1/namespaces/%s/statefulsets?fieldSelector=%s", kubernetesMaster,
                     namespace, fieldSelectorValue);
         }

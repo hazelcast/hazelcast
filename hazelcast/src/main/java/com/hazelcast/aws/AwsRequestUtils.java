@@ -16,11 +16,10 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.utils.RestClient;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Instant;
@@ -83,13 +82,9 @@ final class AwsRequestUtils {
 
     private static String urlEncode(String string) {
         String encoded;
-        try {
-            encoded = URLEncoder.encode(string, "UTF-8")
-                    .replace("+", "%20")
-                    .replace("*", "%2A");
-        } catch (UnsupportedEncodingException e) {
-            throw new HazelcastException(e);
-        }
+        encoded = URLEncoder.encode(string, StandardCharsets.UTF_8)
+                .replace("+", "%20")
+                .replace("*", "%2A");
         return encoded;
     }
 
