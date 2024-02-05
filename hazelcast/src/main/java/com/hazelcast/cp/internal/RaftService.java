@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -30,9 +31,11 @@ import com.hazelcast.cp.event.CPMembershipEvent;
 import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
+import com.hazelcast.cp.internal.operation.GetCPObjectInfosOp;
 import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeStateReplicationOp;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
@@ -113,6 +116,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -174,6 +178,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
     private static final long AVAILABILITY_EVENTS_DEDUPLICATION_PERIOD = TimeUnit.MINUTES.toMillis(1);
+    private static final int TRY_COUNT = 10;
 
     private final ReadWriteLock nodeLock = new ReentrantReadWriteLock();
     @Probe(name = CP_METRIC_RAFT_SERVICE_NODES)
@@ -288,6 +293,52 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     public InternalCompletableFuture<CPGroup> getCPGroup(String name) {
         return invocationManager.query(getMetadataGroupId(), new GetActiveRaftGroupByNameOp(name), LINEARIZABLE);
     }
+
+    public CompletableFuture<Collection<String>> getObjectNames(
+            CPGroupId groupId,
+            String serviceName,
+            boolean returnTombstone) {
+
+        RaftNode raftNode = getRaftNode(groupId);
+        if (raftNode != null) {
+            RaftEndpoint endpoint = raftNode.getLeader();
+            if (endpoint == null) {
+                throw new NotLeaderException(groupId, raftNode.getLocalMember(), null);
+            }
+            CPMember cpMember = invocationManager
+                    .getRaftInvocationContext()
+                    .getCPMember(endpoint.getUuid());
+
+            GetCPObjectInfosOp op = new GetCPObjectInfosOp(groupId, serviceName, returnTombstone);
+            return nodeEngine.getOperationService()
+                    .createInvocationBuilder(null, op, cpMember.getAddress())
+                    .setTryCount(TRY_COUNT)
+                    .<Collection<String>>invoke()
+                    .toCompletableFuture();
+        } else {
+            InternalCompletableFuture<CPGroup> cpGroup = getCPGroup(groupId);
+            return cpGroup.thenApplyAsync(group -> {
+                Collection<CPMember> members = group.members();
+                for (CPMember cpMember : members) {
+                    GetCPObjectInfosOp op = new GetCPObjectInfosOp(groupId, serviceName, returnTombstone);
+                    try {
+                        //noinspection unchecked
+                        return (Collection<String>) nodeEngine.getOperationService()
+                                .invokeOnTarget(null, op, cpMember.getAddress())
+                                .get();
+                    } catch (ExecutionException e) {
+                        if (!(e.getCause() instanceof NotLeaderException)) {
+                            throw new HazelcastException(e);
+                        }
+                    } catch (InterruptedException e) {
+                        throw new HazelcastException(e);
+                    }
+                }
+                throw new HazelcastException("Could not retrieve CPObjectInfos");
+            }, nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
+        }
+    }
+
 
     InternalCompletableFuture<Void> resetCPSubsystem() {
         checkState(cpSubsystemEnabled, "CP Subsystem is not enabled!");

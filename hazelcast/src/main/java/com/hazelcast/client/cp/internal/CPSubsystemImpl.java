@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddMembershipListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemGetCPGroupIdsCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemGetCPObjectInfosCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveMembershipListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -33,6 +34,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.CPObjectInfo;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.IAtomicLong;
@@ -46,6 +48,7 @@ import com.hazelcast.cp.event.CPMembershipEvent.EventType;
 import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.event.impl.CPMembershipEventImpl;
+import com.hazelcast.cp.internal.CPObjectInfoImpl;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
@@ -182,10 +185,46 @@ public class CPSubsystemImpl implements CPSubsystem {
         }
     }
 
+    @Nonnull
+    @Override
+    public Iterable<CPObjectInfo> getObjectInfos(@Nonnull CPGroupId groupId, @Nonnull String serviceName) {
+        return internalGetObjectInfos(groupId, serviceName, false);
+    }
+
+    @Nonnull
+    @Override
+    public Iterable<CPObjectInfo> getTombstoneInfos(@Nonnull CPGroupId groupId, @Nonnull String serviceName) {
+        return internalGetObjectInfos(groupId, serviceName, true);
+    }
+
+    private List<CPObjectInfo> internalGetObjectInfos(CPGroupId groupId, String serviceName, boolean tombstone) {
+        ClientMessage clientMessage = CPSubsystemGetCPObjectInfosCodec.encodeRequest(
+                (RaftGroupId) groupId,
+                serviceName,
+                tombstone
+        );
+        ClientInvocation invocation = new ClientInvocation(
+                (HazelcastClientInstanceImpl) context.getHazelcastInstance(),
+                clientMessage,
+                null
+        );
+        ClientInvocationFuture future = invocation.invoke();
+        try {
+            return future.thenApplyAsync(CPSubsystemGetCPObjectInfosCodec::decodeResponse, CALLER_RUNS)
+                    .get()
+                    .stream()
+                    .map(name -> (CPObjectInfo) new CPObjectInfoImpl(name, serviceName, groupId))
+                    .toList();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new HazelcastException("Could not retrieve CP object infos", e);
+        }
+    }
+
     private static class CPMembershipEventHandler extends CPSubsystemAddMembershipListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final CPMembershipListener listener;
+
         CPMembershipEventHandler(CPMembershipListener listener) {
             this.listener = listener;
         }
@@ -221,7 +260,7 @@ public class CPSubsystemImpl implements CPSubsystem {
         }
 
         public void handleGroupAvailabilityEventEvent(RaftGroupId groupId, Collection<CPMember> members,
-                Collection<CPMember> unavailableMembers, boolean isShutdown) {
+                                                      Collection<CPMember> unavailableMembers, boolean isShutdown) {
 
             long now = Clock.currentTimeMillis();
             recentEvents.values().removeIf(expirationTime -> expirationTime < now);

@@ -37,6 +37,7 @@ import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddMembershipListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemGetCPGroupIdsCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemGetCPObjectInfosCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveMembershipListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
@@ -820,6 +821,7 @@ import com.hazelcast.client.impl.protocol.task.transactionalset.TransactionalSet
 import com.hazelcast.cp.internal.client.AddCPGroupAvailabilityListenerMessageTask;
 import com.hazelcast.cp.internal.client.AddCPMembershipListenerMessageTask;
 import com.hazelcast.cp.internal.client.CPSubsystemGetCPGroupIdsMessageTask;
+import com.hazelcast.cp.internal.client.CPSubsystemGetCPObjectInfosMessageTask;
 import com.hazelcast.cp.internal.client.RemoveCPGroupAvailabilityListenerMessageTask;
 import com.hazelcast.cp.internal.client.RemoveCPMembershipListenerMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.client.AddAndGetMessageTask;
@@ -1737,6 +1739,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new RemoveCPGroupAvailabilityListenerMessageTask(cm, node, con));
         factories.put(CPSubsystemGetCPGroupIdsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CPSubsystemGetCPGroupIdsMessageTask(cm, node, con));
+        factories.put(CPSubsystemGetCPObjectInfosCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new CPSubsystemGetCPObjectInfosMessageTask(cm, node, con));
     }
 
     private void initializeAtomicLongTaskFactories() {

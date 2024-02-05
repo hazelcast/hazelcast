@@ -22,6 +22,7 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.CPObjectInfo;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.IAtomicLong;
@@ -30,31 +31,45 @@ import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
+import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
+import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueSnapshot;
+import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
+import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Provides access to CP Subsystem utilities
  */
 public class CPSubsystemImpl implements CPSubsystem {
+
     public static final String CPMAP_LICENSE_MESSAGE =
             "CPMap is not included in your license. Please also ensure you are using the enterprise client.";
 
@@ -71,7 +86,7 @@ public class CPSubsystemImpl implements CPSubsystem {
             logger.info("CP Subsystem is enabled with " + cpMemberCount + " members.");
         } else {
             logger.warning("CP Subsystem is not enabled. CP data structures will operate in UNSAFE mode! "
-                    + "Please note that UNSAFE mode will not provide strong consistency guarantees.");
+                           + "Please note that UNSAFE mode will not provide strong consistency guarantees.");
         }
     }
 
@@ -142,7 +157,7 @@ public class CPSubsystemImpl implements CPSubsystem {
         return nodeEngine.getService(serviceName);
     }
 
-    protected  <T extends DistributedObject> T createProxy(String serviceName, String name) {
+    protected <T extends DistributedObject> T createProxy(String serviceName, String name) {
         RaftRemoteService service = getService(serviceName);
         return service.createProxy(name);
     }
@@ -187,10 +202,103 @@ public class CPSubsystemImpl implements CPSubsystem {
         }
     }
 
+    @Nonnull
+    @Override
+    public Iterable<CPObjectInfo> getObjectInfos(@Nonnull CPGroupId groupId, @Nonnull String serviceName) {
+        return getCPObjectInfos(groupId, serviceName, false);
+    }
+
+    @Nonnull
+    @Override
+    public Iterable<CPObjectInfo> getTombstoneInfos(@Nonnull CPGroupId groupId, @Nonnull String serviceName) {
+        return getCPObjectInfos(groupId, serviceName, true);
+    }
+
+    private Iterable<CPObjectInfo> getCPObjectInfos(CPGroupId groupId, String serviceName, boolean returnTombstone) {
+        RaftService raftService = getService(RaftService.SERVICE_NAME);
+        try {
+            // The names need to be collected from a snapshot on leader of the group
+            Collection<String> names = raftService.getObjectNames(groupId, serviceName, returnTombstone).get();
+            return toObjectInfos(names, serviceName, groupId);
+        } catch (InterruptedException | ExecutionException e) {
+            if (e.getCause() instanceof NotLeaderException) {
+                throw (NotLeaderException) e.getCause();
+            }
+            if (e.getCause() instanceof TargetNotMemberException) {
+                throw new NotLeaderException(groupId, raftService.getLocalCPEndpoint(), null);
+            }
+            throw new HazelcastException(e);
+        }
+    }
+
+    private static Iterable<CPObjectInfo> toObjectInfos(
+            Collection<String> names,
+            String serviceName,
+            CPGroupId groupId) {
+
+        return names.stream()
+                .map(name -> new CPObjectInfoImpl(name, serviceName, groupId))
+                .collect(toList());
+    }
+
+    public Collection<String> getCPObjectNames(CPGroupId groupId, String serviceName, boolean returnTombstone) {
+        switch (serviceName) {
+            case LockService.SERVICE_NAME:
+            case SemaphoreService.SERVICE_NAME:
+            case CountDownLatchService.SERVICE_NAME:
+                return listSnapshotAwareServiceResourceNames(
+                        groupId,
+                        returnTombstone,
+                        serviceName,
+                        ResourceRegistry::getDestroyedNames,
+                        (ResourceRegistry<?, ?> registry) -> Set.copyOf(registry.getResources().keySet())
+                );
+
+            case AtomicLongService.SERVICE_NAME:
+            case AtomicRefService.SERVICE_NAME:
+                return listSnapshotAwareServiceResourceNames(
+                        groupId,
+                        returnTombstone,
+                        serviceName,
+                        RaftAtomicValueSnapshot::getDestroyed,
+                        (RaftAtomicValueSnapshot<?> snapshot) ->
+                                StreamSupport.stream(snapshot.getValues().spliterator(), false)
+                                        .map(Map.Entry::getKey)
+                                        .collect(Collectors.toSet())
+                );
+
+            case CPMapServiceUtil.SERVICE_NAME:
+                // This behavior is overridden in EE
+                throw new UnsupportedOperationException(CPMAP_LICENSE_MESSAGE);
+
+            default:
+                throw new IllegalArgumentException("Calling getCPObjectInfo is not supported for " + serviceName);
+        }
+    }
+
+    protected <T> Collection<String> listSnapshotAwareServiceResourceNames(
+            CPGroupId groupId,
+            boolean tombstone,
+            String serviceName,
+            Function<T, Collection<String>> tombstonesFn,
+            Function<T, Collection<String>> resourceFn
+    ) {
+        SnapshotAwareService<T> service = nodeEngine.getService(serviceName);
+        T snapshot = service.takeSnapshot(groupId, -1);
+        if (snapshot == null) {
+            return Collections.emptyList();
+        }
+        if (tombstone) {
+            return tombstonesFn.apply(snapshot);
+        } else {
+            return resourceFn.apply(snapshot);
+        }
+    }
+
     /*
-    'map' is already taken in HazelcastNamespaceProvider for Spring support. When you create a 'hz:cpmap' type (see
-    fullConfig-applicationContext-hazelcast.xml) it will call this method as per the semantics of HazelcastNamespaceProvider.
-     */
+        'map' is already taken in HazelcastNamespaceProvider for Spring support. When you create a 'hz:cpmap' type (see
+        fullConfig-applicationContext-hazelcast.xml) it will call this method as per the semantics of HazelcastNamespaceProvider.
+         */
     private <K, V> CPMap<K, V> getCpmap(@Nonnull String name) {
         return getMap(name);
     }

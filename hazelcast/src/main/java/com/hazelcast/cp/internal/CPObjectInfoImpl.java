@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp;
+package com.hazelcast.cp.internal;
 
-/**
- * Identifier for CP groups.
- *
- * @see CPGroup
- * @see CPSubsystem
- */
-public interface CPGroupId {
-    /**
-     * Returns name of the CP group.
-     */
-    String getName();
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPObjectInfo;
 
-    /**
-     * Returns unique id of the CP group.
-     */
-    long getId();
+import static java.util.Objects.requireNonNull;
+
+public record CPObjectInfoImpl(String name, String serviceName, CPGroupId groupId) implements CPObjectInfo {
+
+    public CPObjectInfoImpl(String name, String serviceName, CPGroupId groupId) {
+        this.name = requireNonNull(name, "name must not be null");
+        this.serviceName = requireNonNull(serviceName, "serviceName must not be null");
+        this.groupId = requireNonNull(groupId, "groupId must not be null");
+    }
+
 }
