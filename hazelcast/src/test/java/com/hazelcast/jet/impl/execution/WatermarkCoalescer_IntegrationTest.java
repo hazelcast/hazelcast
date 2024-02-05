@@ -197,11 +197,11 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
             while (pos < list.size()) {
                 Object item = list.get(pos);
-                if (item instanceof SerializableWm) {
-                    item = new Watermark(((SerializableWm) item).timestamp);
-                } else if (item instanceof Delay) {
-                    getLogger().info("will wait " + ((Delay) item).millis + " ms");
-                    nextItemAt = System.nanoTime() + MILLISECONDS.toNanos(((Delay) item).millis);
+                if (item instanceof SerializableWm serializableWm) {
+                    item = new Watermark(serializableWm.timestamp);
+                } else if (item instanceof Delay delay) {
+                    getLogger().info("will wait " + delay.millis + " ms");
+                    nextItemAt = System.nanoTime() + MILLISECONDS.toNanos(delay.millis);
                     pos++;
                     return false;
                 } else if (item.equals(DONE_ITEM_STR)) {

@@ -755,8 +755,8 @@ public class AggregateOperationsTest {
     }
 
     private static void assertEqualsOrArrayEquals(String msg, Object expected, Object actual) {
-        if (expected instanceof Object[]) {
-            assertArrayEquals(msg, (Object[]) expected, (Object[]) actual);
+        if (expected instanceof Object[] objectArray) {
+            assertArrayEquals(msg, objectArray, (Object[]) actual);
         } else {
             assertEquals(msg, expected, actual);
         }

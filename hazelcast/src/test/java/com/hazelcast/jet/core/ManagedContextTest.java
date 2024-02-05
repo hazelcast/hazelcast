@@ -152,23 +152,23 @@ public class ManagedContextTest extends JetTestSupport {
             if (obj instanceof AnotherTestProcessor) {
                 return new TestProcessor().setInjectedValue(INJECTED_VALUE);
             }
-            if (obj instanceof TestServiceContext) {
-                ((TestServiceContext) obj).injectedValue = INJECTED_VALUE;
+            if (obj instanceof TestServiceContext testServiceContext) {
+                testServiceContext.injectedValue = INJECTED_VALUE;
             } else if (obj instanceof AnotherTestServiceContext) {
                 return new TestServiceContext().setInjectedValue(INJECTED_VALUE);
             }
-            if (obj instanceof SourceContext) {
-                ((SourceContext) obj).injectedValue = INJECTED_VALUE;
+            if (obj instanceof SourceContext sourceContext) {
+                sourceContext.injectedValue = INJECTED_VALUE;
             } else if (obj instanceof AnotherSourceContext) {
                 return new SourceContext().setInjectedValue(INJECTED_VALUE);
             }
-            if (obj instanceof SinkContext) {
-                ((SinkContext) obj).injectedValue = INJECTED_VALUE;
+            if (obj instanceof SinkContext sinkContext) {
+                sinkContext.injectedValue = INJECTED_VALUE;
             } else if (obj instanceof AnotherSinkContext) {
                 return new SinkContext().setInjectedValue(INJECTED_VALUE);
             }
-            if (obj instanceof TestProcessor) {
-                ((TestProcessor) obj).injectedValue = INJECTED_VALUE;
+            if (obj instanceof TestProcessor testProcessor) {
+                testProcessor.injectedValue = INJECTED_VALUE;
             }
             return obj;
         }

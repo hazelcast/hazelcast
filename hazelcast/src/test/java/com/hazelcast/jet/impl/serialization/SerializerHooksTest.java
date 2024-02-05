@@ -103,9 +103,9 @@ public class SerializerHooksTest {
         Object deserialized = serializationService.toObject(serialized);
 
         assertNotSame("serialization/deserialization didn't take place", instance, deserialized);
-        if (instance instanceof Object[]) {
+        if (instance instanceof Object[] objectArray) {
             assertArrayEquals("objects are not equal after serialize/deserialize",
-                    (Object[]) instance, (Object[]) deserialized);
+                    objectArray, (Object[]) deserialized);
         } else {
             assertEquals("objects are not equal after serialize/deserialize", instance, deserialized);
         }
