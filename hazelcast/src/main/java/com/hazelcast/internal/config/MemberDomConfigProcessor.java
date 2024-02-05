@@ -2737,8 +2737,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String id = getAttribute(node, "id");
         if (url != null) {
             nsConfig.addJar(url, id);
-        } else {
-            throw new InvalidConfigurationException("Path for jar is missing");
         }
     }
 
@@ -2747,8 +2745,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String id = getAttribute(node, "id");
         if (url != null) {
             nsConfig.addJarsInZip(url, id);
-        } else {
-            throw new InvalidConfigurationException("Path for jars-in-zip is missing");
         }
     }
 
