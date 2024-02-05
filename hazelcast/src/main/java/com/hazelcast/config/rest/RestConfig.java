@@ -600,9 +600,9 @@ public class RestConfig {
 
     /**
      * Sets the expiration duration for jwt token.
+     * <b>WARNING:</b> The resolution for tokenValidityDuration can not be more than a second.
      *
      * @param tokenValidityDuration the duration for which the token should be valid.
-     * @warning This resolution for tokenValidityDuration can not be more than a second.
      */
     public void setTokenValidityDuration(Duration tokenValidityDuration) {
         this.tokenValidityDuration = tokenValidityDuration;
