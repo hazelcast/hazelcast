@@ -102,15 +102,13 @@ public class Planner {
         LoggingUtil.logFine(LOGGER, "Watermarks in the pipeline will be throttled to %d", frameSizeGcd);
         // Update watermark throttling frame length on all transforms with the determined length
         for (Transform transform : adjacencyMap.keySet()) {
-            if (transform instanceof StreamSourceTransform) {
-                StreamSourceTransform t = (StreamSourceTransform) transform;
-                EventTimePolicy policy = t.getEventTimePolicy();
+            if (transform instanceof StreamSourceTransform streamSourceTransform) {
+                EventTimePolicy policy = streamSourceTransform.getEventTimePolicy();
                 if (policy != null) {
-                    t.setEventTimePolicy(withFrameSize(policy, frameSizeGcd));
+                    streamSourceTransform.setEventTimePolicy(withFrameSize(policy, frameSizeGcd));
                 }
-            } else if (transform instanceof TimestampTransform) {
-                TimestampTransform t = (TimestampTransform) transform;
-                t.setEventTimePolicy(withFrameSize(t.getEventTimePolicy(), frameSizeGcd));
+            } else if (transform instanceof TimestampTransform timestampTransform) {
+                timestampTransform.setEventTimePolicy(withFrameSize(timestampTransform.getEventTimePolicy(), frameSizeGcd));
             }
         }
 

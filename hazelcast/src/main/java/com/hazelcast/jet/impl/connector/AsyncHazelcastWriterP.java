@@ -152,8 +152,8 @@ public abstract class AsyncHazelcastWriterP implements Processor {
 
     private void checkError() {
         Throwable t = firstError.get();
-        if (t instanceof HazelcastInstanceNotActiveException) {
-            throw handleInstanceNotActive((HazelcastInstanceNotActiveException) t, isLocal());
+        if (t instanceof HazelcastInstanceNotActiveException hazelcastInstanceNotActiveException) {
+            throw handleInstanceNotActive(hazelcastInstanceNotActiveException, isLocal());
         } else if (t != null) {
             throw sneakyThrow(t);
         }

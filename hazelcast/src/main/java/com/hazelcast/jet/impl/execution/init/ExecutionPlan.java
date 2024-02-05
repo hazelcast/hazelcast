@@ -495,8 +495,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 .map(EdgeDef::partitioner)
                 .filter(Objects::nonNull)
                 .forEach(partitioner -> {
-                            if (partitioner instanceof SerializationServiceAware) {
-                                ((SerializationServiceAware) partitioner).setSerializationService(jobSerializationService);
+                            if (partitioner instanceof SerializationServiceAware serializationServiceAware) {
+                                serializationServiceAware.setSerializationService(jobSerializationService);
                             }
                             partitioner.init(object -> partitionService.getPartitionId(jobSerializationService.toData(object)));
                         }

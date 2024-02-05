@@ -154,8 +154,8 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         if (isLightJob) {
             validateConfigForLightJobs(config);
         }
-        if (jobDefinition instanceof PipelineImpl) {
-            config = config.attachAll(((PipelineImpl) jobDefinition).attachedFiles());
+        if (jobDefinition instanceof PipelineImpl pipelineImpl) {
+            config = config.attachAll(pipelineImpl.attachedFiles());
         }
         if (!config.getResourceConfigs().isEmpty()) {
             uploadResources(jobId, config);

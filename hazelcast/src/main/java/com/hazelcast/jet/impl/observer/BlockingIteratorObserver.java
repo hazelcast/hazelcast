@@ -58,8 +58,8 @@ public final class BlockingIteratorObserver<T> implements Iterator<T>, Observer<
             next = waitForNext();
         }
 
-        if (next instanceof WrappedThrowable) {
-            throw rethrow(((WrappedThrowable) next).get());
+        if (next instanceof WrappedThrowable wrappedThrowable) {
+            throw rethrow(wrappedThrowable.get());
         } else {
             return next != COMPLETED;
         }
