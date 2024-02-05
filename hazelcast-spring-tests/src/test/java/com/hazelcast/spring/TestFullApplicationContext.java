@@ -35,7 +35,6 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -79,8 +78,6 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.UserCodeNamespaceConfig;
-import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -144,11 +141,9 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
@@ -180,22 +175,16 @@ import com.hazelcast.wan.WanPublisherState;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -204,7 +193,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -219,9 +207,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.Boolean.TRUE;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -326,9 +312,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "pnCounter")
     private PNCounter pnCounter;
-
-    @Rule
-    public final TemporaryFolder tempDir = new TemporaryFolder();
 
     @BeforeClass
     public static void start() {
@@ -1726,81 +1709,5 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertTrue(tpcConfig.isEnabled());
         assertEquals(12, tpcConfig.getEventloopCount());
-    }
-
-    @Test
-    @Ignore("Pending move to EE codebase")
-    public void testNamespacesConfig() throws IOException {
-        //load expected files from resources. These are the files that are expected to be loaded by the NamespaceConfig
-        //and the contents of these files are compared to the contents of the ResourceDefinition objects payload.
-        Path jarPath = tempDir.newFile("testjar.jar").toPath();
-        Path zipPath = tempDir.newFile("testjar.zip").toPath();
-        Files.copy(getClass().getResourceAsStream("namespaces/testjar.jar"), jarPath, REPLACE_EXISTING);
-        Files.copy(getClass().getResourceAsStream("namespaces/testjar.zip"), zipPath, REPLACE_EXISTING);
-
-        final String expectedJarURL = "file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.jar";
-        final String expectedZipURL = "file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.zip";
-
-        final UserCodeNamespacesConfig userCodeNamespacesConfig = config.getNamespacesConfig();
-        assertTrue(userCodeNamespacesConfig.isEnabled());
-        assertEquals(2, ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).size());
-
-        final UserCodeNamespaceConfig userCodeNamespaceConfig = ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).get("ns1");
-
-        assertNotNull(userCodeNamespaceConfig);
-        assertEquals("ns1", userCodeNamespaceConfig.getName());
-
-        assertEquals(2, ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig).size());
-
-        //validate NS1 ResourceDefinition contents.
-        Collection<ResourceDefinition> ns1Resources = ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig);
-        assertEquals(2, ns1Resources.size());
-
-        Optional<ResourceDefinition> jarIdResource = ns1Resources.stream().filter(r -> r.id().equals("ns1jar")).findFirst();
-        assertTrue(jarIdResource.isPresent());
-        assertEquals(expectedJarURL, jarIdResource.get().url());
-        assertEquals(ResourceType.JAR, jarIdResource.get().type());
-        //check the bytes[] are equal
-        assertArrayEquals(getTestFileBytes(jarPath.toFile()), jarIdResource.get().payload());
-
-        Optional<ResourceDefinition> zipId = ns1Resources.stream().filter(r -> r.id().equals("ns1jarsInZip")).findFirst();
-        assertTrue(zipId.isPresent());
-        assertEquals(expectedZipURL, zipId.get().url());
-        assertEquals(ResourceType.JARS_IN_ZIP, zipId.get().type());
-        //check the bytes[] are equal
-        assertArrayEquals(getTestFileBytes(zipPath.toFile()), zipId.get().payload());
-        //validate NS2 ResourceDefinition contents.
-
-        final UserCodeNamespaceConfig userCodeNamespaceConfig2 = ConfigAccessor.getNamespaceConfigs(config.getNamespacesConfig()).get("ns2");
-        assertNotNull(userCodeNamespaceConfig2);
-        assertEquals("ns2", userCodeNamespaceConfig2.getName());
-
-        Collection<ResourceDefinition> ns2Resources = ConfigAccessor.getResourceDefinitions(userCodeNamespaceConfig2);
-        assertEquals(2, ns2Resources.size());
-        Optional<ResourceDefinition> jarId2Resource = ns2Resources.stream().filter(r -> r.id().equals("ns2jar")).findFirst();
-
-        assertTrue(jarId2Resource.isPresent());
-        assertEquals(jarId2Resource.get().url(), expectedJarURL);
-        assertEquals(ResourceType.JAR, jarId2Resource.get().type());
-        //check the bytes[] are equal
-        assertArrayEquals(getTestFileBytes(jarPath.toFile()), jarId2Resource.get().payload());
-
-        //non-id supplied resource definition should use url.
-        Optional<ResourceDefinition> jarResource = ns2Resources.stream().filter(r -> r.url().equals(expectedZipURL)).findFirst();
-        assertTrue(jarResource.isPresent());
-        assertEquals(ResourceType.JARS_IN_ZIP, jarResource.get().type());
-        assertEquals(expectedZipURL, jarResource.get().url());
-        //check the bytes[] are equal
-        assertArrayEquals(getTestFileBytes(zipPath.toFile()), jarResource.get().payload());
-
-        // Validate filtering config
-        assertNotNull(userCodeNamespacesConfig.getClassFilterConfig());
-        JavaSerializationFilterConfig filterConfig = userCodeNamespacesConfig.getClassFilterConfig();
-        assertTrue(filterConfig.isDefaultsDisabled());
-        assertTrue(filterConfig.getWhitelist().isListed("com.acme.app.FakeClass"));
-        assertTrue(filterConfig.getWhitelist().isListed("com.hazelcast.fake.place.MagicClass"));
-        assertFalse(filterConfig.getWhitelist().isListed("not.in.the.whitelist.ClassName"));
-        assertTrue(filterConfig.getBlacklist().isListed("com.acme.app.BeanComparator"));
-        assertFalse(filterConfig.getBlacklist().isListed("not.in.the.blacklist.ClassName"));
     }
 }

@@ -1184,34 +1184,6 @@
             <hz:tpc enabled="true">
                 <hz:eventloop-count>12</hz:eventloop-count>
             </hz:tpc>
-            <!-- TODO: Move Namespace testing to EE (post-merge) -->
-            <hz:user-code-namespaces enabled="false">
-                <hz:class-filter defaults-disabled="true">
-                    <hz:blacklist>
-                        <hz:class>com.acme.app.BeanComparator</hz:class>
-                    </hz:blacklist>
-                    <hz:whitelist>
-                        <hz:package>com.acme.app</hz:package>
-                        <hz:prefix>com.hazelcast.</hz:prefix>
-                    </hz:whitelist>
-                </hz:class-filter>
-                <hz:namespace name="ns1">
-                    <hz:jar id="ns1jar">
-                        <hz:url>file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.jar</hz:url>
-                    </hz:jar>
-                    <hz:jars-in-zip id="ns1jarsInZip">
-                        <hz:url>file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.zip</hz:url>
-                    </hz:jars-in-zip>
-                </hz:namespace>
-                <hz:namespace name="ns2">
-                    <hz:jar id="ns2jar">
-                        <hz:url>file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.jar</hz:url>
-                    </hz:jar>
-                    <hz:jars-in-zip>
-                        <hz:url>file:./src/test/resources/com/hazelcast/spring/namespaces/testjar.zip</hz:url>
-                    </hz:jars-in-zip>
-                </hz:namespace>
-            </hz:user-code-namespaces>
         </hz:config>
     </hz:hazelcast>
 
