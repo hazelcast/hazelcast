@@ -32,6 +32,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
@@ -135,6 +136,8 @@ public class JobClassLoaderService {
             List<URL> list = entry.getValue().stream()
                                   .map(jar -> {
                                       try {
+                                          assert Files.exists(Paths.get(customLibDir))
+                                                  : "Directory " + customLibDir + " does not exist";
                                           Path path = Paths.get(customLibDir, jar);
                                           return path.toUri().toURL();
                                       } catch (MalformedURLException e) {

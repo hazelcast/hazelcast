@@ -25,7 +25,6 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -42,17 +41,17 @@ import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.example.jet.impl.deployment.ResourceCollector;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,6 +61,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ProcessorClassLoaderTest extends JetTestSupport {
+
+    @ClassRule
+    public static final TemporaryFolder tempDir = new TemporaryFolder();
     private static final ILogger LOGGER = Logger.getLogger(ProcessorClassLoaderTest.class);
     private static final String SOURCE_NAME = "test-source";
 
@@ -74,7 +76,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        jarFile = File.createTempFile("source_", ".jar");
+        jarFile = tempDir.newFile("source_" + System.currentTimeMillis() + ".jar");
         JarUtil.createJarFile(
                 "target/test-classes/",
                 Stream.of(
@@ -86,26 +88,16 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
                 ).map(ReflectionUtils::toClassResourceId).collect(Collectors.toList()),
                 jarFile.getAbsolutePath()
         );
-        LoggingUtil.logFinest(LOGGER, "%s", jarFile);
+        LOGGER.fine("Jar file path: %s", jarFile);
 
-        resourcesJarFile = File.createTempFile("resources_", ".jar");
+        resourcesJarFile = tempDir.newFile("resources_ " + System.currentTimeMillis() + ".jar");
         JarUtil.createResourcesJarFile(resourcesJarFile);
 
         // Setup the path for custom lib directory, this is by default set to `custom-lib` directory in hazelcast
         // distribution zip
-        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
-    }
+        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), tempDir.getRoot().getAbsolutePath());
 
-    @AfterClass
-    public static void afterClass() throws Exception {
-        if (jarFile != null) {
-            Files.delete(jarFile.toPath());
-            jarFile = null;
-        }
-        if (resourcesJarFile != null) {
-            Files.delete(resourcesJarFile.toPath());
-            resourcesJarFile = null;
-        }
+        assertThat(tempDir.getRoot()).exists().isReadable();
     }
 
     @Before
@@ -115,6 +107,9 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
         member = createHazelcastMember();
         client = HazelcastClient.newHazelcastClient();
         jet = client.getJet();
+
+        assertThat(resourcesJarFile).exists().isReadable();
+        assertThat(jarFile).exists().isReadable();
     }
 
     @After
