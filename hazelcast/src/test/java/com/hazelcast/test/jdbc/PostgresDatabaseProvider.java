@@ -19,9 +19,15 @@ package com.hazelcast.test.jdbc;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.postgresql.xa.PGXADataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
 
 import javax.annotation.Nonnull;
 import javax.sql.CommonDataSource;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 public class PostgresDatabaseProvider extends JdbcDatabaseProvider<PostgreSQLContainer<?>> {
 
@@ -63,11 +69,20 @@ public class PostgresDatabaseProvider extends JdbcDatabaseProvider<PostgreSQLCon
         return dataSource;
     }
 
+    private static final WaitStrategy PG_DEFAULT_WAIT = new LogMessageWaitStrategy()
+                .withRegEx(".*database system is ready to accept connections.*\\s")
+                .withTimes(2)
+                .withStartupTimeout(Duration.of(60, ChronoUnit.SECONDS));
+
     @SuppressWarnings("resource")
     @Override
     PostgreSQLContainer<?> createContainer(String dbName) {
         container = new PostgreSQLContainer<>("postgres:" + TEST_POSTGRES_VERSION)
                 .withDatabaseName(dbName)
+                // On MacOS there seems to be some delay before the port is available for connections (maybe only with colima?).
+                // As a result, container is reported started based only on logs earlier that it can be connected to.
+                // If we wait for both conditions (port and log) we should get robust behavior.
+                .waitingFor(new WaitAllStrategy().withStrategy(PG_DEFAULT_WAIT).withStrategy(Wait.defaultWaitStrategy()))
                 .withUrlParam("user", user())
                 .withUrlParam("password", password());
         if (command != null) {
