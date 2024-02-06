@@ -47,6 +47,7 @@ import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -591,7 +592,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       )
                       .thenCompose(stage -> stage)
                       .whenComplete((metrics, e) -> {
-                          if (e instanceof CancellationException) {
+                          if (ExceptionUtil.isOrHasCause(e, CancellationException.class)) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
                           } else if (e != null) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId()

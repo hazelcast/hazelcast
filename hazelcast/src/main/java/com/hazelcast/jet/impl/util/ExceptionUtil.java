@@ -185,6 +185,7 @@ public final class ExceptionUtil {
         return peeledFailure instanceof JobTerminateRequestedException
                 || peeledFailure instanceof ResultLimitReachedException
                 || peeledFailure instanceof TerminatedWithSnapshotException
+                || peeledFailure instanceof CancellationByUserException
                 || checkCause(peeledFailure);
     }
 
