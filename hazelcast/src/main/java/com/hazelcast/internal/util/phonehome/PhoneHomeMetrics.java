@@ -203,14 +203,31 @@ public enum PhoneHomeMetrics {
     REST_CONFIG_RELOAD_FAILURE("restconfigreloadfail"),
 
     REST_REQUEST_COUNT("restrequestct"),
-    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");
+    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct"),
+
+    //New REST module
+    //Note: Hazelcast has two types of REST support. The new REST Service (hazelcast-enterprise-rest) uses "rests" prefix
+    //while old one uses "rest".
+    RESTS_ENABLED("restsenabled"),
+    RESTS_GET_MEMBERS_COUNT("restsgtmsct"),
+    RESTS_GET_MEMBER_SELF_COUNT("restsgtmselfct"),
+    RESTS_GET_MEMBER_WITH_UUID_COUNT("restsgtmuuidct"),
+    RESTS_GET_CLUSTER_COUNT("restsgtcct"),
+    RESTS_GET_CLUSTER_STATE_COUNT("restsgtcstct"),
+    RESTS_PUT_CLUSTER_STATE_COUNT("restsptcstct"),
+    RESTS_GET_CLUSTER_VERSION_COUNT("restsgtcvect"),
+    RESTS_PUT_CLUSTER_VERSION_COUNT("restsptcvect"),
+    RESTS_GET_MEMBER_READY_COUNT("restsgtmrdct"),
+    RESTS_GET_MEMBER_HEALTH_COUNT("restsgtmhtlct");
+
     private final String query;
 
     PhoneHomeMetrics(String query) {
         this.query = query;
     }
 
-    String getRequestParameterName() {
+    //Visible for testing.
+    public String getRequestParameterName() {
         return query;
     }
 }

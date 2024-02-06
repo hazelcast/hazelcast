@@ -30,7 +30,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
  *
  * @see PhoneHomeMetrics
  */
-interface MetricsCollector {
+public interface MetricsCollector {
 
     int TIMEOUT = 2000;
     int RESPONSE_OK = 200;

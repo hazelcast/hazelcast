@@ -17,9 +17,11 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -88,14 +90,24 @@ public class PhoneHome {
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 
+    /**
+     * Registers a metric collector. It is useful for modules that are loaded dynamically.
+     *
+     * @param metricsCollector if null do nothing.
+     */
+    protected void registerMetricsCollector(@Nonnull MetricsCollector metricsCollector) {
+        Preconditions.checkNotNull(metricsCollector, "MetricsCollector cannot be null.");
+        metricsCollectorList.add(metricsCollector);
+    }
+
     public void check() {
         if (!isPhoneHomeEnabled(hazelcastNode)) {
             return;
         }
         try {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
-                                                      .scheduleWithRepetition("PhoneHome",
-                                                              () -> phoneHome(false), 0, 1, TimeUnit.DAYS);
+                    .scheduleWithRepetition("PhoneHome",
+                            () -> phoneHome(false), 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
