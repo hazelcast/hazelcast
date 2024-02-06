@@ -503,7 +503,7 @@ public class RestConfig {
     /**
      * Indicates whether the RestConfig is enabled.
      */
-    private boolean enabled = true;
+    private boolean enabled;
 
     /**
      * The port number for the Rest API server endpoint.
