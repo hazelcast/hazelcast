@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.DefaultTypeResolver;
+import com.hazelcast.jet.sql.impl.connector.jdbc.TypeResolver;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlWriter;
@@ -24,10 +27,12 @@ import org.apache.calcite.sql.SqlWriter.Frame;
 import org.apache.calcite.sql.SqlWriter.FrameTypeEnum;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 
+import java.util.Locale;
+
 /**
  * Custom dialect for MySQL which allows correct unparsing of MySQL specific operators, like CONCAT
  */
-public class HazelcastMySqlDialect extends MysqlSqlDialect {
+public class HazelcastMySqlDialect extends MysqlSqlDialect implements TypeResolver {
 
     /**
      * Creates a HazelcastMySqlDialect.
@@ -61,5 +66,19 @@ public class HazelcastMySqlDialect extends MysqlSqlDialect {
             operand.unparse(writer, 0, 0);
         }
         writer.endList(frame);
+    }
+
+    @Override
+    @SuppressWarnings("ReturnCount")
+    public QueryDataType resolveType(String columnTypeName, int precision, int scale) {
+        return switch (columnTypeName.toUpperCase(Locale.ROOT)) {
+            case "TINYTEXT", "MEDIUMTEXT", "LONGTEXT" -> QueryDataType.VARCHAR;
+            case "TINYINT UNSIGNED" -> QueryDataType.SMALLINT;
+            case "SMALLINT UNSIGNED", "MEDIUMINT", "MEDIUMINT UNSIGNED", "YEAR" -> QueryDataType.INT;
+            case "INT UNSIGNED" -> QueryDataType.BIGINT;
+            case "BIGINT UNSIGNED" -> QueryDataType.DECIMAL;
+
+            default -> DefaultTypeResolver.resolveType(columnTypeName, precision, scale);
+        };
     }
 }
