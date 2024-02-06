@@ -48,9 +48,11 @@ import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
 import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalUserCodeNamespaceStats;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
+import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.StatisticsAwareService;
@@ -255,6 +257,8 @@ public class TimedMemberStateFactory {
                 handleFlakeIdGenerator(memberState, config, ((FlakeIdGeneratorService) service).getStats());
             } else if (service instanceof CacheService) {
                 handleCache(memberState, (CacheService) service);
+            } else if (service instanceof UserCodeNamespaceService userCodeNamespaceService) {
+                handleUserCodeNamespaces(memberState, userCodeNamespaceService.getStats());
             }
         }
 
@@ -274,6 +278,11 @@ public class TimedMemberStateFactory {
             }
         }
         memberState.setFlakeIdGeneratorsWithStats(flakeIdGeneratorsWithStats);
+    }
+
+    private void handleUserCodeNamespaces(MemberStateImpl memberState,
+                                        Map<String, LocalUserCodeNamespaceStats> nsStats) {
+        memberState.setUserCodeNamespacesWithStats(nsStats.keySet());
     }
 
     private void handleExecutorService(MemberStateImpl memberState, Config config,

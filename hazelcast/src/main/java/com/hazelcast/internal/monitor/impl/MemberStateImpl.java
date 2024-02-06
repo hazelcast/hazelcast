@@ -71,6 +71,7 @@ public class MemberStateImpl implements MemberState {
     private Set<String> durableExecutorsWithStats = emptySet();
     private Set<String> cachesWithStats = emptySet();
     private Set<String> flakeIdGeneratorsWithStats = emptySet();
+    private Set<String> userCodeNamespacesWithStats = emptySet();
     private Collection<ClientEndPointDTO> clients = emptySet();
     private Map<UUID, String> clientStats = emptyMap();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
@@ -215,6 +216,14 @@ public class MemberStateImpl implements MemberState {
         this.flakeIdGeneratorsWithStats = flakeIdGeneratorsWithStats;
     }
 
+    public Set<String> getUserCodeNamespacesWithStats() {
+        return userCodeNamespacesWithStats;
+    }
+
+    public void setUserCodeNamespacesWithStats(Set<String> userCodeNamespacesWithStats) {
+        this.userCodeNamespacesWithStats = userCodeNamespacesWithStats;
+    }
+
     public void putLocalWanStats(String name, LocalWanStats localWanStats) {
         wanStats.put(name, localWanStats);
     }
@@ -317,6 +326,7 @@ public class MemberStateImpl implements MemberState {
         serializeAsMap(root, "cacheStats", cachesWithStats);
         serializeAsMap(root, "flakeIdStats", flakeIdGeneratorsWithStats);
         serializeMap(root, "wanStats", wanStats);
+        serializeAsMap(root, "userCodeNamespacesStats", userCodeNamespacesWithStats);
 
         final JsonArray clientsArray = new JsonArray();
         for (ClientEndPointDTO client : clients) {
@@ -459,6 +469,11 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "flakeIdStats")) {
             flakeIdGeneratorsWithStats.add(next.getName());
         }
+        userCodeNamespacesWithStats = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, "userCodeNamespacesStats")) {
+            userCodeNamespacesWithStats.add(next.getName());
+        }
+
         for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
             putDeserializedIfSerializable(wanStats, next.getName(), next.getValue().asObject(),
                     new LocalWanStatsImpl());
@@ -519,6 +534,7 @@ public class MemberStateImpl implements MemberState {
                 + ", durableExecutorStats=" + durableExecutorsWithStats
                 + ", cachesWithStats=" + cachesWithStats
                 + ", flakeIdGeneratorsWithStats=" + flakeIdGeneratorsWithStats
+                + ", userCodeNamespacesWithStats=" + userCodeNamespacesWithStats
                 + ", wanStats=" + wanStats
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState

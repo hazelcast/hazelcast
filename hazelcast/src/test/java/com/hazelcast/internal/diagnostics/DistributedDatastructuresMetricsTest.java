@@ -18,7 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
@@ -366,14 +366,14 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         assertTrue(collector.probes.isEmpty());
     }
 
-    static class EmptyRunnable implements Runnable, Serializable {
+    private static class EmptyRunnable implements Runnable, Serializable {
 
         @Override
         public void run() {
         }
     }
 
-    static class StringMetricsCollector implements MetricsCollector {
+    private static class StringMetricsCollector implements MetricsCollector {
         final HashMap<String, Object> probes = new HashMap<>();
         private final Pattern pattern;
 
@@ -422,7 +422,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
-            for (Entry<String, Object> probe : probes.entrySet()) {
+            for (Map.Entry<String, Object> probe : probes.entrySet()) {
                 sb.append(probe.getKey()).append(" - ").append(probe.getValue()).append("\n");
             }
             return sb.toString();

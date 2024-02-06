@@ -19,6 +19,9 @@ package com.hazelcast.internal.namespace;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.UserCodeNamespacesConfig;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.monitor.impl.LocalUserCodeNamespaceStats;
+import com.hazelcast.internal.services.StatisticsAwareService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,7 +36,7 @@ import java.util.concurrent.Callable;
  * @see NamespaceUtil
  * @since 5.4
  */
-public interface UserCodeNamespaceService {
+public interface UserCodeNamespaceService extends StatisticsAwareService<LocalUserCodeNamespaceStats>, DynamicMetricsProvider {
     /** Name of the User Code Namespace Service */
     String SERVICE_NAME = "hz:impl:namespaceService";
     /**

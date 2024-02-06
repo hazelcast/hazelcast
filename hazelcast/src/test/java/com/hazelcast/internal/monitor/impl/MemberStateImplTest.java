@@ -127,6 +127,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setExecutorsWithStats(singleton("executor-1"));
         memberState.setCachesWithStats(singleton("cache-1"));
         memberState.setFlakeIdGeneratorsWithStats(singleton("flakeIdGenerator-1"));
+        memberState.setUserCodeNamespacesWithStats(singleton("userCodeNamespace-1"));
         memberState.setOperationStats(new LocalOperationStatsImpl());
         memberState.setClients(clients);
         memberState.setNodeState(state);
@@ -154,6 +155,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(singleton("executor-1"), deserialized.getExecutorsWithStats());
         assertEquals(singleton("cache-1"), deserialized.getCachesWithStats());
         assertEquals(singleton("flakeIdGenerator-1"), deserialized.getFlakeIdGeneratorsWithStats());
+        assertEquals(singleton("userCodeNamespace-1"), deserialized.getUserCodeNamespacesWithStats());
         assertNotNull(deserialized.getOperationStats());
 
         client = deserialized.getClients().iterator().next();

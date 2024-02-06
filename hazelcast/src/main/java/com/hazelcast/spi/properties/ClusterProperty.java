@@ -920,6 +920,13 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.metrics.datastructures.enabled", "true");
 
     /**
+     * Enables/disables collecting metrics from user code namespaces.
+     * By default, user code namespaces metrics collection is enabled.
+     */
+    public static final HazelcastProperty METRICS_USER_CODE_NAMESPACES
+            = new HazelcastProperty("hazelcast.metrics.user.code.namespaces.enabled", "true");
+
+    /**
      * Sets the metrics collection frequency in seconds.
      * <p>
      * NOTE: This property overrides {@link MetricsConfig#getCollectionFrequencySeconds()}.

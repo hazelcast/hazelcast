@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.namespace.impl;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalUserCodeNamespaceStats;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -24,6 +27,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -89,5 +94,15 @@ public final class NoOpUserCodeNamespaceService
     @Override
     public ClassLoader getClassLoaderForNamespace(String namespace) {
         return configClassLoader;
+    }
+
+    @Override
+    public Map<String, LocalUserCodeNamespaceStats> getStats() {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        // No-op
     }
 }
