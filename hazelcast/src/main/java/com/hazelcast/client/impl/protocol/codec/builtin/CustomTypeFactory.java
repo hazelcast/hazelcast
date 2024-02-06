@@ -49,6 +49,7 @@ import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
@@ -153,6 +154,20 @@ public final class CustomTypeFactory {
         entryView.setVersion(version);
         entryView.setTtl(ttl);
         entryView.setMaxIdle(maxIdle);
+        return entryView;
+    }
+
+    public static ReplicatedMapEntryView<Data, Data> createReplicatedMapEntryView(Data key, Data value, long creationTime,
+                                                                           long hits, long lastAccessTime, long lastUpdateTime,
+                                                                           long ttl) {
+        ReplicatedMapEntryView<Data, Data> entryView = new ReplicatedMapEntryView<>();
+        entryView.setKey(key);
+        entryView.setValue(value);
+        entryView.setCreationTime(creationTime);
+        entryView.setHits(hits);
+        entryView.setLastAccessTime(lastAccessTime);
+        entryView.setLastUpdateTime(lastUpdateTime);
+        entryView.setTtl(ttl);
         return entryView;
     }
 
