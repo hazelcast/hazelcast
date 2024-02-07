@@ -9,8 +9,8 @@ on:
       - "master"
       - "*.z"
     paths:
-      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
-      - '.github/terraform/aws/**'
+      - "hazelcast/src/main/java/com/hazelcast/aws/**"
+      - ".github/terraform/aws/**"
 
 jobs:
   build:
@@ -37,7 +37,13 @@ jobs:
       AWS_REGION: us-east-1
     strategy:
       matrix:
-        suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
+        suite:
+          [
+            "ec2_cl_to_ec2_m",
+            "ec2_cl_to_fargate_ecs_m",
+            "fargate_ecs_cl_to_ec2_m",
+            "fargate_ecs_cl_to_fargate_ecs_m",
+          ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.0.1
@@ -71,7 +77,7 @@ jobs:
           name: aws-discovery-client.jar
           path: aws-discovery-suite/terraform/tools/client
 
-      - name : Set-up Terraform
+      - name: Set-up Terraform
         uses: hashicorp/setup-terraform@v2.0.3
         with:
           terraform_version: 1.5.4

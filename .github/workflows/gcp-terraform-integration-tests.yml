@@ -9,8 +9,8 @@ on:
       - "master"
       - "*.z"
     paths:
-      - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
-      - '.github/terraform/gcp/**'
+      - "hazelcast/src/main/java/com/hazelcast/gcp/**"
+      - ".github/terraform/gcp/**"
 
 jobs:
   build:
@@ -49,14 +49,14 @@ jobs:
         id: java-config
         with:
           config: ${{ github.workspace }}/.github/java-config.yml
-    
+
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           java-version: ${{ steps.java-config.outputs['java-version'] }}
           distribution: ${{ steps.java-config.outputs['distribution'] }}
           architecture: x64
-          cache: 'maven'
+          cache: "maven"
 
       - name: Build hazelcast jar
         run: |
@@ -82,15 +82,15 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-  
+
       - name: Get Secrets
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: |
             GKE_SA_KEY,CN/GKE_SA_KEY
-  
+
       - name: Authenticate to GCP
-        uses: 'google-github-actions/auth@v2.0.1'
+        uses: "google-github-actions/auth@v2.0.1"
         with:
           credentials_json: ${{ env.GKE_SA_KEY }}
 
@@ -99,7 +99,7 @@ jobs:
           touch ~/gcp_key_file.json
           echo $GKE_SA_KEY > ~/gcp_key_file.json
 
-      - name : Set-up Terraform
+      - name: Set-up Terraform
         uses: hashicorp/setup-terraform@v3.0.0
 
       - name: Terraform Init

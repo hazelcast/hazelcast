@@ -9,7 +9,7 @@ on:
       - "master"
       - "*.z"
     paths:
-      - 'hazelcast/src/main/java/com/hazelcast/kubernetes/**'
+      - "hazelcast/src/main/java/com/hazelcast/kubernetes/**"
 
 env:
   GAR_PROJECT_ID: hazelcast-33
@@ -38,7 +38,7 @@ jobs:
 
     strategy:
       matrix:
-        suite: ['gke']
+        suite: ["gke"]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.0.1
@@ -62,7 +62,7 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
-          install_components: 'gke-gcloud-auth-plugin,kubectl'
+          install_components: "gke-gcloud-auth-plugin,kubectl"
 
       - name: Copy kubeconfig
         run: |
@@ -77,7 +77,7 @@ jobs:
           token: ${{ env.DEVOPS_GITHUB_TOKEN }}
           path: auto-discovery-suite
 
-      - name : Set-up Terraform
+      - name: Set-up Terraform
         uses: hashicorp/setup-terraform@v2.0.3
         with:
           terraform_version: 1.5.4
