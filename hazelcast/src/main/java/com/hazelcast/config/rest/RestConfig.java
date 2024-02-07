@@ -585,8 +585,9 @@ public class RestConfig {
      *
      * @param securityRealm the name of the realm. This should be an already defined valid security realm.
      */
-    public void setSecurityRealm(String securityRealm) {
+    public RestConfig setSecurityRealm(String securityRealm) {
         this.securityRealm = securityRealm;
+        return this;
     }
 
     /**
@@ -604,8 +605,9 @@ public class RestConfig {
      *
      * @param tokenValidityDuration the duration for which the token should be valid.
      */
-    public void setTokenValidityDuration(Duration tokenValidityDuration) {
+    public RestConfig setTokenValidityDuration(Duration tokenValidityDuration) {
         this.tokenValidityDuration = tokenValidityDuration;
+        return this;
     }
 
     /**
