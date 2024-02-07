@@ -66,13 +66,13 @@ jobs:
           path: aws-discovery-suite
 
       - name: Download hazelcast.jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: hazelcast.jar
           path: aws-discovery-suite/terraform/tools
 
       - name: Download aws-discovery-client.jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: aws-discovery-client.jar
           path: aws-discovery-suite/terraform/tools/client

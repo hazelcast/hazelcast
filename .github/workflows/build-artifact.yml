@@ -113,13 +113,13 @@ jobs:
           mv target/aws-discovery-client.jar aws-discovery-client.jar
 
       - name: Upload hazelcast.jar
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: hazelcast.jar
           path: aws-discovery-suite/terraform/tools/hazelcast.jar
 
       - name: Upload aws-discovery-client.jar
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: aws-discovery-client.jar
           path: aws-discovery-suite/terraform/tools/client/aws-discovery-client.jar
