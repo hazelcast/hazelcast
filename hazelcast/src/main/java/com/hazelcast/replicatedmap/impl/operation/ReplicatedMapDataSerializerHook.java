@@ -25,6 +25,7 @@ import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.replicatedmap.impl.iterator.EntryViewsWithCursor;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY_ID;
@@ -64,7 +65,10 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 26;
     public static final int PUT_ALL_WITH_METADATA = 27;
     public static final int ENTRY_VIEW_HOLDER = 28;
-    private static final int LEN = ENTRY_VIEW_HOLDER + 1;
+    public static final int FETCH_ENTRY_VIEWS = 29;
+    public static final int END_ENTRYVIEW_ITERATION = 30;
+    public static final int ENTRYVIEWS_WITH_CURSOR = 31;
+    private static final int LEN = ENTRYVIEWS_WITH_CURSOR + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -108,6 +112,9 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE] = arg -> new MergeOperation();
         constructors[PUT_ALL_WITH_METADATA] = arg -> new PutAllWithMetadataOperation();
         constructors[ENTRY_VIEW_HOLDER] = arg -> new ReplicatedMapEntryViewHolder();
+        constructors[FETCH_ENTRY_VIEWS] = arg -> new FetchEntryViewsOperation();
+        constructors[END_ENTRYVIEW_ITERATION] = arg -> new EndEntryViewIterationOperation();
+        constructors[ENTRYVIEWS_WITH_CURSOR] = arg -> new EntryViewsWithCursor();
 
         return new ArrayDataSerializableFactory(constructors);
     }

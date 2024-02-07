@@ -47,6 +47,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
+import com.hazelcast.replicatedmap.impl.iterator.ReplicatedMapIterationService;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -89,7 +90,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                                              MigrationAwareService, SplitBrainHandlerService,
                                              StatisticsAwareService<LocalReplicatedMapStats>,
                                              SplitBrainProtectionAwareService, DynamicMetricsProvider {
-
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
 
@@ -120,6 +120,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final SplitBrainProtectionService splitBrainProtectionService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
+    private final ReplicatedMapIterationService iterationService;
     private final LocalReplicatedMapStatsProvider statsProvider;
     private final SplitBrainMergePolicyProvider mergePolicyProvider;
 
@@ -134,6 +135,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
         this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this);
+        this.iterationService = new ReplicatedMapIterationService(this, nodeEngine.getSerializationService(), nodeEngine);
         this.splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
         this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         this.statsProvider = new LocalReplicatedMapStatsProvider(config, partitionContainers);
@@ -173,6 +175,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         if (antiEntropyFuture != null) {
             antiEntropyFuture.cancel(true);
         }
+        this.iterationService.shutdown();
     }
 
     /**
@@ -311,6 +314,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     public ReplicatedMapEventPublishingService getEventPublishingService() {
         return eventPublishingService;
+    }
+
+    public ReplicatedMapIterationService getIterationService() {
+        return iterationService;
     }
 
     @Override

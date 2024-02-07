@@ -16,8 +16,10 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,7 +31,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.replicatedmap.impl.iterator.ReplicatedMapIterationService.ITERATOR_CLEANUP_TIMEOUT_MILLIS;
+import static com.hazelcast.replicatedmap.impl.iterator.ReplicatedMapIterationService.ITERATOR_CLEANUP_PERIOD_SECONDS;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -37,10 +42,20 @@ import static org.junit.Assert.assertSame;
 public class ReplicatedMapServiceTest extends HazelcastTestSupport {
 
     private NodeEngine nodeEngine;
+    private HazelcastInstance hazelcastInstance;
+
+    @Override
+    protected Config getConfig() {
+        Config config = super.getConfig();
+        // make cleanup faster
+        config.getProperties().setProperty(ITERATOR_CLEANUP_TIMEOUT_MILLIS.getName(), "2000");
+        config.getProperties().setProperty(ITERATOR_CLEANUP_PERIOD_SECONDS.getName(), "10");
+        return config;
+    }
 
     @Before
     public void setUp() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        hazelcastInstance = createHazelcastInstance();
         nodeEngine = getNodeEngineImpl(hazelcastInstance);
     }
 
@@ -73,5 +88,19 @@ public class ReplicatedMapServiceTest extends HazelcastTestSupport {
         LocalReplicatedMapStats stats3 = service.getLocalReplicatedMapStats(name);
         assertSame(stats, stats2);
         assertSame(stats2, stats3);
+    }
+
+    @Test
+    public void testCleanups_StaleIterators() {
+        String name = randomMapName();
+        for (int i = 0; i < 10000; i++) {
+            hazelcastInstance.getReplicatedMap(name).put(i, i);
+        }
+        ReplicatedMapService service = getNodeEngineImpl(hazelcastInstance).getService(ReplicatedMapService.SERVICE_NAME);
+        service.getIterationService().createIterator(name, 0, UuidUtil.newUnsecureUUID());
+        assertThat(service.getIterationService().getIteratorManager().getKeySet()).hasSize(1);
+        assertTrueEventually(() -> {
+            assertThat(service.getIterationService().getIteratorManager().getKeySet()).isEmpty();
+        });
     }
 }
