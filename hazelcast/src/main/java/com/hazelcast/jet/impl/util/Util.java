@@ -436,8 +436,7 @@ public final class Util {
         if (!logger.isInfoEnabled()) {
             return;
         }
-        if (item instanceof JetEvent) {
-            JetEvent event = (JetEvent) item;
+        if (item instanceof JetEvent event) {
             logger.info(
                     format("Event dropped, late by %d ms. currentWatermark=%s, eventTime=%s, event=%s",
                             currentWm - event.timestamp(), toLocalTime(currentWm), toLocalTime(event.timestamp()),

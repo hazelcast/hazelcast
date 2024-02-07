@@ -88,8 +88,8 @@ public class WindowGroupTransform<K, R> extends AbstractTransform {
     @Override
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
-        if (wDef instanceof SessionWindowDefinition) {
-            addSessionWindow(p, (SessionWindowDefinition) wDef);
+        if (wDef instanceof SessionWindowDefinition sessionWindowDefinition) {
+            addSessionWindow(p, sessionWindowDefinition);
         } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0 || shouldRebalanceAnyInput()) {
             addSlidingWindowSingleStage(p, (SlidingWindowDefinition) wDef);
         } else {
