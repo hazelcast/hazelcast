@@ -35,7 +35,7 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <jctools.version>4.0.2</jctools.version>
+        <jctools.version>4.0.3</jctools.version>
     </properties>
 
     <build>
