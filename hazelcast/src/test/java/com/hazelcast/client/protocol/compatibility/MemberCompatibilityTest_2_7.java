@@ -7903,7 +7903,7 @@ public class MemberCompatibilityTest_2_7 {
         int fileClientMessageIndex = 889;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPSubsystemGetCPObjectInfosCodec.RequestParameters parameters = CPSubsystemGetCPObjectInfosCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aRaftGroupId, parameters.cpGroupId));
+        assertTrue(isEqual(aRaftGroupId, parameters.groupId));
         assertTrue(isEqual(aString, parameters.serviceName));
         assertTrue(isEqual(aBoolean, parameters.tombstone));
     }

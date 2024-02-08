@@ -37,7 +37,7 @@ public class CPSubsystemGetCPObjectInfosMessageTask extends
 
     @Override
     protected CompletableFuture<Collection<String>> processInternal() {
-        CPGroupId groupId = parameters.cpGroupId;
+        CPGroupId groupId = parameters.groupId;
         String serviceName = parameters.serviceName;
         boolean returnTombstone = parameters.tombstone;
 
@@ -78,7 +78,7 @@ public class CPSubsystemGetCPObjectInfosMessageTask extends
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.serviceName, parameters.cpGroupId, parameters.tombstone};
+        return new Object[]{parameters.serviceName, parameters.groupId, parameters.tombstone};
     }
 
 }

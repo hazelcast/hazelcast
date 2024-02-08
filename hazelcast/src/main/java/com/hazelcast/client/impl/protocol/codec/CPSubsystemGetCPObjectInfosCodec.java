@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * A snapshot is used to retrieve the result.
  */
 @SuppressWarnings("unused")
-@Generated("60c31271ea80a825dcb862680e4ff659")
+@Generated("f71d5fd5a2ef0628a819f3d7213a6d35")
 public final class CPSubsystemGetCPObjectInfosCodec {
     //hex: 0x220600
     public static final int REQUEST_MESSAGE_TYPE = 2229760;
@@ -57,7 +57,7 @@ public final class CPSubsystemGetCPObjectInfosCodec {
         /**
          * Defines the cp group to return cp structures from
          */
-        public com.hazelcast.cp.internal.RaftGroupId cpGroupId;
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
 
         /**
          * The service name of the cp structures to return
@@ -71,7 +71,7 @@ public final class CPSubsystemGetCPObjectInfosCodec {
         public boolean tombstone;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId cpGroupId, java.lang.String serviceName, boolean tombstone) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String serviceName, boolean tombstone) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("CPSubsystem.GetCPObjectInfos");
@@ -80,7 +80,7 @@ public final class CPSubsystemGetCPObjectInfosCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_TOMBSTONE_FIELD_OFFSET, tombstone);
         clientMessage.add(initialFrame);
-        RaftGroupIdCodec.encode(clientMessage, cpGroupId);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, serviceName);
         return clientMessage;
     }
@@ -90,7 +90,7 @@ public final class CPSubsystemGetCPObjectInfosCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.tombstone = decodeBoolean(initialFrame.content, REQUEST_TOMBSTONE_FIELD_OFFSET);
-        request.cpGroupId = RaftGroupIdCodec.decode(iterator);
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.serviceName = StringCodec.decode(iterator);
         return request;
     }
