@@ -1660,7 +1660,7 @@
             <dependency>
                 <groupId>com.google.auth</groupId>
                 <artifactId>google-auth-library-bom</artifactId>
-                <version>1.22.0</version>
+                <version>1.23.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
