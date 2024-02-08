@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
@@ -50,6 +51,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -1715,5 +1717,104 @@ public final class Sources {
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionURL, query, createOutputFn));
+    }
+
+    /**
+     * Fetches {@link com.hazelcast.core.EntryView}s that are in the partition with given partition id in the
+     * {@link ReplicatedMap} with the given name. This method utilizes {@link ClientReplicatedMapProxy#entryViews(int, int)} to
+     * fetch the entry views. This overload supports passing a {@link com.hazelcast.dataconnection.DataConnection} name
+     * to connect to the remote cluster.
+     * @param replicatedMapName name of the {@link ReplicatedMap}
+     * @param dataConnectionName name of the data connection to connect to the remote cluster
+     * @param partitionId partition id of the partition to fetch the entry views from. ReplicatedMap entries are stored as
+     *                    partitioned data in the cluster. Each partition is replicated to the nodes in the cluster. See
+     *                    {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore} for more.
+     * @param fetchSize number of entry views to fetch in a single request
+     * @return a source that emits {@link ReplicatedMapEntryViewHolder}s
+     */
+    @Nonnull
+    public static BatchSource<ReplicatedMapEntryViewHolder> remoteReplicatedMapEntryViews(
+            @Nonnull String replicatedMapName,
+            @Nonnull String dataConnectionName,
+            int partitionId,
+            int fetchSize
+    ) {
+        return remoteReplicatedMapEntryViewsInternal(replicatedMapName, dataConnectionName, null, partitionId, fetchSize);
+    }
+
+    /**
+     * Fetches {@link com.hazelcast.core.EntryView}s that are in the partition with given partition id in the
+     * {@link ReplicatedMap} with the given name. This method utilizes {@link ClientReplicatedMapProxy#entryViews(int, int)} to
+     * fetch the entry views. This overload supports passing a {@link ClientConfig} to connect to the remote cluster.
+     * @param replicatedMapName name of the {@link ReplicatedMap}
+     * @param clientConfig client configuration to connect to the remote cluster
+     * @param partitionId partition id of the partition to fetch the entry views from. ReplicatedMap entries are stored as
+     *                    partitioned data in the cluster. Each partition is replicated to the nodes in the cluster. See
+     *                    {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore} for more.
+     * @param fetchSize number of entry views to fetch in a single request
+     * @return a source that emits {@link ReplicatedMapEntryViewHolder}s
+     */
+    @Nonnull
+    public static BatchSource<ReplicatedMapEntryViewHolder> remoteReplicatedMapEntryViews(
+            @Nonnull String replicatedMapName,
+            @Nonnull ClientConfig clientConfig,
+            int partitionId,
+            int fetchSize
+    ) {
+        return remoteReplicatedMapEntryViewsInternal(replicatedMapName, null, clientConfig, partitionId, fetchSize);
+    }
+
+    @Nonnull
+    static BatchSource<ReplicatedMapEntryViewHolder> remoteReplicatedMapEntryViewsInternal(
+            @Nonnull String replicatedMapName,
+            @Nullable String dataConnectionName,
+            @Nullable ClientConfig clientConfig,
+            int partitionId,
+            int fetchSize
+    ) {
+        String xmlConfig = ImdgUtil.asXmlString(clientConfig);
+        return SourceBuilder.batch("replicatedMapEntryViewSource(" + replicatedMapName + ')',
+                        context -> new RemoteReplicatedMapEntryViewReader(
+                                replicatedMapName,
+                                dataConnectionName,
+                                xmlConfig,
+                                fetchSize,
+                                partitionId,
+                                context
+                        ))
+                .fillBufferFn(RemoteReplicatedMapEntryViewReader::fillBufferFn)
+                .destroyFn(RemoteReplicatedMapEntryViewReader::destroy)
+                .build();
+    }
+
+    private static class RemoteReplicatedMapEntryViewReader extends HazelcastClientBaseContext {
+        private final String replicatedMapName;
+        private final int fetchSize;
+        private final int partitionId;
+        private Iterator<ReplicatedMapEntryViewHolder> iterator;
+
+        RemoteReplicatedMapEntryViewReader(@Nonnull String replicatedMapName, @Nullable String dataConnectionName,
+                                           @Nullable String clientXml, int fetchSize, int partitionId, Context context) {
+            super(dataConnectionName, clientXml, context);
+            this.replicatedMapName = replicatedMapName;
+            this.fetchSize = fetchSize;
+            this.partitionId = partitionId;
+        }
+
+        public void fillBufferFn(SourceBuffer<ReplicatedMapEntryViewHolder> buffer) {
+            if (iterator == null) {
+                ClientReplicatedMapProxy<Object, Object> rMap = (ClientReplicatedMapProxy<Object, Object>)
+                        client.getReplicatedMap(replicatedMapName);
+                iterator = rMap.entryViews(this.partitionId, this.fetchSize).iterator();
+            }
+            int counter = 0;
+            while (iterator.hasNext() && counter < fetchSize) {
+                buffer.add(iterator.next());
+                counter++;
+            }
+            if (!iterator.hasNext()) {
+                buffer.close();
+            }
+        }
     }
 }

@@ -17,19 +17,29 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -44,8 +54,10 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -69,6 +81,7 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class SourcesTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
+    private static HazelcastInstance remoteHz2;
     private static ClientConfig clientConfig;
 
     @BeforeClass
@@ -76,13 +89,17 @@ public class SourcesTest extends PipelineTestSupport {
         Config config = new Config();
         config.setClusterName(randomName());
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        remoteHz = createRemoteCluster(config, 2).get(0);
+        List<HazelcastInstance> instances = createRemoteCluster(config, 2);
+        remoteHz = instances.get(0);
+        remoteHz2 = instances.get(1);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
     }
 
     @AfterClass
     public static void afterClass() {
         HazelcastInstanceFactory.terminateAll();
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -349,17 +366,20 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionName_customBatchSize() {
-        remoteReplicatedMap_dataConnectionName((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+        remoteReplicatedMap_dataConnectionName((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName, 100));
     }
 
     @Test
     public void remoteReplicatedMap_emptySourceMap() {
-        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName));
     }
 
     @Test
     public void remoteReplicatedMap_emptySourceMap_customBatchSize() {
-        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName, 100));
     }
 
     private void remoteReplicatedMap_emptySourceMap(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
@@ -380,12 +400,14 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionMissing() {
-        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName));
     }
 
     @Test
     public void remoteReplicatedMap_dataConnectionMissing_customBatchSize() {
-        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName, 100));
     }
 
     private void remoteReplicatedMap_dataConnectionMissing(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
@@ -405,15 +427,17 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionToNonExistentCluster() {
-        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName));
     }
 
-    @Test
     public void remoteReplicatedMap_dataConnectionToNonExistentCluster_customBatchSize() {
-        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName, 100));
     }
 
-    private void remoteReplicatedMap_dataConnectionToNonExistentCluster(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
+    private void remoteReplicatedMap_dataConnectionToNonExistentCluster(Function<String, BatchSource<Entry<Object, Object>>>
+                                                                                sourceFn) {
         // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
@@ -432,7 +456,187 @@ public class SourcesTest extends PipelineTestSupport {
 
         // Then
         p.readFrom(source).writeTo(sink);
-        assertThatThrownBy(this::execute).isInstanceOf(CompletionException.class).hasStackTraceContaining("Unable to connect to any cluster");
+        assertThatThrownBy(this::execute).isInstanceOf(CompletionException.class)
+                .hasStackTraceContaining("Unable to connect to any cluster");
+    }
+
+    @Test
+    public void remoteReplicatedMapEntryViews() {
+        // Given
+        int itemCount = 100;
+        int partitionId = 0;
+
+        List<ReplicatedMapEntryViewHolder> data = null;
+        for (HazelcastInstance i : new HazelcastInstance[]{remoteHz, remoteHz2}) {
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(i);
+            if (data == null) {
+                data = prepareReplicatedMapEntryViews(itemCount, partitionId,
+                        nodeEngine.getPartitionService(), nodeEngine.getSerializationService());
+            }
+            ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
+            service.getReplicatedRecordStore(srcName, true, partitionId).putRecords(convertToRecordMigrationInfo(data), 0);
+        }
+
+        // When
+        BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(srcName, clientConfig,
+                partitionId, 100);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        assertThat(sinkList).usingElementComparator((obj1, obj2) -> {
+            ReplicatedMapEntryViewHolder o1 = (ReplicatedMapEntryViewHolder) obj1;
+            ReplicatedMapEntryViewHolder o2 = (ReplicatedMapEntryViewHolder) obj2;
+            // hits and last access time are modified as we access the entries.
+            if (equalsExceptLastAccessTimeAndHits(o1, o2)) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }).containsExactlyInAnyOrderElementsOf(data);
+    }
+
+    private List<ReplicatedMapEntryViewHolder> prepareReplicatedMapEntryViews(int itemCount, int partitionId,
+                                                                              InternalPartitionService partitionService,
+                                                                              SerializationService ss) {
+        List<ReplicatedMapEntryViewHolder> list = new ArrayList<>(itemCount);
+        long counter = 0;
+        long currentItemCount = 0;
+        while (currentItemCount < itemCount) {
+            counter++;
+            if (partitionService.getPartitionId(counter) != partitionId) {
+                continue;
+            }
+            currentItemCount++;
+            HeapData keyData = ss.toData(counter);
+            list.add(new ReplicatedMapEntryViewHolder(keyData, keyData, RandomPicker.getInt(0, 100000),
+                    RandomPicker.getInt(0, 100000), RandomPicker.getInt(0, 100000), RandomPicker.getInt(0, 100000),
+                    RandomPicker.getInt(0, 100000)));
+        }
+        return list;
+    }
+
+    private Collection<RecordMigrationInfo> convertToRecordMigrationInfo(List<ReplicatedMapEntryViewHolder> holders) {
+        Collection<RecordMigrationInfo> list = new ArrayList<>(holders.size());
+        for (ReplicatedMapEntryViewHolder holder : holders) {
+            RecordMigrationInfo migrationInfo = new RecordMigrationInfo(holder.getKey(), holder.getValue(),
+                    holder.getTtlMillis());
+            migrationInfo.setCreationTime(holder.getCreationTime());
+            migrationInfo.setHits(holder.getHits());
+            migrationInfo.setLastUpdateTime(holder.getLastUpdateTime());
+            migrationInfo.setLastAccessTime(holder.getLastAccessTime());
+            list.add(migrationInfo);
+        }
+        return list;
+    }
+
+    @Test
+    public void remoteReplicatedMapEntryViews_dataConnectionName() {
+        // Given
+        int itemCount = 2;
+        int partitionId = 0;
+
+        List<ReplicatedMapEntryViewHolder> data = null;
+        for (HazelcastInstance i : new HazelcastInstance[]{remoteHz, remoteHz2}) {
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(i);
+            if (data == null) {
+                data = prepareReplicatedMapEntryViews(itemCount, partitionId,
+                        nodeEngine.getPartitionService(), nodeEngine.getSerializationService());
+            }
+            ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
+            service.getReplicatedRecordStore(srcName, true, partitionId).putRecords(convertToRecordMigrationInfo(data), 0);
+        }
+
+        // When
+        String dataConnectionName = "remoteHz";
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(
+                srcName, dataConnectionName, partitionId, 100);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        assertThat(sinkList).usingElementComparator((obj1, obj2) -> {
+            ReplicatedMapEntryViewHolder o1 = (ReplicatedMapEntryViewHolder) obj1;
+            ReplicatedMapEntryViewHolder o2 = (ReplicatedMapEntryViewHolder) obj2;
+            // hits and last access time are modified as we access the entries.
+            if (o1.getKey().equals(o2.getKey()) && o1.getValue().equals(o2.getValue())
+                    && o1.getCreationTime() == o2.getCreationTime()
+                    && o1.getLastUpdateTime() == o2.getLastUpdateTime()
+                    && o1.getTtlMillis() == o2.getTtlMillis()) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }).containsExactlyInAnyOrderElementsOf(data);
+    }
+
+    @Test
+    public void remoteReplicatedMapEntryViews_emptySourceMap() {
+        // Given empty map
+        // When
+        String dataConnectionName = randomString();
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(
+                srcName, dataConnectionName, 0, 100);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        assertThat(sinkList).isEmpty();
+    }
+
+    @Test
+    public void remoteReplicatedMapEntryViews_dataConnectionMissing() {
+        remoteReplicatedMapEntryViews_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName,
+                dataConnectionName));
+    }
+
+    private void remoteReplicatedMapEntryViews_dataConnectionMissing(Function<String, BatchSource<Entry<Object, Object>>>
+                                                                             sourceFn) {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getReplicatedMap(srcName), input);
+
+        // When
+        String dataConnectionName = randomString();
+        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        assertThatThrownBy(this::execute).isInstanceOf(CompletionException.class)
+                .hasStackTraceContaining("Data connection '" + dataConnectionName + "' not found");
+    }
+
+    @Test
+    public void remoteReplicatedMapEntryViews_dataConnectionToNonExistentCluster() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getReplicatedMap(srcName), input);
+
+        // When
+        String dataConnectionName = randomString();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress("localhost:911");
+        clientConfig.setClusterName("neverland");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3000);
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(srcName,
+                dataConnectionName, 0, 100);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        assertThatThrownBy(this::execute).isInstanceOf(CompletionException.class)
+                .hasStackTraceContaining("Unable to connect to any cluster");
     }
 
     @Test
@@ -698,5 +902,14 @@ public class SourcesTest extends PipelineTestSupport {
 
         // When-Then
         p.readFrom(source);
+    }
+
+    public static boolean equalsExceptLastAccessTimeAndHits(ReplicatedMapEntryViewHolder o1, ReplicatedMapEntryViewHolder o2) {
+        if (o1 == o2) {
+            return true;
+        }
+        return o1.getCreationTime() == o2.getCreationTime() && o1.getLastUpdateTime() == o2.getLastUpdateTime()
+                && o1.getTtlMillis() == o2.getTtlMillis() && Objects.equals(o1.getKey(), o2.getKey())
+                && Objects.equals(o1.getValue(), o2.getValue());
     }
 }
