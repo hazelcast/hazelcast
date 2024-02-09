@@ -145,6 +145,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals("false", parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()));
         assertEquals("false", parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()));
         assertEquals("false", parameters.get(PhoneHomeMetrics.DYNAMIC_CONFIG_PERSISTENCE_ENABLED.getRequestParameterName()));
+        assertEquals("false", parameters.get(PhoneHomeMetrics.UCN_ENABLED.getRequestParameterName()));
     }
 
     @Test

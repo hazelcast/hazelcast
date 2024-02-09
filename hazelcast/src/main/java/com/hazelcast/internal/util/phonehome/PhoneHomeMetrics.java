@@ -218,7 +218,9 @@ public enum PhoneHomeMetrics {
     RESTS_GET_CLUSTER_VERSION_COUNT("restsgtcvect"),
     RESTS_PUT_CLUSTER_VERSION_COUNT("restsptcvect"),
     RESTS_GET_MEMBER_READY_COUNT("restsgtmrdct"),
-    RESTS_GET_MEMBER_HEALTH_COUNT("restsgtmhtlct");
+    RESTS_GET_MEMBER_HEALTH_COUNT("restsgtmhtlct"),
+    UCN_ENABLED("ucnenabled"),
+    UCN_NAMESPACE_COUNT("ucncount");
 
     private final String query;
 
