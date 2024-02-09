@@ -80,6 +80,55 @@ public class SqlCatalog {
         }
     }
 
+    //TODO: Seems like unnecessary code repetition.
+    public SqlCatalog(List<TableResolver> tableResolvers, Set<String> elements) {
+        // Populate schemas and tables.
+        schemas = new HashMap<>();
+
+        Map<String, Set<Table>> tableConflicts = new HashMap<>();
+
+        for (TableResolver tableResolver : tableResolvers) {
+            Collection<Table> tables = tableResolver.getTables(elements);
+
+            for (List<String> searchPath : tableResolver.getDefaultSearchPaths()) {
+                assert searchPath.size() == 2 && searchPath.get(0).equals(QueryUtils.CATALOG) : searchPath;
+
+                schemas.putIfAbsent(searchPath.get(1), new HashMap<>());
+            }
+
+            for (Table table : tables) {
+                String schemaName = table.getSchemaName();
+                String tableName = table.getSqlName();
+
+                Table oldTable = schemas
+                        .computeIfAbsent(schemaName, key -> new HashMap<>())
+                        .putIfAbsent(tableName, table);
+
+                if (oldTable == null) {
+                    tableConflicts.computeIfAbsent(tableName, key -> new HashSet<>()).add(table);
+                }
+            }
+        }
+
+        // Add conflict information to tables
+        for (Set<Table> tableConflict : tableConflicts.values()) {
+            if (tableConflict.size() == 1) {
+                // No conflict.
+                continue;
+            }
+
+            Set<String> conflictingSchemas = new HashSet<>(tableConflict.size());
+
+            for (Table table : tableConflict) {
+                conflictingSchemas.add(table.getSchemaName());
+            }
+
+            for (Table table : tableConflict) {
+                table.setConflictingSchemas(conflictingSchemas);
+            }
+        }
+    }
+
     public Map<String, Map<String, Table>> getSchemas() {
         return schemas;
     }

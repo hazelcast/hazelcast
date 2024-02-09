@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Generic interface that resolves tables belonging to a particular backend.
@@ -48,6 +49,12 @@ public interface TableResolver {
      */
     @Nonnull
     List<Table> getTables();
+
+    /**
+     * @return Collection of tables to be registered.
+     */
+    @Nonnull
+    List<Table> getTables(Set<String> elements);
 
     /**
      * Adds a listener to be called when a {@see Table} is added, removed or changed.

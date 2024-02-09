@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
@@ -143,6 +144,21 @@ public class DataConnectionResolver implements TableResolver {
                         connectorCache,
                         isSecurityEnabled
                 )));
+        return tables;
+    }
+    @Nonnull
+    @Override
+    public List<Table> getTables(Set<String> elements) {
+        List<Table> tables = new ArrayList<>();
+
+        ADDITIONAL_TABLE_PRODUCERS.forEach(producer -> tables.add(
+                producer.apply(
+                        getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage),
+                        connectorCache,
+                        isSecurityEnabled
+                )));
+
+        //TODO: Optimize this getTables too.
         return tables;
     }
 

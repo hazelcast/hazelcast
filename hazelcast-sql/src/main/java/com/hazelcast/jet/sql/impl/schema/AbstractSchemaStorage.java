@@ -23,6 +23,7 @@ import com.hazelcast.map.MapEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
+import java.util.Set;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 
@@ -41,6 +42,10 @@ public abstract class AbstractSchemaStorage {
 
     Collection<Object> allObjects() {
         return storage().values();
+    }
+
+    Collection<Object> allObjects(Set<String> elements) {
+        return storage().getAll(elements).values();
     }
 
     IMap<String, Object> storage() {

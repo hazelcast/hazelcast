@@ -22,6 +22,7 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlExpectedResultType;
@@ -292,9 +293,18 @@ public class SqlServiceImpl implements InternalSqlService {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
         PlanKey planKey = new PlanKey(searchPaths, sql);
         SqlPlan plan = planCache.get(planKey);
+        SqlPlan planOpt = planCache.get(planKey);
         if (plan == null) {
             SqlCatalog catalog = new SqlCatalog(optimizer.tableResolvers());
+            SqlCatalog catalogOpt = new SqlCatalog(optimizer.tableResolvers(), QueryParser.getTablesFromSql(sql));
+
             plan = optimizer.prepare(new OptimizationTask(sql, args, searchPaths, catalog, ssc));
+            planOpt = optimizer.prepare(new OptimizationTask(sql, args, searchPaths, catalogOpt, ssc));
+
+            if (!plan.equals(planOpt)) {
+               throw new RuntimeException("Error: Plan mismatch");
+            }
+
             if (plan.isCacheable()) {
                 planCache.put(planKey, plan);
             }

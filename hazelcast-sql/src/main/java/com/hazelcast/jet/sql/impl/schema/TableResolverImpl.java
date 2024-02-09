@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -275,6 +276,49 @@ public class TableResolverImpl implements TableResolver {
     @Override
     public List<Table> getTables() {
         Collection<Object> objects = relationsStorage.allObjects();
+        List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
+
+        int lastMappingsSize = this.lastMappingsSize;
+        int lastViewsSize = this.lastViewsSize;
+        int lastTypesSize = this.lastTypesSize;
+
+        // Trying to avoid list growing.
+        List<Mapping> mappings = lastMappingsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastMappingsSize);
+        List<View> views = lastViewsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastViewsSize);
+        List<Type> types = lastTypesSize == 0 ? new ArrayList<>() : new ArrayList<>(lastTypesSize);
+
+        for (Object o : objects) {
+            if (o instanceof Mapping) {
+                tables.add(toTable((Mapping) o));
+                mappings.add((Mapping) o);
+            } else if (o instanceof View) {
+                tables.add(toTable((View) o));
+                views.add((View) o);
+            } else if (o instanceof Type) {
+                types.add((Type) o);
+            } else if (o instanceof DataConnectionCatalogEntry) {
+                // Note: data connection is not a 'table' or 'relation',
+                // It's stored in a separate namespace.
+                continue;
+            } else {
+                throw new RuntimeException("Unexpected: " + o);
+            }
+        }
+
+        ADDITIONAL_TABLE_PRODUCERS.forEach(producer ->
+                tables.add(producer.apply(mappings, views, types, connectorCache, nodeEngine)));
+
+        this.lastViewsSize = views.size();
+        this.lastMappingsSize = mappings.size();
+        this.lastTypesSize = types.size();
+
+        return tables;
+    }
+
+    @Nonnull
+    public List<Table> getTables(Set<String> elements) {
+        //TODO: Seems to violate DRY principle.
+        Collection<Object> objects = relationsStorage.allObjects(elements);
         List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
 
         int lastMappingsSize = this.lastMappingsSize;

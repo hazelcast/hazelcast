@@ -24,6 +24,8 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Test table resolver.
@@ -56,6 +58,15 @@ public class TestTableResolver implements TableResolver {
     @Override
     public List<Table> getTables() {
         return tables;
+    }
+
+    //TODO: Optimize this one too.
+    @Nonnull
+    @Override
+    public List<Table> getTables(Set<String> elements) {
+        return tables.stream()
+                     .filter(t -> elements.contains(t.getSqlName()))
+                     .collect(Collectors.toList());
     }
 
     @Override

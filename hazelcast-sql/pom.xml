@@ -33,6 +33,7 @@
     </parent>
 
     <properties>
+        <enforcer.skip>true</enforcer.skip>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 

@@ -79,7 +79,9 @@ public class SqlClientTest extends SqlTestSupport {
     @Test
     public void test_partitionBasedRouting() {
         createMapping("test", Integer.class, String.class);
-        createMapping("test2", Integer.class, String.class);
+        for (int i = 0; i < 500; i++) {
+            createMapping("test" + i, Integer.class, String.class);
+        }
 
         checkPartitionArgumentIndex("SELECT * FROM test WHERE __key = ?", 0, 1);
         checkPartitionArgumentIndex("UPDATE test SET this = ? WHERE __key = ?", 1, "testVal", 1);
