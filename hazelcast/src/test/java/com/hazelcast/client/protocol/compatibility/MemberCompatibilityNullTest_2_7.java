@@ -7213,6 +7213,8 @@ public class MemberCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.maxSize));
         assertTrue(isEqual(anInt, parameters.maxSizePolicy));
+        assertTrue(parameters.isWanReplicationRefExists);
+        assertTrue(isEqual(null, parameters.wanReplicationRef));
     }
 
     @Test

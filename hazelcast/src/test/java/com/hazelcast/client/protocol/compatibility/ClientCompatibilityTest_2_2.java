@@ -6139,7 +6139,7 @@ public class ClientCompatibilityTest_2_2 {
     @Test
     public void test_MCUpdateMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 775;
-        ClientMessage encoded = MCUpdateMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aBoolean, anInt, anInt);
+        ClientMessage encoded = MCUpdateMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aBoolean, anInt, anInt, aWanReplicationRef);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

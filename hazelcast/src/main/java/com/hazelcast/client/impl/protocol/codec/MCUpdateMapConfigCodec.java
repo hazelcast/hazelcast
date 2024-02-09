@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Updates the config of a map on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("b58e85f8aafd359fac7d31ff882346f5")
+@Generated("dbbd3441b38349442d4fae83897cbc88")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x200400
     public static final int REQUEST_MESSAGE_TYPE = 2098176;
@@ -106,9 +106,20 @@ public final class MCUpdateMapConfigCodec {
          * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
          */
         public int maxSizePolicy;
+
+        /**
+         * The new WanReplicationRef to apply.
+         */
+        public @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef;
+
+        /**
+         * True if the wanReplicationRef is received from the client, false otherwise.
+         * If this is false, wanReplicationRef has the default value for its type.
+         */
+        public boolean isWanReplicationRefExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName, int timeToLiveSeconds, int maxIdleSeconds, int evictionPolicy, boolean readBackupData, int maxSize, int maxSizePolicy) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, int timeToLiveSeconds, int maxIdleSeconds, int evictionPolicy, boolean readBackupData, int maxSize, int maxSizePolicy, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.UpdateMapConfig");
@@ -123,6 +134,7 @@ public final class MCUpdateMapConfigCodec {
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET, maxSizePolicy);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
+        CodecUtil.encodeNullable(clientMessage, wanReplicationRef, WanReplicationRefCodec::encode);
         return clientMessage;
     }
 
@@ -137,6 +149,12 @@ public final class MCUpdateMapConfigCodec {
         request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
         request.maxSizePolicy = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET);
         request.mapName = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            request.wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
+            request.isWanReplicationRefExists = true;
+        } else {
+            request.isWanReplicationRefExists = false;
+        }
         return request;
     }
 

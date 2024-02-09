@@ -459,7 +459,8 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                         0,
                         false,
                         100,
-                        0
+                        0,
+                        null
                 ),
                 null
         );

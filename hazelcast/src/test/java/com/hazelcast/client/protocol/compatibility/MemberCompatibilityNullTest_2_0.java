@@ -6901,6 +6901,7 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.maxSize));
         assertTrue(isEqual(anInt, parameters.maxSizePolicy));
+        assertFalse(parameters.isWanReplicationRefExists);
     }
 
     @Test

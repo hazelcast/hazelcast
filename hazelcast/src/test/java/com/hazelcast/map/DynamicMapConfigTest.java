@@ -130,7 +130,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
                 mapConfig.getEvictionConfig().getSize(),
                 mapConfig.getEvictionConfig().getMaxSizePolicy().getId(),
                 mapConfig.isReadBackupData(),
-                mapConfig.getEvictionConfig().getEvictionPolicy().getId());
+                mapConfig.getEvictionConfig().getEvictionPolicy().getId(),
+                true,
+                null);
         executeOperation(node, updateMapConfigOperation);
     }
 

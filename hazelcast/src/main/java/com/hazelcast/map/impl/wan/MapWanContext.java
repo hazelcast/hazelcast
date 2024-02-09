@@ -40,15 +40,25 @@ public class MapWanContext {
 
     protected volatile SplitBrainMergePolicy wanMergePolicy;
     protected volatile ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
-    private final MapConfig mapConfig;
     private final String name;
     private final MapServiceContext mapServiceContext;
+    private MapConfig mapConfig;
     private volatile boolean persistWanReplicatedData;
 
     public MapWanContext(MapContainer mapContainer) {
         this.mapConfig = mapContainer.getMapConfig();
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();
+    }
+
+    /**
+     * Used to update the {@link MapConfig} reference to match that of
+     * this context's owning {@link MapContainer}.
+     *
+     * @param mapConfig the new {@link MapConfig} to apply
+     */
+    public void setMapConfig(MapConfig mapConfig) {
+        this.mapConfig = mapConfig;
     }
 
     public void start() {
@@ -59,6 +69,8 @@ public class MapWanContext {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef == null) {
+            // reset due to possible reconfiguration
+            wanReplicationDelegateSupplier = null;
             return;
         }
         String wanReplicationRefName = wanReplicationRef.getName();

@@ -20,19 +20,23 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 /**
  * Operation to update map configuration from Management Center.
  */
-public class UpdateMapConfigOperation extends AbstractManagementOperation {
+public class UpdateMapConfigOperation extends AbstractManagementOperation implements Versioned {
 
     private boolean readBackupData;
     private int timeToLiveSeconds;
@@ -40,14 +44,19 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
     private int maxSize;
     private int maxSizePolicyId;
     private int evictionPolicyId;
+    private WanReplicationRef wanReplicationRef;
     private String mapName;
+
+    // RU_COMPAT 5.3: Required for backwards compatibility
+    private transient boolean applyWanReplicationRef;
 
     public UpdateMapConfigOperation() {
     }
 
     public UpdateMapConfigOperation(String mapName, int timeToLiveSeconds, int maxIdleSeconds,
                                     int maxSize, int maxSizePolicyId, boolean readBackupData,
-                                    int evictionPolicyId) {
+                                    int evictionPolicyId, boolean applyWanReplicationRef,
+                                    WanReplicationRef wanReplicationRef) {
         this.mapName = mapName;
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxIdleSeconds = maxIdleSeconds;
@@ -55,6 +64,8 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         this.maxSizePolicyId = maxSizePolicyId;
         this.readBackupData = readBackupData;
         this.evictionPolicyId = evictionPolicyId;
+        this.applyWanReplicationRef = applyWanReplicationRef;
+        this.wanReplicationRef = wanReplicationRef;
     }
 
     @Override
@@ -65,15 +76,23 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         newConfig.setTimeToLiveSeconds(timeToLiveSeconds);
         newConfig.setMaxIdleSeconds(maxIdleSeconds);
         newConfig.setReadBackupData(readBackupData);
+        if (applyWanReplicationRef) {
+            newConfig.setWanReplicationRef(wanReplicationRef);
+        }
 
         EvictionConfig evictionConfig = newConfig.getEvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.getById(evictionPolicyId));
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.getById(maxSizePolicyId));
         evictionConfig.setSize(maxSize);
 
+        MapConfigReadOnly readOnlyConfig = new MapConfigReadOnly(newConfig);
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
-        mapContainer.setMapConfig(new MapConfigReadOnly(newConfig));
+        mapContainer.setMapConfig(readOnlyConfig);
         mapContainer.initEvictor();
+        if (applyWanReplicationRef) {
+            mapContainer.getWanContext().setMapConfig(readOnlyConfig);
+            mapContainer.getWanContext().start();
+        }
     }
 
     @Override
@@ -85,6 +104,11 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         out.writeInt(maxSizePolicyId);
         out.writeBoolean(readBackupData);
         out.writeInt(evictionPolicyId);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeObject(wanReplicationRef);
+        }
     }
 
     @Override
@@ -96,6 +120,15 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         maxSizePolicyId = in.readInt();
         readBackupData = in.readBoolean();
         evictionPolicyId = in.readInt();
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            wanReplicationRef = in.readObject();
+            applyWanReplicationRef = true;
+        } else {
+            wanReplicationRef = null;
+            applyWanReplicationRef = false;
+        }
     }
 
     @Override

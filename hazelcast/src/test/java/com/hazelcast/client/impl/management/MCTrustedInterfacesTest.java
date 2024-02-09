@@ -286,7 +286,7 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
 
     @Test
     public void testUpdateMapConfigMessageTask() throws Exception {
-        assertFailureOnUntrustedInterface(MCUpdateMapConfigCodec.encodeRequest(randomString(), 100, 200, 0, false, 100, 0));
+        assertFailureOnUntrustedInterface(MCUpdateMapConfigCodec.encodeRequest(randomString(), 100, 200, 0, false, 100, 0, null));
     }
 
     @Test

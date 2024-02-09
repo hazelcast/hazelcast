@@ -53,7 +53,9 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
                 parameters.maxSize,
                 parameters.maxSizePolicy,
                 parameters.readBackupData,
-                parameters.evictionPolicy);
+                parameters.evictionPolicy,
+                parameters.isWanReplicationRefExists,
+                parameters.wanReplicationRef);
     }
 
     @Override
@@ -95,7 +97,9 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
                 parameters.maxSize,
                 parameters.maxSizePolicy,
                 parameters.readBackupData,
-                parameters.evictionPolicy
+                parameters.evictionPolicy,
+                parameters.isWanReplicationRefExists,
+                parameters.wanReplicationRef
         };
     }
 
