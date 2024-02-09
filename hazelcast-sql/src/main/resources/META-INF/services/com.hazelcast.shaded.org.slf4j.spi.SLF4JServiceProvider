@@ -1,0 +1,15 @@
+# Apache Calcite has a dependency on the {@code slf4j-api} artifact. Due to JAR
+# hell in the runtime, we shade and relocate the {@code slf4j-api} library into
+# the {@code com.hazelcast} package during build.
+#
+# <p>
+# SLF4J requires at least one {@link SLF4JServiceProvider} to be present.
+# However, the required name of the service files changes due to shading, so service provider inside e.g. Log4J2
+# won't work - we need to provide custom file with some implementation, like this no-op implementation
+# in order to suppress warnings.
+#
+# <p>
+# The binder delegates to the no-op logger service provider, suppressing all messages
+# from the relocated Apache Calcite.
+
+com.hazelcast.sql.impl.NoopSlf4jServiceProvider

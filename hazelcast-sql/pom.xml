@@ -346,13 +346,6 @@
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
                                 </filter>
-                                <filter>
-                                    <artifact>org.slf4j:slf4j-api</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <exclude>org/slf4j/impl/StaticLoggerBinder.java</exclude>
-                                    </excludes>
-                                </filter>
                             </filters>
                         </configuration>
                     </execution>
