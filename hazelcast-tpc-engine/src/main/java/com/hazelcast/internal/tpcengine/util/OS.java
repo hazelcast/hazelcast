@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+import java.io.File;
+
 /**
  * Utility methods for OS specific functionality.
  */
@@ -173,7 +175,7 @@ public final class OS {
      */
     public static String ensureUnixSeparators(final String path) {
         if (OS.isWindows()) {
-            return path.replace('\\', '/');
+            return path.replace(File.separatorChar, '/');
         }
         return path;
     }

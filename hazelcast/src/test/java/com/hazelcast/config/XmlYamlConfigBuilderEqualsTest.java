@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,7 +33,6 @@ import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -170,12 +170,10 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
 
     /** Replace the UCN example paths with real files (but empty) to ensure they can be inflated */
     private String replaceUCNReferencesWithTemporaryFile(String str) throws IOException {
-        for (Path pathToReplace : new Path[] {Paths.get("/", "etc", "hazelcast", "jar.jar"),
-                Paths.get("/", "etc", "hazelcast", "jar2.jar"), Paths.get("/", "etc", "hazelcast", "jar3.jar"),
-                Paths.get("/", "etc", "hazelcast", "jarsInZip.zip")}) {
+        for (Path pathToReplace : new Path[] {Path.of("etc", "hazelcast", "jar.jar"), Path.of("etc", "hazelcast", "jar2.jar"),
+                Path.of("etc", "hazelcast", "jar3.jar"), Path.of("etc", "hazelcast", "jarsInZip.zip")}) {
 
-            Path newPath = tempDirectory.resolve(Paths.get("/")
-                    .relativize(pathToReplace));
+            Path newPath = tempDirectory.resolve(pathToReplace);
 
             try {
                 Files.createDirectories(newPath.getParent());
@@ -183,10 +181,16 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
             } catch (FileAlreadyExistsException ignored) {
             }
 
-            str = str.replace(pathToReplace.toUri()
-                    .toString(),
-                    newPath.toUri()
-                            .toString());
+            // Convert the Path to the URL equivalent we expect to be present in the config file
+
+            // It's not possible to do this using the typical "Path.toUri()" approach
+            // On Windows this implicitly converts the path to an absolute path first, meaning you get a
+            // "file:///C:/path/to/the/repo/etc" URL
+            // Even if you create an absolute path to nowhere, Windows will still assume it's relative to the C: drive and you
+            // end up with "file:///C:/etc" URL
+            // For tests where the scope is controlled and no escaping is required, hardcoding is sufficient
+            str = str.replace("file:///" + OS.ensureUnixSeparators(pathToReplace.toString()), newPath.toUri()
+                    .toString());
         }
 
         return str;
