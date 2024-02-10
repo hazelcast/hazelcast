@@ -346,7 +346,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         @Override
         public void begin() {
             if (!txnInitialized) {
-                LoggingUtil.logFine(logger, "initTransactions in begin %s", transactionId);
+                logger.fine("initTransactions in begin %s", transactionId);
                 txnInitialized = true;
                 producer.initTransactions();
                 transactionId.updateProducerAndEpoch(producer);

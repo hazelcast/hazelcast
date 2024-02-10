@@ -59,7 +59,6 @@ import java.util.function.Function;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * Client-side {@code JetInstance} implementation
@@ -200,10 +199,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
 
             // Send only job metadata
-            logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
+            getLogger().fine("Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
-            logFine(getLogger(), "Job execution from jar '%s' finished successfully",
-                    jarPath);
+            getLogger().fine("Job execution from jar '%s' finished successfully", jarPath);
         } catch (Exception exception) {
             sneakyThrow(exception);
         }
@@ -217,13 +215,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             JobUploadCall jobUploadCall = initializeJobUploadCall(submitJobParameters.getJarPath());
 
             // First send job metadata
-            logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
+            getLogger().fine("Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForUpload(jobUploadCall, submitJobParameters);
 
             // Then send job parts
             sendJobMultipart(jobUploadCall, jarPath);
-            logFine(getLogger(), "Job upload from jar '%s' finished successfully",
-                    jarPath);
+            getLogger().fine("Job upload from jar '%s' finished successfully", jarPath);
         } catch (IOException | NoSuchAlgorithmException exception) {
             sneakyThrow(exception);
         }
@@ -296,7 +293,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                         currentPartNumber,
                         jobUploadCall.getTotalParts(), dataToSend, bytesRead, sha256Hex);
 
-                logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d/%d",
+                getLogger().fine("Submitting Job Part for jarPath: %s PartNumber %d/%d",
                         jarPath, currentPartNumber, jobUploadCall.getTotalParts());
 
                 invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest);

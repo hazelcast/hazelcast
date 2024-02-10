@@ -47,8 +47,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.util.Collections.unmodifiableMap;
 
 public class JobClassLoaderService {
@@ -206,7 +204,7 @@ public class JobClassLoaderService {
      * the classloader only if there are no more phases left.
      */
     public void tryRemoveClassloadersForJob(long jobId, JobPhase phase) {
-        logFinest(logger, "Try remove classloaders for jobId=%s, phase=%s", idToString(jobId), phase);
+        logger.finest("Try remove classloaders for jobId=%s, phase=%s", idToString(jobId), phase);
         classLoaders.compute(jobId, (k, jobClassLoaders) -> {
             if (jobClassLoaders == null) {
                 logger.warning("JobClassLoaders for jobId=" + idToString(jobId) + " already removed");
@@ -215,7 +213,7 @@ public class JobClassLoaderService {
 
             int phaseCount = jobClassLoaders.removePhase(phase);
             if (phaseCount == 0) {
-                logFinest(logger, "JobClassLoaders phaseCount = 0, removing classloaders for jobId=%s",
+                logger.finest("JobClassLoaders phaseCount = 0, removing classloaders for jobId=%s",
                         idToString(jobId));
                 Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
                 if (processorCls != null) {
@@ -231,12 +229,12 @@ public class JobClassLoaderService {
                 JetDelegatingClassLoader jobClassLoader = jobClassLoaders.jobClassLoader();
                 jobClassLoader.shutdown();
 
-                logFine(logger, "Finish JobClassLoaders phaseCount = 0," +
+                logger.fine("Finish JobClassLoaders phaseCount = 0," +
                         " removing classloaders for jobId=%s", idToString(jobId));
                 // Removes the item from the map
                 return null;
             } else {
-                logFinest(logger, "JobClassLoaders refCount > 0, NOT removing classloaders for jobId=%s", idToString(jobId));
+                logger.finest("JobClassLoaders refCount > 0, NOT removing classloaders for jobId=%s", idToString(jobId));
                 return jobClassLoaders;
             }
         });
@@ -271,7 +269,7 @@ public class JobClassLoaderService {
 
     /**
      * Keeps job classloader and potentially processor classloaders for a job.
-     *
+     * <p>
      * Note:
      * On master node there is a race between closing PMS and PS.
      * We need to close the classloader only after both have been called.

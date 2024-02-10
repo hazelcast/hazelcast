@@ -58,7 +58,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD_RESOURCES;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_SUBMIT;
@@ -191,7 +190,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                 try {
                     return newJobInt(newJobId(), jobDefinition, config, subject, false);
                 } catch (JobAlreadyExistsException e) {
-                    logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
+                    getLogger().fine("Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
             }
         }
