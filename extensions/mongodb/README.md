@@ -70,7 +70,7 @@ For more detail check out
 [MongoSources](src/main/java/com/hazelcast/jet/mongodb/MongoSources.java),
 [MongoSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoSourceBuilder.java)
 and 
-[MongoSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoSourceTest.java).
+[MongoSourceTest](src/test/java/com/hazelcast/jet/mongodb/MongoSourceTest.java).
 
 ### As a Stream Source
 
@@ -118,7 +118,7 @@ For more detail check out
 [MongoSources](src/main/java/com/hazelcast/jet/mongodb/MongoSources.java),
 [MongoSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoSourceBuilder.java)
 and 
-[MongoSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoSourceTest.java).
+[MongoSourceTest](src/test/java/com/hazelcast/jet/mongodb/MongoSourceTest.java).
 
 
 ### As a Sink
@@ -147,7 +147,7 @@ For more detail check out
 [MongoSinks](src/main/java/com/hazelcast/jet/mongodb/MongoSinks.java),
 [MongoSinkBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoSinkBuilder.java)
 and 
-[MongoSinkTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoSinkTest.java).
+[MongoSinkTest](src/test/java/com/hazelcast/jet/mongodb/MongoSinkTest.java).
 
 ## Fault Tolerance
 
