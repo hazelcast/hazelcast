@@ -22,12 +22,34 @@ import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
 public class OracleAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcSqlConnectorTest {
+
+    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlValue:{2}, javaValue:{3}, jdbcValue:{4}")
+    public static Collection<Object[]> parameters() {
+        // Include parameters from the parent class
+        Collection<Object[]> parentParams = AllTypesInsertJdbcSqlConnectorTest.parameters();
+
+        // Add additional parameters in the child class
+        List<Object[]> list = new ArrayList<>(parentParams);
+
+        Object[][] additionalData = {
+                {"BINARY_FLOAT", "REAL", "1.5", 1.5f, 1.5f},
+                {"BINARY_DOUBLE", "DOUBLE", "1.8", 1.8, 1.8},
+        };
+        list.addAll(asList(additionalData));
+
+        return list;
+    }
 
     @BeforeClass
     public static void beforeClass() {
