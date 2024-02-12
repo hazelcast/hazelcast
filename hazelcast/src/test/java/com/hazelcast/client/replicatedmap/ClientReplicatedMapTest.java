@@ -549,7 +549,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             Map<Integer, Long> versionMap = new HashMap<>();
             for (Partition partition : partitions) {
                 int partitionId = partition.getPartitionId();
-                ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(name, false, partitionId);
+                ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(name, true, partitionId);
                 versionMap.put(partitionId, store.getVersion());
             }
             versions.put(engine, versionMap);
