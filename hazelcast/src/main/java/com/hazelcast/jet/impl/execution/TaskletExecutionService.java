@@ -270,7 +270,7 @@ public class TaskletExecutionService {
             max = min;
         }
 
-        logFinest(logger, "Creating idler with %s=%dµs,%s=%dµs", minName, min, maxName, max);
+        logger.finest("Creating idler with %s=%dµs,%s=%dµs", minName, min, maxName, max);
         return new BackoffIdleStrategy(0, 0,
             minProp.getTimeUnit().toNanos(min), maxProp.getTimeUnit().toNanos(max)
         );

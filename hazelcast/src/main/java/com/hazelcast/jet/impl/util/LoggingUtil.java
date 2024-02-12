@@ -58,13 +58,4 @@ public final class LoggingUtil {
         logger.finest(template, arg1, arg2);
     }
 
-    /** @see ILogger#finest(String, Object, Object, Object) */
-    public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
-        logger.finest(template, arg1, arg2, arg3);
-    }
-
-    /** @see ILogger#finest(String, Object, Object, Object, Object) */
-    public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
-        logger.finest(template, arg1, arg2, arg3, arg4);
-    }
 }
