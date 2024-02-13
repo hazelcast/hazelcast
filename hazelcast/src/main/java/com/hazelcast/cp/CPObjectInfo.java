@@ -17,19 +17,23 @@
 package com.hazelcast.cp;
 
 /**
- * Identifier for CP groups.
- *
- * @see CPGroup
- * @see CPSubsystem
+ * Info (name, serviceName, group) about a CP object
  */
-public interface CPGroupId {
-    /**
-     * Returns name of the CP group.
-     */
-    String getName();
+public interface CPObjectInfo {
 
     /**
-     * Returns unique id of the CP group.
+     * Name of the object
      */
-    long getId();
+    String name();
+
+    /**
+     * The service name for this object.
+     */
+    String serviceName();
+
+    /**
+     * Id of the group this object belongs to
+     */
+    CPGroupId groupId();
+
 }

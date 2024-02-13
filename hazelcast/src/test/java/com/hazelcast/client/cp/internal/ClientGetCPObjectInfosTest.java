@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp;
+package com.hazelcast.client.cp.internal;
 
-/**
- * Identifier for CP groups.
- *
- * @see CPGroup
- * @see CPSubsystem
- */
-public interface CPGroupId {
-    /**
-     * Returns name of the CP group.
-     */
-    String getName();
+import com.hazelcast.cp.internal.GetCPObjectInfosTest;
+import org.junit.BeforeClass;
 
-    /**
-     * Returns unique id of the CP group.
-     */
-    long getId();
+public class ClientGetCPObjectInfosTest extends GetCPObjectInfosTest {
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        GetCPObjectInfosTest.beforeClass();
+        cp = client.getCPSubsystem();
+    }
 }

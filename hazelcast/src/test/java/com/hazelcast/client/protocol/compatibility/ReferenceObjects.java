@@ -52,6 +52,7 @@ import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -706,6 +707,7 @@ public class ReferenceObjects {
     public static Address anAddress;
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
+    public static List<CPGroupId> aListOfCpGroupIds;
     public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
     public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
     public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
@@ -745,6 +747,7 @@ public class ReferenceObjects {
     }
 
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
+    public static List<RaftGroupId> aListOfRaftGroupIds = Collections.singletonList(aRaftGroupId);
     public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(aUUID, anInt, aString, aString);
     public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
 

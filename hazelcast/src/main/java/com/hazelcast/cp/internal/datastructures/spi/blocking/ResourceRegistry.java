@@ -225,6 +225,14 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         return groupId;
     }
 
+    public Map<String, R> getResources() {
+        return resources;
+    }
+
+    public Set<String> getDestroyedNames() {
+        return destroyedNames;
+    }
+
     // queried locally in tests
     public final Map<BiTuple<String, UUID>, BiTuple<Long, Long>> getWaitTimeouts() {
         return unmodifiableMap(waitTimeouts);

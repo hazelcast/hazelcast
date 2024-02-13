@@ -26,12 +26,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -370,6 +377,36 @@ import java.util.UUID;
 public interface CPSubsystem {
 
     /**
+     * Constant identifying service for {@link IAtomicLong},
+     * to be used with {@link #getObjectInfos(CPGroupId, String)}
+     */
+    String ATOMIC_LONG = AtomicLongService.SERVICE_NAME;
+
+    /**
+     * Constant identifying service for {@link IAtomicReference},
+     * to be used with {@link #getObjectInfos(CPGroupId, String)}
+     */
+    String ATOMIC_REFERENCE = AtomicRefService.SERVICE_NAME;
+
+    /**
+     * Constant identifying service for {@link ICountDownLatch},
+     * to be used with {@link #getObjectInfos(CPGroupId, String)}
+     */
+    String COUNT_DOWN_LATCH = CountDownLatchService.SERVICE_NAME;
+
+    /**
+     * Constant identifying service for {@link ISemaphore},
+     * to be used with {@link #getObjectInfos(CPGroupId, String)}
+     */
+    String SEMAPHORE = SemaphoreService.SERVICE_NAME;
+
+    /**
+     * Constant identifying service for {@link FencedLock},
+     * to be used with {@link #getObjectInfos(CPGroupId, String)}
+     */
+    String LOCK = LockService.SERVICE_NAME;
+
+    /**
      * Returns a proxy for an {@link IAtomicLong} instance created on CP
      * Subsystem. Hazelcast's {@link IAtomicLong} is a distributed version of
      * <tt>java.util.concurrent.atomic.AtomicLong</tt>. If no group name is
@@ -557,5 +594,36 @@ public interface CPSubsystem {
      * @since 4.1
      */
     boolean removeGroupAvailabilityListener(UUID id);
+
+    /**
+     * Returns all active CP group ids.
+     *
+     * @since 5.4
+     */
+    @Beta
+    @Nonnull
+    Collection<CPGroupId> getCPGroupIds();
+
+    /**
+     * Returns info about all objects of given type within the given group
+     *
+     * @param groupId groupId for which to return the object infos
+     * @param serviceName service name for which the objects are returned
+     * @since 5.4
+     */
+    @Beta
+    @Nonnull
+    Iterable<CPObjectInfo> getObjectInfos(@Nonnull CPGroupId groupId, @Nonnull String serviceName);
+
+    /**
+     * Returns info about all tombstones of given type within the given group
+     *
+     * @param groupId groupId for which to return the tombstone infos
+     * @param serviceName service name for which the tombstones are returned
+     * @since 5.4
+     */
+    @Beta
+    @Nonnull
+    Iterable<CPObjectInfo> getTombstoneInfos(@Nonnull CPGroupId groupId, @Nonnull String serviceName);
 
 }
