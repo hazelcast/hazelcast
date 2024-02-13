@@ -22,7 +22,6 @@ package com.hazelcast.internal.tpcengine.util;
 public final class JVM {
 
     private static final int MAJOR_VERSION = Runtime.version().feature();
-    private static final boolean IS_32_BIT = is32bit0();
 
     private JVM() {
     }
@@ -36,34 +35,12 @@ public final class JVM {
         return MAJOR_VERSION;
     }
 
-    private static boolean is32bit0() {
-        String systemProp;
-        systemProp = System.getProperty("com.ibm.vm.bitmode");
-        if (systemProp != null) {
-            return "64".equals(systemProp);
-        }
-
-        // sun.arch.data.model is available on Oracle, Zing and (most probably) IBM JVMs
-        String architecture = System.getProperty("sun.arch.data.model", "?");
-        return architecture != null && architecture.equals("32");
-    }
-
     /**
      * Checks if the JVM is 32 bit.
      *
      * @return true if 32 bit.
      */
     public static boolean is32bit() {
-        return IS_32_BIT;
+        return !OS.is64bit();
     }
-
-    /**
-     * Checks if the JVM is 64 bit.
-     *
-     * @return true if 64 bit.
-     */
-    public static boolean is64bit() {
-        return !IS_32_BIT;
-    }
-
 }
