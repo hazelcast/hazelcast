@@ -32,6 +32,7 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DataHolder;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.IMap;
@@ -61,6 +62,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
@@ -290,6 +292,47 @@ public class SourcesTest extends PipelineTestSupport {
                 .map(String::valueOf)
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void remoteMapKeyData() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getMap(srcName), input);
+        SerializationService ss = getNodeEngineImpl(remoteHz).getSerializationService();
+
+        // When
+        BatchSource<DataHolder> source = Sources.remoteMapKeyData(srcName, clientConfig);
+        p.readFrom(source).writeTo(sink);
+        execute();
+
+        // Then
+        List<DataHolder> keyData = input.stream().map(i -> new DataHolder(ss.toData(String.valueOf(i))))
+                .collect(Collectors.toList());
+        assertEquals(toBag(keyData), sinkToBag());
+    }
+
+    @Test
+    public void remoteMapKeyData_dataConnectionName() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getMap(srcName), input);
+        SerializationService ss = getNodeEngineImpl(remoteHz).getSerializationService();
+
+        // When
+        String dataConnectionName = "remoteHz";
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<DataHolder> source = Sources.remoteMapKeyData(srcName, dataConnectionName);
+        p.readFrom(source).writeTo(sink);
+        execute();
+
+        // Then
+        List<DataHolder> keyData = input.stream().map(i ->
+                new DataHolder(ss.toData(String.valueOf(i)))).collect(Collectors.toList());
+        assertEquals(toBag(keyData), sinkToBag());
     }
 
     @Test

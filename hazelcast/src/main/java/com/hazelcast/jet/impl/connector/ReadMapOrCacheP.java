@@ -41,6 +41,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.DataHolder;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -113,6 +114,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private final int[] partitionIds;
     private final IterationPointer[][] readPointers;
     private final int maxParallelRead;
+    private final boolean deserialize;
 
     private F[] readFutures;
 
@@ -126,9 +128,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
     private Object pendingItem;
 
-    private ReadMapOrCacheP(@Nonnull Reader<F, B, R> reader, @Nonnull int[] partitionIds) {
+    private ReadMapOrCacheP(@Nonnull Reader<F, B, R> reader, @Nonnull int[] partitionIds, boolean deserialize) {
         this.reader = reader;
         this.partitionIds = partitionIds;
+        this.deserialize = deserialize;
 
         maxParallelRead = Math.min(partitionIds.length, MAX_PARALLEL_READ);
         readPointers = new IterationPointer[partitionIds.length][];
@@ -170,7 +173,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         pendingItem = null;
 
         while (currentBatchPosition < currentBatch.size()) {
-            Object item = reader.toObject(currentBatch.get(currentBatchPosition++));
+            R element = currentBatch.get(currentBatchPosition++);
+            Object item;
+            if (!deserialize && element instanceof Data) {
+                item = new DataHolder((Data) element);
+            } else {
+                item = reader.toObject(element);
+            }
             if (item == null) {
                 // element was filtered out by the predicate (?)
                 continue;
@@ -273,6 +282,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
+        private final boolean deserialize = true;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
         LocalProcessorMetaSupplier(
@@ -283,7 +293,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new LocalProcessorSupplier<>(readerSupplier);
+            return address -> new LocalProcessorSupplier<>(readerSupplier, deserialize);
         }
 
         @Override
@@ -316,6 +326,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         static final long serialVersionUID = 1L;
 
         private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
+        private boolean deserialize = true;
 
         private transient int[] memberPartitions;
         private transient HazelcastInstance hzInstance;
@@ -325,9 +336,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         private LocalProcessorSupplier(
-                @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
+                @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
+                boolean deserialize
         ) {
             this.readerSupplier = readerSupplier;
+            this.deserialize = deserialize;
         }
 
         @Override
@@ -341,7 +354,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public List<Processor> get(int count) {
             return Arrays.stream(distributeObjects(count, memberPartitions))
                     .map(partitions ->
-                            new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService), partitions))
+                            new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService),
+                                    partitions, deserialize))
                     .collect(toList());
         }
 
@@ -378,6 +392,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final String clientXml;
         private final String dataConnectionName;
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
+        private boolean deserialize = true;
 
         private transient HazelcastClientProxy client;
         private transient int totalParallelism;
@@ -386,13 +401,24 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         RemoteProcessorSupplier(
                 String clientXml,
                 String dataConnectionName,
-                @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
+                @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier
+        ) {
             if (clientXml != null && dataConnectionName != null) {
                 throw new IllegalArgumentException("Only one of clientXml and dataConnectionName can be set");
             }
             this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
             this.readerSupplier = readerSupplier;
+        }
+
+        RemoteProcessorSupplier(
+                String clientXml,
+                String dataConnectionName,
+                @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier,
+                boolean deserialize
+        ) {
+            this(clientXml, dataConnectionName, readerSupplier);
+            this.deserialize = deserialize;
         }
 
         @Override
@@ -427,7 +453,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             return IntStream.range(0, count)
                     .mapToObj(i -> {
                         int[] partitionIds = Util.roundRobinPart(remotePartitionCount, totalParallelism, baseIndex + i);
-                        return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds);
+                        return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds, deserialize);
                     })
                     .collect(Collectors.toList());
         }

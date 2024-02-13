@@ -318,6 +318,23 @@ public final class HazelcastReaders {
         return new RemoteProcessorSupplier<>(null, dataConnectionName, new RemoteMapKeysReaderFunction(mapName));
     }
 
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeyDataSupplier(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig
+    ) {
+        String clientXml = ImdgUtil.asXmlString(clientConfig);
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapKeysReaderFunction(mapName), false);
+    }
+
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeyDataSupplier(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return new RemoteProcessorSupplier<>(null, dataConnectionName, new RemoteMapKeysReaderFunction(mapName), false);
+    }
+
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters, Entry<Data, Data>>>,
             IdentifiedDataSerializable {

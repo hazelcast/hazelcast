@@ -64,6 +64,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 20;
     public static final int RANDOM_MEMBER_PROCESSOR_META_SUPPLIER = 21;
     public static final int REMOTE_MAP_KEYS_READER_FUNCTION = 22;
+    public static final int DATA_HOLDER = 23;
 
     /**
      * Factory ID
@@ -128,6 +129,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new ProcessorMetaSupplier.SpecificMemberPms();
                 case RANDOM_MEMBER_PROCESSOR_META_SUPPLIER:
                     return new ProcessorMetaSupplier.RandomMemberPms();
+                case DATA_HOLDER:
+                    return new DataHolder();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

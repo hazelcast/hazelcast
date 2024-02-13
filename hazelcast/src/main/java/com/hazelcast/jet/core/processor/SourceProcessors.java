@@ -186,6 +186,24 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
+     * {@link Sources#remoteMapKeyData(String, ClientConfig)}.
+     */
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeyDataP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastReaders.readRemoteMapKeyDataSupplier(mapName, clientConfig);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sources#remoteMapKeyData(String, String)}.
+     */
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeyDataP(@Nonnull String mapName, @Nonnull String dataConnectionName) {
+        return HazelcastReaders.readRemoteMapKeyDataSupplier(mapName, dataConnectionName);
+    }
+
+    /**
+     * Returns a supplier of processors for
      * {@link Sources#remoteMapJournal(String, ClientConfig, JournalInitialPosition)}.
      */
     @Nonnull
