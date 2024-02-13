@@ -732,9 +732,9 @@ public final class MetricDescriptorConstants {
     // ===[/KAFKA-CONNECT]=======================================================
 
     // ===[USER-CODE-NAMESPACES]=======================================================
-    public static final String USER_CODE_NAMESPACE_PREFIX = "user.code.namespace";
-    public static final String USER_CODE_NAMESPACE_RESOURCE_PREFIX = "user.code.namespace.resource";
-    public static final String USER_CODE_NAMESPACE_RESOURCE_ID_TAG = "resource.id";
+    public static final String USER_CODE_NAMESPACE_PREFIX = "ucn";
+    public static final String USER_CODE_NAMESPACE_RESOURCE_PREFIX = "ucn.resource";
+    public static final String USER_CODE_NAMESPACE_RESOURCE_ID_TAG = "resourceId";
     public static final String USER_CODE_NAMESPACE_DISCRIMINATOR_NAME = "name";
     public static final String USER_CODE_NAMESPACE_UPDATE_TIME = "updateTime";
     public static final String USER_CODE_NAMESPACE_RESOURCE_COUNT = "resourceCount";
