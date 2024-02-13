@@ -4784,6 +4784,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
             out.write(new byte[]{0x50, 0x4B, 0x03, 0x04});
         }
         File tempJarZip = tempFolder.newFile("tempZip.zip");
+        File tempClass = tempFolder.newFile("TempClass.class");
 
         String yamlTestString = "hazelcast:\n"
                 + "  user-code-namespaces:\n"
@@ -4805,6 +4806,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      - id: \"zipId\"\n"
                 + "        resource-type: \"jars_in_zip\"\n"
                 + "        url: " + tempJarZip.toURI().toURL() + "\n"
+                + "      - id: \"classId\"\n"
+                + "        resource-type: \"class\"\n"
+                + "        url: " + tempClass.toURI().toURL() + "\n"
                 + "    ns2:\n"
                 + "      - id: \"jarId2\"\n"
                 + "        resource-type: \"jar\"\n"
@@ -4818,24 +4822,27 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(userCodeNamespaceConfig);
 
         assertThat(userCodeNamespaceConfig.getName()).isEqualTo("ns1");
-        assertThat(userCodeNamespaceConfig.getResourceConfigs()).hasSize(2);
+        assertThat(userCodeNamespaceConfig.getResourceConfigs()).hasSize(3);
 
-        //validate NS1 ResourceDefinition contents.
+        // validate NS1 ResourceDefinition contents.
         Collection<ResourceDefinition> ns1Resources = userCodeNamespaceConfig.getResourceConfigs();
-        assertThat(ns1Resources).hasSize(2);
         Optional<ResourceDefinition> jarIdResource = ns1Resources.stream().filter(r -> r.id().equals("jarId")).findFirst();
         assertThat(jarIdResource).isPresent();
         assertThat(jarIdResource.get().url()).isEqualTo(tempJar.toURI().toURL().toString());
         assertEquals(ResourceType.JAR, jarIdResource.get().type());
-        //check the bytes[] are equal
+        // check the bytes[] are equal
         assertArrayEquals(getTestFileBytes(tempJar), jarIdResource.get().payload());
         Optional<ResourceDefinition> zipId = ns1Resources.stream().filter(r -> r.id().equals("zipId")).findFirst();
+        Optional<ResourceDefinition> classId = ns1Resources.stream().filter(r -> r.id().equals("classId")).findFirst();
         assertThat(zipId).isPresent();
         assertThat(zipId.get().url()).isEqualTo(tempJarZip.toURI().toURL().toString());
         assertEquals(ResourceType.JARS_IN_ZIP, zipId.get().type());
-        //check the bytes[] are equal
+        assertThat(classId).isPresent();
+        assertThat(classId.get().url()).isEqualTo(tempClass.toURI().toURL().toString());
+        assertEquals(ResourceType.CLASS, classId.get().type());
+        // check the bytes[] are equal
         assertArrayEquals(getTestFileBytes(tempJarZip), zipId.get().payload());
-        //validate NS2 ResourceDefinition contents.
+        // validate NS2 ResourceDefinition contents.
         final UserCodeNamespaceConfig userCodeNamespaceConfig2 = userCodeNamespacesConfig.getNamespaceConfigs().get("ns2");
         assertNotNull(userCodeNamespaceConfig2);
         assertThat(userCodeNamespaceConfig2.getName()).isEqualTo("ns2");
@@ -4846,7 +4853,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(jarId2Resource).isPresent();
         assertThat(jarId2Resource.get().url()).isEqualTo(tempJar.toURI().toURL().toString());
         assertEquals(ResourceType.JAR, jarId2Resource.get().type());
-        //check the bytes[] are equal
+        // check the bytes[] are equal
         assertArrayEquals(getTestFileBytes(tempJar), jarId2Resource.get().payload());
 
         // Validate filtering config

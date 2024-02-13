@@ -84,6 +84,10 @@ public class UserCodeNamespaceConfig
         return this;
     }
 
+    public UserCodeNamespaceConfig addClass(@Nonnull URL url, @Nullable String id) {
+        return add(new ResourceDefinitionImpl(new ResourceConfig(url, id, ResourceType.CLASS)));
+    }
+
     public UserCodeNamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
         return add(url, id, ResourceType.JAR);
     }

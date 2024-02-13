@@ -190,6 +190,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.jet.config.ResourceType.CLASS;
 import static com.hazelcast.jet.config.ResourceType.JAR;
 import static com.hazelcast.jet.config.ResourceType.JARS_IN_ZIP;
 import static java.lang.Boolean.parseBoolean;
@@ -2501,6 +2502,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleNamespaceResource(child, JAR, resources);
                 } else if ("jars-in-zip".equals(nodeName)) {
                     handleNamespaceResource(child, JARS_IN_ZIP, resources);
+                } else if ("class".equals(nodeName)) {
+                    handleNamespaceResource(child, CLASS, resources);
                 }
             }
 

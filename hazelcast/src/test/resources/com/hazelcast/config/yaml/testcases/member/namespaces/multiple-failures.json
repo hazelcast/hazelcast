@@ -30,6 +30,12 @@
               "id": 123,
               "url": "file://path"
             }
+          },
+          {
+           "class": {
+             "id": "unique-class-id",
+             "url": "wrong/path"
+           }
           }
         ]
       }

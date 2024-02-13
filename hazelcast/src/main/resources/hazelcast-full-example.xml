@@ -4190,6 +4190,15 @@
                     It has the following sub-elements:
                     * <url>:
                         Defines the URL of the zip resource.
+                * <class>:
+                    Defines a class resource to be loaded for the namespace.
+                    It has the following attributes:
+                    * <id>:
+                        Id of the class resource. This is an optional property.
+                        If not provided, the id will be the URL path.
+                    It has the following sub-elements:
+                    * <url>:
+                        Defines the URL of the class resource.
     -->
     <user-code-namespaces enabled="true">
         <class-filter defaults-disabled="true">
@@ -4212,6 +4221,9 @@
             <jars-in-zip id="jarsInZipId">
                 <url>file:///etc/hazelcast/jarsInZip.zip</url>
             </jars-in-zip>
+            <class id="classId">
+                <url>file:///etc/hazelcast/classes/MyClass.class</url>
+            </class>
         </namespace>
         <namespace name="ns2">
             <jar id="jarId2">

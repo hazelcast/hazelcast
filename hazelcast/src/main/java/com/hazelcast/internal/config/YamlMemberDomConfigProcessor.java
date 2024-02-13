@@ -345,6 +345,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                             ns.addJar(new URI(resourceUrl).toURL(), resourceId);
                         } else if ("jars_in_zip".equalsIgnoreCase(resourceTypeName)) {
                             ns.addJarsInZip(new URI(resourceUrl).toURL(), resourceId);
+                        } else if ("class".equalsIgnoreCase(resourceTypeName)) {
+                            ns.addClass(new URI(resourceUrl).toURL(), resourceId);
                         }
                     } catch (MalformedURLException | URISyntaxException e) {
                         throw new IllegalArgumentException(

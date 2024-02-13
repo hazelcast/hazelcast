@@ -1309,6 +1309,8 @@ public class ConfigXmlGenerator {
             return "jar";
         } else if (ResourceType.JARS_IN_ZIP.equals(type)) {
             return "jars-in-zip";
+        } else if (ResourceType.CLASS.equals(type)) {
+            return "class";
         } else {
             throw new IllegalArgumentException("Unknown resource type: " + type);
         }

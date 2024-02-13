@@ -171,7 +171,8 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     /** Replace the UCN example paths with real files (but empty) to ensure they can be inflated */
     private String replaceUCNReferencesWithTemporaryFile(String str) throws IOException {
         for (Path pathToReplace : new Path[] {Path.of("etc", "hazelcast", "jar.jar"), Path.of("etc", "hazelcast", "jar2.jar"),
-                Path.of("etc", "hazelcast", "jar3.jar"), Path.of("etc", "hazelcast", "jarsInZip.zip")}) {
+                Path.of("etc", "hazelcast", "jar3.jar"), Path.of("etc", "hazelcast", "jarsInZip.zip"),
+                Path.of("etc", "hazelcast", "classes", "MyClass.class")}) {
 
             Path newPath = tempDirectory.resolve(pathToReplace);
 

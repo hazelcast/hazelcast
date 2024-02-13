@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.UUID;
 
 import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -72,6 +73,48 @@ public class UserCodeNamespaceConfigTest {
                                               .filter(rc -> rc.id().equals(classResourceId))
                                               .filter(rc -> rc.url().equals(cl.getResource(classResourceId).toString()))
                                               .count();
+        assertEquals(1, matches);
+    }
+
+    @Test
+    public void testAddClass_WithCustomId() {
+        Class<?> clazz = Person.class;
+        ClassLoader classLoader = clazz.getClassLoader();
+        String className = clazz.getName().replace('.', '/') + ".class";
+        URL url = classLoader.getResource(className);
+        assertNotNull("url of class was not expected to be null", url);
+        String id = UUID.randomUUID().toString();
+
+        userCodeNamespaceConfig.addClass(url, id);
+        assertNotNull(clazz.getName() + ".getClassLoader() returned null", classLoader);
+        String classResourceId = toClassResourceId(clazz.getName());
+
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                .filter(rc -> rc.type().equals(ResourceType.CLASS))
+                .filter(rc -> rc.id().equals(id))
+                .filter(rc -> rc.url().equals(classLoader.getResource(classResourceId).toString()))
+                .count();
+        assertEquals(1, matches);
+    }
+
+    @Test
+    public void testAddClass_WithNullId() {
+        Class<?> clazz = Person.class;
+        ClassLoader classLoader = clazz.getClassLoader();
+        String className = clazz.getName().replace('.', '/') + ".class";
+        URL url = classLoader.getResource(className);
+        assertNotNull("url of class was not expected to be null", url);
+        String id = UUID.randomUUID().toString();
+
+        userCodeNamespaceConfig.addClass(url, null);
+        assertNotNull(clazz.getName() + ".getClassLoader() returned null", classLoader);
+        String classResourceId = toClassResourceId(clazz.getName());
+
+        long matches = userCodeNamespaceConfig.getResourceConfigs().stream()
+                .filter(rc -> rc.type().equals(ResourceType.CLASS))
+                .filter(rc -> rc.id().equals("Person.class"))
+                .filter(rc -> rc.url().equals(classLoader.getResource(classResourceId).toString()))
+                .count();
         assertEquals(1, matches);
     }
 

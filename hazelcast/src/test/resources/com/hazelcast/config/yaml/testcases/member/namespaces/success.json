@@ -43,6 +43,12 @@
               "id": "test3",
               "url": "file://home/hazelcast/test3.zip"
             }
+          },
+          {
+            "class": {
+              "id": "test4",
+              "url": "file://home/hazelcast/MyClass.class"
+            }
           }
         ]
       }

@@ -1185,6 +1185,9 @@
             <jars-in-zip id="jarsInZipId">
                 <url>file:///path/to/jarsInZip/jars.zip</url>
             </jars-in-zip>
+            <class id="classId">
+                <url>file:///path/to/MyClass.class</url>
+            </class>
         </namespace>
         <namespace name="ns2">
             <jar id="jarId2">

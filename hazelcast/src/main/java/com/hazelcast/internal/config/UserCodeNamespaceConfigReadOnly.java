@@ -31,22 +31,27 @@ public class UserCodeNamespaceConfigReadOnly
 
     @Override
     public UserCodeNamespaceConfig setName(String name) {
-        throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
+        throw new UnsupportedOperationException("This config is read-only namespace: " + getName());
     }
 
 
     @Override
     public UserCodeNamespaceConfig addClass(@Nonnull Class<?>... classes) {
-        throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
+        throw new UnsupportedOperationException("This config is read-only namespace: " + getName());
+    }
+
+    @Override
+    public UserCodeNamespaceConfig addClass(@Nonnull URL url, @Nullable String id) {
+        throw new UnsupportedOperationException("This config is read-only namespace: " + getName());
     }
 
     @Override
     public UserCodeNamespaceConfig addJar(@Nonnull URL url, @Nullable String id) {
-        throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
+        throw new UnsupportedOperationException("This config is read-only namespace: " + getName());
     }
 
     @Override
     public UserCodeNamespaceConfig addJarsInZip(@Nonnull URL url, @Nullable String id) {
-        throw new UnsupportedOperationException("This config is read-only name-space: " + getName());
+        throw new UnsupportedOperationException("This config is read-only namespace: " + getName());
     }
 }

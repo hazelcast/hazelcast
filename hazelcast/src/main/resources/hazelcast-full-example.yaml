@@ -4099,6 +4099,11 @@ hazelcast:
         resource-type: JARS_IN_ZIP
         # Sub-Attribute of a namespace object, Defines the URL of the zip resource.
         url: "file:///etc/hazelcast/jarsInZip.zip"
+      - id: classId
+        # Sub-Attribute of a namespace object, Defines a class resource to be loaded for the namespace.
+        resource-type: CLASS
+        # Sub-Attribute of a namespace object, Defines the URL of the class resource.
+        url: "file:///etc/hazelcast/classes/MyClass.class"
     ns2:
       - id: jarId2
         resource-type: JAR

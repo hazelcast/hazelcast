@@ -5238,10 +5238,11 @@
         "resource-type": {
           "enum": [
             "JAR",
-            "JARS_IN_ZIP"
+            "JARS_IN_ZIP",
+            "CLASS"
           ],
           "default": "JAR",
-          "description": "The resource type. Valid values are JAR or JARS_IN_ZIP."
+          "description": "The resource type. Valid values are CLASS, JAR or JARS_IN_ZIP."
         },
         "url": {
           "type": "string",

@@ -6511,6 +6511,18 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="class-resource">
+        <xs:complexContent>
+            <xs:extension base="resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures a class type resource pointing to a class file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
     <xs:complexType name="namespace-type">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -6525,6 +6537,13 @@
                 <xs:annotation>
                     <xs:documentation>
                         Defines a ZIP archive containing multiple JAR files within a user code namespace.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="class" type="class-resource">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a single class file within a user code namespace.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

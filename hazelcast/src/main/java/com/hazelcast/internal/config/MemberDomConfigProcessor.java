@@ -2729,6 +2729,17 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches(nodeName, "jars-in-zip")) {
                 handleJarsInZipNode(n, nsConfig);
             }
+            if (matches(nodeName, "class")) {
+                handleClassNode(n, nsConfig);
+            }
+        }
+    }
+
+    void handleClassNode(Node node, final UserCodeNamespaceConfig nsConfig) {
+        URL url = getNamespaceResourceUrl(node);
+        String id = getAttribute(node, "id");
+        if (url != null) {
+            nsConfig.addClass(url, id);
         }
     }
 
