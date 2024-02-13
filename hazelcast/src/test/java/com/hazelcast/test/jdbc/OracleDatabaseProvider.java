@@ -24,6 +24,8 @@ import org.testcontainers.utility.MountableFile;
 
 import javax.sql.CommonDataSource;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeNoArm64Architecture;
+
 public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(OracleDatabaseProvider.class);
 
@@ -35,6 +37,7 @@ public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer
     @SuppressWarnings("resource")
     @Override
     OracleContainer createContainer(String dbName) {
+        assumeNoArm64Architecture();
         return new OracleContainer("gvenzl/oracle-xe:21-slim-faststart")
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("init.sql"), "/container-entrypoint-startdb.d/init.sql");
