@@ -32,6 +32,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 public class WindowResult<R> {
     private final long start;
     private final long end;
+    @Nonnull
     private final R result;
     private final boolean isEarly;
 

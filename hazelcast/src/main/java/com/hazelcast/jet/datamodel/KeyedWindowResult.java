@@ -32,6 +32,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * @since Jet 3.0
  */
 public final class KeyedWindowResult<K, R> extends WindowResult<R> implements Entry<K, R> {
+    @Nonnull
     private final K key;
 
     /**
@@ -70,6 +71,7 @@ public final class KeyedWindowResult<K, R> extends WindowResult<R> implements En
      * Alias for {@link #key}, implements {@code Map.Entry}.
      */
     @Override
+    @Nonnull
     public K getKey() {
         return key;
     }
@@ -78,6 +80,7 @@ public final class KeyedWindowResult<K, R> extends WindowResult<R> implements En
      * Alias for {@link #result()}, implements {@code Map.Entry}.
      */
     @Override
+    @Nonnull
     public R getValue() {
         return result();
     }
@@ -110,7 +113,8 @@ public final class KeyedWindowResult<K, R> extends WindowResult<R> implements En
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), key);
+        // conform to Map.Entry hashCode() contract
+        return getKey().hashCode() ^ getValue().hashCode();
     }
 
     @Override

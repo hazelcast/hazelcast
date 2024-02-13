@@ -66,6 +66,9 @@ public class EqualityTest {
     public void keyedWindowResult_equalsAndHashCode() {
         EqualsVerifier.forClass(KeyedWindowResult.class)
                 .usingGetClass()
+                // KeyedWindowResult has equals with all fields
+                // but hashCode uses only key and value according to Map.Entry contract
+                .suppress(Warning.STRICT_HASHCODE)
                 .verify();
     }
 
