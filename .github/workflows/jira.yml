@@ -4,26 +4,50 @@ on:
   issues:
     types: labeled
 
-
 jobs:
-  jira1:
+  createJiraIssue:
     if: ${{ github.event.label.name == 'to-jira' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Test composite one
-        uses: hazelcast/github-jira-tool-action@v2
+      - name: Identify team name
+        id: get-team
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const labels = ${{ toJson(github.event.issue.labels) }}
+            const teamLabel = labels.find(label => label.name.includes('Team: '))?.name || ""
+            const team = teamLabel.replace('Team: ','')
+            console.log("Team: " + team)
+            return team
+      - name: Identify issue type
+        id: get-issue-type
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const labels = ${{ toJson(github.event.issue.labels) }}
+            const issueType = labels.some(label => label.name.includes('Test-Failure')) 
+              ? "Test Failure" 
+              : "Bug"
+            console.log("Issue type: " + issueType)  
+            return issueType           
+      - name: Create jira issue
+        uses: hazelcast/github-jira-tool-action@v5
         with:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           TARGET_JIRA_PROJECT: HZ
+          ISSUE_TYPE: ${{ steps.get-issue-type.outputs.result }}
           JIRA_LABEL: from-gh
-  jira2:
+          TEAM_NAME: ${{ steps.get-team.outputs.result }}
+  createClientJiraIssue:
     if: ${{ github.event.label.name == 'to-client-jira' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Test composite one
-        uses: hazelcast/github-jira-tool-action@v3.2.0
+      - name: Create jira issue
+        uses: hazelcast/github-jira-tool-action@v5
         with:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
