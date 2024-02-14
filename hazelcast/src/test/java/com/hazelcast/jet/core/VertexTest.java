@@ -20,10 +20,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
@@ -36,9 +35,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class VertexTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private Vertex v;
 
@@ -105,8 +101,7 @@ public class VertexTest {
         v.localParallelism(4);
         v.localParallelism(-1); // this is good
 
-        exception.expect(IllegalArgumentException.class);
-        v.localParallelism(-5); // this is not good
+        Assert.assertThrows(IllegalArgumentException.class, () -> v.localParallelism(-5)); // this is not good
     }
 
     private void validateProcessor() throws UnknownHostException {

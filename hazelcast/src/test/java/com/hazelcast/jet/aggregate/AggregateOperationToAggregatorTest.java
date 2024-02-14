@@ -19,10 +19,9 @@ package com.hazelcast.jet.aggregate;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,9 +35,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AggregateOperationToAggregatorTest extends PipelineTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void test_missingCombineFn() {
         AggregateOperation1<Object, Void, Void> aggrOp =
@@ -46,8 +42,7 @@ public class AggregateOperationToAggregatorTest extends PipelineTestSupport {
             .andAccumulate((v, t) -> { })
             .andExportFinish(v -> v);
 
-        expectedException.expect(NullPointerException.class);
-        toAggregator(aggrOp);
+        Assert.assertThrows(NullPointerException.class, () -> toAggregator(aggrOp));
     }
 
     @Test

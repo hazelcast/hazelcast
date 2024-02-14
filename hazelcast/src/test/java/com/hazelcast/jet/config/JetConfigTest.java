@@ -20,10 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
@@ -33,8 +31,6 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetConfigTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void when_setInstanceConfig_thenReturnsInstanceConfig() {

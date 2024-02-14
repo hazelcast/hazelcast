@@ -19,10 +19,9 @@ package com.hazelcast.jet.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static junit.framework.TestCase.assertTrue;
@@ -32,8 +31,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InstanceConfigTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void when_NegativeBackupCount_thenThrowsException() {
@@ -41,8 +38,7 @@ public class InstanceConfigTest {
         InstanceConfig instanceConfig = new InstanceConfig();
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
-        instanceConfig.setBackupCount(-1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> instanceConfig.setBackupCount(-1));
     }
 
     @Test
@@ -51,8 +47,7 @@ public class InstanceConfigTest {
         InstanceConfig instanceConfig = new InstanceConfig();
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
-        instanceConfig.setBackupCount(10);
+        Assert.assertThrows(IllegalArgumentException.class, () -> instanceConfig.setBackupCount(10));
     }
 
     @Test

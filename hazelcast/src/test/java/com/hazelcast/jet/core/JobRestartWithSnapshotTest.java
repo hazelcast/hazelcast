@@ -37,10 +37,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -82,9 +80,6 @@ import static org.junit.Assert.assertTrue;
 public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     private static final int LOCAL_PARALLELISM = 4;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance instance1;
     private HazelcastInstance instance2;
