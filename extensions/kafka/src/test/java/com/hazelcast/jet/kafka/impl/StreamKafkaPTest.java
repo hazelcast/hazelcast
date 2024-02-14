@@ -66,6 +66,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -574,14 +575,19 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         }
         assertTrue("nothing was produced to partition-1", somethingInPartition1);
         Set<Object> receivedEvents = new HashSet<>();
-        for (int i = 1; i < 11; i++) {
+        for (int i = 1; i < 11;) {
             try {
-                receivedEvents.add(consumeEventually(processor, outbox));
+                Object consumed = consumeEventually(processor, outbox);
+                if (!(consumed instanceof Watermark)) {
+                    receivedEvents.add(consumed);
+                    i++;
+                }
             } catch (AssertionError e) {
-                throw new AssertionError("Unable to receive 10 items, events so far: " + receivedEvents);
+                throw new AssertionError("Unable to receive 10 items, events so far: " + receivedEvents, e);
             }
         }
-        assertEquals(range(1, 11).mapToObj(i -> entry(i, Integer.toString(i))).collect(toSet()), receivedEvents);
+        var expected = range(1, 11).mapToObj(i -> entry(i, Integer.toString(i))).collect(toSet());
+        assertThat(receivedEvents).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
@@ -621,17 +627,20 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             somethingInPartition1 |= recordMetadata.partition() == 1;
         }
         assertTrue("nothing was produced to partition-1", somethingInPartition1);
-        Set<Object> receivedEvents = new HashSet<>();
-        for (int i = 2; i < 12; i++) {
+        Set<Object> receivedEvents = new LinkedHashSet<>();
+        for (int i = 2; i < 12;) {
             try {
-                receivedEvents.add(consumeEventually(processor, outbox));
+                Object consumed = consumeEventually(processor, outbox);
+                if (!(consumed instanceof Watermark)) {
+                    receivedEvents.add(consumed);
+                    i++;
+                }
             } catch (AssertionError e) {
-                throw new AssertionError("Unable to receive 10 items, events so far: " + receivedEvents);
+                throw new AssertionError("Unable to receive 10 items, events so far: " + receivedEvents, e);
             }
         }
-        receivedEvents.removeIf(o -> o instanceof Watermark);
         var expected = range(2, 12).mapToObj(i -> entry(i, Integer.toString(i))).collect(toSet());
-        assertEquals(expected, receivedEvents);
+        assertThat(receivedEvents).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
