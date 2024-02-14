@@ -18,16 +18,17 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedExecutor;
@@ -700,7 +701,23 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      */
     @Override
     public void executeEventCallback(@Nonnull Runnable callback) {
+        executeEventCallback(callback, false);
+    }
+
+    /**
+     * Same as {@link #executeEventCallback(Runnable)} but optionally throws exceptions if
+     * the callback was not accepted for execution.
+     *
+     * @param callback the callback to execute on a random event thread
+     * @param shouldThrow if the exceptions should be thrown
+     * @throws HazelcastInstanceNotActiveException when instance is not active
+     * @throws RejectedExecutionException if the worker is the overloaded
+     */
+    public void executeEventCallback(@Nonnull Runnable callback, boolean shouldThrow) {
         if (!nodeEngine.isRunning()) {
+            if (shouldThrow) {
+                throw new HazelcastInstanceNotActiveException();
+            }
             return;
         }
         try {
@@ -710,6 +727,10 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
             if (eventExecutor.isLive()) {
                 logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
+            }
+
+            if (shouldThrow) {
+                throw e;
             }
         }
     }

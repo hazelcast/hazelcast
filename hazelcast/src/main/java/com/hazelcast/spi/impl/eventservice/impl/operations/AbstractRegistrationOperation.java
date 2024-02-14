@@ -23,11 +23,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
@@ -49,24 +49,48 @@ abstract class AbstractRegistrationOperation extends Operation
     }
 
     @Override
-    public final void run() throws Exception {
+    public final void run() {
         if (orderKey == -1) {
-            runInternal();
+            // run synchronously
+            doRun();
         } else {
+            // run asynchronously on executor dedicated for the key to preserve order
+            // and wait for the execution to finish
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
+
             eventService.executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
-                    runInternal();
+                    try {
+                        doRun();
+                    } catch (Throwable e) {
+                        logError(e);
+                        sendResponse(e);
+                    }
                 }
 
                 @Override
                 public int getKey() {
                     return orderKey;
                 }
-            });
+            }, true);
         }
+    }
+
+    private void doRun() {
+        runInternal();
         checkMemberListVersion();
+        sendResponse(null);
+    }
+
+    @Override
+    public final boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public final Object getResponse() {
+        throw new UnsupportedOperationException();
     }
 
     protected abstract void runInternal();

@@ -60,6 +60,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelism
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -256,7 +257,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     listener.deregister();
                     job.cancel();
                     assertHasNoListenerEventually(job.getIdString(), listener.registrationId);
-                    assertTrue(listener.log.isEmpty());
+                    assertThat(listener.log).isEmpty();
                 }).runLightJob();
     }
 
@@ -338,7 +339,6 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         public JobStatusLogger(Job job) {
             this.job = job;
             registrationId = job.addStatusListener(this);
-            MockPS.unblock();
         }
 
         @Override
@@ -412,6 +412,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
             assertNotNull("Use when() to specify a test", test);
             Job job = submit.apply(instance.get().getJet(), dag);
             JobStatusLogger listener = new JobStatusLogger(job);
+            MockPS.unblock();
             jobIdString = job.getIdString();
             registrationId = listener.registrationId;
             test.accept(job, listener);
