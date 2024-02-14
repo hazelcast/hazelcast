@@ -54,39 +54,42 @@ public class YamlOnlyConfigBuilderTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testMapQueryCachePredicateBothClassNameAndSql() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "      query-caches:\n"
-                + "        cache-name:\n"
-                + "          predicate:\n"
-                + "            class-name: com.hazelcast.examples.SimplePredicate\n"
-                + "            sql: \"%age=40\"\n";
+        String yaml = """
+                hazelcast:
+                  map:
+                    test:
+                      query-caches:
+                        cache-name:
+                          predicate:
+                            class-name: com.hazelcast.examples.SimplePredicate
+                            sql: "%age=40"
+                """;
 
         buildConfig(yaml);
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testMapQueryCachePredicateNeitherClassNameNorSql() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "      query-caches:\n"
-                + "        cache-name:\n"
-                + "          predicate: {}\n";
+        String yaml = """
+                hazelcast:
+                  map:
+                    test:
+                      query-caches:
+                        cache-name:
+                          predicate: {}
+                """;
 
         buildConfig(yaml);
     }
 
     @Test
     public void testNullInMapThrows() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "    query-caches: {}\n";
+        String yaml = """
+                hazelcast:
+                  map:
+                    test:
+                    query-caches: {}
+                """;
 
         assertThatThrownBy(() -> buildConfig(yaml))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/map/test"));
@@ -94,11 +97,12 @@ public class YamlOnlyConfigBuilderTest {
 
     @Test
     public void testNullInSequenceThrows() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  listeners:\n"
-                + "    - com.package.SomeListener\n"
-                + "    -\n";
+        String yaml = """
+                hazelcast:
+                  listeners:
+                    - com.package.SomeListener
+                    -
+                """;
 
         assertThatThrownBy(() -> buildConfig(yaml))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/listeners"));
@@ -106,24 +110,24 @@ public class YamlOnlyConfigBuilderTest {
 
     @Test
     public void testExplicitNullScalarThrows() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  instance-name: !!null";
-
+        String yaml = """
+                hazelcast:
+                  instance-name: !!null
+                """;
         assertThatThrownBy(() -> buildConfig(yaml))
                 .has(rootCause(InvalidConfigurationException.class, "hazelcast/instance-name"));
     }
 
     @Test
     public void testCPMapConfig() {
-        String yaml = ""
-                              + "hazelcast:\n"
-                              + "  cp-subsystem:\n"
-                              + "    maps:\n"
-                              + "      map1:\n"
-                              + "        max-size-mb: 50\n"
-                              + "      map2:\n"
-                              + "        max-size-mb: 25";
+        String yaml = """
+                hazelcast:
+                  cp-subsystem:
+                    maps:
+                      map1:
+                        max-size-mb: 50
+                      map2:
+                        max-size-mb: 25""";
         Config config = buildConfig(yaml);
         assertNotNull(config);
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();

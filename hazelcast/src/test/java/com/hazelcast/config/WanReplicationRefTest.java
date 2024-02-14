@@ -63,7 +63,7 @@ public class WanReplicationRefTest {
 
     @Test
     public void testSetFilters() {
-        List<String> filters = new ArrayList<String>();
+        List<String> filters = new ArrayList<>();
         filters.add("myFilter1");
         filters.add("myFilter2");
 

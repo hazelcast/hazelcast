@@ -45,7 +45,7 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Before
     @After
-    public void beforeAndAfter() throws Exception {
+    public void beforeAndAfter() {
         System.clearProperty(SYSPROP_MEMBER_CONFIG);
         helper.ensureTestConfigDeleted();
     }

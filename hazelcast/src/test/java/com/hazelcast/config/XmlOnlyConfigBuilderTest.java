@@ -261,7 +261,7 @@ public class XmlOnlyConfigBuilderTest {
         try {
             validator.validate(source);
         } catch (SAXException ex) {
-            fail(xmlFileName + " is not valid because: " + ex.toString());
+            fail(xmlFileName + " is not valid because: " + ex);
         }
     }
 

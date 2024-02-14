@@ -1331,7 +1331,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "<map-store >"
-                + (useDefault ? "" : "<offload>" + String.valueOf(value) + "</offload>")
+                + (useDefault ? "" : "<offload>" + value + "</offload>")
                 + "</map-store>"
                 + "</map>"
                 + HAZELCAST_END_TAG;

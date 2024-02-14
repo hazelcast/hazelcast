@@ -46,7 +46,7 @@ public class WanReplicationRefReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setFiltersOnReadOnlyWanReplicationRefShouldFail() {
-        getReadOnlyRef().setFilters(Collections.<String>emptyList());
+        getReadOnlyRef().setFilters(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)
