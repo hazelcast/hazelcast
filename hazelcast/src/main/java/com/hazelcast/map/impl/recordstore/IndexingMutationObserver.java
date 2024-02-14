@@ -180,7 +180,9 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
             return;
         }
 
-        indexRegistry.removeEntry(toBackingKeyFormat(dataKey), getValueOrCachedValue(record, ss), operationSource);
+        Data backingKey = toBackingKeyFormat(dataKey);
+        Object valueOrCachedValue = getValueOrCachedValue(record, ss);
+        indexRegistry.removeEntry(backingKey, valueOrCachedValue, operationSource);
     }
 
     private Data toBackingKeyFormat(Data key) {
