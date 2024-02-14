@@ -219,7 +219,7 @@ public class ClientMigrationListenerTest {
     }
 
     private PartitionMigrationListenerTest.EventCollectingMigrationListener eventCollectingMigrationListener() {
-        return new PartitionMigrationListenerTest.EventCollectingMigrationListener();
+        return new PartitionMigrationListenerTest.EventCollectingMigrationListener(false);
     }
 
     private void assertRegistrationsSizeEventually(HazelcastInstance instance, int size) {

@@ -47,7 +47,7 @@ public class PartitionMigrationComputeIntensiveTest extends HazelcastTestSupport
         assertClusterSizeEventually(instances.length, instances);
         warmUpPartitions(instances);
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
         instances[0].getPartitionService().addMigrationListener(listener);
 
         changeClusterStateEventually(instances[0], ClusterState.PASSIVE);
