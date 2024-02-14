@@ -57,7 +57,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -254,7 +253,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
+    public void testNonExistentEntriesValueAreNotInsertedIntoMap() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(new MapStoreTest.NullLoader());
 
@@ -270,11 +269,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(MAP_NAME);
 
-        // load entries.
-        assertThatThrownBy(() -> map.getAll(new HashSet<>(asList("key1", "key2", "key3"))))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("Neither key nor value can be loaded as null");
+        //load not existent entries
+        Map<String, String> responseMap = map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+        assertEquals(0, responseMap.size());
+        assertEquals(0, map.size());
     }
+
 
     @Test
     public void test_executeOnEntries_with_read_only_entry_processor() {
