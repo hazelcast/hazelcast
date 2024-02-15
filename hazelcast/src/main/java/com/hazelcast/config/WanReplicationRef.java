@@ -153,6 +153,7 @@ public class WanReplicationRef implements IdentifiedDataSerializable, Serializab
     /**
      * Returns {@code true} if incoming WAN events to this member should be
      * republished (forwarded) to this WAN replication reference.
+     * The default state for republishing is {@code true} (enabled).
      */
     public boolean isRepublishingEnabled() {
         return republishingEnabled;
@@ -161,6 +162,7 @@ public class WanReplicationRef implements IdentifiedDataSerializable, Serializab
     /**
      * Sets if incoming WAN events to this member should be republished
      * (forwarded) to this WAN replication reference.
+     * The default state for republishing is {@code true} (enabled).
      *
      * @param republishEnabled whether WAN event republishing is enabled
      * @return this config
