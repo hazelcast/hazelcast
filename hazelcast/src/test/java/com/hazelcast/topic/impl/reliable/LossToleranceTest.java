@@ -16,13 +16,11 @@
 
 package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.cluster.Member;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,41 +31,37 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
-import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LossToleranceTest extends HazelcastTestSupport {
 
-    private static final String RELIABLE_TOPIC_NAME = "foo";
+    private String reliableTopicName;
     private ReliableTopicProxy<String> topic;
     private Ringbuffer<ReliableTopicMessage> ringbuffer;
     private HazelcastInstance topicOwnerInstance;
-    private HazelcastInstance topicBackupInstance;
 
     @Before
     public void setup() {
-        Config config = smallInstanceConfig().addRingBufferConfig(
-                new RingbufferConfig(RELIABLE_TOPIC_NAME)
+        final HazelcastInstance[] instances = createHazelcastInstances(smallInstanceConfig(), 2);
+
+        warmUpPartitions(instances);
+        assertClusterSizeEventually(instances.length, instances);
+
+        topicOwnerInstance = instances[0];
+        reliableTopicName = randomNameOwnedBy(topicOwnerInstance, getClass().getName());
+
+        // Update the configuration now we've generated a name
+        instances[0].getConfig().addRingBufferConfig(
+                new RingbufferConfig(reliableTopicName)
                         .setCapacity(100)
                         .setTimeToLiveSeconds(0)
                         .setBackupCount(0)
                         .setAsyncBackupCount(0));
-        final HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
-        warmUpPartitions(instances);
-        for (HazelcastInstance instance : instances) {
-            final Member owner = instance.getPartitionService().getPartition(TOPIC_RB_PREFIX + RELIABLE_TOPIC_NAME).getOwner();
-            final Member localMember = instance.getCluster().getLocalMember();
-            if (localMember.equals(owner)) {
-                topicOwnerInstance = instance;
-            } else {
-                topicBackupInstance = instance;
-            }
-        }
-
-        topic = (ReliableTopicProxy<String>) topicBackupInstance.<String>getReliableTopic(RELIABLE_TOPIC_NAME);
+        // Get the topic from the backup (i.e. non-owning) instance
+        topic = (ReliableTopicProxy<String>) instances[1].<String>getReliableTopic(reliableTopicName);
         ringbuffer = topic.ringbuffer;
     }
 
