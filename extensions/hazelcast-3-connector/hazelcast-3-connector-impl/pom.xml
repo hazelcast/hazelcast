@@ -5,7 +5,7 @@
     <parent>
         <artifactId>hazelcast-3-connector-root</artifactId>
         <groupId>com.hazelcast</groupId>
-        <version>5.2.4-SNAPSHOT</version>
+        <version>5.2.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>hazelcast-3-connector-impl</artifactId>
