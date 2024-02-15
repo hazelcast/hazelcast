@@ -403,6 +403,11 @@
                     </excludedGroups>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
+                    <!-- Fixes missing parameters in test name for tests run via mvn -->
+                    <statelessTestsetReporter
+                            implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                        <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                    </statelessTestsetReporter>
                 </configuration>
             </plugin>
 
@@ -864,6 +869,11 @@
                                     <systemPropertyVariables>
                                         <multipleJVM>true</multipleJVM>
                                     </systemPropertyVariables>
+                                    <!-- Fixes missing parameters in test name for tests run via mvn -->
+                                    <statelessTestsetReporter
+                                            implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                        <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                                    </statelessTestsetReporter>
                                 </configuration>
                             </execution>
                             <execution>
@@ -897,6 +907,11 @@
                                         com.hazelcast.test.annotation.NightlyTest,
                                         com.hazelcast.test.annotation.ParallelJVMTest
                                     </excludedGroups>
+                                    <!-- Fixes missing parameters in test name for tests run via mvn -->
+                                    <statelessTestsetReporter
+                                            implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                        <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                                    </statelessTestsetReporter>
                                 </configuration>
                             </execution>
                         </executions>
@@ -981,6 +996,11 @@
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
+                            <!-- Fixes missing parameters in test name for tests run via mvn -->
+                            <statelessTestsetReporter
+                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
                         </configuration>
                     </plugin>
 
@@ -1069,6 +1089,11 @@
                             <includes>
                                 <include>**/YourTestFileHear.java</include>
                             </includes>
+                            <!-- Fixes missing parameters in test name for tests run via mvn -->
+                            <statelessTestsetReporter
+                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -1145,6 +1170,11 @@
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
+                            <!-- Fixes missing parameters in test name for tests run via mvn -->
+                            <statelessTestsetReporter
+                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
                         </configuration>
                     </plugin>
 
@@ -1299,6 +1329,11 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
                             </excludes>
+                            <!-- Fixes missing parameters in test name for tests run via mvn -->
+                            <statelessTestsetReporter
+                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -1367,6 +1402,11 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
                             </excludes>
+                            <!-- Fixes missing parameters in test name for tests run via mvn -->
+                            <statelessTestsetReporter
+                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -1467,6 +1507,11 @@
                                 com.hazelcast.test.annotation.NightlyTest,
                                 com.hazelcast.test.annotation.SerializationSamplesExcluded
                             </excludedGroups>
+                            <!-- Fixes missing parameters in test name for tests run via mvn -->
+                            <statelessTestsetReporter
+                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
                         </configuration>
                     </plugin>
                 </plugins>
