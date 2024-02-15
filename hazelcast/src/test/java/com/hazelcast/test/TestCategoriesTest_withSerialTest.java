@@ -21,11 +21,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
+import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -33,18 +32,15 @@ public class TestCategoriesTest_withSerialTest extends HazelcastTestSupport {
 
     @Test
     public void testGetTestCategories() {
-        HashSet<Class<?>> testCategories = getTestCategories();
-        assertEquals("Expected a single test category", 1, testCategories.size());
-        assertTrue("Expected to find a QuickTest category", testCategories.contains(QuickTest.class));
+        Collection<Class<?>> testCategories = getTestCategories();
+
+        assertThat(testCategories).as("@%s annotation did not have expected values", Category.class.getSimpleName())
+                .containsExactlyInAnyOrder(QuickTest.class);
     }
 
     @Test
     public void testAssertThatNotMultithreadedTest() {
-        try {
-            assertThatIsNotMultithreadedTest();
-            fail("Expected an exception on this serial test");
-        } catch (AssertionError e) {
-            ignore(e);
-        }
+        assertThatCode(() -> assertThatIsNotMultithreadedTest()).as("Expected an exception on this serial test")
+                .doesNotThrowAnyException();
     }
 }

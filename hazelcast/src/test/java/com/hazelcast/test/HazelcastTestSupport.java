@@ -67,15 +67,17 @@ import org.junit.function.ThrowingRunnable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.StackWalker.Option;
+import java.lang.StackWalker.StackFrame;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +108,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -1438,8 +1439,8 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertThatIsNotMultithreadedTest() {
-        assertFalse("Test cannot run with parallel runner",
-                Thread.currentThread() instanceof MultithreadedTestRunnerThread);
+        assertThat(Thread.currentThread()).as("Test cannot run with parallel runner")
+                .isNotInstanceOf(MultithreadedTestRunnerThread.class);
     }
 
     // ###################################
@@ -1464,15 +1465,13 @@ public abstract class HazelcastTestSupport {
      * This method doesn't cover {@link Category} annotations on a test method.
      * It may also fail on test class hierarchies (the annotated class has to be in the stack trace).
      */
-    public static HashSet<Class<?>> getTestCategories() {
-        List<Class<?>> testCategories = acceptOnStackTrace((element, results) -> {
+    public static Collection<Class<?>> getTestCategories() {
+        Collection<Class<?>> testCategories = acceptOnStackTrace((frame, results) -> {
             try {
-                String className = element.getClassName();
-                Class<?> clazz = Class.forName(className);
+                Class<?> clazz = frame.getDeclaringClass();
                 Category annotation = clazz.getAnnotation(Category.class);
                 if (annotation != null) {
-                    List<Class<?>> categoryList = asList(annotation.value());
-                    results.addAll(categoryList);
+                    Collections.addAll(results, annotation.value());
                 }
             } catch (Exception ignored) {
             }
@@ -1480,7 +1479,7 @@ public abstract class HazelcastTestSupport {
         if (testCategories.isEmpty()) {
             fail("Could not find any classes with a @Category annotation in the stack trace");
         }
-        return new HashSet<>(testCategories);
+        return testCategories;
     }
 
     // ###################################
@@ -1614,12 +1613,10 @@ public abstract class HazelcastTestSupport {
      * result from the {@code BiConsumer} should be added to the {@code results} list which is
      * returned as the result of this method.
      */
-    private static <V> List<V> acceptOnStackTrace(BiConsumer<StackTraceElement, List<V>> consumer) {
-        List<V> results = new ArrayList<>();
-        StackTraceElement[] stackTrace = new Exception().getStackTrace();
-        for (StackTraceElement stackTraceElement : stackTrace) {
-            consumer.accept(stackTraceElement, results);
-        }
+    private static <V> Collection<V> acceptOnStackTrace(BiConsumer<StackFrame, Collection<V>> consumer) {
+        Collection<V> results = new ArrayList<>();
+        StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE)
+                .forEach(stackFrame -> consumer.accept(stackFrame, results));
         return results;
     }
 
