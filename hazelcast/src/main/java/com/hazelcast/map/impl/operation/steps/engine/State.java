@@ -36,6 +36,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nullable;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -106,6 +107,7 @@ public class State {
     private volatile Consumer backupOpAfterRun;
     private volatile int sizeBefore;
     private volatile int sizeAfter;
+    private volatile BitSet nonWanReplicatedIndexes;
 
     public State(RecordStore recordStore, MapOperation operation) {
         init(recordStore, operation);
@@ -548,4 +550,11 @@ public class State {
         this.sizeAfter = sizeAfter;
     }
 
+    public void setNonWanReplicatedIndexes(BitSet nonWanReplicationIndexes) {
+        this.nonWanReplicatedIndexes = nonWanReplicationIndexes;
+    }
+
+    public BitSet getNonWanReplicatedIndexes() {
+        return nonWanReplicatedIndexes;
+    }
 }

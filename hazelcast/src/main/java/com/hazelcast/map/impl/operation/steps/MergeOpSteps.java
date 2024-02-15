@@ -34,6 +34,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Queue;
 
@@ -150,7 +151,7 @@ public enum MergeOpSteps implements IMapOpStep {
 
     PROCESS() {
         @Override
-        @SuppressWarnings("checkstyle:NestedIfDepth")
+        @SuppressWarnings({"checkstyle:NestedIfDepth", "checkstyle:CyclomaticComplexity"})
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -191,7 +192,13 @@ public enum MergeOpSteps implements IMapOpStep {
                         if (shouldMergeExpiration) {
                             Record record = recordStore.getRecord((Data) key);
                             if (record != null) {
-                                recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
+                                if (!recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow())) {
+                                    // If we did not merge values, and did not merge expiration metadata, do not WAN replicate
+                                    if (state.getNonWanReplicatedIndexes() == null) {
+                                        state.setNonWanReplicatedIndexes(new BitSet());
+                                    }
+                                    state.getNonWanReplicatedIndexes().set(i / NUMBER_OF_ITEMS);
+                                }
                             }
                         }
                         continue;
@@ -263,7 +270,12 @@ public enum MergeOpSteps implements IMapOpStep {
                 }
 
                 if (hasWanReplication) {
-                    operation.publishWanUpdate(dataKey, dataValue);
+                    // Don't WAN replicate keys that did not change during the merge; see MergeOperation and CacheMergeOperation
+                    boolean nonReplicatedKey = state.getNonWanReplicatedIndexes() != null
+                            && state.getNonWanReplicatedIndexes().get(i / NUMBER_OF_ITEMS);
+                    if (!nonReplicatedKey) {
+                        operation.publishWanUpdate(dataKey, dataValue);
+                    }
                 }
 
                 if (hasInvalidation) {
@@ -279,12 +291,12 @@ public enum MergeOpSteps implements IMapOpStep {
             }
 
             state.setBackupPairs(backupPairs);
-
             state.setResult(hasMergedValues);
 
             operation.invalidateNearCache(invalidationKeys);
-
             operation.finishIndexMarking(state.getNotMarkedIndexes());
+            operation.setNonWanReplicatedKeys(state.getNonWanReplicatedIndexes());
+
         }
 
         @Override

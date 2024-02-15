@@ -309,6 +309,16 @@ public class MergeOperation extends MapOperation
     }
 
     /**
+     * Sets the {@link BitSet} of keys which should not be WAN replicated, as their values have not changed.
+     * See {@link MergeOpSteps#PROCESS}
+     *
+     * @param nonWanReplicatedKeys the key indexes which should not be WAN replicated
+     */
+    public void setNonWanReplicatedKeys(BitSet nonWanReplicatedKeys) {
+        this.nonWanReplicatedKeys = nonWanReplicatedKeys;
+    }
+
+    /**
      * Since records may get evicted on NOOME after
      * they have been merged. We are re-checking
      * backup pair list to eliminate evicted entries.
