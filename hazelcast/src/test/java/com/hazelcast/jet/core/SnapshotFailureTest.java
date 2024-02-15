@@ -32,10 +32,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -54,9 +52,6 @@ public class SnapshotFailureTest extends JetTestSupport {
     private static final int LOCAL_PARALLELISM = 4;
 
     private static volatile boolean storeFailed;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance instance1;
 

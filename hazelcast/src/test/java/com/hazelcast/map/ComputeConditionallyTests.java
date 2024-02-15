@@ -24,10 +24,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import testsubjects.NonStaticFunctionFactory;
 import testsubjects.StaticNonSerializableBiFunction;
@@ -47,8 +45,6 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ComputeConditionallyTests extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     HazelcastInstance[] instances;
     private HazelcastInstance firstNode;

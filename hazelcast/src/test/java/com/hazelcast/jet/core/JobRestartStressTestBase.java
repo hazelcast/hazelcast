@@ -24,8 +24,6 @@ import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JobRepository;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import java.util.function.Function;
 
@@ -33,9 +31,6 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public class JobRestartStressTestBase extends JetTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance instance1;
 
