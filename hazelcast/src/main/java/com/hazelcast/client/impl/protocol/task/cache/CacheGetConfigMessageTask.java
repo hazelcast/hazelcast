@@ -24,6 +24,8 @@ import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -70,7 +72,7 @@ public class CacheGetConfigMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

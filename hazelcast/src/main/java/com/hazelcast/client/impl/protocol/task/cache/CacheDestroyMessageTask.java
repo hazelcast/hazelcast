@@ -23,6 +23,8 @@ import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -66,12 +68,12 @@ public class CacheDestroyMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters, ActionConstants.ACTION_DESTROY);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return null;
+        return parameters;
     }
 
     @Override
