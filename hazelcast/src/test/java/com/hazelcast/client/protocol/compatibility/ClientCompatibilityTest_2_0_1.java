@@ -87,6 +87,10 @@ public class ClientCompatibilityTest_2_0_1 {
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
         assertFalse(parameters.isTpcPortsExists);
         assertFalse(parameters.isTpcTokenExists);
+        assertFalse(parameters.isMemberListVersionExists);
+        assertFalse(parameters.isMemberInfosExists);
+        assertFalse(parameters.isPartitionListVersionExists);
+        assertFalse(parameters.isPartitionsExists);
     }
 
     @Test
@@ -112,6 +116,10 @@ public class ClientCompatibilityTest_2_0_1 {
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
         assertFalse(parameters.isTpcPortsExists);
         assertFalse(parameters.isTpcTokenExists);
+        assertFalse(parameters.isMemberListVersionExists);
+        assertFalse(parameters.isMemberInfosExists);
+        assertFalse(parameters.isPartitionListVersionExists);
+        assertFalse(parameters.isPartitionsExists);
     }
 
     @Test

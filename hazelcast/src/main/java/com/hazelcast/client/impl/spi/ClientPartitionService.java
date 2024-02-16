@@ -16,10 +16,14 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.Partition;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -28,6 +32,18 @@ import java.util.UUID;
  * Allows to retrieve information about the partition count, the partition owner or the partitionId of a key.
  */
 public interface ClientPartitionService {
+
+    /**
+     * Updates the partition table with the new partition table information.
+     *
+     * Note: The partitions can be empty on the response, client will not apply the empty partition table.
+     *
+     * @param connection the connection which the partition table is received from
+     * @param partitions the partition table
+     * @param partitionStateVersion the version of the partition table
+     */
+    void handlePartitionsViewEvent(Connection connection, Collection<Map.Entry<UUID, List<Integer>>> partitions,
+                                   int partitionStateVersion);
 
     /**
      * @param partitionId

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster.
  */
 @SuppressWarnings("unused")
-@Generated("31da87ab482d768c480295c711e9f411")
+@Generated("3beea2466a4f9fc9c86378f984ee6d6c")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -52,7 +52,9 @@ public final class ClientAuthenticationCodec {
     private static final int RESPONSE_PARTITION_COUNT_FIELD_OFFSET = RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_CLUSTER_ID_FIELD_OFFSET = RESPONSE_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET = RESPONSE_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_MEMBER_LIST_VERSION_FIELD_OFFSET = RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_PARTITION_LIST_VERSION_FIELD_OFFSET = RESPONSE_MEMBER_LIST_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_PARTITION_LIST_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientAuthenticationCodec() {
     }
@@ -200,6 +202,26 @@ public final class ClientAuthenticationCodec {
         public @Nullable byte[] tpcToken;
 
         /**
+         * Incremental member list version
+         */
+        public int memberListVersion;
+
+        /**
+         * List of member infos  at the cluster associated with the given version
+         */
+        public java.util.List<com.hazelcast.internal.cluster.MemberInfo> memberInfos;
+
+        /**
+         * Incremental state version of the partition table
+         */
+        public int partitionListVersion;
+
+        /**
+         * The partition table. In each entry, it has uuid of the member and list of partitions belonging to that member
+         */
+        public java.util.List<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions;
+
+        /**
          * True if the tpcPorts is received from the member, false otherwise.
          * If this is false, tpcPorts has the default value for its type.
          */
@@ -210,9 +232,33 @@ public final class ClientAuthenticationCodec {
          * If this is false, tpcToken has the default value for its type.
          */
         public boolean isTpcTokenExists;
+
+        /**
+         * True if the memberListVersion is received from the member, false otherwise.
+         * If this is false, memberListVersion has the default value for its type.
+         */
+        public boolean isMemberListVersionExists;
+
+        /**
+         * True if the memberInfos is received from the member, false otherwise.
+         * If this is false, memberInfos has the default value for its type.
+         */
+        public boolean isMemberInfosExists;
+
+        /**
+         * True if the partitionListVersion is received from the member, false otherwise.
+         * If this is false, partitionListVersion has the default value for its type.
+         */
+        public boolean isPartitionListVersionExists;
+
+        /**
+         * True if the partitions is received from the member, false otherwise.
+         * If this is false, partitions has the default value for its type.
+         */
+        public boolean isPartitionsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts, @Nullable byte[] tpcToken) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts, @Nullable byte[] tpcToken, int memberListVersion, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos, int partitionListVersion, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -222,12 +268,16 @@ public final class ClientAuthenticationCodec {
         encodeInt(initialFrame.content, RESPONSE_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
         encodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET, clusterId);
         encodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET, failoverSupported);
+        encodeInt(initialFrame.content, RESPONSE_MEMBER_LIST_VERSION_FIELD_OFFSET, memberListVersion);
+        encodeInt(initialFrame.content, RESPONSE_PARTITION_LIST_VERSION_FIELD_OFFSET, partitionListVersion);
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
         CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
         CodecUtil.encodeNullable(clientMessage, tpcToken, ByteArrayCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
+        EntryListUUIDListIntegerCodec.encode(clientMessage, partitions);
         return clientMessage;
     }
 
@@ -241,6 +291,18 @@ public final class ClientAuthenticationCodec {
         response.partitionCount = decodeInt(initialFrame.content, RESPONSE_PARTITION_COUNT_FIELD_OFFSET);
         response.clusterId = decodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET);
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
+        if (initialFrame.content.length >= RESPONSE_MEMBER_LIST_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES) {
+            response.memberListVersion = decodeInt(initialFrame.content, RESPONSE_MEMBER_LIST_VERSION_FIELD_OFFSET);
+            response.isMemberListVersionExists = true;
+        } else {
+            response.isMemberListVersionExists = false;
+        }
+        if (initialFrame.content.length >= RESPONSE_PARTITION_LIST_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES) {
+            response.partitionListVersion = decodeInt(initialFrame.content, RESPONSE_PARTITION_LIST_VERSION_FIELD_OFFSET);
+            response.isPartitionListVersionExists = true;
+        } else {
+            response.isPartitionListVersionExists = false;
+        }
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
@@ -254,6 +316,18 @@ public final class ClientAuthenticationCodec {
             response.isTpcTokenExists = true;
         } else {
             response.isTpcTokenExists = false;
+        }
+        if (iterator.hasNext()) {
+            response.memberInfos = ListMultiFrameCodec.decode(iterator, MemberInfoCodec::decode);
+            response.isMemberInfosExists = true;
+        } else {
+            response.isMemberInfosExists = false;
+        }
+        if (iterator.hasNext()) {
+            response.partitions = EntryListUUIDListIntegerCodec.decode(iterator);
+            response.isPartitionsExists = true;
+        } else {
+            response.isPartitionsExists = false;
         }
         return response;
     }

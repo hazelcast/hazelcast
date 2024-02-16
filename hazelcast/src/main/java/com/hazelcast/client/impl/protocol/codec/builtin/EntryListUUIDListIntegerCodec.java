@@ -44,7 +44,7 @@ public final class EntryListUUIDListIntegerCodec {
         ListUUIDCodec.encode(clientMessage, keyList);
     }
 
-    public static Collection<Map.Entry<UUID, List<Integer>>> decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static List<Map.Entry<UUID, List<Integer>>> decode(ClientMessage.ForwardFrameIterator iterator) {
         List<List<Integer>> listv = ListMultiFrameCodec.decode(iterator, ListIntegerCodec::decode);
         List<UUID> listK = ListUUIDCodec.decode(iterator);
 

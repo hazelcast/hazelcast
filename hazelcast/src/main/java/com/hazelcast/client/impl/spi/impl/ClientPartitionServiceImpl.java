@@ -65,9 +65,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    /**
-     * The partitions can be empty on the response, client will not apply the empty partition table,
-     */
+    @Override
     public void handlePartitionsViewEvent(Connection connection, Collection<Map.Entry<UUID, List<Integer>>> partitions,
                                           int partitionStateVersion) {
         if (logger.isFinestEnabled()) {

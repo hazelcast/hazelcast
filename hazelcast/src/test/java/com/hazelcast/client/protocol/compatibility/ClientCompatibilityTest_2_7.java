@@ -89,6 +89,14 @@ public class ClientCompatibilityTest_2_7 {
         assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
         assertTrue(parameters.isTpcTokenExists);
         assertTrue(isEqual(aByteArray, parameters.tpcToken));
+        assertTrue(parameters.isMemberListVersionExists);
+        assertTrue(isEqual(anInt, parameters.memberListVersion));
+        assertTrue(parameters.isMemberInfosExists);
+        assertTrue(isEqual(aListOfMemberInfos, parameters.memberInfos));
+        assertTrue(parameters.isPartitionListVersionExists);
+        assertTrue(isEqual(anInt, parameters.partitionListVersion));
+        assertTrue(parameters.isPartitionsExists);
+        assertTrue(isEqual(aListOfUUIDToListOfIntegers, parameters.partitions));
     }
 
     @Test
@@ -116,6 +124,14 @@ public class ClientCompatibilityTest_2_7 {
         assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
         assertTrue(parameters.isTpcTokenExists);
         assertTrue(isEqual(aByteArray, parameters.tpcToken));
+        assertTrue(parameters.isMemberListVersionExists);
+        assertTrue(isEqual(anInt, parameters.memberListVersion));
+        assertTrue(parameters.isMemberInfosExists);
+        assertTrue(isEqual(aListOfMemberInfos, parameters.memberInfos));
+        assertTrue(parameters.isPartitionListVersionExists);
+        assertTrue(isEqual(anInt, parameters.partitionListVersion));
+        assertTrue(parameters.isPartitionsExists);
+        assertTrue(isEqual(aListOfUUIDToListOfIntegers, parameters.partitions));
     }
 
     @Test

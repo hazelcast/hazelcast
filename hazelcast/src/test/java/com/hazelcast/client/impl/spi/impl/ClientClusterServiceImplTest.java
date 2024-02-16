@@ -494,15 +494,6 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWaitInitialMembership() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
-        MemberInfo masterMember = member("127.0.0.1");
-        clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember("127.0.0.2"),
-                member("127.0.0.3")), UUID.randomUUID());
-        clusterService.waitInitialMemberListFetched();
-    }
-
-    @Test
     public void testGetEffectiveMemberList() {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
 

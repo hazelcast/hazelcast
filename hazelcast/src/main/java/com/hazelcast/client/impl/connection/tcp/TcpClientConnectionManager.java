@@ -501,7 +501,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         logger.info("Trying to connect to next cluster: " + nextContext.getClusterName());
 
         if (doConnectToCandidateCluster(nextContext, true)) {
-            client.waitForInitialMembershipEvents();
             fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
             return true;
         }
@@ -1067,6 +1066,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.getMemberUuid(), connection);
 
+            updateClusterViewMetaDataIfAvailable(connection, response);
+
             if (connectionsEmpty) {
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
@@ -1131,6 +1132,19 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             onConnectionClose(connection);
         }
         return connection;
+    }
+
+    private void updateClusterViewMetaDataIfAvailable(TcpClientConnection connection, AuthenticationResponse response) {
+        if (response.isMemberListVersionExists()) {
+            client.getClientClusterService()
+                    .handleMembersViewEvent(response.getMemberListVersion(), response.getMemberInfos(),
+                            connection.getClusterUuid());
+        }
+
+        if (response.isPartitionListVersionExists()) {
+            client.getClientPartitionService()
+                    .handlePartitionsViewEvent(connection, response.getPartitions(), response.getPartitionListVersion());
+        }
     }
 
     /**

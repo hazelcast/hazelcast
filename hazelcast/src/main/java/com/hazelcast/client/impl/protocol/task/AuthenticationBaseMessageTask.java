@@ -17,11 +17,14 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.security.Credentials;
@@ -32,7 +35,9 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -175,19 +180,24 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                     + ", authentication failed");
         }
         byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
+
+        return encodeUnauthenticated(status, failoverSupported);
+    }
+
+    private ClientMessage encodeUnauthenticated(byte status, boolean failoverSupported) {
+        return encodeAuthenticationResponse(status, null, null, (byte) -1, "", -1, null,
+                failoverSupported, null, null, null, null);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
-        return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
+        return encodeUnauthenticated(status, failoverSupported);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, "",
-                -1, null, failoverSupported, null, null);
+        return encodeUnauthenticated(SERIALIZATION_VERSION_MISMATCH.getId(), failoverSupported);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
@@ -214,9 +224,14 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         String serverVersion = getMemberBuildInfo().getVersion();
         byte[] tpcToken = endpoint.getTpcToken() != null ? endpoint.getTpcToken().getContent() : null;
-        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
+
+        ClusterViewListenerService clusterListenerService = clientEngine.getClusterListenerService();
+        MembersView membersView = clusterListenerService.getMembersView();
+        ClusterViewListenerService.PartitionsView partitionsView = clusterListenerService.getPartitionsViewOrNull();
+
+        return encodeAuthenticationResponse(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
                 clientEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,
-                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken);
+                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken, membersView, partitionsView);
     }
 
     private void setConnectionType() {
@@ -227,10 +242,35 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
-                                                byte serializationVersion, String serverVersion,
-                                                int partitionCount, UUID clusterId, boolean failoverSupported,
-                                                List<Integer> tpcPorts, byte[] tpcToken);
+    protected ClientMessage encodeAuthenticationResponse(byte status, Address thisAddress, UUID uuid,
+                                                         byte serializationVersion, String serverVersion,
+                                                         int partitionCount, UUID clusterId, boolean failoverSupported,
+                                                         List<Integer> tpcPorts, byte[] tpcToken,
+                                                         MembersView membersView,
+                                                         ClusterViewListenerService.PartitionsView partitionsView) {
+        if (membersView == null) {
+            membersView = new MembersView(-1, Collections.emptyList());
+        }
+
+        if (partitionsView == null) {
+            partitionsView = new ClusterViewListenerService.PartitionsView(Collections.EMPTY_MAP, -1);
+        }
+
+        List<Map.Entry<UUID, List<Integer>>> partitions = partitionsView.partitions().entrySet().stream().toList();
+
+        return encodeAuthenticationResponse(status, thisAddress, uuid, serializationVersion, serverVersion, partitionCount,
+                clusterId, failoverSupported, tpcPorts, tpcToken, membersView.getVersion(), membersView.getMembers(),
+                partitionsView.version(), partitions);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    protected abstract ClientMessage encodeAuthenticationResponse(byte status, Address thisAddress, UUID uuid,
+                                                                  byte serializationVersion, String serverVersion,
+                                                                  int partitionCount, UUID clusterId, boolean failoverSupported,
+                                                                  List<Integer> tpcPorts, byte[] tpcToken, int memberListVersion,
+                                                                  List<MemberInfo> members,
+                                                                  int partitionsVersion,
+                                                                  List<Map.Entry<UUID, List<Integer>>> partitions);
 
     protected abstract String getClientType();
 

@@ -22,8 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -45,6 +44,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.AbstractMap;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -183,11 +185,11 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testAuthenticationResponse() throws UnknownHostException {
-        Collection<Member> members = new LinkedList<>();
+        Collection<MemberInfo> members = new LinkedList<>();
         Address address1 = new Address("127.0.0.1", 5702);
-        members.add(new MemberImpl(address1, MemberVersion.of("3.12"), false, UUID.randomUUID()));
+        members.add(new MemberInfo(address1, UUID.randomUUID(), null, false, MemberVersion.of("5.4")));
         Address address2 = new Address("127.0.0.1", 5703);
-        members.add(new MemberImpl(address2, MemberVersion.of("3.12"), false, UUID.randomUUID()));
+        members.add(new MemberInfo(address2, UUID.randomUUID(), null, false, MemberVersion.of("5.4")));
         UUID uuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
         List<Integer> tpcPorts = new ArrayList<>();
@@ -196,10 +198,16 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         byte[] tpcToken = new byte[64];
         new Random().nextBytes(tpcToken);
 
-        ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId, true, tpcPorts, tpcToken);
-        AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
+        int memberListVersion = 1;
 
+        int partitionsVersion = 2;
+        List<Map.Entry<UUID, List<Integer>>> partitions = new ArrayList<>();
+        partitions.add(new AbstractMap.SimpleEntry<>(UUID.randomUUID(), Arrays.asList(1, 2, 3)));
+
+        ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
+                uuid, (byte) 1, "5.4", 271, clusterId, true, tpcPorts, tpcToken,
+                memberListVersion, members, partitionsVersion, partitions);
+        AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
         ClientMessageEncoder encoder = new ClientMessageEncoder();
         encoder.src(() -> reference.getAndSet(null));
@@ -232,12 +240,16 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
         assertEquals(uuid, parameters.memberUuid);
         assertEquals(1, parameters.serializationVersion);
-        assertEquals("3.12", parameters.serverHazelcastVersion);
+        assertEquals("5.4", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
         assertEquals(true, parameters.failoverSupported);
         assertEquals(tpcPorts, parameters.tpcPorts);
         assertArrayEquals(tpcToken, parameters.tpcToken);
+        assertEquals(memberListVersion, parameters.memberListVersion);
+        assertEquals(members, parameters.memberInfos);
+        assertEquals(partitionsVersion, parameters.partitionListVersion);
+        assertEquals(partitions, parameters.partitions);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {

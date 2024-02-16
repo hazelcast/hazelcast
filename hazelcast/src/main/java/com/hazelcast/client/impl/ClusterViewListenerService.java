@@ -142,26 +142,7 @@ public class ClusterViewListenerService {
         }
     }
 
-    private ClientMessage getPartitionViewMessageOrNull() {
-        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        PartitionTableView partitionTableView = partitionService.createPartitionTableView();
-        Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
-        if (partitions.size() == 0) {
-            return null;
-        }
-
-        int version;
-        long currentStamp = partitionTableView.stamp();
-        long latestStamp = latestPartitionStamp.get();
-        if (currentStamp != latestStamp && latestPartitionStamp.compareAndSet(latestStamp, currentStamp)) {
-            partitionTableVersion.incrementAndGet();
-        }
-        version = partitionTableVersion.get();
-
-        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(version, partitions.entrySet());
-    }
-
-    private ClientMessage getMemberListViewMessage() {
+    public MembersView getMembersView() {
         MembershipManager membershipManager = ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager();
         MembersView membersView = membershipManager.getMembersView();
 
@@ -178,7 +159,46 @@ public class ClusterViewListenerService {
             memberInfos.add(new MemberInfo(address, member.getUuid(), member.getAttributes(),
                     member.isLiteMember(), member.getVersion(), member.getAddressMap()));
         }
-        return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos);
+
+        return new MembersView(version, memberInfos);
+    }
+
+    public record PartitionsView(Map<UUID, List<Integer>> partitions, int version) {
+    }
+
+    public PartitionsView getPartitionsViewOrNull() {
+        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
+        PartitionTableView partitionTableView = partitionService.createPartitionTableView();
+        Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
+        if (partitions.isEmpty()) {
+            return null;
+        }
+
+        int version;
+        long currentStamp = partitionTableView.stamp();
+        long latestStamp = latestPartitionStamp.get();
+        if (currentStamp != latestStamp && latestPartitionStamp.compareAndSet(latestStamp, currentStamp)) {
+            partitionTableVersion.incrementAndGet();
+        }
+        version = partitionTableVersion.get();
+
+        return new PartitionsView(partitions, version);
+    }
+
+    private ClientMessage getPartitionViewMessageOrNull() {
+        PartitionsView partitionsView = getPartitionsViewOrNull();
+        if (partitionsView == null) {
+            return null;
+        }
+
+        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(partitionsView.version(),
+                partitionsView.partitions().entrySet());
+    }
+
+    private ClientMessage getMemberListViewMessage() {
+        MembersView processedMembersView = getMembersView();
+        return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(
+                processedMembersView.getVersion(), processedMembersView.getMembers());
     }
 
     public void deregisterListener(ClientEndpoint clientEndpoint) {

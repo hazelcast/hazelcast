@@ -20,9 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.MemberInfo;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -48,6 +50,24 @@ public final class AuthenticationResponse {
     private final List<Integer> tpcPorts;
     private final byte[] tpcToken;
 
+    /**
+     * True if the memberListVersion is received from the member, false otherwise.
+     * If this is false, memberListVersion has the default value for its type.
+     */
+    private boolean isMemberListVersionExists;
+
+    /**
+     * True if the partitionListVersion is received from the member, false otherwise.
+     * If this is false, partitionListVersion has the default value for its type.
+     */
+    private boolean isPartitionListVersionExists;
+
+    private int memberListVersion;
+    private List<MemberInfo> memberInfos;
+    private int partitionListVersion;
+    private List<Map.Entry<UUID, List<Integer>>> partitions;
+
+    @SuppressWarnings("checkstyle:parameternumber")
     private AuthenticationResponse(byte status,
                                    Address address,
                                    UUID memberUuid,
@@ -57,7 +77,13 @@ public final class AuthenticationResponse {
                                    UUID clusterId,
                                    boolean failoverSupported,
                                    List<Integer> tpcPorts,
-                                   byte[] tpcToken) {
+                                   byte[] tpcToken,
+                                   boolean isMemberListVersionExists,
+                                   int memberListVersion,
+                                   List<MemberInfo> memberInfos,
+                                   boolean isPartitionListVersionExists,
+                                   int partitionListVersion,
+                                   List<Map.Entry<UUID, List<Integer>>> partitions) {
         this.status = status;
         this.address = address;
         this.memberUuid = memberUuid;
@@ -68,6 +94,12 @@ public final class AuthenticationResponse {
         this.failoverSupported = failoverSupported;
         this.tpcPorts = tpcPorts;
         this.tpcToken = tpcToken;
+        this.isMemberListVersionExists = isMemberListVersionExists;
+        this.memberListVersion = memberListVersion;
+        this.memberInfos = memberInfos;
+        this.isPartitionListVersionExists = isPartitionListVersionExists;
+        this.partitionListVersion = partitionListVersion;
+        this.partitions = partitions;
     }
 
     /**
@@ -155,6 +187,50 @@ public final class AuthenticationResponse {
         return tpcToken;
     }
 
+    /**
+     * Returns the member list version.
+     *
+     * @return the member list version
+     */
+    public int getMemberListVersion() {
+        return memberListVersion;
+    }
+
+    /**
+     * Returns the list of member infos.
+     *
+     * @return the list of member infos
+     */
+    public List<MemberInfo> getMemberInfos() {
+        return memberInfos;
+    }
+
+    /**
+     * Returns the partition list version.
+     *
+     * @return the partition list version
+     */
+    public int getPartitionListVersion() {
+        return partitionListVersion;
+    }
+
+    /**
+     * Returns the list of partitions.
+     *
+     * @return the list of partitions
+     */
+    public List<Map.Entry<UUID, List<Integer>>> getPartitions() {
+        return partitions;
+    }
+
+    public boolean isMemberListVersionExists() {
+        return isMemberListVersionExists;
+    }
+
+    public boolean isPartitionListVersionExists() {
+        return isPartitionListVersionExists;
+    }
+
     public static AuthenticationResponse from(ClientMessage message) {
         switch (message.getMessageType()) {
             case ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE:
@@ -178,7 +254,13 @@ public final class AuthenticationResponse {
                 parameters.clusterId,
                 parameters.failoverSupported,
                 parameters.tpcPorts,
-                parameters.tpcToken
+                parameters.tpcToken,
+                parameters.isMemberListVersionExists,
+                parameters.memberListVersion,
+                parameters.memberInfos,
+                parameters.isPartitionListVersionExists,
+                parameters.partitionListVersion,
+                parameters.partitions
         );
     }
 
@@ -194,7 +276,12 @@ public final class AuthenticationResponse {
                 parameters.clusterId,
                 parameters.failoverSupported,
                 parameters.tpcPorts,
-                parameters.tpcToken
-        );
+                parameters.tpcToken,
+                parameters.isMemberListVersionExists,
+                parameters.memberListVersion,
+                parameters.memberInfos,
+                parameters.isPartitionListVersionExists,
+                parameters.partitionListVersion,
+                parameters.partitions);
     }
 }

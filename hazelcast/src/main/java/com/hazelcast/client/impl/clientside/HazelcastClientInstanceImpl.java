@@ -414,9 +414,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
             boolean asyncStart = connectionStrategyConfig.isAsyncStart();
-            if (!asyncStart) {
-                waitForInitialMembershipEvents();
-            }
+
             connectionManager.tryConnectToAllClusterMembers(!asyncStart);
 
             listenerService.start();
@@ -903,10 +901,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
      */
     public boolean shouldCheckUrgentInvocations() {
         return schemaService.hasAnySchemas();
-    }
-
-    public void waitForInitialMembershipEvents() {
-        clusterService.waitInitialMemberListFetched();
     }
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {

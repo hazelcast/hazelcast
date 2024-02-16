@@ -30,7 +30,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 
@@ -48,8 +47,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -69,14 +66,12 @@ public class ClientClusterServiceImpl implements ClientClusterService {
      * In both cases, we need to fire InitialMembershipEvent.
      */
     public static final int INITIAL_MEMBER_LIST_VERSION = -1;
-    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
     private final AtomicReference<MemberListSnapshot> memberListSnapshot =
             new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
-    private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -174,18 +169,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
-    public void waitInitialMemberListFetched() {
-        try {
-            boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!success) {
-                throw new IllegalStateException("Could not get initial member list from cluster!");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
     public void onClusterConnect() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
@@ -208,7 +191,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the cluster snapshot");
             }
-            initialListFetchedLatch = new CountDownLatch(1);
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
             memberListSnapshot.set(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION,
                     clusterViewSnapshot.members,
@@ -307,6 +289,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return sb.toString();
     }
 
+    @Override
     public void handleMembersViewEvent(int memberListVersion, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         if (logger.isFinestEnabled()) {
             MemberListSnapshot snapshot = createSnapshot(memberListVersion, memberInfos, clusterUuid);
@@ -320,7 +303,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 if (clusterViewSnapshot.version == INITIAL_MEMBER_LIST_VERSION) {
                     //this means this is the first time client connected to cluster/cluster has changed(blue/green)
                     applyInitialState(memberListVersion, memberInfos, clusterUuid);
-                    initialListFetchedLatch.countDown();
                     return;
                 }
             }
