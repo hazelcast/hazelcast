@@ -37,6 +37,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
@@ -505,6 +506,8 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMapEntryViews() {
+        // Create map first so all record stores get created
+        ReplicatedMap<?, ?> replicatedMap = remoteHz.getReplicatedMap(srcName);
         // Given
         int itemCount = 100;
         int partitionId = 0;
@@ -521,8 +524,7 @@ public class SourcesTest extends PipelineTestSupport {
         }
 
         // When
-        BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(srcName, clientConfig,
-                partitionId, 100);
+        BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(srcName, clientConfig, 100);
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -575,6 +577,8 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMapEntryViews_dataConnectionName() {
+        // Create map first so all record stores get created
+        ReplicatedMap<?, ?> replicatedMap = remoteHz.getReplicatedMap(srcName);
         // Given
         int itemCount = 2;
         int partitionId = 0;
@@ -597,7 +601,7 @@ public class SourcesTest extends PipelineTestSupport {
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
         BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(
-                srcName, dataConnectionName, partitionId, 100);
+                srcName, dataConnectionName, 100);
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -619,6 +623,8 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMapEntryViews_emptySourceMap() {
+        // Create map first so all record stores get created
+        ReplicatedMap<?, ?> replicatedMap = remoteHz.getReplicatedMap(srcName);
         // Given empty map
         // When
         String dataConnectionName = randomString();
@@ -627,7 +633,7 @@ public class SourcesTest extends PipelineTestSupport {
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
         BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(
-                srcName, dataConnectionName, 0, 100);
+                srcName, dataConnectionName, 100);
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -674,7 +680,7 @@ public class SourcesTest extends PipelineTestSupport {
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
         BatchSource<ReplicatedMapEntryViewHolder> source = Sources.remoteReplicatedMapEntryViews(srcName,
-                dataConnectionName, 0, 100);
+                dataConnectionName, 100);
 
         // Then
         p.readFrom(source).writeTo(sink);

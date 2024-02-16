@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.jet.core.Processor.Context;
 
@@ -30,7 +30,7 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
  */
 class HazelcastClientBaseContext {
 
-    protected HazelcastInstance client;
+    protected HazelcastClientProxy client;
 
     HazelcastClientBaseContext(String dataConnectionName, String clientXml, Context context) {
         if (dataConnectionName == null && clientXml == null) {
@@ -44,12 +44,12 @@ class HazelcastClientBaseContext {
                     context.dataConnectionService()
                            .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
             try {
-                this.client = dataConnection.getClient();
+                this.client = (HazelcastClientProxy) dataConnection.getClient();
             } finally {
                 dataConnection.release();
             }
         } else {
-            this.client = newHazelcastClient(asClientConfig(clientXml));
+            this.client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
         }
     }
 
