@@ -29,6 +29,7 @@ import com.hazelcast.internal.util.StateMachine;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -51,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -183,7 +183,6 @@ public class MapKeyLoader {
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
     private final ClusterService clusterService;
-    private final Executor internalAsyncExecutor;
 
     public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
                         ClusterService clusterService, ExecutionService execService,
@@ -196,7 +195,6 @@ public class MapKeyLoader {
         this.execService = execService;
         this.logger = getLogger(MapKeyLoader.class);
         this.nodeWideLoadedKeyLimiter = nodeWideLoadedKeyLimiter;
-        this.internalAsyncExecutor = execService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     /**
@@ -215,15 +213,12 @@ public class MapKeyLoader {
         role.nextOrStay(newRole);
         state.next(State.LOADING);
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("startInitialLoad invoked " + getStateMessage());
-        }
+        logStateMessage("startInitialLoad");
 
         switch (newRole) {
             case SENDER:
                 return sendKeys(mapStoreContext, false);
-            case SENDER_BACKUP:
-            case RECEIVER:
+            case SENDER_BACKUP, RECEIVER:
                 return triggerLoading();
             default:
                 return keyLoadFinished;
@@ -434,9 +429,7 @@ public class MapKeyLoader {
      * @see MapLoader#loadAllKeys()
      */
     private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) throws Exception {
-        if (logger.isFinestEnabled()) {
-            logger.finest("sendKeysInBatches invoked " + getStateMessage());
-        }
+        logStateMessage("sendKeysInBatches");
 
         int clusterSize = partitionService.getMemberPartitionsMap().size();
         Iterator<Object> keys = null;
@@ -456,7 +449,7 @@ public class MapKeyLoader {
             Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch, nodeWideLoadedKeyLimiter);
 
             int callCount = 0;
-            List<Future> futures = new ArrayList<>();
+            List<Future<Object>> futures = new ArrayList<>();
             while (batches.hasNext()) {
                 Map<Integer, List<Data>> batch = batches.next();
                 if (batch.isEmpty()) {
@@ -479,8 +472,8 @@ public class MapKeyLoader {
         } finally {
             sendKeyLoadCompleted(clusterSize, loadError);
 
-            if (keys instanceof Closeable) {
-                closeResource((Closeable) keys);
+            if (keys instanceof Closeable closeable) {
+                closeResource(closeable);
             }
         }
     }
@@ -503,11 +496,11 @@ public class MapKeyLoader {
      * @return a list of futures representing pending
      * completion of the value offloading task
      */
-    private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues,
+    private List<Future<Object>> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues,
                                    Semaphore nodeWideLoadedKeyLimiter) {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
 
-        List<Future> futures = new ArrayList<>(entries.size());
+        List<Future<Object>> futures = new ArrayList<>(entries.size());
 
         Iterator<Entry<Integer, List<Data>>> iterator = entries.iterator();
         while (iterator.hasNext()) {
@@ -551,17 +544,19 @@ public class MapKeyLoader {
         // The SENDER will be then in the LOADING status, thus the loadAll call will be ignored.
         // it happens only if all LoadAllOperation finish before the sendKeyLoadCompleted is started (test case, little data)
         // Fixes https://github.com/hazelcast/hazelcast/issues/5453
-        List<Future> futures = new ArrayList<>();
+        List<Future<Object>> futures = new ArrayList<>();
         Operation senderStatus = new KeyLoadStatusOperation(mapName, exception);
-        Future senderFuture = opService.createInvocationBuilder(SERVICE_NAME, senderStatus, mapNamePartition)
+        Future<Object> senderFuture = opService.createInvocationBuilder(SERVICE_NAME, senderStatus, mapNamePartition)
                 .setReplicaIndex(0).invoke();
         futures.add(senderFuture);
 
         // notify SENDER_BACKUP
         if (hasBackup && clusterSize > 1) {
             Operation senderBackupStatus = new KeyLoadStatusOperation(mapName, exception);
-            Future senderBackupFuture = opService.createInvocationBuilder(SERVICE_NAME, senderBackupStatus, mapNamePartition)
-                    .setReplicaIndex(1).invoke();
+            Future<Object> senderBackupFuture =
+                    opService.createInvocationBuilder(SERVICE_NAME, senderBackupStatus, mapNamePartition)
+                            .setReplicaIndex(1)
+                            .invoke();
             futures.add(senderBackupFuture);
         }
 
@@ -626,9 +621,11 @@ public class MapKeyLoader {
         state.next(State.LOADED);
     }
 
-    private String getStateMessage() {
-        return "on partitionId=" + partitionId + " on " + clusterService.getThisAddress() + " role=" + role
-                + " state=" + state;
+    private void logStateMessage(String methodName) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("%s invoked on partitionId=%s on %s role=%s state=%s, called from:\n%s", methodName, partitionId,
+                    clusterService.getThisAddress(), role, state, ReflectionUtils.getStackTrace(Thread.currentThread()));
+        }
     }
 
     /**

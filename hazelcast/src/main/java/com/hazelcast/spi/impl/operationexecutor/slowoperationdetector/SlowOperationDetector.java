@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
@@ -128,8 +129,6 @@ public final class SlowOperationDetector {
     }
 
     private final class DetectorThread extends Thread {
-
-        private final StringBuilder stackTraceStringBuilder = new StringBuilder();
         private volatile boolean running = true;
 
         private DetectorThread(String hzName) {
@@ -203,20 +202,12 @@ public final class SlowOperationDetector {
         }
 
         private String getStackTraceOrNull(OperationRunner operationRunner, Object operation) {
-            StackTraceElement[] stackTraceElements = operationRunner.currentThread().getStackTrace();
             // check if the operation is still the same, if not, we can't use this stacktrace
             if (operationRunner.currentTask() != operation) {
                 return null;
+            } else {
+                return ReflectionUtils.getStackTrace(operationRunner.currentThread());
             }
-            String prefix = "";
-            for (StackTraceElement stackTraceElement : stackTraceElements) {
-                stackTraceStringBuilder.append(prefix).append(stackTraceElement.toString());
-                prefix = "\n\t";
-            }
-
-            String stackTrace = stackTraceStringBuilder.toString();
-            stackTraceStringBuilder.setLength(0);
-            return stackTrace;
         }
 
         private SlowOperationLog getOrCreate(String stackTrace, Object operation) {

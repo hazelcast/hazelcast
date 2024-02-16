@@ -165,7 +165,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     @Override
     public Iterable<Object> loadAllKeys() {
         if (isMapLoader()) {
-            return NamespaceUtil.callWithOwnClassLoader(mapLoader, () -> (Iterable<Object>) mapLoader.loadAllKeys());
+            return NamespaceUtil.callWithOwnClassLoader(mapLoader, () -> mapLoader.loadAllKeys());
         }
         return null;
     }

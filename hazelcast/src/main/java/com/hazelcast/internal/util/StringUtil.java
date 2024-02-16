@@ -39,7 +39,7 @@ public final class StringUtil {
     /**
      * Points to the System property 'line.separator'.
      */
-    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    public static final String LINE_SEPARATOR = System.lineSeparator();
 
     /**
      * LOCALE_INTERNAL is the default locale for string operations and number formatting. Initialized to

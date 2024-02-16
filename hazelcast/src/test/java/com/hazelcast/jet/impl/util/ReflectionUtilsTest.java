@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils.ClassResource;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -201,6 +202,19 @@ public class ReflectionUtilsTest {
                               .contains("file_pretty_printed.json")
                               .contains("file_list_pretty_printed.json")
                               .contains("package.properties");
+    }
+
+    @Test
+    public void testGetStackTrace() {
+        String stackTrace = ReflectionUtils.getStackTrace(Thread.currentThread());
+        String[] stackTraceLines = stackTrace.split(StringUtil.LINE_SEPARATOR);
+
+        // Because the stack trace contains line numbers, and those are implementation specific (i.e. within the
+        // ReflectionUtils or ReflectionUtilsTest classes, or even in the JVM, we can't use a typical assertion
+
+        // Instead assert the first and last elements look as expected
+        assertThat(stackTraceLines[0]).startsWith("com.hazelcast.jet.impl.util.ReflectionUtilsTest.testGetStackTrace");
+        assertThat(stackTraceLines[stackTraceLines.length - 1]).startsWith("\tjava.base/java.lang.Thread.run");
     }
 
     @Test

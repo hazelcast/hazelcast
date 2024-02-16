@@ -35,10 +35,12 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -394,6 +396,16 @@ public final class ReflectionUtils {
 
     private static void skipBytes(ByteBuffer buffer, int toSkip) {
         buffer.position(buffer.position() + toSkip);
+    }
+
+    public static String getStackTrace(Thread thread) {
+        return getStackTrace(thread, 3);
+    }
+
+    public static String getStackTrace(Thread thread, int skip) {
+        return Arrays.stream(thread.getStackTrace()).skip(skip)
+                .map(Object::toString)
+                .collect(Collectors.joining("\n\t"));
     }
 
     public static final class Resources {

@@ -63,6 +63,7 @@ class CountingMapLoader extends SimpleMapLoader {
         return () -> new CloseableIterator<>(allKeys.iterator());
     }
 
+    /** How many times {@link #loadAllKeys()} is invoked */
     public int getLoadAllKeysInvocations() {
         return loadAllKeysInvocations.get();
     }
