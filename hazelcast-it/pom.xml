@@ -31,7 +31,7 @@
     <description>Hazelcast Integration Tests</description>
 
     <modules>
-        <!-- See other modules in profiles -->
+        <module>distribution-it</module>
     </modules>
 
     <properties>
@@ -45,16 +45,7 @@
         Some test dependencies, like junit and assertj are already inherited from the parent.
         -->
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>nightly-build</id>
-            <modules>
-                <module>distribution-it</module>
-            </modules>
-        </profile>
-    </profiles>
-
+    
     <build>
         <plugins>
             <plugin>
