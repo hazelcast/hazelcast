@@ -76,17 +76,6 @@
         </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.hazelcast</groupId>
-                <artifactId>hazelcast-distribution</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <build>
         <plugins>
             <plugin>
@@ -106,6 +95,7 @@
                                 <artifactItem>
                                     <groupId>com.hazelcast</groupId>
                                     <artifactId>hazelcast-distribution</artifactId>
+                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <fileMappers>
                                         <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
