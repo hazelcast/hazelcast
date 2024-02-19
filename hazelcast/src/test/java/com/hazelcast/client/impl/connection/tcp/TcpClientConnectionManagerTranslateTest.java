@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
@@ -44,6 +43,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.UUID;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -211,7 +211,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         @Override
         public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
             try {
-                return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
+                return new Addresses(List.of(new Address("127.0.0.1", 5701)));
             } catch (UnknownHostException e) {
                 return null;
             }

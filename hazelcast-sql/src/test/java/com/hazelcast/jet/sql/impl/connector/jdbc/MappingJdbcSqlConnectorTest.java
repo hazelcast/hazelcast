@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -106,7 +105,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "DATA CONNECTION \"testDatabaseRef\"" + LE +
                 "OBJECT TYPE \"Table\"";
         assertRowsAnyOrder("SELECT GET_DDL('relation', '" + mappingName + "')",
-                ImmutableList.of(new Row(expectedMappingQuery)));
+                List.of(new Row(expectedMappingQuery)));
     }
 
     @Test

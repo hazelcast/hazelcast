@@ -16,15 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.test.TestAbstractSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
-import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
@@ -32,6 +31,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
@@ -121,7 +122,7 @@ public class PhysicalJoinTest extends OptimizerTestSupport {
 
         String query = "SELECT * FROM l JOIN r ON l.b = r.y";
         assertPlan(
-                optimizePhysical(query, ImmutableList.of(), tableLeft, tableRight).getPhysical(),
+                optimizePhysical(query, List.of(), tableLeft, tableRight).getPhysical(),
                 plan(
                         planRow(0, StreamToStreamJoinPhysicalRel.class),
                         planRow(1, FullScanPhysicalRel.class),

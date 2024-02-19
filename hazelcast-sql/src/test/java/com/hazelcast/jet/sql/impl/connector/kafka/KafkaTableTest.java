@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaTable.KafkaPlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -26,12 +25,13 @@ import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -62,7 +62,7 @@ public class KafkaTableTest {
                 schema1,
                 name1,
                 topic1,
-                ImmutableList.of(new TableField(field1, QueryDataType.INT, false)),
+                List.of(new TableField(field1, QueryDataType.INT, false)),
                 Map.of("key", value1)
         );
         KafkaPlanObjectKey k2 = new KafkaPlanObjectKey(
