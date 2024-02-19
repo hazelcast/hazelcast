@@ -40,7 +40,7 @@ import javax.net.ssl.SSLContext;
 import java.net.URL;
 import java.util.ArrayList;
 
-import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.testcontainers.containers.BindMode.READ_WRITE;
@@ -60,12 +60,15 @@ public abstract class MongoDataConnectionSslTestBase extends SimpleTestInCluster
     public static void setUp() {
         URL resourceTS = MongoDataConnectionSslTestBase.class.getResource("/certs/ca.p12");
         URL resourceKS = MongoDataConnectionSslTestBase.class.getResource("/certs/localhost.p12");
+        assert resourceTS != null;
+        assert resourceKS != null;
         trustStoreLocation = resourceTS.getFile();
         keyStoreLocation = resourceKS.getFile();
         assumeDockerEnabled();
     }
 
     @Test
+    @SuppressWarnings("resource")
     public void should_connect_with_ssl() {
         // given / when
         try (MongoDBContainer mongoContainer = new MyMongoContainer()

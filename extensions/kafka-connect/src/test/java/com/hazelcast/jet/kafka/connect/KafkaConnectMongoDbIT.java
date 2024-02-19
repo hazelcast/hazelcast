@@ -45,17 +45,18 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, NightlyTest.class})
 public class KafkaConnectMongoDbIT extends JetTestSupport {
-    private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
     private static MongoDBContainer mongoContainer;
     private static MongoClient mongoClient;
 
@@ -92,13 +93,14 @@ public class KafkaConnectMongoDbIT extends JetTestSupport {
         waitForNextSnapshot(jobRepository, job.getId(), 30, false);
 
         //Start creating new docs
-        AtomicLong recordsCreatedCounter = new AtomicLong();
+        AtomicInteger recordsCreatedCounter = new AtomicInteger();
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         ScheduledFuture<?> scheduledFuture = scheduler.scheduleWithFixedDelay(() -> createOneRecord("test",
                 recordsCreatedCounter.incrementAndGet()), 0, 10, MILLISECONDS);
 
         // wait for some snapshots and data
-        Thread.sleep(10_000);
+        SECONDS.sleep(3);
+        waitForNextSnapshot(jobRepository, job.getId(), 30, false);
 
         Map<String, String> map = nonLeader.getMap("test");
         final int currentElements = map.size();
@@ -140,7 +142,7 @@ public class KafkaConnectMongoDbIT extends JetTestSupport {
         return KafkaConnectSources.connect(connectorProperties, TestUtil::convertToStringWithJustIndexForMongo);
     }
 
-    public void createOneRecord(String testName, long index) {
+    public void createOneRecord(String testName, int index) {
         Document document = new Document().append("index", index);
         mongoClient.getDatabase(testName).getCollection(testName).insertOne(document);
     }

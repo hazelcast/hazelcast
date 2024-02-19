@@ -34,6 +34,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,7 +62,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private final FunctionEx<SourceRecord, T> projectionFn;
     private Properties propertiesFromUser;
     private boolean snapshotInProgress;
-    private Traverser<Entry<BroadcastKey<String>, State>> snapshotTraverser;
+    private Traverser<Entry<BroadcastKey<String>, ? extends Serializable>> snapshotTraverser;
     private boolean snapshotsEnabled;
     private Traverser<?> traverser = Traversers.empty();
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
@@ -76,6 +78,10 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         Objects.requireNonNull(projectionFn, "projectionFn is required");
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         this.projectionFn = projectionFn;
+
+        // each ReadKafkaConnectP handles exactly one partition, designated by its processorOrder
+        // we would use processorOrder here is the eventTimeMapper was shared.
+        // That means we ignore SourceRecord's partition() and do not create mapping like in StreamKafkaP
         eventTimeMapper.addPartitions(1);
     }
 
@@ -124,6 +130,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     @Override
     public boolean complete() {
         if (!active) {
+            emitFromTraverser(eventTimeMapper.flatMapIdle());
             return false;
         }
         // The taskConfig has not been received yet. We can not complete the processor
@@ -174,9 +181,16 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         if (!snapshotsEnabled) {
             return true;
         }
+        if (!emitFromTraverser(traverser)) {
+            return false;
+        }
         snapshotInProgress = true;
         if (snapshotTraverser == null) {
-            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), sourceConnectorWrapper.copyState()))
+            snapshotTraverser = Traversers
+                    .traverseItems(
+                            entry(snapshotKey(), sourceConnectorWrapper.copyState()),
+                            entry(snapshotKeyWm(), eventTimeMapper.getWatermark(0))
+                    )
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
                         logger.finest("Finished saving snapshot");
@@ -189,6 +203,10 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         return broadcastKey("snapshot-" + processorOrder);
     }
 
+    private BroadcastKey<String> snapshotKeyWm() {
+        return broadcastKey("snapshotWm-" + processorOrder);
+    }
+
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         logger.info("Restoring from snapshot with key " + key + " value " + value);
@@ -196,6 +214,10 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
             sourceConnectorWrapper.restoreState((State) value);
+        }
+        boolean forThisProcessorWm = snapshotKeyWm().equals(key);
+        if (forThisProcessorWm) {
+            eventTimeMapper.restoreWatermark(0, (Long) value);
         }
     }
 
@@ -214,7 +236,9 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
     @Override
     public void close() {
-        sourceConnectorWrapper.close();
+        if (sourceConnectorWrapper != null) {
+            sourceConnectorWrapper.close();
+        }
         logger.info("Closed ReadKafkaConnectP");
     }
 
@@ -234,11 +258,19 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
+    /**
+     * Only for testing.
+     */
+    EventTimeMapper<T> eventTimeMapper() {
+        return eventTimeMapper;
+    }
+
     public static <T> ReadKafkaConnectProcessorSupplier processorSupplier(
             @Nonnull Properties propertiesFromUser,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         return new ReadKafkaConnectProcessorSupplier() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Nonnull

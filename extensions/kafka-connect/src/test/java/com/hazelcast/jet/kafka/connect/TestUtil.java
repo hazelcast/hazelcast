@@ -16,26 +16,39 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public final class TestUtil {
 
     static Pattern mongoIndexExtraction = Pattern.compile(".*numberLong\": \"(\\d*).*");
 
+    private static final ObjectMapper MAPPER = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     private TestUtil() {
     }
 
     static String convertToString(SourceRecord rec) {
         return Values.convertToString(rec.valueSchema(), rec.value());
+    }
+
+    static <T> T convertToType(SourceRecord rec, Class<T> clazz) {
+        try {
+            return MAPPER.readValue(Values.convertToString(rec.valueSchema(), rec.value()), clazz);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static String convertToStringWithJustIndexForMongo(SourceRecord rec) {

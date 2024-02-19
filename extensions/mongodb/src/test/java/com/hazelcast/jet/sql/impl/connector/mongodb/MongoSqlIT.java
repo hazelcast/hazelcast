@@ -33,13 +33,12 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
+import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlIT extends SqlTestSupport {
-    public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.2");
-
     public static final MongoDBContainer mongoContainer
             = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 

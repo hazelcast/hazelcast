@@ -52,7 +52,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -85,13 +85,13 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
-                        TestUtil::convertToString))
-                .withoutTimestamps()
-                .setLocalParallelism(2);
+                                                          TestUtil::convertToString))
+                                                  .withoutTimestamps()
+                                                  .setLocalParallelism(2);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(2 * ITEM_COUNT, list.size())));
+                        list -> assertThat(list).hasSize(2 * ITEM_COUNT)));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
@@ -108,6 +108,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
+
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
@@ -118,16 +119,19 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
     private static Properties getConnectorProperties() {
         Properties connectorProperties = new Properties();
         connectorProperties.setProperty("name", "neo4j");
+        connectorProperties.setProperty("tasks.max", "1");
         connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
         connectorProperties.setProperty("topic", "some-topic");
         connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
         connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");
         connectorProperties.setProperty("neo4j.authentication.basic.password", "password");
-        connectorProperties.setProperty("neo4j.streaming.poll.interval.msecs", "5000");
+        connectorProperties.setProperty("neo4j.streaming.poll.interval.msecs", "1000");
         connectorProperties.setProperty("neo4j.streaming.property", "timestamp");
         connectorProperties.setProperty("neo4j.streaming.from", "ALL");
+        connectorProperties.setProperty("neo4j.enforce.schema", "true");
         connectorProperties.setProperty("neo4j.source.query",
-                "MATCH (ts:TestSource) RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
+                "MATCH (ts:TestSource) WHERE ts.timestamp > $lastCheck " +
+                        "RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
         return connectorProperties;
     }
 
@@ -140,4 +144,5 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
             }
         }
     }
+
 }

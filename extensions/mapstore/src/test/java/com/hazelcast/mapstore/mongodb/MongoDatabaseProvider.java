@@ -25,11 +25,10 @@ import org.testcontainers.containers.MongoDBContainer;
 import java.util.Properties;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 
 public class MongoDatabaseProvider implements TestDatabaseProvider {
-
-    static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.2");
 
     private MongoDBContainer mongoContainer;
     private MongoClient mongoClient;

@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
@@ -53,7 +54,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class FieldResolverTest {
-    static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
     private static final MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 
     @BeforeClass

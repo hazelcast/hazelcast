@@ -195,14 +195,20 @@
         <!-- See http://checkstyle.sf.net/config_whitespace.html -->
         <!-- module name="EmptyForIteratorPad"/ -->
         <module name="GenericWhitespace"/>
-        <module name="MethodParamPad"/>
+        <module name="MethodParamPad">
+            <property name="tokens"
+                value="CTOR_DEF,LITERAL_NEW,METHOD_CALL,METHOD_DEF,SUPER_CTOR_CALL,ENUM_CONSTANT_DEF" />
+        </module>
         <!-- module name="NoWhitespaceAfter"/ -->
         <!-- module name="NoWhitespaceBefore"/ -->
         <module name="OperatorWrap"/>
         <module name="ParenPad"/>
         <module name="TypecastParenPad"/>
         <module name="WhitespaceAfter"/>
-        <module name="WhitespaceAround"/>
+        <module name="WhitespaceAround">
+            <property name="allowEmptyTypes" value="true" />
+            <property name="allowEmptyLambdas" value="true" />
+        </module>
 
         <!-- Modifier Checks                                    -->
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->
