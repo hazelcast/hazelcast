@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
@@ -36,6 +37,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIM
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 /**
  * Test for different error conditions.
@@ -111,7 +113,9 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
         // Start query with immediate shutdown afterwards
         HazelcastSqlException error = assertSqlExceptionWithShutdown(instance1, streamingQuery);
-        assertInstanceOf(HazelcastInstanceNotActiveException.class, findRootCause(error));
+        var rootCause = findRootCause(error);
+
+        assertTrue(rootCause instanceof TopologyChangedException || rootCause instanceof HazelcastInstanceNotActiveException);
     }
 
     @Test

@@ -1081,6 +1081,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
 
     void onMemberAdded(MemberImpl addedMember) {
         // the member can re-join with the same UUID in certain scenarios
+        membersShuttingDown.remove(addedMember.getUuid());
         removedMembers.remove(addedMember.getUuid());
         if (addedMember.isLiteMember()) {
             return;

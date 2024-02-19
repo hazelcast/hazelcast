@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
@@ -23,7 +24,7 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Operation sent from a non-master member to master to notify it that the
+ * Operation sent from a member to all other members to notify it that the
  * caller is about to shut down. The master should request termination of all
  * jobs running on caller and then the caller will actually shut down.
  */
@@ -41,5 +42,10 @@ public class NotifyMemberShutdownOperation extends AsyncOperation implements Urg
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_OP;
+    }
+
+    @Override
+    public final String getServiceName() {
+        return JetServiceBackend.SERVICE_NAME;
     }
 }

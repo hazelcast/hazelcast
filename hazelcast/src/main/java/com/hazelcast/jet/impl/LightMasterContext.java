@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -72,6 +74,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
@@ -342,6 +345,9 @@ public final class LightMasterContext {
             ) {
                 result = (Throwable) response;
             }
+        }
+        if (isOrHasCause(result, HazelcastInstanceNotActiveException.class)) {
+            result = new TopologyChangedException("Member left the cluster");
         }
         if (result != null
                 && !(result instanceof CancellationException)

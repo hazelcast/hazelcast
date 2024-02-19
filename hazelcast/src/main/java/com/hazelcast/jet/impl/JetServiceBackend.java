@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -35,6 +36,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
@@ -199,7 +201,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
-            notifyMasterWeAreShuttingDown(shutdownFuture.get());
+            notifyAllMembersWeAreShuttingDown(shutdownFuture.get());
         }
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
@@ -213,10 +215,44 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
+    private void notifyNonMasterMembersWeAreShuttingDown(Address masterAddress) {
+        Supplier<Operation> operationSupplier = NotifyMemberShutdownOperation::new;
+        var localAddress = nodeEngine.getThisAddress();
+        InvocationUtil.invokeOnStableClusterParallel(
+                nodeEngine,
+                operationSupplier,
+                0,
+                member -> !member.getAddress().equals(masterAddress) && !member.getAddress().equals(localAddress)
+        ).whenComplete((r, t) -> {
+            if (t != null) {
+                logger.warning(
+                        "Some non-master members encountered errors during the notification process about the shutdown member "
+                                + nodeEngine.getNode().getThisUuid(),
+                        t
+                );
+            } else {
+                logger.fine(
+                        "All non-master members were informed about the shutdown of member "
+                                + nodeEngine.getNode().getThisUuid()
+                );
+            }
+        });
+    }
+
+    private void notifyAllMembersWeAreShuttingDown(CompletableFuture<Void> future) {
+        var fixedMasterAddress = nodeEngine.getMasterAddress();
+        // we not guarantee the delivery of information to non-master members
+        // in order not to delay shutdown of this member. If the notification is lost
+        // some light jobs coordinated by those members can fail.
+        notifyNonMasterMembersWeAreShuttingDown(fixedMasterAddress);
+        // we guarantee delivery of information to the master
+        notifyMasterWeAreShuttingDown(future, fixedMasterAddress);
+    }
+
+    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future, Address masterAddress) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
-                .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, masterAddress)
                 .whenCompleteAsync((response, throwable) -> {
                     // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
                     NodeState nodeState = nodeEngine.getNode().getState();
@@ -225,7 +261,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                                 " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
                         // recursive call
                         nodeEngine.getExecutionService().schedule(
-                                () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                                () -> notifyMasterWeAreShuttingDown(future, nodeEngine.getMasterAddress()),
+                                NOTIFY_MEMBER_SHUTDOWN_DELAY,
+                                SECONDS
+                        );
                     } else {
                         if (throwable != null) {
                             logger.warning("Failed to notify master member that this member is shutting down," +
