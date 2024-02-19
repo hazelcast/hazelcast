@@ -45,8 +45,8 @@ public class SqlSlowIndexResolutionTest extends SqlIndexResolutionTest {
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> t1 : nonBaseTypes()) {
-                    for (ExpressionType<?> t2 : nonBaseTypes()) {
+                for (ExpressionType<?> t1 : slowTestTypes()) {
+                    for (ExpressionType<?> t2 : slowTestTypes()) {
                         res.add(new Object[]{indexType, composite, t1, t2});
                     }
                 }

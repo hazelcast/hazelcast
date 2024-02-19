@@ -99,8 +99,8 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         List<Object[]> res = new ArrayList<>();
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> t1 : baseTypes()) {
-                    for (ExpressionType<?> t2 : baseTypes()) {
+                for (ExpressionType<?> t1 : quickTestTypes()) {
+                    for (ExpressionType<?> t2 : quickTestTypes()) {
                         res.add(new Object[]{indexType, composite, t1, t2});
                     }
                 }
