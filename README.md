@@ -339,7 +339,6 @@ see used in the comments on your PR:
 * `run-ee-compile` - compile hazelcast-enterprise with this PR
 * `run-ee-tests` - run tests from hazelcast-enterprise with this PR
 * `run-windows` - run the tests on a Windows machine (HighFive is not supported here)
-* `run-with-jdk17` - run the tests with JDK 17
 * `run-with-ibm-jdk-8` - run the tests with IBM JDK 8
 * `run-cdc-debezium-tests` - run all tests in the
   `extensions/cdc-debezium` module
@@ -356,7 +355,7 @@ see used in the comments on your PR:
 * `run-sonar` - run SonarCloud analysis
 * `run-arm64` - run the tests on arm64 machine
 
-Where not indicated, the builds run on a Linux machine with Oracle JDK 11.
+Where not indicated, the builds run on a Linux machine with Oracle JDK 17.
 
 ### Creating PRs for Hazelcast SQL
 
