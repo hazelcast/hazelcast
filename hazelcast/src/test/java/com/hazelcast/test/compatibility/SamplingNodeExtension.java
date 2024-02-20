@@ -43,6 +43,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.tpc.TpcServerBootstrapImpl;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -332,5 +334,10 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public UserCodeNamespaceService getNamespaceService() {
         return nodeExtension.getNamespaceService();
+    }
+
+    @Override
+    public TpcServerBootstrap createTpcServerBootstrap() {
+        return new TpcServerBootstrapImpl(null);
     }
 }

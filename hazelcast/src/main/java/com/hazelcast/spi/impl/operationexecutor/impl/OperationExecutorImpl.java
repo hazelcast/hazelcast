@@ -133,10 +133,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        if (!tpcServerBootstrap.isEnabled()) {
-            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
-        } else {
+        if (tpcServerBootstrap.isEnabled()) {
             this.partitionThreads = initTpcPartitionThreads(tpcServerBootstrap, hzName, nodeExtension, configClassLoader);
+        } else {
+            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
         }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);

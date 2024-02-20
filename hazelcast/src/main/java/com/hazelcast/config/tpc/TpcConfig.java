@@ -26,7 +26,8 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 /**
  * Hazelcast TPC is the next generation of Hazelcast built with thread
  * per core architecture. It's still being developed and everything is
- * subject to change. TPC is disabled by default.
+ * subject to change. TPC is disabled by default and is only available
+ * for Hazelcast Enterprise.
  *
  * @since 5.3
  */

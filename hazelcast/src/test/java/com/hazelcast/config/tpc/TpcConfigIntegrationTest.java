@@ -17,42 +17,40 @@
 package com.hazelcast.config.tpc;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.tpc.TpcConfigAccessors.isTpcEnabled;
-import static org.junit.Assert.assertFalse;
+import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_ENABLED;
+import static com.hazelcast.test.OverridePropertyRule.clear;
+import static org.junit.Assert.assertThrows;
+
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TpcConfigTest extends HazelcastTestSupport {
+public class TpcConfigIntegrationTest {
 
-    private final Config config = smallInstanceConfig();
+    @Rule
+    public final OverridePropertyRule ruleSysPropTpcEnabled = clear(TPC_ENABLED.getName());
 
     @Test
-    public void testTPCDisabledByDefault() {
-        assertFalse(isTpcEnabled(createHazelcastInstance(config)));
+    public void whenTpcEnabled_fromSystemProperty() {
+        System.setProperty(TPC_ENABLED.getName(), "true");
+
+        assertThrows(IllegalStateException.class, Hazelcast::newHazelcastInstance);
     }
 
     @Test
-    public void testConfigValidation() {
-        TpcConfig tpcConfig = config.getTpcConfig();
-        assertThrows(IllegalArgumentException.class, () -> tpcConfig.setEventloopCount(0));
-    }
+    public void whenTpcEnabled_fromConfig() {
+        Config config = new Config();
+        config.getTpcConfig().setEnabled(true);
 
-    @Test
-    public void testEqualsAndHashCode() {
-        assumeDifferentHashCodes();
-        EqualsVerifier.forClass(TpcConfig.class)
-                .usingGetClass()
-                .suppress(Warning.NONFINAL_FIELDS)
-                .verify();
+        assertThrows(IllegalStateException.class, () -> Hazelcast.newHazelcastInstance(config));
     }
 }

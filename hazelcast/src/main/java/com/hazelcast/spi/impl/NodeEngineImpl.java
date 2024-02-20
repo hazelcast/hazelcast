@@ -155,7 +155,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
             this.tenantControlService = new TenantControlServiceImpl(this);
-            this.tpcServerBootstrap = new TpcServerBootstrap(this);
+            this.tpcServerBootstrap = node.getNodeExtension().createTpcServerBootstrap();
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);

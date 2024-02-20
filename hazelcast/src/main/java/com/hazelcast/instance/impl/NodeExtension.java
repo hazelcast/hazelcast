@@ -39,6 +39,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
@@ -428,4 +429,6 @@ public interface NodeExtension {
      * @return the {@link UserCodeNamespaceService} instance for this member.
      */
     UserCodeNamespaceService getNamespaceService();
+
+    TpcServerBootstrap createTpcServerBootstrap();
 }

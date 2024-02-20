@@ -94,6 +94,8 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
 import com.hazelcast.internal.server.tcp.PacketDecoder;
 import com.hazelcast.internal.server.tcp.PacketEncoder;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.tpc.TpcServerBootstrapImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -727,5 +729,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public UserCodeNamespaceService getNamespaceService() {
         return new NoOpUserCodeNamespaceService(getLegacyUCDClassLoader(node.getConfig()));
+    }
+
+    @Override
+    public TpcServerBootstrap createTpcServerBootstrap() {
+        return new TpcServerBootstrapImpl(node);
     }
 }

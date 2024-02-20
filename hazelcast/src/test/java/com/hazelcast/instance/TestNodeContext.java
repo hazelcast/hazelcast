@@ -35,6 +35,7 @@ import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
+import com.hazelcast.internal.tpc.TpcServerBootstrapImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -97,6 +98,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
         when(nodeExtension.getNamespaceService()).thenReturn(new NoOpUserCodeNamespaceService(TestNodeContext.class.getClassLoader()));
+        when(nodeExtension.createTpcServerBootstrap()).thenReturn(new TpcServerBootstrapImpl(node));
         return nodeExtension;
     }
 

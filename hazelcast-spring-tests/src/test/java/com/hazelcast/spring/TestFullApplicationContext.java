@@ -1707,7 +1707,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testTpcConfig() {
         TpcConfig tpcConfig = config.getTpcConfig();
 
-        assertTrue(tpcConfig.isEnabled());
+        assertFalse(tpcConfig.isEnabled());
         assertEquals(12, tpcConfig.getEventloopCount());
     }
 }

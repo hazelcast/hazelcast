@@ -17,11 +17,8 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
@@ -51,11 +48,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientPorts;
-import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientSocketConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
-import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -88,51 +82,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         assertWrongProtocolAlert(REST_PORT, Protocols.CLUSTER, "AAA");
         assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLIENT_BINARY, "AAA");
         assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLUSTER, "AAA");
-    }
-
-    @Test
-    @Category(QuickTest.class)
-    public void testTPCPortsWithAdvancedNetwork() {
-        Config config = smallInstanceConfig();
-        config.getTpcConfig().setEnabled(true).setEventloopCount(4);
-        ServerSocketEndpointConfig clientSSConfig = new ServerSocketEndpointConfig();
-        clientSSConfig.getTpcSocketConfig()
-                .setReceiveBufferSizeKB(1024)
-                .setSendBufferSizeKB(512)
-                .setPortRange("15000-16000");
-        config.getAdvancedNetworkConfig().setEnabled(true).setClientEndpointConfig(clientSSConfig);
-
-        HazelcastInstance[] hz = new HazelcastInstance[3];
-        for (int i = 0; i < 3; i++) {
-            hz[i] = newHazelcastInstance(config);
-        }
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals(1024, getClientSocketConfig(hz[i]).getReceiveBufferSizeKB());
-            assertEquals(512, getClientSocketConfig(hz[i]).getSendBufferSizeKB());
-            assertEquals(4, getClientPorts(hz[i]).size());
-        }
-    }
-
-    @Test
-    @Category(QuickTest.class)
-    public void testTpcWithAdvancedNetworkAndWithoutClientSocketConfigThrows() {
-        Config config = smallInstanceConfig();
-        config.getTpcConfig().setEnabled(true);
-        config.getAdvancedNetworkConfig().setEnabled(true);
-        assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
-    }
-
-    @Test
-    @Category(QuickTest.class)
-    public void testTpcWithAdvancedNetworkAndWithNonClientTpcSocketConfigurationThrows() {
-        Config config = smallInstanceConfig();
-        config.getTpcConfig().setEnabled(true);
-        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        advancedNetworkConfig.setEnabled(true);
-        advancedNetworkConfig.setClientEndpointConfig(new ServerSocketEndpointConfig());
-        advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMBER).getTpcSocketConfig().setPortRange("12000-16000");
-        assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
     }
 
     @Test

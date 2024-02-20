@@ -1181,7 +1181,7 @@
                 </hz:properties>
                 <hz:shared>false</hz:shared>
             </hz:data-connection>
-            <hz:tpc enabled="true">
+            <hz:tpc enabled="false">
                 <hz:eventloop-count>12</hz:eventloop-count>
             </hz:tpc>
         </hz:config>
