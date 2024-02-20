@@ -17,6 +17,9 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Offloadable;
@@ -25,8 +28,11 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Observable;
+import com.hazelcast.jet.core.DataHolder;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -35,7 +41,6 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.spi.annotation.Beta;
@@ -49,9 +54,12 @@ import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
-import java.util.HashMap;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.function.Functions.entryKey;
@@ -248,7 +256,7 @@ public final class Sinks {
     }
 
     /**
-     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * Returns a sink that puts {@code DataHolder}s it receives into a Hazelcast
      * {@code ReplicatedMap} with the specified name in a remote cluster connected via the data connection
      * identified by the supplied data connection name. You can add a data connection config by
      * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
@@ -260,7 +268,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      * <p>
      * This method uses batching while writing to the replicated map. The default batch size is
-     * 1 million entries. Use {@link #remoteReplicatedMap(String, String, int)} to change
+     * 1 million entries. Use {@link #remoteReplicatedMapData(String, String, int)} to change
      * the batch size.
      * <p>
      * {@link SinkBuilder#sinkBuilder(String, FunctionEx)} is used to create the sink and the preferred local
@@ -271,14 +279,14 @@ public final class Sinks {
      * @throws com.hazelcast.jet.JetException if the data connection is not found
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
-                                                               @Nonnull String dataConnectionName) {
-        return remoteReplicatedMap(replicatedMapName, dataConnectionName, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+    public static Sink<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(@Nonnull String replicatedMapName,
+                                                                              @Nonnull String dataConnectionName) {
+        return remoteReplicatedMapData(replicatedMapName, dataConnectionName, RMAP_DEFAULT_WRITE_BATCH_SIZE);
     }
 
 
     /**
-     * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
+     * This method does the same thing as {@link #remoteReplicatedMapData(String, String)} with a different batch
      * size provided rather than the default batch size.
      *
      * @param replicatedMapName  name of the replicated map in the remote cluster
@@ -287,14 +295,14 @@ public final class Sinks {
      * @throws com.hazelcast.jet.JetException if the data connection is not found
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
-                                                               @Nonnull String dataConnectionName,
-                                                               int batchSize) {
-        return remoteReplicatedMapInternal(replicatedMapName, dataConnectionName, null, batchSize);
+    public static Sink<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(@Nonnull String replicatedMapName,
+                                                                              @Nonnull String dataConnectionName,
+                                                                              int batchSize) {
+        return remoteReplicatedMapDataInternal(replicatedMapName, dataConnectionName, null, batchSize);
     }
 
     /**
-     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * Returns a sink that puts {@code DataHolder}s it receives into a Hazelcast
      * {@code ReplicatedMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      * <p>
@@ -309,7 +317,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      * <p>
      * This method uses batching while writing to the replicated map. The default batch size is
-     * 1 million entries. Use {@link #remoteReplicatedMap(String, ClientConfig, int)} to change
+     * 1 million entries. Use {@link #remoteReplicatedMapData(String, ClientConfig, int)} to change
      * the batch size.
      * <p>
      * {@link SinkBuilder#sinkBuilder(String, FunctionEx)} is used to create the sink and the preferred local
@@ -319,13 +327,13 @@ public final class Sinks {
      * @param clientConfig      configuration of the client to connect to the remote cluster
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
-                                                               @Nonnull ClientConfig clientConfig) {
-        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+    public static Sink<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(@Nonnull String replicatedMapName,
+                                                                              @Nonnull ClientConfig clientConfig) {
+        return remoteReplicatedMapData(replicatedMapName, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
     }
 
     /**
-     * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
+     * This method does the same thing as {@link #remoteReplicatedMapData(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
      * <p>
      * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
@@ -338,65 +346,69 @@ public final class Sinks {
      * @param batchSize         batch size to use
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
-                                                               @Nonnull ClientConfig clientConfig,
-                                                               int batchSize) {
-        return remoteReplicatedMapInternal(replicatedMapName, null, clientConfig, batchSize);
+    public static Sink<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(@Nonnull String replicatedMapName,
+                                                                              @Nonnull ClientConfig clientConfig,
+                                                                              int batchSize) {
+        return remoteReplicatedMapDataInternal(replicatedMapName, null, clientConfig, batchSize);
     }
 
     @Nonnull
-    static <K, V> Sink<Entry<K, V>> remoteReplicatedMapInternal(
+    static Sink<Entry<DataHolder, DataHolder>> remoteReplicatedMapDataInternal(
             @Nonnull String replicatedMapName,
             @Nullable String dataConnectionName,
             @Nullable ClientConfig clientConfig,
             int batchSize) {
         String xmlConfig = ImdgUtil.asXmlString(clientConfig);
-        return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')',
-                                  context -> new RemoteReplicatedMapBatchWriter<K, V>(
+        return SinkBuilder.sinkBuilder("remoteReplicatedMapDataSink(" + replicatedMapName + ')',
+                                  context -> new RemoteReplicatedMapDataBatchWriter(
                                           replicatedMapName,
                                           dataConnectionName,
                                           xmlConfig,
                                           batchSize,
                                           context
                                   ))
-                          .receiveFn(RemoteReplicatedMapBatchWriter<K, V>::write)
-                          .flushFn(RemoteReplicatedMapBatchWriter::flush)
-                          .destroyFn(RemoteReplicatedMapBatchWriter::destroy).build();
+                          .receiveFn(RemoteReplicatedMapDataBatchWriter::write)
+                          .flushFn(RemoteReplicatedMapDataBatchWriter::flush)
+                          .destroyFn(RemoteReplicatedMapDataBatchWriter::destroy).build();
     }
 
-    private static class RemoteReplicatedMapBatchWriter<K, V> extends HazelcastClientBaseContext {
+    private static class RemoteReplicatedMapDataBatchWriter extends HazelcastClientBaseContext {
 
-        private final ReplicatedMap<K, V> replicatedMap;
+        private final String name;
         private final int batchSize;
+        private final Collection<Entry<Data, Data>> batch;
+        private final int targetPartitionId;
 
-        private final Map<K, V> batch;
-
-        RemoteReplicatedMapBatchWriter(String replicatedMapName,
-                                       String dataConnectionName,
-                                       String clientXml,
-                                       int batchSize,
-                                       Processor.Context context
+        RemoteReplicatedMapDataBatchWriter(String replicatedMapName,
+                                           String dataConnectionName,
+                                           String clientXml,
+                                           int batchSize,
+                                           Processor.Context context
         ) {
             super(dataConnectionName, clientXml, context);
-            this.replicatedMap = client.getReplicatedMap(replicatedMapName);
+            this.name = replicatedMapName;
             this.batchSize = batchSize;
-            this.batch = new HashMap<>(batchSize);
+            this.batch = new ArrayList<>(batchSize);
+            int partitionCount = client.getPartitionService().getPartitions().size();
+            this.targetPartitionId = ThreadLocalRandomProvider.get().nextInt(partitionCount);
         }
 
-        public void write(Map.Entry<K, V> entry) {
-            batch.put(entry.getKey(), entry.getValue());
+        public void write(Map.Entry<DataHolder, DataHolder> entry) throws ExecutionException, InterruptedException {
+            AbstractMap.SimpleEntry<Data, Data> e = new AbstractMap.SimpleEntry<>(entry.getKey().getData(),
+                    entry.getValue().getData());
+            batch.add(e);
             if (batch.size() >= batchSize) {
                 this.flush();
             }
         }
 
-        public void flush() {
+        public void flush() throws ExecutionException, InterruptedException {
             if (!batch.isEmpty()) {
-                replicatedMap.putAll(batch);
+                ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(name, batch);
+                new ClientInvocation(client.client, request, name, targetPartitionId).invoke().get();
                 batch.clear();
             }
         }
-
     }
 
     /**

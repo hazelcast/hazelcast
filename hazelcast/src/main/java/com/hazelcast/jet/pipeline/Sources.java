@@ -19,7 +19,11 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
 import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
@@ -27,6 +31,8 @@ import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -47,6 +53,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
@@ -68,6 +75,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
@@ -549,7 +557,7 @@ public final class Sources {
 
 
     /**
-     * Returns a source that fetches entries from the Hazelcast {@code ReplicatedMap}
+     * Returns a source that fetches entries as {@link DataHolder} from the Hazelcast {@code ReplicatedMap}
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
@@ -569,7 +577,7 @@ public final class Sources {
      * mutation is not detected at all.
      * <p>
      * This method reads entries in batches of 1 million by default. To change
-     * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
+     * the batch size, use {@link #remoteReplicatedMapData(String, ClientConfig, int)}.
      * <p>
      * The total parallelism for this processor is 1.
      *
@@ -577,15 +585,15 @@ public final class Sources {
      * @param clientConfig      client configuration to connect to the remote cluster
      */
     @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+    public static BatchSource<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(
             @Nonnull String replicatedMapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_READ_BATCH_SIZE);
+        return remoteReplicatedMapData(replicatedMapName, clientConfig, RMAP_DEFAULT_READ_BATCH_SIZE);
     }
 
     /**
-     * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
+     * This method does the same thing as {@link #remoteReplicatedMapData(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
      * <p>
      * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
@@ -598,7 +606,7 @@ public final class Sources {
      * @param batchSize         batch size to use
      */
     @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+    public static BatchSource<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(
             @Nonnull String replicatedMapName,
             @Nonnull ClientConfig clientConfig,
             int batchSize
@@ -607,7 +615,7 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that fetches entries from the Hazelcast {@code ReplicatedMap}
+     * Returns a source that fetches entries as {@link DataHolder}s from the Hazelcast {@code ReplicatedMap}
      * with the specified name in a remote cluster connected via the data connection identified by the supplied
      * data connection name and emits them as {@code Map.Entry}. You can add a data connection config by
      * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
@@ -624,7 +632,7 @@ public final class Sources {
      * mutation is not detected at all.
      * <p>
      * This method reads entries in batches of 1 million by default. To change
-     * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
+     * the batch size, use {@link #remoteReplicatedMapData(String, ClientConfig, int)}.
      * <p>
      * The total parallelism for this processor is 1.
      *
@@ -632,15 +640,15 @@ public final class Sources {
      * @param dataConnectionName data connection name to use to connect to the remote cluster
      */
     @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+    public static BatchSource<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(
             @Nonnull String replicatedMapName,
             @Nonnull String dataConnectionName
     ) {
-        return remoteReplicatedMap(replicatedMapName, dataConnectionName, RMAP_DEFAULT_READ_BATCH_SIZE);
+        return remoteReplicatedMapData(replicatedMapName, dataConnectionName, RMAP_DEFAULT_READ_BATCH_SIZE);
     }
 
     /**
-     * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
+     * This method does the same thing as {@link #remoteReplicatedMapData(String, String)} with a different batch
      * size provided rather than the default batch size.
      *
      * @param replicatedMapName  name of the replicated map in the remote cluster
@@ -648,7 +656,7 @@ public final class Sources {
      * @param batchSize          batch size to use
      */
     @Nonnull
-    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+    public static BatchSource<Entry<DataHolder, DataHolder>> remoteReplicatedMapData(
             @Nonnull String replicatedMapName,
             @Nonnull String dataConnectionName,
             int batchSize
@@ -657,7 +665,7 @@ public final class Sources {
     }
 
     @Nonnull
-    static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMapInternal(
+    static BatchSource<Entry<DataHolder, DataHolder>> remoteReplicatedMapInternal(
             @Nonnull String replicatedMapName,
             @Nullable String dataConnectionName,
             @Nullable ClientConfig clientConfig,
@@ -665,44 +673,56 @@ public final class Sources {
     ) {
         String xmlConfig = ImdgUtil.asXmlString(clientConfig);
         return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')',
-                                    context -> new RemoteReplicatedMapReader<K, V>(
+                                    context -> new RemoteReplicatedMapDataReader(
                                             replicatedMapName,
                                             dataConnectionName,
                                             xmlConfig,
                                             batchSize,
                                             context
                                     ))
-                            .<Entry<K, V>>fillBufferFn(RemoteReplicatedMapReader::fillBufferFn)
-                            .destroyFn(RemoteReplicatedMapReader::destroy)
+                            .fillBufferFn(RemoteReplicatedMapDataReader::fillBufferFn)
+                            .destroyFn(RemoteReplicatedMapDataReader::destroy)
                             .build();
     }
 
-    private static class RemoteReplicatedMapReader<K, V> extends HazelcastClientBaseContext {
+    private static class RemoteReplicatedMapDataReader extends HazelcastClientBaseContext {
         private final String replicatedMapName;
         private final int batchSize;
+        private Iterator<Map.Entry<Data, Data>> iterator;
+        private final int targetPartitionId;
 
-        private Iterator<Map.Entry<K, V>> iterator;
-
-        RemoteReplicatedMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
-                                  int batchSize, Context context) {
+        RemoteReplicatedMapDataReader(String replicatedMapName, String dataConnectionName, String clientXml,
+                                      int batchSize, Context context) {
             super(dataConnectionName, clientXml, context);
             this.replicatedMapName = replicatedMapName;
             this.batchSize = batchSize;
+            int partitionCount = client.getPartitionService().getPartitions().size();
+            this.targetPartitionId = ThreadLocalRandomProvider.get().nextInt(partitionCount);
         }
 
-        public void fillBufferFn(SourceBuffer<Entry<K, V>> buffer) {
+        public void fillBufferFn(SourceBuffer<Entry<DataHolder, DataHolder>> buffer)
+                throws ExecutionException, InterruptedException {
             if (iterator == null) {
-                ReplicatedMap<K, V> rMap = client.getReplicatedMap(replicatedMapName);
-                iterator = rMap.entrySet().iterator();
+                ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(replicatedMapName);
+                ClientInvocationFuture f = new ClientInvocation(
+                        client.client, request, replicatedMapName, targetPartitionId
+                ).invoke();
+                ClientMessage response = f.get();
+                iterator = ReplicatedMapEntrySetCodec.decodeResponse(response).iterator();
             }
             int counter = 0;
             while (iterator.hasNext() && counter < batchSize) {
-                buffer.add(iterator.next());
+                buffer.add(transform(iterator.next()));
                 counter++;
             }
             if (!iterator.hasNext()) {
                 buffer.close();
             }
+        }
+
+        private Entry<DataHolder, DataHolder> transform(Entry<Data, Data> entry) {
+            return new LazyMapEntry<>(new DataHolder(entry.getKey()), new DataHolder(entry.getValue()),
+                    client.getSerializationService());
         }
     }
 
