@@ -90,7 +90,7 @@ jobs:
             GKE_SA_KEY,CN/GKE_SA_KEY
 
       - name: Authenticate to GCP
-        uses: "google-github-actions/auth@v2.0.1"
+        uses: "google-github-actions/auth@v2.1.1"
         with:
           credentials_json: ${{ env.GKE_SA_KEY }}
 

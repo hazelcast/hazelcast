@@ -55,7 +55,7 @@ jobs:
             GCLOUD_KEYFILE_JSON,CN/GKE_SA_KEY
 
       - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1.1.1
+        uses: google-github-actions/auth@v2.1.1
         with:
           credentials_json: ${{ env.GCLOUD_KEYFILE_JSON }}
 
