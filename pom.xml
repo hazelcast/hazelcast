@@ -2225,7 +2225,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.18</version>
+            <version>10.1.19</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
