@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Identify team name
         id: get-team
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           result-encoding: string
           script: |
@@ -22,7 +22,7 @@ jobs:
             return team
       - name: Identify issue type
         id: get-issue-type
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           result-encoding: string
           script: |
