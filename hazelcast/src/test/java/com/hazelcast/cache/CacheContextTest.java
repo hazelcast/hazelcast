@@ -19,7 +19,6 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -45,7 +44,6 @@ import java.io.Serializable;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -88,9 +86,9 @@ public class CacheContextTest extends HazelcastTestSupport {
     protected void cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType decreaseType) {
         CacheManager cacheManager = provider.getCacheManager();
         CacheEntryListenerConfiguration<String, String> cacheEntryListenerConfig
-                = new MutableCacheEntryListenerConfiguration<String, String>(
+                = new MutableCacheEntryListenerConfiguration<>(
                 FactoryBuilder.factoryOf(new TestListener()), null, true, true);
-        CompleteConfiguration<String, String> cacheConfig = new MutableConfiguration<String, String>();
+        CompleteConfiguration<String, String> cacheConfig = new MutableConfiguration<>();
         Cache<String, String> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         cache.registerCacheEntryListener(cacheEntryListenerConfig);
@@ -98,35 +96,15 @@ public class CacheContextTest extends HazelcastTestSupport {
         final CacheService cacheService1 = getCacheService(hazelcastInstance1);
         final CacheService cacheService2 = getCacheService(hazelcastInstance2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(cacheService1.getCacheContext(CACHE_NAME_WITH_PREFIX));
-            }
-        });
+        assertTrueEventually(() -> assertNotNull(cacheService1.getCacheContext(CACHE_NAME_WITH_PREFIX)));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(cacheService2.getCacheContext(CACHE_NAME_WITH_PREFIX));
-            }
-        });
+        assertTrueEventually(() -> assertNotNull(cacheService2.getCacheContext(CACHE_NAME_WITH_PREFIX)));
 
         final CacheContext cacheContext1 = cacheService1.getCacheContext(CACHE_NAME_WITH_PREFIX);
         final CacheContext cacheContext2 = cacheService2.getCacheContext(CACHE_NAME_WITH_PREFIX);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, cacheContext1.getCacheEntryListenerCount());
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, cacheContext2.getCacheEntryListenerCount());
-            }
-        });
+        assertEqualsEventually(cacheContext1::getCacheEntryListenerCount, 1);
+        assertEqualsEventually(cacheContext2::getCacheEntryListenerCount, 1);
 
         switch (decreaseType) {
             case DEREGISTER:
@@ -142,18 +120,8 @@ public class CacheContextTest extends HazelcastTestSupport {
                 throw new IllegalArgumentException("Unsupported decrease type: " + decreaseType);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, cacheContext1.getCacheEntryListenerCount());
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, cacheContext2.getCacheEntryListenerCount());
-            }
-        });
+        assertEqualsEventually(cacheContext1::getCacheEntryListenerCount, 0);
+        assertEqualsEventually(cacheContext2::getCacheEntryListenerCount, 0);
     }
 
     private CacheService getCacheService(HazelcastInstance instance) {

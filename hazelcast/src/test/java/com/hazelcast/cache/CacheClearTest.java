@@ -93,7 +93,7 @@ public class CacheClearTest extends CacheTestSupport {
         final int ENTRY_COUNT_PER_PARTITION = 3;
         Node node = getNode(hazelcastInstance);
         int partitionCount = node.getPartitionService().getPartitionCount();
-        Map<String, String> entries = new HashMap<String, String>(partitionCount * ENTRY_COUNT_PER_PARTITION);
+        Map<String, String> entries = new HashMap<>(partitionCount * ENTRY_COUNT_PER_PARTITION);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             for (int i = 0; i < ENTRY_COUNT_PER_PARTITION; i++) {

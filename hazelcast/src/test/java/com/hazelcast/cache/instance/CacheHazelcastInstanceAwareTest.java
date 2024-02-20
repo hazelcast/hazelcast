@@ -57,7 +57,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -71,8 +70,8 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
-    private static final ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
-    private static final ConcurrentMap<Long, Boolean> NODE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
+    private static final ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<Long, Boolean> NODE_INJECTION_RESULT_MAP = new ConcurrentHashMap<>();
 
     private static final String CACHE_NAME = "MyCache";
 
@@ -86,7 +85,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
     }
 
     protected CacheConfig<Integer, Integer> createCacheConfig(String cacheName) {
-        return new CacheConfig<Integer, Integer>(cacheName);
+        return new CacheConfig<>(cacheName);
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
@@ -209,23 +208,12 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
         Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        cache.loadAll(new HashSet<Integer>(), false, new CompletionListenerWithDependencies(id));
+        cache.loadAll(new HashSet<>(), false, new CompletionListenerWithDependencies(id));
 
-        assertEqualsEventually(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id);
-            }
-        }, Boolean.TRUE);
+        assertEqualsEventually(() -> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id), Boolean.TRUE);
         // Node is only injected on member side completion listener
         if (!ClassLoaderUtil.isClassAvailable(null, "com.hazelcast.client.HazelcastClient")) {
-            assertEqualsEventually(new Callable<Boolean>() {
-                @Override
-                public Boolean call()
-                        throws Exception {
-                    return NODE_INJECTION_RESULT_MAP.get(id);
-                }
-            }, Boolean.TRUE);
+            assertEqualsEventually(() -> NODE_INJECTION_RESULT_MAP.get(id), Boolean.TRUE);
         }
     }
 

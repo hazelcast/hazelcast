@@ -28,7 +28,6 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.concurrent.Callable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -152,13 +150,7 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.putAsync(i, "Value-" + i).toCompletableFuture().get();
         }
 
-        assertEqualsEventually(new Callable<Long>() {
-            @Override
-            public Long call()
-                    throws Exception {
-                return stats.getCachePuts();
-            }
-        }, ENTRY_COUNT);
+        assertEqualsEventually(stats::getCachePuts, ENTRY_COUNT);
     }
 
     @Test
@@ -242,13 +234,7 @@ public class CacheStatsTest extends CacheTestSupport {
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
             cache.getAsync(i).toCompletableFuture().get();
         }
-        assertEqualsEventually(new Callable<Long>() {
-            @Override
-            public Long call()
-                    throws Exception {
-                return stats.getCacheGets();
-            }
-        }, 2 * ENTRY_COUNT);
+        assertEqualsEventually(stats::getCacheGets, 2 * ENTRY_COUNT);
     }
 
     @Test
@@ -305,13 +291,7 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.removeAsync(i).toCompletableFuture().get();
         }
 
-        assertEqualsEventually(new Callable<Long>() {
-            @Override
-            public Long call()
-                    throws Exception {
-                return stats.getCacheRemovals();
-            }
-        }, ENTRY_COUNT);
+        assertEqualsEventually(stats::getCacheRemovals, ENTRY_COUNT);
     }
 
     @Test
@@ -379,13 +359,7 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.getAsync(i).toCompletableFuture().get();
         }
 
-        assertEqualsEventually(new Callable<Long>() {
-            @Override
-            public Long call()
-                    throws Exception {
-                return stats.getCacheHits();
-            }
-        }, ENTRY_COUNT);
+        assertEqualsEventually(stats::getCacheHits, ENTRY_COUNT);
     }
 
     @Test
@@ -443,13 +417,7 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.getAsync(i).toCompletableFuture().get();
         }
 
-        assertEqualsEventually(new Callable<Long>() {
-            @Override
-            public Long call()
-                    throws Exception {
-                return stats.getCacheMisses();
-            }
-        }, GET_COUNT - ENTRY_COUNT);
+        assertEqualsEventually(stats::getCacheMisses, GET_COUNT - ENTRY_COUNT);
     }
 
     @Test
@@ -695,12 +663,7 @@ public class CacheStatsTest extends CacheTestSupport {
     }
 
     private void assertOwnedEntryCount(final int expectedEntryCount, final CacheStatistics... statsList) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedEntryCount, getOwnedEntryCount(statsList));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedEntryCount, getOwnedEntryCount(statsList)));
     }
 
     @Test
