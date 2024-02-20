@@ -20,6 +20,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class AddIndexOperationFactory extends AbstractMapOperationFactory {
 
     public AddIndexOperationFactory(String name, IndexConfig config) {
         super(name);
-        this.config = config;
+        this.config = IndexUtils.validateAndNormalize(name, config);
     }
 
     @Override

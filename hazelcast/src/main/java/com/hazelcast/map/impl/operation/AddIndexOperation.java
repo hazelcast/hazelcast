@@ -26,10 +26,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -40,7 +41,10 @@ import java.io.IOException;
 import static com.hazelcast.config.CacheDeserializedValues.NEVER;
 
 public class AddIndexOperation extends MapOperation
-        implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
+        implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation,
+                    // AddIndexOperation is used when map proxy for IMap with indexes is initialized during passive state
+                    // (eg. IMap is read for the first time after HotRestart recovery when the cluster is still in PASSIVE state)
+                    AllowedDuringPassiveState {
     /**
      * Configuration of the index.
      */
@@ -50,10 +54,15 @@ public class AddIndexOperation extends MapOperation
         // No-op.
     }
 
-    public AddIndexOperation(String name, IndexConfig config) {
+    /**
+     * @param name Index name
+     * @param config Index configuration. Must be normalized before passing to this operation.
+     */
+    AddIndexOperation(String name, IndexConfig config) {
         super(name);
 
-        this.config = IndexUtils.validateAndNormalize(name, config);
+        assert IndexUtils.validateAndNormalize(name, config).equals(config) : "Index configuration must be normalized";
+        this.config = config;
     }
 
     @Override
@@ -108,6 +117,11 @@ public class AddIndexOperation extends MapOperation
         }, false, false);
 
         index.markPartitionAsIndexed(partitionId);
+
+        // Register index after we are done creating it and before sending response to the user.
+        // It would be better to do once on each member instead of for each partition
+        // but currently there is no appropriate operation for that as index must be registered on each member.
+        mapServiceContext.registerIndex(name, config);
     }
 
     @Override

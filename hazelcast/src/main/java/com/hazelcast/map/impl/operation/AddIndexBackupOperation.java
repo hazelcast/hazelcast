@@ -49,6 +49,13 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
 
         IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
         indexRegistry.recordIndexDefinition(config);
+
+        // Register index also in backup operation. This usually should be redundant
+        // as usually the member should be also owner of some partitions. But just in case it is not,
+        // we also register the index here.
+        // It would be better to do once on each member instead of for each partition
+        // but currently there is no appropriate operation for that as index must be registered on each member.
+        mapServiceContext.registerIndex(name, config);
     }
 
     @Override

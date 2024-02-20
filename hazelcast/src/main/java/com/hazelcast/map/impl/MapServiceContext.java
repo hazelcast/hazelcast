@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
@@ -46,6 +47,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -274,5 +277,18 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      */
     default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
         return false;
+    }
+
+    /**
+     * Tracks indexes created dynamically via {@link com.hazelcast.map.IMap#addIndex}
+     */
+    default void registerIndex(String mapName, IndexConfig config) {
+    }
+
+    /**
+     * Gets remembered indexes created dynamically via {@link com.hazelcast.map.IMap#addIndex}
+     */
+    default Collection<IndexConfig> getMapIndexConfigs(String mapName) {
+        return Collections.emptyList();
     }
 }

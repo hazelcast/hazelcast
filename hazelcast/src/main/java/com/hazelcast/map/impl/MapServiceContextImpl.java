@@ -460,8 +460,15 @@ class MapServiceContextImpl implements MapServiceContext {
             mapStoreWrapper.destroy();
         }
 
+        // if there are any dynamic indexes, remove them
+        removeMapIndexConfigs(mapName);
+
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
+    }
+
+    protected void removeMapIndexConfigs(String mapName) {
+        // no-op in OS
     }
 
     /**

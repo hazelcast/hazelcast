@@ -39,7 +39,7 @@ public enum ConfigCheckMode {
     /**
      * Ignore configuration conflicts.
      * The caller can still decide to a log it, but it should not go into WARNING level, but
-     * into FINEST/DEBUG, etc..
+     * into FINEST/DEBUG, etc.
      *
      */
     SILENT
