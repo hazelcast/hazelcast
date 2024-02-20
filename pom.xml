@@ -157,7 +157,7 @@
         <jna.version>5.14.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.2.1</archunit.version>
-        <errorprone.version>2.24.1</errorprone.version>
+        <errorprone.version>2.25.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
         <hikari.version>5.1.0</hikari.version>
 
