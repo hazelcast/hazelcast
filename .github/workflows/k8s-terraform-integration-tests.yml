@@ -60,7 +60,7 @@ jobs:
           credentials_json: ${{ env.GCLOUD_KEYFILE_JSON }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           install_components: "gke-gcloud-auth-plugin,kubectl"
 
