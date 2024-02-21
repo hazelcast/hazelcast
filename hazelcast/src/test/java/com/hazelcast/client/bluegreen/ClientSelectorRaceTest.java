@@ -53,7 +53,7 @@ public class ClientSelectorRaceTest extends HazelcastTestSupport {
 
         final ClientEngineImpl clientEngineImpl = getClientEngineImpl(instance);
 
-        LinkedList<Thread> threads = new LinkedList<Thread>();
+        LinkedList<Thread> threads = new LinkedList<>();
         int numberOfClients = 100;
         for (int i = 0; i < numberOfClients; i++) {
             Thread thread = new Thread(hazelcastFactory::newHazelcastClient);

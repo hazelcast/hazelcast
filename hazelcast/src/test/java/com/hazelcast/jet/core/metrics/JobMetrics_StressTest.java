@@ -121,7 +121,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
         static final AtomicInteger completeCount = new AtomicInteger();
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             initCount.incrementAndGet();
         }
 

@@ -116,7 +116,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
     }
 
     @Test()
-    public void addCustomObjectRegisteredAsync() throws Exception {
+    public void addCustomObjectRegisteredAsync() {
         assumeTrue(config != null);
 
         assertEquals(0L, estimator.estimate());
@@ -161,7 +161,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         }
 
         @Override
-        public CustomObject read(ObjectDataInput in) throws IOException {
+        public CustomObject read(ObjectDataInput in) {
             // not needed
             throw new UnsupportedOperationException();
         }

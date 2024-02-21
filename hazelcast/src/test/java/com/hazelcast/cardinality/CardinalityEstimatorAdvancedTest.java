@@ -103,19 +103,17 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
                 final AtomicInteger exceptionCount = new AtomicInteger(0);
                 for (int j = 0; j < parallel; j++) {
                     final int id = j;
-                    ex.execute(new Runnable() {
-                        public void run() {
-                            try {
-                                counter.incrementAndGet();
-                                instances[id] = nodeFactory.newHazelcastInstance();
-                                instances[id].getCardinalityEstimator(name)
-                                        .add(String.valueOf(counter.get()));
-                            } catch (Exception e) {
-                                exceptionCount.incrementAndGet();
-                                e.printStackTrace();
-                            } finally {
-                                countDownLatch.countDown();
-                            }
+                    ex.execute(() -> {
+                        try {
+                            counter.incrementAndGet();
+                            instances[id] = nodeFactory.newHazelcastInstance();
+                            instances[id].getCardinalityEstimator(name)
+                                    .add(String.valueOf(counter.get()));
+                        } catch (Exception e) {
+                            exceptionCount.incrementAndGet();
+                            e.printStackTrace();
+                        } finally {
+                            countDownLatch.countDown();
                         }
                     });
                 }

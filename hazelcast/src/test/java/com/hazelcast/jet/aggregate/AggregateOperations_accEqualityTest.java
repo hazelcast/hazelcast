@@ -40,7 +40,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.reducing;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -66,7 +66,7 @@ public class AggregateOperations_accEqualityTest {
 
     @Test
     public void testTwoAccumulatorsEqual() {
-        assertTrue("this test is not needed if deduct is not implemented", operation.deductFn() != null);
+        assertNotNull("this test is not needed if deduct is not implemented", operation.deductFn());
 
         Object accumulator1 = operation.createFn();
         Object accumulator2 = operation.createFn();

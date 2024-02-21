@@ -85,7 +85,7 @@ public class CardinalityEstimatorBackupTest extends HazelcastTestSupport {
     }
 
     private long readEstimate(final HazelcastInstance instance) {
-        final OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final CardinalityEstimatorService cardinalityEstimatorService = getNodeEngineImpl(instance)
                                                                                  .getService(CardinalityEstimatorService.SERVICE_NAME);
 
