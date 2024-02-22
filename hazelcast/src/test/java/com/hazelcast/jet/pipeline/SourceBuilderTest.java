@@ -202,7 +202,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            ToLongFunctionEx<String> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            ToLongFunctionEx<String> timestampFn = line -> Long.parseLong(line.substring(LINE_PREFIX.length()));
 
             BatchSource<String> socketSource = SourceBuilder
                     .batch("socket-source-with-timestamps", ctx -> socketReader(localPort))
@@ -289,7 +289,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            ToLongFunctionEx<String> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            ToLongFunctionEx<String> timestampFn = line -> Long.parseLong(line.substring(LINE_PREFIX.length()));
 
             BatchSource<String> socketSource = SourceBuilder
                     .batch("socket-source-with-timestamps", ctx -> socketReader(localPort))

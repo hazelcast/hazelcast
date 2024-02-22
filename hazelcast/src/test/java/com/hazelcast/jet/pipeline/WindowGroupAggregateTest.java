@@ -27,9 +27,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -56,6 +54,7 @@ import static java.util.Comparator.comparing;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
@@ -93,8 +92,6 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
     private static final AggregateOperation1<Entry<String, Integer>, LongAccumulator, Long> SUMMING =
             summingLong(Entry::getValue);
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void when_noTimestamps_then_error() {
@@ -104,9 +101,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .withoutTimestamps()
                 .window(tumbling(1));
 
-        // Then
-        exception.expectMessage("is missing a timestamp definition");
-        stage.aggregate(counting());
+        assertThatThrownBy(() -> stage.aggregate(counting()))
+                .hasMessageContaining("is missing a timestamp definition");
     }
 
     @Test

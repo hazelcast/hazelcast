@@ -134,7 +134,7 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertAnyOrder_duplicate_entry() throws Throwable {
+    public void test_assertAnyOrder_duplicate_entry() {
         p.readFrom(TestSources.items(1, 3, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 3)));
 
@@ -353,12 +353,12 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_multiple_assertions_in_pipeline() throws Throwable {
+    public void test_multiple_assertions_in_pipeline() {
         Map<String, Long> assertionSink = hz().getMap(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items("some text here and here and some here"))
-                .apply(Assertions.assertOrdered(Arrays.asList("some text here and here and some here")))
+                .apply(Assertions.assertOrdered(List.of("some text here and here and some here")))
                 .flatMap(line -> traverseArray(line.toLowerCase(Locale.ROOT).split("\\W+")))
                 .apply(Assertions.assertAnyOrder(
                         Arrays.asList("some", "text", "here", "and", "here", "and", "some", "here")))

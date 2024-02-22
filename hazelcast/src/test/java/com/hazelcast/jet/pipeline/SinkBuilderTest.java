@@ -90,14 +90,12 @@ public class SinkBuilderTest extends PipelineTestSupport {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             spawn(() -> uncheckRun(() -> {
                 while (!serverSocket.isClosed()) {
-                    Socket socket = serverSocket.accept();
                     spawn(() -> uncheckRun(() -> {
-                        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                        try (Socket socket = serverSocket.accept();
+                             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
                             while (in.readLine() != null) {
                                 counter.incrementAndGet();
                             }
-                        } finally {
-                            socket.close();
                         }
                     }));
                 }

@@ -36,9 +36,7 @@ import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,6 +77,7 @@ import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -86,9 +85,6 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
     private static final BiFunction<String, Integer, String> ENRICHING_FORMAT_FN =
             (prefix, i) -> String.format("%s-%04d", prefix, i);
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void setName() {
@@ -228,7 +224,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 stage -> stage
                         .map(Objects::toString)
                         .flatMap(item -> Traversers.traverseItems(item + "-1", item + "-2")),
-                item -> Stream.of(item.toString() + "-1", item.toString() + "-2")
+                item -> Stream.of(item + "-1", item + "-2")
         );
     }
 
@@ -238,7 +234,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 stage -> stage
                         .flatMap(item -> Traversers.traverseItems(item + "-1", item + "-2"))
                         .map(item -> item + "x"),
-                item -> Stream.of(item.toString() + "-1x", item.toString() + "-2x")
+                item -> Stream.of(item + "-1x", item + "-2x")
         );
     }
 
@@ -1208,11 +1204,9 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<SimpleEvent> timestamped = p.readFrom(TestSources.itemStream(1)).withIngestionTimestamps();
         StreamStage<SimpleEvent> nonTimestamped = p.readFrom(TestSources.itemStream(1)).withoutTimestamps();
 
-        // Then
-        exception.expectMessage("both have or both not have timestamp definitions");
-
         // When
-        nonTimestamped.merge(timestamped);
+        assertThatThrownBy(() -> nonTimestamped.merge(timestamped))
+                .hasMessageContaining("both have or both not have timestamp definitions");
     }
 
     @Test
@@ -1220,11 +1214,9 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<SimpleEvent> timestamped = p.readFrom(TestSources.itemStream(1)).withIngestionTimestamps();
         StreamStage<SimpleEvent> nonTimestamped = p.readFrom(TestSources.itemStream(1)).withoutTimestamps();
 
-        // Then
-        exception.expectMessage("both have or both not have timestamp definitions");
-
         // When
-        timestamped.merge(nonTimestamped);
+        assertThatThrownBy(() -> timestamped.merge(nonTimestamped))
+                .hasMessageContaining("both have or both not have timestamp definitions");
     }
 
     @Test
