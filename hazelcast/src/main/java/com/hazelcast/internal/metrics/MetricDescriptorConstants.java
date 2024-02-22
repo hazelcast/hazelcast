@@ -719,6 +719,7 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_ACK_DELAY_LAST_START = "ackDelayLastStart";
     public static final String WAN_METRIC_ACK_DELAY_LAST_END = "ackDelayLastEnd";
     public static final String WAN_METRIC_CONNECTION_HEALTH = "connectionHealth";
+    public static final String WAN_METRIC_FAILED_TRANSMIT_COUNT = "failedTransmitCount";
     public static final String WAN_DISCRIMINATOR_CONNECTION_ADDRESS = "address";
     public static final String WAN_TAG_DISCOVERY_STRATEGY = "discoveryStrategy";
     public static final String WAN_QUEUE_FILL_PERCENT = "queueFillPercent";
