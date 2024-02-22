@@ -153,7 +153,7 @@
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <mockito.version>5.10.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.19.5</testcontainers.version>
+        <testcontainers.version>1.19.6</testcontainers.version>
         <jna.version>5.14.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.2.1</archunit.version>
