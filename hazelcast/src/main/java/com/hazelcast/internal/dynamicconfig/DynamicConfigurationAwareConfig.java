@@ -42,7 +42,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -58,8 +57,10 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SqlConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.rest.RestConfig;
@@ -89,7 +90,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
-
 import java.io.File;
 import java.net.URL;
 import java.util.List;
@@ -272,9 +272,29 @@ public class DynamicConfigurationAwareConfig extends Config {
         boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getMapConfigs(),
                 mapConfig.getName(), mapConfig);
         if (staticConfigDoesNotExist) {
-            if (mapConfig.getTieredStoreConfig().isEnabled()) {
-                throw new InvalidConfigurationException("Tiered store enabled map config"
-                        + " cannot be added dynamically [" + mapConfig + "]");
+            TieredStoreConfig tsConfig = mapConfig.getTieredStoreConfig();
+            if (tsConfig.isEnabled()) {
+                if (staticConfig.getDeviceConfigs().isEmpty()) {
+                    // if the instance started with no device configs, tiered store service didn't initialize
+                    // we have to fail the config addition attempt
+                    throw new InvalidConfigurationException("Tiered store enabled map config"
+                            + " cannot be added dynamically [" + mapConfig + "] if there are no device configs in the"
+                            + " static configuration");
+                }
+
+                if (!staticConfig.getNativeMemoryConfig().isEnabled()) {
+                    // if the instance started with native memory disabled, tiered store service didn't initialize
+                    // we have to fail the config addition attempt
+                    throw new InvalidConfigurationException("Tiered store enabled map config"
+                            + " cannot be added dynamically [" + mapConfig + "] if native memory is disabled");
+                }
+
+                String deviceName = tsConfig.getDiskTierConfig().getDeviceName();
+                if (!getDeviceConfigs().containsKey(deviceName)) {
+                    throw new InvalidConfigurationException("Tiered store enabled map config"
+                            + " cannot be added dynamically [" + mapConfig + "] due to missing device config ["
+                            + deviceName + "]");
+                }
             }
             configurationService.broadcastConfig(mapConfig);
         }

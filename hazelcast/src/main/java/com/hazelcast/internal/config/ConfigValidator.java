@@ -25,17 +25,46 @@ import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import static com.hazelcast.config.EvictionPolicy.LFU;
-import static com.hazelcast.config.EvictionPolicy.LRU;
-import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import com.hazelcast.config.InMemoryFormat;
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.TieredStoreConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
+
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.EvictionPolicy.RANDOM;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_SIZE;
@@ -47,43 +76,15 @@ import static com.hazelcast.config.MaxSizePolicy.USED_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.USED_HEAP_SIZE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NativeMemoryConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
-import com.hazelcast.config.NearCachePreloaderConfig;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.TieredStoreConfig;
-import com.hazelcast.config.WanBatchPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.cp.CPSubsystemConfig;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.ProtocolType;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
-import com.hazelcast.internal.util.MutableInteger;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
-import com.hazelcast.spi.merge.MergingValue;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import static java.lang.String.format;
-
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Validates a Hazelcast configuration in a specific
@@ -132,8 +133,8 @@ public final class ConfigValidator {
         checkTSEnabledOnEnterpriseJar(mapConfig.getTieredStoreConfig());
 
         if (getBuildInfo().isEnterprise()) {
-            checkMapNativeConfig(mapConfig, config.getNativeMemoryConfig());
             checkTieredStoreMapConfig(config, mapConfig);
+            checkMapNativeConfig(mapConfig, config.getNativeMemoryConfig());
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
@@ -149,6 +150,10 @@ public final class ConfigValidator {
         }
 
         String mapName = mapConfig.getName();
+        if (!config.getNativeMemoryConfig().isEnabled()) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but native memory is not enabled.", mapName));
+        }
         DiskTierConfig diskTierConfig = mapConfig.getTieredStoreConfig().getDiskTierConfig();
         if (!diskTierConfig.isEnabled()) {
             throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "

@@ -41,7 +41,6 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -106,7 +105,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -481,19 +479,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         assertConfigurationsEqualOnAllMembers(config);
         assertConfigurationsEqualOnAllMembers(reordered);
-    }
-
-    @Test
-    public void testMapConfig_throws_InvalidConfigurationException_when_tiered_store_enabled() {
-        MapConfig config = getMapConfig();
-
-        config.getTieredStoreConfig().setEnabled(true);
-
-        InvalidConfigurationException exception = assertThrows(InvalidConfigurationException.class,
-                () -> driver.getConfig().addMapConfig(config));
-
-        assertTrue(exception.getMessage().contains("Tiered store enabled map config cannot be added dynamically"));
-
     }
 
     @Test

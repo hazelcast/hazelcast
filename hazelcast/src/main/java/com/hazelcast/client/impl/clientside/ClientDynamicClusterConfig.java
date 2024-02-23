@@ -65,7 +65,6 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.IntegrityCheckerConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -73,7 +72,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -93,6 +91,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.rest.RestConfig;
@@ -138,11 +137,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addMapConfig(MapConfig mapConfig) {
-        if (mapConfig.getTieredStoreConfig().isEnabled()) {
-            throw new InvalidConfigurationException(
-                    "Tiered store enabled map config" + " cannot be added dynamically [" + mapConfig + "]");
-        }
-
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(mapConfig.getEntryListenerConfigs());
         List<ListenerConfigHolder> partitionLostListenerConfigs =
                 adaptListenerConfigs(mapConfig.getPartitionLostListenerConfigs());
