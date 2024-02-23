@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
@@ -115,6 +116,22 @@ public class BatchAggregateTest extends PipelineTestSupport {
         execute();
         assertEquals(
                 emptyList(),
+                new ArrayList<>(sinkList)
+        );
+    }
+
+    @Test
+    // The execution path depends on partition assignment - which node
+    // executes parallel step and which executes combine step
+    public void when_maxOfOneItems_then_producesOutput() {
+        // When
+        BatchStage<Integer> aggregated = batchStageFromList(List.of(1)).aggregate(maxBy(ComparatorEx.naturalOrder()));
+
+        // Then
+        aggregated.writeTo(sink);
+        execute();
+        assertEquals(
+                List.of(1),
                 new ArrayList<>(sinkList)
         );
     }

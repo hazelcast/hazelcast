@@ -246,7 +246,7 @@ public final class AggregateOperations {
                     }
                 })
                 .andCombine((a1, a2) -> {
-                    if (a1.isNull() || comparator.compare(a1.get(), a2.get()) < 0) {
+                    if (a1.isNull() || (!a2.isNull() && comparator.compare(a1.get(), a2.get()) < 0)) {
                         a1.set(a2.get());
                     }
                 })
