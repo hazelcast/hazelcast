@@ -7270,6 +7270,7 @@ public class MemberCompatibilityNullTest_2_4 {
         assertTrue(isEqual(anInt, parameters.responseTimeoutMillis));
         assertTrue(isEqual(anInt, parameters.ackType));
         assertTrue(isEqual(anInt, parameters.queueFullBehavior));
+        assertFalse(parameters.isConsistencyCheckStrategyExists);
     }
 
     @Test

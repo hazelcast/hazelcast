@@ -131,7 +131,7 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
 
         ClientMessage clientMessage = MCAddWanBatchPublisherConfigCodec.encodeRequest(randomString(), randomString(),
                 randomString(), randomString(), random.nextInt(), random.nextInt(), random.nextInt(), random.nextInt(),
-                random.nextInt(), random.nextInt());
+                random.nextInt(), random.nextInt(), (byte) random.nextInt(2));
 
         assertFailureOnUntrustedInterface(clientMessage);
     }

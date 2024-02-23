@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Add a new WAN batch publisher configuration
  */
 @SuppressWarnings("unused")
-@Generated("c27b6d8025cd80cf3fff87c9e09cd6ca")
+@Generated("2279e566e4371c66dd45fc94ead6b938")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
@@ -49,7 +49,8 @@ public final class MCAddWanBatchPublisherConfigCodec {
     private static final int REQUEST_RESPONSE_TIMEOUT_MILLIS_FIELD_OFFSET = REQUEST_BATCH_MAX_DELAY_MILLIS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ACK_TYPE_FIELD_OFFSET = REQUEST_RESPONSE_TIMEOUT_MILLIS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET = REQUEST_ACK_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET = REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCAddWanBatchPublisherConfigCodec() {
@@ -117,9 +118,22 @@ public final class MCAddWanBatchPublisherConfigCodec {
          * 2 - THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
          */
         public int queueFullBehavior;
+
+        /**
+         * Strategy for checking the consistency of data between wanReplicationResourceName:
+         * 0 - NONE
+         * 1 - MERKLE_TREES
+         */
+        public byte consistencyCheckStrategy;
+
+        /**
+         * True if the consistencyCheckStrategy is received from the client, false otherwise.
+         * If this is false, consistencyCheckStrategy has the default value for its type.
+         */
+        public boolean isConsistencyCheckStrategyExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, @Nullable java.lang.String publisherId, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, @Nullable java.lang.String publisherId, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior, byte consistencyCheckStrategy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.AddWanBatchPublisherConfig");
@@ -132,6 +146,7 @@ public final class MCAddWanBatchPublisherConfigCodec {
         encodeInt(initialFrame.content, REQUEST_RESPONSE_TIMEOUT_MILLIS_FIELD_OFFSET, responseTimeoutMillis);
         encodeInt(initialFrame.content, REQUEST_ACK_TYPE_FIELD_OFFSET, ackType);
         encodeInt(initialFrame.content, REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET, queueFullBehavior);
+        encodeByte(initialFrame.content, REQUEST_CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET, consistencyCheckStrategy);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         StringCodec.encode(clientMessage, targetCluster);
@@ -150,6 +165,12 @@ public final class MCAddWanBatchPublisherConfigCodec {
         request.responseTimeoutMillis = decodeInt(initialFrame.content, REQUEST_RESPONSE_TIMEOUT_MILLIS_FIELD_OFFSET);
         request.ackType = decodeInt(initialFrame.content, REQUEST_ACK_TYPE_FIELD_OFFSET);
         request.queueFullBehavior = decodeInt(initialFrame.content, REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET + BYTE_SIZE_IN_BYTES) {
+            request.consistencyCheckStrategy = decodeByte(initialFrame.content, REQUEST_CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET);
+            request.isConsistencyCheckStrategyExists = true;
+        } else {
+            request.isConsistencyCheckStrategyExists = false;
+        }
         request.name = StringCodec.decode(iterator);
         request.targetCluster = StringCodec.decode(iterator);
         request.publisherId = CodecUtil.decodeNullable(iterator, StringCodec::decode);

@@ -20,10 +20,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ManagementPermission;
@@ -63,6 +65,11 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
         WanQueueFullBehavior queueFullBehavior = WanQueueFullBehavior.getByType(parameters.queueFullBehavior);
         publisherConfig.setQueueFullBehavior(
                 queueFullBehavior != null ? queueFullBehavior : DEFAULT_QUEUE_FULL_BEHAVIOUR);
+        if (parameters.isConsistencyCheckStrategyExists) {
+            WanSyncConfig syncConfig = new WanSyncConfig();
+            syncConfig.setConsistencyCheckStrategy(ConsistencyCheckStrategy.getById(parameters.consistencyCheckStrategy));
+            publisherConfig.setSyncConfig(syncConfig);
+        }
         wanConfig.addBatchReplicationPublisherConfig(publisherConfig);
 
         return nodeEngine.getWanReplicationService().addWanReplicationConfig(wanConfig);

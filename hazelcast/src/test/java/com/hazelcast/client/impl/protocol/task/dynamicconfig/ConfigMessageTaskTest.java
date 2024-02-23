@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.cluster.Address.createUnresolvedAddress;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,15 +53,17 @@ public abstract class ConfigMessageTaskTest {
     protected Node mockNode;
     protected Connection mockConnection;
 
+    protected NodeEngineImpl mockNodeEngineImpl;
+
     @Before
     public void setup() {
         // setup mocks
         mockNode = mock(Node.class);
         mockConnection = mock(ServerConnection.class);
-        ClientEngine mockClientEngine = mock(ClientEngine.class);
+        ClientEngine mockClientEngine = mock(ClientEngine.class, RETURNS_DEEP_STUBS);
         ClientEndpointManager mockClientEndpointManager = mock(ClientEndpointManager.class);
         ClientEndpoint mockClientEndpoint = mock(ClientEndpoint.class);
-        NodeEngineImpl mockNodeEngineImpl = mock(NodeEngineImpl.class);
+        mockNodeEngineImpl = mock(NodeEngineImpl.class, RETURNS_DEEP_STUBS);
         NodeExtension mockNodeExtension = mock(NodeExtension.class);
         ClusterWideConfigurationService mockConfigurationService = mock(ClusterWideConfigurationService.class);
         InternalCompletableFuture<Object> mockFuture = mock(InternalCompletableFuture.class);
@@ -74,6 +77,7 @@ public abstract class ConfigMessageTaskTest {
         when(mockClientEngine.getEndpointManager()).thenReturn(mockClientEndpointManager);
         when(mockClientEngine.getExceptionFactory()).thenReturn(new ClientExceptionFactory(false,
                 new Config().getClassLoader()));
+        when(mockClientEngine.getManagementTasksChecker().isTrusted(any())).thenReturn(true);
 
         when(mockClientEndpoint.getClientType()).thenReturn(ConnectionType.JAVA_CLIENT);
         when(mockClientEndpoint.isAuthenticated()).thenReturn(true);

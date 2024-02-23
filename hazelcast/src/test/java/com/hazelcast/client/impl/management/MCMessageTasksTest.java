@@ -118,7 +118,8 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 random.nextInt(),
                 random.nextInt(),
                 random.nextInt(),
-                random.nextInt()
+                random.nextInt(),
+                (byte) random.nextInt(2)
         );
 
         assertFailure(clientMessage, UnsupportedOperationException.class, "Adding new WAN config is not supported.");
