@@ -16,71 +16,43 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collections;
+import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Tag("com.hazelcast.test.annotation.QuickTest")
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-public class LazyCollectionTest {
+class LazyCollectionTest {
+    private static LazyCollection<?, ?> collection;
 
-    private LazyCollection<Object, Object> collection;
-
-    @Before
-    @SuppressWarnings("unchecked")
-    public void setUp() {
-        ValuesIteratorFactory<Object, Object> iteratorFactory = mock(ValuesIteratorFactory.class);
-        InternalReplicatedMapStorage<Object, Object> storage = mock(InternalReplicatedMapStorage.class);
-        collection = new LazyCollection<Object, Object>(iteratorFactory, storage);
+    @BeforeAll
+    public static void setUp() {
+        collection = new LazyCollection<>(mock(), new InternalReplicatedMapStorage<>());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void testContains_throwsException() {
-        collection.contains(null);
+    private static Stream<Named<Executable>> unsupportedOperations() {
+        return Stream.of(Named.of("contains", () -> collection.contains(null)),
+                Named.of("containsAll", () -> collection.containsAll(Collections.emptyList())),
+                Named.of("add", () -> collection.add(null)),
+                Named.of("addAll", () -> collection.addAll(Collections.emptyList())),
+                Named.of("remove", () -> collection.remove(null)),
+                Named.of("removeAll", () -> collection.removeAll(Collections.emptyList())),
+                Named.of("retainAll", () -> collection.retainAll(Collections.emptyList())),
+                Named.of("clear", () -> collection.clear()));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testContainsAll_throwsException() {
-        collection.containsAll(Collections.EMPTY_LIST);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAdd_throwsException() {
-        collection.add(null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAddAll_throwsException() {
-        collection.addAll(Collections.EMPTY_LIST);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemove_throwsException() {
-        collection.remove(null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemoveAll_throwsException() {
-        collection.removeAll(Collections.EMPTY_LIST);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRetainAll_throwsException() {
-        collection.retainAll(Collections.EMPTY_LIST);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testClear_throwsException() {
-        collection.clear();
+    @ParameterizedTest
+    @MethodSource("unsupportedOperations")
+    void testUnsupportedOperations(Executable operation) {
+        assertThrows(UnsupportedOperationException.class, operation);
     }
 }
