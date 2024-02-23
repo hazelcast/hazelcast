@@ -1,16 +1,32 @@
-This document lists the enhancements and fixed issues for the Hazelcast Platform 5.2.4 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository (github.com/hazelcast/hazelcast).
+This document lists the enhancements and fixed issues for the Hazelcast Platform 5.2.5 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
 
 ## Enhancements
 
-* Updated the version of `jackson-core` dependency to 2.15.2. [#24730]
-* Hazelcast was sending requests to Kubernetes API when deploying an application with embedded Hazelcast and `service-dns` (DNS lookup mode) specified to a Kubernetes cluster. This was causing the requests to be unsuccessful and the application not to start. This mechanism has been improved by creating Kubernetes client only for the DNS lookup mode. [#24045]
+* Improved the permission checks in the file connectors by adding a method that returns the permissions required to resolve field names. [#25674]
+* Updated the versions of following dependencies:
+  ** Snappy to 1.1.10.5
+  ** gRPC to 1.59
+  ** Netty to 4.1.100.Final
+  ** Elasticsearch to 7.17.13
+  ** Everit JSON Schema to 1.14.3
+  [#24866], [#25820], [#25708], [#25729], [#25775]
 
 ## Fixes
 
-* Fixed an issue where some of the members in a Hazelcast cluster deployed on Kubernetes (as a statefulset) shut down with en exception in a delayed manner. [#24709]
-* Fixed an issue where Jet job snapshots could be prematurely deleted after a restart of a cluster, having lossless restart enabled. [#24576]
-* Fixed an issue where the SELECT COUNT(DISTINCT COLUMN) query for maps was producing incorrect results. [#24490]
-* Fixed various issues in [Health Monitor] including incorrect metric names. [#24634]
-* Fixed an issue where the REST calls were failing for Hazelcast clusters with TLS v1.3 configured, and deployed on Kubernetes. [#24624]
-* Fixed an issue where SQL statements were failing when a class (to determine the fields of a key/value pair) no longer exists but the mapping is still valid. [#24043]
-* Fixed an issue where `lastAccessTime` and `expirationTime` was not updated when an entry is accessed via `executeOnEntries`. [#24012]
+* Fixed an issue where the entry listeners for Replicated Maps were checking the Map permissions instead of the Replicated Map permissions. [#25971]
+* Fixed an issue where the map entries' metadata, such as time-to-live and expiration, was not replicated correctly over WAN after updating existing entries. [#25506]
+* Fixed an issue where there was a difference between the elapsed clock time and elapsed total time when listening to migration events. [#25066]
+* Fixed an issue where the member list was not updated after a cluster failover scenario. [#24944]
+* Renamed the service port for Hazelcast clusters deployed in Kubernetes environments to hazelcast. The previous name, `hazelcast-service-port`, caused member auto-discovery for embedded deployments to fail. [#24841]
+* Fixed an issue where Hazelcast was sending empty map interceptor information to the members that are newly joined to the cluster; it was causing eager map initializations. [#24669]
+
+## Removed/Deprecated Features
+
+* Removed the evaluation tool (for trying out Platform 5.x features for IMDG 3.x users) and the relevant IMDG 3.x JAR libraries from Hazelcast Platform distributions. [#25697]
+
+## Contributors
+
+We would like to thank the contributors from our open source community
+who worked on this release:
+
+* [Aleksei Zotov](https://github.com/azotcsit)
