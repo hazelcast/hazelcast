@@ -339,6 +339,7 @@ public class MapChunk extends Operation
         }
 
         MapContainer mapContainer = recordStore.getMapContainer();
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         if (mapContainer.shouldUseGlobalIndex()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
@@ -348,12 +349,14 @@ public class MapChunk extends Operation
                 if (indexRegistry.getIndex(indexConfig.getName()) == null) {
                     indexRegistry.addOrGetIndex(indexConfig);
                 }
+                mapServiceContext.registerIndex(mapName, indexConfig);
             }
         } else {
             IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(getPartitionId());
             indexRegistry.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
                 indexRegistry.addOrGetIndex(indexConfig);
+                mapServiceContext.registerIndex(mapName, indexConfig);
             }
         }
     }

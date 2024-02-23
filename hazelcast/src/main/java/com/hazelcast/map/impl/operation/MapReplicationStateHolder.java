@@ -305,6 +305,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
         RecordStore recordStore = operation.getRecordStore(mapName);
         MapContainer mapContainer = recordStore.getMapContainer();
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         if (mapContainer.shouldUseGlobalIndex()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
@@ -314,12 +315,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 if (indexRegistry.getIndex(indexConfig.getName()) == null) {
                     indexRegistry.addOrGetIndex(indexConfig);
                 }
+                mapServiceContext.registerIndex(mapName, indexConfig);
             }
         } else {
             IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(operation.getPartitionId());
             indexRegistry.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
                 indexRegistry.addOrGetIndex(indexConfig);
+                mapServiceContext.registerIndex(mapName, indexConfig);
             }
         }
     }

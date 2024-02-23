@@ -83,7 +83,7 @@ public class MapContainer {
     protected final String name;
     protected final String splitBrainProtectionName;
     // on-heap indexes are global, meaning there is only one index per map,
-    // stored in the mapContainer, so if globalIndexes is null it means that
+    // stored in the mapContainer, so if globalIndexRegistry is null it means that
     // global index is not in use
     protected final Extractors extractors;
     protected final MapStoreContext mapStoreContext;
