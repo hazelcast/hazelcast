@@ -114,6 +114,11 @@
             <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!--Postgres-->
         <dependency>
             <groupId>org.testcontainers</groupId>
