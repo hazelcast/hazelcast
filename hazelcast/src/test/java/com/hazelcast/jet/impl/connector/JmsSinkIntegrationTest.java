@@ -56,8 +56,8 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
     private static int counter;
 
-    private String destinationName = "dest" + counter++;
-    private IList<Object> srcList = instance().getList("src-" + counter++);
+    private final String destinationName = "dest" + counter++;
+    private final IList<Object> srcList = instance().getList("src-" + counter++);
 
     @BeforeClass
     public static void beforeClass() {
@@ -212,10 +212,11 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
                 .exactlyOnce(exactlyOnce)
                 .build();
 
-        try (
-                Connection connection = new ActiveMQConnectionFactory(broker.getVmURL()).createConnection();
-                Session session = connection.createSession(false, DUPS_OK_ACKNOWLEDGE);
-                MessageConsumer consumer = session.createConsumer(session.createQueue(destinationName))
+
+        try (ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory(broker.getVmURL());
+             Connection connection = activeMQConnectionFactory.createConnection();
+             Session session = connection.createSession(false, DUPS_OK_ACKNOWLEDGE);
+             MessageConsumer consumer = session.createConsumer(session.createQueue(destinationName))
         ) {
             connection.start();
             List<Integer> actualSinkContents = new ArrayList<>();
