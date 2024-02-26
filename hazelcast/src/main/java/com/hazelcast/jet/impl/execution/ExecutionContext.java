@@ -322,7 +322,23 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 executionFuture = cancellationFuture;
                 return false;
             }
-            snapshotContext.cancel();
+
+            // Very rarely it can happen that snapshotContext=null here.
+            // Basic scenario is when job initializes slowly (under load) and execution context is already created
+            // but not yet fully initialized (did not reach SnapshotContext creation in ExecutionContext.initialize()).
+            // If such job is terminated twice for any reason (eg. manual termination, cancelAllExecutions, member left etc.)
+            // and the completeExecution invocation is slow, then terminateExecution may be invoked twice from
+            // JobExecutionService.terminateExecution0.
+            // If that happens, first invocation will set `executionFuture = cancellationFuture` and the second invocation
+            // will reach here. This should not be very harmful, as completeExecution is safe to be invoked multiple times.
+            //
+            // Due to concurrent nature of initialization and cancellation it is hard to precisely know if the job
+            // was cancelled _before_ execution started or cancelled _when_ the execution was starting.
+            // However, in any case, snapshotContext=null means that the job has not yet started,
+            // so there is no cleanup to do.
+            if (snapshotContext != null) {
+                snapshotContext.cancel();
+            }
             return true;
         }
     }
