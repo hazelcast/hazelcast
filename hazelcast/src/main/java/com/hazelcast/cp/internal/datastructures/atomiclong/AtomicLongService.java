@@ -55,7 +55,7 @@ public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, 
         super.init(nodeEngine, properties);
 
         if (nodeEngine.getProperties().getBoolean(METRICS_DATASTRUCTURES)) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 

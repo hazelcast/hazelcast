@@ -50,7 +50,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -156,7 +155,7 @@ public class MapContainer {
     public IndexRegistry createIndexRegistry(boolean global, int partitionId) {
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
 
-        Node node = ((NodeEngineImpl) mapServiceContext.getNodeEngine()).getNode();
+        Node node = mapServiceContext.getNodeEngine().getNode();
         return IndexRegistry.newBuilder(node, getName(),
                         serializationService, mapServiceContext.getIndexCopyBehavior(),
                         mapConfig.getInMemoryFormat())

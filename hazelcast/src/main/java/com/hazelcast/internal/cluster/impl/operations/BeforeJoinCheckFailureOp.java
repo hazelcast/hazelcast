@@ -21,7 +21,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.io.IOException;
 
@@ -48,7 +48,7 @@ public class BeforeJoinCheckFailureOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         final Node node = nodeEngine.getNode();
         JoinOperation.verifyCanShutdown(node, failReasonMsg);
 

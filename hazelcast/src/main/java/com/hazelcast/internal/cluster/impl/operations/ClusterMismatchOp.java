@@ -19,10 +19,10 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.server.tcp.LinkedAddresses;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 
 public class ClusterMismatchOp extends AbstractClusterOperation {
 
@@ -31,7 +31,7 @@ public class ClusterMismatchOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         Connection connection = getConnection();
 
         String message = "Node could not join cluster at node: " + connection.getRemoteAddress()

@@ -23,7 +23,6 @@ import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -44,7 +43,7 @@ public class SetLicenseOperation extends AbstractManagementOperation {
     @Override
     public void run() throws Exception {
         DefaultNodeExtension nodeExtension
-                = (DefaultNodeExtension) ((NodeEngineImpl) getNodeEngine()).getNode().getNodeExtension();
+                = (DefaultNodeExtension) getNodeEngine().getNode().getNodeExtension();
         nodeExtension.setLicenseKey(licenseKey);
 
         LicenseKey licenseKeyObject = new LicenseKey(licenseKey);

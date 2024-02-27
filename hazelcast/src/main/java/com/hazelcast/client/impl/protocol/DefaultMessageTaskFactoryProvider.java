@@ -123,7 +123,6 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGenerator
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
@@ -132,6 +131,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
@@ -496,14 +496,13 @@ import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetConfig
 import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCacheConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCardinalityEstimatorConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDataConnectionConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDataConnectionConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMultiMapConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddUserCodeNamespaceConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddPNCounterConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddQueueConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddReliableTopicConfigMessageTask;
@@ -512,6 +511,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddRingbufferConfig
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddScheduledExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddSetConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddUserCodeNamespaceConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddWanReplicationConfigTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.ExecutorServiceCancelOnAddressMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.ExecutorServiceCancelOnPartitionMessageTask;
@@ -632,8 +632,8 @@ import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPublisherCreateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPublisherCreateWithValueMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutAllMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutMessageTask;
@@ -875,7 +875,6 @@ import com.hazelcast.internal.longregister.client.task.LongRegisterIncrementAndG
 import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTask;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
@@ -892,7 +891,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
     private final Node node;
 
     public DefaultMessageTaskFactoryProvider(NodeEngine nodeEngine) {
-        this.node = ((NodeEngineImpl) nodeEngine).getNode();
+        this.node = nodeEngine.getNode();
         this.factories = createInt2ObjectHashMap(MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY);
         initFactories();
     }

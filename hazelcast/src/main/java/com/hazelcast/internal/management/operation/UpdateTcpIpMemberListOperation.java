@@ -23,7 +23,6 @@ import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ public class UpdateTcpIpMemberListOperation extends AbstractManagementOperation 
 
     @Override
     public void run() throws Exception {
-        Config config = ((NodeEngineImpl) getNodeEngine()).getNode().getConfig();
+        Config config = getNodeEngine().getNode().getConfig();
         Object activeNetworkConfig;
         TcpIpConfig tcpIpConfig;
         if (config.getAdvancedNetworkConfig().isEnabled()) {

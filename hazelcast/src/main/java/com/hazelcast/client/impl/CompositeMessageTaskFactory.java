@@ -28,7 +28,6 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
@@ -42,7 +41,7 @@ public class CompositeMessageTaskFactory implements MessageTaskFactory {
 
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.node = ((NodeEngineImpl) nodeEngine).getNode();
+        this.node = nodeEngine.getNode();
         MessageTaskFactoryProvider defaultProvider = new DefaultMessageTaskFactoryProvider(this.nodeEngine);
         this.factories = new Int2ObjectHashMap<>(defaultProvider.getFactories().size());
         loadProvider(defaultProvider);
