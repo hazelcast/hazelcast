@@ -21,10 +21,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.EventTimeMapper.NO_NATIVE_TIME;
@@ -33,6 +31,7 @@ import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -41,10 +40,6 @@ import static org.junit.Assert.assertNull;
 public class EventTimeMapperTest {
 
     private static final long LAG = 3;
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Test
     public void smokeTest() {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
@@ -142,8 +137,8 @@ public class EventTimeMapperTest {
         );
         eventTimeMapper.addPartitions(ns(0), 1);
 
-        exception.expectMessage("Neither timestampFn nor nativeEventTime specified");
-        eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME);
+        assertThatThrownBy(() -> eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME))
+                .hasMessage("Neither timestampFn nor nativeEventTime specified");
     }
 
     @Test
