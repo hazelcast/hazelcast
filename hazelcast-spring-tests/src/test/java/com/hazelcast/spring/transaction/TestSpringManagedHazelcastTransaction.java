@@ -19,17 +19,15 @@ package com.hazelcast.spring.transaction;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -40,8 +38,10 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.hazelcast.spring.transaction.ServiceBeanWithTransactionalContext.TIMEOUT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.springframework.test.annotation.DirtiesContext.MethodMode.AFTER_METHOD;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -62,8 +62,6 @@ public class TestSpringManagedHazelcastTransaction {
         instance.getMap("dummyObjectMap").clear();
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Autowired
     ServiceBeanWithTransactionalContext service;
@@ -82,11 +80,7 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     public void noTransactionContextWhenNoTransaction() {
-        // given
-        expectedException.expect(NoTransactionException.class);
-
-        // when
-        transactionalContext.getMap("magic");
+        assertThrows(NoTransactionException.class, () -> transactionalContext.getMap("magic"));
     }
 
     /**
@@ -120,12 +114,10 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     public void transactionTimedOutExceptionWhenTimeoutValueIsSetForTransaction() {
-        // given
-        expectedException.expect(TransactionSystemException.class);
-        expectedException.expectMessage("Transaction is timed-out!");
-
-        // when
-        service.putWithDelay_transactionTimeoutValue(new DummyObject(1L, "magic"), TIMEOUT + 1);
+        DummyObject dummyObject = new DummyObject(1L, "magic");
+        TransactionSystemException exception = assertThrows(TransactionSystemException.class,
+                () -> service.putWithDelay_transactionTimeoutValue(dummyObject, TIMEOUT + 1));
+        assertThat(exception).hasRootCauseMessage("Transaction is timed-out!");
     }
 
     /**
@@ -137,11 +129,10 @@ public class TestSpringManagedHazelcastTransaction {
     public void transactionTimedOutExceptionWhenTimeoutValueIsSetInTransactionManager() {
         // given
         transactionManager.setDefaultTimeout(TIMEOUT);
-        expectedException.expect(TransactionSystemException.class);
-        expectedException.expectMessage("Transaction is timed-out!");
-
-        // when
-        service.putWithDelay(new DummyObject(1L, "magic"), TIMEOUT + 1);
+        DummyObject dummyObject = new DummyObject(1L, "magic");
+        TransactionSystemException exception = assertThrows(TransactionSystemException.class,
+                () -> service.putWithDelay(dummyObject, TIMEOUT + 1));
+        assertThat(exception).hasRootCauseMessage("Transaction is timed-out!");
     }
 
     /**
@@ -152,11 +143,13 @@ public class TestSpringManagedHazelcastTransaction {
     public void transactionTimeoutTakesPrecedenceOverTransactionManagerDefaultTimeout() {
         // given
         transactionManager.setDefaultTimeout(TIMEOUT + 2);
-        expectedException.expect(TransactionSystemException.class);
-        expectedException.expectMessage("Transaction is timed-out!");
 
         // when
-        service.putWithDelay_transactionTimeoutValue(new DummyObject(1L, "magic"), TIMEOUT + 1);
+        DummyObject dummyObject = new DummyObject(1L, "magic");
+        TransactionSystemException exception = assertThrows(TransactionSystemException.class,
+                () -> service.putWithDelay_transactionTimeoutValue(dummyObject, TIMEOUT + 1));
+
+        assertThat(exception).hasRootCauseMessage("Transaction is timed-out!");
     }
 
     /**
@@ -254,10 +247,8 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     public void transactionalServiceBeanInvocation_nestedWithPropagationRequiresNew() {
-        // given
-        expectedException.expect(TransactionSuspensionNotSupportedException.class);
-
-        // when
-        service.putUsingOtherBean_newTransaction(new DummyObject(1L, "magic"));
+        DummyObject dummyObject = new DummyObject(1L, "magic");
+        assertThrows(TransactionSuspensionNotSupportedException.class,
+                () -> service.putUsingOtherBean_newTransaction(dummyObject));
     }
 }

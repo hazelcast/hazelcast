@@ -33,7 +33,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * Tests for {@link HazelcastCache} for timeout.
@@ -73,7 +73,7 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
 
             config.getNetworkConfig().getInterfaces()
                     .setEnabled(true)
-                    .setInterfaces(Arrays.asList("127.0.0.1"));
+                    .setInterfaces(List.of("127.0.0.1"));
             return config;
         }
 

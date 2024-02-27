@@ -16,10 +16,10 @@
 
 package com.hazelcast.spring.context;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 
 @Component("someBean")
 @Scope("singleton")

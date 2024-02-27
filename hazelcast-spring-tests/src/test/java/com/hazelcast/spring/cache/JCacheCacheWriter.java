@@ -21,8 +21,8 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
+import jakarta.annotation.Resource;
 
-import javax.annotation.Resource;
 import javax.cache.Cache;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;

@@ -19,6 +19,7 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,7 +28,6 @@ import org.junit.runner.RunWith;
 import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.test.context.ContextConfiguration;
 
-import javax.annotation.Resource;
 import javax.cache.Cache;
 
 import static org.junit.Assert.assertNotNull;

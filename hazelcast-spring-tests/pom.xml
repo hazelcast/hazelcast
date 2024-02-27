@@ -111,10 +111,17 @@
 
     <profiles>
         <profile>
-            <id>spring-5</id>
+            <id>spring-6</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <properties>
+                <org.springframework.version>6.1.4</org.springframework.version>
+                <javax.annotation.version>1.3.2</javax.annotation.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>spring-5</id>
             <properties>
                 <org.springframework.version>5.3.31</org.springframework.version>
                 <javax.annotation.version>1.3.2</javax.annotation.version>

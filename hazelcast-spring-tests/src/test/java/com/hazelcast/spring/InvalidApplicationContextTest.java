@@ -16,25 +16,25 @@
 
 package com.hazelcast.spring;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-public class InvalidApplicationContextTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+public class InvalidApplicationContextTest {
 
     @Test
     public void shouldFailWhenLoadBalancerContainsClassNameAndImplementationAttribute() {
-        expectedException.expect(BeanDefinitionStoreException.class);
-        expectedException.expectMessage("Unexpected exception parsing XML document from class path resource [com/hazelcast/spring/"
-                + "customLoadBalancer-invalidApplicationContext.xml]; nested exception is "
-                + "java.lang.IllegalArgumentException: Exactly one of 'class-name' or 'implementation' attributes is "
-                + "required to create LoadBalancer!");
+        String expectedMessage = "Unexpected exception parsing XML document from class path resource [com/hazelcast/spring/customLoadBalancer-invalidApplicationContext.xml]";
 
-        new ClassPathXmlApplicationContext("com\\hazelcast\\spring\\customLoadBalancer-invalidApplicationContext.xml");
+        String rootExpectedMessage = "Exactly one of 'class-name' or 'implementation' attributes is required to create LoadBalancer!";
+        BeanDefinitionStoreException exception = assertThrows(BeanDefinitionStoreException.class,
+                () -> new ClassPathXmlApplicationContext("com\\hazelcast\\spring\\customLoadBalancer-invalidApplicationContext.xml")
+        );
+        assertThat(exception)
+                .hasMessageContaining(expectedMessage)
+                .hasRootCauseMessage(rootExpectedMessage);
     }
 }

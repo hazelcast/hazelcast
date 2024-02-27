@@ -32,7 +32,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,12 +83,7 @@ public class HazelcastCacheTest {
         String key = createRandomKey();
 
         assertNull(cache.get(key));
-        Object value = cache.get(key, new Callable<Object>() {
-            @Override
-            public Object call() {
-                return returnValue;
-            }
-        });
+        Object value = cache.get(key, () -> returnValue);
         assertEquals(returnValue, value);
         assertEquals(value, cache.get(key).get());
     }
@@ -108,11 +102,8 @@ public class HazelcastCacheTest {
         String key = createRandomKey();
         cache.put(key, initialValue);
 
-        Object value = cache.get(key, new Callable<Object>() {
-            @Override
-            public Object call() {
-                throw new IllegalStateException("Should not have been invoked");
-            }
+        Object value = cache.get(key, () -> {
+            throw new IllegalStateException("Should not have been invoked");
         });
         assertEquals(initialValue, value);
     }
@@ -123,11 +114,8 @@ public class HazelcastCacheTest {
         assertNull(cache.get(key));
 
         try {
-            cache.get(key, new Callable<Object>() {
-                @Override
-                public Object call() {
-                    throw new UnsupportedOperationException("Expected exception");
-                }
+            cache.get(key, () -> {
+                throw new UnsupportedOperationException("Expected exception");
             });
         } catch (Cache.ValueRetrievalException ex) {
             assertNotNull(ex.getCause());
@@ -141,27 +129,21 @@ public class HazelcastCacheTest {
     @Test
     public void testCacheGetSynchronized() throws Exception {
         final AtomicInteger counter = new AtomicInteger();
-        final List<Object> results = new CopyOnWriteArrayList<Object>();
+        final List<Object> results = new CopyOnWriteArrayList<>();
         final CountDownLatch latch = new CountDownLatch(10);
 
         final String key = createRandomKey();
-        Runnable run = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Integer value = cache.get(key, new Callable<Integer>() {
-                        @Override
-                        public Integer call() {
-                            // make sure the thread will overlap
-                            sleepMillis(50);
+        Runnable run = () -> {
+            try {
+                Integer value = cache.get(key, () -> {
+                    // make sure the thread will overlap
+                    sleepMillis(50);
 
-                            return counter.incrementAndGet();
-                        }
-                    });
-                    results.add(value);
-                } finally {
-                    latch.countDown();
-                }
+                    return counter.incrementAndGet();
+                });
+                results.add(value);
+            } finally {
+                latch.countDown();
             }
         };
 

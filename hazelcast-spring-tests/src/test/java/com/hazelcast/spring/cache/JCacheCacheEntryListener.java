@@ -21,8 +21,8 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
+import jakarta.annotation.Resource;
 
-import javax.annotation.Resource;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryListenerException;
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -30,13 +30,13 @@ import com.hazelcast.security.IPermissionPolicy;
 import com.hazelcast.security.SecurityInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import jakarta.annotation.Resource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Set;
 

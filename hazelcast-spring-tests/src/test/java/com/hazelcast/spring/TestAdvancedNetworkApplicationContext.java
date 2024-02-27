@@ -31,6 +31,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,7 +39,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
-import javax.annotation.Resource;
 import java.util.Arrays;
 
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;

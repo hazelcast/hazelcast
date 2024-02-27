@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,7 +33,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.test.context.ContextConfiguration;
 
-import javax.annotation.Resource;
 import javax.cache.CacheManager;
 
 import static org.junit.Assert.assertEquals;
