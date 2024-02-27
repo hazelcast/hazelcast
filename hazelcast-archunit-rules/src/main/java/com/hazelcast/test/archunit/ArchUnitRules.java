@@ -60,6 +60,7 @@ public final class ArchUnitRules {
      */
     public static final ArchRule NO_JUNIT_MIXING = classes()
             .that().haveSimpleNameEndingWith("Test")
+            .or().haveSimpleNameEndingWith("IT")
             .should(notMixJUnit4AndJUnit5Annotations());
 
     private ArchUnitRules() {
