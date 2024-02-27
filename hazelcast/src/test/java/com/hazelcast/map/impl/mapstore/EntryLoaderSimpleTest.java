@@ -29,6 +29,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapContainerImpl;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -431,7 +432,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         MapService service = getNodeEngineImpl(instances[0]).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Config config = mapServiceContext.getNodeEngine().getConfig();
-        MapContainer mapContainer = new MapContainer("anyName", config, mapServiceContext);
+        MapContainer mapContainer = new MapContainerImpl("anyName", config, mapServiceContext);
         Data key = mapServiceContext.toData("key");
         DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0,
                 mock(MapKeyLoader.class), mock(ILogger.class));
