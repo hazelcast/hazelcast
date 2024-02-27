@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnectorStabilityTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.OracleDatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProviderFactory;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
@@ -30,7 +30,7 @@ public class OracleJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabili
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initializeStabilityTestOracle(new OracleDatabaseProvider());
+        initializeStabilityTestOracle(OracleDatabaseProviderFactory.createTestDatabaseProvider());
     }
 
     private static void initializeStabilityTestOracle(TestDatabaseProvider provider) throws Exception {

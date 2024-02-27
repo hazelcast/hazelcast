@@ -17,7 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.test.jdbc.OracleDatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProviderFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public class OracleTableAndColumnNameTest extends JdbcSqlTestSupport {
     private String tableName;
     @BeforeClass
     public static void beforeClass() {
-        initialize(new OracleDatabaseProvider());
+        initialize(OracleDatabaseProviderFactory.createTestDatabaseProvider());
     }
 
     @Test

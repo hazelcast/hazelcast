@@ -26,8 +26,14 @@ import javax.sql.CommonDataSource;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeNoArm64Architecture;
 
-public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OracleDatabaseProvider.class);
+public class OracleXeDatabaseProvider extends JdbcDatabaseProvider<OracleContainer> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OracleXeDatabaseProvider.class);
+
+    public final String dockerImageName;
+
+    OracleXeDatabaseProvider(String dockerImageName) {
+        this.dockerImageName = dockerImageName;
+    }
 
     @Override
     public CommonDataSource createDataSource(boolean xa) {
@@ -38,14 +44,15 @@ public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer
     @Override
     OracleContainer createContainer(String dbName) {
         assumeNoArm64Architecture();
-        return new OracleContainer("gvenzl/oracle-xe:21-slim-faststart")
+        return new OracleContainer(dockerImageName)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-                .withCopyFileToContainer(MountableFile.forClasspathResource("init.sql"), "/container-entrypoint-startdb.d/init.sql");
+                .withCopyFileToContainer(MountableFile.forClasspathResource("oracle/oracle-xe-init.sql"), "/container-entrypoint-startdb.d/init.sql");
     }
 
     @Override
     public String url() {
-        return "jdbc:oracle:thin:test1/password@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
+        return "jdbc:oracle:thin:" + user() + "/" + password()
+               + "@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
     }
 
     @Override
@@ -57,14 +64,13 @@ public class OracleDatabaseProvider extends JdbcDatabaseProvider<OracleContainer
 
     @Override
     public String user() {
-        return "test1";
+        return container.getUsername();
     }
 
     @Override
     public String password() {
-        return "password";
+        return container.getPassword();
     }
-
 
     @Override
     public TestDatabaseRecordProvider recordProvider() {

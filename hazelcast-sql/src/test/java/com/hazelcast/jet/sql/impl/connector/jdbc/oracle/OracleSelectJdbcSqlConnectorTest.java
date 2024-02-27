@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.SelectJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.OracleDatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProviderFactory;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
@@ -27,7 +27,7 @@ public class OracleSelectJdbcSqlConnectorTest extends SelectJdbcSqlConnectorTest
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(new OracleDatabaseProvider());
+        initialize(OracleDatabaseProviderFactory.createTestDatabaseProvider());
     }
 
 }
