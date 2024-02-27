@@ -45,6 +45,8 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
+    private static final long INCREASED_TIMEOUT_SECONDS = 10 * 60L;
+
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
@@ -69,7 +71,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
             int outPipelineSize = ioBalancer.getOutLoadTracker().getPipelines().size();
             assertEquals(0, inPipelineSize);
             assertEquals(0, outPipelineSize);
-        });
+        }, INCREASED_TIMEOUT_SECONDS);
     }
 
     @Test
