@@ -268,7 +268,13 @@ public class JobRepository {
             try {
                 jobResourcesMap.putAll(tmpMap);
             } catch (Exception e) {
-                jobResourcesMap.destroy();
+                try {
+                    jobResourcesMap.destroy();
+                } catch (Exception ee) {
+                    JetException wrapper = new JetException("Job resource upload failed", ee);
+                    wrapper.addSuppressed(e);
+                    throw wrapper;
+                }
                 throw new JetException("Job resource upload failed", e);
             }
         }
