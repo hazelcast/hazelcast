@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.namespace.NamespaceUtil;
@@ -26,10 +27,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.exception.ServiceNotFoundException;
 
 import javax.cache.configuration.Configuration;
 import java.io.IOException;
@@ -37,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 /**
@@ -62,7 +62,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
 
     @Override
     public void run() throws Exception {
-        if (isJCacheAvailable(getNodeEngine().getConfigClassLoader())) {
+        if (isJCacheAvailable()) {
             ICacheService cacheService = getService();
             for (CacheConfig cacheConfig : configs) {
                 cacheService.putCacheConfigIfAbsent(cacheConfig);
@@ -83,6 +83,10 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
                         new ServiceNotFoundException("Service with name '" + SERVICE_NAME + "' not found!"));
             }
         }
+    }
+
+    public boolean isJCacheAvailable() {
+        return JCacheDetector.isJCacheAvailable(getNodeEngine().getConfigClassLoader());
     }
 
     @Override
