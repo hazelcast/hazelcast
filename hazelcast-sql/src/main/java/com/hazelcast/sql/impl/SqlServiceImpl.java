@@ -22,6 +22,7 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizerImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlExpectedResultType;
@@ -93,12 +94,13 @@ public class SqlServiceImpl implements InternalSqlService {
         this.reflectionClassNameFilter = isNull(reflectionConfig) ? null : new ReflectionClassNameFilter(reflectionConfig);
     }
 
+    @Override
     public void start() {
         if (!Util.isJetEnabled(nodeEngine)) {
             return;
         }
         QueryResultRegistry resultRegistry = new QueryResultRegistry();
-        optimizer = new CalciteSqlOptimizer(nodeEngine, resultRegistry);
+        optimizer = new CalciteSqlOptimizerImpl(nodeEngine, resultRegistry);
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         PlanCacheChecker planCacheChecker = new PlanCacheChecker(
@@ -121,6 +123,7 @@ public class SqlServiceImpl implements InternalSqlService {
         internalService.start();
     }
 
+    @Override
     public void reset() {
         if (!Util.isJetEnabled(nodeEngine)) {
             return;
@@ -128,6 +131,7 @@ public class SqlServiceImpl implements InternalSqlService {
         planCache.clear();
     }
 
+    @Override
     public void shutdown() {
         if (!Util.isJetEnabled(nodeEngine)) {
             return;
@@ -147,17 +151,17 @@ public class SqlServiceImpl implements InternalSqlService {
         return internalService;
     }
 
+    @Override
     public long getSqlQueriesSubmittedCount() {
         return sqlQueriesSubmitted.get();
     }
 
+    @Override
     public long getSqlStreamingQueriesExecutedCount() {
         return sqlStreamingQueriesExecuted.get();
     }
 
-    /**
-     * For testing only.
-     */
+    @Override
     public CalciteSqlOptimizer getOptimizer() {
         return optimizer;
     }
@@ -331,6 +335,7 @@ public class SqlServiceImpl implements InternalSqlService {
         return QueryUtils.prepareSearchPaths(currentSearchPaths, optimizer.tableResolvers());
     }
 
+    @Override
     public String mappingDdl(String name) {
         return optimizer.mappingDdl(name);
     }

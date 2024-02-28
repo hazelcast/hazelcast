@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizerImpl;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
@@ -57,7 +57,7 @@ import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTI
 public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
 
     /**
-     * See {@link CalciteSqlOptimizer#postOptimizationRewrites(PhysicalRel)}.
+     * See {@link CalciteSqlOptimizerImpl#postOptimizationRewrites(PhysicalRel)}.
      */
     private final int discriminator;
 

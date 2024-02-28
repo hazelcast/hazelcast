@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.ReflectionClassNameFilter;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
@@ -52,4 +53,7 @@ public interface InternalSqlService extends SqlService {
     String mappingDdl(String name);
 
     ReflectionClassNameFilter getReflectionClassNameFilter();
+
+    @PrivateApi
+    Object getOptimizer();
 }

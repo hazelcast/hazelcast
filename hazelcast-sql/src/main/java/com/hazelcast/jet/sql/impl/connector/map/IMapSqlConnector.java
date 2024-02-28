@@ -35,7 +35,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizerImpl;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -262,7 +262,7 @@ public class IMapSqlConnector implements SqlConnector {
 
             // We need some low-level data which are not passed to SqlConnector, this code should be refactored.
             DagBuildContextImpl contextImpl = (DagBuildContextImpl) context;
-            var relPrunability = CalciteSqlOptimizer.partitionStrategyCandidates(contextImpl.getRel(),
+            var relPrunability = CalciteSqlOptimizerImpl.partitionStrategyCandidates(contextImpl.getRel(),
                     contextImpl.getParameterMetadata(),
                     // expect only single map in the rel
                     Map.of(table.getSqlName(), table));

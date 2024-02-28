@@ -64,7 +64,7 @@ public final class TypeUtils {
     public static FieldEnricher<?, ?> getFieldEnricher(
             String format,
             InternalSerializationService serializationService,
-            RelationsStorage relationsStorage
+            AbstractRelationsStorage relationsStorage
     ) {
         switch (format) {
             case PORTABLE_FORMAT:
@@ -83,7 +83,7 @@ public final class TypeUtils {
     private static class PortableEnricher extends FieldEnricher<PortableId, ClassDefinition> {
         private final PortableContext context;
 
-        PortableEnricher(RelationsStorage relationsStorage, InternalSerializationService serializationService) {
+        PortableEnricher(AbstractRelationsStorage relationsStorage, InternalSerializationService serializationService) {
             super(TypeKind.PORTABLE, relationsStorage);
             context = serializationService.getPortableContext();
         }
@@ -135,7 +135,7 @@ public final class TypeUtils {
     }
 
     private static class CompactEnricher extends FieldEnricher<String, Void> {
-        CompactEnricher(RelationsStorage relationsStorage) {
+        CompactEnricher(AbstractRelationsStorage relationsStorage) {
             super(TypeKind.COMPACT, relationsStorage);
         }
 
@@ -171,7 +171,7 @@ public final class TypeUtils {
     }
 
     private static class JavaEnricher extends FieldEnricher<Class<?>, SortedMap<String, Class<?>>> {
-        JavaEnricher(RelationsStorage relationsStorage) {
+        JavaEnricher(AbstractRelationsStorage relationsStorage) {
             super(TypeKind.JAVA, relationsStorage);
         }
 
@@ -218,7 +218,7 @@ public final class TypeUtils {
     }
 
     private static class AvroEnricher extends FieldEnricher<Schema, Schema> {
-        AvroEnricher(RelationsStorage relationsStorage) {
+        AvroEnricher(AbstractRelationsStorage relationsStorage) {
             super(TypeKind.AVRO, relationsStorage);
         }
 
@@ -282,9 +282,9 @@ public final class TypeUtils {
      */
     public abstract static class FieldEnricher<ID, S> {
         private final TypeKind typeKind;
-        private final RelationsStorage relationsStorage;
+        private final AbstractRelationsStorage relationsStorage;
 
-        FieldEnricher(TypeKind typeKind, RelationsStorage relationsStorage) {
+        FieldEnricher(TypeKind typeKind, AbstractRelationsStorage relationsStorage) {
             this.typeKind = typeKind;
             this.relationsStorage = relationsStorage;
         }

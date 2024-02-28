@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 
 /**
  * Listener which hooks finally optimized query plan by calling
- * {@link QueryPlanListener#onQueryPlanBuilt} in {@link CalciteSqlOptimizer#optimize}.
+ * {@link QueryPlanListener#onQueryPlanBuilt} in {@link CalciteSqlOptimizerImpl#optimize}.
  */
 public interface QueryPlanListener {
     void onQueryPlanBuilt(PhysicalRel rootRel);

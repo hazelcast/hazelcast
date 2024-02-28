@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.AbstractRelationsStorage;
 import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.RegularPOJO;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class NestedTypesDDLTest extends SqlTestSupport {
-    private static RelationsStorage storage;
+    private static AbstractRelationsStorage storage;
 
     @BeforeClass
     public static void beforeClass() {

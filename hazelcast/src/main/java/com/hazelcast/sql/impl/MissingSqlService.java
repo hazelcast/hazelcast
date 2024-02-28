@@ -113,4 +113,9 @@ public class MissingSqlService implements InternalSqlService {
                 null,
                 null);
     }
+
+    @Override
+    public Object getOptimizer() {
+        throw throwDisabled();
+    }
 }

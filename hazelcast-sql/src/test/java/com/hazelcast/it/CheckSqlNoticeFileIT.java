@@ -16,12 +16,12 @@
 
 package com.hazelcast.it;
 
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizerImpl;
 
 public class CheckSqlNoticeFileIT extends CheckNoticeFileIT {
 
     @Override
     protected Class<?> getClassFromPackage() {
-        return CalciteSqlOptimizer.class;
+        return CalciteSqlOptimizerImpl.class;
     }
 }
