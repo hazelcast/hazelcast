@@ -36,6 +36,7 @@ import java.io.IOException;
  * @param <K> key
  * @param <V> value
  */
+@SuppressWarnings("removal")
 public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements IdentifiedDataSerializable {
 
     protected Data keyData;
@@ -68,16 +69,16 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             throw new IllegalArgumentException("keyData cannot be null");
         }
 
-        if (key instanceof Data) {
-            this.keyData = (Data) key;
+        if (key instanceof Data data) {
+            this.keyData = data;
             this.keyObject = null;
         } else {
             this.keyObject = (K) key;
             this.keyData = null;
         }
 
-        if (value instanceof Data) {
-            this.valueData = (Data) value;
+        if (value instanceof Data data) {
+            this.valueData = data;
             this.valueObject = null;
         } else {
             this.valueObject = (V) value;
@@ -164,7 +165,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
 
         Object possiblyData = record.getValue();
 
-        return possiblyData instanceof Data ? (Data) possiblyData : null;
+        return possiblyData instanceof Data data ? data : null;
     }
 
     public Object getByPrioritizingDataValue() {
@@ -253,7 +254,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CachedQueryEntry that = (CachedQueryEntry) o;
+        CachedQueryEntry<?, ?> that = (CachedQueryEntry<?, ?>) o;
         return keyData.equals(that.keyData);
     }
 

@@ -31,10 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -44,10 +42,13 @@ public class IndexImplTest {
 
     private IndexImpl index;
 
+    private InternalSerializationService mockSerializationService;
+    private Extractors mockExtractors;
+
     @Before
     public void setUp() {
-        InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
-        Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
+        mockSerializationService = mock(InternalSerializationService.class);
+        mockExtractors = Extractors.newBuilder(mockSerializationService).build();
 
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, ATTRIBUTE_NAME);
 
@@ -63,17 +64,23 @@ public class IndexImplTest {
         );
     }
 
+    /**
+     * Assert {@link CachedQueryEntry.getKey} <em>isn't</em> called (i.e. the key isn't deserialized) when an entry is added,
+     * thanks to the {@link #index}
+     */
     @Test
     public void saveEntryIndex_doNotDeserializeKey() {
-        CachedQueryEntry<?, ?> entry = createMockQueryableEntry();
+        CachedQueryEntry<Object, Object> entry = createQueryableEntry();
         index.putEntry(entry, null, entry, Index.OperationSource.USER);
-        verify(entry, never()).getKey();
     }
 
-    private CachedQueryEntry<?, ?> createMockQueryableEntry() {
-        CachedQueryEntry<?, ?> entry = mock(CachedQueryEntry.class);
-        Data keyData = mock(Data.class);
-        when(entry.getKeyData()).thenReturn(keyData);
-        return entry;
+    private CachedQueryEntry<Object, Object> createQueryableEntry() {
+        return new CachedQueryEntry<>(mockSerializationService, mock(Data.class), null, mockExtractors) {
+            @Override
+            public Object getKey() {
+                fail("\"getKey()\" should not have been called");
+                return null;
+            }
+        };
     }
 }
