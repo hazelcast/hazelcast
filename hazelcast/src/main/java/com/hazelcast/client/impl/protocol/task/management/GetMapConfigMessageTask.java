@@ -76,7 +76,8 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Strin
                 config.isReadBackupData(),
                 evictionPolicyId,
                 mergePolicy,
-                config.getIndexConfigs());
+                config.getIndexConfigs(),
+                config.getWanReplicationRef());
     }
 
     @Override

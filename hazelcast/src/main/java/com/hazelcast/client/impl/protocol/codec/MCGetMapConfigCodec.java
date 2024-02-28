@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the config of a map on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("9d4c4efdd2534bcab8fce8245cf9a0bc")
+@Generated("1a57f2c08284cf9af2b0af876cd65769")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -156,13 +156,24 @@ public final class MCGetMapConfigCodec {
         public java.util.List<com.hazelcast.config.IndexConfig> globalIndexes;
 
         /**
+         * WanReplicationRef of the map.
+         */
+        public @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef;
+
+        /**
          * True if the globalIndexes is received from the member, false otherwise.
          * If this is false, globalIndexes has the default value for its type.
          */
         public boolean isGlobalIndexesExists;
+
+        /**
+         * True if the wanReplicationRef is received from the member, false otherwise.
+         * If this is false, wanReplicationRef has the default value for its type.
+         */
+        public boolean isWanReplicationRefExists;
     }
 
-    public static ClientMessage encodeResponse(int inMemoryFormat, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, int maxSize, int maxSizePolicy, boolean readBackupData, int evictionPolicy, java.lang.String mergePolicy, java.util.Collection<com.hazelcast.config.IndexConfig> globalIndexes) {
+    public static ClientMessage encodeResponse(int inMemoryFormat, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, int maxSize, int maxSizePolicy, boolean readBackupData, int evictionPolicy, java.lang.String mergePolicy, java.util.Collection<com.hazelcast.config.IndexConfig> globalIndexes, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -179,6 +190,7 @@ public final class MCGetMapConfigCodec {
 
         StringCodec.encode(clientMessage, mergePolicy);
         ListMultiFrameCodec.encode(clientMessage, globalIndexes, IndexConfigCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, wanReplicationRef, WanReplicationRefCodec::encode);
         return clientMessage;
     }
 
@@ -201,6 +213,12 @@ public final class MCGetMapConfigCodec {
             response.isGlobalIndexesExists = true;
         } else {
             response.isGlobalIndexesExists = false;
+        }
+        if (iterator.hasNext()) {
+            response.wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
+            response.isWanReplicationRefExists = true;
+        } else {
+            response.isWanReplicationRefExists = false;
         }
         return response;
     }

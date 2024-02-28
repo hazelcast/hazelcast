@@ -6884,7 +6884,7 @@ public class MemberCompatibilityTest_2_0_1 {
     @Test
     public void test_MCGetMapConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 764;
-        ClientMessage encoded = MCGetMapConfigCodec.encodeResponse(anInt, anInt, anInt, anInt, anInt, anInt, anInt, aBoolean, anInt, aString, aListOfIndexConfigs);
+        ClientMessage encoded = MCGetMapConfigCodec.encodeResponse(anInt, anInt, anInt, anInt, anInt, anInt, anInt, aBoolean, anInt, aString, aListOfIndexConfigs, aWanReplicationRef);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

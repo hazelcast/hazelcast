@@ -52,6 +52,8 @@ import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -200,9 +202,16 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMapConfigMessageTask() throws Exception {
+        WanReplicationRef wanRef = new WanReplicationRef();
+        wanRef.setName(randomString());
+
+        Config config = member.getConfig();
+        String mapName = randomString();
+        config.getMapConfig(mapName).setWanReplicationRef(wanRef);
+
         ClientInvocation invocation = new ClientInvocation(
                 getClientImpl(),
-                MCGetMapConfigCodec.encodeRequest(randomString()),
+                MCGetMapConfigCodec.encodeRequest(mapName),
                 null
         );
 
@@ -214,6 +223,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
         MCGetMapConfigCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         assertFalse(response.readBackupData);
+        assertEquals(wanRef, response.wanReplicationRef);
     }
 
     @Test
