@@ -322,6 +322,11 @@ class MockServer implements Server {
 
         private boolean send(Packet packet, Address targetAddress, SendTask sendTask) {
             UUID targetUuid = server.nodeRegistry.uuidOf(targetAddress);
+            if (targetUuid == serverContext.getThisUuid()) {
+                logger.warning("Packet send task is rejected. Target is this node! Target[uuid=" + targetUuid
+                        + ", address=" + targetAddress + "]");
+                return false;
+            }
             MockServerConnection connection = null;
             if (targetUuid != null) {
                 connection = get(targetUuid);

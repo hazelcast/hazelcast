@@ -25,8 +25,7 @@ import org.junit.runners.model.Statement;
  * <p>
  * Can be used for finer control of the scope of a System property.
  * <p>
- * Consider using {@link uk.org.webcompere.systemstubs.jupiter.SystemStub}'s
- * {@link uk.org.webcompere.systemstubs.properties.SystemProperties}
+ * When migrating to JUnit5 consider using {@link org.junitpioneer.jupiter.SetEnvironmentVariable} and related.
  */
 public final class OverridePropertyRule implements TestRule {
 

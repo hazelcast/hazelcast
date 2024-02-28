@@ -21,10 +21,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junitpioneer.jupiter.SetSystemProperty;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import picocli.CommandLine;
-import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -87,20 +87,19 @@ class HazelcastServerCommandLineTest {
     }
 
     @Test
+    @SetSystemProperty(key = "hazelcast.logging.type", value = "log4j2")
+    @SetSystemProperty(key = "log4j2.configurationFile", value = "faulty-log.properties")
     void test_log4j2_exception() throws Exception {
-        new SystemProperties("hazelcast.logging.type", "log4j2", "log4j2.configurationFile", "faulty-log.properties")
-                .execute(() -> {
-                    try (ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-                            PrintStream errorPrintStream = new PrintStream(outputStreamCaptor)) {
-                        CommandLine cmd = new CommandLine(new HazelcastServerCommandLine())
-                                .setOut(createPrintWriter(System.out)).setErr(createPrintWriter(errorPrintStream))
-                                .setTrimQuotes(true).setExecutionExceptionHandler(new ExceptionHandler());
-                        cmd.execute("start");
+        try (ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+             PrintStream errorPrintStream = new PrintStream(outputStreamCaptor)) {
+            CommandLine cmd = new CommandLine(new HazelcastServerCommandLine())
+                    .setOut(createPrintWriter(System.out)).setErr(createPrintWriter(errorPrintStream))
+                    .setTrimQuotes(true).setExecutionExceptionHandler(new ExceptionHandler());
+            cmd.execute("start");
 
-                        String string = outputStreamCaptor.toString(StandardCharsets.UTF_8);
-                        assertThat(string).contains("org.apache.logging.log4j.core.config.ConfigurationException: "
-                                + "No type attribute provided for Layout on Appender STDOUT");
-                    }
-                });
+            String string = outputStreamCaptor.toString(StandardCharsets.UTF_8);
+            assertThat(string).contains("org.apache.logging.log4j.core.config.ConfigurationException: "
+                    + "No type attribute provided for Layout on Appender STDOUT");
+        }
     }
 }

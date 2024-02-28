@@ -46,7 +46,7 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
         String testName = testName(method);
         setThreadLocalTestMethodName(testName);
         try {
-            // use local system properties so se tests don't effect each other
+            // use local system properties so serial tests don't affect each other
             System.setProperties(new LocalProperties(currentSystemProperties));
             long start = System.currentTimeMillis();
             System.out.println("Started Running Test: " + testName);
