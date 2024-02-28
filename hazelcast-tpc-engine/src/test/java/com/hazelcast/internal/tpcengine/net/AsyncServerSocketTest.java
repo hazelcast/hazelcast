@@ -20,168 +20,169 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static junit.framework.TestCase.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-
 public abstract class AsyncServerSocketTest {
 
-    private final List<Reactor> reactors = new ArrayList<>();
+    private final Collection<Reactor> reactors = new ArrayList<>();
 
     public abstract ReactorBuilder newReactorBuilder();
 
-    public Reactor newReactor() {
+    private Reactor newReactor() {
         ReactorBuilder reactorBuilder = newReactorBuilder();
         Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor.start();
     }
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
+    private static AsyncServerSocket newAsyncServerSocket(Reactor reactor) {
+        return reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                })
+                .build();
     }
 
     @After
-    public void after() throws InterruptedException {
+    public void after() {
         terminateAll(reactors);
     }
 
     @Test
     public void test_construction() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                })
-                .build();
-        assertSame(reactor, socket.getReactor());
-        assertNotNull(socket.metrics());
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            assertSame(reactor, socket.getReactor());
+            assertNotNull(socket.metrics());
+        }
     }
 
     @Test
     public void test_getLocalPort_whenNotYetBound() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                })
-                .build();
-
-        int localPort = socket.getLocalPort();
-        assertEquals(-1, localPort);
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            int localPort = socket.getLocalPort();
+            assertEquals(-1, localPort);
+        }
     }
 
     @Test
     public void test_bind_whenLocalAddressNull() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                })
-                .build();
-
-        System.out.println(socket.getLocalPort());
-        assertThrows(NullPointerException.class, () -> socket.bind(null));
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            assertThrows(NullPointerException.class, () -> socket.bind(null));
+        }
     }
 
     @Test
     public void test_getLocalAddress_whenNotBound() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                })
-                .build();
-        assertNull(socket.getLocalAddress());
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            assertNull(socket.getLocalAddress());
+        }
     }
 
     @Test
     public void test_server_andNoBind() {
         Reactor reactor = newReactor();
-        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        builder.setAcceptConsumer(acceptRequest -> {
-        });
-        AsyncServerSocket socket = builder.build();
-        socket.start();
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            socket.start();
+        }
     }
 
     @Test
     public void test_bind_whenBacklogNegative() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                })
-                .build();
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            SocketAddress localAddress = createLoopBackAddressWithEphemeralPort();
 
-        assertThrows(IllegalArgumentException.class, () -> socket.bind(new InetSocketAddress("127.0.0.1", 0), -1));
+            assertThrows(IllegalArgumentException.class, () -> socket.bind(localAddress, -1));
+        }
     }
 
     @Test
     public void test_bind() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
+        try (AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                 })
-                .build();
+                .build()) {
+            InetSocketAddress local = createLoopBackAddressWithEphemeralPort();
+            socket.bind(local);
 
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-        socket.bind(local);
-
-        assertEquals(local, socket.getLocalAddress());
-        assertEquals(5000, socket.getLocalPort());
-
-        // we need to close the socket manually only when accept is called, the AsyncSocket is part
-        // of the reactor
-        socket.close();
+            assertThat(socket.getLocalPort()).isPositive();
+        }
     }
 
     @Test
     public void test_bind_whenAlreadyBound() {
         Reactor reactor = newReactor();
-        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                })
-                .build();
+        try (AsyncServerSocket socket = newAsyncServerSocket(reactor)) {
+            InetSocketAddress local = createLoopBackAddressWithEphemeralPort();
+            socket.bind(local);
 
-        socket.bind(new InetSocketAddress("127.0.0.1", 0));
-        assertThrows(UncheckedIOException.class, () -> socket.bind(new InetSocketAddress("127.0.0.1", 0)));
-
-        socket.close();
+            assertThrows(UncheckedIOException.class, () -> socket.bind(local));
+        }
     }
 
     @Test
     public void test_connect() {
         Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+        try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new DevNullAsyncSocketReader())
                             .build();
                     socket.start();
                 })
-                .build();
+                .build()) {
+            serverSocket.bind(createLoopBackAddressWithEphemeralPort());
+            serverSocket.start();
 
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
-        serverSocket.start();
+            int clients = 5;
+            for (int k = 0; k < clients; k++) {
+                AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
+                        .setReader(new DevNullAsyncSocketReader())
+                        .build();
+                clientSocket.start();
 
-        int clients = 5;
-        for (int k = 0; k < clients; k++) {
+                CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
+                assertCompletesEventually(connect);
+            }
+
+            assertEquals(clients, serverSocket.metrics.accepted());
+        }
+    }
+
+    @Test
+    public void test_accept_withException() {
+        Reactor reactor = newReactor();
+        try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                    throw new RuntimeException();
+                })
+                .build()) {
+            serverSocket.bind(createLoopBackAddressWithEphemeralPort());
+            serverSocket.start();
+
             AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
                     .setReader(new DevNullAsyncSocketReader())
                     .build();
@@ -189,32 +190,8 @@ public abstract class AsyncServerSocketTest {
 
             CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
             assertCompletesEventually(connect);
+            assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
         }
-
-        assertEquals(clients, serverSocket.metrics.accepted());
-    }
-
-    @Test
-    public void test_accept_withException() {
-        Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                    throw new RuntimeException();
-                })
-                .build();
-
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
-        serverSocket.start();
-
-        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
-        clientSocket.start();
-
-        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
-        assertCompletesEventually(connect);
-        assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
     }
 
     @Test
@@ -224,10 +201,9 @@ public abstract class AsyncServerSocketTest {
         try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(CloseUtil::closeQuietly)
                 .build()) {
-
-            serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-            serverSocket.bind(serverAddress);
+            serverSocket.bind(createLoopBackAddressWithEphemeralPort());
             serverSocket.start();
+            serverAddress = serverSocket.getLocalAddress();
         }
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -242,40 +218,49 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_createCloseLoop_withSameReactor() {
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         Reactor reactor = newReactor();
+        SocketAddress local = createLoopBackAddressWithEphemeralPort();
         for (int k = 0; k < 1000; k++) {
-            AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+            try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(new DevNullAsyncSocketReader())
                                 .build();
                         clientSocket.start();
                     })
-                    .build();
-            serverSocket.bind(local);
-            serverSocket.start();
-            serverSocket.close();
+                    .build()) {
+
+                serverSocket.bind(local);
+                serverSocket.start();
+            }
         }
     }
 
     @Test
     public void test_createCloseLoop_withNewReactor() {
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
+        SocketAddress local = createLoopBackAddressWithEphemeralPort();
         for (int k = 0; k < 1000; k++) {
             Reactor reactor = newReactor();
-            AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+            try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(new DevNullAsyncSocketReader())
                                 .build();
                         clientSocket.start();
                     })
-                    .build();
-            serverSocket.bind(local);
-            serverSocket.start();
-            terminate(reactor);
-            reactors.remove(reactor);
+                    .build()) {
+
+                serverSocket.bind(local);
+                serverSocket.start();
+
+                terminate(reactor);
+                reactors.remove(reactor);
+            }
         }
+    }
+
+    /** @return a loopback {@InetSocketAddress} with an ephemeral port */
+    private static InetSocketAddress createLoopBackAddressWithEphemeralPort() {
+        return new InetSocketAddress("127.0.0.1", 0);
     }
 }
