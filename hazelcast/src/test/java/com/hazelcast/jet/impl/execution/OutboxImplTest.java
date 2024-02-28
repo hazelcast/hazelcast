@@ -23,10 +23,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicLongArray;
@@ -34,6 +32,7 @@ import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,9 +42,6 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OutboxImplTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private OutboxImpl outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> DONE, e -> DONE},
             true, new ProgressTracker(), mockSerializationService(), 3, new AtomicLongArray(4));
@@ -181,10 +177,10 @@ public class OutboxImplTest {
         assertTrue(offerF.test(3));
         assertFalse(offerF.test(4));
 
-        exception.expect(AssertionError.class);
-        exception.expectMessage("Different");
         // we offer the different item than the last false-returning call
-        offerF.test(5);
+        assertThatThrownBy(() -> offerF.test(5))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("Different");
     }
 
     private void do_when_offerToDifferentOrdinal_then_fail(Predicate<Object> offerF1, Predicate<Object> offerF2) {
@@ -193,10 +189,10 @@ public class OutboxImplTest {
         assertTrue(offerF1.test(3));
         assertFalse(offerF1.test(4));
 
-        exception.expect(AssertionError.class);
-        exception.expectMessage("ifferent");
         // we offer the same item as the last false-returning call, but to different offer function
-        offerF2.test(4);
+        assertThatThrownBy(() -> offerF2.test(4))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("ifferent");
     }
 
     private static SerializationService mockSerializationService() {

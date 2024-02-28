@@ -30,10 +30,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Future;
@@ -42,6 +40,7 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -53,9 +52,6 @@ public class SuspendResumeTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 3;
     private static final int PARALLELISM = 4;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance[] instances;
     private DAG dag;
@@ -181,7 +177,7 @@ public class SuspendResumeTest extends JetTestSupport {
         Job job = instances[1].getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
         // When
-        Future future = spawn(job::join);
+        Future<?> future = spawn(job::join);
         sleepSeconds(1); // wait for the join to reach member
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
@@ -196,7 +192,7 @@ public class SuspendResumeTest extends JetTestSupport {
         // When
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
-        Future future = spawn(job::join);
+        Future<?> future = spawn(job::join);
         // Then
         assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
     }
@@ -208,7 +204,7 @@ public class SuspendResumeTest extends JetTestSupport {
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
         // When
-        Future future = spawn(job::join);
+        Future<?> future = spawn(job::join);
         assertTrueAllTheTime(() -> assertFalse(future.isDone()), 1);
         job.resume();
         assertJobStatusEventually(job, RUNNING);
@@ -244,11 +240,11 @@ public class SuspendResumeTest extends JetTestSupport {
         NoOutputSourceP.executionStarted.await();
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
-        // Then
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("Cannot RESTART_GRACEFUL, job status is SUSPENDED");
+
         // When
-        job.restart();
+        assertThatThrownBy(job::restart)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot RESTART_GRACEFUL, job status is SUSPENDED");
     }
 
     @Test
@@ -257,11 +253,11 @@ public class SuspendResumeTest extends JetTestSupport {
         NoOutputSourceP.executionStarted.await();
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
-        // Then
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("Cannot SUSPEND_GRACEFUL, job status is SUSPENDED");
+
         // When
-        job.suspend();
+        assertThatThrownBy(job::suspend)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot SUSPEND_GRACEFUL, job status is SUSPENDED");
     }
 
     @Test

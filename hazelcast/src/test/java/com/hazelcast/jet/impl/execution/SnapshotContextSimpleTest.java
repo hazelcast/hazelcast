@@ -22,10 +22,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
@@ -34,15 +32,13 @@ import java.util.concurrent.CompletableFuture;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SnapshotContextSimpleTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private final SnapshotContext ssContext =
             new SnapshotContext(mock(ILogger.class), "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
@@ -54,8 +50,7 @@ public class SnapshotContextSimpleTest {
         ssContext.cancel();
 
         // Then
-        exception.expect(CancellationException.class);
-        ssContext.startNewSnapshotPhase1(10, "map", 0);
+        assertThrows(CancellationException.class, () -> ssContext.startNewSnapshotPhase1(10, "map", 0));
     }
 
     @Test
@@ -69,8 +64,7 @@ public class SnapshotContextSimpleTest {
         ssContext.cancel();
 
         // Then
-        exception.expect(CancellationException.class);
-        ssContext.startNewSnapshotPhase2(10, true);
+        assertThrows(CancellationException.class, () -> ssContext.startNewSnapshotPhase2(10, true));
     }
 
     @Test

@@ -33,10 +33,8 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -84,12 +82,13 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -98,9 +97,6 @@ public class AggregateOperationsTest {
 
     private static final InternalSerializationService SERIALIZATION_SERVICE =
             new DefaultSerializationServiceBuilder().build();
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void when_counting() {
@@ -145,11 +141,9 @@ public class AggregateOperationsTest {
         AggregateOperation1<Long, LongLongAccumulator, Double> aggrOp = averagingLong(Long::longValue);
         LongLongAccumulator acc = new LongLongAccumulator(Long.MAX_VALUE, 0L);
 
-        // Then
-        exception.expect(ArithmeticException.class);
-
         // When
-        aggrOp.accumulateFn().accept(acc, 0L);
+        BiConsumerEx<? super LongLongAccumulator, ? super Long> biConsumerEx = aggrOp.accumulateFn();
+        assertThrows(ArithmeticException.class, () -> biConsumerEx.accept(acc, 0L));
     }
 
     @Test
@@ -158,12 +152,10 @@ public class AggregateOperationsTest {
         AggregateOperation1<Long, LongLongAccumulator, Double> aggrOp = averagingLong(Long::longValue);
         LongLongAccumulator acc = aggrOp.createFn().get();
 
-        // Then
-        exception.expect(ArithmeticException.class);
-
         // When
-        aggrOp.accumulateFn().accept(acc, Long.MAX_VALUE);
-        aggrOp.accumulateFn().accept(acc, 1L);
+        BiConsumerEx<? super LongLongAccumulator, ? super Long> biConsumerEx = aggrOp.accumulateFn();
+        biConsumerEx.accept(acc, Long.MAX_VALUE);
+        assertThrows(ArithmeticException.class, () -> biConsumerEx.accept(acc, 1L));
     }
 
     @Test
@@ -178,11 +170,10 @@ public class AggregateOperationsTest {
         AggregateOperation1<Double, LongDoubleAccumulator, Double> aggrOp = averagingDouble(Double::doubleValue);
         LongDoubleAccumulator acc = new LongDoubleAccumulator(Long.MAX_VALUE, 0.0d);
 
-        // Then
-        exception.expect(ArithmeticException.class);
 
         // When
-        aggrOp.accumulateFn().accept(acc, 0.0d);
+        BiConsumerEx<? super LongDoubleAccumulator, ? super Double> biConsumerEx = aggrOp.accumulateFn();
+        assertThrows(ArithmeticException.class, () -> biConsumerEx.accept(acc, 0.0d));
     }
 
     @Test
@@ -403,10 +394,11 @@ public class AggregateOperationsTest {
                 toMap(Entry::getKey, Entry::getValue);
 
         Map<Integer, Integer> acc = op.createFn().get();
-        op.accumulateFn().accept(acc, entry(1, 1));
+        BiConsumerEx<? super Map<Integer, Integer>, ? super Entry<Integer, Integer>> biConsumerEx = op.accumulateFn();
+        biConsumerEx.accept(acc, entry(1, 1));
 
-        exception.expect(IllegalStateException.class);
-        op.accumulateFn().accept(acc, entry(1, 2));
+        Entry<Integer, Integer> entry = entry(1, 2);
+        assertThrows(IllegalStateException.class, () -> biConsumerEx.accept(acc, entry));
     }
 
     @Test
@@ -421,11 +413,8 @@ public class AggregateOperationsTest {
         Map<Integer, Integer> acc2 = op.createFn().get();
         op.accumulateFn().accept(acc2, entry(1, 2));
 
-        // Then
-        exception.expect(IllegalStateException.class);
-
         // When
-        combineFn.accept(acc1, acc2);
+        assertThrows(IllegalStateException.class, () -> combineFn.accept(acc1, acc2));
     }
 
     @Test
