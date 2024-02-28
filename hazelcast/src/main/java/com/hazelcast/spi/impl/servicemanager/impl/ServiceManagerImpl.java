@@ -29,6 +29,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -154,7 +155,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(SetService.SERVICE_NAME, new SetService(nodeEngine));
         registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
         registerService(DistributedDurableExecutorService.SERVICE_NAME, new DistributedDurableExecutorService(nodeEngine));
-        registerService(FlakeIdGeneratorService.SERVICE_NAME, new FlakeIdGeneratorService(nodeEngine));
+        registerService(FlakeIdGeneratorService.SERVICE_NAME, new FlakeIdGeneratorServiceImpl(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
         registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
         registerService(XAService.SERVICE_NAME, new XAService(nodeEngine));

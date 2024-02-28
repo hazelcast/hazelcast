@@ -33,10 +33,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
@@ -53,6 +51,7 @@ import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_SEQUENCE;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_EPOCH_START;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.NODE_ID_UPDATE_INTERVAL_NS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -69,9 +68,6 @@ public class FlakeIdGeneratorProxyTest {
     private static final int MAX_BIT_LENGTH = 63;
     private final long DEFAULT_BITS_TIMESTAMP = MAX_BIT_LENGTH - (DEFAULT_BITS_NODE_ID + DEFAULT_BITS_SEQUENCE);
     private static final ILogger LOG = Logger.getLogger(FlakeIdGeneratorProxyTest.class);
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private FlakeIdGeneratorProxy gen;
     private ClusterService clusterService;
@@ -193,17 +189,17 @@ public class FlakeIdGeneratorProxyTest {
     public void when_currentTimeBeforeAllowedRange_then_fail() {
         long lowestGoodTimestamp = DEFAULT_EPOCH_START - (1L << DEFAULT_BITS_TIMESTAMP);
         gen.newIdBaseLocal(lowestGoodTimestamp, 0, 1);
-        exception.expect(HazelcastException.class);
-        exception.expectMessage("Current time out of allowed range");
-        gen.newIdBaseLocal(lowestGoodTimestamp - 1, 0, 1);
+
+        assertThatThrownBy(() -> gen.newIdBaseLocal(lowestGoodTimestamp - 1, 0, 1)).isInstanceOf(HazelcastException.class)
+                .hasMessage("Current time out of allowed range");
     }
 
     @Test
     public void when_currentTimeAfterAllowedRange_then_fail() {
         gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP) - 1, 0, 1);
-        exception.expect(HazelcastException.class);
-        exception.expectMessage("Current time out of allowed range");
-        gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP), 0, 1);
+        assertThatThrownBy(() -> gen.newIdBaseLocal(DEFAULT_EPOCH_START + (1L << DEFAULT_BITS_TIMESTAMP), 0, 1))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("Current time out of allowed range");
     }
 
     @Test

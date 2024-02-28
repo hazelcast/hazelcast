@@ -231,32 +231,32 @@ public class TimedMemberStateFactory {
     private void createMemState(MemberStateImpl memberState,
                                 Collection<StatisticsAwareService> services) {
         Config config = instance.getConfig();
-        for (StatisticsAwareService service : services) {
-            if (service instanceof MapService) {
-                handleMap(memberState, ((MapService) service).getStats());
-            } else if (service instanceof MultiMapService) {
-                handleMultiMap(memberState, ((MultiMapService) service).getStats());
-            } else if (service instanceof QueueService) {
-                handleQueue(memberState, ((QueueService) service).getStats());
-            } else if (service instanceof TopicService) {
-                handleTopic(memberState, ((TopicService) service).getStats());
-            } else if (service instanceof ReliableTopicService) {
-                handleReliableTopic(memberState, ((ReliableTopicService) service).getStats());
-            } else if (service instanceof DistributedExecutorService) {
-                handleExecutorService(memberState, config, ((DistributedExecutorService) service).getStats());
-            } else if (service instanceof DistributedScheduledExecutorService) {
+        for (StatisticsAwareService<?> service : services) {
+            if (service instanceof MapService mapService) {
+                handleMap(memberState, mapService.getStats());
+            } else if (service instanceof MultiMapService multiMapService) {
+                handleMultiMap(memberState, multiMapService.getStats());
+            } else if (service instanceof QueueService queueService) {
+                handleQueue(memberState, queueService.getStats());
+            } else if (service instanceof TopicService topicService) {
+                handleTopic(memberState, topicService.getStats());
+            } else if (service instanceof ReliableTopicService reliableTopicService) {
+                handleReliableTopic(memberState, reliableTopicService.getStats());
+            } else if (service instanceof DistributedExecutorService distributedExecutorService) {
+                handleExecutorService(memberState, config, distributedExecutorService.getStats());
+            } else if (service instanceof DistributedScheduledExecutorService distributedScheduledExecutorService) {
                 handleScheduledExecutorService(memberState, config,
-                        ((DistributedScheduledExecutorService) service).getStats());
-            } else if (service instanceof DistributedDurableExecutorService) {
-                handleDurableExecutorService(memberState, config, ((DistributedDurableExecutorService) service).getStats());
-            } else if (service instanceof ReplicatedMapService) {
-                handleReplicatedMap(memberState, config, ((ReplicatedMapService) service).getStats());
-            } else if (service instanceof PNCounterService) {
-                handlePNCounter(memberState, config, ((PNCounterService) service).getStats());
-            } else if (service instanceof FlakeIdGeneratorService) {
-                handleFlakeIdGenerator(memberState, config, ((FlakeIdGeneratorService) service).getStats());
-            } else if (service instanceof CacheService) {
-                handleCache(memberState, (CacheService) service);
+                        distributedScheduledExecutorService.getStats());
+            } else if (service instanceof DistributedDurableExecutorService distributedDurableExecutorService) {
+                handleDurableExecutorService(memberState, config, distributedDurableExecutorService.getStats());
+            } else if (service instanceof ReplicatedMapService replicatedMapService) {
+                handleReplicatedMap(memberState, config, replicatedMapService.getStats());
+            } else if (service instanceof PNCounterService pnCounterService) {
+                handlePNCounter(memberState, config, pnCounterService.getStats());
+            } else if (service instanceof FlakeIdGeneratorService flakeIdGeneratorService) {
+                handleFlakeIdGenerator(memberState, config, flakeIdGeneratorService.getStats());
+            } else if (service instanceof CacheService cacheService) {
+                handleCache(memberState, cacheService);
             } else if (service instanceof UserCodeNamespaceService userCodeNamespaceService) {
                 handleUserCodeNamespaces(memberState, userCodeNamespaceService.getStats());
             }
