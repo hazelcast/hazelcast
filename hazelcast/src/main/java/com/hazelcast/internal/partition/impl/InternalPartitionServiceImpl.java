@@ -169,7 +169,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         migrationManager = new MigrationManager(node, this, partitionServiceLock);
         replicaManager = new PartitionReplicaManager(node, this);
 
-        partitionReplicaStateChecker = new PartitionReplicaStateChecker(node, this);
+        partitionReplicaStateChecker = new PartitionReplicaStateChecker(node.getNodeEngine(), this);
         partitionEventManager = new PartitionEventManager(node);
 
         masterTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(), TRIGGER_MASTER_DELAY_MILLIS,
@@ -1326,7 +1326,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return partitionEventManager;
     }
 
-    boolean isFetchMostRecentPartitionTableTaskRequired() {
+    @Override
+    public boolean isFetchMostRecentPartitionTableTaskRequired() {
         return shouldFetchPartitionTables;
     }
 
