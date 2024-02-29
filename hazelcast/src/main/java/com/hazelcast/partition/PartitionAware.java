@@ -46,8 +46,51 @@ public interface PartitionAware<T> {
     /**
      * The key that will be used by Hazelcast to specify the partition.
      * You should give the same key for objects that you want to be in the same partition.
+     * <p>
+     * The contract of {@link #getPartitionKey()} method is as follows:
+     * <p>
+     * Let us define {@code toData(o)} as serialized form of given object obtained by using
+     * Hazelcast Serialization configured for the cluster (the exact method used is
+     * {@link com.hazelcast.internal.serialization.SerializationService#toData SerializationService.toData}
+     * from an internal SPI).
+     * <p>
+     * Assume {@code PartitionAware a, b} are objects (eg. IMap keys) and
+     * {@code T pk1 = a.getPartitionKey(), pk2 = b.getPartitionKey()} are partition key values.
+     * <p>
+     * Then {@link #getPartitionKey()} implementation must obey the following contract:
+     * <ol>
+     *     <li>(mandatory) Deterministic partitioning: if {@code a.equals(b)} then either
+     *         {@code toData(a.getPartitionKey()).equals(toData(b.getPartitionKey()))}
+     *         or {@code a.getPartitionKey() == null && b.getPartitionKey() == null}</li>
+     *     <li>(recommended) Reasonable partitioning: if {@code a.equals(b)} then
+     *         {@code a.getPartitionKey().equals(b.getPartitionKey())}</li>
+     *     <li>(recommended) Reasonable partitioning key serialization (if custom
+     *         serialization is used): if {@code pk1.equals(pk2)} then
+     *         {@code toData(pk1).equals(toData(pk2))}</li>
+     *     <li>The above stated conditions must hold when the {@link #getPartitionKey()}
+     *         is invoked any number of times on any member or client, regardless of time
+     *         (note that some partitioned data structures support persistence) and if the JVM
+     *         is restarted, regardless of client/member version and JVM version (across all JVMs
+     *         ever used in given deployment), timezone, locale and similar differences in the
+     *         environment.</li>
+     * </ol>
+     * Adhering to the contract guarantees stable partitioning of the data and ability to find
+     * appropriate member and partition who owns given object during querying and modifications.
+     * <p>
+     * Notes:
+     * <ul>
+     * <li>{@link #getPartitionKey()} contract is similar to {@link Object#hashCode() hashCode()}
+     *     but with stricter long-term requirements.</li>
+     * <li>Partition key is not compared directly, only serialized form is compared or used to
+     *     calculate partition id.</li>
+     * <li>For unequal objects {@link #getPartitionKey()} may return the same or different values
+     *     according to specific partitioning use case needs.</li>
+     * </ul>
      *
-     * @return the key that specifies the partition
+     * @return the key that specifies the partition. Returning {@code null} or {@code this} will
+     *         cause the result as if the object did not implement {@link PartitionAware}. If the
+     *         returned key itself implements {@link PartitionAware}, this fact will be ignored
+     *         and the key will be treated as a plain object.
      */
     T getPartitionKey();
 
