@@ -76,6 +76,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -231,7 +232,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     /**
-     * Reproducer for https://github.com/hazelcast/hazelcast/issues/1854
+     * Reproducer for <a href="https://github.com/hazelcast/hazelcast/issues/1854">...</a>
      * Similar to above tests but with executeOnKeys instead.
      */
     @Test
@@ -304,7 +305,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testEntryProcessorDeleteWithPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        cfg.getMapConfig(MAP_NAME)
+                .setBackupCount(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
@@ -326,7 +328,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
-        map2.executeOnEntries(new TestLoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
+        Map<String, Boolean> responseMap = map2.executeOnEntries(new TestLoggingEntryProcessor(),
+                Predicates.equal("attr1", "foo"));
+
+        assertTrue("Response map must be empty", responseMap.isEmpty());
     }
 
     @Test
@@ -1601,6 +1606,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     private static class Issue1764UpdatingEntryProcessor implements EntryProcessor<String, Issue1764Data, Boolean> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
         private final String newValue;
 

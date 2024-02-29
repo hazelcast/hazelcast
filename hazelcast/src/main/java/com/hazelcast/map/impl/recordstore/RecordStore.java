@@ -277,8 +277,8 @@ public interface RecordStore<R extends Record> {
      * @return the {@link MapMergeResponse} indicating the result of the merge
      */
     MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
-                                SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                                CallerProvenance provenance);
+                           SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                           CallerProvenance provenance);
 
     R getRecord(Data key);
 
@@ -311,7 +311,7 @@ public interface RecordStore<R extends Record> {
      * does not intercept.
      *
      * @param dataKey key to remove
-     * @param backup {@code true} if a backup partition, otherwise {@code false}.
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      */
     void removeReplicatedRecord(Data dataKey, boolean backup);
 
@@ -468,7 +468,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Returns live record or null if record is already expired. Does not load missing keys from a map store.
      *
-     * @param key      key to be accessed
+     * @param key    key to be accessed
      * @param backup true if partition is a backup-partition otherwise set false
      * @return live record or null
      * @see #get
@@ -636,7 +636,7 @@ public interface RecordStore<R extends Record> {
      * <p>
      * Clears data in this record store.
      *
-     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
+     * @param backup {@code true} if a backup partition, otherwise {@code false}.
      * @return number of cleared entries.
      */
     int clear(boolean backup);
@@ -646,7 +646,7 @@ public interface RecordStore<R extends Record> {
      * <p>
      * Used in replication operations.
      *
-     * @see #putReplicatedRecord
+     * @see #putOrUpdateReplicatedRecord
      */
     void reset();
 

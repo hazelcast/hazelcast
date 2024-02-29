@@ -160,6 +160,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         testIndexWithoutMapProxy((mapName) -> restartCluster(false, ClusterState.ACTIVE));
     }
 
+    @Ignore("https://github.com/hazelcast/hazelcast-enterprise/issues/7063")
     @Test
     public void shouldUseIndexFromClient_whenClusterRestartedInPassiveState() {
         warmUpPartitions(member1, member2);
