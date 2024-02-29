@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Arrays.asList;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
-    public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+    public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + MONGO_VERSION);
 
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;

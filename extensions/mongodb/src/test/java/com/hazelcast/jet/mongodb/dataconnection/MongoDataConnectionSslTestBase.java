@@ -40,7 +40,7 @@ import javax.net.ssl.SSLContext;
 import java.net.URL;
 import java.util.ArrayList;
 
-import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.testcontainers.containers.BindMode.READ_WRITE;
@@ -117,7 +117,7 @@ public abstract class MongoDataConnectionSslTestBase extends SimpleTestInCluster
     }
     private static class MyMongoContainer extends MongoDBContainer {
         MyMongoContainer() {
-            super("mongo:" + TEST_MONGO_VERSION);
+            super("mongo:" + MONGO_VERSION);
         }
         @Override
         public void configure() {

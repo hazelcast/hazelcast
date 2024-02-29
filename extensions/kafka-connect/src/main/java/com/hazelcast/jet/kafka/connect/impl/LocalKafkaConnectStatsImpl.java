@@ -72,4 +72,11 @@ public class LocalKafkaConnectStatsImpl implements LocalKafkaConnectStats {
         return sourceRecordPollTotal;
     }
 
+    @Override
+    public String toString() {
+        return "LocalKafkaConnectStatsImpl{" +
+                "sourceRecordPollTotal=" + sourceRecordPollTotal +
+                ", sourceRecordPollAvgTime=" + sourceRecordPollAvgTime +
+                '}';
+    }
 }

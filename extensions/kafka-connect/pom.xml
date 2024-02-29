@@ -176,9 +176,11 @@
             <artifactId>connect-api</artifactId>
             <version>${kafka.version}</version>
         </dependency>
+
+        <!-- Test dependencies -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>toxiproxy</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -212,7 +214,6 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <!-- Driver 5.x requires JDK 17 -->
             <version>5.17.0</version>
             <scope>test</scope>
         </dependency>

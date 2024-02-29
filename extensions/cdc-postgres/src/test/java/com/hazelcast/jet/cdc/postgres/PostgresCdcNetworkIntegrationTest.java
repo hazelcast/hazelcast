@@ -46,7 +46,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.ToxiproxyContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -59,6 +58,7 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.cdc.postgres.AbstractPostgresCdcIntegrationTest.getConnection;
 import static com.hazelcast.jet.cdc.postgres.PostgresCdcSources.PostgresSnapshotMode.INITIAL;
@@ -80,9 +80,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
     private static final String NETWORK_ALIAS = "postgres";
     private static final String UPSTREAM = "postgres:5432";
-    private static final DockerImageName TOXIPROXY_IMAGE = DockerImageName
-            .parse("ghcr.io/shopify/toxiproxy:2.5.0")
-            .asCompatibleSubstituteFor("shopify/toxiproxy");
 
     @Parameter
     public RetryStrategy reconnectBehavior;

@@ -28,12 +28,14 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.kafka.connect.impl.processorsupplier.ReadKafkaConnectProcessorSupplier;
+import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
@@ -57,7 +59,7 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
     private ILogger logger = Logger.getLogger(ReadKafkaConnectP.class);
-    private SourceConnectorWrapper sourceConnectorWrapper;
+    private transient SourceConnectorWrapper sourceConnectorWrapper;
     private final EventTimeMapper<T> eventTimeMapper;
     private final FunctionEx<SourceRecord, T> projectionFn;
     private Properties propertiesFromUser;
@@ -71,6 +73,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private int processorOrder;
     private final AtomicInteger counter = new AtomicInteger();
     private boolean active = true;
+    private RetryStrategy retryStrategy;
 
     public ReadKafkaConnectP(@Nonnull EventTimePolicy<? super T> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
@@ -85,23 +88,6 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         eventTimeMapper.addPartitions(1);
     }
 
-    public void setPropertiesFromUser(Properties propertiesFromUser) {
-        this.propertiesFromUser = propertiesFromUser;
-    }
-
-    // Used for testing
-    public void setSourceConnectorWrapper(SourceConnectorWrapper sourceConnectorWrapper) {
-        this.sourceConnectorWrapper = sourceConnectorWrapper;
-    }
-
-    public void setProcessorOrder(int processorOrder) {
-        this.processorOrder = processorOrder;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
     @Override
     protected void init(@Nonnull Context context) {
         logger = getLogger();
@@ -114,7 +100,8 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         );
 
         if (sourceConnectorWrapper == null) {
-            sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser, processorOrder, context);
+            sourceConnectorWrapper = new SourceConnectorWrapper(propertiesFromUser, processorOrder, context,
+                    retryStrategy);
             sourceConnectorWrapper.setActiveStatusSetter(this::setActive);
         }
         snapshotsEnabled = context.snapshottingEnabled();
@@ -143,15 +130,19 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         if (!emitFromTraverser(traverser)) {
             return false;
         }
+        if (sourceConnectorWrapper.waitNeeded()) {
+            return false;
+        }
 
         long start = Timer.nanos();
         List<SourceRecord> sourceRecords = sourceConnectorWrapper.poll();
 
-        logger.info("Total polled record size " + counter.addAndGet(sourceRecords.size()));
+        logger.fine("Total polled record size " + counter.addAndGet(sourceRecords.size()));
 
         long durationInNanos = Timer.nanosElapsed(start);
         localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
         localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
+
         this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
                 traverseIterable(sourceRecords)
                         .flatMap(sourceRecord -> {
@@ -165,6 +156,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
                             sourceConnectorWrapper.commitRecord(sourceRecord);
                             return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
                         });
+
         emitFromTraverser(traverser);
         return false;
     }
@@ -258,6 +250,27 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
+    public void setPropertiesFromUser(Properties propertiesFromUser) {
+        this.propertiesFromUser = propertiesFromUser;
+    }
+
+    // Used for testing
+    public void setSourceConnectorWrapper(SourceConnectorWrapper sourceConnectorWrapper) {
+        this.sourceConnectorWrapper = sourceConnectorWrapper;
+    }
+
+    public void setProcessorOrder(int processorOrder) {
+        this.processorOrder = processorOrder;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    private void setRetryStrategy(@Nullable RetryStrategy retryStrategy) {
+        this.retryStrategy = retryStrategy;
+    }
+
     /**
      * Only for testing.
      */
@@ -268,7 +281,8 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     public static <T> ReadKafkaConnectProcessorSupplier processorSupplier(
             @Nonnull Properties propertiesFromUser,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
+            @Nonnull FunctionEx<SourceRecord, T> projectionFn,
+            @Nullable RetryStrategy retryStrategy) {
         return new ReadKafkaConnectProcessorSupplier() {
             @Serial
             private static final long serialVersionUID = 1L;
@@ -280,6 +294,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
                         .mapToObj(i -> {
                             ReadKafkaConnectP<T> processor = new ReadKafkaConnectP<>(eventTimePolicy, projectionFn);
                             processor.setPropertiesFromUser(propertiesFromUser);
+                            processor.setRetryStrategy(retryStrategy);
                             return processor;
                         })
                         .collect(Collectors.toList());

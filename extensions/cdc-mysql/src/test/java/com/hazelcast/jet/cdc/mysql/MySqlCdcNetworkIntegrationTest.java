@@ -58,6 +58,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -78,7 +79,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
     private static final String NETWORK_ALIAS = "mysql";
     private static final String UPSTREAM = "mysql:3306";
-    private static final String TOXI_PROXY_IMAGE = "ghcr.io/shopify/toxiproxy:2.5.0";
 
     @Parameter(value = 0)
     public RetryStrategy reconnectBehavior;
@@ -362,7 +362,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     @SuppressWarnings("resource")
     private ToxiproxyContainer initToxiproxy(Network network) {
-        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXI_PROXY_IMAGE).withNetwork(network));
+        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXIPROXY_IMAGE).withNetwork(network));
         toxiproxy.start();
         return toxiproxy;
     }

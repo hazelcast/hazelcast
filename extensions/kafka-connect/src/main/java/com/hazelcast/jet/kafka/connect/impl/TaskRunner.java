@@ -80,7 +80,7 @@ public class TaskRunner {
         }
     }
 
-    private void restartTaskIfNeeded() {
+    void restartTaskIfNeeded() {
         if (reconfigurationNeeded) {
             reconfigurationNeeded = false;
             try {
@@ -169,6 +169,10 @@ public class TaskRunner {
         return "TaskRunner{" +
                "name='" + name + '\'' +
                '}';
+    }
+
+    void forceRestart() {
+        reconfigurationNeeded = true;
     }
 
     @FunctionalInterface

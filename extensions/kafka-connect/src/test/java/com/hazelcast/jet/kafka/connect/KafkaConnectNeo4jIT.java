@@ -16,15 +16,22 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.jet.retry.IntervalFunction;
+import com.hazelcast.jet.retry.RetryStrategies;
+import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -47,12 +54,16 @@ import org.testcontainers.utility.DockerImageName;
 import javax.annotation.Nonnull;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -115,6 +126,36 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         }
     }
 
+    @Test
+    public void testDbNotStarted() {
+        Properties connectorProperties = getConnectorProperties();
+        connectorProperties.put("neo4j.server.uri", "bolt://localhost:52403");
+        connectorProperties.setProperty("neo4j.retry.backoff.msecs", "5");
+        connectorProperties.setProperty("neo4j.retry.max.attemps", "1");
+
+        Pipeline pipeline = Pipeline.create();
+        RetryStrategy strategy = RetryStrategies.custom()
+                                                .maxAttempts(2)
+                                                .intervalFunction(IntervalFunction.constant(500))
+                                                .build();
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
+                                                          TestUtil::convertToString,
+                                                          strategy))
+                                                  .withoutTimestamps()
+                                                  .setLocalParallelism(2);
+        streamStage.writeTo(Sinks.logger());
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        LOGGER.info("Creating a job");
+        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+
+        assertJobStatusEventually(job, FAILED);
+    }
+
     @Nonnull
     private static Properties getConnectorProperties() {
         Properties connectorProperties = new Properties();
@@ -133,6 +174,58 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
                 "MATCH (ts:TestSource) WHERE ts.timestamp > $lastCheck " +
                         "RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
         return connectorProperties;
+    }
+
+    @Test
+    public void testDistinct() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+
+        final String testName = "testDistinct";
+        Properties connectorProperties = getConnectorProperties();
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
+                        TestUtil::convertToString))
+                .withIngestionTimestamps()
+                .peek(s -> ">input " + s)
+                .window(WindowDefinition.tumbling(3))
+                .distinct()
+                .peek(s -> ">distinct " + s)
+                .rollingAggregate(AggregateOperations.counting())
+                .peek(s -> ">aggreg " + s)
+                .writeTo(Sinks.list(testName));
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(getConnectorURL("neo4j-kafka-connect-neo4j-2.0.1.zip"));
+
+        LOGGER.info("Creating a job");
+        Job testJob = instance.getJet().newJob(pipeline, jobConfig);
+        assertJobStatusEventually(testJob, RUNNING);
+        final AtomicLong recordsCreatedCounter = new AtomicLong();
+        String boltUrl = container.getBoltUrl();
+        Driver driver = GraphDatabase.driver(boltUrl, AuthTokens.none());
+        Session session = driver.session();
+
+        final int expectedSize = 9;
+        IntStream.range(0, expectedSize)
+                 .forEach(value -> {
+                     session.run("CREATE (:TestSource {name: '" + testName + "', value: '"
+                             + testName + "-value-" + value + "', timestamp: datetime().epochMillis});");
+                     recordsCreatedCounter.incrementAndGet();
+                 });
+
+        final IList<Long> testList = instance.getList(testName);
+
+        assertTrueEventually(() -> assertThat(testList)
+                .hasSizeGreaterThan(3)
+                .last()
+                .asInstanceOf(LONG)
+                .isEqualTo(expectedSize)
+        );
+
+        session.close();
+        driver.close();
     }
 
     private static void insertNodes(String prefix) {

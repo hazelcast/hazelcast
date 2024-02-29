@@ -110,29 +110,31 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
         connectorProperties.setProperty("topic.prefix", "mongo");
         connectorProperties.setProperty("tasks.max", String.valueOf(tasksMax));
 
+        final IList<Long> testList = instance.getList(testName);
+
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
                         rec -> convertToType(rec, ChangeStreamDoc.class).fullDocument()))
                 .withIngestionTimestamps()
                 .setLocalParallelism(localParallelism)
-                .window(WindowDefinition.tumbling(500))
+                .window(WindowDefinition.tumbling(50))
                 .distinct()
                 .rollingAggregate(counting())
-                .writeTo(Sinks.list(testName));
+                .writeTo(Sinks.list(testList));
         JobConfig jobConfig = jobConfig();
 
         Job testJob = instance.getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(testJob, RUNNING);
-        Thread.sleep(500);
+        Thread.sleep(200);
 
+        testList.clear();
+        assertTrueEventually(() -> assertThat(testList).isEmpty());
         final AtomicLong recordsCreatedCounter = new AtomicLong();
         final int expectedSize = 9;
         for (int value = 0; value < expectedSize; value++) {
             createOneRecord(testName, value);
             recordsCreatedCounter.incrementAndGet();
         }
-
-        final IList<Long> testList = instance.getList(testName);
 
         assertTrueEventually(() -> assertThat(testList)
                 .isNotEmpty()
@@ -146,7 +148,7 @@ public class KafkaConnectWindowingViaMongoDbIT extends JetTestSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addClass(TestUtil.class);
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
-        jobConfig.setSnapshotIntervalMillis(500);
+        jobConfig.setSnapshotIntervalMillis(1500);
         jobConfig.addJar(getConnectorURL("mongo-kafka-connect-1.10.0-all.jar"));
         return jobConfig;
     }

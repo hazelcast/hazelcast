@@ -20,6 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -47,25 +50,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.management.MBeanServer;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
 import java.io.File;
 import java.io.Serializable;
-import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -74,6 +73,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.kafka.connect.data.Values.convertToString;
@@ -115,7 +115,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
-        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+        HazelcastInstance hz = createHazelcastInstance(config);
+        Job job = hz.getJet().newJob(pipeline, jobConfig);
 
         try {
             job.join();
@@ -124,12 +125,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-            assertTrueEventually(() -> {
-                List<Long> pollTotalList = getSourceRecordPollTotalList();
-                assertThat(pollTotalList).isNotEmpty();
-                Long sourceRecordPollTotal = pollTotalList.get(0);
-                assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
-            });
         }
     }
 
@@ -143,14 +138,12 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
-
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("max.interval", "1");
         randomProperties.setProperty("kafka.topic", "orders");
         randomProperties.setProperty("quickstart", "orders");
-
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(connect(randomProperties, ConnectRecord::hashCode))
@@ -179,7 +172,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         randomProperties.setProperty("max.interval", "1");
         randomProperties.setProperty("kafka.topic", "orders");
         randomProperties.setProperty("quickstart", "orders");
-
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<WindowResult<Long>> streamStage = pipeline.readFrom(connect(randomProperties, ConnectRecord::hashCode))
@@ -214,7 +206,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Map.Entry<String, Order>> streamStage = pipeline.readFrom(connect(randomProperties,
+        StreamStage<Map.Entry<String, Order>> streamStage = pipeline
+                .readFrom(connect(randomProperties,
                         rec -> entry(convertToString(rec.keySchema(), rec.key()), new Order(rec))))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
@@ -231,9 +224,14 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
-        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+        HazelcastInstance hz = createHazelcastInstance(config);
+        Job job = hz.getJet().newJob(pipeline, jobConfig);
+        MetricsRegistry metricsRegistry = getNode(hz).nodeEngine.getMetricsRegistry();
 
+        var collector = new KafkaMetricsCollector();
+        ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
         try {
+            es.scheduleWithFixedDelay(() -> metricsRegistry.collect(collector), 10, 10, MILLISECONDS);
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
@@ -241,39 +239,15 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
             assertTrueEventually(() -> {
-                List<Long> pollTotalList = getSourceRecordPollTotalList();
-                assertThat(pollTotalList).isNotEmpty();
-                Long sourceRecordPollTotal = pollTotalList.get(0);
-                assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
+                assertThat(collector.sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
             });
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) {
-        return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(toList());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    private static <T> T getAttribute(ObjectInstance objectInstance, String attribute) {
-        try {
-            return (T) ManagementFactory.getPlatformMBeanServer().getAttribute(objectInstance.getObjectName(), attribute);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
-    }
-
-    private static List<ObjectInstance> getMBeans(ObjectName objectName) {
-        MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
-        return new ArrayList<>(platformMBeanServer.queryMBeans(objectName, null));
     }
 
     @Test
     public void test_scaling() throws URISyntaxException {
         final int instanceCount = 3;
         final int localParallelism = 3;
-        final int totalParallelism = instanceCount * localParallelism;
         final int tasksMax = 2 * localParallelism;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
@@ -284,7 +258,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         randomProperties.setProperty("tasks.max", String.valueOf(tasksMax)); // reduced from possible 3x
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
+        StreamStage<Order> streamStage = pipeline
+                .readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
         streamStage
@@ -299,8 +274,13 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         HazelcastInstance hazelcastInstance = hazelcastInstances[0];
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-
+        MetricsRegistry metricsRegistry = getNode(hazelcastInstance).nodeEngine.getMetricsRegistry();
+        ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+        var collector = new KafkaMetricsCollector();
         try {
+            es.scheduleAtFixedRate(() -> {
+                metricsRegistry.collect(collector);
+            }, 20, 10, MILLISECONDS);
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
@@ -308,16 +288,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
 
-            // due to reconfigurations we may receive [tasksMax, totalParallelism] of metrics
             assertTrueEventually(() -> {
-                List<Long> sourceRecordPollTotalList = getSourceRecordPollTotalList();
-                assertThat(sourceRecordPollTotalList).hasSizeBetween(tasksMax, totalParallelism);
-                assertThat(sourceRecordPollTotalList).allSatisfy(a -> assertThat(a).isNotNegative());
-            });
-            assertTrueEventually(() -> {
-                List<Long> times = getSourceRecordPollTotalTimes();
-                assertThat(times).hasSizeBetween(tasksMax, totalParallelism);
-                assertThat(times).allSatisfy(a -> assertThat(a).isNotNegative());
+                assertThat(collector.sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
+                assertThat(collector.sourceRecordPollAvgTime).isNotEqualTo(0L);
             });
         }
     }
@@ -331,16 +304,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         return list.stream()
                 .collect(Collectors.groupingBy(KafkaConnectIT::getTaskId,
                         Collectors.mapping(Function.identity(), toList())));
-    }
-
-    private static List<Long> getSourceRecordPollTotalList() throws Exception {
-        ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
-        return getMBeanValues(objectName, "sourceRecordPollTotal");
-    }
-
-    private static List<Long> getSourceRecordPollTotalTimes() throws Exception {
-        ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
-        return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
     @Test
@@ -360,7 +323,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
+        StreamStage<Order> streamStage = pipeline
+                .readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
         streamStage.writeTo(Sinks.list("testResults"));
@@ -478,6 +442,33 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                     ", orderUnits=" + orderUnits +
                     ", headers=" + headers +
                     '}';
+        }
+    }
+
+    private static class KafkaMetricsCollector implements MetricsCollector {
+        private long sourceRecordPollTotal;
+        private long sourceRecordPollAvgTime;
+
+        @Override
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            String name = descriptor.toString();
+            if (name.contains("sourceRecordPollTotalAvgTime")) {
+                sourceRecordPollAvgTime += value;
+            } else if (name.contains("sourceRecordPollTotal")) {
+                sourceRecordPollTotal += value;
+            }
+        }
+
+        @Override
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+        }
+
+        @Override
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+        }
+
+        @Override
+        public void collectNoValue(MetricDescriptor descriptor) {
         }
     }
 }

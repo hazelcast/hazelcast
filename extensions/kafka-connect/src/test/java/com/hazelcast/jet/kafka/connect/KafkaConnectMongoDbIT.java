@@ -47,7 +47,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
 import static com.hazelcast.jet.kafka.connect.TestUtil.getConnectorURL;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -63,7 +63,7 @@ public class KafkaConnectMongoDbIT extends JetTestSupport {
     @BeforeClass
     public static void setupClass() {
         assumeDockerEnabled();
-        mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+        mongoContainer = new MongoDBContainer("mongo:" + MONGO_VERSION);
         mongoContainer.start();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());
     }

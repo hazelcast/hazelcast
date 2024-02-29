@@ -25,7 +25,7 @@ import org.testcontainers.containers.MongoDBContainer;
 import java.util.Properties;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 
 public class MongoDatabaseProvider implements TestDatabaseProvider {
@@ -36,7 +36,7 @@ public class MongoDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
-        mongoContainer  = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+        mongoContainer  = new MongoDBContainer("mongo:" + MONGO_VERSION);
         mongoContainer.start();
         String connectionString = mongoContainer.getConnectionString();
         mongoClient = MongoClients.create(connectionString);

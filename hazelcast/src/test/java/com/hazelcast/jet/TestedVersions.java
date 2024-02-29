@@ -15,13 +15,18 @@
  */
 package com.hazelcast.jet;
 
+import org.testcontainers.utility.DockerImageName;
+
+import static org.testcontainers.utility.DockerImageName.parse;
+
 /**
  * Simple placeholder for versions of various Docker images.
  */
 public final class TestedVersions {
-
-    public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.5");
-
+    public static final String MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.5");
+    public static final String TOXIPROXY_VERSION = System.getProperty("test.toxiproxy.version", "2.7.0");
+    public static final DockerImageName TOXIPROXY_IMAGE = parse("ghcr.io/shopify/toxiproxy:" + TOXIPROXY_VERSION)
+            .asCompatibleSubstituteFor("shopify/toxiproxy");
 
     public static final String DEFAULT_ORACLE_IMAGE_NAME = "gvenzl/oracle-xe:21-slim-faststart";
     public static final String ORACLE_PROPERTY_NAME = "test.oracle.version";

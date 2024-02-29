@@ -21,6 +21,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigPublisher;
 import com.hazelcast.jet.kafka.connect.impl.message.TaskConfigMessage;
+import com.hazelcast.jet.retry.RetryStrategies;
+import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.Message;
@@ -29,6 +32,7 @@ import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,11 +46,18 @@ import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
+import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 
 /**
  * This class wraps a Kafka Connector and TaskRunner
  */
 public class SourceConnectorWrapper {
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public static final RetryStrategy DEFAULT_RECONNECT_BEHAVIOR = RetryStrategies
+            .custom()
+            .maxAttempts(10)
+            .intervalFunction(exponentialBackoffWithCap(200, 1.5d, 5_000L))
+            .build();
     private final ILogger logger = Logger.getLogger(SourceConnectorWrapper.class);
     private SourceConnector sourceConnector;
     private int tasksMax;
@@ -59,22 +70,34 @@ public class SourceConnectorWrapper {
     private final int processorOrder;
     private TaskConfigPublisher taskConfigPublisher;
     private final AtomicBoolean receivedTaskConfiguration = new AtomicBoolean();
+    private final RetryTracker reconnectTracker;
+    private Map<String, String> currentConfig;
     // this should be refactored later
     private Consumer<Boolean> activeStatusSetter = ignored -> {
     };
+    private transient Exception lastConnectionException;
 
-    public SourceConnectorWrapper(Properties propertiesFromUser, int processorOrder, Context context) {
-        validatePropertiesFromUser(propertiesFromUser);
+    public SourceConnectorWrapper(Properties currentConfig, int processorOrder, Context context) {
+        this(currentConfig, processorOrder, context, DEFAULT_RECONNECT_BEHAVIOR);
+    }
+
+    public SourceConnectorWrapper(Properties currentConfig, int processorOrder, Context context,
+                                  RetryStrategy retryStrategy) {
+        validatePropertiesFromUser(currentConfig);
 
         this.processorOrder = processorOrder;
         this.isMasterProcessor = processorOrder == 0;
+
+        var rs = retryStrategy == null ? DEFAULT_RECONNECT_BEHAVIOR : retryStrategy;
+        this.reconnectTracker = new RetryTracker(rs);
+        this.currentConfig = toMap(currentConfig);
 
         // Order of resource creation is important.
         // First create the topic. Any processor can create the topic
         createTopic(context.hazelcastInstance(), context.executionId());
 
         // Then create the source connector. Now source connector can use the topic
-        createSourceConnector(propertiesFromUser);
+        createSourceConnector();
     }
 
     void validatePropertiesFromUser(Properties propertiesFromUser) {
@@ -85,19 +108,65 @@ public class SourceConnectorWrapper {
         tasksMax = Integer.parseInt(propertyValue);
     }
 
-    void createSourceConnector(Properties propertiesFromUser) {
-        String connectorClazz = propertiesFromUser.getProperty("connector.class");
+    void createSourceConnector() {
+        String connectorClazz = currentConfig.get("connector.class");
+        if (!reconnectTracker.shouldTryAgain()) {
+            if (lastConnectionException != null) {
+                throw new HazelcastException("Cannot connect using connector " + connectorClazz, lastConnectionException);
+            }
+        }
         logger.fine("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
 
         sourceConnector = newConnectorInstance(connectorClazz);
-        sourceConnector.initialize(new JetConnectorContext());
 
-        logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
-        Map<String, String> map = toMap(propertiesFromUser);
-        sourceConnector.start(map);
+        try {
+            sourceConnector.initialize(new JetConnectorContext());
+            logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
+            sourceConnector.start(currentConfig);
 
-        logger.fine("Creating task runner '" + name + "'");
-        createTaskRunner();
+        } catch (Exception e) {
+            reconnectTracker.attemptFailed();
+            sourceConnector.stop();
+            sourceConnector = null;
+            lastConnectionException = e;
+            return;
+        }
+
+        try {
+            logger.fine("Creating task runner '" + name + "'");
+            createTaskRunner();
+        } catch (Exception e) {
+            reconnectTracker.attemptFailed();
+            lastConnectionException = e;
+        }
+    }
+
+    boolean waitNeeded() {
+        if (!reconnectTracker.shouldTryAgain()) {
+            throw new HazelcastException("Cannot launch connector and/or task correctly", lastConnectionException);
+        }
+        if (reconnectTracker.needsToWait()) {
+            return true;
+        }
+        if (sourceConnector == null) {
+            createSourceConnector();
+        }
+        return !restartTaskIfNeeded();
+    }
+
+    private boolean restartTaskIfNeeded() {
+        if (sourceConnector == null) {
+            return false;
+        }
+        try {
+            taskRunner.restartTaskIfNeeded();
+            return true;
+        } catch (Exception e) {
+            taskRunner.forceRestart();
+            reconnectTracker.attemptFailed();
+            lastConnectionException = e;
+            return false;
+        }
     }
 
     // Package private for testing
@@ -106,6 +175,10 @@ public class SourceConnectorWrapper {
         taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
         requestTaskReconfiguration();
         return taskRunner;
+    }
+    private SourceTask createSourceTask() {
+        Class<? extends SourceTask> taskClass = sourceConnector.taskClass().asSubclass(SourceTask.class);
+        return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
      void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
@@ -164,6 +237,7 @@ public class SourceConnectorWrapper {
                         + " with taskConfig=" + maskPasswords(taskConfig));
 
             taskRunner.updateTaskConfig(taskConfig);
+            currentConfig = taskConfig;
 
         }
         receivedTaskConfiguration.set(true);
@@ -183,14 +257,30 @@ public class SourceConnectorWrapper {
 
     public List<SourceRecord> poll() {
         try {
-        return taskRunner.poll();
+            return taskRunner.poll();
         } catch (Exception e) {
-            throw rethrow(e);
+            reconnectTracker.attemptFailed();
+            lastConnectionException = e;
+
+            String willRetry = reconnectTracker.shouldTryAgain() ? ", will reconnect later" : "";
+            logger.warning("Exception while polling records" + willRetry, e);
+
+            taskRunner.forceRestart();
+            return Collections.emptyList();
         }
     }
 
     public void commitRecord(SourceRecord sourceRecord) {
-        taskRunner.commitRecord(sourceRecord);
+        try {
+            taskRunner.commitRecord(sourceRecord);
+        } catch (Exception e) {
+            taskRunner.forceRestart();
+            reconnectTracker.attemptFailed();
+            lastConnectionException = e;
+
+            String willRetry = reconnectTracker.shouldTryAgain() ? ", will reconnect later" : "";
+            logger.warning("Exception while committing records" + willRetry, e);
+        }
     }
 
     public State copyState() {
@@ -202,7 +292,16 @@ public class SourceConnectorWrapper {
     }
 
     public void commit() {
-        taskRunner.commit();
+        try {
+            taskRunner.commit();
+        } catch (Exception e) {
+            taskRunner.forceRestart();
+            reconnectTracker.attemptFailed();
+            lastConnectionException = e;
+
+            String willRetry = reconnectTracker.shouldTryAgain() ? ", will reconnect later" : "";
+            logger.warning("Exception while committing records" + willRetry, e);
+        }
     }
 
     public String getTaskRunnerName() {
@@ -228,12 +327,6 @@ public class SourceConnectorWrapper {
         sourceConnector.stop();
         destroyTopic();
         logger.fine("Connector '" + name + "' stopped");
-    }
-
-
-    private SourceTask createSourceTask() {
-        Class<? extends SourceTask> taskClass = sourceConnector.taskClass().asSubclass(SourceTask.class);
-        return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
     /**

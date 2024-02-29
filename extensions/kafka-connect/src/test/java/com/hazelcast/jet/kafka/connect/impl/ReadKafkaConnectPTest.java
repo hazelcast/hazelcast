@@ -116,16 +116,15 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(1, 3);
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = { 0, 1, 2 })
-    public void should_produce_watermarks(int processorOrder) throws Exception {
-        final boolean isActive = processorOrder == 0;
+    @ParameterizedTest(name = "isActive={0}")
+    @ValueSource(booleans = { true, false })
+    public void should_produce_watermarks(boolean isActive) throws Exception {
 
-        var sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties(), processorOrder, context);
+        var sourceConnectorWrapper = new SourceConnectorWrapper(minimalProperties(), 0, context);
         var policy = EventTimePolicy.eventTimePolicy(o -> System.currentTimeMillis(), limitingRealTimeLag(0),
                 1, 0, 1);
         readKafkaConnectP = new ReadKafkaConnectP<>(policy, rec -> (Integer) rec.value());
-        readKafkaConnectP.setActive(processorOrder == 0);
+        readKafkaConnectP.setActive(isActive);
         readKafkaConnectP.setSourceConnectorWrapper(sourceConnectorWrapper);
         readKafkaConnectP.eventTimeMapper().restoreWatermark(0, 1337);
 

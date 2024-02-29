@@ -45,6 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.ToxiproxyContainer;
 
+import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
 
@@ -55,7 +56,7 @@ import static org.elasticsearch.client.RequestOptions.DEFAULT;
 public class RetryElasticSinkTest extends BaseElasticTest {
 
     @Rule
-    public ToxiproxyContainer toxiproxy = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
+    public ToxiproxyContainer toxiproxy = new ToxiproxyContainer(TOXIPROXY_IMAGE)
             .withNetwork(ElasticSupport.network)
             .withNetworkAliases("toxiproxy");
 

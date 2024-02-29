@@ -33,14 +33,14 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
-import static com.hazelcast.jet.TestedVersions.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.TestedVersions.MONGO_VERSION;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlIT extends SqlTestSupport {
     public static final MongoDBContainer mongoContainer
-            = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+            = new MongoDBContainer("mongo:" + MONGO_VERSION);
 
     protected static SqlService sqlService;
     protected static MongoClient mongoClient;
