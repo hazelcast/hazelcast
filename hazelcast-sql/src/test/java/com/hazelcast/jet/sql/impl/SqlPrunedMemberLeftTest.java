@@ -53,7 +53,9 @@ import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static com.hazelcast.jet.sql.impl.SqlEndToEndTestSupport.calculateExpectedPartitions;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)

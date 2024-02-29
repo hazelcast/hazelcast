@@ -32,7 +32,12 @@ import java.util.Locale;
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
 import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
 import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

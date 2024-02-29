@@ -21,7 +21,11 @@ import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
-import org.junit.*;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.junit.experimental.categories.Category;
 
 import java.lang.annotation.Annotation;
@@ -36,7 +40,7 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
             AfterClass.class
     );
 
-    private static final Set<Class<? extends Annotation>> JUNIT_4_ClASS_ANNOTATION = Set.of(
+    private static final Set<Class<? extends Annotation>> JUNIT_4_CLASS_ANNOTATION = Set.of(
             Category.class
     );
 
@@ -80,7 +84,7 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
     private boolean hasAnyJUnit5Annotations(JavaClass item) {
         boolean hasJUnit5ClassAnnotation = item.getAnnotations().stream()
                 .anyMatch(annotation -> JUNIT_5_CLASS_ANNOTATION.stream()
-                        .anyMatch(aa -> aa.isAssignableFrom(annotation.getClass())));
+                        .anyMatch(classAnnotation -> classAnnotation.isAssignableFrom(annotation.getClass())));
 
         boolean hasJUnit5Annotation = item.getMethods().stream()
                 .anyMatch(method -> JUNIT_5_ANNOTATION_CLASSES.stream()
@@ -94,7 +98,7 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
                         .anyMatch(method::isAnnotatedWith));
 
         boolean hasJUnit4ClassAnnotation = item.getAnnotations().stream()
-                .anyMatch(annotation -> JUNIT_4_ClASS_ANNOTATION.stream()
+                .anyMatch(annotation -> JUNIT_4_CLASS_ANNOTATION.stream()
                         .anyMatch(aa -> annotation.getRawType().isAssignableFrom(aa)));
 
         return hasJUnit4Annotation || hasJUnit4ClassAnnotation;
