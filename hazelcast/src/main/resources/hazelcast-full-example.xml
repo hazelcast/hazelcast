@@ -4112,11 +4112,12 @@
     <!--
     ===== HAZELCAST TPC CONFIGURATION =====
 
-    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
-    It's still being developed and everything is subject to change. TPC is disabled by default.
+    Configures the member for thread-per-core (TPC) model using the <tpc> configuration element.
+    TPC will only be used if both client and server have <tpc> enabled.
     -->
+    <!-- Enables or disables TPC-aware mode. -->
     <tpc enabled="true">
-        <!-- Configures the number of eventloops. It's equal to available processor count by default. -->
+        <!-- Configures the number of eventloops. This deaults to available processor count. -->
         <eventloop-count>12</eventloop-count>
     </tpc>
 
