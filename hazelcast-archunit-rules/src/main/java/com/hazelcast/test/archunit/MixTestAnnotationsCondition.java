@@ -17,17 +17,15 @@
 package com.hazelcast.test.archunit;
 
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import org.junit.experimental.categories.Category;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.AfterClass;
-import org.junit.experimental.categories.Category;
-
 import java.lang.annotation.Annotation;
 import java.util.Set;
 
@@ -47,6 +45,7 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
     private static final Set<Class<? extends Annotation>> JUNIT_5_CLASS_ANNOTATION = Set.of(
             org.junit.jupiter.api.Tag.class
     );
+
     private static final Set<Class<? extends Annotation>> JUNIT_5_ANNOTATION_CLASSES = Set.of(
             org.junit.jupiter.api.Test.class,
             org.junit.jupiter.api.BeforeEach.class,
@@ -56,10 +55,12 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
             org.junit.jupiter.api.Tag.class
     );
 
+    private static final String JUNIT4_PACKAGE = "org.junit";
+    private static final String JUNIT5_PACKAGE = "org.junit.jupiter.api";
+
     public MixTestAnnotationsCondition() {
         super("Do not mix Junit4 and Junit5 annotations");
     }
-
 
     @Override
     public void check(JavaClass item, ConditionEvents events) {
@@ -72,36 +73,39 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
         }
     }
 
-    private boolean hasJUnit5Assertions(JavaClass item) {
-        Set<JavaMethodCall> methodCalls = item.getMethodCallsFromSelf();
-        return methodCalls.stream().anyMatch(call -> call.getTarget().getFullName().contains("org.junit.jupiter.api.Assertions"));
+    private boolean hasAnyJUnit4Annotations(JavaClass item) {
+        return hasClassAnnotation(item, JUNIT_4_CLASS_ANNOTATION)
+                || hasMethodAnnotations(item, JUNIT_4_ANNOTATION_CLASSES);
     }
+
     private boolean hasJUnit4Assertions(JavaClass item) {
-        Set<JavaMethodCall> methodCalls = item.getMethodCallsFromSelf();
-        return methodCalls.stream().anyMatch(call -> call.getTarget().getFullName().contains("org.junit.Assert"));
+        return isCallingMethod(item, JUNIT4_PACKAGE + "." + "Assert");
     }
 
     private boolean hasAnyJUnit5Annotations(JavaClass item) {
-        boolean hasJUnit5ClassAnnotation = item.getAnnotations().stream()
-                .anyMatch(annotation -> JUNIT_5_CLASS_ANNOTATION.stream()
-                        .anyMatch(classAnnotation -> classAnnotation.isAssignableFrom(annotation.getClass())));
-
-        boolean hasJUnit5Annotation = item.getMethods().stream()
-                .anyMatch(method -> JUNIT_5_ANNOTATION_CLASSES.stream()
-                        .anyMatch(method::isAnnotatedWith));
-
-        return hasJUnit5Annotation || hasJUnit5ClassAnnotation;
+        return hasClassAnnotation(item, JUNIT_5_CLASS_ANNOTATION)
+                || hasMethodAnnotations(item, JUNIT_5_ANNOTATION_CLASSES);
     }
-    private boolean hasAnyJUnit4Annotations(JavaClass item) {
-        boolean hasJUnit4Annotation = item.getMethods().stream()
-                .anyMatch(method -> JUNIT_4_ANNOTATION_CLASSES.stream()
+
+    private boolean hasJUnit5Assertions(JavaClass item) {
+        return isCallingMethod(item, JUNIT5_PACKAGE + "." + "Assertions");
+    }
+
+    private boolean isCallingMethod(JavaClass item, String fullMethodName) {
+        return item.getMethodCallsFromSelf().stream().
+                anyMatch(methodCall -> methodCall.getTarget().getFullName().contains(fullMethodName));
+    }
+
+    private boolean hasClassAnnotation(JavaClass item, Set<Class<? extends Annotation>> annotations) {
+        return item.getAnnotations().stream()
+                .anyMatch(annotation -> annotations.stream()
+                        .anyMatch(classAnnotation -> classAnnotation.isAssignableFrom(annotation.getClass())));
+    }
+
+    private boolean hasMethodAnnotations(JavaClass item, Set<Class<? extends Annotation>> annotations) {
+        return item.getMethods().stream()
+                .anyMatch(method -> annotations.stream()
                         .anyMatch(method::isAnnotatedWith));
-
-        boolean hasJUnit4ClassAnnotation = item.getAnnotations().stream()
-                .anyMatch(annotation -> JUNIT_4_CLASS_ANNOTATION.stream()
-                        .anyMatch(aa -> annotation.getRawType().isAssignableFrom(aa)));
-
-        return hasJUnit4Annotation || hasJUnit4ClassAnnotation;
     }
 
     public static ArchCondition<JavaClass> notMixJUnit4AndJUnit5Annotations() {

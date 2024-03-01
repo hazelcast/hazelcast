@@ -29,8 +29,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
-
-
 /**
  * Needs to run serially because it messes with system properties.
  */
