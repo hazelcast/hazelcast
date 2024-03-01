@@ -501,6 +501,7 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager.forEachMatchingService(serviceClass, consumer);
     }
 
+    @Override
     public Node getNode() {
         return node;
     }

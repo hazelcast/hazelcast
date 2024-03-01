@@ -88,15 +88,15 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         if (partitionContainer.destroyMapContainer(mapContainer)) {
             if (mapContainer.shouldUseGlobalIndex()) {
                 // remove global indexes from old-map-container and add them to new one
-                addIndexConfigToNewMapContainer(mapContainer.name, -1,
+                addIndexConfigToNewMapContainer(mapContainer.getName(), -1,
                         mapContainer.getIndexes());
             }
         }
 
         // remove partitioned indexes from old-map-container and add them to new one
         if (!mapContainer.shouldUseGlobalIndex()) {
-            Indexes indexes = partitionContainer.getIndexes().remove(mapContainer.name);
-            addIndexConfigToNewMapContainer(mapContainer.name, recordStore.getPartitionId(),
+            Indexes indexes = partitionContainer.getIndexes().remove(mapContainer.getName());
+            addIndexConfigToNewMapContainer(mapContainer.getName(), recordStore.getPartitionId(),
                     indexes);
         }
     }
