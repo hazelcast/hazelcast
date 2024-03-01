@@ -330,7 +330,7 @@ public class InstanceTrackingConfig {
      */
     private static boolean isOEMBuild() {
         try {
-            Class<?> helper = Class.forName("com.hazelcast.license.util.LicenseHelper");
+            Class<?> helper = Class.forName("com.hazelcast.instance.impl.BuiltInLicenseHolder");
             Method getLicense = helper.getMethod("getBuiltInLicense");
             // enabled for OEM/NLC build
             return getLicense.invoke(null) != null;
