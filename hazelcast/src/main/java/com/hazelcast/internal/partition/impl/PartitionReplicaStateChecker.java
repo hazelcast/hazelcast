@@ -16,18 +16,17 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -39,13 +38,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.FETCHING_PARTITION_TABLE;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_ON_MASTER;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_OWNED;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.SAFE;
-import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.impl.PartitionStateManager.INITIAL_STAMP;
 import static java.lang.Thread.currentThread;
 
@@ -59,20 +58,17 @@ public class PartitionReplicaStateChecker {
     private static final int REPLICA_SYNC_CHECK_TIMEOUT_SECONDS = 10;
     private static final int INVOCATION_TRY_COUNT = 10;
     private static final int INVOCATION_TRY_PAUSE_MILLIS = 100;
-
-    private final Node node;
-    private final NodeEngineImpl nodeEngine;
-    private final InternalPartitionServiceImpl partitionService;
+    private final NodeEngine nodeEngine;
+    private final InternalPartitionService partitionService;
     private final ILogger logger;
 
     private final PartitionStateManager partitionStateManager;
     private final MigrationManager migrationManager;
 
-    PartitionReplicaStateChecker(Node node, InternalPartitionServiceImpl partitionService) {
-        this.node = node;
-        this.nodeEngine = node.getNodeEngine();
+    PartitionReplicaStateChecker(NodeEngine nodeEngine, InternalPartitionService partitionService) {
+        this.nodeEngine = nodeEngine;
         this.partitionService = partitionService;
-        this.logger = node.getLogger(getClass());
+        this.logger = nodeEngine.getLogger(getClass());
 
         this.partitionStateManager = partitionService.getPartitionStateManager();
         this.migrationManager = partitionService.getMigrationManager();
@@ -179,7 +175,7 @@ public class PartitionReplicaStateChecker {
         int memberGroupsSize = partitionStateManager.getMemberGroupsSize();
         int replicaCount = Math.min(InternalPartition.MAX_REPLICA_COUNT, memberGroupsSize);
 
-        ClusterServiceImpl clusterService = node.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
 
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
@@ -258,10 +254,10 @@ public class PartitionReplicaStateChecker {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private int invokeReplicaSyncOperations(int maxBackupCount, Semaphore semaphore, AtomicBoolean result) {
-        MemberImpl localMember = node.getLocalMember();
+        Member localMember = nodeEngine.getLocalMember();
         BiConsumer<Object, Throwable> callback = new ReplicaSyncResponseCallback(result, semaphore);
 
-        ClusterServiceImpl clusterService = node.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
 
         int ownedCount = 0;
@@ -314,7 +310,7 @@ public class PartitionReplicaStateChecker {
     }
 
     boolean hasOnGoingMigrationMaster(Level level) {
-        ClusterService clusterService = node.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
             return clusterService.isJoined();

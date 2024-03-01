@@ -18,13 +18,14 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -57,9 +58,9 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest extends HazelcastTestSupport {
 
-    private List<InternalPartition> partitions = new ArrayList<InternalPartition>();
+    private final List<InternalPartition> partitions = new ArrayList<>();
 
-    private Node node;
+    private NodeEngine nodeEngine;
     private PartitionStateManager partitionStateManager;
     private MigrationManager migrationManager;
 
@@ -68,29 +69,28 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
     @Before
     public void setUp() {
         ILogger logger = getLogger(PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest.class);
-        ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
+        ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.getClusterState()).thenReturn(ClusterState.ACTIVE);
 
-        node = mock(Node.class);
-        when(node.getLogger(any(Class.class))).thenReturn(logger);
-        when(node.getClusterService()).thenReturn(clusterService);
+        nodeEngine = mock(NodeEngine.class);
+        when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
+        when(nodeEngine.getClusterService()).thenReturn(clusterService);
 
         partitionStateManager = mock(PartitionStateManager.class);
-        when(partitionStateManager.getPartitions()).thenAnswer(new Answer<InternalPartition[]>() {
-            @Override
-            public InternalPartition[] answer(InvocationOnMock invocationOnMock) throws Throwable {
-                InternalPartition[] partitionsArray = new InternalPartition[partitions.size()];
-                return partitions.toArray(partitionsArray);
-            }
-        });
+        when(partitionStateManager.getPartitions()).thenAnswer(
+                (Answer<InternalPartition[]>) invocationOnMock -> {
+                    InternalPartition[] partitionsArray = new InternalPartition[partitions.size()];
+                    return partitions.toArray(partitionsArray);
+                }
+        );
 
         migrationManager = mock(MigrationManager.class);
 
-        InternalPartitionServiceImpl partitionService = mock(InternalPartitionServiceImpl.class);
+        InternalPartitionService partitionService = mock(InternalPartitionService.class);
         when(partitionService.getPartitionStateManager()).thenReturn(partitionStateManager);
         when(partitionService.getMigrationManager()).thenReturn(migrationManager);
 
-        replicaStateChecker = new PartitionReplicaStateChecker(node, partitionService);
+        replicaStateChecker = new PartitionReplicaStateChecker(nodeEngine,  partitionService);
     }
 
     @Test
@@ -132,8 +132,8 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
 
     @Test
     public void whenHasOngoingMigration_withMigrationOnMaster_thenWaitForOngoingMigrations() {
-        when(node.getMasterAddress()).thenReturn(null);
-        when(node.getClusterService().isJoined()).thenReturn(true);
+        when(nodeEngine.getMasterAddress()).thenReturn(null);
+        when(nodeEngine.getClusterService().isJoined()).thenReturn(true);
 
         assertEquals(MIGRATION_ON_MASTER, replicaStateChecker.getPartitionServiceState());
         assertFalse(replicaStateChecker.triggerAndWaitForReplicaSync(10, TimeUnit.MILLISECONDS, 5));
