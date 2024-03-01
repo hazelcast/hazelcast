@@ -41,12 +41,15 @@ public class UserCodeUtil {
     }
 
     /**
-     * Not possible to name the files in a sensible way on creation - because the `maven-jar-plugin` only supports a single
-     * output name for the entire project - so the classifier is used to distinguish (and to prevent overlap which will confuse
-     * maven)
+     * Not possible to name the files in a sensible way on creation - because the `maven-assembly-plugin` will always insert the
+     * name of the "main" JAR into the filename unless configured not to, which has
+     * <a href="https://maven.apache.org/plugins/maven-assembly-plugin/single-mojo.html#appendAssemblyId">nasty side
+     * effects</a>.
+     *
+     * @return something like <code>hazelcast-5.4.0-SNAPSHOT-{YOUR-ASSEMBLY-ID}.jar</code>
      */
-    public String getCompiledJARName(String classifier) {
-        return String.join("-", artifactId, version, classifier) + FilenameUtils.EXTENSION_SEPARATOR + "jar";
+    public String getCompiledJARName(String assemblyId) {
+        return String.join("-", artifactId, version, assemblyId) + FilenameUtils.EXTENSION_SEPARATOR + "jar";
     }
 
     public static Path pathRelativeToBinariesFolder(String... path) {

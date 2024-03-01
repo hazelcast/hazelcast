@@ -225,7 +225,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addJar(UserCodeUtil.pathRelativeToBinariesFolder("EntryProcessorWithAnonymousAndInner",
-                UserCodeUtil.INSTANCE.getCompiledJARName("entry-processor-with-anonymous-and-inner")).toFile());
+                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-entry-processor-with-anonymous-and-inner")).toFile());
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         Config config = createNodeConfig();
@@ -308,7 +308,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
          *
          */
         clientUserCodeDeploymentConfig.addJar(UserCodeUtil
-                .pathRelativeToBinariesFolder("ChildParent", UserCodeUtil.INSTANCE.getCompiledJARName("child-parent"))
+                .pathRelativeToBinariesFolder("ChildParent", UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-child-parent"))
                 .toFile());
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 

@@ -96,7 +96,7 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         config.setEnabled(true);
         ClassLoader classLoader = getClass().getClassLoader();
         config.addJar(
-                pathRelativeToBinariesFolder("IncrementingEntryProcessor", UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor")).toFile());
+                pathRelativeToBinariesFolder("IncrementingEntryProcessor", UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-incrementing-entry-processor")).toFile());
         ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
         service.start();
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
@@ -120,7 +120,7 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         config.setEnabled(true);
         ClassLoader classLoader = getClass().getClassLoader();
         config.setJarPaths(Collections.singletonList(pathRelativeToBinariesFolder("IncrementingEntryProcessor",
-                UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor")).toAbsolutePath().toString()));
+                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-incrementing-entry-processor")).toAbsolutePath().toString()));
         ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
         service.start();
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
@@ -134,7 +134,7 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         config.setEnabled(true);
         ClassLoader classLoader = getClass().getClassLoader();
         URL resource = urlRelativeToBinariesFolder("IncrementingEntryProcessor",
-                UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor"));
+                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-incrementing-entry-processor"));
         config.addJar(resource.toExternalForm());
         ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
         service.start();
@@ -169,7 +169,7 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         config.setEnabled(true);
         ClassLoader classLoader = getClass().getClassLoader();
         config.addJar(UserCodeUtil.pathRelativeToBinariesFolder("IncrementingEntryProcessor",
-                UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor")).toFile());
+                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-incrementing-entry-processor")).toFile());
         ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
         service.start();
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
@@ -186,7 +186,7 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         config.setEnabled(true);
         ClassLoader classLoader = getClass().getClassLoader();
         config.addJar(UserCodeUtil.pathRelativeToBinariesFolder("EntryProcessorWithAnonymousAndInner",
-                UserCodeUtil.INSTANCE.getCompiledJARName("entry-processor-with-anonymous-and-inner"))
+                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-entry-processor-with-anonymous-and-inner"))
                 .toFile());
         ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
         service.start();

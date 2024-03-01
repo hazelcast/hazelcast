@@ -955,7 +955,50 @@
 
         <profile>
             <id>pr-builder</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>usercodedeployment-child-parent</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-entry-processor-with-anonymous-and-inner</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-incrementing-entry-processor</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-incrementing-entry-processor-conflicting</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>usercodedeployment-shaded-classes</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
             <properties>
+                <!--
+                    To improve PR builder runtime, skip *some* assembly-plugins that are not required for build validation
+                    https://github.com/hazelcast/hazelcast/pull/18521
+                -->
                 <assembly.skipAssembly>true</assembly.skipAssembly>
                 <!-- Set the classifier to empty in this profile to use regular jar-->
                 <fat.dependency.classifier/>

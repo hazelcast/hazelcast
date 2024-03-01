@@ -116,9 +116,9 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
 
         Stream.of(
                 new String[] {"IncrementingEntryProcessor",
-                        UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor")},
+                        UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-incrementing-entry-processor")},
                 new String[] {"IncrementingEntryProcessorConflicting",
-                        UserCodeUtil.INSTANCE.getCompiledJARName("incrementing-entry-processor-conflicting")})
+                        UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-incrementing-entry-processor-conflicting")})
                 .forEach(path -> {
                     ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig1 = new ClientUserCodeDeploymentConfig()
                             .addJar(pathRelativeToBinariesFolder(path).toFile()).setEnabled(true);

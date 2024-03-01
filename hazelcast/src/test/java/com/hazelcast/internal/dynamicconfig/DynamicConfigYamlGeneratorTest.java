@@ -546,15 +546,15 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         config.getNamespacesConfig()
                 .addNamespaceConfig(new UserCodeNamespaceConfig("ns1")
                         .addJar(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
-                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarId")
+                                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-child-parent")), "jarId")
                         .addJarsInZip(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
-                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarsInZipId"));
+                                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-child-parent")), "jarsInZipId"));
         config.getNamespacesConfig()
                 .addNamespaceConfig(new UserCodeNamespaceConfig("ns2")
                         .addJar(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
-                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarId-2")
+                                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-child-parent")), "jarId-2")
                         .addJarsInZip(UserCodeUtil.urlRelativeToBinariesFolder("ChildParent",
-                                UserCodeUtil.INSTANCE.getCompiledJARName("child-parent")), "jarsInZipId-2"));
+                                UserCodeUtil.INSTANCE.getCompiledJARName("usercodedeployment-child-parent")), "jarsInZipId-2"));
         Config actual = getNewConfigViaGenerator(config);
         assertEquals(config.getNamespacesConfig(), actual.getNamespacesConfig());
     }

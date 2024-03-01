@@ -103,6 +103,85 @@
                 </executions>
             </plugin>
 
+            <!-- This need to be declared *before* `maven-jar-plugin` to avoid shading issues -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven.assembly.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>usercodedeployment-child-parent</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <outputDirectory>${project.build.directory}/ChildParent</outputDirectory>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/test/assembly/usercodedeployment-child-parent.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>usercodedeployment-entry-processor-with-anonymous-and-inner</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <outputDirectory>${project.build.directory}/EntryProcessorWithAnonymousAndInner</outputDirectory>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/test/assembly/usercodedeployment-entry-processor-with-anonymous-and-inner.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>usercodedeployment-incrementing-entry-processor</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <outputDirectory>${project.build.directory}/IncrementingEntryProcessor</outputDirectory>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/test/assembly/usercodedeployment-incrementing-entry-processor.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>usercodedeployment-incrementing-entry-processor-conflicting</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <outputDirectory>${project.build.directory}/IncrementingEntryProcessorConflicting</outputDirectory>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/test/assembly/usercodedeployment-incrementing-entry-processor-conflicting.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>usercodedeployment-shaded-classes</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <outputDirectory>${project.build.directory}/ShadedClasses</outputDirectory>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/test/assembly/usercodedeployment-shaded-classes.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -134,81 +213,6 @@
                             <excludes>
                                 <exclude>**/*.serialization.compatibility.binary</exclude>
                             </excludes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>usercodedeployment-child-parent</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                        <configuration>
-                            <testClassesDirectory>${project.build.directory}/ChildParent</testClassesDirectory>
-                            <outputDirectory>${project.build.directory}/ChildParent</outputDirectory>
-                            <includes>
-                                <include>**/*.class</include>
-                            </includes>
-                            <classifier>child-parent</classifier>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>usercodedeployment-entry-processor-with-anonymous-and-inner</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                        <configuration>
-                            <testClassesDirectory>${project.build.directory}/EntryProcessorWithAnonymousAndInner</testClassesDirectory>
-                            <outputDirectory>${project.build.directory}/EntryProcessorWithAnonymousAndInner</outputDirectory>
-                            <classifier>entry-processor-with-anonymous-and-inner</classifier>
-                            <includes>
-                                <include>**/*.class</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>usercodedeployment-incrementing-entry-processor</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                        <configuration>
-                            <testClassesDirectory>${project.build.directory}/IncrementingEntryProcessor</testClassesDirectory>
-                            <outputDirectory>${project.build.directory}/IncrementingEntryProcessor</outputDirectory>
-                            <classifier>incrementing-entry-processor</classifier>
-                            <includes>
-                                <include>**/*.class</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>usercodedeployment-incrementing-entry-processor-conflicting</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                        <configuration>
-                            <testClassesDirectory>${project.build.directory}/IncrementingEntryProcessorConflicting</testClassesDirectory>
-                            <outputDirectory>${project.build.directory}/IncrementingEntryProcessorConflicting</outputDirectory>
-                            <includes>
-                                <include>**/*.class</include>
-                            </includes>
-                            <classifier>incrementing-entry-processor-conflicting</classifier>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>usercodedeployment-shaded-classes</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                        <configuration>
-                            <testClassesDirectory>${project.build.directory}/ShadedClasses</testClassesDirectory>
-                            <outputDirectory>${project.build.directory}/ShadedClasses</outputDirectory>
-                            <includes>
-                                <include>**/*.class</include>
-                            </includes>
-                            <classifier>shaded-classes</classifier>
                         </configuration>
                     </execution>
                 </executions>
