@@ -23,6 +23,12 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Period;
+import java.util.Collection;
+import java.util.List;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
@@ -37,8 +43,48 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.apache.calcite.sql.type.SqlTypeName.UNKNOWN;
 
 public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSupport {
+    protected static final Period ONE_YEAR_AND_ONE_MONTH = Period.of(1, 1, 0);
 
     protected abstract String operator();
+
+    /**
+     * @return some {@link LocalDate}s to be used for testing:
+     *         <ol>
+     *         <li>First day in year - testing for rolling into previous year if required
+     *         <li>Last day in year - testing for rolling into next year if required
+     *         <li>Middle of January - "regular" day
+     *         <li>Middle of July - "regular" day, potentially in Summer time for DST zones
+     *         <li>Leap year extra day
+     *         <li><a href="https://github.com/hazelcast/hazelcast-mono/pull/962#issuecomment-1971318190">The date a year & a
+     *         month after a leap years' extra day</a>
+     *         <li>{@link LocalDate#now} - some extra runtime variance
+     *         </ol>
+     */
+    protected static Collection<LocalDate> dates() {
+        return List.of(LocalDate.of(2023, 1, 1), LocalDate.of(2023, 12, 31), LocalDate.of(2023, 1, 10),
+                LocalDate.of(2023, 7, 10), LocalDate.of(2024, 2, 29), LocalDate.of(2025, 3, 29), LocalDate.now());
+    }
+
+    /**
+     * @return some {@link LocalTimes}s to be used for testing:
+     *         <ol>
+     *         <li>Start of day - testing for rolling into previous day if required
+     *         <li>End of day - testing for rolling into next day if required
+     *         <li>Mid-afternoon - "regular" time
+     *         <li>{@link LocalTime#now} - some extra runtime variance
+     *         </ol>
+     */
+    protected static Collection<LocalTime> times() {
+        return List.of(LocalTime.MIN, LocalTime.MAX, LocalTime.of(13, 53), LocalTime.now());
+    }
+
+    /** @return cartesian product of all {@link #dates()} & {@link #times()} */
+    protected static Collection<LocalDateTime> dateTimes() {
+        return dates().stream()
+                .flatMap(date -> times().stream()
+                        .map(time -> LocalDateTime.of(date, time)))
+                .toList();
+    }
 
     @Test
     public void testVarchar() {

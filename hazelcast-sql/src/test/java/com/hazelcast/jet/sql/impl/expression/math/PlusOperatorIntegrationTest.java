@@ -22,9 +22,10 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,6 +36,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DATE;
@@ -58,7 +60,7 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.time.temporal.ChronoUnit.YEARS;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(JUnitParamsRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTest {
     @Override
@@ -432,9 +434,8 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
     }
 
     @Test
-    public void testDate() {
-        LocalDate date = LocalDate.now();
-
+    @Parameters(method = "dates")
+    public void testDate(LocalDate date) {
         // Check null values when one side is interval
         putAndCheckValue(date, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckValue(date, sql("INTERVAL '1' SECOND", null), TIMESTAMP, null);
@@ -454,7 +455,7 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
         putAndCheckValue(date, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP, date.atStartOfDay().plus(1, MONTHS));
         putAndCheckValue(date, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP, date.atStartOfDay().plus(1, YEARS));
         putAndCheckValue(date, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP,
-                date.atStartOfDay().plus(1, YEARS).plus(1, MONTHS));
+                date.atStartOfDay().plus(ONE_YEAR_AND_ONE_MONTH));
 
         // Check the inverse order of operands
         putAndCheckValue(date, sql("INTERVAL '1' SECOND", "this"), TIMESTAMP, date.atStartOfDay().plus(1, SECONDS));
@@ -469,9 +470,8 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
     }
 
     @Test
-    public void testTime() {
-        LocalTime time = LocalTime.now();
-
+    @Parameters(method = "times")
+    public void testTime(LocalTime time) {
         // Check null values when one side is interval
         putAndCheckValue(time, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckValue(time, sql("INTERVAL '1' SECOND", null), TIMESTAMP, null);
@@ -506,9 +506,8 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
     }
 
     @Test
-    public void testTimestamp() {
-        LocalDateTime timestamp = LocalDateTime.now();
-
+    @Parameters(method = "dateTimes")
+    public void testTimestamp(LocalDateTime timestamp) {
         // Check null values when one side is interval
         putAndCheckValue(timestamp, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckValue(timestamp, sql("INTERVAL '1' SECOND", null), TIMESTAMP, null);
@@ -528,7 +527,7 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP, timestamp.plus(1, MONTHS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP, timestamp.plus(1, YEARS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP,
-                timestamp.plus(1, YEARS).plus(1, MONTHS));
+                timestamp.plus(ONE_YEAR_AND_ONE_MONTH));
 
         // Check the inverse order of operands
         putAndCheckValue(timestamp, sql("INTERVAL '1' SECOND", "this"), TIMESTAMP, timestamp.plus(1, SECONDS));
@@ -543,8 +542,10 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
     }
 
     @Test
-    public void testTimestampWithTimezone() {
-        OffsetDateTime timestamp = OffsetDateTime.now();
+    @Parameters(method = "dateTimes")
+    public void testTimestampWithTimezone(LocalDateTime date) {
+        OffsetDateTime timestamp = date.atZone(ZoneId.systemDefault())
+                .toOffsetDateTime();
 
         // Check null values when one side is interval
         putAndCheckValue(timestamp, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
@@ -567,7 +568,7 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, MONTHS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, YEARS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP_WITH_TIME_ZONE,
-                timestamp.plus(1, YEARS).plus(1, MONTHS));
+                timestamp.plus(ONE_YEAR_AND_ONE_MONTH));
 
         // Check the inverse order of operands
         putAndCheckValue(timestamp, sql("INTERVAL '1' SECOND", "this"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, SECONDS));
