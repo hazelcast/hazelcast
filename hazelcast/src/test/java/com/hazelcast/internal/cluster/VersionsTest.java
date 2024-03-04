@@ -16,33 +16,43 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.Version;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.test.HazelcastTestSupport.assertUtilityConstructor;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class VersionsTest extends HazelcastTestSupport {
-
+@Tag("com.hazelcast.test.annotation.QuickTest")
+class VersionsTest {
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         assertUtilityConstructor(Versions.class);
     }
 
     @Test
-    public void version_4_0() {
+    void version_4_0() {
         assertEquals(Versions.V4_0, Version.of(4, 0));
     }
 
     @Test
-    public void version_4_1() {
+    void version_4_1() {
         assertEquals(Versions.V4_1, Version.of(4, 1));
+    }
+
+    @Test
+    void testParse() {
+        Version version = Versions.CURRENT_CLUSTER_VERSION;
+        assertEquals(version, Version.of(version.toString()));
+    }
+
+    @Test
+    void testCurrentVersion() {
+        assertNotNull(Versions.CURRENT_CLUSTER_VERSION);
+        assertNotNull(Versions.PREVIOUS_CLUSTER_VERSION);
+
+        assertNotEquals(Versions.PREVIOUS_CLUSTER_VERSION, Versions.CURRENT_CLUSTER_VERSION);
     }
 }

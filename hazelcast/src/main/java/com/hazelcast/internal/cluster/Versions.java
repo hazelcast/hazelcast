@@ -16,7 +16,14 @@
 
 package com.hazelcast.internal.cluster;
 
+import com.hazelcast.instance.GeneratedBuildProperties;
 import com.hazelcast.version.Version;
+
+import javax.annotation.Nonnull;
+
+import java.lang.reflect.Field;
+import java.text.MessageFormat;
+import java.util.Objects;
 
 public final class Versions {
 
@@ -65,8 +72,50 @@ public final class Versions {
      */
     public static final Version V5_5 = Version.of(5, 5);
 
-    public static final Version PREVIOUS_CLUSTER_VERSION = V5_4;
-    public static final Version CURRENT_CLUSTER_VERSION = V5_5;
+    @Nonnull
+    public static final Version PREVIOUS_CLUSTER_VERSION;
+    @Nonnull
+    public static final Version CURRENT_CLUSTER_VERSION;
+
+    static {
+        // Dynamically set PREVIOUS_CLUSTER_VERSION & CURRENT_CLUSTER_VERSION by reflection
+
+        Version buildPropertiesVersion = Version.of(GeneratedBuildProperties.VERSION);
+
+        // Find an equivalent version in the existing constant pool
+        Version currentClusterVersionConstant = null;
+
+        // The previous version is assumed to be the declared version lexicographically before CURRENT_CLUSTER_VERSION
+        Version previousHighest = null;
+
+        for (Field field : Versions.class.getFields()) {
+            if (field.getType()
+                    .equals(Version.class)) {
+                try {
+                    Version version = (Version) field.get(null);
+
+                    if (version != null) {
+                        int versionCompareToBuildPropertiesVersion = version.compareTo(buildPropertiesVersion);
+
+                        if (versionCompareToBuildPropertiesVersion == 0) {
+                            currentClusterVersionConstant = version;
+                        } else if (versionCompareToBuildPropertiesVersion < 0
+                                && (previousHighest == null || version.compareTo(previousHighest) > 0)) {
+                            previousHighest = version;
+                        }
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new ExceptionInInitializerError(e);
+                }
+            }
+        }
+
+        CURRENT_CLUSTER_VERSION = Objects.requireNonNull(currentClusterVersionConstant,
+                () -> MessageFormat.format("Failed to find matching constant for version {0}", buildPropertiesVersion));
+
+        PREVIOUS_CLUSTER_VERSION = Objects.requireNonNull(previousHighest,
+                () -> MessageFormat.format("Failed to find version preceeding {0}", CURRENT_CLUSTER_VERSION));
+    }
 
     private Versions() {
     }

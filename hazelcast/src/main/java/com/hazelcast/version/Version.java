@@ -90,8 +90,8 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
 
     @Override
     public int hashCode() {
-        int result = (int) major;
-        result = 31 * result + (int) minor;
+        int result = major;
+        result = 31 * result + minor;
         return result;
     }
 
