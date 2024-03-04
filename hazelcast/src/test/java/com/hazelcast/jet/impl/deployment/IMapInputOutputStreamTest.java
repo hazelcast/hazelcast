@@ -23,10 +23,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -38,15 +36,13 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.jet.impl.util.IOUtil.copyStream;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void beforeClass() {
@@ -59,8 +55,9 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
         IMapOutputStream outputStream = new IMapOutputStream(map, "test");
 
         outputStream.close();
-        expectedException.expect(IOException.class);
-        outputStream.write(5);
+
+        assertThatThrownBy(() -> outputStream.write(5))
+                .isInstanceOf(IOException.class);
     }
 
     @Test
@@ -84,16 +81,18 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
         IMapInputStream inputStream = new IMapInputStream(map, "test");
 
         inputStream.close();
-        expectedException.expect(IOException.class);
-        System.out.println(inputStream.read(new byte[] {1}, 0, 1));
+
+        assertThatThrownBy(() -> inputStream.read(new byte[] {1}, 0, 1))
+                .isInstanceOf(IOException.class);
     }
 
     @Test
     public void test_writeOutOfBounds_then_throwsException() throws IOException {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
         try (IMapOutputStream outputStream = new IMapOutputStream(map, "test")) {
-            expectedException.expect(IndexOutOfBoundsException.class);
-            outputStream.write(new byte[]{1}, 5, 5);
+
+            assertThatThrownBy(() -> outputStream.write(new byte[]{1}, 5, 5))
+                    .isInstanceOf(IndexOutOfBoundsException.class);
         }
     }
 
@@ -102,8 +101,9 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
         map.put("test", new byte[] {0, 0, 0, 4});
         try (IMapInputStream inputStream = new IMapInputStream(map, "test")) {
-            expectedException.expect(IndexOutOfBoundsException.class);
-            System.out.println(inputStream.read(new byte[]{1}, 5, 5));
+
+            assertThatThrownBy(() -> inputStream.read(new byte[]{1}, 5, 5))
+                    .isInstanceOf(IndexOutOfBoundsException.class);
         }
     }
 

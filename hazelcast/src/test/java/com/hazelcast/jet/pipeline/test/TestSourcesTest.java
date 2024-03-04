@@ -21,10 +21,8 @@ import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jitter.JitterRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,15 +33,13 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TestSourcesTest extends PipelineTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void test_items() {
@@ -70,7 +66,7 @@ public class TestSourcesTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_longStream() throws Throwable {
+    public void test_longStream() {
         int itemsPerSecond = 20;
 
         p.readFrom(TestSources.longStream(itemsPerSecond, 0))
@@ -97,12 +93,12 @@ public class TestSourcesTest extends PipelineTestSupport {
                      avgItems, itemsPerSecond), deviationFromTarget <= 0.1d);
          }));
 
-        expectAssertionsCompleted();
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
     }
 
     @Test
-    public void test_itemStream() throws Throwable {
+    public void test_itemStream() {
         int expectedItemCount = 20;
 
         p.readFrom(TestSources.itemStream(10))
@@ -114,12 +110,12 @@ public class TestSourcesTest extends PipelineTestSupport {
              }
          }));
 
-        expectAssertionsCompleted();
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
     }
 
     @Test
-    public void test_itemStream_withWindowing() throws Throwable {
+    public void test_itemStream_withWindowing() {
         int itemsPerSecond = 10;
 
         p.readFrom(TestSources.itemStream(itemsPerSecond))
@@ -146,8 +142,8 @@ public class TestSourcesTest extends PipelineTestSupport {
                      avgItems, itemsPerSecond), deviationFromTarget <= 0.1d);
          }));
 
-        expectAssertionsCompleted();
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
     }
 
     /**
@@ -156,7 +152,7 @@ public class TestSourcesTest extends PipelineTestSupport {
      * <0.5*expected,2*expected>, i.e. whether number of emitted items in not completely incorrect.
      */
     @Test
-    public void test_itemStream_in_expected_range() throws Throwable {
+    public void test_itemStream_in_expected_range() {
         int itemsPerSecond = 109;
 
         int windowSize = 1000;
@@ -183,23 +179,17 @@ public class TestSourcesTest extends PipelineTestSupport {
                     }
                 }));
 
-        expectAssertionsCompleted();
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
     }
 
     @Test
-    public void itemStream_should_handle_extremely_high_rate() throws Throwable {
+    public void itemStream_should_handle_extremely_high_rate() {
         p.readFrom(TestSources.itemStream(Integer.MAX_VALUE))
                 .withNativeTimestamps(1000)
-                .apply(assertCollectedEventually(10, items -> {
-                    assertFalse("TestSources should generate some items", items.isEmpty());
-                }));
-        expectAssertionsCompleted();
-        executeAndPeel();
+                .apply(assertCollectedEventually(10,
+                        items -> assertFalse("TestSources should generate some items", items.isEmpty())));
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
     }
-
-    private void expectAssertionsCompleted() {
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
-    }
-
 }

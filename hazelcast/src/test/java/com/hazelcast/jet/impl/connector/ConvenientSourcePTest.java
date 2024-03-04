@@ -24,10 +24,8 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -35,14 +33,12 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConvenientSourcePTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void test_faultTolerance() {
@@ -100,9 +96,9 @@ public class ConvenientSourcePTest {
                 .distributed(1) // we use this to avoid forceTotalParallelismOne
                 .build();
 
-        exception.expectMessage("streaming source must not close the buffer");
-        TestSupport
+        assertThatThrownBy(() -> TestSupport
                 .verifyProcessor(((StreamSourceTransform<Integer>) source).metaSupplierFn.apply(noEventTime()))
-                .expectOutput(Collections.emptyList());
+                .expectOutput(Collections.emptyList()))
+                .hasMessageContaining("streaming source must not close the buffer");
     }
 }

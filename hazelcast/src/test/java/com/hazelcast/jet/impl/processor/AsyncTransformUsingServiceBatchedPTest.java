@@ -28,10 +28,8 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -44,12 +42,10 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterSupport {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private ProcessorSupplier getSupplier(BiFunctionEx<? super String, ? super List<String>,
                             CompletableFuture<Traverser<String>>> mapFn
@@ -121,8 +117,10 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
                 .hazelcastInstance(instance())
                 .input(asList("a", "b"));
 
-        exception.expect(NullPointerException.class);
-        testSupport.expectOutput(emptyList());
+        List<Object> list = emptyList();
+        assertThatThrownBy(() -> testSupport.expectOutput(list))
+                .isInstanceOf(NullPointerException.class);
+
     }
 
     @Test
@@ -136,14 +134,15 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
 
     @Test
     public void when_futureCompletedExceptionally_then_jobFails() {
-        exception.expect(JetException.class);
-        exception.expectMessage("test exception");
-        TestSupport
-                .verifyProcessor(getSupplier((ctx, item) ->
-                        exceptionallyCompletedFuture(new RuntimeException("test exception"))))
-                .hazelcastInstance(instance())
-                .input(singletonList("a"))
-                .expectOutput(emptyList());
+        assertThatThrownBy(() ->
+                TestSupport
+                        .verifyProcessor(getSupplier((ctx, item) ->
+                                exceptionallyCompletedFuture(new RuntimeException("test exception"))))
+                        .hazelcastInstance(instance())
+                        .input(singletonList("a"))
+                        .expectOutput(emptyList()))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("test exception");
 
     }
 }
