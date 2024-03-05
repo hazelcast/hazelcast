@@ -62,8 +62,11 @@ public class OracleAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbc
         assumeThat(type).describedAs("TINYINT not supported on Oracle")
                 .isNotEqualTo("TINYINT");
 
-        assumeThat(type).describedAs("BOOLEAN not supported on Oracle")
-                .isNotEqualTo("BOOLEAN");
+        // If Oracle Free is true, the test will always run regardless of the type
+        // If Oracle Free is false, the test will be ignored when the type is "BOOLEAN"
+        assumeThat(OracleDatabaseProviderFactory.isOracleFreeVersion() || !type.equals("BOOLEAN"))
+                .describedAs("BOOLEAN not supported on Oracle")
+                .isTrue();
 
         assumeThat(type).describedAs("TIME not supported on Oracle")
                 .isNotEqualTo("TIME");

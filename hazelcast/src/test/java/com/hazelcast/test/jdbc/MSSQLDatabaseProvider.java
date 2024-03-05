@@ -32,15 +32,15 @@ public class MSSQLDatabaseProvider extends JdbcDatabaseProvider<MSSQLServerConta
     MSSQLServerContainer<?> createContainer(String dbName) {
         assumeNoArm64Architecture();
         // withDatabaseName() throws UnsupportedOperationException
-        container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
-        container.acceptLicense()
+        MSSQLServerContainer<?> mssqlServerContainer = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
+        mssqlServerContainer.acceptLicense()
                  // See https://learn.microsoft.com/en-us/sql/connect/jdbc/using-basic-data-types?view=sql-server-ver16
                  // "To use java.sql.Time with the time SQL Server type, you must set the sendTimeAsDatetime
                  // connection property to false."
                 .withUrlParam("sendTimeAsDateTime", "false")
-                .withUrlParam("user", container.getUsername())
-                .withUrlParam("password", container.getPassword());
-        return container;
+                .withUrlParam("user", mssqlServerContainer.getUsername())
+                .withUrlParam("password", mssqlServerContainer.getPassword());
+        return mssqlServerContainer;
     }
 
     @Override

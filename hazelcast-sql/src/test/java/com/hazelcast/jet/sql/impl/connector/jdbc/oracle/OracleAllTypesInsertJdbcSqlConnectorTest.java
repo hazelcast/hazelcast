@@ -59,10 +59,14 @@ public class OracleAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbc
     @Before
     public void setUp() throws Exception {
         assumeThat(type).describedAs("TINYINT not supported on Oracle")
-                .isNotEqualTo("TINYINT");
+                .isNotEqualTo(
+                        "TINYINT");
 
-        assumeThat(type).describedAs("BOOLEAN not supported on Oracle")
-                .isNotEqualTo("BOOLEAN");
+        // If Oracle Free is true, the test will always run regardless of the type
+        // If Oracle Free is false, the test will be ignored when the type is "BOOLEAN"
+        assumeThat(OracleDatabaseProviderFactory.isOracleFreeVersion() || !type.equals("BOOLEAN"))
+                .describedAs("BOOLEAN not supported on Oracle")
+                .isTrue();
 
         assumeThat(type).describedAs("BIGINT not supported on Oracle")
                 .isNotEqualTo("BIGINT");

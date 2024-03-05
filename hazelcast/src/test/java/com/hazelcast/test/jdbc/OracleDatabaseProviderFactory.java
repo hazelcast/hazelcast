@@ -29,6 +29,10 @@ public class OracleDatabaseProviderFactory {
         return createTestDatabaseProvider(TEST_ORACLE_VERSION);
     }
 
+    public static boolean isOracleFreeVersion() {
+        return TEST_ORACLE_VERSION.contains("gvenzl/oracle-free");
+    }
+
     static TestDatabaseProvider createTestDatabaseProvider(String dockerImageName) {
         if (dockerImageName.startsWith("gvenzl/oracle-xe")) {
             return new OracleXeDatabaseProvider(TEST_ORACLE_VERSION);

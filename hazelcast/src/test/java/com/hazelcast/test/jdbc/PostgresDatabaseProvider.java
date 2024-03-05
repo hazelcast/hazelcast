@@ -77,7 +77,7 @@ public class PostgresDatabaseProvider extends JdbcDatabaseProvider<PostgreSQLCon
     @SuppressWarnings("resource")
     @Override
     PostgreSQLContainer<?> createContainer(String dbName) {
-        container = new PostgreSQLContainer<>("postgres:" + TEST_POSTGRES_VERSION)
+        PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:" + TEST_POSTGRES_VERSION)
                 .withDatabaseName(dbName)
                 // On MacOS there seems to be some delay before the port is available for connections (maybe only with colima?).
                 // As a result, container is reported started based only on logs earlier that it can be connected to.
@@ -86,9 +86,9 @@ public class PostgresDatabaseProvider extends JdbcDatabaseProvider<PostgreSQLCon
                 .withUrlParam("user", user())
                 .withUrlParam("password", password());
         if (command != null) {
-            container.withCommand(command);
+            postgreSQLContainer.withCommand(command);
         }
-        return container;
+        return postgreSQLContainer;
     }
 
     @Override
