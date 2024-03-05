@@ -29,10 +29,8 @@ import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.impl.processor.SessionWindowP.Keys;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map.Entry;
@@ -43,13 +41,11 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(ParallelJVMTest.class)
 public class SessionWindowP_failoverTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private SessionWindowP<Entry<String, Long>, ?, Long, ?> p;
 
@@ -74,9 +70,9 @@ public class SessionWindowP_failoverTest {
     public void when_differentWmExactlyOnce_then_fail() throws Exception {
         init(EXACTLY_ONCE);
 
-        p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.CURRENT_WATERMARK), 1L);
-        exception.expect(AssertionError.class);
-        p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.CURRENT_WATERMARK), 2L);
+        BroadcastKey<Keys> keysBroadcastKey = BroadcastKey.broadcastKey(Keys.CURRENT_WATERMARK);
+        p.restoreFromSnapshot(keysBroadcastKey, 1L);
+        assertThrows(AssertionError.class, () -> p.restoreFromSnapshot(keysBroadcastKey, 2L));
     }
 
     @Test

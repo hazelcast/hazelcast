@@ -19,14 +19,13 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -34,9 +33,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WatermarkCoalescerTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private WatermarkCoalescer wc = WatermarkCoalescer.create(2);
 
@@ -199,29 +195,33 @@ public class WatermarkCoalescerTest {
     @Test
     public void when_duplicateDoneCall_then_error() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
-        exception.expectMessage("Duplicate");
-        assertEquals(Long.MIN_VALUE, wc.queueDone(0));
+
+        assertThatThrownBy(() -> wc.queueDone(0))
+                .hasMessageContaining("Duplicate");
     }
 
     @Test
     public void when_wmAfterDone_then_error() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
-        exception.expectMessage("not monotonically increasing");
-        assertEquals(Long.MIN_VALUE, wc.observeWm(0, 0));
+
+        assertThatThrownBy(() -> wc.observeWm(0, 0))
+                .hasMessageContaining("not monotonically increasing");
     }
 
     @Test
     public void when_idleMessageAfterDone_then_error() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
-        exception.expectMessage("not monotonically increasing");
-        assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+
+        assertThatThrownBy(() -> wc.observeWm(0, IDLE_MESSAGE.timestamp()))
+                .hasMessageContaining("not monotonically increasing");
     }
 
     @Test
     public void when_wmGoesBack_then_error() {
         assertEquals(Long.MIN_VALUE, wc.observeWm(0, 10));
-        exception.expectMessage("not monotonically increasing");
-        assertEquals(Long.MIN_VALUE, wc.observeWm(0, 9));
+
+        assertThatThrownBy(() -> wc.observeWm(0, 9))
+                .hasMessageContaining("not monotonically increasing");
     }
 
     @Test

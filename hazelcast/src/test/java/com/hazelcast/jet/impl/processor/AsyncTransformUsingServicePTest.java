@@ -36,10 +36,8 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -59,6 +57,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -68,8 +67,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Parameter
     public boolean ordered;
@@ -224,14 +221,15 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
 
     @Test
     public void when_futureCompletedExceptionally_then_jobFails() {
-        exception.expect(JetException.class);
-        exception.expectMessage("test exception");
-        TestSupport
+        assertThatThrownBy(() -> TestSupport
                 .verifyProcessor(getSupplier((ctx, item) ->
                         exceptionallyCompletedFuture(new RuntimeException("test exception"))))
                 .hazelcastInstance(instance())
                 .input(singletonList("a"))
-                .expectOutput(emptyList());
+                .expectOutput(emptyList())
+        )
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("test exception");
     }
 
     @Test

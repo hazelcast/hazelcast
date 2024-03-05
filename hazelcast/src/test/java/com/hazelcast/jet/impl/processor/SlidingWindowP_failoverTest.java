@@ -30,10 +30,8 @@ import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.Keys;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map.Entry;
@@ -44,13 +42,11 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(ParallelJVMTest.class)
 public class SlidingWindowP_failoverTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private SlidingWindowP<Entry<String, Long>, ?, Long, ?> p;
 
@@ -77,9 +73,9 @@ public class SlidingWindowP_failoverTest {
     public void when_differentWmExactlyOnce_then_fail() throws Exception {
         init(EXACTLY_ONCE);
 
-        p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.NEXT_WIN_TO_EMIT), 1L);
-        exception.expect(AssertionError.class);
-        p.restoreFromSnapshot(BroadcastKey.broadcastKey(Keys.NEXT_WIN_TO_EMIT), 2L);
+        BroadcastKey<Keys> broadcastKey = BroadcastKey.broadcastKey(Keys.NEXT_WIN_TO_EMIT);
+        p.restoreFromSnapshot(broadcastKey, 1L);
+        assertThrows(AssertionError.class, () -> p.restoreFromSnapshot(broadcastKey, 2L));
     }
 
     @Test

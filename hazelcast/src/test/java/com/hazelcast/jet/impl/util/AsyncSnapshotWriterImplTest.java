@@ -39,10 +39,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
@@ -66,9 +64,6 @@ import static org.junit.Assert.assertFalse;
 public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     private static final String ALWAYS_FAILING_MAP = "alwaysFailingMap";
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private NodeEngineImpl nodeEngine;
     private AsyncSnapshotWriterImpl writer;
@@ -327,10 +322,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         os.write(1);
         os.write(1);
 
-        // Then
-        exception.expect(RuntimeException.class);
         // When
-        os.write(1);
+        assertThrows(RuntimeException.class, () -> os.write(1));
     }
 
     static class AlwaysFailingMapStore extends AMapStore implements Serializable {
