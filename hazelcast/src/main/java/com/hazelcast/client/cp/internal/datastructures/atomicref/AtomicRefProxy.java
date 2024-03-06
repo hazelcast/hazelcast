@@ -208,4 +208,8 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefApplyCodec::decodeResponse);
     }
 
+    public String getObjectName() {
+        return objectName;
+    }
+
 }
