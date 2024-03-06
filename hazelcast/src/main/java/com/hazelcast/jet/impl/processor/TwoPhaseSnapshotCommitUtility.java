@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionId;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -35,9 +34,9 @@ import javax.annotation.Nullable;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * A base class for transaction utilities implementing different transaction
@@ -378,7 +377,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
 
         @Override
         public void begin() {
-            LoggingUtil.logFine(logger, "begin %s", id());
+            logger.fine("begin %s", id());
             try {
                 wrapped.begin();
             } catch (Exception e) {
@@ -388,7 +387,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
 
         @Override
         public boolean flush() {
-            LoggingUtil.logFine(logger, "flush %s", id());
+            logger.fine("flush %s", id());
             try {
                 return wrapped.flush();
             } catch (Exception e) {
@@ -398,7 +397,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
 
         @Override
         public void endAndPrepare() {
-            LoggingUtil.logFine(logger, "endAndPrepare %s", id());
+            logger.fine("endAndPrepare %s", id());
             try {
                 wrapped.endAndPrepare();
             } catch (Exception e) {
@@ -408,7 +407,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
 
         @Override
         public void commit() {
-            LoggingUtil.logFine(logger, "commit %s", id());
+            logger.fine("commit %s", id());
             try {
                 wrapped.commit();
             } catch (Exception e) {
@@ -418,7 +417,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
 
         @Override
         public void rollback() {
-            LoggingUtil.logFine(logger, "rollback %s", id());
+            logger.fine("rollback %s", id());
             try {
                 wrapped.rollback();
             } catch (Exception e) {
@@ -428,7 +427,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
 
         @Override
         public void release() {
-            LoggingUtil.logFine(logger, "release %s", id());
+            logger.fine("release %s", id());
             try {
                 wrapped.release();
             } catch (Exception e) {

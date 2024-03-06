@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.processor.TransactionPoolSnapshotUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.kafka.KafkaDataConnection;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
@@ -152,7 +151,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             return false;
         }
         transaction.flush();
-        LoggingUtil.logFinest(context.logger(), "flush in complete() done, %s", transaction.transactionId);
+        context.logger().finest("flush in complete() done, %s", transaction.transactionId);
         checkError();
         snapshotUtility.afterCompleted();
         return true;

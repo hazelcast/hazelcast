@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionId;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import javax.annotation.Nonnull;
@@ -80,13 +79,13 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
                 processorIndex -> {
                     for (int i = 0; i < adjustPoolSize(externalGuarantee, isSource, poolSize); i++) {
                         TXN_ID txnId = createTxnIdFn.apply(processorIndex, i);
-                        LoggingUtil.logFine(procContext.logger(), "recover and abort %s", txnId);
+                        procContext.logger().fine("recover and abort %s", txnId);
                         recoverAndAbortFn.accept(txnId);
                     }
                 });
 
         this.poolSize = adjustPoolSize(externalGuarantee, isSource, poolSize);
-        LoggingUtil.logFine(procContext.logger(), "Actual pool size used: %d", this.poolSize);
+        procContext.logger().fine("Actual pool size used: %d", this.poolSize);
         if (this.poolSize > 1) {
             transactionIds = new ArrayList<>(this.poolSize);
             for (int i = 0; i < this.poolSize; i++) {
@@ -164,7 +163,7 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
         transactionToCommit = transactions.get(activeTxnIndex);
         incrementActiveTxnIndex();
         if (!activeTransactionUsed) {
-            LoggingUtil.logFine(procContext().logger(),
+            procContext().logger().fine(
                     "transaction not used, ignoring snapshot, txnId=%s", transactionToCommit.id());
             return true;
         }
@@ -243,7 +242,7 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
                     break;
                 }
             }
-            LoggingUtil.logFine(procContext().logger(), "recover and commit %s", txnId);
+            procContext().logger().fine("recover and commit %s", txnId);
             recoverAndCommitFn().accept(txnId);
         }
     }

@@ -76,7 +76,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.concurrent.CompletableFuture.runAsync;
@@ -143,7 +142,7 @@ public final class LightMasterContext {
             throw new JetException("No data member with version equal to the coordinator version found");
         }
         if (members.size() < membersView.size()) {
-            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
+            logger.fine("Light job %s will run on a subset of members: %d out of %d members with version %s",
                     idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
 
@@ -151,11 +150,13 @@ public final class LightMasterContext {
             JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
             String dotRepresentation = dag.toDotString(jetConfig.getCooperativeThreadCount(),
                     jetConfig.getDefaultEdgeConfig().getQueueSize());
-            logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
-                            + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
+            logger.fine("""
+                            Start executing light job %s, execution graph in DOT format:
+                            %s
+                            HINT: You can use graphviz or http://viz-js.com to visualize the printed graph.""",
                     jobIdString, dotRepresentation);
-            logFine(logger, "Job config for %s: %s", jobIdString, jobConfig);
-            logFine(logger, "Building execution plan for %s", jobIdString);
+            logger.fine("Job config for %s: %s", jobIdString, jobConfig);
+            logger.fine("Building execution plan for %s", jobIdString);
         }
 
         Set<Vertex> vertices = new HashSet<>();
@@ -168,7 +169,7 @@ public final class LightMasterContext {
                         mc.finalizeJob(e);
                         throw rethrow(e);
                     }
-                    logFine(logger, "Built execution plans for %s", jobIdString);
+                    logger.fine("Built execution plans for %s", jobIdString);
                     Set<MemberInfo> participants = planMap.keySet();
 
                     coordinationService.jobInvocationObservers.forEach(obs ->

@@ -61,6 +61,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -326,7 +327,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source(host, port))
                 .withNativeTimestamps(0)
-                .map(r -> entry(r.key().toMap().get("id"), r.value().toJson()))
+                .map(r -> entry(requireNonNull(r.key()).toMap().get("id"), r.value().toJson()))
                 .writeTo(Sinks.map("results"));
         return pipeline;
     }
@@ -348,7 +349,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                         .withPassword("mysqlpw")
         );
         if (fixedExposedPort != null) {
-            Consumer<CreateContainerCmd> cmd = e -> e.withPortBindings(
+            Consumer<CreateContainerCmd> cmd = e -> requireNonNull(e.getHostConfig()).withPortBindings(
                     new PortBinding(Ports.Binding.bindPort(fixedExposedPort), new ExposedPort(MYSQL_PORT)));
             mysql = mysql.withCreateContainerCmdModifier(cmd);
         }

@@ -48,7 +48,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -250,7 +249,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         List<CompletableFuture> futures = new ArrayList<>(contexts.size());
 
         for (ExecutionContext exeCtx : contexts) {
-            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s", exeCtx.jobNameAndExecutionId(), reason);
+            logger.fine("Completing %s locally. Reason: %s", exeCtx.jobNameAndExecutionId(), reason);
             futures.add(terminateExecution0(exeCtx, null, new CancellationException()));
         }
 
@@ -271,8 +270,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                                  .filter(exeCtx -> exeCtx.coordinator() != null
                                          && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
                                  .map(exeCtx -> {
-                                     LoggingUtil.logFine(logger, "Completing %s " +
-                                                     "locally. Reason: Member %s left the cluster",
+                                     logger.fine("Completing %s locally. Reason: Member %s left the cluster",
                                              exeCtx.jobNameAndExecutionId(), address);
                                      return terminateExecution0(exeCtx, null, new MemberLeftException(member));
                                  })
@@ -639,7 +637,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 } else {
                     // if coordinator is not known, remove execution if it's not known for too long
                     if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
-                        LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
+                        logger.fine("Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
                         terminateFutures.add(terminateExecution0(ctx, CANCEL_FORCEFUL, new CancellationException()));
                     }

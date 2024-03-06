@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.CheckReturnValue;
@@ -50,13 +49,13 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supplierWithService;
-import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 /**
  * Processor which, for each received item, emits all the items from the
@@ -317,7 +316,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             for (int i = 0; i < lastReceivedWms.length; i++) {
                 lastReceivedWmsMap.put(wmKeys[i], lastReceivedWms[i]);
             }
-            LoggingUtil.logFinest(getLogger(), "Saving to snapshot: %s, lastReceivedWm=%s",
+            getLogger().finest("Saving to snapshot: %s, lastReceivedWm=%s",
                     inFlightItems, lastReceivedWmsMap);
             snapshotTraverser = traverseIterable(inFlightItems.entrySet())
                     .<Entry>map(en -> entry(
@@ -348,7 +347,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         // replay each item appropriate number of times, order does not matter
         for (int i = 0; i < value1.f1(); i++) {
             restoredObjects.add(value1.f0());
-            LoggingUtil.logFinest(getLogger(), "Restored: %s", value1.f0());
+            getLogger().finest("Restored: %s", value1.f0());
         }
     }
 

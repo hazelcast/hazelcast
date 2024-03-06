@@ -61,8 +61,6 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -280,7 +278,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                     )
                     .append(entry(broadcastKey(Keys.NEXT_WIN_TO_EMIT), nextWinToEmit))
                     .onFirstNull(() -> {
-                        logFinest(getLogger(), "Saved nextWinToEmit: %s", nextWinToEmit);
+                        getLogger().finest("Saved nextWinToEmit: %s", nextWinToEmit);
                         snapshotTraverser = null;
                     });
         }
@@ -345,7 +343,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             nextWinToEmit = minRestoredNextWinToEmit > Long.MIN_VALUE
                     ? winPolicy.higherFrameTs(minRestoredNextWinToEmit - 1)
                     : minRestoredNextWinToEmit;
-            logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
+            getLogger().finest("Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
             // Delete too old restored frames. This can happen when restoring from exported state and new job
             // has smaller window size
             if (nextWinToEmit > Long.MIN_VALUE + winPolicy.windowSize()) {

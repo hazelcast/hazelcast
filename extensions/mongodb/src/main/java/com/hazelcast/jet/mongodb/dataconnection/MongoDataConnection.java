@@ -182,7 +182,7 @@ public class MongoDataConnection extends DataConnectionBase {
 
     /**
      * Returns an instance of {@link MongoClient}.
-     *
+     * <p>
      * If client is {@linkplain DataConnectionConfig#isShared()} and there will be still some usages of given client,
      * the {@linkplain MongoClient#close()} method won't take an effect.
      */

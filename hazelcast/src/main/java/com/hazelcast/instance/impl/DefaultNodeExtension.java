@@ -140,18 +140,20 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.instance.impl.Node.getLegacyUCDClassLoader;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension {
-    private static final String PLATFORM_LOGO
-    = "\to    o     o     o---o   o--o o      o---o     o     o----o o--o--o\n"
-    + "\t|    |    / \\       /         |     /         / \\    |         |   \n"
-    + "\to----o       o     o   o----o |    o             o   o----o    |   \n"
-    + "\t|    |  *     \\   /           |     \\       *     \\       |    |   \n"
-    + "\to    o *       o o---o   o--o o----o o---o *       o o----o    o   ";
+    private static final String PLATFORM_LOGO = """
+      o    o     o     o---o   o--o o      o---o     o     o----o o--o--o
+      |    |    / \\       /         |     /         / \\    |         |
+      o----o       o     o   o----o |    o             o   o----o    |
+      |    |  *     \\   /           |     \\       *     \\       |    |
+      o    o *       o o---o   o--o o----o o---o *       o o----o    o
+      """.indent(4);
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.";
 
@@ -411,7 +413,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
         String partitioningStrategyClassName = node.getProperties().getString(ClusterProperty.PARTITIONING_STRATEGY_CLASS);
-        if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
+        if (!isNullOrEmpty(partitioningStrategyClassName)) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {
             return new DefaultPartitioningStrategy();

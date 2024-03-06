@@ -54,7 +54,6 @@ import com.hazelcast.jet.impl.operation.GetLocalExecutionMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -117,7 +116,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
@@ -1024,7 +1022,7 @@ public class MasterJobContext {
         // If there is any member in our participants that is not among current data members,
         // this job will be restarted anyway. If it's the other way, then the sizes won't match.
         if (mc.executionPlanMap() == null || mc.executionPlanMap().size() == dataMembersWithPartitionsCount) {
-            LoggingUtil.logFine(logger, "Not scaling up %s: not running or already running on all members",
+            logger.fine("Not scaling up %s: not running or already running on all members",
                     mc.jobIdString());
             return true;
         }
@@ -1171,8 +1169,7 @@ public class MasterJobContext {
             // retrying, the job will eventually not be RUNNING, in which case
             // we'll return last known metrics, or it will be running again, in
             // which case we'll get fresh metrics.
-            logFinest(
-                logger,
+            logger.finest(
                 "Rescheduling collectMetrics for %s, some members threw %s",
                 mc.jobIdString(),
                 ExecutionNotFoundException.class.getSimpleName()
@@ -1265,7 +1262,7 @@ public class MasterJobContext {
         }
 
         public void processResponse(Address address, Object response) {
-            LoggingUtil.logFine(logger, "%s received response to StartExecutionOperation from %s: %s",
+            logger.fine("%s received response to StartExecutionOperation from %s: %s",
                     mc.jobIdString(), address, response);
             CompletableFuture<Object> future = operationResponses.get(address);
             if (response instanceof Throwable) {

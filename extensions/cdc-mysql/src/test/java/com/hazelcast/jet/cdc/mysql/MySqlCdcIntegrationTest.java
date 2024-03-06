@@ -49,7 +49,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static java.util.Objects.requireNonNull;
 
+@SuppressWarnings("SqlResolve")
 public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
     @Test
@@ -170,7 +172,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         pipeline.readFrom(source("customers"))
                 .withNativeTimestamps(0)
                 .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
-                .groupingKey(record -> (Integer) record.key().toMap().get("id"))
+                .groupingKey(record -> (Integer) requireNonNull(record.key()).toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,
                         (accumulator, customerId, record) -> {
@@ -230,7 +232,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         pipeline.readFrom(source("customers"))
                 .withNativeTimestamps(0)
                 .writeTo(CdcSinks.map("cache",
-                        r -> r.key().toMap().get("id"),
+                        r -> requireNonNull(r.key()).toMap().get("id"),
                         r -> r.value().toObject(Customer.class).toString()));
 
 
@@ -296,9 +298,9 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         //pick random method for extracting ID in order to test all code paths
         boolean primitive = ThreadLocalRandom.current().nextBoolean();
         if (primitive) {
-            return (Integer) record.key().toMap().get("order_number");
+            return (Integer) requireNonNull(record.key()).toMap().get("order_number");
         } else {
-            return record.key().toObject(OrderPrimaryKey.class).id;
+            return requireNonNull(record.key()).toObject(OrderPrimaryKey.class).id;
         }
     }
 

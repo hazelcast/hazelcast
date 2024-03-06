@@ -45,7 +45,6 @@ import java.util.Queue;
 import static com.hazelcast.jet.impl.Networking.PACKET_HEADER_SIZE;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -251,7 +250,7 @@ public class ReceiverTasklet implements Tasklet {
             rwinDiff /= 2;
             receiveWindowCompressed += rwinDiff;
             if (rwinDiff != 0) {
-                logFinest(logger, "receiveWindowCompressed changed by %d to %d", rwinDiff, receiveWindowCompressed);
+                logger.finest("receiveWindowCompressed changed by %d to %d", rwinDiff, receiveWindowCompressed);
             }
         }
         return ackedSeqCompressed + receiveWindowCompressed;

@@ -59,7 +59,6 @@ import static com.hazelcast.client.properties.ClientProperty.PARTITION_ARGUMENT_
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.sql.impl.SqlErrorCode.CONNECTION_PROBLEM;
 import static com.hazelcast.sql.impl.SqlErrorCode.PARTITION_DISTRIBUTION;
 import static com.hazelcast.sql.impl.SqlErrorCode.RESTARTABLE_ERROR;
@@ -186,20 +185,20 @@ public class SqlClientService implements SqlService {
             try {
                 connection = getQueryConnection();
                 QueryId queryId = QueryId.create(connection.getRemoteUuid());
-                logFinest(logger, "Resubmitting query: %s with new query id %s", result.getQueryId(), queryId);
+                logger.finest("Resubmitting query: %s with new query id %s", result.getQueryId(), queryId);
                 result.setQueryId(queryId);
                 ClientMessage message = invoke(result.getSqlExecuteMessage(queryId), connection);
                 resubmissionResult = createResubmissionResult(message, connection);
                 if (resubmissionResult.getSqlError() == null) {
-                    logFinest(logger, "Resubmitting query: %s ended without error", result.getQueryId());
+                    logger.finest("Resubmitting query: %s ended without error", result.getQueryId());
                 } else {
-                    logFinest(logger, "Resubmitting query: %s ended with error", result.getQueryId());
+                    logger.finest("Resubmitting query: %s ended with error", result.getQueryId());
                 }
                 if (resubmissionResult.getSqlError() == null || !shouldResubmit(resubmissionResult.getSqlError())) {
                     return resubmissionResult;
                 }
             } catch (Exception e) {
-                logFinest(logger, "Resubmitting query: %s ended with exception", result.getQueryId());
+                logger.finest("Resubmitting query: %s ended with exception", result.getQueryId());
                 RuntimeException rethrown = connection == null ? (RuntimeException) e : rethrow(e, connection);
                 if (!shouldResubmit(rethrown)) {
                     throw rethrown;

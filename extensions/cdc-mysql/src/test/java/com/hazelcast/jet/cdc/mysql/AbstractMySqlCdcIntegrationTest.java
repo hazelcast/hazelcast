@@ -67,6 +67,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
                 .setReconnectBehavior(RetryStrategies.indefinitely(1000));
     }
 
+    @SuppressWarnings("SqlSourceToSinkFlow")
     protected void createDb(String database) throws SQLException {
         String jdbcUrl = "jdbc:mysql://" + mysql.getHost() + ":" + mysql.getMappedPort(MYSQL_PORT) + "/";
         try (Connection connection = getMySqlConnection(jdbcUrl, "root", "mysqlpw")) {

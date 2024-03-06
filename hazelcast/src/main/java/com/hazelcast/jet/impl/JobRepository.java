@@ -84,7 +84,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -229,40 +228,34 @@ public class JobRepository {
             Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
             for (ResourceConfig rc : jobConfig.getResourceConfigs().values()) {
                 switch (rc.getResourceType()) {
-                    case CLASSPATH_RESOURCE:
-                    case CLASS:
+                    case CLASSPATH_RESOURCE, CLASS -> {
                         try (InputStream in = rc.getUrl().openStream()) {
                             readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
                         }
-                        break;
-                    case FILE:
+                    }
+                    case FILE -> {
                         try (InputStream in = rc.getUrl().openStream();
                              IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
                         ) {
                             packStreamIntoZip(in, os, requireNonNull(fileNameFromUrl(rc.getUrl())));
                         }
-                        break;
-                    case DIRECTORY:
+                    }
+                    case DIRECTORY -> {
                         Path baseDir = validateAndGetDirectoryPath(rc);
                         try (IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))) {
                             packDirectoryIntoZip(baseDir, os);
                         }
-                        break;
-                    case JAR:
-                        loadJar(tmpMap, rc);
-                        break;
-                    case JARS_IN_ZIP:
-                        loadJarsInZip(tmpMap, rc.getUrl());
-                        break;
-                    default:
-                        throw new JetException("Unsupported resource type: " + rc.getResourceType());
+                    }
+                    case JAR -> loadJar(tmpMap, rc);
+                    case JARS_IN_ZIP -> loadJarsInZip(tmpMap, rc.getUrl());
+                    default -> throw new JetException("Unsupported resource type: " + rc.getResourceType());
                 }
             }
         } catch (IOException | URISyntaxException e) {
             throw new JetException("Job resource upload failed", e);
         }
         // avoid creating resources map if map is empty
-        if (tmpMap.size() > 0) {
+        if (!tmpMap.isEmpty()) {
             IMap<String, byte[]> jobResourcesMap = getJobResources(jobId);
             // now upload it all
             try {
@@ -501,7 +494,7 @@ public class JobRepository {
             if (map.getName().startsWith(SNAPSHOT_DATA_MAP_PREFIX)) {
                 long id = jobIdFromPrefixedName(map.getName(), SNAPSHOT_DATA_MAP_PREFIX);
                 if (!activeJobs.contains(id)) {
-                    logFine(logger, "Deleting snapshot data map '%s' because job already finished", map.getName());
+                    logger.fine("Deleting snapshot data map '%s' because job already finished", map.getName());
                     map.destroy();
                 }
             } else if (map.getName().startsWith(RESOURCES_MAP_NAME_PREFIX)) {
@@ -518,7 +511,7 @@ public class JobRepository {
         }
         if (jobResults.get().containsKey(id)) {
             // if job is finished, we can safely delete the map
-            logFine(logger, "Deleting job resource map '%s' because job is already finished", map.getName());
+            logger.fine("Deleting job resource map '%s' because job is already finished", map.getName());
             map.destroy();
         } else {
             // Job might be in the process of uploading resources, check how long the map has been there.
@@ -535,7 +528,7 @@ public class JobRepository {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void cleanupJobResults(NodeEngine nodeEngine) {
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(ClusterProperty.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
@@ -606,7 +599,7 @@ public class JobRepository {
     }
 
     public boolean jobRecordsMapExists() {
-        return ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME);
+        return ((AbstractJetInstance<?>) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME);
     }
 
     private Map<Long, JobRecord> jobRecordsMap() {
@@ -618,7 +611,7 @@ public class JobRepository {
 
     private Map<Long, JobResult> jobResultsMap() {
         if (jobResults.remembered() != null ||
-                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
+                ((AbstractJetInstance<?>) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
             return jobResults.get();
         }
         return Collections.emptyMap();
@@ -730,7 +723,7 @@ public class JobRepository {
         String mapName = snapshotDataMapName(jobId, dataMapIndex);
         try {
             instance.getMap(mapName).clear();
-            logFine(logger, "Cleared snapshot data map %s", mapName);
+            logger.fine("Cleared snapshot data map %s", mapName);
         } catch (Exception logged) {
             logger.warning("Cannot delete old snapshot data  " + idToString(jobId), logged);
         }

@@ -23,12 +23,14 @@ import com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.Collection;
 
 /**
  * This class creates Processors via given ProcessorSupplier and assigns them processorOrder
  */
 class TaskMaxProcessorSupplier implements ProcessorSupplier {
+    @Serial
     private static final long serialVersionUID = 1L;
     private final int localParallelismForMember;
     private final ReadKafkaConnectProcessorSupplier supplier;

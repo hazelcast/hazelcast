@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.processor.TransactionPoolSnapshotUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionId;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 
@@ -145,10 +144,10 @@ public abstract class XaSinkProcessorBase implements Processor {
             } catch (XAException e) {
                 switch (e.errorCode) {
                     case XA_RETRY:
-                        LoggingUtil.logFine(context.logger(), "Commit failed with XA_RETRY, will retry in %s ms. XID: %s",
+                        context.logger().fine("Commit failed with XA_RETRY, will retry in %s ms. XID: %s",
                                 COMMIT_RETRY_DELAY_MS, xid);
                         Thread.sleep(COMMIT_RETRY_DELAY_MS);
-                        LoggingUtil.logFine(context.logger(), "Retrying commit %s", xid);
+                        context.logger().fine("Retrying commit %s", xid);
                         continue;
                     case XAException.XA_HEURCOM:
                         context.logger().info("Due to a heuristic decision, the work done on behalf of " +
@@ -161,7 +160,7 @@ public abstract class XaSinkProcessorBase implements Processor {
                                 handleXAException(e, xid));
                         break;
                     case XAException.XAER_NOTA:
-                        LoggingUtil.logFine(context.logger(), "Failed to commit XID restored from snapshot: The " +
+                        context.logger().fine("Failed to commit XID restored from snapshot: The " +
                                 "specified XID is not known to the resource manager. This happens normally when the " +
                                 "transaction was committed in phase 2 of the snapshot and can be ignored, but can " +
                                 "happen also if the transaction wasn't committed in phase 2 and the RM lost it (in " +
@@ -188,7 +187,7 @@ public abstract class XaSinkProcessorBase implements Processor {
             // If error is XAER_NOTA (transaction doesn't exist), we don't even log it, this is the normal
             // case, we roll back preemptively
             if (e.errorCode != XAException.XAER_NOTA) {
-                LoggingUtil.logFine(context.logger(), "Failed to roll back, transaction ID: %s. Error: %s",
+                context.logger().fine("Failed to roll back, transaction ID: %s. Error: %s",
                         xid, handleXAException(e, xid));
             }
         }

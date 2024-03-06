@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.kafka.connect.impl.message;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 public class TaskConfigMessage implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private List<Map<String, String>> taskConfigs;

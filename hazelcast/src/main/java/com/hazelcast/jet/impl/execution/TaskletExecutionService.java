@@ -63,7 +63,6 @@ import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.ClusterProperty.JET_IDLE_COOPERATIVE_MAX_MICROSECONDS;
@@ -429,7 +428,7 @@ public class TaskletExecutionService {
         }
 
         private void dismissTasklet(TaskletTracker t) {
-            logFinest(logger, "Tasklet %s is done", t.tasklet);
+            logger.finest("Tasklet %s is done", t.tasklet);
             t.executionTracker.taskletDone();
             trackers.remove(t);
         }

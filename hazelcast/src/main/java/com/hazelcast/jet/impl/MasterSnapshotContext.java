@@ -26,7 +26,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -51,7 +50,6 @@ import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.JobRepository.safeImap;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -223,7 +221,7 @@ class MasterSnapshotContext {
                 return;
             }
 
-            logFine(logger, "Starting snapshot %d for %s, flags: %s, writing to: %s",
+            logger.fine("Starting snapshot %d for %s, flags: %s, writing to: %s",
                     newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
                     SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotName);
 
@@ -268,7 +266,7 @@ class MasterSnapshotContext {
                 mergedResult.merge((SnapshotPhase1Result) response);
             }
             if (!missingResponses.isEmpty()) {
-                LoggingUtil.logFine(logger, "%s will wait for %d responses to StartExecutionOperation in " +
+                logger.fine("%s will wait for %d responses to StartExecutionOperation in " +
                         "onSnapshotPhase1Complete()", mc.jobIdString(), missingResponses.size());
             }
 
@@ -301,13 +299,13 @@ class MasterSnapshotContext {
             mc.lock();
             try {
                 if (!missingResponses.isEmpty()) {
-                    LoggingUtil.logFine(logger, "%s all awaited responses to StartExecutionOperation received or " +
+                    logger.fine("%s all awaited responses to StartExecutionOperation received or " +
                             "were already received", mc.jobIdString());
                 }
                 // Note: this method can be called after finalizeJob() is called or even after new execution started.
                 // Check the execution ID to check if a new execution didn't start yet.
                 if (executionId != mc.executionId()) {
-                    LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 1: " +
+                    logger.fine("%s: ignoring responses for snapshot %s phase 1: " +
                                     "the responses are from a different execution: %s. Responses: %s",
                             mc.jobIdString(), snapshotId, idToString(executionId), responses);
                     // a new execution started, ignore this response.
@@ -481,7 +479,7 @@ class MasterSnapshotContext {
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             if (executionId != mc.executionId()) {
-                LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 2: " +
+                logger.fine("%s: ignoring responses for snapshot %s phase 2: " +
                                 "the responses are from a different execution: %s. Responses: %s",
                         mc.jobIdString(), snapshotId, idToString(executionId), responses);
                 return;

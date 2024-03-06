@@ -59,7 +59,6 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.lang.Math.min;
@@ -288,7 +287,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         }
         currentWatermark = minRestoredCurrentWatermark;
         totalKeys.set(keyToWindows.size());
-        logFine(getLogger(), "Restored currentWatermark from snapshot to: %s", currentWatermark);
+        getLogger().fine("Restored currentWatermark from snapshot to: %s", currentWatermark);
         return true;
     }
 

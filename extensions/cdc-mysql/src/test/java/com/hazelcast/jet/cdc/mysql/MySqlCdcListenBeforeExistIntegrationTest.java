@@ -67,7 +67,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         try {
             //then
             createDb(DATABASE);
-            createTableWithData(DATABASE, "someTable");
+            createTableWithData();
             insertToTable(DATABASE, "someTable", 1001, "someValue1", "someValue2");
 
             assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), expectedRecords);
@@ -101,7 +101,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
 
         try {
             //then
-            createTableWithData(DATABASE, "someTable");
+            createTableWithData();
             insertToTable(DATABASE, "someTable", 1001, "someValue1", "someValue2");
 
             assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), expectedRecords);
@@ -115,7 +115,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
     public void listenBeforeColumnExists() throws Exception {
         // given
         createDb(DATABASE);
-        createTableWithData(DATABASE, "someTable");
+        createTableWithData();
         insertToTable(DATABASE, "someTable", 1001, "someValue1", "someValue2");
 
         List<String> expectedRecords = Arrays.asList(
@@ -150,15 +150,16 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         }
     }
 
-    private void createTableWithData(String database, String table) throws SQLException {
-        try (Connection connection = getConnection(mysql, database)) {
+    @SuppressWarnings("SqlResolve")
+    private void createTableWithData() throws SQLException {
+        try (Connection connection = getConnection(mysql, MySqlCdcListenBeforeExistIntegrationTest.DATABASE)) {
             Statement statement = connection.createStatement();
-            statement.addBatch("CREATE TABLE " + table + " (\n"
+            statement.addBatch("CREATE TABLE " + "someTable" + " (\n"
                             + "  id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,\n"
                             + "  value_1 VARCHAR(255) NOT NULL,\n"
                             + "  value_2 VARCHAR(255) NOT NULL\n"
                             + ")");
-            statement.addBatch("ALTER TABLE " + table + " AUTO_INCREMENT = 1001 ;");
+            statement.addBatch("ALTER TABLE someTable AUTO_INCREMENT = 1001 ;");
             statement.executeBatch();
         }
     }

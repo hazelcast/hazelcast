@@ -29,7 +29,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * See {@link Processors#insertWatermarksP}.
@@ -92,7 +91,7 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
     @Override
     public boolean finishSnapshotRestore() {
         eventTimeMapper.restoreWatermark(0, minRestoredWm);
-        logFine(getLogger(), "restored lastEmittedWm=%s", minRestoredWm);
+        getLogger().fine("restored lastEmittedWm=%s", minRestoredWm);
         return true;
     }
 

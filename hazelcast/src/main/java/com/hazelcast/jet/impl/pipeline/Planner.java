@@ -34,7 +34,6 @@ import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -99,7 +98,7 @@ public class Planner {
         if (frameSizeGcd > MAXIMUM_WATERMARK_GAP) {
             frameSizeGcd = Util.gcd(frameSizeGcd, MAXIMUM_WATERMARK_GAP);
         }
-        LoggingUtil.logFine(LOGGER, "Watermarks in the pipeline will be throttled to %d", frameSizeGcd);
+        LOGGER.fine("Watermarks in the pipeline will be throttled to %d", frameSizeGcd);
         // Update watermark throttling frame length on all transforms with the determined length
         for (Transform transform : adjacencyMap.keySet()) {
             if (transform instanceof StreamSourceTransform streamSourceTransform) {

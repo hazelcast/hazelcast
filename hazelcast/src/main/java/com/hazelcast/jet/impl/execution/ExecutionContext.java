@@ -40,7 +40,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
-import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -221,7 +220,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         synchronized (executionLock) {
             if (executionFuture != null) {
                 // beginExecution was already called or execution was cancelled before it started.
-                LoggingUtil.logFine(logger, "%s: execution started after cancelled", jobNameAndExecutionId());
+                logger.fine("%s: execution started after cancelled", jobNameAndExecutionId());
                 return executionFuture;
             } else {
                 // begin job execution
@@ -347,13 +346,13 @@ public class ExecutionContext implements DynamicMetricsProvider {
      * Starts the phase 1 of a new snapshot.
      */
     public CompletableFuture<SnapshotPhase1Result> beginSnapshotPhase1(long snapshotId, String mapName, int flags) {
-        LoggingUtil.logFine(logger, "Starting snapshot %d phase 1 for %s on member", snapshotId, jobNameAndExecutionId());
+        logger.fine("Starting snapshot %d phase 1 for %s on member", snapshotId, jobNameAndExecutionId());
         synchronized (executionLock) {
             if (cancellationFuture.isDone()) {
                 throw new CancellationException();
             } else if (executionFuture != null && executionFuture.isDone()) {
                 // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
-                LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 1 for %s: execution completed",
+                logger.fine("Ignoring snapshot %d phase 1 for %s: execution completed",
                         snapshotId, jobNameAndExecutionId());
                 return completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
             }
@@ -365,13 +364,13 @@ public class ExecutionContext implements DynamicMetricsProvider {
      * Starts the phase 2 of the current snapshot.
      */
     public CompletableFuture<Void> beginSnapshotPhase2(long snapshotId, boolean success) {
-        LoggingUtil.logFine(logger, "Starting snapshot %d phase 2 for %s on member", snapshotId, jobNameAndExecutionId());
+        logger.fine("Starting snapshot %d phase 2 for %s on member", snapshotId, jobNameAndExecutionId());
         synchronized (executionLock) {
             if (cancellationFuture.isDone()) {
                 throw new CancellationException();
             } else if (executionFuture != null && executionFuture.isDone()) {
                 // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
-                LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 2 for %s: execution completed",
+                logger.fine("Ignoring snapshot %d phase 2 for %s: execution completed",
                         snapshotId, jobNameAndExecutionId());
                 return completedFuture(null);
             }

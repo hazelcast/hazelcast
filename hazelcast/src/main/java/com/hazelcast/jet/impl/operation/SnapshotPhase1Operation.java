@@ -28,9 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class SnapshotPhase1Operation extends AsyncJobOperation {
 
@@ -39,9 +37,6 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
     public static volatile boolean postponeResponses;
 
     private static final int RETRY_MS = 100;
-    private static final CompletableFuture<SnapshotPhase1Result> EMPTY_RESULT =
-            completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
-
     private long executionId;
     private long snapshotId;
     private String mapName;
@@ -72,8 +67,7 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
                 .exceptionally(exc -> new SnapshotPhase1Result(0, 0, 0, exc))
                 .thenApply(result -> {
                     if (result.getError() == null) {
-                        logFine(getLogger(),
-                                "Snapshot %s phase 1 for %s finished successfully on member",
+                        getLogger().fine("Snapshot %s phase 1 for %s finished successfully on member",
                                 snapshotId, ctx.jobNameAndExecutionId());
                     } else {
                         getLogger().warning(String.format("Snapshot %d phase 1 for %s finished with an error on member: " +

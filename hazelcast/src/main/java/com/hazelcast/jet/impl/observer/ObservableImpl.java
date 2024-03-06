@@ -47,7 +47,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 public class ObservableImpl<T> implements Observable<T> {
 
@@ -280,11 +279,11 @@ public class ObservableImpl<T> implements Observable<T> {
             } else if (t instanceof StaleSequenceException) {
                 return handleStaleSequenceException((StaleSequenceException) t);
             } else if (t instanceof HazelcastInstanceNotActiveException) {
-                logFine(logger, "Terminating message listener '%s'. Reason: HazelcastInstance is shutting down", id);
+                logger.fine("Terminating message listener '%s'. Reason: HazelcastInstance is shutting down", id);
             } else if (t instanceof HazelcastClientNotActiveException) {
-                logFine(logger, "Terminating message listener '%s'. Reason: HazelcastClient is shutting down", id);
+                logger.fine("Terminating message listener '%s'. Reason: HazelcastClient is shutting down", id);
             } else if (t instanceof DistributedObjectDestroyedException) {
-                logFine(logger, "Terminating message listener '%s'. Reason: Topic is destroyed", id);
+                logger.fine("Terminating message listener '%s'. Reason: Topic is destroyed", id);
             } else {
                 logger.warning("Terminating message listener '" + id + "'. " +
                         "Reason: Unhandled exception, message: " + t.getMessage(), t);
@@ -293,7 +292,7 @@ public class ObservableImpl<T> implements Observable<T> {
         }
 
         private boolean handleOperationTimeoutException() {
-            logFine(logger, "Message listener '%s' timed out. Continuing from last known sequence: %d", id, sequence);
+            logger.fine("Message listener '%s' timed out. Continuing from last known sequence: %d", id, sequence);
             return true;
         }
 
@@ -308,7 +307,7 @@ public class ObservableImpl<T> implements Observable<T> {
          */
         private boolean handleIllegalArgumentException(IllegalArgumentException t) {
             final long currentHeadSequence = ringbuffer.headSequence();
-            logFine(logger, "Message listener '%s' requested a too large sequence: %s. Jumping from old " +
+            logger.fine("Message listener '%s' requested a too large sequence: %s. Jumping from old " +
                     "sequence %d to sequence %d.", id, t.getMessage(), sequence, currentHeadSequence);
             adjustSequence(currentHeadSequence);
             return true;
@@ -325,7 +324,7 @@ public class ObservableImpl<T> implements Observable<T> {
          */
         private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) {
             long headSeq = ringbuffer.headSequence();
-            logFine(logger, "Message listener '%s' ran into a stale sequence. Jumping from oldSequence %d to " +
+            logger.fine("Message listener '%s' ran into a stale sequence. Jumping from oldSequence %d to " +
                     "sequence %d.", id, sequence, headSeq);
             adjustSequence(headSeq);
             return true;

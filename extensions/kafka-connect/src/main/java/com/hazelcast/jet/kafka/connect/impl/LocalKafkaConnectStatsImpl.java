@@ -30,9 +30,10 @@ import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalKafkaConnectStatsImpl implements LocalKafkaConnectStats {
-
-    private final AtomicLongFieldUpdater<LocalKafkaConnectStatsImpl> sourceRecordPollTotalUpdater =
+    @SuppressWarnings("ConstantName")
+    private static final AtomicLongFieldUpdater<LocalKafkaConnectStatsImpl> sourceRecordPollTotalUpdater =
             newUpdater(LocalKafkaConnectStatsImpl.class, "sourceRecordPollTotal");
+
     @Probe(name = KAFKA_CONNECT_CREATION_TIME, unit = MS)
     private final long creationTime;
 
