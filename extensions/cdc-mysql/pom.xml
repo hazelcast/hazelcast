@@ -74,7 +74,6 @@
                 <artifactId>license-maven-plugin</artifactId>
                 <configuration>
                     <includedLicenses combine.children="append">
-                        <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
                         <!-- License for  mysql-connector-j -->
                         <includedLicense>The GNU General Public License, v2 with Universal FOSS Exception, v1.0</includedLicense>
                     </includedLicenses>

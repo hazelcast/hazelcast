@@ -55,7 +55,7 @@
                         <includedLicense>CDDL</includedLicense>
                         <includedLicense>CDDL 1.1</includedLicense>
                         <includedLicense>Lesser General Public License (LGPL)</includedLicense>
-                        <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
+                        <includedLicense>The GNU General Public License, v2 with Universal FOSS Exception, v1.0</includedLicense>
                         <includedLicense>The Go license</includedLicense>
                         <includedLicense>Elastic License 2.0</includedLicense>
                     </includedLicenses>
