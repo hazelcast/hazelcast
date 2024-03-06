@@ -21,10 +21,8 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -50,9 +48,6 @@ import static org.junit.Assert.assertTrue;
 public class DAGTest {
 
     private static final SupplierEx<Processor> PROCESSOR_SUPPLIER = noopP();
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void when_newVertex_then_hasIt() {
@@ -85,11 +80,9 @@ public class DAGTest {
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.edge(between(a, a));
+        Edge between = between(a, a);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(between));
     }
 
     @Test
@@ -99,11 +92,9 @@ public class DAGTest {
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.edge(between(a, b));
+        Edge between = between(a, b);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(between));
     }
 
     @Test
@@ -113,11 +104,9 @@ public class DAGTest {
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.edge(between(a, b));
+        Edge between = between(a, b);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(between));
     }
 
     @Test
@@ -126,12 +115,11 @@ public class DAGTest {
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Edge has no destination");
-
         // When
-        dag.edge(from(a));
+        Edge from = from(a);
+        assertThatThrownBy(() -> dag.edge(from))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Edge has no destination");
     }
 
     @Test
@@ -144,11 +132,9 @@ public class DAGTest {
                 .vertex(a1)
                 .vertex(b);
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.edge(between(a2, b));
+        Edge between = between(a2, b);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(between));
     }
 
     @Test
@@ -161,11 +147,9 @@ public class DAGTest {
                 .vertex(a)
                 .vertex(b1);
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.edge(between(a, b2));
+        Edge between = between(a, b2);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(between));
     }
 
     @Test
@@ -285,11 +269,9 @@ public class DAGTest {
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
         dag.edge(from(a, 0).to(b, 0));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.edge(from(a, 0).to(c, 0));
+        Edge edge = from(a, 0).to(c, 0);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(edge));
     }
 
     @Test
@@ -302,11 +284,9 @@ public class DAGTest {
         dag.edge(from(a, 0).to(b, 0))
            .edge(from(a, 2).to(c, 0));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
-        dag.validate();
+        assertThrows(IllegalArgumentException.class, dag::validate);
     }
 
     @Test
@@ -318,11 +298,10 @@ public class DAGTest {
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
         dag.edge(from(a, 0).to(c, 0));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
-        dag.edge(from(b, 0).to(c, 0));
+        Edge edge = from(b, 0).to(c, 0);
+        assertThrows(IllegalArgumentException.class, () -> dag.edge(edge));
     }
 
     @Test
@@ -335,11 +314,8 @@ public class DAGTest {
         dag.edge(from(a, 0).to(c, 0))
            .edge(from(b, 0).to(c, 2));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-
         // When
-        dag.validate();
+        assertThrows(IllegalArgumentException.class, dag::validate);
     }
 
     @Test
@@ -362,12 +338,11 @@ public class DAGTest {
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
         dag.edge(between(a, c));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Edge.from().to()");
-
         // When
-        dag.edge(between(b, c));
+        Edge between = between(b, c);
+        assertThatThrownBy(() -> dag.edge(between))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Edge.from().to()");
     }
 
     @Test
@@ -379,7 +354,8 @@ public class DAGTest {
         dag.edge(from(a).to(c, 1));
 
         // When and Then
-        assertThatThrownBy(() -> dag.edge(from(b).to(c, 1)))
+        Edge edge = from(b).to(c, 1);
+        assertThatThrownBy(() -> dag.edge(edge))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageNotContaining("Edge.from().to()");
     }

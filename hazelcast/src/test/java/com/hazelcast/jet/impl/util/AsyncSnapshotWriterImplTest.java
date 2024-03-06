@@ -44,7 +44,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
@@ -182,7 +181,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     }
 
     @Test
-    public void when_singleLargeEntry_then_flushedImmediatelyAndDeserializesCorrectly() throws IOException {
+    public void when_singleLargeEntry_then_flushedImmediatelyAndDeserializesCorrectly() {
         // When
         String key = "k";
         String value = generate(() -> "a").limit(128).collect(joining());
@@ -265,7 +264,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     }
 
     @Test
-    public void test_serializeAndDeserialize() throws Exception {
+    public void test_serializeAndDeserialize() {
         // This is the way we serialize and deserialize objects into the snapshot. We depend on some internals of IMDG:
         // - using the HeapData.toByteArray() from offset 4
         // - concatenate them into one array

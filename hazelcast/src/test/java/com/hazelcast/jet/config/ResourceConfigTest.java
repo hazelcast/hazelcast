@@ -125,11 +125,8 @@ public class ResourceConfigTest extends JetTestSupport {
         // Given
         URL url = URI.create("http://hazelcast.org").toURL();
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addJar(url);
+        assertThrows(IllegalArgumentException.class, () -> config.addJar(url));
     }
 
     @Test
@@ -140,11 +137,8 @@ public class ResourceConfigTest extends JetTestSupport {
         URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.addJar(url1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addJar(url2);
+        assertThrows(IllegalArgumentException.class, () -> config.addJar(url2));
     }
 
     private ResourceConfig getFirstResourceConfig() {
@@ -175,11 +169,7 @@ public class ResourceConfigTest extends JetTestSupport {
         File file2 = createFile("path/to/another/" + resourceId);
         config.addJar(file1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
-        // When
-        config.addJar(file2);
+        assertThrows(IllegalArgumentException.class, () -> config.addJar(file2));
     }
 
     @Test
@@ -221,11 +211,8 @@ public class ResourceConfigTest extends JetTestSupport {
         String path2 = createFile("path/to/another/" + resourceId).toString();
         config.addJar(path1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addJar(path2);
+        assertThrows(IllegalArgumentException.class, () -> config.addJar(path2));
     }
 
     @Test
@@ -262,11 +249,8 @@ public class ResourceConfigTest extends JetTestSupport {
         // Given
         URL url = URI.create("http://hazelcast.org").toURL();
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addJarsInZip(url);
+        assertThrows(IllegalArgumentException.class, () -> config.addJarsInZip(url));
     }
 
     @Test
@@ -277,11 +261,8 @@ public class ResourceConfigTest extends JetTestSupport {
         URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.addJarsInZip(url1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addJarsInZip(url2);
+        assertThrows(IllegalArgumentException.class, () -> config.addJarsInZip(url2));
     }
 
     @Test
@@ -309,11 +290,9 @@ public class ResourceConfigTest extends JetTestSupport {
         String path2 = createFile("path/to/another/" + resourceId).toString();
         config.addJarsInZip(path1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
 
         // When
-        config.addJarsInZip(path2);
+        assertThrows(IllegalArgumentException.class, () -> config.addJarsInZip(path2));
     }
 
     @Test
@@ -353,11 +332,9 @@ public class ResourceConfigTest extends JetTestSupport {
         File file2 = createFile("path/to/another/" + resourceId);
         config.addJarsInZip(file1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
 
         // When
-        config.addJarsInZip(file2);
+        assertThrows(IllegalArgumentException.class, () -> config.addJarsInZip(file2));
     }
 
     @Test
@@ -399,11 +376,8 @@ public class ResourceConfigTest extends JetTestSupport {
         String path2 = createFile("path/to/another/" + resourceId).toString();
         config.addClasspathResource(path1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addClasspathResource(path2);
+        assertThrows(IllegalArgumentException.class, () -> config.addClasspathResource(path2));
     }
 
     @Test
@@ -474,11 +448,8 @@ public class ResourceConfigTest extends JetTestSupport {
         File file2 = createFile("path/to/another/" + resourceId);
         config.addClasspathResource(file1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addClasspathResource(file2);
+        assertThrows(IllegalArgumentException.class, () -> config.addClasspathResource(file2));
     }
 
     @Test
@@ -550,11 +521,8 @@ public class ResourceConfigTest extends JetTestSupport {
         URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.addClasspathResource(url1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addClasspathResource(url2);
+        assertThrows(IllegalArgumentException.class, () -> config.addClasspathResource(url2));
     }
 
     @Test
@@ -562,11 +530,8 @@ public class ResourceConfigTest extends JetTestSupport {
         // Given
         URL url = URI.create("http://hazelcast.org").toURL();
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.addClasspathResource(url);
+        assertThrows(IllegalArgumentException.class, () -> config.addClasspathResource(url));
     }
 
     @Test
@@ -624,11 +589,8 @@ public class ResourceConfigTest extends JetTestSupport {
         URL url2 = URI.create("http://another.site/" + resourceId).toURL();
         config.attachFile(url1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachFile(url2);
+        assertThrows(IllegalArgumentException.class, () -> config.attachFile(url2));
     }
 
     @Test
@@ -636,11 +598,8 @@ public class ResourceConfigTest extends JetTestSupport {
         // Given
         URL url = URI.create("http://hazelcast.org").toURL();
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachFile(url);
+        assertThrows(IllegalArgumentException.class, () -> config.attachFile(url));
     }
 
     @Test
@@ -684,11 +643,8 @@ public class ResourceConfigTest extends JetTestSupport {
         String path2 = createFile("path/to/another/" + resourceId).toString();
         config.attachFile(path1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachFile(path2);
+        assertThrows(IllegalArgumentException.class, () -> config.attachFile(path2));
     }
 
     @Test
@@ -759,11 +715,8 @@ public class ResourceConfigTest extends JetTestSupport {
         File file2 = createFile("path/to/another/" + resourceId);
         config.attachFile(file1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachFile(file2);
+        assertThrows(IllegalArgumentException.class, () -> config.attachFile(file2));
     }
 
     @Test
@@ -850,11 +803,8 @@ public class ResourceConfigTest extends JetTestSupport {
         URL url2 = createDirectory("path/to/another/dir").toURI().toURL();
         config.attachDirectory(url1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachDirectory(url2);
+        assertThrows(IllegalArgumentException.class, () -> config.attachDirectory(url2));
     }
 
     @Test
@@ -911,11 +861,8 @@ public class ResourceConfigTest extends JetTestSupport {
         String path2 = createDirectory("path/to/another/dir").toString();
         config.attachDirectory(path1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachDirectory(path2);
+        assertThrows(IllegalArgumentException.class, () -> config.attachDirectory(path2));
     }
 
     @Test
@@ -986,11 +933,8 @@ public class ResourceConfigTest extends JetTestSupport {
         File dir2 = createDirectory("path/to/another/" + resourceId);
         config.attachDirectory(dir1);
 
-        // Then
-        expectedException.expect(IllegalArgumentException.class);
-
         // When
-        config.attachDirectory(dir2);
+        assertThrows(IllegalArgumentException.class, () -> config.attachDirectory(dir2));
     }
 
     @Test
