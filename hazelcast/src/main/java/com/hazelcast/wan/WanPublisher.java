@@ -83,4 +83,14 @@ public interface WanPublisher<T> {
      * @param eventObject the replication backup event
      */
     void publishReplicationEventBackup(WanEvent<T> eventObject);
+
+    /**
+     * Republishes the {@code eventObject} WAN replication backup event.
+     * Only used for data structures which have republishing enabled.
+     *
+     * @param eventObject the replication backup event
+     */
+    default void publishRepublishedReplicationEventBackup(WanEvent<T> eventObject) {
+        publishReplicationEventBackup(eventObject);
+    }
 }
