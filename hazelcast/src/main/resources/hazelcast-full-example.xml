@@ -4117,7 +4117,7 @@
     -->
     <!-- Enables or disables TPC-aware mode. -->
     <tpc enabled="true">
-        <!-- Configures the number of eventloops. This deaults to available processor count. -->
+        <!-- Configures the number of eventloops. This defaults to available processor count. -->
         <eventloop-count>12</eventloop-count>
     </tpc>
 
