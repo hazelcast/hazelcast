@@ -60,8 +60,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -238,9 +241,9 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-            assertTrueEventually(() -> {
-                assertThat(collector.sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
-            });
+            assertTrueEventually(() -> assertThat(collector.getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
+        } finally {
+            shutdownAndAwaitTermination(es);
         }
     }
 
@@ -289,9 +292,11 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
 
             assertTrueEventually(() -> {
-                assertThat(collector.sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
-                assertThat(collector.sourceRecordPollAvgTime).isNotEqualTo(0L);
+                assertThat(collector.getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT);
+                assertThat(collector.getSourceRecordPollAvgTime()).isNotEqualTo(0L);
             });
+        } finally {
+            shutdownAndAwaitTermination(es);
         }
     }
 
@@ -377,6 +382,17 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         }
     }
 
+    private void shutdownAndAwaitTermination(ExecutorService executorService) {
+        try {
+            executorService.shutdown();
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                // Cancel currently executing tasks
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException ignored) {
+        }
+    }
+
     private URL getDataGenConnectorURL() throws URISyntaxException {
         ClassLoader classLoader = getClass().getClassLoader();
         final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-datagen-0.6.0.zip";
@@ -446,16 +462,24 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
     }
 
     private static class KafkaMetricsCollector implements MetricsCollector {
-        private long sourceRecordPollTotal;
-        private long sourceRecordPollAvgTime;
+        private final AtomicLong sourceRecordPollTotal = new AtomicLong();
+        private final AtomicLong sourceRecordPollAvgTime = new AtomicLong();
+
+        public Long getSourceRecordPollTotal() {
+            return sourceRecordPollTotal.get();
+        }
+
+        public Long getSourceRecordPollAvgTime() {
+            return sourceRecordPollAvgTime.get();
+        }
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
             String name = descriptor.toString();
             if (name.contains("sourceRecordPollTotalAvgTime")) {
-                sourceRecordPollAvgTime += value;
+                sourceRecordPollAvgTime.addAndGet(value);
             } else if (name.contains("sourceRecordPollTotal")) {
-                sourceRecordPollTotal += value;
+                sourceRecordPollTotal.addAndGet(value);
             }
         }
 
