@@ -220,7 +220,8 @@ public enum PhoneHomeMetrics {
     RESTS_GET_MEMBER_READY_COUNT("restsgtmrdct"),
     RESTS_GET_MEMBER_HEALTH_COUNT("restsgtmhtlct"),
     UCN_ENABLED("ucnenabled"),
-    UCN_NAMESPACE_COUNT("ucncount");
+    UCN_NAMESPACE_COUNT("ucncount"),
+    V_CPU_COUNT("vcpuct");
 
     private final String query;
 
