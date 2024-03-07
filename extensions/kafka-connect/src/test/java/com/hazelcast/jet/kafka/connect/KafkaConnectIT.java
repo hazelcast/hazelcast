@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -94,6 +95,27 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
     public static final int ITEM_COUNT = 1_000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIT.class);
+
+    @Test
+    public void test_non_serializable() {
+        assertThatThrownBy(() -> {
+            Pipeline.create()
+                    .readFrom(connect(new Properties(), new NonSerializableMapping()))
+                    .withIngestionTimestamps()
+                    .writeTo(Sinks.logger());
+        })
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("\"projectionFn\" must be serializable");
+    }
+    private static class NonSerializableMapping implements FunctionEx<SourceRecord, Object> {
+        @SuppressWarnings("unused")
+        private final Object nonSerializableField = new Object();
+
+        @Override
+        public Object applyEx(SourceRecord sourceRecord) throws Exception {
+            return sourceRecord;
+        }
+    }
 
     @Test
     public void test_reading_without_timestamps() throws URISyntaxException {
