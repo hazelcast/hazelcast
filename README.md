@@ -335,7 +335,7 @@ trigger the build using special comments. These are the phrases you may
 see used in the comments on your PR:
 
 * `run-lab-run` - run the default PR builder
-* `run-lts-compilers` - compiles the sources with JDK 11 and JDK 17 (without running tests)
+* `run-lts-compilers` - compiles the sources with JDK 17 and JDK 21 (without running tests)
 * `run-ee-compile` - compile hazelcast-enterprise with this PR
 * `run-ee-tests` - run tests from hazelcast-enterprise with this PR
 * `run-windows` - run the tests on a Windows machine (HighFive is not supported here)
