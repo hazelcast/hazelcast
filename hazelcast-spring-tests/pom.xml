@@ -135,21 +135,6 @@
                 </dependency>
             </dependencies>
         </profile>
-        <profile>
-            <id>spring-4</id>
-            <properties>
-                <org.springframework.version>4.3.23.RELEASE</org.springframework.version>
-                <jsr250.api.version>1.0</jsr250.api.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>jsr250-api</artifactId>
-                    <version>${jsr250.api.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
 
 </project>
