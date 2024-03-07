@@ -30,11 +30,11 @@ import com.hazelcast.security.IPermissionPolicy;
 import com.hazelcast.security.SecurityInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.List;
@@ -51,15 +51,15 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class SecureApplicationContextTest {
 
-    @Resource
+    @Autowired
     private Config config;
 
     private SecurityConfig securityConfig;
 
-    @Resource
+    @Autowired
     private ICredentialsFactory dummyCredentialsFactory;
 
-    @Resource
+    @Autowired
     private IPermissionPolicy dummyPermissionPolicy;
 
     @Before

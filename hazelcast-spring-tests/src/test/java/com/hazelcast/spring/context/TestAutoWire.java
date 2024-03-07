@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Tests if hazelcast instance can be used/injected in a class with an {@code @Autowired}
  * annotation. This test specifically for {@code @Autowired} case, not other annotations like
- * {@code @Resource}. Because they are using different annotation bean post processors so they may
+ * {@code @Autowired
  * behave differently.
  * <p>
  * {@link org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor}

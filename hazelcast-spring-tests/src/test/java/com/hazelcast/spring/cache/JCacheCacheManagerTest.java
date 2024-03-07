@@ -21,7 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -44,16 +43,16 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class JCacheCacheManagerTest {
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
     @Autowired
     private IJCacheDummyBean bean;
 
-    @Resource(name = "cacheManager")
+    @Autowired
     private JCacheCacheManager springCacheManager;
 
-    @Resource(name = "cacheManager2")
+    @Autowired
     private CacheManager cacheManager2;
 
     @BeforeClass

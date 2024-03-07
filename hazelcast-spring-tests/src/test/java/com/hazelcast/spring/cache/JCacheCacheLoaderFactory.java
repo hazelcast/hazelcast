@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
-import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheLoader;
@@ -60,7 +60,7 @@ public class JCacheCacheLoaderFactory
         return dummyBean;
     }
 
-    @Resource(name = "dummy")
+    @Autowired
     public void setDummyBean(IJCacheDummyBean dummyBean) {
         INJECTED_DUMMY_BEAN.set(dummyBean);
         this.dummyBean = dummyBean;

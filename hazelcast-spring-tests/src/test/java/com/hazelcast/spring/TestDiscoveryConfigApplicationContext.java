@@ -25,13 +25,13 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.List;
@@ -47,7 +47,7 @@ public class TestDiscoveryConfigApplicationContext {
 
     private Config config;
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
     @BeforeClass

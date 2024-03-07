@@ -172,7 +172,6 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.WanPublisherState;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -225,69 +224,69 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     private Config config;
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
-    @Resource(name = "jetService")
+    @Autowired
     private JetService jet;
 
-    @Resource(name = "map1")
+    @Autowired
     private IMap<Object, Object> map1;
 
-    @Resource(name = "map2")
+    @Autowired
     private IMap<Object, Object> map2;
 
-    @Resource(name = "multiMap")
+    @Autowired
     private MultiMap multiMap;
 
-    @Resource(name = "replicatedMap")
+    @Autowired
     private ReplicatedMap replicatedMap;
 
-    @Resource(name = "queue")
+    @Autowired
     private IQueue queue;
 
-    @Resource(name = "topic")
+    @Autowired
     private ITopic topic;
 
-    @Resource(name = "set")
+    @Autowired
     private ISet set;
 
-    @Resource(name = "list")
+    @Autowired
     private IList list;
 
-    @Resource(name = "executorService")
+    @Autowired
     private ExecutorService executorService;
 
-    @Resource(name = "flakeIdGenerator")
+    @Autowired
     private FlakeIdGenerator flakeIdGenerator;
 
-    @Resource(name = "atomicLong")
+    @Autowired
     private IAtomicLong atomicLong;
 
-    @Resource(name = "atomicReference")
+    @Autowired
     private IAtomicReference atomicReference;
 
-    @Resource(name = "countDownLatch")
+    @Autowired
     private ICountDownLatch countDownLatch;
 
-    @Resource(name = "semaphore")
+    @Autowired
     private ISemaphore semaphore;
 
-    @Resource(name = "lock")
+    @Autowired
     private FencedLock lock;
 
-    @Resource(name = "dummyMapStore")
+    @Autowired
     private MapStore dummyMapStore;
 
     @Autowired
     private MapStoreFactory dummyMapStoreFactory;
 
-    @Resource(name = "dummyQueueStore")
+    @Autowired
     private QueueStore dummyQueueStore;
     @Autowired
     private QueueStoreFactory dummyQueueStoreFactory;
 
-    @Resource(name = "dummyRingbufferStore")
+    @Autowired
     private RingbufferStore dummyRingbufferStore;
     @Autowired
     private RingbufferStoreFactory dummyRingbufferStoreFactory;
@@ -301,16 +300,16 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Autowired
     private EntryListener entryListener;
 
-    @Resource
+    @Autowired
     private SSLContextFactory sslContextFactory;
 
-    @Resource
+    @Autowired
     private SocketInterceptor socketInterceptor;
 
-    @Resource
+    @Autowired
     private StreamSerializer dummySerializer;
 
-    @Resource(name = "pnCounter")
+    @Autowired
     private PNCounter pnCounter;
 
     @BeforeClass

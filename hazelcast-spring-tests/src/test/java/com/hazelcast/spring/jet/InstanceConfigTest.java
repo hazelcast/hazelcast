@@ -20,11 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 
@@ -33,7 +33,7 @@ import org.springframework.test.context.ContextConfiguration;
 @Category(QuickTest.class)
 public class InstanceConfigTest extends HazelcastTestSupport {
 
-    @Resource(name = "config")
+    @Autowired
     Config config;
 
     @Test

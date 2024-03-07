@@ -31,12 +31,12 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.Arrays;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestAdvancedNetworkApplicationContext {
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
     @BeforeClass

@@ -32,7 +32,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -61,7 +60,7 @@ public class TestJCache {
     @Autowired
     private ApplicationContext context;
 
-    @Resource(name = "instance1")
+    @Autowired
     private HazelcastInstance instance1;
 
     @BeforeClass

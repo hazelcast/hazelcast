@@ -19,12 +19,12 @@ package com.hazelcast.spring;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.Assert.assertNotNull;
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class TestEmptyApplicationContext {
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
     @BeforeClass

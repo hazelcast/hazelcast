@@ -26,7 +26,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -49,7 +48,7 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class TestCacheManager extends HazelcastTestSupport {
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
     @Autowired

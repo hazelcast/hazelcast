@@ -74,13 +74,13 @@ import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.nio.ByteOrder;
@@ -106,118 +106,156 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestClientApplicationContext {
 
-    @Resource(name = "client")
+    @Autowired
+    @Qualifier(value = "client")
     private HazelcastClientProxy client;
 
-    @Resource(name = "client2")
+    @Autowired
+    @Qualifier(value = "client2")
     private HazelcastClientProxy client2;
 
-    @Resource(name = "client3")
+    @Autowired
+    @Qualifier(value = "client3")
     private HazelcastClientProxy client3;
 
-    @Resource(name = "client4")
+    @Autowired
+    @Qualifier(value = "client4")
     private HazelcastClientProxy client4;
 
-    @Resource(name = "client5")
+    @Autowired
+    @Qualifier(value = "client5")
     private HazelcastClientProxy client5;
 
-    @Resource(name = "client6")
+    @Autowired
+    @Qualifier(value = "client6")
     private HazelcastClientProxy client6;
 
-    @Resource(name = "client7-empty-serialization-config")
+    @Autowired
+    @Qualifier(value = "client7-empty-serialization-config")
     private HazelcastClientProxy client7;
 
-    @Resource(name = "client8")
+    @Autowired
+    @Qualifier(value = "client8")
     private HazelcastClientProxy client8;
 
-    @Resource(name = "client9-user-code-deployment-test")
+    @Autowired
+    @Qualifier(value = "client9-user-code-deployment-test")
     private HazelcastClientProxy userCodeDeploymentTestClient;
 
-    @Resource(name = "client10-flakeIdGenerator")
+    @Autowired
+    @Qualifier(value = "client10-flakeIdGenerator")
     private HazelcastClientProxy client10;
 
-    @Resource(name = "client11-icmp-ping")
+    @Autowired
+    @Qualifier(value = "client11-icmp-ping")
     private HazelcastClientProxy icmpPingTestClient;
 
-    @Resource(name = "client12-hazelcast-cloud")
+    @Autowired
+    @Qualifier(value = "client12-hazelcast-cloud")
     private HazelcastClientProxy hazelcastCloudClient;
 
-    @Resource(name = "client13-exponential-connection-retry")
+    @Autowired
+    @Qualifier(value = "client13-exponential-connection-retry")
     private HazelcastClientProxy connectionRetryClient;
 
-    @Resource(name = "client14-reliable-topic")
+    @Autowired
+    @Qualifier(value = "client14-reliable-topic")
     private HazelcastClientProxy hazelcastReliableTopic;
 
-    @Resource(name = "client16-name-and-labels")
+    @Autowired
+    @Qualifier(value = "client16-name-and-labels")
     private HazelcastClientProxy namedClient;
 
-    @Resource(name = "client17-backupAckToClient")
+    @Autowired
+    @Qualifier(value = "client17-backupAckToClient")
     private HazelcastClientProxy backupAckToClient;
 
-    @Resource(name = "client18-metrics")
+    @Autowired
+    @Qualifier(value = "client18-metrics")
     private HazelcastClientProxy metricsClient;
 
-    @Resource(name = "client19-instance-tracking")
+    @Autowired
+    @Qualifier(value = "client19-instance-tracking")
     private HazelcastClientProxy instanceTrackingClient;
 
-    @Resource(name = "client20-native-memory")
+    @Autowired
+    @Qualifier(value = "client20-native-memory")
     private HazelcastClientProxy nativeMemoryClient;
 
-    @Resource(name = "client21-persistent-memory-system-memory")
+    @Autowired
+    @Qualifier(value = "client21-persistent-memory-system-memory")
     private HazelcastClientProxy pmemSystemMemoryClient;
 
-    @Resource(name = "client22-with-overridden-default-serializers")
+    @Autowired
+    @Qualifier(value = "client22-with-overridden-default-serializers")
     private HazelcastClientProxy clientWithOverriddenDefaultSerializers;
 
-    @Resource(name = "client23-with-compact-serialization")
+    @Autowired
+    @Qualifier(value = "client23-with-compact-serialization")
     private HazelcastClientProxy clientWithCompactSerialization;
 
-    @Resource(name = "client24-with-sql")
+    @Autowired
+    @Qualifier(value = "client24-with-sql")
     private HazelcastClientProxy clientWithSql;
 
-    @Resource(name = "client25-with-tpc")
+    @Autowired
+    @Qualifier(value = "client25-with-tpc")
     private HazelcastClientProxy clientWithTpc;
 
-    @Resource(name = "instance")
+    @Autowired
+    @Qualifier(value = "instance")
     private HazelcastInstance instance;
 
-    @Resource(name = "map1")
+    @Autowired
+    @Qualifier(value = "map1")
     private IMap<Object, Object> map1;
 
-    @Resource(name = "map2")
+    @Autowired
+    @Qualifier(value = "map2")
     private IMap<Object, Object> map2;
 
-    @Resource(name = "multiMap")
+    @Autowired
+    @Qualifier(value = "multiMap")
     private MultiMap multiMap;
 
-    @Resource(name = "queue")
+    @Autowired
+    @Qualifier(value = "queue")
     private IQueue queue;
 
-    @Resource(name = "topic")
+    @Autowired
+    @Qualifier(value = "topic")
     private ITopic topic;
 
-    @Resource(name = "set")
+    @Autowired
+    @Qualifier(value = "set")
     private ISet set;
 
-    @Resource(name = "list")
+    @Autowired
+    @Qualifier(value = "list")
     private IList list;
 
-    @Resource(name = "executorService")
+    @Autowired
+    @Qualifier(value = "executorService")
     private ExecutorService executorService;
 
-    @Resource(name = "atomicLong")
+    @Autowired
+    @Qualifier(value = "atomicLong")
     private IAtomicLong atomicLong;
 
-    @Resource(name = "atomicReference")
+    @Autowired
+    @Qualifier(value = "atomicReference")
     private IAtomicReference atomicReference;
 
-    @Resource(name = "countDownLatch")
+    @Autowired
+    @Qualifier(value = "countDownLatch")
     private ICountDownLatch countDownLatch;
 
-    @Resource(name = "semaphore")
+    @Autowired
+    @Qualifier(value = "semaphore")
     private ISemaphore semaphore;
 
-    @Resource(name = "reliableTopic")
+    @Autowired
+    @Qualifier(value = "reliableTopic")
     private ITopic reliableTopic;
 
     @Autowired

@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
-import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,7 +35,7 @@ public class JCachePartitionLostListener implements HazelcastInstanceAware, Node
 
     public static JCachePartitionLostListener instance;
 
-    @Resource(name = "dummy")
+    @Autowired
     private IJCacheDummyBean dummyBean;
 
     public JCachePartitionLostListener() {

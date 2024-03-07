@@ -22,10 +22,10 @@ import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.io.File;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestPersistenceEncryptionKeyStoreApplicationContext {
 
-    @Resource(name = "theConfig")
+    @Autowired
     private Config config;
 
     @Test

@@ -23,11 +23,11 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.concurrent.CompletionException;
@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 @ContextConfiguration(locations = {"application-context-jet-service.xml"})
 public class SpringServiceFactoriesTest {
 
-    @Resource(name = "jet")
+    @Autowired
     private JetService jet;
 
     @BeforeClass

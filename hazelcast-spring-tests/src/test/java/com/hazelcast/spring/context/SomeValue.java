@@ -19,16 +19,14 @@ package com.hazelcast.spring.context;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.io.IOException;
-
 @SpringAware
-public class SomeValue implements DataSerializable, ApplicationContextAware {
+public class SomeValue implements DataSerializable, ApplicationContextAware, InitializingBean {
 
     transient ApplicationContext context;
 
@@ -46,8 +44,8 @@ public class SomeValue implements DataSerializable, ApplicationContextAware {
         this.someBean = someBean;
     }
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void afterPropertiesSet() {
         init = true;
     }
 
@@ -82,10 +80,10 @@ public class SomeValue implements DataSerializable, ApplicationContextAware {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
     }
 }

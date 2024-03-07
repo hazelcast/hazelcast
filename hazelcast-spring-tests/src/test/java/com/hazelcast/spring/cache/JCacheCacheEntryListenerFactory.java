@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
-import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryListener;
@@ -36,7 +36,7 @@ public class JCacheCacheEntryListenerFactory implements Factory<CacheEntryListen
 
     public static JCacheCacheEntryListenerFactory instance;
 
-    @Resource(name = "dummy")
+    @Autowired
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheEntryListenerFactory() {

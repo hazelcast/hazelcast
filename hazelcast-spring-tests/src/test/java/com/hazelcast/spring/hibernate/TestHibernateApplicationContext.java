@@ -23,12 +23,12 @@ import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.net.InetSocketAddress;
@@ -42,16 +42,16 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class TestHibernateApplicationContext {
 
-    @Resource(name = "instance")
+    @Autowired
     private HazelcastInstance instance;
 
-    @Resource(name = "regionFactory")
+    @Autowired
     private HazelcastCacheRegionFactory regionFactory;
 
-    @Resource(name = "localRegionFactory")
+    @Autowired
     private HazelcastLocalCacheRegionFactory localRegionFactory;
 
-    @Resource(name = "localRegionFactory2")
+    @Autowired
     private HazelcastLocalCacheRegionFactory localRegionFactory2;
 
     @BeforeClass

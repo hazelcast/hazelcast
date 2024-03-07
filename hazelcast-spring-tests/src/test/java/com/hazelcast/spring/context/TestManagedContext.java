@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,10 +47,10 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestManagedContext {
 
-    @Resource(name = "instance1")
+    @Autowired
     private HazelcastInstance instance1;
 
-    @Resource(name = "instance2")
+    @Autowired
     private HazelcastInstance instance2;
 
     @Autowired
@@ -102,7 +101,7 @@ public class TestManagedContext {
     @Test
     public void testRunnableTask() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
 
         instance1.getExecutorService("test").submitToMember(new SomeRunnableTask(),
                 instance2.getCluster().getLocalMember(), new ExecutionCallback() {

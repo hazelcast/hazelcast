@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spring.context.SpringAware;
-import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
@@ -38,7 +38,7 @@ public class JCacheCacheLoader
 
     public static JCacheCacheLoader instance;
 
-    @Resource(name = "dummy")
+    @Autowired
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheLoader() {

@@ -25,12 +25,12 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import jakarta.annotation.Resource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.io.File;
@@ -46,10 +46,10 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestPersistenceEncryptionVaultApplicationContext {
 
-    @Resource(name = "theConfig")
+    @Autowired
     private Config config;
 
-    @Resource
+    @Autowired
     private SSLContextFactory sslContextFactory;
 
     @BeforeClass
