@@ -19,9 +19,9 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
@@ -76,5 +76,10 @@ public class InitializeDistributedObjectOperation extends Operation implements I
     @Override
     public int getClassId() {
         return SpiDataSerializerHook.DIST_OBJECT_INIT;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", name=").append(name);
     }
 }
