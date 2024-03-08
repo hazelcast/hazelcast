@@ -64,7 +64,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     private final Address thisAddress;
     private final OperationServiceImpl operationService;
-    private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
+    private final AtomicBoolean singleRunPermit = new AtomicBoolean();
     private final AtomicInteger lostPartitionCounter = new AtomicInteger();
     private final AtomicInteger nextExpiryQueueToScanIndex = new AtomicInteger();
 

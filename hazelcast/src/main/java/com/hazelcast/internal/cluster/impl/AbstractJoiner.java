@@ -74,7 +74,7 @@ public abstract class AbstractJoiner
     protected final ClusterJoinManager clusterJoinManager;
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
-    private final AtomicInteger tryCount = new AtomicInteger(0);
+    private final AtomicInteger tryCount = new AtomicInteger();
 
     private final long mergeNextRunDelayMs;
     private volatile Address targetAddress;

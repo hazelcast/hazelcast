@@ -253,7 +253,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
     private class QueryCacheAdditionListener implements EntryAddedListener {
 
-        private final AtomicInteger addedEventCount = new AtomicInteger(0);
+        private final AtomicInteger addedEventCount = new AtomicInteger();
 
         QueryCacheAdditionListener() {
         }
@@ -270,7 +270,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
     private class QueryCacheRemovalListener implements EntryRemovedListener {
 
-        private final AtomicInteger removedEventCount = new AtomicInteger(0);
+        private final AtomicInteger removedEventCount = new AtomicInteger();
 
         QueryCacheRemovalListener() {
         }

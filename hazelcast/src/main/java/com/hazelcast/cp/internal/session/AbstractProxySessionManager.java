@@ -53,7 +53,7 @@ public abstract class AbstractProxySessionManager {
     private final ConcurrentMap<RaftGroupId, Object> mutexes = new ConcurrentHashMap<>();
     private final ConcurrentMap<RaftGroupId, SessionState> sessions = new ConcurrentHashMap<>();
     private final ConcurrentMap<BiTuple<RaftGroupId, Long>, Long> threadIds = new ConcurrentHashMap<>();
-    private final AtomicBoolean scheduleHeartbeat = new AtomicBoolean(false);
+    private final AtomicBoolean scheduleHeartbeat = new AtomicBoolean();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean running = true;
 

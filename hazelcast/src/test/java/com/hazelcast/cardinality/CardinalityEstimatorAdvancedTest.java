@@ -99,8 +99,8 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
             for (int i = 0; i < total / parallel; i++) {
                 final HazelcastInstance[] instances = new HazelcastInstance[parallel];
                 final CountDownLatch countDownLatch = new CountDownLatch(parallel);
-                final AtomicInteger counter = new AtomicInteger(0);
-                final AtomicInteger exceptionCount = new AtomicInteger(0);
+                final AtomicInteger counter = new AtomicInteger();
+                final AtomicInteger exceptionCount = new AtomicInteger();
                 for (int j = 0; j < parallel; j++) {
                     final int id = j;
                     ex.execute(() -> {

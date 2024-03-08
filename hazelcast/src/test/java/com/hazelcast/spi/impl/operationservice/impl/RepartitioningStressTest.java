@@ -261,7 +261,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             this.map = map;
             this.values = new AtomicInteger[itemCount];
             for (int i = 0; i < itemCount; i++) {
-                this.values[i] = new AtomicInteger(0);
+                this.values[i] = new AtomicInteger();
             }
         }
 

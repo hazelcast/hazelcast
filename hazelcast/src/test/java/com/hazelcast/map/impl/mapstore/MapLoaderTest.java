@@ -550,7 +550,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     @Test
     public void testGetAll_putsLoadedItemsToIMap() {
         Integer[] requestedKeys = {1, 2, 3};
-        AtomicInteger loadedKeysCounter = new AtomicInteger(0);
+        AtomicInteger loadedKeysCounter = new AtomicInteger();
         MapStore<Integer, Integer> mapStore = createMapLoader(loadedKeysCounter);
 
         IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
@@ -775,7 +775,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<>();
-        private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
+        private AtomicInteger loadAllKeysCallCount = new AtomicInteger();
 
         public SampleIndexableObjectMapLoader() {
             for (int i = 0; i < 10; i++) {

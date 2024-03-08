@@ -72,7 +72,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         }
         SqlTestSupport.createMapping(instances[0], MAP_NAME, Integer.class, Integer.class);
         map = instances[0].getMap(MAP_NAME);
-        mutatorException = new AtomicReference<>(null);
+        mutatorException = new AtomicReference<>();
         progress = new AtomicInteger();
     }
 

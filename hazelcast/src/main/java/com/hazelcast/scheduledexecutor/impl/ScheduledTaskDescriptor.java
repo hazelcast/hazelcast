@@ -48,7 +48,7 @@ public class ScheduledTaskDescriptor
 
     private TaskDefinition definition;
 
-    private final AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
+    private final AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>();
 
     private transient volatile ScheduledFuture<?> future;
 

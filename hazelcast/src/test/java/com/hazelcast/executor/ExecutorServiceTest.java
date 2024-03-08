@@ -374,7 +374,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testSubmitToKeyOwnerRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-        final AtomicInteger nullResponseCount = new AtomicInteger(0);
+        final AtomicInteger nullResponseCount = new AtomicInteger();
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
         ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
             public void onResponse(Object response) {
@@ -405,7 +405,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testSubmitToMemberRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-        final AtomicInteger nullResponseCount = new AtomicInteger(0);
+        final AtomicInteger nullResponseCount = new AtomicInteger();
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
         ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
             public void onResponse(Object response) {
@@ -460,7 +460,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testSubmitToAllMembersRunnable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-        final AtomicInteger nullResponseCount = new AtomicInteger(0);
+        final AtomicInteger nullResponseCount = new AtomicInteger();
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT * NODE_COUNT);
         MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
@@ -601,7 +601,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testSubmitToMembersCallable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicInteger count = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(NODE_COUNT);
         MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
@@ -637,7 +637,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testSubmitToAllMembersCallable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicInteger count = new AtomicInteger();
         final CountDownLatch countDownLatch = new CountDownLatch(NODE_COUNT * NODE_COUNT);
         MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {

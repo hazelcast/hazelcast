@@ -63,7 +63,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
         final int itemCount = 1000;
         final String mapName = randomMapName();
 
-        final AtomicBoolean breakMe = new AtomicBoolean(false);
+        final AtomicBoolean breakMe = new AtomicBoolean();
 
         final Config config = createNewConfig(mapName, new BrokenLoadSimpleStore(breakMe));
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);

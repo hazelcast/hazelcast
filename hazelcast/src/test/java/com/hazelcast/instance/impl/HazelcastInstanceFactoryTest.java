@@ -174,7 +174,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             public NodeExtension createNodeExtension(Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
                 doAnswer(new Answer() {
-                    final AtomicBoolean throwException = new AtomicBoolean(false);
+                    final AtomicBoolean throwException = new AtomicBoolean();
 
                     @Override
                     public Object answer(InvocationOnMock invocation) throws Throwable {

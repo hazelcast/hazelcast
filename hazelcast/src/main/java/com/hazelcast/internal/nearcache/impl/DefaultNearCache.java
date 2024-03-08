@@ -224,7 +224,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     private class ExpirationTask implements Runnable {
 
-        private final AtomicBoolean expirationInProgress = new AtomicBoolean(false);
+        private final AtomicBoolean expirationInProgress = new AtomicBoolean();
 
         @Override
         public void run() {

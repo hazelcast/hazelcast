@@ -96,7 +96,7 @@ public class MapListenerTest extends HazelcastTestSupport {
             EntryUpdatedListener<String, Person>, HazelcastInstanceAware {
 
         private HazelcastInstance hazelcastInstance;
-        public AtomicInteger nulls = new AtomicInteger(0);
+        public AtomicInteger nulls = new AtomicInteger();
 
         @Override
         public void entryAdded(EntryEvent<String, Person> event) {

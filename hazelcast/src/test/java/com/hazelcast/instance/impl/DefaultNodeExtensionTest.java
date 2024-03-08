@@ -186,7 +186,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersionListener_invokedWithNodeCodebaseVersion_whenClusterVersionIsNull() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicBoolean failed = new AtomicBoolean(false);
+        final AtomicBoolean failed = new AtomicBoolean();
         ClusterVersionListener listener = newVersion -> {
             if (!newVersion.equals(nodeVersion.asVersion())) {
                 failed.set(true);
@@ -201,7 +201,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         // override initial cluster version
         System.setProperty(ClusterProperty.INIT_CLUSTER_VERSION.getName(), "2.1.7");
         final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicBoolean failed = new AtomicBoolean(false);
+        final AtomicBoolean failed = new AtomicBoolean();
         ClusterVersionListener listener = newVersion -> {
             if (!newVersion.equals(Version.of("2.1.7"))) {
                 failed.set(true);

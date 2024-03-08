@@ -64,7 +64,7 @@ public final class HazelcastBootstrap {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastBootstrap.class);
 
-    private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
+    private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean();
 
     private HazelcastBootstrap() {
     }

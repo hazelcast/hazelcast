@@ -70,8 +70,8 @@ public class ClientSemaphoreThreadedTest {
     public void concurrent_trySemaphoreTest(final boolean tryWithTimeOut) {
         final ISemaphore semaphore = client.getCPSubsystem().getSemaphore(randomString());
         semaphore.init(1);
-        final AtomicInteger upTotal = new AtomicInteger(0);
-        final AtomicInteger downTotal = new AtomicInteger(0);
+        final AtomicInteger upTotal = new AtomicInteger();
+        final AtomicInteger downTotal = new AtomicInteger();
 
         final SemaphoreTestThread[] threads = new SemaphoreTestThread[8];
         for (int i = 0; i < threads.length; i++) {

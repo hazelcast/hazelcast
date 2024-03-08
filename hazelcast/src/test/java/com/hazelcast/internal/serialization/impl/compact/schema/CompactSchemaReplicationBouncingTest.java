@@ -80,7 +80,7 @@ public class CompactSchemaReplicationBouncingTest extends HazelcastTestSupport {
 
     static class NewSchemaRegisterer implements Runnable {
 
-        private final AtomicInteger counter = new AtomicInteger(0);
+        private final AtomicInteger counter = new AtomicInteger();
         private final HazelcastInstance driver;
 
         NewSchemaRegisterer(HazelcastInstance driver) {

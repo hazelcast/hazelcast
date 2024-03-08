@@ -53,7 +53,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     protected final SerializationService serializationService;
     protected final ReplicatedMapService replicatedMapService;
     protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
-    protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
+    protected final AtomicBoolean isLoaded = new AtomicBoolean();
 
     private final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
 

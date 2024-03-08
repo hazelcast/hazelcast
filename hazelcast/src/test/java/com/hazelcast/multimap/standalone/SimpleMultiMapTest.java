@@ -55,9 +55,9 @@ public final class SimpleMultiMapTest {
         boolean load = init(args);
         ExecutorService es = newFixedThreadPool(threadCount);
         final MultiMap<String, byte[]> map = instance.getMultiMap("default");
-        final AtomicInteger gets = new AtomicInteger(0);
-        final AtomicInteger puts = new AtomicInteger(0);
-        final AtomicInteger removes = new AtomicInteger(0);
+        final AtomicInteger gets = new AtomicInteger();
+        final AtomicInteger puts = new AtomicInteger();
+        final AtomicInteger removes = new AtomicInteger();
         load(load, es, map);
 
         for (int i = 0; i < threadCount; i++) {

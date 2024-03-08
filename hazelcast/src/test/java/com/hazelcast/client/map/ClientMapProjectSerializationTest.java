@@ -74,7 +74,7 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
 
         private String value;
 
-        private static AtomicInteger readCalled = new AtomicInteger(0);
+        private static AtomicInteger readCalled = new AtomicInteger();
 
         OnlyDeserializedTwiceObject() {
         }

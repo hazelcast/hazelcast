@@ -331,7 +331,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testSubmitToKeyOwnerRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-        final AtomicInteger nullResponseCount = new AtomicInteger(0);
+        final AtomicInteger nullResponseCount = new AtomicInteger();
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
         Consumer<Object> callback = response -> {
             if (response == null) {

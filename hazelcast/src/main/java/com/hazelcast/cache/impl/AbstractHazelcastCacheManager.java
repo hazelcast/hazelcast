@@ -75,8 +75,8 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
     protected final URI uri;
     protected final Properties properties;
 
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private final AtomicBoolean isClosed = new AtomicBoolean();
+    private final AtomicBoolean isDestroyed = new AtomicBoolean();
 
     private final WeakReference<ClassLoader> classLoaderReference;
     private final String cacheNamePrefix;
