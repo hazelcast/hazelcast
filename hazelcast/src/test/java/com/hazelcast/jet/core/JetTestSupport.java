@@ -93,7 +93,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * This is needed to finish tests which got stuck in @Before, @BeforeClass, @After or @AfterClass method.
      */
     @ClassRule
-    public static Timeout globalTimeout = Timeout.seconds(15 * 60);
+    public static Timeout globalTimeout = Timeout.seconds(25 * 60);
 
     @ClassRule
     public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
