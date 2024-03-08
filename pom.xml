@@ -729,7 +729,6 @@
                                     <exclude>META-INF/*.RSA</exclude>
                                     <exclude>META-INF/LICENSE</exclude>
                                     <exclude>META-INF/MANIFEST.MF</exclude>
-                                    <exclude>META-INF/THIRD-PARTY.txt</exclude>
                                     <exclude>META-INF/DEPENDENCIES</exclude>
                                     <exclude>overview.html</exclude>
                                 </excludes>
