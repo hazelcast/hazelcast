@@ -974,14 +974,9 @@ hazelcast-client:
   #     Sets the resubmission mode for failing queries. By default, it is set to NEVER.
   sql:
     resubmission-mode: RETRY_SELECTS
-  # Configures the client for TPC, which is the next generation Hazelcast that
-  # uses thread-per-core model. TPC-aware clients will maintain connections to
-  # all cores of all cluster members. The client will route partition-specific
-  # invocations to the correct core of the correct member in the best effort
-  # basis. Configuration element's name is "tpc".
-  #
-  # It has the following sub-elements:
+  # Configures the client for thread-per-core (TPC) model using the <tpc> configuration
+  # element. TPC will only be used if both client and server have <tpc> enabled.
   # * "enabled":
-  #     Enables or disables the TPC-aware mode.
+  #     Enables or disables TPC-aware mode.
   tpc:
     enabled: true
