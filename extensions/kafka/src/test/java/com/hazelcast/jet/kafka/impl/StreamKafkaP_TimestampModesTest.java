@@ -41,7 +41,7 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
 
-    private static KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
+    private static final KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
 
     private static Properties properties;
 

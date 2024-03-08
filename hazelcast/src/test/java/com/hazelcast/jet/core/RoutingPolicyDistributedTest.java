@@ -24,10 +24,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -40,6 +38,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,8 +54,6 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
 
     private static Address address1;
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private CollectPerProcessorSink consumerSup;
 
@@ -139,8 +136,8 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
            .vertex(consumer)
            .edge(edge);
 
-        exception.expectMessage(expectedError);
-        instance().getJet().newJob(dag).join();
+        assertThatThrownBy(() -> instance().getJet().newJob(dag).join())
+                .hasMessageContaining(expectedError);
     }
 
     @Test
@@ -155,8 +152,8 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
                    .distributeTo(new Address("1.2.3.4", 9999))
                    .allToOne());
 
-        exception.expectMessage("The target member of an edge is not present in the cluster");
-        instance().getJet().newJob(dag).join();
+        assertThatThrownBy(() -> instance().getJet().newJob(dag).join())
+                .hasMessageContaining("The target member of an edge is not present in the cluster");
     }
 
     @Test

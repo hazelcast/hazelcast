@@ -28,8 +28,6 @@ import com.hazelcast.test.AssertTask;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -47,10 +45,8 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
 
     protected static HazelcastInstance instance;
     static final String JOURNALED_MAP_NAME = "journaledMap";
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     // we must use local parallelism 1 on the stages to avoid wm coalescing
     protected final Function<StreamSourceStage<Integer>, StreamStage<Integer>> withoutTimestampsFn =
@@ -118,8 +114,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         assertTrueAllTheTime(assertTask, 1);
         assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
         job.cancel();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        assertThrows(CancellationException.class, job::join);
     }
 
     private static class WatermarkCollector extends AbstractProcessor {

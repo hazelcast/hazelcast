@@ -22,10 +22,8 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +39,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollected;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -48,8 +47,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AssertionsTest extends PipelineTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void test_assertOrdered() {
@@ -60,12 +57,12 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertOrdered_should_fail() throws Throwable {
+    public void test_assertOrdered_should_fail() {
         p.readFrom(TestSources.items(4, 3, 2, 1))
          .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
@@ -87,7 +84,7 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertOrdered_not_terminal_should_fail() throws Throwable {
+    public void test_assertOrdered_not_terminal_should_fail() {
         List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
@@ -95,8 +92,8 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)))
                 .writeTo(sinkList());
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
 
         assertEquals(4, assertionSink.size());
         assertEquals(1, (int) assertionSink.get(0));
@@ -125,12 +122,12 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertAnyOrder_should_fail() throws Throwable {
+    public void test_assertAnyOrder_should_fail() {
         p.readFrom(TestSources.items(3, 2, 1))
          .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
@@ -142,21 +139,21 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertAnyOrder_duplicate_entry_only_in_source_should_fail() throws Throwable {
+    public void test_assertAnyOrder_duplicate_entry_only_in_source_should_fail() {
         p.readFrom(TestSources.items(1, 3, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3)));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
-    public void test_assertAnyOrder_duplicate_entry_only_in_assert_should_fail() throws Throwable {
+    public void test_assertAnyOrder_duplicate_entry_only_in_assert_should_fail() {
         p.readFrom(TestSources.items(1, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 3)));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
@@ -178,7 +175,7 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertAnyOrder_not_terminal_should_fail() throws Throwable {
+    public void test_assertAnyOrder_not_terminal_should_fail() {
         List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
@@ -186,13 +183,8 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)))
                 .writeTo(sinkList());
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
-
-        assertEquals(4, assertionSink.size());
-        assertEquals(3, (int) assertionSink.get(0));
-        assertEquals(2, (int) assertionSink.get(1));
-        assertEquals(1, (int) assertionSink.get(2));
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
@@ -204,12 +196,12 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertContains_should_fail() throws Throwable {
+    public void test_assertContains_should_fail() {
         p.readFrom(TestSources.items(4, 1, 2, 3))
          .apply(Assertions.assertContains(Arrays.asList(1, 3, 5)));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
@@ -231,7 +223,7 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertContains_not_terminal_should_fail() throws Throwable {
+    public void test_assertContains_not_terminal_should_fail() {
         List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
@@ -239,8 +231,8 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertContains(Arrays.asList(1, 3, 5)))
                 .writeTo(sinkList());
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
 
         assertEquals(4, assertionSink.size());
         assertEquals(4, (int) assertionSink.get(0));
@@ -258,12 +250,12 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertCollected_should_fail() throws Throwable {
+    public void test_assertCollected_should_fail() {
         p.readFrom(TestSources.items(1))
          .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
@@ -285,7 +277,7 @@ public class AssertionsTest extends PipelineTestSupport {
     }
 
     @Test
-    public void test_assertCollected_not_terminal_should_fail() throws Throwable {
+    public void test_assertCollected_not_terminal_should_fail() {
         List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
@@ -293,35 +285,35 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)))
                 .writeTo(sinkList());
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
 
         assertEquals(1, assertionSink.size());
         assertEquals(1, (int) assertionSink.get(0));
     }
 
     @Test
-    public void test_assertCollectedEventually() throws Throwable {
+    public void test_assertCollectedEventually() {
         p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
          .withoutTimestamps()
          .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '0'", c.contains(0L))));
 
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
     }
 
     @Test
-    public void test_assertCollectedEventually_should_fail() throws Throwable {
+    public void test_assertCollectedEventually_should_fail() {
         p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
          .withoutTimestamps()
          .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '1'", c.contains(1L))));
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
     }
 
     @Test
-    public void test_assertCollectedEventuallynot_terminal() throws Throwable {
+    public void test_assertCollectedEventuallynot_terminal() {
         List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
@@ -330,14 +322,14 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '0'", c.contains(0L))))
                 .writeTo(sinkList());
 
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionCompletedException.class.getName());
 
         assertFalse(assertionSink.isEmpty());
     }
 
     @Test
-    public void test_assertCollectedEventuallynot_terminal_should_fail() throws Throwable {
+    public void test_assertCollectedEventuallynot_terminal_should_fail() {
         List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
@@ -346,8 +338,8 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '1'", c.contains(1L))))
                 .writeTo(sinkList());
 
-        expectedException.expectMessage(AssertionError.class.getName());
-        executeAndPeel();
+        assertThatThrownBy(this::executeAndPeel)
+                .hasMessageContaining(AssertionError.class.getName());
 
         assertFalse(assertionSink.isEmpty());
     }

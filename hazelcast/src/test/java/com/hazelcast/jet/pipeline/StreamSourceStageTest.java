@@ -46,6 +46,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -200,8 +201,8 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         StreamStage<Entry<Object, Object>> stage = p.readFrom(Sources.mapJournal("foo", START_FROM_OLDEST))
                 .withIngestionTimestamps();
 
-        expectedException.expectMessage("This stage already has timestamps assigned to it");
-        stage.addTimestamps(o -> 0L, 0);
+        assertThatThrownBy(() -> stage.addTimestamps(o -> 0L, 0))
+                .hasMessageContaining("This stage already has timestamps assigned to it");
     }
 
     @Test
