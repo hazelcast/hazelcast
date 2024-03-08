@@ -60,9 +60,9 @@ public class TaskRunner {
         try {
             taskLifecycleLock.lock();
             if (running) {
-                logger.fine("Stopping task '" + name + "'");
+                logger.info("Stopping task '" + name + "'");
                 task.stop();
-                logger.fine("Task '" + name + "' stopped");
+                logger.info("Task '" + name + "' stopped");
             }
         } finally {
             running = false;
@@ -119,7 +119,7 @@ public class TaskRunner {
                     this.task = taskLocal;
                     running = true;
                 } else {
-                    logger.finest("No task config for task '" + name + "'");
+                    logger.info("No task config for task '" + name + "'");
                 }
             }
         } finally {

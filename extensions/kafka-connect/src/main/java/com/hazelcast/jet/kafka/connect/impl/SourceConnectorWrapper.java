@@ -115,16 +115,18 @@ public class SourceConnectorWrapper {
                 throw new HazelcastException("Cannot connect using connector " + connectorClazz, lastConnectionException);
             }
         }
-        logger.fine("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
+        logger.info("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
 
         sourceConnector = newConnectorInstance(connectorClazz);
 
         try {
             sourceConnector.initialize(new JetConnectorContext());
-            logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
+            logger.info("Starting connector '" + name + "'. Below are the propertiesFromUser");
             sourceConnector.start(currentConfig);
+            logger.info("Connector '" + name + "' started");
 
         } catch (Exception e) {
+            logger.warning("Error while starting connector", e);
             reconnectTracker.attemptFailed();
             sourceConnector.stop();
             sourceConnector = null;
@@ -133,8 +135,9 @@ public class SourceConnectorWrapper {
         }
 
         try {
-            logger.fine("Creating task runner '" + name + "'");
+            logger.info("Creating task runner '" + name + "'");
             createTaskRunner();
+            logger.info("Task runner '" + name + "' created");
         } catch (Exception e) {
             reconnectTracker.attemptFailed();
             lastConnectionException = e;
@@ -162,6 +165,7 @@ public class SourceConnectorWrapper {
             taskRunner.restartTaskIfNeeded();
             return true;
         } catch (Exception e) {
+            logger.warning("Error while restarting task", e);
             taskRunner.forceRestart();
             reconnectTracker.attemptFailed();
             lastConnectionException = e;
@@ -322,11 +326,11 @@ public class SourceConnectorWrapper {
     }
 
     public void close() {
-        logger.fine("Stopping connector '" + name + "'");
+        logger.info("Stopping connector '" + name + "'");
         taskRunner.stop();
         sourceConnector.stop();
         destroyTopic();
-        logger.fine("Connector '" + name + "' stopped");
+        logger.info("Connector '" + name + "' stopped");
     }
 
     /**
