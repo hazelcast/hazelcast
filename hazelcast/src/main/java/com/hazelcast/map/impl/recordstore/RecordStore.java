@@ -665,11 +665,15 @@ public interface RecordStore<R extends Record> {
 
     void setLocalRecordStoreStats(LocalRecordStoreStats stats);
 
-    default void beforeOperation() {
-        // no-op
+    default int beforeOperation() {
+        return -1;
     }
 
     default void afterOperation() {
+        // no-op
+    }
+
+    default void afterOperation(int threadIndex) {
         // no-op
     }
 

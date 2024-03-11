@@ -327,16 +327,16 @@ public class QueryRunner {
         return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
     }
 
-    void beforeOperation(int partitionId, String mapName) {
+    int beforeOperation(int partitionId, String mapName) {
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
-        recordStore.beforeOperation();
+        return recordStore.beforeOperation();
     }
 
-    void afterOperation(int partitionId, String mapName) {
+    void afterOperation(int partitionId, String mapName, int threadIndex) {
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
-        recordStore.afterOperation();
+        recordStore.afterOperation(threadIndex);
     }
 
 }

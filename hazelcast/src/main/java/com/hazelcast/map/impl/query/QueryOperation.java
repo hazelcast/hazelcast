@@ -286,15 +286,15 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             String mapName = query.getMapName();
             String namespace = MapService.lookupNamespace(getNodeEngine(), mapName);
             NamespaceUtil.setupNamespace(getNodeEngine(), namespace);
+            int threadIndex = queryRunner.beforeOperation(partitionId, mapName);
             try {
-                queryRunner.beforeOperation(partitionId, mapName);
                 Result result
                         = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
                 future.addResult(partitionId, result);
             } catch (Throwable ex) {
                 future.completeExceptionally(ex);
             } finally {
-                queryRunner.afterOperation(partitionId, mapName);
+                queryRunner.afterOperation(partitionId, mapName, threadIndex);
                 NamespaceUtil.cleanupNamespace(getNodeEngine(), namespace);
             }
         }

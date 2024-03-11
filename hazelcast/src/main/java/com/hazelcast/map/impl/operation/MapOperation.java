@@ -213,8 +213,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public CallStatus call() throws Exception {
-        if (this instanceof BlockingOperation) {
-            BlockingOperation blockingOperation = (BlockingOperation) this;
+        if (this instanceof BlockingOperation blockingOperation) {
             if (blockingOperation.shouldWait()) {
                 return WAIT;
             }

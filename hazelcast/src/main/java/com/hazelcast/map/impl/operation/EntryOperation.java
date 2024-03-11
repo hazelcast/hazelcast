@@ -207,11 +207,11 @@ public class EntryOperation extends LockAwareOperation
         // case we will set tieredStoreAndPartitionCompactorEnabled to
         // false if entry is in memory and flow will continue based on
         // the false value of tieredStoreAndPartitionCompactorEnabled
-        recordStore.beforeOperation();
+        int threadIndex = recordStore.beforeOperation();
         if (recordStore.existInMemory(dataKey)) {
             return true;
         } else {
-            recordStore.afterOperation();
+            recordStore.afterOperation(threadIndex);
             return false;
         }
     }

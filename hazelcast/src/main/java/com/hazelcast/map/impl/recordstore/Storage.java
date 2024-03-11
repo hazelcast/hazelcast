@@ -91,7 +91,7 @@ public interface Storage<K, R> {
 
     /**
      * Read-only and not thread-safe iterator.
-     *
+     * <p>
      * Returned iterator from this method doesn't throw {@link
      * java.util.ConcurrentModificationException} to fail fast. Because fail
      * fast may not be the desired behaviour always. For example if you are
@@ -168,11 +168,12 @@ public interface Storage<K, R> {
 
     Data toBackingDataKeyFormat(Data key);
 
-    default void beforeOperation() {
+    default int beforeOperation() {
         // no-op
+        return -1;
     }
 
-    default void afterOperation() {
+    default void afterOperation(int threadIndex) {
         // no-op
     }
 }
