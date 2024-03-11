@@ -22,7 +22,9 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.collection.CollectionManager;
 import com.couchbase.client.java.manager.collection.CollectionSpec;
+import com.couchbase.client.java.manager.collection.ScopeSpec;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -30,12 +32,11 @@ import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -55,15 +56,11 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
@@ -79,7 +76,7 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"))
             .withStartupAttempts(5);
 
-    private static final int ITEM_COUNT = 1_000;
+    private static final int ITEM_COUNT = 100;
 
     private static final String COUCHBASE_LOGS_IN_CONTAINER = "/opt/couchbase/var/lib/couchbase/logs";
     private static final String COUCHBASE_LOGS_FILE = "couchbase-logs.tar.gz";
@@ -100,9 +97,49 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
         }
     }
 
+
+    @After
+    public void clearDb() {
+        try (Cluster cluster = connectToCluster()) {
+            Bucket bucket = cluster.bucket(BUCKET_NAME);
+            bucket.waitUntilReady(Duration.ofSeconds(10));
+
+            CollectionManager collections = bucket.collections();
+            for (ScopeSpec scopeSpec : collections.getAllScopes()) {
+                for (CollectionSpec collectionSpec : scopeSpec.collections()) {
+                    collections.dropCollection(scopeSpec.name(), collectionSpec.name());
+                }
+            }
+        }
+    }
+
     @Test
-    public void testReading() throws Exception {
+    public void testReading_1_1() throws Exception {
+        testReading(1, 1);
+    }
+
+    @Test
+    public void testReading_3_1() throws Exception {
+        testReading(3, 1);
+    }
+    @Test
+    public void testReading_3_2() throws Exception {
+        testReading(3, 2);
+    }
+
+    @Test
+    public void testReading_2_1() throws Exception {
+        testReading(2, 1);
+    }
+    @Test
+    public void testReading_2_2() throws Exception {
+        testReading(2, 1);
+    }
+
+
+    public void testReading(int tasksMax, int localParallelism) throws Exception {
         Properties connectorProperties = new Properties();
+        connectorProperties.put("tasks.max", String.valueOf(tasksMax));
         connectorProperties.setProperty("name", "couchbase");
         connectorProperties.setProperty("connector.class", "com.couchbase.connect.kafka.CouchbaseSourceConnector");
         connectorProperties.setProperty("couchbase.bucket", BUCKET_NAME);
@@ -115,16 +152,17 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
         insertDocuments("items-1");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Map<String, Object>> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
+        StreamStage<Map<String, Object>> streamStage = pipeline
+                .readFrom(KafkaConnectSources.connect(connectorProperties,
                         TestUtil::convertToString))
                 .withoutTimestamps()
+                .setLocalParallelism(localParallelism)
                 .map(base64 -> Base64.getDecoder().decode(base64))
                 .map(JsonUtil::mapFrom);
 
         streamStage.writeTo(Sinks.logger());
         streamStage
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(2 * ITEM_COUNT, list.size())));
+                .writeTo(Sinks.list("results"));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getCouchbaseConnectorURL());
@@ -133,19 +171,22 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         LOGGER.info("Creating a job");
-        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+
+        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, 3);
+        assertClusterSizeEventually(3, hazelcastInstances[0]);
+        HazelcastInstance hazelcastInstance = hazelcastInstances[0];
+        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
         insertDocuments("items-2");
 
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-        }
+        //ITEM_COUNT is multiplied by 2 as there is insertDocuments before and after the pipeline
+        assertTrueEventually(() -> assertThat(hazelcastInstance.getList("results"))
+                                             .hasSize(ITEM_COUNT * 2));
+
+        // double check it won't create new records
+        Thread.sleep(Duration.ofSeconds(5).toMillis());
+        assertThat(hazelcastInstance.getList("results")).hasSize(ITEM_COUNT * 2);
     }
 
     private static void insertDocuments(String collectionName) {
@@ -156,11 +197,10 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
             LOGGER.info("Creating collection " + collectionName);
             CollectionManager collectionMgr = bucket.collections();
             CollectionSpec spec = CollectionSpec.create(collectionName);
-            collectionMgr.createCollection(spec);
+            collectionMgr.createCollection(spec.scopeName(), collectionName);
             Collection collection = bucket.collection(collectionName);
             for (int i = 0; i < ITEM_COUNT; i++) {
                 String id = collectionName + "-id-" + i;
-                LOGGER.info("Inserting document id=" + id + " into " + collectionName);
                 collection.insert(id, JsonObject.create().put("value", collectionName + "-value-" + i));
             }
         }

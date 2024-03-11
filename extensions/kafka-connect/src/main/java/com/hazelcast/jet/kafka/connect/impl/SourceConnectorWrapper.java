@@ -117,19 +117,25 @@ public class SourceConnectorWrapper {
         }
         logger.info("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
 
-        sourceConnector = newConnectorInstance(connectorClazz);
-
         try {
-            sourceConnector.initialize(new JetConnectorContext());
-            logger.info("Starting connector '" + name + "'. Below are the propertiesFromUser");
-            sourceConnector.start(currentConfig);
-            logger.info("Connector '" + name + "' started");
+            sourceConnector = newConnectorInstance(connectorClazz);
+
+            if (isMasterProcessor) {
+                sourceConnector.initialize(new JetConnectorContext());
+                logger.info("Starting connector '" + name + "'. Below are the propertiesFromUser");
+                sourceConnector.start(currentConfig);
+                logger.info("Connector '" + name + "' started");
+            } else {
+                logger.info("Connector '" + name + "' created, not starting because it's not a master processor");
+            }
 
         } catch (Exception e) {
             logger.warning("Error while starting connector", e);
             reconnectTracker.attemptFailed();
-            sourceConnector.stop();
-            sourceConnector = null;
+            if (sourceConnector != null) {
+                sourceConnector.stop();
+                sourceConnector = null;
+            }
             lastConnectionException = e;
             return;
         }

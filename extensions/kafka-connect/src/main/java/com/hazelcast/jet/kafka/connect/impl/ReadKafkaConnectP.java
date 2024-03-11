@@ -72,7 +72,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private int localProcessorIndex;
     private int processorOrder;
     private final AtomicInteger counter = new AtomicInteger();
-    private boolean active = true;
+    private volatile boolean active = true;
     private RetryStrategy retryStrategy;
 
     public ReadKafkaConnectP(@Nonnull EventTimePolicy<? super T> eventTimePolicy,

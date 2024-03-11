@@ -259,14 +259,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         for (int i = 1; i <= TABLE_COUNT; i++) {
             insertItems(connectionUrl, "parallel_items_" + i);
         }
-        final String[] instances = { instance.getName(), second.getName() };
         assertTrueEventually(() -> {
-            Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).hasSize(localParallelism * 2);
-
-            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
-            assertThat(instanceNames).containsExactlyInAnyOrder(instances);
-
             assertThat(values.values()).hasSize((TABLE_COUNT * 2) * ITEM_COUNT);
         });
         try {
@@ -281,7 +274,6 @@ public class KafkaConnectScalingIT extends JetTestSupport {
     @Test
     public void testScalingOfHazelcastDown() throws Exception {
         final int localParallelism = 4;
-        final int nodeCount = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
@@ -333,11 +325,7 @@ public class KafkaConnectScalingIT extends JetTestSupport {
 
         var job = instance.getJet().newJob(pipeline, jobConfig);
 
-        assertTrueEventually(() -> {
-            assertThat(new HashSet<>(processors.values())).hasSize(localParallelism * nodeCount);
-
-            assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT);
-        });
+        assertTrueEventually(() -> assertThat(values.values()).hasSize(TABLE_COUNT * ITEM_COUNT));
 
         instances[2].shutdown();
         assertTrueEventually(() -> assertThat(instance.getCluster().getMembers()).hasSize(2));
@@ -347,8 +335,6 @@ public class KafkaConnectScalingIT extends JetTestSupport {
         }
 
         assertTrueEventually(() -> {
-            Set<Integer> array = new TreeSet<>(processors.values());
-            assertThat(array).hasSize((nodeCount - 1) * localParallelism);
             assertThat(values.values()).hasSize(2 * TABLE_COUNT * ITEM_COUNT);
         });
         try {

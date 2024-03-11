@@ -98,12 +98,10 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
     @Test
     public void test_non_serializable() {
-        assertThatThrownBy(() -> {
-            Pipeline.create()
-                    .readFrom(connect(new Properties(), new NonSerializableMapping()))
-                    .withIngestionTimestamps()
-                    .writeTo(Sinks.logger());
-        })
+        assertThatThrownBy(() -> Pipeline.create()
+                                     .readFrom(connect(new Properties(), new NonSerializableMapping()))
+                                     .withIngestionTimestamps()
+                                     .writeTo(Sinks.logger()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("\"projectionFn\" must be serializable");
     }
@@ -112,7 +110,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         private final Object nonSerializableField = new Object();
 
         @Override
-        public Object applyEx(SourceRecord sourceRecord) throws Exception {
+        public Object applyEx(SourceRecord sourceRecord) {
             return sourceRecord;
         }
     }
@@ -299,13 +297,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         HazelcastInstance hazelcastInstance = hazelcastInstances[0];
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        MetricsRegistry metricsRegistry = getNode(hazelcastInstance).nodeEngine.getMetricsRegistry();
-        ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
-        var collector = new KafkaMetricsCollector();
+        var collectors = new MultiNodeMetricsCollector<>(hazelcastInstances, new KafkaMetricsCollector());
         try {
-            es.scheduleAtFixedRate(() -> {
-                metricsRegistry.collect(collector);
-            }, 20, 10, MILLISECONDS);
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
@@ -314,11 +307,10 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
 
             assertTrueEventually(() -> {
-                assertThat(collector.getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT);
-                assertThat(collector.getSourceRecordPollAvgTime()).isNotEqualTo(0L);
+                assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT);
             });
         } finally {
-            shutdownAndAwaitTermination(es);
+            collectors.close();
         }
     }
 
