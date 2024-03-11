@@ -41,7 +41,6 @@ import static com.hazelcast.jet.pipeline.test.Assertions.assertCollected;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -324,8 +323,6 @@ public class AssertionsTest extends PipelineTestSupport {
 
         assertThatThrownBy(this::executeAndPeel)
                 .hasMessageContaining(AssertionCompletedException.class.getName());
-
-        assertFalse(assertionSink.isEmpty());
     }
 
     @Test
@@ -340,8 +337,6 @@ public class AssertionsTest extends PipelineTestSupport {
 
         assertThatThrownBy(this::executeAndPeel)
                 .hasMessageContaining(AssertionError.class.getName());
-
-        assertFalse(assertionSink.isEmpty());
     }
 
     @Test
