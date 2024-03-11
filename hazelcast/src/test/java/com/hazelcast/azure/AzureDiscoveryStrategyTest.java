@@ -49,7 +49,7 @@ public class AzureDiscoveryStrategyTest {
 
     @Before
     public void setUp() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("hz-port", String.format("%s-%s", PORT1, PORT2));
         azureDiscoveryStrategy = new AzureDiscoveryStrategy(properties, azureClient);
     }
@@ -72,7 +72,7 @@ public class AzureDiscoveryStrategyTest {
     @Test
     public void newValidProperties() {
         // given
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("tenant-id", "subscription-id-1");
         properties.put("client-id", "subscription-id-1");
         properties.put("client-secret", "subscription-id-1");
@@ -92,7 +92,7 @@ public class AzureDiscoveryStrategyTest {
     @Test(expected = InvalidConfigurationException.class)
     public void newInvalidPortRangeProperty() {
         // given
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("hz-port", "invalid");
 
         // when

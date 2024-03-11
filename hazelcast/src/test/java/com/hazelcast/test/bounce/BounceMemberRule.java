@@ -149,8 +149,8 @@ public class BounceMemberRule implements TestRule {
 
     private BounceMemberRule(BounceTestConfiguration bounceTestConfig) {
         this.bounceTestConfig = bounceTestConfig;
-        this.members = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getClusterSize());
-        this.testDrivers = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getDriverCount());
+        this.members = new AtomicReferenceArray<>(bounceTestConfig.getClusterSize());
+        this.testDrivers = new AtomicReferenceArray<>(bounceTestConfig.getDriverCount());
         this.bouncingIntervalSeconds = bounceTestConfig.getBouncingIntervalSeconds();
         this.progressMonitor = new ProgressMonitor(bounceTestConfig.getMaximumStaleSeconds());
     }
@@ -379,7 +379,7 @@ public class BounceMemberRule implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 LOGGER.info("Spawning member bouncing thread");
-                bouncingMembersTask = new FutureTask<Runnable>(new MemberUpDownMonkey(), null);
+                bouncingMembersTask = new FutureTask<>(new MemberUpDownMonkey(), null);
                 Thread bounceMembersThread = new Thread(bouncingMembersTask);
                 bounceMembersThread.setDaemon(true);
                 bounceMembersThread.start();
@@ -419,7 +419,7 @@ public class BounceMemberRule implements TestRule {
         // do not wait more than 30 seconds
         long deadline = currentTimeMillis() + SECONDS.toMillis(TEST_TASK_TIMEOUT_SECONDS);
         LOGGER.info("Waiting until " + timeToString(deadline) + " for test tasks to complete gracefully.");
-        List<Future> futuresToWaitFor = new ArrayList<Future>(Arrays.asList(futures));
+        List<Future> futuresToWaitFor = new ArrayList<>(Arrays.asList(futures));
         while (!futuresToWaitFor.isEmpty() && currentTimeMillis() < deadline) {
             Iterator<Future> iterator = futuresToWaitFor.iterator();
             while (iterator.hasNext()) {

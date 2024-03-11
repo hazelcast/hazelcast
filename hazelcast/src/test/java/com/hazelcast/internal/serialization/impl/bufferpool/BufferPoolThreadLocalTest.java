@@ -118,7 +118,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     @Test
     public void clear() {
         // store the pool in a weak reference since we don't want to force a strong reference ourselves.
-        final WeakReference<BufferPool> poolRef = new WeakReference<BufferPool>(bufferPoolThreadLocal.get());
+        final WeakReference<BufferPool> poolRef = new WeakReference<>(bufferPoolThreadLocal.get());
 
         // call clear; kills the strong references.
         bufferPoolThreadLocal.clear();

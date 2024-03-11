@@ -75,7 +75,7 @@ public class AdvancedMapJournalTest extends HazelcastTestSupport {
             }
         }
 
-        LinkedList<HazelcastInstance> instanceList = new LinkedList<HazelcastInstance>(Arrays.asList(instances));
+        LinkedList<HazelcastInstance> instanceList = new LinkedList<>(Arrays.asList(instances));
         waitAllForSafeState(instanceList);
 
         int expectedSize = keyCount * updateCount;

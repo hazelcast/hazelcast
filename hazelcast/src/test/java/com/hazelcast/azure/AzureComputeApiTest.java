@@ -79,7 +79,7 @@ public class AzureComputeApiTest {
         AzureAddress address2 = new AzureAddress(INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP);
         AzureAddress address3 = new AzureAddress(INSTANCE_3_PRIVATE_IP, null);
         AzureAddress address4 = new AzureAddress(INSTANCE_4_PRIVATE_IP, null);
-        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(4);
+        Set<AzureAddress> expected = new LinkedHashSet<>(4);
         expected.add(address1);
         expected.add(address2);
         expected.add(address3);
@@ -109,7 +109,7 @@ public class AzureComputeApiTest {
         AzureAddress address2 = new AzureAddress(INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP);
         AzureAddress address3 = new AzureAddress(INSTANCE_3_PRIVATE_IP, null);
         AzureAddress address4 = new AzureAddress(INSTANCE_4_PRIVATE_IP, null);
-        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(4);
+        Set<AzureAddress> expected = new LinkedHashSet<>(4);
         expected.add(address1);
         expected.add(address2);
         expected.add(address3);
@@ -134,7 +134,7 @@ public class AzureComputeApiTest {
 
         // then
         AzureAddress address1 = new AzureAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
-        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(2);
+        Set<AzureAddress> expected = new LinkedHashSet<>(2);
         expected.add(address1);
         assertEquals(expected, result);
     }

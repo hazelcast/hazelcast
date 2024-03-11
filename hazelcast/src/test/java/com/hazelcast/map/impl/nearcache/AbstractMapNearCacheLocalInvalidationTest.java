@@ -425,7 +425,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
             // bring null to local cache
             String expectedNull = map.get(key);
             assertNull(expectedNull);
-            HashSet<String> keys = new HashSet<String>();
+            HashSet<String> keys = new HashSet<>();
             keys.add(key);
             Map<String, String> result = (Map) map.executeOnKeys(keys, new WritingEntryProcessor());
             for (Map.Entry<String, String> e : result.entrySet()) {

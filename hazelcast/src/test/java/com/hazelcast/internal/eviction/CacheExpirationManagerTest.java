@@ -72,7 +72,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
-        final SimpleEntryListener<Integer, Integer> simpleEntryListener = new SimpleEntryListener<Integer, Integer>();
+        final SimpleEntryListener<Integer, Integer> simpleEntryListener = new SimpleEntryListener<>();
 
         CacheManager cacheManager = createCacheManager(node);
         CacheConfiguration<Integer, Integer> cacheConfig = createCacheConfig(simpleEntryListener,

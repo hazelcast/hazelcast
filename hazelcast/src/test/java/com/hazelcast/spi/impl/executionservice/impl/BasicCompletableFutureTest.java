@@ -249,7 +249,7 @@ public class BasicCompletableFutureTest {
     }
 
     private <V> FutureTask<V> future(final V result) {
-        return new FutureTask<V>(() -> {
+        return new FutureTask<>(() -> {
             if (delegateThrowException) {
                 throw new RuntimeException("Exception in execution");
             }

@@ -87,15 +87,15 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
 
         //establish and open a CacheEntryListenerServer to handle cache
         //cache entry events from a CacheEntryListenerClient
-        listener = new MyCacheEntryListener<Long, String>(oldValueRequired);
+        listener = new MyCacheEntryListener<>(oldValueRequired);
         cacheEntryListenerServer.addCacheEventListener(listener);
 
         //establish a CacheEntryListenerClient that a Cache can use for CacheEntryListening
         //(via the CacheEntryListenerServer)
         CacheEntryListenerClient<Long, String> clientListener =
-                new CacheEntryListenerClient<Long, String>(cacheEntryListenerServer.getInetAddress(),
+                new CacheEntryListenerClient<>(cacheEntryListenerServer.getInetAddress(),
                         cacheEntryListenerServer.getPort());
-        listenerConfiguration = new MutableCacheEntryListenerConfiguration<Long, String>(
+        listenerConfiguration = new MutableCacheEntryListenerConfiguration<>(
                 FactoryBuilder.factoryOf(clientListener),
                 null,
                 oldValueRequired,
@@ -111,12 +111,12 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
         cache.deregisterCacheEntryListener(this.listenerConfiguration);
 
         CacheEntryListenerClient<Long, String> clientListener =
-                new CacheEntryListenerClient<Long, String>(cacheEntryListenerServer.getInetAddress(),
+                new CacheEntryListenerClient<>(cacheEntryListenerServer.getInetAddress(),
                         cacheEntryListenerServer.getPort());
 
-        MyCacheEntryListener<Long, String> filteredListener = new MyCacheEntryListener<Long, String>(oldValueRequired);
+        MyCacheEntryListener<Long, String> filteredListener = new MyCacheEntryListener<>(oldValueRequired);
         CacheEntryListenerConfiguration<Long, String> listenerConfiguration =
-                new MutableCacheEntryListenerConfiguration<Long, String>(
+                new MutableCacheEntryListenerConfiguration<>(
                         FactoryBuilder.factoryOf(clientListener),
                         FactoryBuilder.factoryOf(new MyCacheEntryEventFilter()),
                         oldValueRequired, true);
@@ -132,7 +132,7 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
         assertEquals(0, filteredListener.getUpdated());
         assertEquals(0, filteredListener.getRemoved());
 
-        Map<Long, String> entries = new HashMap<Long, String>();
+        Map<Long, String> entries = new HashMap<>();
         entries.put(2L, "Lucky");
         entries.put(3L, "Bryn");
         cache.putAll(entries);
@@ -185,7 +185,7 @@ public abstract class AbstractCacheListenerTest extends org.jsr107.tck.event.Cac
         assertEquals(3, filteredListener.getUpdated());
         assertEquals(1, filteredListener.getRemoved());
 
-        Set<Long> keys = new HashSet<Long>();
+        Set<Long> keys = new HashSet<>();
         keys.add(1L);
         cache.getAll(keys);
         assertEquals(2, filteredListener.getCreated());

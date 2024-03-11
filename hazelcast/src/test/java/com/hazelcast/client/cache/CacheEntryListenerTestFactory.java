@@ -24,6 +24,6 @@ import javax.cache.configuration.Factory;
 public class CacheEntryListenerTestFactory<K, V> implements Factory<ClientCacheEntryExpiredLatchCountdownListener<K, V>> {
     @Override
     public ClientCacheEntryExpiredLatchCountdownListener<K, V> create() {
-        return new ClientCacheEntryExpiredLatchCountdownListener<K, V>();
+        return new ClientCacheEntryExpiredLatchCountdownListener<>();
     }
 }

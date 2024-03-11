@@ -126,18 +126,18 @@ public class AggregatorsTest extends HazelcastTestSupport {
 
         Wheel emptyWheel = new Wheel();
         emptyWheel.tiresA = new Long[0];
-        emptyWheel.tiresC = new ArrayList<Long>();
+        emptyWheel.tiresC = new ArrayList<>();
 
         Wheel wheel = new Wheel();
         wheel.tiresA = values;
-        wheel.tiresC = new ArrayList<Long>();
+        wheel.tiresC = new ArrayList<>();
         for (Long value : values) {
             wheel.tiresC.add(value);
         }
 
         Car car = new Car();
         car.wheelsA = new Wheel[]{wheel, emptyWheel, nullWheel};
-        car.wheelsC = new ArrayList<Wheel>();
+        car.wheelsC = new ArrayList<>();
         car.wheelsC.add(emptyWheel);
         car.wheelsC.add(wheel);
         car.wheelsC.add(nullWheel);
@@ -146,7 +146,7 @@ public class AggregatorsTest extends HazelcastTestSupport {
     }
 
     private static class TestAggregator extends AbstractAggregator<Map.Entry<Integer, Car>, Long, List<Long>> {
-        private List<Long> accumulated = new ArrayList<Long>();
+        private List<Long> accumulated = new ArrayList<>();
 
         TestAggregator(String attribute) {
             super(attribute);

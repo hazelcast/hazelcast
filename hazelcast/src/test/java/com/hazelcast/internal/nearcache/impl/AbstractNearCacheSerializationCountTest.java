@@ -80,10 +80,10 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
     private static final AtomicInteger VALUE_SERIALIZE_COUNT = new AtomicInteger();
     private static final AtomicInteger VALUE_DESERIALIZE_COUNT = new AtomicInteger();
 
-    private static final AtomicReference<List<String>> KEY_SERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
-    private static final AtomicReference<List<String>> KEY_DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
-    private static final AtomicReference<List<String>> VALUE_SERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
-    private static final AtomicReference<List<String>> VALUE_DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+    private static final AtomicReference<List<String>> KEY_SERIALIZE_STACKTRACE = new AtomicReference<>();
+    private static final AtomicReference<List<String>> KEY_DESERIALIZE_STACKTRACE = new AtomicReference<>();
+    private static final AtomicReference<List<String>> VALUE_SERIALIZE_STACKTRACE = new AtomicReference<>();
+    private static final AtomicReference<List<String>> VALUE_DESERIALIZE_STACKTRACE = new AtomicReference<>();
 
     /**
      * The {@link DataStructureMethods} which should be used in the test.

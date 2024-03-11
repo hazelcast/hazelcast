@@ -68,7 +68,7 @@ public abstract class AbstractCRDTBounceTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        instances = new AtomicReferenceArray<HazelcastInstance>(NODE_COUNT);
+        instances = new AtomicReferenceArray<>(NODE_COUNT);
         for (int i = 0; i < NODE_COUNT; i++) {
             instances.set(i, factory.newHazelcastInstance(getConfig()));
         }

@@ -46,7 +46,7 @@ public abstract class AbstractExecutorNullTest extends HazelcastTestSupport {
         Member sampleMember = getDriver().getCluster().getMembers().iterator().next();
         Set<Member> sampleMembers = Collections.singleton(sampleMember);
         MemberSelector sampleSelector = member -> true;
-        ExecutionCallback<Object> sampleCallback = new ExecutionCallback<Object>() {
+        ExecutionCallback<Object> sampleCallback = new ExecutionCallback<>() {
             @Override
             public void onResponse(Object response) {
 

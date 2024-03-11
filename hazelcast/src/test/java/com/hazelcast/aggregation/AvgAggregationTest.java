@@ -301,7 +301,7 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testGenericAvg() {
-        List<Number> values = new ArrayList<Number>();
+        List<Number> values = new ArrayList<>();
         values.addAll(sampleLongs());
         values.addAll(sampleDoubles());
         values.addAll(sampleIntegers());

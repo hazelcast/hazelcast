@@ -64,7 +64,7 @@ public class ArrayRingbufferTest {
 
     @Test
     public void testIsEmpty() {
-        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<String>(5);
+        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<>(5);
         assertTrue(rb.isEmpty());
         rb.add("");
         assertFalse(rb.isEmpty());
@@ -72,14 +72,14 @@ public class ArrayRingbufferTest {
 
     @Test
     public void testPeekNextSequenceNumberReturnsTheNext() {
-        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<String>(5);
+        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<>(5);
         long nextTailSequence = rb.peekNextTailSequence();
         long sequenceAdded = rb.add("");
         assertEquals(sequenceAdded, nextTailSequence);
     }
 
     private static ArrayRingbuffer fullRingbuffer() {
-        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<String>(5);
+        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<>(5);
         for (int i = 0; i < rb.getCapacity(); i++) {
             rb.add("");
         }

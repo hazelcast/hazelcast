@@ -57,7 +57,7 @@ public class BatchEventDataTest extends HazelcastTestSupport {
         otherEventData = prepareDefaultQueryCacheEventDataWithMapName();
         eventData.setSequence(2);
 
-        ArrayList<QueryCacheEventData> events = new ArrayList<QueryCacheEventData>();
+        ArrayList<QueryCacheEventData> events = new ArrayList<>();
         events.add(eventData);
 
         batchEventData = new BatchEventData(events, "source", 1);

@@ -87,7 +87,7 @@ public class BackupTest extends HazelcastTestSupport {
         config.getMapConfig(mapName).setBackupCount(0);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Collection<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(nodeCount);
+        Collection<HazelcastInstance> instances = new ArrayList<>(nodeCount);
 
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -136,7 +136,7 @@ public class BackupTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
-        List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(nodeCount);
+        List<HazelcastInstance> instances = new ArrayList<>(nodeCount);
 
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);

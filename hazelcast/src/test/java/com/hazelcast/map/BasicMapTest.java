@@ -276,8 +276,8 @@ public class BasicMapTest extends HazelcastTestSupport {
         final String value1 = "/home/data/file1.dat";
         final String value2 = "/home/data/file2.dat";
 
-        final AtomicReference<String> oldValue1 = new AtomicReference<String>();
-        final AtomicReference<String> oldValue2 = new AtomicReference<String>();
+        final AtomicReference<String> oldValue1 = new AtomicReference<>();
+        final AtomicReference<String> oldValue2 = new AtomicReference<>();
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
@@ -1099,14 +1099,14 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testGetAllPutAll() {
         warmUpPartitions(instances);
         IMap<Integer, Integer> map = getInstance().getMap("testGetAllPutAll");
-        Set<Integer> set = new HashSet<Integer>();
+        Set<Integer> set = new HashSet<>();
         set.add(1);
         set.add(3);
         map.getAll(set);
         assertTrue(map.isEmpty());
 
         int size = 100;
-        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> mm = new HashMap<>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
@@ -1127,7 +1127,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertEquals(map.get(i).intValue(), i);
         }
 
-        set = new HashSet<Integer>();
+        set = new HashSet<>();
         set.add(1);
         set.add(3);
         Map m2 = map.getAll(set);
@@ -1147,7 +1147,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map2 = instance2.getMap("testPutAllBackup");
         warmUpPartitions(instances);
 
-        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> mm = new HashMap<>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
@@ -1175,7 +1175,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map2 = instance2.getMap("testPutAllTooManyEntries");
         warmUpPartitions(instances);
 
-        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> mm = new HashMap<>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
@@ -1198,7 +1198,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         int size = 10000;
 
         IMap<Integer, Integer> map = instances[0].getMap("testPutAllAsync");
-        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> mm = new HashMap<>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
@@ -1276,7 +1276,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
@@ -1339,7 +1339,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
@@ -1424,7 +1424,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
@@ -1490,7 +1490,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
@@ -1738,7 +1738,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         };
         assertRunnableThrowsNullPointerException(runnable, "delete(null)");
 
-        final Set<String> keys = new HashSet<String>();
+        final Set<String> keys = new HashSet<>();
         keys.add("key");
         keys.add(null);
         runnable = new Runnable() {
@@ -2026,7 +2026,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         };
         assertRunnableThrowsNullPointerException(runnable, "executeOnKey(null, entryProcessor)");
 
-        final Map<String, String> mapWithNullKey = new HashMap<String, String>();
+        final Map<String, String> mapWithNullKey = new HashMap<>();
         mapWithNullKey.put("key", "value");
         mapWithNullKey.put(null, "nullKey");
         runnable = new Runnable() {
@@ -2036,7 +2036,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullKey)");
 
-        final Map<String, String> mapWithNullValue = new HashMap<String, String>();
+        final Map<String, String> mapWithNullValue = new HashMap<>();
         mapWithNullValue.put("key", "value");
         mapWithNullValue.put("nullValue", null);
         runnable = new Runnable() {

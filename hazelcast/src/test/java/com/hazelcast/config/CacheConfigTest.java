@@ -106,7 +106,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         Config config = new XmlConfigBuilder(configUrl2).build();
 
         CacheSimpleConfig simpleConfig = config.getCacheConfig("cache3");
-        CacheConfig<Object, String> cacheConfig = new CacheConfig<Object, String>(simpleConfig);
+        CacheConfig<Object, String> cacheConfig = new CacheConfig<>(simpleConfig);
 
         Factory<CacheWriter<? super Object, ? super String>> writerFactory = cacheConfig.getCacheWriterFactory();
         CacheWriter<? super Object, ? super String> cacheWriter = writerFactory.create();
@@ -691,7 +691,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         @Override
         public Map<K, String> loadAll(Iterable<? extends K> keys) throws CacheLoaderException {
-            Map<K, String> result = new HashMap<K, String>();
+            Map<K, String> result = new HashMap<>();
             for (K key : keys) {
                 result.put(key, String.valueOf(key));
             }

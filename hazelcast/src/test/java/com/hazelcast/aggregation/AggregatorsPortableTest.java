@@ -135,7 +135,7 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
     }
 
     private static class TestAggregator extends AbstractAggregator<Map.Entry<Integer, Car>, String, List<String>> {
-        private List<String> accumulated = new ArrayList<String>();
+        private List<String> accumulated = new ArrayList<>();
 
         TestAggregator(String attribute) {
             super(attribute);

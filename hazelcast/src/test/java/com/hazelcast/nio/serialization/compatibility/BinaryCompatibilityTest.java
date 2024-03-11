@@ -65,7 +65,7 @@ import static org.junit.Assert.fail;
 public class BinaryCompatibilityTest {
 
     private static final int NULL_OBJECT = -1;
-    private static Map<String, Data> dataMap = new HashMap<String, Data>();
+    private static Map<String, Data> dataMap = new HashMap<>();
 
     // OPTIONS
     private static Object[] objects = ReferenceObjects.allTestObjects;
@@ -75,7 +75,7 @@ public class BinaryCompatibilityTest {
 
     @Parameters(name = "allowUnsafe:{0}, {index}, isBigEndian:{2}, version:{3}")
     public static Iterable<Object[]> parameters() {
-        LinkedList<Object[]> parameters = new LinkedList<Object[]>();
+        LinkedList<Object[]> parameters = new LinkedList<>();
         for (boolean allowUnsafe : unsafeAllowedOpts) {
             for (Object object : objects) {
                 for (ByteOrder byteOrder : byteOrders) {

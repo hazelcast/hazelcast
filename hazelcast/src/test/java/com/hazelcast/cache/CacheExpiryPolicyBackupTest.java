@@ -91,7 +91,7 @@ public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
     public void testSetExpiryPolicyBackupOperation() {
         HazelcastInstance instance = instances[0];
         ICache<String, String> cache = instance.getCacheManager().getCache(cacheName);
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
 
         for (int i = 0; i < ENTRIES; i++) {
             cache.put("key" + i, "value");

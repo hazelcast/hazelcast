@@ -150,7 +150,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
     @Test
     public void test_setEndpointConfigs_throwsException_whenServerSocketCardinalityBroken() throws Exception {
         IdentityHashMap<EndpointQualifier, EndpointConfig> offendingEndpointConfigs =
-                new IdentityHashMap<EndpointQualifier, EndpointConfig>();
+                new IdentityHashMap<>();
         EndpointQualifier one = createReflectively(ProtocolType.MEMBER, "1");
         EndpointQualifier two = createReflectively(ProtocolType.MEMBER, "2");
         offendingEndpointConfigs.put(one, new ServerSocketEndpointConfig());

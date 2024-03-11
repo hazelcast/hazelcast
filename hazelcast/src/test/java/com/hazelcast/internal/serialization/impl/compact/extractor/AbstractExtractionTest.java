@@ -176,7 +176,7 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
      * Generates combinations of parameters and outputs them in the *horrible* JUnit format
      */
     protected static Collection<Object[]> axes(List<Index> indexes) {
-        List<Object[]> combinations = new ArrayList<Object[]>();
+        List<Object[]> combinations = new ArrayList<>();
         for (Index index : indexes) {
             combinations.add(new Object[]{index});
         }

@@ -282,7 +282,7 @@ public abstract class AbstractConcurrentArrayQueueTest extends HazelcastTestSupp
     }
 
     private void testDrainTo(int limit, int expected) {
-        List<Integer> result = new ArrayList<Integer>();
+        List<Integer> result = new ArrayList<>();
         for (int i = 0; i < CAPACITY; i++) {
             queue.offer(i);
         }

@@ -230,7 +230,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
 
     private CachedQueryEntry<Object, Object> createEntry(Object key) {
         Data keyData = serializationService.toData(key);
-        return new CachedQueryEntry<Object, Object>(serializationService, keyData, new Object(),
+        return new CachedQueryEntry<>(serializationService, keyData, new Object(),
                 newExtractor());
     }
 

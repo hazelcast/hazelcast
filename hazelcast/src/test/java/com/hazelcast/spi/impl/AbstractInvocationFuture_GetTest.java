@@ -106,7 +106,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
 
     @Test
     public void whenInterruptedWhileWaiting() throws Exception {
-        final AtomicReference<Thread> thread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
         Future getFuture = spawn(new Callable<Object>() {
             @Override
@@ -137,7 +137,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
 
     @Test
     public void whenMultipleGetters() throws ExecutionException, InterruptedException {
-        List<Future> getFutures = new LinkedList<Future>();
+        List<Future> getFutures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
             getFutures.add(spawn(new Callable<Object>() {
                 @Override

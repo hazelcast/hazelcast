@@ -175,7 +175,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             return Collections.singleton(address);
         } else {
             final CountDownLatch latch = new CountDownLatch(count);
-            Collection<Address> addresses = new HashSet<Address>();
+            Collection<Address> addresses = new HashSet<>();
 
             for (int i = 0; i < count; i++) {
                 final HazelcastInstance hz = instances.remove(0);

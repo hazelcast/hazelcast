@@ -418,7 +418,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, HOURS);
 
-        Map<Integer, String> putAllMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
+        Map<Integer, String> putAllMap = new HashMap<>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "value-" + i;
             switch (method) {
@@ -839,7 +839,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // this should invalidate the Near Cache
         IMapReplaceEntryProcessor mapEntryProcessor = new IMapReplaceEntryProcessor("value", "newValue");
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, HOURS);
-        Map<Integer, String> invalidationMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
+        Map<Integer, String> invalidationMap = new HashMap<>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "value-" + i;
             String newValue = "newValue-" + i;
@@ -1041,7 +1041,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         // this should invalidate the Near Cache
-        Set<Integer> keys = new HashSet<Integer>(DEFAULT_RECORD_COUNT);
+        Set<Integer> keys = new HashSet<>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             keys.add(i);
         }
@@ -1253,7 +1253,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         // this should invalidate the Near Cache
-        Set<Integer> removeKeys = new HashSet<Integer>();
+        Set<Integer> removeKeys = new HashSet<>();
         if (method == DataStructureMethods.REMOVE_ALL) {
             adapter.removeAll();
         } else {

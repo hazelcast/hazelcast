@@ -57,7 +57,7 @@ public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTes
         final int loopsPerThread = 100;
         final AtomicLong finalValue = new AtomicLong();
 
-        final ArrayList<Future> futures = new ArrayList<Future>(parallelism);
+        final ArrayList<Future> futures = new ArrayList<>(parallelism);
         for (int i = 0; i < parallelism; i++) {
             futures.add(spawn(new Runnable() {
                 @Override

@@ -63,7 +63,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
     private static final boolean THREAD_DUMP_ON_FAILURE;
 
-    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
+    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<>();
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
@@ -158,7 +158,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected List<FrameworkMethod> getChildren() {
         List<FrameworkMethod> children = super.getChildren();
-        List<FrameworkMethod> modifiableList = new ArrayList<FrameworkMethod>(children);
+        List<FrameworkMethod> modifiableList = new ArrayList<>(children);
         Collections.shuffle(modifiableList);
         return modifiableList;
     }
@@ -250,7 +250,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     protected List<TestRule> getTestRules(Object target) {
         List<TestRule> testRules = super.getTestRules(target);
 
-        Set<Class<? extends TestRule>> testRuleClasses = new HashSet<Class<? extends TestRule>>();
+        Set<Class<? extends TestRule>> testRuleClasses = new HashSet<>();
 
         TestClass testClass = getTestClass();
 
@@ -360,7 +360,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         @Override
         public void evaluate() throws Throwable {
-            List<Throwable> errors = new ArrayList<Throwable>();
+            List<Throwable> errors = new ArrayList<>();
             try {
                 next.evaluate();
             } catch (Throwable e) {

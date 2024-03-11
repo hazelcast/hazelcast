@@ -107,7 +107,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
 
     @Test
     public void whenInterrupted() throws Exception {
-        final AtomicReference<Thread> thread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
         Future getFuture = spawn(new Callable<Object>() {
             @Override

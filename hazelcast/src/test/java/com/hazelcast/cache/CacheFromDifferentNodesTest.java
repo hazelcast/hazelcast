@@ -90,7 +90,7 @@ public class CacheFromDifferentNodesTest
 
         assertNull(cacheManager.getCache(cacheName));
 
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
 
@@ -137,10 +137,10 @@ public class CacheFromDifferentNodesTest
         CacheManager cacheManager1 = cachingProvider1.getCacheManager();
         CacheManager cacheManager2 = cachingProvider2.getCacheManager();
 
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
-        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
+        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<>();
         MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
-                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                new MutableCacheEntryListenerConfiguration<>(
                         FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
@@ -171,7 +171,7 @@ public class CacheFromDifferentNodesTest
             }
         });
 
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         keys.add(key1);
         keys.add(key2);
         cache2.removeAll(keys);

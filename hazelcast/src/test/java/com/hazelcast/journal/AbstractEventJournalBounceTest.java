@@ -111,7 +111,7 @@ public abstract class AbstractEventJournalBounceTest {
     }
 
     private <T> LinkedList<T> getEventJournalEvents(EventJournalReader<T> reader) {
-        final LinkedList<T> events = new LinkedList<T>();
+        final LinkedList<T> events = new LinkedList<>();
 
         for (int i = 1; i < TEST_PARTITION_COUNT; i++) {
             try {

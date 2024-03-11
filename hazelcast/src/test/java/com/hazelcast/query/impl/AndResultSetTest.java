@@ -76,7 +76,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/9614
     public void size_matchingPredicate_notInResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
@@ -94,7 +94,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/9614
     public void size_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         int size = resultSet.size();
@@ -111,9 +111,9 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/9614
     public void size_matchingPredicate_inOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> otherIndexResult = new HashSet<>();
         otherIndexResult.add(entries.iterator().next());
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(otherIndexResult);
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
@@ -138,7 +138,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test
     public void contains_matchingPredicate_notInResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
@@ -148,7 +148,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test
     public void contains_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
         for (QueryableEntry entry : entries) {
@@ -159,9 +159,9 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test
     public void contains_matchingPredicate_inOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> otherIndexResult = new HashSet<>();
         otherIndexResult.add(entries.iterator().next());
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(otherIndexResult);
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(Predicates.alwaysTrue()));
 
@@ -181,7 +181,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     }
 
     private static Set<QueryableEntry> generateEntries(int count) {
-        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> result = new HashSet<>();
         for (int k = 0; k < count; k++) {
             QueryableEntry entry = new DummyEntry();
             result.add(entry);

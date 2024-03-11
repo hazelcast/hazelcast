@@ -98,7 +98,7 @@ public abstract class AbstractCRDTPropertyTest<C extends CRDT<C>, H, S> {
     }
 
     private List<C> setupCRDTs(int size) {
-        final List<C> counters = new ArrayList<C>(size);
+        final List<C> counters = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             counters.add(getCRDT());
         }

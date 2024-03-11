@@ -52,7 +52,7 @@ public class AdditionalServiceClassLoader
     }
 
     private Enumeration<URL> addResource(Enumeration<URL> original, URL additionalResource) {
-        Vector<URL> urls = new Vector<URL>();
+        Vector<URL> urls = new Vector<>();
         while (original.hasMoreElements()) {
             urls.add(original.nextElement());
         }
