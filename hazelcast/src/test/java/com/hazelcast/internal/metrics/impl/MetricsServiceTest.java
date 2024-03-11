@@ -18,7 +18,6 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
@@ -31,7 +30,8 @@ import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.mock.MockUtil;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -70,20 +70,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsServiceTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
-
-    @Mock
-    private Node nodeMock;
     @Mock
     private HazelcastInstance hzMock;
     @Mock
-    private NodeEngineImpl nodeEngineMock;
+    private NodeEngine nodeEngineMock;
     @Mock
     private LoggingService loggingServiceMock;
     @Mock
@@ -98,18 +95,17 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
     private MetricsService metricsService;
 
+    private AutoCloseable openMocks;
     @Before
     public void setUp() {
-        initMocks(this);
+        openMocks = openMocks(this);
 
         metricsRegistry = new MetricsRegistryImpl(loggerMock, ProbeLevel.INFO);
 
-        when(nodeMock.getLogger(any(Class.class))).thenReturn(loggerMock);
-        when(nodeMock.getLogger(any(String.class))).thenReturn(loggerMock);
-        when(nodeEngineMock.getNode()).thenReturn(nodeMock);
         when(nodeEngineMock.getConfig()).thenReturn(config);
         when(nodeEngineMock.getLoggingService()).thenReturn(loggingServiceMock);
         when(nodeEngineMock.getLogger(any(Class.class))).thenReturn(loggerMock);
+        when(nodeEngineMock.getLogger(any(String.class))).thenReturn(loggerMock);
         when(nodeEngineMock.getMetricsRegistry()).thenReturn(metricsRegistry);
         when(nodeEngineMock.getHazelcastInstance()).thenReturn(hzMock);
         when(hzMock.getName()).thenReturn("mockInstance");
@@ -139,6 +135,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         if (executionService != null) {
             executionService.shutdown();
         }
+
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test

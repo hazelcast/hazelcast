@@ -495,9 +495,9 @@ import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetConfig
 import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCacheConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCardinalityEstimatorConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDataConnectionConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDataConnectionConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
@@ -628,8 +628,8 @@ import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPublisherCreateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPublisherCreateWithValueMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutAllMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutMessageTask;
@@ -869,7 +869,6 @@ import com.hazelcast.internal.longregister.client.task.LongRegisterIncrementAndG
 import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTask;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
@@ -886,7 +885,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
     private final Node node;
 
     public DefaultMessageTaskFactoryProvider(NodeEngine nodeEngine) {
-        this.node = ((NodeEngineImpl) nodeEngine).getNode();
+        this.node = nodeEngine.getNode();
         this.factories = createInt2ObjectHashMap(MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY);
         initFactories();
     }

@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -104,7 +104,7 @@ public class AccumulatorScannerTask implements Runnable {
 
     private Operation createConsumerOperation(int partitionId, Queue<Accumulator> accumulators) {
         PublisherContext publisherContext = context.getPublisherContext();
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) publisherContext.getNodeEngine();
+        NodeEngine nodeEngine = publisherContext.getNodeEngine();
 
         Operation operation = new ConsumeAccumulatorOperation(accumulators, MAX_PROCESSABLE_ACCUMULATOR_COUNT);
         operation

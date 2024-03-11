@@ -16,13 +16,15 @@
 
 package com.hazelcast.map.impl.querycache;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.map.IMapEvent;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.querycache.publisher.DefaultPublisherContext;
@@ -32,11 +34,8 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -84,7 +83,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
      * {@link EventService} can drop them.
      */
     private void flushPublishersOnNodeShutdown() {
-        Node node = ((NodeEngineImpl) this.nodeEngine).getNode();
+        Node node = this.nodeEngine.getNode();
         LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
         lifecycleService.addLifecycleListener(event -> {
             if (SHUTTING_DOWN == event.getState()) {

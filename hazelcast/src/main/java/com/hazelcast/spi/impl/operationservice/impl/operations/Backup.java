@@ -192,7 +192,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         if (isCallerClient()) {
-            ClientEngine clientEngine = ((NodeEngineImpl) getNodeEngine()).getNode().getClientEngine();
+            ClientEngine clientEngine = getNodeEngine().getNode().getClientEngine();
             UUID clientUUID = getCallerUuid();
             clientEngine.dispatchBackupEvent(clientUUID, clientCorrelationId);
         } else if (nodeEngine.getThisAddress().equals(originalCaller)) {
