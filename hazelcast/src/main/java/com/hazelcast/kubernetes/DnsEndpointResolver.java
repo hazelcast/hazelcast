@@ -107,7 +107,7 @@ final class DnsEndpointResolver
             return Collections.emptyList();
         }
 
-        List<DiscoveryNode> result = new ArrayList<DiscoveryNode>();
+        List<DiscoveryNode> result = new ArrayList<>();
         for (String address : addresses) {
             result.add(new SimpleDiscoveryNode(new Address(address, getHazelcastPort(port))));
         }

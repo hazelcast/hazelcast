@@ -723,7 +723,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     public static class TestNodeFilter implements NodeFilter {
 
-        private final List<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>();
+        private final List<DiscoveryNode> nodes = new ArrayList<>();
 
         @Override
         public boolean test(DiscoveryNode candidate) {

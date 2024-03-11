@@ -121,7 +121,7 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
         if (multicastMemberInfo == null) {
             return null;
         }
-        ArrayList<DiscoveryNode> arrayList = new ArrayList<DiscoveryNode>();
+        ArrayList<DiscoveryNode> arrayList = new ArrayList<>();
         try {
             discoveryNode = new SimpleDiscoveryNode(new Address(multicastMemberInfo.getHost(), multicastMemberInfo.getPort()));
             arrayList.add(discoveryNode);

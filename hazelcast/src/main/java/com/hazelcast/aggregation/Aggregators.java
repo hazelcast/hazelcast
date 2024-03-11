@@ -77,7 +77,7 @@ public final class Aggregators {
      * Aggregation result type Long.
      */
     public static <I> Aggregator<I, Long> count() {
-        return new CountAggregator<I>();
+        return new CountAggregator<>();
     }
 
     /**
@@ -87,7 +87,7 @@ public final class Aggregators {
      * Aggregation result type Long.
      */
     public static <I> Aggregator<I, Long> count(String attributePath) {
-        return new CountAggregator<I>(attributePath);
+        return new CountAggregator<>(attributePath);
     }
 
     /**
@@ -125,7 +125,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalAvg() {
-        return new BigDecimalAverageAggregator<I>();
+        return new BigDecimalAverageAggregator<>();
     }
 
     /**
@@ -137,7 +137,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalAvg(String attributePath) {
-        return new BigDecimalAverageAggregator<I>(attributePath);
+        return new BigDecimalAverageAggregator<>(attributePath);
     }
 
     /**
@@ -148,7 +148,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigIntegerAvg() {
-        return new BigIntegerAverageAggregator<I>();
+        return new BigIntegerAverageAggregator<>();
     }
 
     /**
@@ -160,7 +160,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigIntegerAvg(String attributePath) {
-        return new BigIntegerAverageAggregator<I>(attributePath);
+        return new BigIntegerAverageAggregator<>(attributePath);
     }
 
     /**
@@ -171,7 +171,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleAvg() {
-        return new DoubleAverageAggregator<I>();
+        return new DoubleAverageAggregator<>();
     }
 
     /**
@@ -183,7 +183,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleAvg(String attributePath) {
-        return new DoubleAverageAggregator<I>(attributePath);
+        return new DoubleAverageAggregator<>(attributePath);
     }
 
     /**
@@ -194,7 +194,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> integerAvg() {
-        return new IntegerAverageAggregator<I>();
+        return new IntegerAverageAggregator<>();
     }
 
     /**
@@ -206,7 +206,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> integerAvg(String attributePath) {
-        return new IntegerAverageAggregator<I>(attributePath);
+        return new IntegerAverageAggregator<>(attributePath);
     }
 
     /**
@@ -217,7 +217,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> longAvg() {
-        return new LongAverageAggregator<I>();
+        return new LongAverageAggregator<>();
     }
 
     /**
@@ -229,7 +229,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> longAvg(String attributePath) {
-        return new LongAverageAggregator<I>(attributePath);
+        return new LongAverageAggregator<>(attributePath);
     }
 
     /**
@@ -240,7 +240,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> numberAvg() {
-        return new NumberAverageAggregator<I>();
+        return new NumberAverageAggregator<>();
     }
 
     /**
@@ -252,7 +252,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> numberAvg(String attributePath) {
-        return new NumberAverageAggregator<I>(attributePath);
+        return new NumberAverageAggregator<>(attributePath);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -267,7 +267,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalMax() {
-        return new MaxAggregator<I, BigDecimal>();
+        return new MaxAggregator<>();
     }
 
     /**
@@ -279,7 +279,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalMax(String attributePath) {
-        return new MaxAggregator<I, BigDecimal>(attributePath);
+        return new MaxAggregator<>(attributePath);
     }
 
     /**
@@ -290,7 +290,7 @@ public final class Aggregators {
      * Aggregation result type is BigInteger.
      */
     public static <I> Aggregator<I, BigInteger> bigIntegerMax() {
-        return new MaxAggregator<I, BigInteger>();
+        return new MaxAggregator<>();
     }
 
     /**
@@ -302,7 +302,7 @@ public final class Aggregators {
      * Aggregation result type is BigInteger.
      */
     public static <I> Aggregator<I, BigInteger> bigIntegerMax(String attributePath) {
-        return new MaxAggregator<I, BigInteger>(attributePath);
+        return new MaxAggregator<>(attributePath);
     }
 
     /**
@@ -313,7 +313,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleMax() {
-        return new MaxAggregator<I, Double>();
+        return new MaxAggregator<>();
     }
 
     /**
@@ -325,7 +325,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleMax(String attributePath) {
-        return new MaxAggregator<I, Double>(attributePath);
+        return new MaxAggregator<>(attributePath);
     }
 
     /**
@@ -336,7 +336,7 @@ public final class Aggregators {
      * Aggregation result type is Integer.
      */
     public static <I> Aggregator<I, Integer> integerMax() {
-        return new MaxAggregator<I, Integer>();
+        return new MaxAggregator<>();
     }
 
     /**
@@ -348,7 +348,7 @@ public final class Aggregators {
      * Aggregation result type is Integer.
      */
     public static <I> Aggregator<I, Integer> integerMax(String attributePath) {
-        return new MaxAggregator<I, Integer>(attributePath);
+        return new MaxAggregator<>(attributePath);
     }
 
     /**
@@ -359,7 +359,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> longMax() {
-        return new MaxAggregator<I, Long>();
+        return new MaxAggregator<>();
     }
 
     /**
@@ -371,7 +371,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> longMax(String attributePath) {
-        return new MaxAggregator<I, Long>(attributePath);
+        return new MaxAggregator<>(attributePath);
     }
 
     /**
@@ -383,7 +383,7 @@ public final class Aggregators {
      * Aggregation result type is R.
      */
     public static <I, R extends Comparable> Aggregator<I, R> comparableMax() {
-        return new MaxAggregator<I, R>();
+        return new MaxAggregator<>();
     }
 
     /**
@@ -396,7 +396,7 @@ public final class Aggregators {
      * Aggregation result type is R.
      */
     public static <I, R extends Comparable> Aggregator<I, R> comparableMax(String attributePath) {
-        return new MaxAggregator<I, R>(attributePath);
+        return new MaxAggregator<>(attributePath);
     }
 
     /**
@@ -408,7 +408,7 @@ public final class Aggregators {
      * Accepts generic Comparable input values.
      */
     public static <I> Aggregator<I, I> maxBy(String attributePath) {
-        return new MaxByAggregator<I>(attributePath);
+        return new MaxByAggregator<>(attributePath);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -423,7 +423,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalMin() {
-        return new MinAggregator<I, BigDecimal>();
+        return new MinAggregator<>();
     }
 
     /**
@@ -435,7 +435,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalMin(String attributePath) {
-        return new MinAggregator<I, BigDecimal>(attributePath);
+        return new MinAggregator<>(attributePath);
     }
 
     /**
@@ -446,7 +446,7 @@ public final class Aggregators {
      * Aggregation result type is BigInteger.
      */
     public static <I> Aggregator<I, BigInteger> bigIntegerMin() {
-        return new MinAggregator<I, BigInteger>();
+        return new MinAggregator<>();
     }
 
     /**
@@ -458,7 +458,7 @@ public final class Aggregators {
      * Aggregation result type is BigInteger.
      */
     public static <I> Aggregator<I, BigInteger> bigIntegerMin(String attributePath) {
-        return new MinAggregator<I, BigInteger>(attributePath);
+        return new MinAggregator<>(attributePath);
     }
 
     /**
@@ -469,7 +469,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleMin() {
-        return new MinAggregator<I, Double>();
+        return new MinAggregator<>();
     }
 
     /**
@@ -481,7 +481,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleMin(String attributePath) {
-        return new MinAggregator<I, Double>(attributePath);
+        return new MinAggregator<>(attributePath);
     }
 
     /**
@@ -492,7 +492,7 @@ public final class Aggregators {
      * Aggregation result type is Integer.
      */
     public static <I> Aggregator<I, Integer> integerMin() {
-        return new MinAggregator<I, Integer>();
+        return new MinAggregator<>();
     }
 
     /**
@@ -504,7 +504,7 @@ public final class Aggregators {
      * Aggregation result type is Integer.
      */
     public static <I> Aggregator<I, Integer> integerMin(String attributePath) {
-        return new MinAggregator<I, Integer>(attributePath);
+        return new MinAggregator<>(attributePath);
     }
 
     /**
@@ -515,7 +515,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> longMin() {
-        return new MinAggregator<I, Long>();
+        return new MinAggregator<>();
     }
 
     /**
@@ -527,7 +527,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> longMin(String attributePath) {
-        return new MinAggregator<I, Long>(attributePath);
+        return new MinAggregator<>(attributePath);
     }
 
     /**
@@ -539,7 +539,7 @@ public final class Aggregators {
      * Aggregation result type is R.
      */
     public static <I, R extends Comparable> Aggregator<I, R> comparableMin() {
-        return new MinAggregator<I, R>();
+        return new MinAggregator<>();
     }
 
     /**
@@ -552,7 +552,7 @@ public final class Aggregators {
      * Aggregation result type is R.
      */
     public static <I, R extends Comparable> Aggregator<I, R> comparableMin(String attributePath) {
-        return new MinAggregator<I, R>(attributePath);
+        return new MinAggregator<>(attributePath);
     }
 
     /**
@@ -565,7 +565,7 @@ public final class Aggregators {
      * Accepts generic Comparable input values.
      */
     public static <I> Aggregator<I, I> minBy(String attributePath) {
-        return new MinByAggregator<I>(attributePath);
+        return new MinByAggregator<>(attributePath);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -580,7 +580,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalSum() {
-        return new BigDecimalSumAggregator<I>();
+        return new BigDecimalSumAggregator<>();
     }
 
     /**
@@ -592,7 +592,7 @@ public final class Aggregators {
      * Aggregation result type is BigDecimal.
      */
     public static <I> Aggregator<I, BigDecimal> bigDecimalSum(String attributePath) {
-        return new BigDecimalSumAggregator<I>(attributePath);
+        return new BigDecimalSumAggregator<>(attributePath);
     }
 
     /**
@@ -603,7 +603,7 @@ public final class Aggregators {
      * Aggregation result type is BigInteger.
      */
     public static <I> Aggregator<I, BigInteger> bigIntegerSum() {
-        return new BigIntegerSumAggregator<I>();
+        return new BigIntegerSumAggregator<>();
     }
 
     /**
@@ -615,7 +615,7 @@ public final class Aggregators {
      * Aggregation result type is BigInteger.
      */
     public static <I> Aggregator<I, BigInteger> bigIntegerSum(String attributePath) {
-        return new BigIntegerSumAggregator<I>(attributePath);
+        return new BigIntegerSumAggregator<>(attributePath);
     }
 
     /**
@@ -626,7 +626,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleSum() {
-        return new DoubleSumAggregator<I>();
+        return new DoubleSumAggregator<>();
     }
 
     /**
@@ -638,7 +638,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> doubleSum(String attributePath) {
-        return new DoubleSumAggregator<I>(attributePath);
+        return new DoubleSumAggregator<>(attributePath);
     }
 
     /**
@@ -649,7 +649,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> integerSum() {
-        return new IntegerSumAggregator<I>();
+        return new IntegerSumAggregator<>();
     }
 
     /**
@@ -661,7 +661,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> integerSum(String attributePath) {
-        return new IntegerSumAggregator<I>(attributePath);
+        return new IntegerSumAggregator<>(attributePath);
     }
 
     /**
@@ -672,7 +672,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> longSum() {
-        return new LongSumAggregator<I>();
+        return new LongSumAggregator<>();
     }
 
     /**
@@ -684,7 +684,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> longSum(String attributePath) {
-        return new LongSumAggregator<I>(attributePath);
+        return new LongSumAggregator<>(attributePath);
     }
 
     /**
@@ -695,7 +695,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> fixedPointSum() {
-        return new FixedSumAggregator<I>();
+        return new FixedSumAggregator<>();
     }
 
     /**
@@ -707,7 +707,7 @@ public final class Aggregators {
      * Aggregation result type is Long.
      */
     public static <I> Aggregator<I, Long> fixedPointSum(String attributePath) {
-        return new FixedSumAggregator<I>(attributePath);
+        return new FixedSumAggregator<>(attributePath);
     }
 
     /**
@@ -718,7 +718,7 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> floatingPointSum() {
-        return new FloatingPointSumAggregator<I>();
+        return new FloatingPointSumAggregator<>();
     }
 
     /**
@@ -730,6 +730,6 @@ public final class Aggregators {
      * Aggregation result type is Double.
      */
     public static <I> Aggregator<I, Double> floatingPointSum(String attributePath) {
-        return new FloatingPointSumAggregator<I>(attributePath);
+        return new FloatingPointSumAggregator<>(attributePath);
     }
 }

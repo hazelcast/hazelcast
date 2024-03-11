@@ -112,7 +112,7 @@ public interface Traverser<T> {
     @Nonnull
     @CheckReturnValue
     default Traverser<T> takeWhile(@Nonnull Predicate<? super T> predicate) {
-        return new Traverser<T>() {
+        return new Traverser<>() {
             boolean predicateSatisfied = true;
 
             @Override
@@ -134,7 +134,7 @@ public interface Traverser<T> {
     @Nonnull
     @CheckReturnValue
     default Traverser<T> dropWhile(@Nonnull Predicate<? super T> predicate) {
-        return new Traverser<T>() {
+        return new Traverser<>() {
             boolean predicateSatisfied = true;
 
             @Override
@@ -166,7 +166,7 @@ public interface Traverser<T> {
     @Nonnull
     @CheckReturnValue
     default Traverser<T> append(@Nonnull T item) {
-        return new Traverser<T>() {
+        return new Traverser<>() {
             T appendedItem = item;
             @Override
             public T next() {
@@ -190,7 +190,7 @@ public interface Traverser<T> {
     @Nonnull
     @CheckReturnValue
     default Traverser<T> prepend(@Nonnull T item) {
-        return new Traverser<T>() {
+        return new Traverser<>() {
             private boolean itemReturned;
             @Override
             public T next() {
@@ -227,7 +227,7 @@ public interface Traverser<T> {
     @Nonnull
     @CheckReturnValue
     default Traverser<T> onFirstNull(@Nonnull Runnable action) {
-        return new Traverser<T>() {
+        return new Traverser<>() {
             private boolean didRun;
 
             @Override

@@ -370,7 +370,7 @@ public class TransactionalMapProxy
                 predicate, IterationType.KEY, true, tx.isOriginatedFromClient());
 
         Extractors extractors = mapServiceContext.getExtractors(name);
-        Set<Object> returningKeySet = new HashSet<Object>(queryResultSet);
+        Set<Object> returningKeySet = new HashSet<>(queryResultSet);
         CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             if (entry.getValue().type == Type.REMOVED) {

@@ -208,7 +208,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
     }
 
     private class QueryFuture extends InternalCompletableFuture {
-        private final AtomicReferenceArray<Result> resultArray = new AtomicReferenceArray<Result>(partitionCount());
+        private final AtomicReferenceArray<Result> resultArray = new AtomicReferenceArray<>(partitionCount());
         private final AtomicInteger remaining;
 
         QueryFuture(int localPartitionCount) {

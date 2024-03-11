@@ -152,7 +152,7 @@ public final class SinkProcessors {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
-        MapSinkConfiguration<T, K, V> config = new MapSinkConfiguration<T, K, V>(mapName);
+        MapSinkConfiguration<T, K, V> config = new MapSinkConfiguration<>(mapName);
         config.setClientXml(ImdgUtil.asXmlString(clientConfig));
         config.setToKeyFn(toKeyFn);
         config.setToValueFn(toValueFn);

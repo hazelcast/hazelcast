@@ -50,7 +50,7 @@ public class JsonPattern {
      * Creates an empty JsonPattern.
      */
     public JsonPattern() {
-        this(new ArrayList<Integer>());
+        this(new ArrayList<>());
     }
 
     public JsonPattern(List<Integer> list) {
@@ -62,7 +62,7 @@ public class JsonPattern {
      * @param other
      */
     public JsonPattern(JsonPattern other) {
-        this(new ArrayList<Integer>(other.pattern));
+        this(new ArrayList<>(other.pattern));
     }
 
     public int get(int index) {

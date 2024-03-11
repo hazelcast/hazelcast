@@ -66,7 +66,7 @@ import static com.hazelcast.internal.util.SetUtil.createLinkedHashSet;
 public abstract class AbstractHazelcastCacheManager implements HazelcastCacheManager {
 
     protected final ConcurrentMap<String, ICacheInternal<?, ?>> caches
-            = new ConcurrentHashMap<String, ICacheInternal<?, ?>>();
+            = new ConcurrentHashMap<>();
 
     protected final CachingProvider cachingProvider;
     protected final HazelcastInstance hazelcastInstance;
@@ -95,7 +95,7 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
 
         this.isDefaultClassLoader = classLoader == null || cachingProvider.getDefaultClassLoader().equals(classLoader);
         ClassLoader localClassLoader = isDefaultClassLoader ? cachingProvider.getDefaultClassLoader() : classLoader;
-        this.classLoaderReference = new WeakReference<ClassLoader>(localClassLoader);
+        this.classLoaderReference = new WeakReference<>(localClassLoader);
 
         this.properties = properties == null ? new Properties() : new Properties(properties);
         this.cacheNamePrefix = getCacheNamePrefix();
@@ -389,9 +389,9 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
     protected <K, V, C extends Configuration<K, V>> CacheConfig<K, V> createCacheConfig(String cacheName, C configuration) {
         CacheConfig<K, V> cacheConfig;
         if (configuration instanceof CompleteConfiguration) {
-            cacheConfig = new CacheConfig<K, V>((CompleteConfiguration<K, V>) configuration);
+            cacheConfig = new CacheConfig<>((CompleteConfiguration<K, V>) configuration);
         } else {
-            cacheConfig = new CacheConfig<K, V>();
+            cacheConfig = new CacheConfig<>();
             cacheConfig.setStoreByValue(configuration.isStoreByValue());
             Class<K> keyType = configuration.getKeyType();
             Class<V> valueType = configuration.getValueType();
