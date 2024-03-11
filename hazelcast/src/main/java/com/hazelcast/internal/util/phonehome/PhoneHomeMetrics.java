@@ -203,7 +203,8 @@ public enum PhoneHomeMetrics {
     REST_CONFIG_RELOAD_FAILURE("restconfigreloadfail"),
 
     REST_REQUEST_COUNT("restrequestct"),
-    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");
+    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct"),
+    V_CPU_COUNT("vcpuct");
     private final String query;
 
     PhoneHomeMetrics(String query) {
