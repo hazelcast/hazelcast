@@ -214,7 +214,8 @@ public enum PhoneHomeMetrics {
     DMT_SOURCE_VERSION("dmtSourceVersion"),
     DMT_TARGET_VERSION("dmtTargetVersion"),
     DMT_TARGET_VIRIDIAN("dmtTargetViridian"),
-    DMT_DS_INFO("dmtDsInfo");
+    DMT_DS_INFO("dmtDsInfo"),
+    DMT_DS_AGGREGATIONS("dmtDsAggregations");
 
     private final String query;
 
