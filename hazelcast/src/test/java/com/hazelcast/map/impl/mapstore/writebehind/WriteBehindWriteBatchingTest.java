@@ -34,7 +34,7 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
     @Test
     public void testWriteBatching() throws Exception {
         final int writeBatchSize = 8;
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)

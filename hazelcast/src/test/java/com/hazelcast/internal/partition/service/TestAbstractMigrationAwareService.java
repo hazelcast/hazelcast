@@ -34,11 +34,11 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
 
     protected static final String BACKUP_COUNT_PROP = "backups.count";
 
-    private final List<PartitionMigrationEvent> beforeEvents = new ArrayList<PartitionMigrationEvent>();
+    private final List<PartitionMigrationEvent> beforeEvents = new ArrayList<>();
 
-    private final List<PartitionMigrationEvent> commitEvents = new ArrayList<PartitionMigrationEvent>();
+    private final List<PartitionMigrationEvent> commitEvents = new ArrayList<>();
 
-    private final List<PartitionMigrationEvent> rollbackEvents = new ArrayList<PartitionMigrationEvent>();
+    private final List<PartitionMigrationEvent> rollbackEvents = new ArrayList<>();
 
     public volatile int backupCount;
 
@@ -93,19 +93,19 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
 
     public List<PartitionMigrationEvent> getBeforeEvents() {
         synchronized (beforeEvents) {
-            return new ArrayList<PartitionMigrationEvent>(beforeEvents);
+            return new ArrayList<>(beforeEvents);
         }
     }
 
     public List<PartitionMigrationEvent> getCommitEvents() {
         synchronized (commitEvents) {
-            return new ArrayList<PartitionMigrationEvent>(commitEvents);
+            return new ArrayList<>(commitEvents);
         }
     }
 
     public List<PartitionMigrationEvent> getRollbackEvents() {
         synchronized (rollbackEvents) {
-            return new ArrayList<PartitionMigrationEvent>(rollbackEvents);
+            return new ArrayList<>(rollbackEvents);
         }
     }
 

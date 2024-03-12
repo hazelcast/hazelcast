@@ -25,7 +25,7 @@ import java.util.Map;
 
 class TestContainerCollector extends AbstractContainerCollector<Object> {
 
-    final Map<String, Object> containers = new HashMap<String, Object>();
+    final Map<String, Object> containers = new HashMap<>();
 
     private final boolean hasContainers;
     private final boolean isMergeable;

@@ -55,13 +55,13 @@ public class TestLoggerFactory extends LoggerFactorySupport {
      * Store all the logging context being created, because we need to
      * clear them in order to change the configuration to reload it.
      */
-    private final Collection<LoggerContext> loggerContexts = new ConcurrentLinkedQueue<LoggerContext>();
+    private final Collection<LoggerContext> loggerContexts = new ConcurrentLinkedQueue<>();
 
     /**
      * Reference to a {@link Log4j2Factory}, which is used to create
      * loggers for older Hazelcast versions.
      */
-    private final AtomicReference<Log4j2Factory> legacyLog4j2Factory = new AtomicReference<Log4j2Factory>();
+    private final AtomicReference<Log4j2Factory> legacyLog4j2Factory = new AtomicReference<>();
 
     /**
      * Changes the configuration to be used.

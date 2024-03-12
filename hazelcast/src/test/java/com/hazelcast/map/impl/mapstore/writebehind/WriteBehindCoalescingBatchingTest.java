@@ -136,7 +136,7 @@ public class WriteBehindCoalescingBatchingTest extends HazelcastTestSupport {
 
         @Override
         public Set<String> loadAllKeys() {
-            return new HashSet<String>(inMemoryStore.keySet());
+            return new HashSet<>(inMemoryStore.keySet());
         }
 
         @Override

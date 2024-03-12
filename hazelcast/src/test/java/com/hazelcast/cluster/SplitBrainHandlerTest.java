@@ -138,8 +138,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private static class LifecycleCountingListener implements LifecycleListener {
-        Map<LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<LifecycleState, AtomicInteger>();
-        BlockingQueue<LifecycleState> eventQueue = new LinkedBlockingQueue<LifecycleState>();
+        Map<LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<>();
+        BlockingQueue<LifecycleState> eventQueue = new LinkedBlockingQueue<>();
 
         LifecycleCountingListener() {
             for (LifecycleEvent.LifecycleState state : LifecycleEvent.LifecycleState.values()) {

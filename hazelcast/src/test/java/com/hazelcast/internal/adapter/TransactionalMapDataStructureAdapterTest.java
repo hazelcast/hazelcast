@@ -58,7 +58,7 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
 
         map = hazelcastInstance.getMap("TransactionalMapDataStructureAdapterTest");
 
-        adapter = new TransactionalMapDataStructureAdapter<Integer, String>(hazelcastInstance,
+        adapter = new TransactionalMapDataStructureAdapter<>(hazelcastInstance,
                 "TransactionalMapDataStructureAdapterTest");
     }
 
@@ -228,7 +228,7 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
 
     @Test(expected = MethodNotAvailableException.class)
     public void testExecuteOnKeys() {
-        Set<Integer> keys = new HashSet<Integer>(singleton(23));
+        Set<Integer> keys = new HashSet<>(singleton(23));
         adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
     }
 
@@ -272,7 +272,7 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
 
     @Test(expected = MethodNotAvailableException.class)
     public void testPutAll() {
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        Map<Integer, String> expectedResult = new HashMap<>();
         expectedResult.put(23, "value-23");
         expectedResult.put(42, "value-42");
 
@@ -296,7 +296,7 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
 
     @Test(expected = MethodNotAvailableException.class)
     public void testInvokeAll() {
-        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
         adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 

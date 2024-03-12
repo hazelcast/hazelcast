@@ -39,7 +39,7 @@ public class WanConsumerConfigDTOTest {
 
     @Test
     public void testSerialization() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("key1", "value1");
         properties.put("key2", "value2");
 

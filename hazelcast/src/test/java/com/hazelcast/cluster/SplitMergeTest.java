@@ -192,7 +192,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
     }
 
     private static class MergeLifecycleListener implements LifecycleListener {
-        final BlockingQueue<LifecycleState> eventQ = new ArrayBlockingQueue<LifecycleState>(10);
+        final BlockingQueue<LifecycleState> eventQ = new ArrayBlockingQueue<>(10);
 
         @Override
         public void stateChanged(LifecycleEvent event) {

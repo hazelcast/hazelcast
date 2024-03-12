@@ -40,11 +40,11 @@ final class TestSamples {
     }
 
     static <T> Map.Entry<T, T> createEntryWithValue(T value) {
-        return new MapEntrySimple<T, T>(value, value);
+        return new MapEntrySimple<>(value, value);
     }
 
     static <T> Map.Entry<T, T> createExtractableEntryWithValue(T value, InternalSerializationService ss) {
-        return new ExtractableEntry<T, T>(value, value, ss);
+        return new ExtractableEntry<>(value, value, ss);
     }
 
     static List<Integer> sampleIntegers() {
@@ -106,7 +106,7 @@ final class TestSamples {
     }
 
     static List<Person> samplePersons() {
-        List<Person> personList = new ArrayList<Person>(NUMBER_OF_SAMPLE_VALUES);
+        List<Person> personList = new ArrayList<>(NUMBER_OF_SAMPLE_VALUES);
         for (Double age : sampleDoubles()) {
             personList.add(new Person(age));
         }
@@ -114,7 +114,7 @@ final class TestSamples {
     }
 
     static List<ValueContainer> sampleValueContainers(ValueContainer.ValueType valueType) {
-        List<ValueContainer> containerList = new ArrayList<ValueContainer>(NUMBER_OF_SAMPLE_VALUES);
+        List<ValueContainer> containerList = new ArrayList<>(NUMBER_OF_SAMPLE_VALUES);
         switch (valueType) {
             case INTEGER:
                 for (int intValue : sampleIntegers()) {
@@ -180,7 +180,7 @@ final class TestSamples {
     }
 
     private static <T extends Number> List<T> sampleValues(RandomNumberSupplier<T> randomNumberSupplier) {
-        List<T> numbers = new ArrayList<T>();
+        List<T> numbers = new ArrayList<>();
         for (int i = 0; i < NUMBER_OF_SAMPLE_VALUES; i++) {
             numbers.add(randomNumberSupplier.get());
         }

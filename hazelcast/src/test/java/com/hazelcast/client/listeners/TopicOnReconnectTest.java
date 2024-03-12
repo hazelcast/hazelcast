@@ -43,7 +43,7 @@ public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
     protected UUID addListener() {
         topic = client.getTopic(randomString());
 
-        MessageListener<String> listener = new MessageListener<String>() {
+        MessageListener<String> listener = new MessageListener<>() {
             @Override
             public void onMessage(Message<String> message) {
                 onEvent(message.getMessageObject());

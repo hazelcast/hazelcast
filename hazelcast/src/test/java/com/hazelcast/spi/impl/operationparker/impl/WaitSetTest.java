@@ -52,8 +52,8 @@ import static org.mockito.Mockito.when;
 public class WaitSetTest {
 
     private ILogger logger = Logger.getLogger(WaitSetTest.class);
-    private ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap = new ConcurrentHashMap<WaitNotifyKey, WaitSet>();
-    private Queue<WaitSetEntry> delayQueue = new LinkedBlockingQueue<WaitSetEntry>();
+    private ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap = new ConcurrentHashMap<>();
+    private Queue<WaitSetEntry> delayQueue = new LinkedBlockingQueue<>();
     private NodeEngine nodeEngine;
     private OperationService operationService;
 

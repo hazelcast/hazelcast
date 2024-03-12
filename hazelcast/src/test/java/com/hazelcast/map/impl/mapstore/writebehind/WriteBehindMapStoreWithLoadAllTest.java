@@ -37,7 +37,7 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_loadAll() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -47,7 +47,7 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
                 .withPartitionCount(1)
                 .build();
         final int numberOfItems = 3;
-        final Map<Integer, Integer> fill = new HashMap<Integer, Integer>();
+        final Map<Integer, Integer> fill = new HashMap<>();
         for (int i = 0; i < numberOfItems; i++) {
             fill.put(i, -1);
         }

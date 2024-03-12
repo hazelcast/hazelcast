@@ -162,7 +162,7 @@ public final class SimpleMapTest {
 
         final IMap<String, Object> map = instance.getMap(NAMESPACE);
         final Member thisMember = instance.getCluster().getLocalMember();
-        List<String> lsOwnedEntries = new LinkedList<String>();
+        List<String> lsOwnedEntries = new LinkedList<>();
         for (int i = 0; i < entryCount; i++) {
             final String key = String.valueOf(i);
             Partition partition = instance.getPartitionService().getPartition(key);

@@ -74,7 +74,7 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
             return Collections.emptySet();
         }
 
-        Set<ServiceNamespace> knownNamespaces = new HashSet<ServiceNamespace>();
+        Set<ServiceNamespace> knownNamespaces = new HashSet<>();
         for (Key key : data.keySet()) {
             knownNamespaces.add(new TestServiceNamespace(key.name));
         }
@@ -93,7 +93,7 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
         }
 
         Collection<ServiceNamespace> knownNamespaces = getAllServiceNamespaces(event);
-        Map<TestServiceNamespace, Integer> values = new HashMap<TestServiceNamespace, Integer>(namespaces.size());
+        Map<TestServiceNamespace, Integer> values = new HashMap<>(namespaces.size());
         for (ServiceNamespace ns : namespaces) {
             assertThat(ns).isIn(knownNamespaces);
 
@@ -166,7 +166,7 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
 
     @Override
     public Collection<Integer> keys(String name) {
-        Set<Integer> set = new HashSet<Integer>();
+        Set<Integer> set = new HashSet<>();
         for (Key key : data.keySet()) {
             if (key.name.equals(name)) {
                 set.add(key.partitionId);

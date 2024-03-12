@@ -103,7 +103,7 @@ public final class ThreadLeakTestUtils {
     }
 
     private static Thread[] getJoinableThreads(Set<Thread> oldThreads, Set<Thread> newThreads) {
-        Set<Thread> diff = new HashSet<Thread>(newThreads);
+        Set<Thread> diff = new HashSet<>(newThreads);
         diff.removeAll(oldThreads);
         diff.remove(Thread.currentThread());
         removeWhitelistedThreadClasses(diff);

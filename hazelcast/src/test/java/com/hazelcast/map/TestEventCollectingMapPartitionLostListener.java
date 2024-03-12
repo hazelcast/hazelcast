@@ -23,7 +23,7 @@ import java.util.List;
 
 public class TestEventCollectingMapPartitionLostListener implements MapPartitionLostListener {
 
-    private final List<MapPartitionLostEvent> events = new ArrayList<MapPartitionLostEvent>();
+    private final List<MapPartitionLostEvent> events = new ArrayList<>();
 
     private final int backupCount;
 
@@ -37,7 +37,7 @@ public class TestEventCollectingMapPartitionLostListener implements MapPartition
     }
 
     public synchronized List<MapPartitionLostEvent> getEvents() {
-        return new ArrayList<MapPartitionLostEvent>(events);
+        return new ArrayList<>(events);
     }
 
     public int getBackupCount() {

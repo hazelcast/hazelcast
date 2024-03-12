@@ -39,7 +39,7 @@ public class WanConsumerConfigTest {
 
     @Test
     public void testSerialization() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("key", "value");
 
         config.setProperties(properties);

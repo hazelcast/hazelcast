@@ -143,7 +143,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        final CountingEntryListener<String, String> listener = new CountingEntryListener<String, String>();
+        final CountingEntryListener<String, String> listener = new CountingEntryListener<>();
 
         MultiMap<String, String> multiMap = instance1.getMultiMap(mapName);
         multiMap.addEntryListener(listener, true);

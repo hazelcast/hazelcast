@@ -58,14 +58,14 @@ public class YamlDomBuilderNegativeTest {
 
     @Test(expected = YamlException.class)
     public void testBuildFromMapDocumentRootNameNotFoundThrows() {
-        Map<String, Object> documentMap = new HashMap<String, Object>();
+        Map<String, Object> documentMap = new HashMap<>();
         documentMap.put("not-root", new Object());
         YamlDomBuilder.build(documentMap, "root");
     }
 
     @Test(expected = YamlException.class)
     public void testBuildFromMapDocumentInvalidScalarThrows() {
-        Map<String, Object> documentMap = new HashMap<String, Object>();
+        Map<String, Object> documentMap = new HashMap<>();
         documentMap.put("root", new Object());
         YamlDomBuilder.build(documentMap, "root");
     }

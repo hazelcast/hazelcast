@@ -98,7 +98,7 @@ public final class TestNodeRegistry {
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
-        Collection<HazelcastInstance> all = new LinkedList<HazelcastInstance>();
+        Collection<HazelcastInstance> all = new LinkedList<>();
         for (Node node : nodes.values()) {
             if (node.isRunning()) {
                 all.add(node.hazelcastInstance);

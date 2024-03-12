@@ -46,7 +46,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -64,7 +64,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting_onSameKey() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -84,7 +84,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemove() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -105,7 +105,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemoveMultipleTimes() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -126,7 +126,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void evict_then_loadAll_onSameKey() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -138,13 +138,13 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
         map.put(1, 100);
 
-        final Map<Integer, Integer> fill = new HashMap<Integer, Integer>();
+        final Map<Integer, Integer> fill = new HashMap<>();
         fill.put(1, -1);
         mapStore.storeAll(fill);
 
         map.evict(1);
 
-        final Set<Integer> loadKeys = new HashSet<Integer>();
+        final Set<Integer> loadKeys = new HashSet<>();
         loadKeys.add(1);
 
         map.loadAll(loadKeys, true);
@@ -154,7 +154,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void evictAll_then_loadAll_onSameKey() throws Exception {
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -166,13 +166,13 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
         map.put(1, 100);
 
-        final Map<Integer, Integer> fill = new HashMap<Integer, Integer>();
+        final Map<Integer, Integer> fill = new HashMap<>();
         fill.put(1, -1);
         mapStore.storeAll(fill);
 
         map.evictAll();
 
-        final Set<Integer> loadKeys = new HashSet<Integer>();
+        final Set<Integer> loadKeys = new HashSet<>();
         loadKeys.add(1);
 
         map.loadAll(loadKeys, true);
@@ -183,7 +183,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     @Test
     public void testWriteBehindFlushPersistsAllRecords_afterShutdownAll() throws Exception {
         int nodeCount = 2;
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -255,7 +255,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     private IMap<Integer, Integer> createMapBackedByWriteBehindStore() {
-        MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         return TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -280,7 +280,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     private MapStore<Integer, Integer> createSlowMapStore(final AtomicInteger storeCount) {
-        return new MapStoreAdapter<Integer, Integer>() {
+        return new MapStoreAdapter<>() {
             @Override
             public void store(Integer key, Integer value) {
                 storeCount.incrementAndGet();

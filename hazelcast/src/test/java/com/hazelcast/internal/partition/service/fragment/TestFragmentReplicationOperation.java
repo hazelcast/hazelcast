@@ -60,7 +60,7 @@ public class TestFragmentReplicationOperation extends Operation {
         super.readInternal(in);
 
         int len = in.readInt();
-        values = new HashMap<TestServiceNamespace, Integer>(len);
+        values = new HashMap<>(len);
         for (int i = 0; i < len; i++) {
             TestServiceNamespace ns = in.readObject();
             int value = in.readInt();

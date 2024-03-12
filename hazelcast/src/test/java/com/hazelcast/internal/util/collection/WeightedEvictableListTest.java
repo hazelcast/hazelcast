@@ -32,14 +32,14 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testNewItemStartsWithOneVote() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         list.addOrVote("a");
         assertEquals(1, list.getList().get(0).weight);
     }
 
     @Test
     public void testVoteFor() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         WeightedItem<String> weightedItem = list.addOrVote("a");
         list.voteFor(weightedItem);
         assertWeightsInOrder(list, 2);
@@ -47,7 +47,7 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testAddDoesNotDuplicate() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         list.addOrVote("a");
         list.addOrVote("a");
         assertItemsInOrder(list, "a");
@@ -55,7 +55,7 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testDuplicateAddIncreasesWeight() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         list.addOrVote("a");
         list.addOrVote("a");
         list.addOrVote("a");
@@ -65,7 +65,7 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testListReorganizesAfterEnoughVotes() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         list.addOrVote("c");
         list.addOrVote("b");
         list.addOrVote("b");
@@ -78,7 +78,7 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testListReorganizesAfterEnoughVotes_viaWeightedItem() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         WeightedItem<String> weightedC = list.addOrVote("c");
         WeightedItem<String> weightedB = list.addOrVote("b");
         WeightedItem<String> weightedA = list.addOrVote("a");
@@ -92,7 +92,7 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testListReorganizesAfterMaxSize() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 100);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 100);
         list.addOrVote("c");
         list.addOrVote("b");
         list.addOrVote("b");
@@ -108,7 +108,7 @@ public class WeightedEvictableListTest {
 
     @Test
     public void testScenario() {
-        WeightedEvictableList<String> list = new WeightedEvictableList<String>(3, 3);
+        WeightedEvictableList<String> list = new WeightedEvictableList<>(3, 3);
         list.addOrVote("a");
         list.addOrVote("b");
         list.addOrVote("c");

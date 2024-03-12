@@ -186,7 +186,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         for (DelayedEntry entry : delayedEntries) {
             queue.addLast(entry, false);
         }
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        List<DelayedEntry> entries = new ArrayList<>();
         queue.filter(new IPredicate<DelayedEntry>() {
             int count = 0;
 
@@ -208,7 +208,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     private List<DelayedEntry> createDelayedEntryList(int numberOfEntriesToCreate) {
-        List<DelayedEntry> list = new ArrayList<DelayedEntry>(numberOfEntriesToCreate);
+        List<DelayedEntry> list = new ArrayList<>(numberOfEntriesToCreate);
         SerializationService ss1 = new DefaultSerializationServiceBuilder().build();
         long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfEntriesToCreate; i++) {

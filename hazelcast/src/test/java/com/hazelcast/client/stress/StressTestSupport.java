@@ -40,7 +40,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     //todo: should be system property
     public static final int KILL_DELAY_SECONDS = 10;
 
-    private final List<HazelcastInstance> instances = new CopyOnWriteArrayList<HazelcastInstance>();
+    private final List<HazelcastInstance> instances = new CopyOnWriteArrayList<>();
     private CountDownLatch startLatch;
     private KillMemberThread killMemberThread;
     private volatile boolean stopOnError = true;

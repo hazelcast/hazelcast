@@ -180,7 +180,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
                 .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), valueOf(partitionThreads));
         instance = createHazelcastInstance(config);
 
-        List<SlowRecursiveOperation> operations = new ArrayList<SlowRecursiveOperation>(numberOfOperations);
+        List<SlowRecursiveOperation> operations = new ArrayList<>(numberOfOperations);
         int partitionCount = getPartitionService(instance).getPartitionCount();
 
         int partitionIndex = 1;

@@ -39,7 +39,7 @@ public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
     @Test
     public void testAllUpdatesReflectedToMapStore() throws Exception {
         int nodeCount = 3;
-        final MapStoreWithCounter<Integer, String> mapStore = new MapStoreWithCounter<Integer, String>();
+        final MapStoreWithCounter<Integer, String> mapStore = new MapStoreWithCounter<>();
         TestMapUsingMapStoreBuilder<Integer, String> builder = TestMapUsingMapStoreBuilder.<Integer, String>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)

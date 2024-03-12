@@ -270,7 +270,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         final List<TestMessage>[] messageLists = new List[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            messageLists[i] = new CopyOnWriteArrayList<TestMessage>();
+            messageLists[i] = new CopyOnWriteArrayList<>();
         }
 
         final CountDownLatch startLatch = new CountDownLatch(nodeCount);
@@ -315,7 +315,7 @@ public class TopicTest extends HazelcastTestSupport {
             TestMessage[] ref = new TestMessage[messageLists[0].size()];
             messageLists[0].toArray(ref);
 
-            Comparator<TestMessage> comparator = new Comparator<TestMessage>() {
+            Comparator<TestMessage> comparator = new Comparator<>() {
                 public int compare(TestMessage m1, TestMessage m2) {
                     // sort only publisher blocks. if publishers are the same, leave them as they are
                     return m1.publisher.getUuid().compareTo(m2.publisher.getUuid());
@@ -349,7 +349,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         final List<TestMessage>[] messageListPerNode = new List[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            messageListPerNode[i] = new CopyOnWriteArrayList<TestMessage>();
+            messageListPerNode[i] = new CopyOnWriteArrayList<>();
         }
 
         final CountDownLatch messageLatch = new CountDownLatch(nodeCount * count);
@@ -536,7 +536,7 @@ public class TopicTest extends HazelcastTestSupport {
             final AtomicInteger onMessageCount = new AtomicInteger(0);
             final CountDownLatch onMessageInvoked = new CountDownLatch(1);
 
-            MessageListener<String> messageListener = new MessageListener<String>() {
+            MessageListener<String> messageListener = new MessageListener<>() {
                 public void onMessage(Message<String> msg) {
                     onMessageCount.incrementAndGet();
                     onMessageInvoked.countDown();
@@ -598,14 +598,14 @@ public class TopicTest extends HazelcastTestSupport {
         final AtomicInteger atomicInteger = new AtomicInteger();
         final String message = "Hazelcast Rocks!";
 
-        MessageListener<String> messageListener1 = new MessageListener<String>() {
+        MessageListener<String> messageListener1 = new MessageListener<>() {
             public void onMessage(Message<String> msg) {
                 atomicInteger.incrementAndGet();
                 latch.countDown();
                 cp.countDown();
             }
         };
-        MessageListener<String> messageListener2 = new MessageListener<String>() {
+        MessageListener<String> messageListener2 = new MessageListener<>() {
             public void onMessage(Message<String> msg) {
                 atomicInteger.incrementAndGet();
                 latch.countDown();
@@ -714,7 +714,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         final Set<String>[] threads = new Set[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            threads[i] = new HashSet<String>();
+            threads[i] = new HashSet<>();
         }
 
         final CountDownLatch startLatch = new CountDownLatch(nodeCount);

@@ -89,7 +89,7 @@ public class TopicStressTest extends HazelcastTestSupport {
             publishThreads[threadIndex] = publishThread;
         }
 
-        listenerMap = new HashMap<String, List<MessageListenerImpl>>();
+        listenerMap = new HashMap<>();
         for (int topicIndex = 0; topicIndex < TOPIC_COUNT; topicIndex++) {
             String topicName = getTopicName(topicIndex);
             List<MessageListenerImpl> listeners = registerTopicListeners(topicName, instances);
@@ -154,7 +154,7 @@ public class TopicStressTest extends HazelcastTestSupport {
 
     private class PublishThread extends Thread {
         private final Random random = new Random();
-        private final Map<String, Long> messageCount = new HashMap<String, Long>();
+        private final Map<String, Long> messageCount = new HashMap<>();
         private final CountDownLatch startLatch;
 
         private PublishThread(CountDownLatch startLatch) {
@@ -213,7 +213,7 @@ public class TopicStressTest extends HazelcastTestSupport {
     }
 
     private List<MessageListenerImpl> registerTopicListeners(String topicName, HazelcastInstance[] instances) {
-        List<MessageListenerImpl> listeners = new LinkedList<MessageListenerImpl>();
+        List<MessageListenerImpl> listeners = new LinkedList<>();
         for (HazelcastInstance hz : instances) {
             MessageListenerImpl listener = new MessageListenerImpl();
             ITopic<Integer> topic = hz.getTopic(topicName);

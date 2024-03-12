@@ -332,7 +332,7 @@ public class UserCodeDeploymentBasicTest extends HazelcastTestSupport {
                 .setEnabled(true);
 
         ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<String> ep =
-                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<String>();
+                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<>();
 
         HazelcastInstance instance1WithoutEp = factory.newHazelcastInstance(configWithoutEnclosingClass);
 

@@ -24,7 +24,7 @@ import java.util.List;
 
 public class TestJsonValues {
 
-    public static final List<JsonValue> LIST = new ArrayList<JsonValue>();
+    public static final List<JsonValue> LIST = new ArrayList<>();
 
     static {
         // arrays

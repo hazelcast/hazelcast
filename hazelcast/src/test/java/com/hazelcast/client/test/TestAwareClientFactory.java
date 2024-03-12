@@ -40,7 +40,7 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class TestAwareClientFactory extends TestAwareInstanceFactory {
 
-    protected final Map<String, List<HazelcastInstance>> perMethodClients = new ConcurrentHashMap<String, List<HazelcastInstance>>();
+    protected final Map<String, List<HazelcastInstance>> perMethodClients = new ConcurrentHashMap<>();
 
     /**
      * Creates new client instance which uses in its network configuration the first member created by this factory. The value

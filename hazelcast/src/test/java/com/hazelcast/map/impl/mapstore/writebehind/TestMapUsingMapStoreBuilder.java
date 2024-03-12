@@ -59,7 +59,7 @@ public class TestMapUsingMapStoreBuilder<K, V> {
     }
 
     public static <K, V> TestMapUsingMapStoreBuilder<K, V> create() {
-        return new TestMapUsingMapStoreBuilder<K, V>();
+        return new TestMapUsingMapStoreBuilder<>();
     }
 
     public TestMapUsingMapStoreBuilder<K, V> mapName(String mapName) {

@@ -92,7 +92,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void executionCallback_notifiedOnSuccess() {
         final CountDownLatch latch = new CountDownLatch(1);
         Callable<String> task = new BasicTestCallable();
-        ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
+        ExecutionCallback<String> executionCallback = new ExecutionCallback<>() {
             public void onResponse(String response) {
                 latch.countDown();
             }
@@ -108,7 +108,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void executionCallback_notifiedOnFailure() {
         final CountDownLatch latch = new CountDownLatch(1);
         FailingTestTask task = new FailingTestTask();
-        ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
+        ExecutionCallback<String> executionCallback = new ExecutionCallback<>() {
             public void onResponse(String response) {
             }
 

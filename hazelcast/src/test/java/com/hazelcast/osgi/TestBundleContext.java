@@ -41,7 +41,7 @@ class TestBundleContext implements BundleContext {
     private final AtomicInteger counter = new AtomicInteger();
     private final Object mutex = new Object();
 
-    private final Map<String, List<ServiceReference>> serviceReferenceMap = new HashMap<String, List<ServiceReference>>();
+    private final Map<String, List<ServiceReference>> serviceReferenceMap = new HashMap<>();
 
     private final TestBundle testBundle;
     private final TestBundle.RegisterDeregisterListener registerDeregisterListener;
@@ -96,7 +96,7 @@ class TestBundleContext implements BundleContext {
         synchronized (mutex) {
             List<ServiceReference> serviceReferences = serviceReferenceMap.get(clazz);
             if (serviceReferences == null) {
-                serviceReferences = new ArrayList<ServiceReference>();
+                serviceReferences = new ArrayList<>();
                 serviceReferenceMap.put(clazz, serviceReferences);
             }
             serviceReferences.add(serviceReference);
@@ -131,7 +131,7 @@ class TestBundleContext implements BundleContext {
     }
 
     ServiceReference[] getAllServiceReferences() {
-        List<ServiceReference> allServiceReferences = new ArrayList<ServiceReference>();
+        List<ServiceReference> allServiceReferences = new ArrayList<>();
         // we simply ignore filter since we don't use filer in our tests
         synchronized (mutex) {
             for (Map.Entry<String, List<ServiceReference>> entry : serviceReferenceMap.entrySet()) {

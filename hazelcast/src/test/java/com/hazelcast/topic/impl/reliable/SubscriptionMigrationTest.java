@@ -64,8 +64,8 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
         final CountingMigrationListener migrationListener = new CountingMigrationListener();
         instance1.getPartitionService().addMigrationListener(migrationListener);
 
-        final PayloadMessageListener<String> listener0 = new PayloadMessageListener<String>();
-        final PayloadMessageListener<String> listener1 = new PayloadMessageListener<String>();
+        final PayloadMessageListener<String> listener0 = new PayloadMessageListener<>();
+        final PayloadMessageListener<String> listener1 = new PayloadMessageListener<>();
 
         topic0.addMessageListener(listener0);
         topic1.addMessageListener(listener1);
@@ -98,7 +98,7 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
 
     public class PayloadMessageListener<V> implements MessageListener<V> {
 
-        private Collection<V> receivedMessages = new HashSet<V>();
+        private Collection<V> receivedMessages = new HashSet<>();
 
         @Override
         public void onMessage(Message<V> message) {

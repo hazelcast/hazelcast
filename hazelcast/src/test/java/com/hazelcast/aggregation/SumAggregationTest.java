@@ -294,7 +294,7 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testFixedPointSum() {
-        List<Number> values = new ArrayList<Number>();
+        List<Number> values = new ArrayList<>();
         values.addAll(sampleLongs());
         values.addAll(sampleIntegers());
         values.addAll(sampleBigIntegers());
@@ -344,7 +344,7 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testFloatingPointSum() {
-        List<Number> values = new ArrayList<Number>();
+        List<Number> values = new ArrayList<>();
         values.addAll(sampleDoubles());
         values.addAll(sampleFloats());
         values.addAll(sampleBigDecimals());

@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TargetAwareOperation extends Operation implements TargetAware, BackupAwareOperation, PartitionAwareOperation {
 
-    public static final List<Address> TARGETS = new CopyOnWriteArrayList<Address>();
+    public static final List<Address> TARGETS = new CopyOnWriteArrayList<>();
 
     private int syncBackupCount;
     private int asyncBackupCount;

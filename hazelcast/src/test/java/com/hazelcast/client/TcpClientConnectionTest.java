@@ -195,7 +195,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
             }
         });
 
-        final AtomicReference<Future> atomicReference = new AtomicReference<Future>();
+        final AtomicReference<Future> atomicReference = new AtomicReference<>();
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {

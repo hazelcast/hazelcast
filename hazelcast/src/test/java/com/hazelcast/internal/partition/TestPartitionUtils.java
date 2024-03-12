@@ -84,7 +84,7 @@ public final class TestPartitionUtils {
     }
 
     public static Map<Integer, PartitionReplicaVersionsView> getAllReplicaVersions(List<HazelcastInstance> instances) {
-        Map<Integer, PartitionReplicaVersionsView> replicaVersions = new HashMap<Integer, PartitionReplicaVersionsView>();
+        Map<Integer, PartitionReplicaVersionsView> replicaVersions = new HashMap<>();
         for (HazelcastInstance instance : instances) {
             collectOwnedReplicaVersions(getNode(instance), replicaVersions);
         }
@@ -92,7 +92,7 @@ public final class TestPartitionUtils {
     }
 
     public static Map<Integer, PartitionReplicaVersionsView> getOwnedReplicaVersions(Node node) {
-        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions = new HashMap<Integer, PartitionReplicaVersionsView>();
+        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions = new HashMap<>();
         collectOwnedReplicaVersions(node, ownedReplicaVersions);
         return ownedReplicaVersions;
     }
@@ -156,7 +156,7 @@ public final class TestPartitionUtils {
     }
 
     public static Map<Integer, List<Address>> getAllReplicaAddresses(Node node) {
-        Map<Integer, List<Address>> allReplicaAddresses = new HashMap<Integer, List<Address>>();
+        Map<Integer, List<Address>> allReplicaAddresses = new HashMap<>();
         InternalPartitionService partitionService = node.getPartitionService();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             allReplicaAddresses.put(partitionId, getReplicaAddresses(node, partitionId));
@@ -170,7 +170,7 @@ public final class TestPartitionUtils {
     }
 
     public static List<Address> getReplicaAddresses(Node node, int partitionId) {
-        List<Address> replicaAddresses = new ArrayList<Address>();
+        List<Address> replicaAddresses = new ArrayList<>();
         InternalPartitionService partitionService = node.getPartitionService();
         InternalPartition partition = partitionService.getPartition(partitionId);
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
@@ -206,7 +206,7 @@ public final class TestPartitionUtils {
 
             Collection<ServiceNamespace> namespaces = replicaManager.getNamespaces(partitionId);
             Map<ServiceNamespace, long[]> versionMap = new HashMap<>(namespaces.size());
-            Set<ServiceNamespace> dirty = new HashSet<ServiceNamespace>();
+            Set<ServiceNamespace> dirty = new HashSet<>();
             for (ServiceNamespace ns : namespaces) {
                 long[] originalVersions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
                 long[] versions = Arrays.copyOf(originalVersions, originalVersions.length);

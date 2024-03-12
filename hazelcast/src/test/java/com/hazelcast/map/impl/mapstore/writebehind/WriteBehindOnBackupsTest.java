@@ -58,7 +58,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
     public void testBackupRemovesEntries_afterProcessingDelay() throws Exception {
         final int numberOfItems = 10;
         final String mapName = randomMapName();
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         TestMapUsingMapStoreBuilder<Integer, Integer> storeBuilder = TestMapUsingMapStoreBuilder.create();
         final IMap<Integer, Integer> map = storeBuilder
                 .mapName(mapName)
@@ -79,7 +79,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
     @Test
     public void testPutTransientDoesNotStoreEntry_onBackupPartition() {
         String mapName = randomMapName();
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         TestMapUsingMapStoreBuilder<Integer, Integer> storeBuilder = TestMapUsingMapStoreBuilder.create();
         final IMap<Integer, Integer> map = storeBuilder
                 .mapName(mapName)
@@ -103,7 +103,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
     @Category(SlowTest.class)
     public void testPutTransientDoesNotStoreEntry_onPromotedReplica() {
         String mapName = randomMapName();
-        final MapStoreWithCounter<String, Object> mapStore = new MapStoreWithCounter<String, Object>();
+        final MapStoreWithCounter<String, Object> mapStore = new MapStoreWithCounter<>();
         TestMapUsingMapStoreBuilder<String, Object> storeBuilder = TestMapUsingMapStoreBuilder.create();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final IMap<String, Object> map = storeBuilder

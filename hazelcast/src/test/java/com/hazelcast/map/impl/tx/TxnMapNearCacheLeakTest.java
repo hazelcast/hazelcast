@@ -95,7 +95,7 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
         TransactionalMapDataStructureAdapter<K, V> dataAdapter
-                = new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME);
+                = new TransactionalMapDataStructureAdapter<>(dataInstance, DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder

@@ -40,7 +40,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
     @Test
     public void testCounter_against_one_node_zero_backup() throws Exception {
         final int maxCapacityPerNode = 100;
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
@@ -60,7 +60,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
     public void testCounter_against_many_nodes() throws Exception {
         final int maxCapacityPerNode = 100;
         final int nodeCount = 2;
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
@@ -81,7 +81,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
     public void testCounter_whenMaxCapacityExceeded() {
         final int maxCapacityPerNode = 100;
         final int nodeCount = 1;
-        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
