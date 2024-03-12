@@ -28,7 +28,9 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -39,9 +41,9 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
     private int tasksMax;
     private ReadKafkaConnectProcessorSupplier supplier;
     private transient boolean partitionedAddresses;
-    private final transient List<Address> memberAddressList = new ArrayList<>();
-    private final transient List<Integer> memberLocalParallelismList = new ArrayList<>();
-    private transient int processorOrder;
+    private final Map<Address, Integer> startingProcessorOrderMap = new HashMap<>();
+    private transient int localParallelism;
+    private int lastInitiallyActiveProcessorOrder;
 
     public void setTasksMax(int tasksMax) {
         this.tasksMax = tasksMax;
@@ -55,12 +57,9 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
         return partitionedAddresses;
     }
 
-    public List<Integer> getMemberLocalParallelismList() {
-        return memberLocalParallelismList;
-    }
-
     @Override
     public void init(@Nonnull Context context) {
+        localParallelism = context.localParallelism();
         // Determine whether the execution plan can accommodate the tasksMax during the planning phase
         int totalParallelism = context.totalParallelism();
         if (totalParallelism < tasksMax) {
@@ -80,64 +79,67 @@ public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, Data
             partitionedAddresses = true;
             partitionTasks(addresses);
         }
+        final int lastActive = this.lastInitiallyActiveProcessorOrder;
         return memberAddress -> {
-            int indexOf = memberAddressList.indexOf(memberAddress);
-            if (indexOf != -1) {
-                memberAddressList.remove(indexOf);
-                Integer localParallelismForMember = memberLocalParallelismList.remove(indexOf);
-                return new TaskMaxProcessorSupplier(localParallelismForMember, supplier,
-                        getAndIncrementProcessorOrder(localParallelismForMember));
+            var startingProcessorOrder = startingProcessorOrderMap.get(memberAddress);
+            if (startingProcessorOrder != null) {
+                return new TaskMaxProcessorSupplier(startingProcessorOrder, lastActive, supplier);
             } else {
                 return new ExpectNothingProcessorSupplier();
             }
         };
     }
 
-    private int getAndIncrementProcessorOrder(int delta) {
-        int result = processorOrder;
-        processorOrder = processorOrder + delta;
-        return result;
-    }
-
+    /**
+     * Algorithm:
+     * We get few addresses, then we iterate and for each we set Kafka Connect's
+     * {@code local parallelism = local parallelism of member}. If it's the last address on the list, we set
+     * KC {@code local parallelism as tasksMax - already created task count}.
+     *  <p>
+     * All the addresses without an assigned value will have KC local parallelism = 0 and will never become active -
+     * we will use {@link com.hazelcast.jet.core.ProcessorMetaSupplier.ExpectNothingProcessorSupplier} for them.
+     */
     private void partitionTasks(List<Address> addresses) {
-        int localParallelism = getLocalParallelism(addresses);
-        List<Address> shuffledAddresses = new ArrayList<>(addresses);
-        Collections.shuffle(shuffledAddresses);
-
+        List<Address> copiedAddresses = new ArrayList<>(addresses);
+        Collections.shuffle(copiedAddresses);
         int taskCounter = 0;
 
-        while (taskCounter < tasksMax) {
-            if (shuffledAddresses.size() == 1) {
-                memberAddressList.add(shuffledAddresses.remove(0));
-                memberLocalParallelismList.add(tasksMax - taskCounter);
-                break;
+        int processorOrder = 0;
+        boolean allMembersAssigned = false;
+        while (taskCounter < tasksMax && !allMembersAssigned) {
+            Address address = copiedAddresses.remove(0);
+            int parallelismForMember;
+            // fill to the tasksMax value if we are at last member
+            if (copiedAddresses.isEmpty()) {
+                parallelismForMember = tasksMax - taskCounter;
+                allMembersAssigned = true;
             } else {
-                memberAddressList.add(shuffledAddresses.remove(0));
-                memberLocalParallelismList.add(localParallelism);
-                taskCounter += localParallelism;
+                parallelismForMember = localParallelism;
             }
+            taskCounter += parallelismForMember;
+            startingProcessorOrderMap.put(address, processorOrder);
+            processorOrder += localParallelism;
         }
+        lastInitiallyActiveProcessorOrder = taskCounter - 1;
     }
 
-    private int getLocalParallelism(List<Address> addresses) {
-        int localParallelism = preferredLocalParallelism();
-        if (localParallelism == -1) {
-            localParallelism = tasksMax / addresses.size();
-        }
-        return localParallelism;
+    Map<Address, Integer> getStartingProcessorOrderMap() {
+        return startingProcessorOrderMap;
+    }
+
+    void setLocalParallelism(int localParallelism) {
+        this.localParallelism = localParallelism;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(tasksMax);
         out.writeObject(supplier);
-        out.writeInt(processorOrder);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         tasksMax = in.readInt();
         supplier = in.readObject();
-        processorOrder = in.readInt();
     }
 }

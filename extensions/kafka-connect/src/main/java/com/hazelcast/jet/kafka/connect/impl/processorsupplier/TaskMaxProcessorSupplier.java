@@ -30,16 +30,16 @@ import java.util.Collection;
  */
 class TaskMaxProcessorSupplier implements ProcessorSupplier {
     private static final long serialVersionUID = 1L;
-    private final int localParallelismForMember;
     private final ReadKafkaConnectProcessorSupplier supplier;
-    private int processorOrder;
+    private final int lastInitiallyActiveProcesorOrder;
+    private final int startingProcessorOrder;
 
-    TaskMaxProcessorSupplier(int localParallelismForMember,
-                                    ReadKafkaConnectProcessorSupplier supplier,
-                                    int processorOrder) {
-        this.localParallelismForMember = localParallelismForMember;
+    TaskMaxProcessorSupplier(int startingProcessorOrder,
+                             int lastInitiallyActiveProcesorOrder,
+                             ReadKafkaConnectProcessorSupplier supplier) {
+        this.startingProcessorOrder = startingProcessorOrder;
+        this.lastInitiallyActiveProcesorOrder = lastInitiallyActiveProcesorOrder;
         this.supplier = supplier;
-        this.processorOrder = processorOrder;
     }
 
     @Override
@@ -66,11 +66,11 @@ class TaskMaxProcessorSupplier implements ProcessorSupplier {
     @Override
     public Collection<? extends Processor> get(int count) {
         Collection<ReadKafkaConnectP<?>> processors = supplier.get(count);
-        int index = 1;
+        int processorOrder = startingProcessorOrder;
         for (ReadKafkaConnectP<?> processor : processors) {
-            processor.setActive(index <= localParallelismForMember);
-            processor.setProcessorOrder(processorOrder++);
-            index++;
+            int thisOrder = processorOrder++;
+            processor.setActive(thisOrder <= lastInitiallyActiveProcesorOrder);
+            processor.setProcessorOrder(thisOrder);
         }
         return processors;
     }

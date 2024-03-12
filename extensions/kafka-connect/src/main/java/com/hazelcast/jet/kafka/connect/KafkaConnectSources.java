@@ -120,6 +120,8 @@ public final class KafkaConnectSources {
                                               @Nullable RetryStrategy retryStrategy) {
         requireNonNull(properties, "properties is required");
         requireNonNull(projectionFn, "projectionFn is required");
+        checkSerializable(projectionFn, "projectionFn");
+
         if (retryStrategy != null) {
             checkSerializable(retryStrategy, "retryStrategy");
         }

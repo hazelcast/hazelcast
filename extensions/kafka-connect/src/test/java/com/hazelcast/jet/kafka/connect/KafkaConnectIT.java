@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -62,6 +63,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -91,6 +93,28 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
     public static final int ITEM_COUNT = 1_000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIT.class);
+
+    @Test
+    public void test_non_serializable() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "test");
+        properties.setProperty("connector.class", "KafkaConnectIT");
+        assertThatThrownBy(() -> Pipeline.create()
+                                         .readFrom(connect(properties, new NonSerializableMapping()))
+                                         .withIngestionTimestamps()
+                                         .writeTo(Sinks.logger()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("\"projectionFn\" must be serializable");
+    }
+    private static class NonSerializableMapping implements FunctionEx<SourceRecord, Object> {
+        @SuppressWarnings("unused")
+        private final Object nonSerializableField = new Object();
+
+        @Override
+        public Object applyEx(SourceRecord sourceRecord) {
+            return sourceRecord;
+        }
+    }
 
     @Test
     public void test_reading_without_timestamps() throws URISyntaxException {
@@ -239,7 +263,7 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
             assertTrueEventually(() -> {
-                assertThat(collector.sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
+                assertThat(collector.getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT);
             });
         }
     }
@@ -274,13 +298,8 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         HazelcastInstance hazelcastInstance = hazelcastInstances[0];
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        MetricsRegistry metricsRegistry = getNode(hazelcastInstance).nodeEngine.getMetricsRegistry();
-        ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
-        var collector = new KafkaMetricsCollector();
+        var collectors = new MultiNodeMetricsCollector<>(hazelcastInstances, new KafkaMetricsCollector());
         try {
-            es.scheduleAtFixedRate(() -> {
-                metricsRegistry.collect(collector);
-            }, 20, 10, MILLISECONDS);
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
         } catch (CompletionException e) {
@@ -289,9 +308,11 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
 
             assertTrueEventually(() -> {
-                assertThat(collector.sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
-                assertThat(collector.sourceRecordPollAvgTime).isNotEqualTo(0L);
+                assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT);
+                assertThat(collectors.collector().getSourceRecordPollAvgTime()).isNotEqualTo(0L);
             });
+        } finally {
+            collectors.close();
         }
     }
 
@@ -446,17 +467,25 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
     }
 
     private static class KafkaMetricsCollector implements MetricsCollector {
-        private long sourceRecordPollTotal;
-        private long sourceRecordPollAvgTime;
+        private final AtomicLong sourceRecordPollTotal = new AtomicLong();
+        private final AtomicLong sourceRecordPollAvgTime = new AtomicLong();
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
             String name = descriptor.toString();
             if (name.contains("sourceRecordPollTotalAvgTime")) {
-                sourceRecordPollAvgTime += value;
+                sourceRecordPollAvgTime.getAndAdd(value);
             } else if (name.contains("sourceRecordPollTotal")) {
-                sourceRecordPollTotal += value;
+                sourceRecordPollTotal.getAndAdd(value);
             }
+        }
+
+        public long getSourceRecordPollTotal() {
+            return sourceRecordPollTotal.get();
+        }
+
+        public long getSourceRecordPollAvgTime() {
+            return sourceRecordPollAvgTime.get();
         }
 
         @Override

@@ -29,64 +29,71 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TaskMaxProcessorMetaSupplierTest {
+    private static final Address[] ADDRESSES = new Address[] {
+            new Address(getLocalHost(), 5000),
+            new Address(getLocalHost(), 5001),
+            new Address(getLocalHost(), 5002),
+            new Address(getLocalHost(), 5003),
+            new Address(getLocalHost(), 5004),
+    };
 
-    private static Stream<Arguments> localParallelismTestData() throws UnknownHostException {
+    private static InetAddress getLocalHost() {
+        try {
+            return InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Stream<Arguments> localParallelismTestData()  {
         return Stream.of(
                 // 1 cluster member
                 Arguments.of(
-                        List.of(new Address(InetAddress.getLocalHost(), 5000)),
+                        List.of(ADDRESSES[0]),
+                        1,
                         // Number of processors per member
-                        List.of(4)
+                        List.of(0)
                 ),
-                // 2 cluster members
+                // 2 cluster members, localParallelism = 1
                 Arguments.of(
-                        List.of(new Address(InetAddress.getLocalHost(), 5000),
-                                new Address(InetAddress.getLocalHost(), 5001)),
-                        List.of(2, 2)
+                        List.of(ADDRESSES[0], ADDRESSES[1]),
+                        1,
+                        List.of(0, 1)
                 ),
-                // 3 cluster members
+                // 2 cluster members, localParallelism = 2
                 Arguments.of(
-                        List.of(new Address(InetAddress.getLocalHost(), 5000),
-                                new Address(InetAddress.getLocalHost(), 5001),
-                                new Address(InetAddress.getLocalHost(), 5002)
-                        ),
+                        List.of(ADDRESSES[0], ADDRESSES[1]),
+                        2,
+                        List.of(0, 2)
+                ),
+                // 3 cluster members, localParallelism = 1
+                Arguments.of(
+                        List.of(ADDRESSES[0], ADDRESSES[1], ADDRESSES[2]),
+                        1,
                         // Number of processors per member
-                        List.of(1, 1, 2)
+                        List.of(0, 1, 2)
                 ),
-                // 4 cluster members
+                // 3 cluster members, localParallelism = 2
                 Arguments.of(
-                        List.of(new Address(InetAddress.getLocalHost(), 5000),
-                                new Address(InetAddress.getLocalHost(), 5001),
-                                new Address(InetAddress.getLocalHost(), 5002),
-                                new Address(InetAddress.getLocalHost(), 5003)
-                        ),
+                        List.of(ADDRESSES[0], ADDRESSES[1], ADDRESSES[2]),
+                        2,
                         // Number of processors per member
-                        List.of(1, 1, 1, 1)
-                ),
-                // 5 cluster members
-                Arguments.of(
-                        List.of(new Address(InetAddress.getLocalHost(), 5000),
-                                new Address(InetAddress.getLocalHost(), 5001),
-                                new Address(InetAddress.getLocalHost(), 5002),
-                                new Address(InetAddress.getLocalHost(), 5003),
-                                new Address(InetAddress.getLocalHost(), 5004)
-                        ),
-                        // Number of processors per member
-                        List.of(0, 0, 0, 0, 4)
+                        List.of(0, 2)
                 )
         );
     }
 
     @ParameterizedTest
     @MethodSource("localParallelismTestData")
-    void testGetOneMember(List<Address> addressList,
-                          List<Integer> memberLocalParallelismList) {
+    void testGetOneMember(List<Address> addressList, int localParallelism, List<Integer> startingOrder) {
 
         TaskMaxProcessorMetaSupplier taskMaxProcessorMetaSupplier = new TaskMaxProcessorMetaSupplier();
         taskMaxProcessorMetaSupplier.setTasksMax(4);
+        taskMaxProcessorMetaSupplier.setLocalParallelism(localParallelism);
         taskMaxProcessorMetaSupplier.get(addressList);
 
         assertThat(taskMaxProcessorMetaSupplier.isPartitionedAddresses()).isTrue();
-        assertThat(taskMaxProcessorMetaSupplier.getMemberLocalParallelismList()).containsAll(memberLocalParallelismList);
+        assertThat(taskMaxProcessorMetaSupplier.getStartingProcessorOrderMap().values())
+                .containsExactlyInAnyOrderElementsOf(startingOrder);
     }
 }

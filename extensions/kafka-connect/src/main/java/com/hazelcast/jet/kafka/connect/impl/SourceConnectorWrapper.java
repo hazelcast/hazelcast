@@ -115,26 +115,35 @@ public class SourceConnectorWrapper {
                 throw new HazelcastException("Cannot connect using connector " + connectorClazz, lastConnectionException);
             }
         }
-        logger.fine("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
-
-        sourceConnector = newConnectorInstance(connectorClazz);
+        logger.info("Initializing connector '" + name + "' of class '" + connectorClazz + "'");
 
         try {
-            sourceConnector.initialize(new JetConnectorContext());
-            logger.fine("Starting connector '" + name + "'. Below are the propertiesFromUser");
-            sourceConnector.start(currentConfig);
+            sourceConnector = newConnectorInstance(connectorClazz);
+
+            if (isMasterProcessor) {
+                sourceConnector.initialize(new JetConnectorContext());
+                logger.info("Starting connector '" + name + "'. Below are the propertiesFromUser");
+                sourceConnector.start(currentConfig);
+                logger.info("Connector '" + name + "' started");
+            } else {
+                logger.info("Connector '" + name + "' created, not starting because it's not a master processor");
+            }
 
         } catch (Exception e) {
+            logger.warning("Error while starting connector", e);
             reconnectTracker.attemptFailed();
-            sourceConnector.stop();
-            sourceConnector = null;
+            if (sourceConnector != null) {
+                sourceConnector.stop();
+                sourceConnector = null;
+            }
             lastConnectionException = e;
             return;
         }
 
         try {
-            logger.fine("Creating task runner '" + name + "'");
+            logger.info("Creating task runner '" + name + "'");
             createTaskRunner();
+            logger.info("Task runner '" + name + "' created");
         } catch (Exception e) {
             reconnectTracker.attemptFailed();
             lastConnectionException = e;
@@ -162,6 +171,7 @@ public class SourceConnectorWrapper {
             taskRunner.restartTaskIfNeeded();
             return true;
         } catch (Exception e) {
+            logger.warning("Error while restarting task", e);
             taskRunner.forceRestart();
             reconnectTracker.attemptFailed();
             lastConnectionException = e;
@@ -181,7 +191,7 @@ public class SourceConnectorWrapper {
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-     void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
+    void setActiveStatusSetter(Consumer<Boolean> activeStatusSetter) {
         this.activeStatusSetter = activeStatusSetter;
     }
 
@@ -234,7 +244,7 @@ public class SourceConnectorWrapper {
         if (taskConfig != null) {
             // Pass my taskConfig to taskRunner
             logger.info("Updating taskRunner with processorOrder = " + processorOrder
-                        + " with taskConfig=" + maskPasswords(taskConfig));
+                    + " with taskConfig=" + maskPasswords(taskConfig));
 
             taskRunner.updateTaskConfig(taskConfig);
             currentConfig = taskConfig;
@@ -315,18 +325,18 @@ public class SourceConnectorWrapper {
         } catch (Exception e) {
             if (e instanceof ClassNotFoundException) {
                 throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
-                                             "Did you add the connector jar to the job?", e);
+                        "Did you add the connector jar to the job?", e);
             }
             throw rethrow(e);
         }
     }
 
     public void close() {
-        logger.fine("Stopping connector '" + name + "'");
+        logger.info("Stopping connector '" + name + "'");
         taskRunner.stop();
         sourceConnector.stop();
         destroyTopic();
-        logger.fine("Connector '" + name + "' stopped");
+        logger.info("Connector '" + name + "' stopped");
     }
 
     /**
@@ -364,12 +374,12 @@ public class SourceConnectorWrapper {
     @Override
     public String toString() {
         return "ConnectorWrapper{" +
-               "name='" + name + '\'' +
-               ", tasksMax=" + tasksMax +
-               ", isMasterProcessor=" + isMasterProcessor +
-               ", processorOrder=" + processorOrder +
-               ", receivedTaskConfiguration=" + receivedTaskConfiguration +
-               '}';
+                "name='" + name + '\'' +
+                ", tasksMax=" + tasksMax +
+                ", isMasterProcessor=" + isMasterProcessor +
+                ", processorOrder=" + processorOrder +
+                ", receivedTaskConfiguration=" + receivedTaskConfiguration +
+                '}';
     }
 
     public boolean hasTaskRunner() {

@@ -32,6 +32,7 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.INSTANCE;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
+import static com.hazelcast.jet.retry.RetryStrategies.never;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -103,8 +104,10 @@ public class SourceConnectorWrapperTest {
         properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
         TestProcessorContext testProcessorContext = new TestProcessorContext();
-        assertThatThrownBy(() -> new SourceConnectorWrapper(properties, 0, testProcessorContext))
+        var c = new SourceConnectorWrapper(properties, 0, testProcessorContext, never());
+        assertThatThrownBy(c::waitNeeded)
                 .isInstanceOf(HazelcastException.class)
+                .cause()
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
     }
