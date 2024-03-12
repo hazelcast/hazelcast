@@ -66,7 +66,7 @@ public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport 
         ExecutorService pool = newFixedThreadPool(createPutGetThreadCount + destroyThreadCount);
 
         final AtomicBoolean isRunning = new AtomicBoolean(true);
-        final AtomicReference<Exception> exception = new AtomicReference<Exception>();
+        final AtomicReference<Exception> exception = new AtomicReference<>();
         for (int i = 0; i < destroyThreadCount; i++) {
             pool.execute(new Runnable() {
                 @Override

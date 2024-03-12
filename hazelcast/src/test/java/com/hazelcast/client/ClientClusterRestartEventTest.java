@@ -80,8 +80,8 @@ public class ClientClusterRestartEventTest {
 
         final CountDownLatch memberAdded = new CountDownLatch(1);
         final CountDownLatch memberRemoved = new CountDownLatch(1);
-        final AtomicReference<Member> addedMemberReference = new AtomicReference<Member>();
-        final AtomicReference<Member> removedMemberReference = new AtomicReference<Member>();
+        final AtomicReference<Member> addedMemberReference = new AtomicReference<>();
+        final AtomicReference<Member> removedMemberReference = new AtomicReference<>();
         client.getCluster().addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {

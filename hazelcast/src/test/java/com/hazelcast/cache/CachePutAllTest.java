@@ -101,7 +101,7 @@ public class CachePutAllTest extends CacheTestSupport {
         final int ENTRY_COUNT_PER_PARTITION = 3;
         Node node = getNode(hazelcastInstance);
         int partitionCount = node.getPartitionService().getPartitionCount();
-        Map<String, String> entries = new HashMap<String, String>(partitionCount * ENTRY_COUNT_PER_PARTITION);
+        Map<String, String> entries = new HashMap<>(partitionCount * ENTRY_COUNT_PER_PARTITION);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             for (int i = 0; i < ENTRY_COUNT_PER_PARTITION; i++) {
@@ -174,7 +174,7 @@ public class CachePutAllTest extends CacheTestSupport {
     @Test
     public void testPutAll_whenEntryExpiresOnCreate() {
         Factory<? extends ExpiryPolicy> expiryPolicyFactory = FactoryBuilder.factoryOf(new CreatedExpiryPolicy(Duration.ZERO));
-        CacheConfig<String, String> cacheConfig = new CacheConfig<String, String>();
+        CacheConfig<String, String> cacheConfig = new CacheConfig<>();
         cacheConfig.setTypes(String.class, String.class);
         cacheConfig.setExpiryPolicyFactory(expiryPolicyFactory);
         cacheConfig.setStatisticsEnabled(true);
@@ -188,7 +188,7 @@ public class CachePutAllTest extends CacheTestSupport {
         MetricsRegistry metricsRegistry = getMetricsRegistry(hazelcastInstances[1]);
         assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
 
-        Map<String, String> entries = new HashMap<String, String>();
+        Map<String, String> entries = new HashMap<>();
         entries.put(key, randomString());
         cache.putAll(entries);
 

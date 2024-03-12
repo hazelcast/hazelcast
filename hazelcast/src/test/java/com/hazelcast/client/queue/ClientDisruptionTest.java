@@ -49,7 +49,7 @@ public class ClientDisruptionTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        cluster = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
+        cluster = new ArrayList<>(CLUSTER_SIZE);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             cluster.add(hazelcastFactory.newHazelcastInstance());
         }

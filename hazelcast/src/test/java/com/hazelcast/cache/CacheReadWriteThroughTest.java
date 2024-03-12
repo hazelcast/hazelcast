@@ -131,7 +131,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
 
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         for (int i = 0; i < 150; i++) {
             keys.add(i);
         }
@@ -155,7 +155,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
 
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         for (int i = 0; i < 150; i++) {
             keys.add(i);
         }
@@ -207,14 +207,14 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         @Override
         public Map<Integer, Integer> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
             if (throwError) {
-                return new HashMap<Integer, Integer>() {
+                return new HashMap<>() {
                     @Override
                     public Integer get(Object key) {
                         throw new IllegalAccessError("Bazinga !!!");
                     }
                 };
             }
-            Map<Integer, Integer> result = new HashMap<Integer, Integer>();
+            Map<Integer, Integer> result = new HashMap<>();
             for (Integer key : keys) {
                 Integer value = load(key);
                 if (value != null) {
@@ -247,7 +247,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         ICache<Integer, Integer> cache = cacheManager.createCache(cacheName, config).unwrap(ICache.class);
         assertNotNull(cache);
 
-        List<Integer> bannedKeys = new ArrayList<Integer>();
+        List<Integer> bannedKeys = new ArrayList<>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             try {
                 cache.put(i, i);
@@ -299,7 +299,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         }
         assertEquals(ENTRY_COUNT, cache.size());
 
-        Map<Integer, Integer> keysAndValues = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> keysAndValues = new HashMap<>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             int oldValue = cache.get(i);
             int newValue = ENTRY_COUNT + i;

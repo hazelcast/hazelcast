@@ -72,7 +72,7 @@ public class ClientExecutorServiceInvokeTest {
             throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         String msg = randomString();
-        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        Collection<Callable<String>> collection = new ArrayList<>();
         collection.add(new AppendCallable(msg));
         collection.add(new AppendCallable(msg));
 
@@ -86,7 +86,7 @@ public class ClientExecutorServiceInvokeTest {
     public void testInvokeAll_withTimeOut()
             throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
-        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        Collection<Callable<String>> collection = new ArrayList<>();
         collection.add(new AppendCallable());
         collection.add(new AppendCallable());
 
@@ -97,7 +97,7 @@ public class ClientExecutorServiceInvokeTest {
     public void testInvokeAny()
             throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
-        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        Collection<Callable<String>> collection = new ArrayList<>();
         collection.add(new AppendCallable());
         collection.add(new AppendCallable());
 
@@ -108,7 +108,7 @@ public class ClientExecutorServiceInvokeTest {
     public void testInvokeAnyTimeOut()
             throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
-        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        Collection<Callable<String>> collection = new ArrayList<>();
         collection.add(new AppendCallable());
         collection.add(new AppendCallable());
         service.invokeAny(collection, 1, TimeUnit.MINUTES);

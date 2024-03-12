@@ -82,7 +82,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCache_notContainsStaleValue_whenUpdatedByMultipleThreads() {
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < NEAR_CACHE_INVALIDATOR_THREAD_COUNT; i++) {
             Thread putter = new MapNearCacheStalenessTest.NearCacheInvalidator(stop, memberMap, ENTRY_COUNT);
             threads.add(putter);

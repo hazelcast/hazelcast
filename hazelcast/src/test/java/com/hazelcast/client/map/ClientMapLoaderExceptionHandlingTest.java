@@ -117,7 +117,7 @@ public class ClientMapLoaderExceptionHandlingTest extends AbstractMapStoreTest {
         public Set loadAllKeys() {
             checkState(!loadAllKeysThrows, getClass().getName());
 
-            final HashSet<Integer> integers = new HashSet<Integer>();
+            final HashSet<Integer> integers = new HashSet<>();
             for (int i = 0; i < 1000; i++) {
                 integers.add(i);
             }

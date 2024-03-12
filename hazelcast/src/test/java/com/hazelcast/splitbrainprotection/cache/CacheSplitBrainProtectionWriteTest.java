@@ -139,14 +139,14 @@ public class CacheSplitBrainProtectionWriteTest extends AbstractSplitBrainProtec
 
     @Test
     public void putAll_splitBrainProtection() {
-        HashMap<Integer, String> hashMap = new HashMap<Integer, String>();
+        HashMap<Integer, String> hashMap = new HashMap<>();
         hashMap.put(123, "");
         cache(0).putAll(hashMap);
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void putAll_noSplitBrainProtection() {
-        HashMap<Integer, String> hashMap = new HashMap<Integer, String>();
+        HashMap<Integer, String> hashMap = new HashMap<>();
         hashMap.put(123, "");
         cache(3).putAll(hashMap);
     }
@@ -223,7 +223,7 @@ public class CacheSplitBrainProtectionWriteTest extends AbstractSplitBrainProtec
 
     @Test
     public void invokeAll_splitBrainProtection() {
-        HashSet<Integer> hashSet = new HashSet<Integer>();
+        HashSet<Integer> hashSet = new HashSet<>();
         hashSet.add(123);
         EntryProcessorResult epr = cache(0).invokeAll(hashSet, new SimpleEntryProcessor()).get(123);
         assertNull(epr);
@@ -231,7 +231,7 @@ public class CacheSplitBrainProtectionWriteTest extends AbstractSplitBrainProtec
 
     @Test(expected = EntryProcessorException.class)
     public void invokeAll_noSplitBrainProtection() {
-        HashSet<Integer> hashSet = new HashSet<Integer>();
+        HashSet<Integer> hashSet = new HashSet<>();
         hashSet.add(123);
         cache(3).invokeAll(hashSet, new SimpleEntryProcessor()).get(123).get();
     }

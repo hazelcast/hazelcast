@@ -113,7 +113,7 @@ public class ClientConfigTest {
         hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        ConcurrentMap<String, Object> context = new ConcurrentHashMap<String, Object>();
+        ConcurrentMap<String, Object> context = new ConcurrentHashMap<>();
         context.put("key1", "value1");
         Object value2 = new Object();
         context.put("key2", value2);

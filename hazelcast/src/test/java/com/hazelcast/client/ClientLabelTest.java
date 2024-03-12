@@ -82,7 +82,7 @@ public class ClientLabelTest {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch clientConnected = new CountDownLatch(1);
 
-        final AtomicReference<Client> clientRef = new AtomicReference<Client>();
+        final AtomicReference<Client> clientRef = new AtomicReference<>();
         instance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {
@@ -113,7 +113,7 @@ public class ClientLabelTest {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
 
-        final AtomicReference<Client> clientRef = new AtomicReference<Client>();
+        final AtomicReference<Client> clientRef = new AtomicReference<>();
         instance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {

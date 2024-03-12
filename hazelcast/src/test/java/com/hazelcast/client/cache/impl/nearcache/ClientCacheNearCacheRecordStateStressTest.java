@@ -135,7 +135,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
             memberCache.put(i, i);
         }
 
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         // member
         for (int i = 0; i < PUT_THREAD_COUNT; i++) {
             Put put = new Put(memberCache);
@@ -287,7 +287,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
 
         @Override
         public void run() {
-            HashSet<Integer> keys = new HashSet<Integer>();
+            HashSet<Integer> keys = new HashSet<>();
             for (int i = 0; i < KEY_SPACE; i++) {
                 keys.add(i);
             }
@@ -309,7 +309,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
 
         @Override
         public void run() {
-            HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+            HashMap<Integer, Integer> map = new HashMap<>();
             do {
                 map.clear();
                 for (int i = 0; i < KEY_SPACE; i++) {

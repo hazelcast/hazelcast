@@ -152,7 +152,7 @@ public class ClientDurableExecutorServiceSubmitTest {
 
         String msg = randomString();
         Callable<String> callable = new AppendCallable(msg);
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<String> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submit(callable).thenAccept((response) -> {
@@ -198,7 +198,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         String msg = randomString();
         Callable<String> callable = new AppendCallable(msg);
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<String> result = new AtomicReference<>();
 
         service.submitToKeyOwner(callable, "key").thenAccept((response) -> {
             result.set(response);

@@ -1015,7 +1015,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 100;
         IMap<Integer, Integer> map = client.getMap(randomString());
 
-        Map<Integer, Integer> expected = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> expected = new HashMap<>();
         for (int i = 0; i < max; i++) {
             expected.put(i, i);
         }
@@ -1039,7 +1039,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 100;
         IMap<Integer, Integer> map = client.getMap(randomString());
 
-        Map<Integer, Integer> expected = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> expected = new HashMap<>();
         for (int i = 0; i < max; i++) {
             map.put(i, i);
             expected.put(i, i);
@@ -1057,7 +1057,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     public void testGetAll_whenMapEmpty() {
         int max = 10;
         IMap<Integer, Integer> map = client.getMap(randomString());
-        Map<Integer, Integer> expected = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> expected = new HashMap<>();
         for (int i = 0; i < max; i++) {
             expected.put(i, i);
         }
@@ -1253,7 +1253,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 81;
         IMap<Integer, String> map = client.getMap(randomString());
 
-        Set<Integer> expected = new TreeSet<Integer>();
+        Set<Integer> expected = new TreeSet<>();
         for (int key = 0; key < max; key++) {
             String value = key + "value";
             expected.add(key);
@@ -1269,7 +1269,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 44;
         IMap<Integer, String> map = client.getMap(randomString());
 
-        Set<Integer> expected = new TreeSet<Integer>();
+        Set<Integer> expected = new TreeSet<>();
         for (int key = 0; key < max; key++) {
             String value = key + "value";
             map.put(key, value);
@@ -1293,14 +1293,14 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 23;
         IMap<Integer, String> map = client.getMap(randomString());
 
-        Set<String> expected = new TreeSet<String>();
+        Set<String> expected = new TreeSet<>();
         for (int key = 0; key < max; key++) {
             String value = key + "value";
             expected.add(value);
             map.put(key, value);
         }
         Collection<String> collection = map.values();
-        Set<String> resultSet = new TreeSet<String>(collection);
+        Set<String> resultSet = new TreeSet<>(collection);
 
         assertEquals(expected, resultSet);
     }
@@ -1310,7 +1310,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 27;
         IMap<Integer, String> map = client.getMap(randomString());
 
-        Set<String> expected = new TreeSet<String>();
+        Set<String> expected = new TreeSet<>();
         for (int key = 0; key < max; key++) {
             String value = key + "value";
             map.put(key, value);
@@ -1318,7 +1318,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         expected.add("4value");
 
         Collection<String> collection = map.values(Predicates.sql("this == 4value"));
-        Set<String> resultSet = new TreeSet<String>(collection);
+        Set<String> resultSet = new TreeSet<>(collection);
 
         assertEquals(expected, resultSet);
     }
@@ -1335,7 +1335,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int max = 34;
         IMap<Integer, String> map = client.getMap(randomString());
 
-        Map<Integer, String> expected = new HashMap<Integer, String>();
+        Map<Integer, String> expected = new HashMap<>();
         for (int key = 0; key < max; key++) {
             String value = key + "value";
             expected.put(key, value);

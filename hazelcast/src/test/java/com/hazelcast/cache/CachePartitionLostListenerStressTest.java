@@ -92,7 +92,7 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
     public void testCachePartitionLostListener() {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
-        List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
+        List<HazelcastInstance> survivingInstances = new ArrayList<>(instances);
         List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
@@ -141,8 +141,8 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
     }
 
     private List<EventCollectingCachePartitionLostListener> registerListeners(CacheManager cacheManager) {
-        CacheConfig<Integer, Integer> config = new CacheConfig<Integer, Integer>();
-        List<EventCollectingCachePartitionLostListener> listeners = new ArrayList<EventCollectingCachePartitionLostListener>();
+        CacheConfig<Integer, Integer> config = new CacheConfig<>();
+        List<EventCollectingCachePartitionLostListener> listeners = new ArrayList<>();
         for (int i = 0; i < getNodeCount(); i++) {
             EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(i);
             listeners.add(listener);

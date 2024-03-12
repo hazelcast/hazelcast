@@ -99,14 +99,14 @@ public class CacheSplitBrainProtectionReadTest extends AbstractSplitBrainProtect
 
     @Test
     public void getAll_splitBrainProtection() {
-        HashSet<Integer> hashSet = new HashSet<Integer>();
+        HashSet<Integer> hashSet = new HashSet<>();
         hashSet.add(123);
         cache(0).getAll(hashSet);
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void getAll_noSplitBrainProtection() {
-        HashSet<Integer> hashSet = new HashSet<Integer>();
+        HashSet<Integer> hashSet = new HashSet<>();
         hashSet.add(123);
         cache(3).getAll(hashSet);
     }

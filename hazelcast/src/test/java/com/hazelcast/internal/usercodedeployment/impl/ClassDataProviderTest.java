@@ -76,8 +76,8 @@ public class ClassDataProviderTest {
     private ClassDataProvider createClassDataProvider(UserCodeDeploymentConfig.ProviderMode providerMode,
                                                       String className, ClassSource classSource, ClassLoader parent) {
         ILogger logger = mock(ILogger.class);
-        ConcurrentMap<String, ClassSource> classSourceMap = new ConcurrentHashMap<String, ClassSource>();
-        ConcurrentMap<String, ClassSource> clientClassSourceMap = new ConcurrentHashMap<String, ClassSource>();
+        ConcurrentMap<String, ClassSource> classSourceMap = new ConcurrentHashMap<>();
+        ConcurrentMap<String, ClassSource> clientClassSourceMap = new ConcurrentHashMap<>();
         classSourceMap.put(className, classSource);
         return new ClassDataProvider(providerMode, parent, classSourceMap, clientClassSourceMap, logger);
     }

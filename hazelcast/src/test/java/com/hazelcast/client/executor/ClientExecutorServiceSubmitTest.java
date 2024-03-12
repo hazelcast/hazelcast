@@ -234,7 +234,7 @@ public class ClientExecutorServiceSubmitTest {
         Callable getUuidCallable = new GetMemberUuidTask();
         Member member = server.getCluster().getLocalMember();
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        final AtomicReference<Object> result = new AtomicReference<Object>();
+        final AtomicReference<Object> result = new AtomicReference<>();
 
         service.submitToMember(getUuidCallable, member, new ExecutionCallback() {
             @Override
@@ -340,7 +340,7 @@ public class ClientExecutorServiceSubmitTest {
         String msg = randomString();
         Callable runnable = new AppendCallable(msg);
         MemberSelector selector = new SelectAllMembers();
-        final AtomicReference<Object> result = new AtomicReference<Object>();
+        final AtomicReference<Object> result = new AtomicReference<>();
 
         service.submit(runnable, selector, new ExecutionCallback() {
             public void onResponse(Object response) {
@@ -536,7 +536,7 @@ public class ClientExecutorServiceSubmitTest {
 
         String msg = randomString();
         Callable<String> callable = new AppendCallable(msg);
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<String> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submit(callable, new ExecutionCallback<String>() {
@@ -595,7 +595,7 @@ public class ClientExecutorServiceSubmitTest {
         String msg = randomString();
         Callable<String> callable = new AppendCallable(msg);
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<String> result = new AtomicReference<>();
 
         service.submitToKeyOwner(callable, "key", new ExecutionCallback<String>() {
             public void onResponse(String response) {

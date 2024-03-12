@@ -44,7 +44,7 @@ public class ClientMapQueryStressTest extends HazelcastTestSupport {
     private final AtomicBoolean stop = new AtomicBoolean();
     private final AtomicInteger mapSizeHolder = new AtomicInteger();
     private final AtomicInteger keySetSizeHolder = new AtomicInteger();
-    private final List<Thread> threads = new ArrayList<Thread>();
+    private final List<Thread> threads = new ArrayList<>();
 
     private IMap map;
 

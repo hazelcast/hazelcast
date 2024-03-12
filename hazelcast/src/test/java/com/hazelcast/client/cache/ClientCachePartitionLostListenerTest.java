@@ -77,7 +77,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         final CachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
+        final CacheConfig<Integer, String> cacheConfig = new CacheConfig<>();
         final Cache<Integer, String> cache = cacheManager.createCache(cacheName, cacheConfig);
         final ICache iCache = cache.unwrap(ICache.class);
 
@@ -98,7 +98,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         final HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final CacheConfig<Integer, String> config = new CacheConfig<>();
         config.setBackupCount(0);
         cacheManager.createCache(cacheName, config);
 
@@ -128,7 +128,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         final HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance1);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final CacheConfig<Integer, String> config = new CacheConfig<>();
         config.setBackupCount(0);
         cacheManager.createCache(cacheName, config);
 
@@ -161,7 +161,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         final HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final CacheConfig<Integer, String> config = new CacheConfig<>();
         config.setBackupCount(0);
         cacheManager.createCache(cacheName, config);
 
@@ -220,7 +220,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         public List<CachePartitionLostEvent> getEvents() {
             synchronized (events) {
-                return new ArrayList<CachePartitionLostEvent>(events);
+                return new ArrayList<>(events);
             }
         }
     }

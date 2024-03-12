@@ -102,7 +102,7 @@ public class CacheServiceTest {
         CacheService cacheService = new TestCacheService(mockNodeEngine, false);
 
         executorService = Executors.newFixedThreadPool(CONCURRENCY);
-        List<Future<CacheConfig>> futures = new ArrayList<Future<CacheConfig>>();
+        List<Future<CacheConfig>> futures = new ArrayList<>();
         for (int i = 0; i < CONCURRENCY; i++) {
             futures.add(
                 executorService.submit(new PutCacheConfigRunnable(cacheService, latch))
@@ -131,7 +131,7 @@ public class CacheServiceTest {
         CacheService cacheService = new TestCacheService(mockNodeEngine, true);
 
         executorService = Executors.newFixedThreadPool(CONCURRENCY);
-        List<Future<CacheConfig>> futures = new ArrayList<Future<CacheConfig>>();
+        List<Future<CacheConfig>> futures = new ArrayList<>();
         for (int i = 0; i < CONCURRENCY; i++) {
             futures.add(
                 executorService.submit(new PutCacheConfigRunnable(cacheService, latch))

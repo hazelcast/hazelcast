@@ -123,7 +123,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
         final Cache<Integer, Integer> clientCache = clientCachingProvider.getCacheManager().createCache(
                 DEFAULT_CACHE_NAME, createCacheConfig(BINARY));
 
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
 
         // continuously adds and removes member
         Thread shadowMember = new Thread(new Runnable() {

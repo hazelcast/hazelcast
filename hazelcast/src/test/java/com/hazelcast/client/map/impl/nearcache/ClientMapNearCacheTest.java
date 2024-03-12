@@ -124,7 +124,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     public void testGetAllChecksNearCacheFirst() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
 
-        HashSet<Integer> keys = new HashSet<Integer>();
+        HashSet<Integer> keys = new HashSet<>();
 
         int size = 1003;
         for (int i = 0; i < size; i++) {
@@ -147,7 +147,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     public void testGetAllPopulatesNearCache() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
 
-        HashSet<Integer> keys = new HashSet<Integer>();
+        HashSet<Integer> keys = new HashSet<>();
 
         int size = 1214;
         for (int i = 0; i < size; i++) {
@@ -558,7 +558,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
-        HashSet<Integer> keys = new HashSet<Integer>();
+        HashSet<Integer> keys = new HashSet<>();
         for (int i = 0; i < mapSize; i++) {
             clientMap.put(i, i);
             keys.add(i);
@@ -587,7 +587,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
-        HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
+        HashMap<Integer, Integer> hashMap = new HashMap<>();
         for (int i = 0; i < mapSize; i++) {
             clientMap.put(i, i);
             hashMap.put(i, i);
@@ -666,7 +666,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         populateNearCache(clientMap, mapSize);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ExecutionCallback<Integer> callback = new ExecutionCallback<Integer>() {
+        ExecutionCallback<Integer> callback = new ExecutionCallback<>() {
             @Override
             public void onResponse(Integer response) {
                 latch.countDown();

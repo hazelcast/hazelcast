@@ -335,7 +335,7 @@ public class ClientEntryLoadedListenerTest extends ClientTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+            HashMap<Integer, Integer> map = new HashMap<>();
             for (Integer key : keys) {
                 map.put(key, sequence.incrementAndGet());
             }

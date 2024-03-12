@@ -75,7 +75,7 @@ public class ClientManagerTest {
         final HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
         final CacheManager cm1 = cachingProvider.getCacheManager(uri1, null);
         final CacheManager cm2 = cachingProvider.getCacheManager(uri2, null);
-        final CacheConfig<String, String> cacheConfig = new CacheConfig<String, String>();
+        final CacheConfig<String, String> cacheConfig = new CacheConfig<>();
         final Cache<String, String> cache1 = cm1.createCache(cacheName, cacheConfig);
         final Cache<String, String> cache2 = cm2.createCache(cacheName, cacheConfig);
 

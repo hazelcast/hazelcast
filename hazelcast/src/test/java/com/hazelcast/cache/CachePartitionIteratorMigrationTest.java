@@ -66,7 +66,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     private <K, V> CacheProxy<K, V> getCacheProxy(CachingProvider cachingProvider) {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<K, V> config = new CacheConfig<K, V>();
+        CacheConfig<K, V> config = new CacheConfig<>();
         config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (CacheProxy<K, V>) cacheManager.createCache(cacheName, config);
 
@@ -76,7 +76,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     public void test_DoesNotReturn_DuplicateEntry_When_Rehashing_Happens() throws Exception {
         HazelcastInstance instance = createHazelcastInstance();
         CacheProxy<String, String> proxy = getCacheProxy(createCachingProvider(instance));
-        HashSet<String> readKeys = new HashSet<String>();
+        HashSet<String> readKeys = new HashSet<>();
 
         String value = "initialValue";
         putValuesToPartition(instance, proxy, value, 1, 100);
@@ -96,8 +96,8 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         CacheProxy<String, String> proxy = getCacheProxy(createCachingProvider(instance));
 
-        HashSet<String> readKeysP1 = new HashSet<String>();
-        HashSet<String> readKeysP2 = new HashSet<String>();
+        HashSet<String> readKeysP1 = new HashSet<>();
+        HashSet<String> readKeysP2 = new HashSet<>();
 
         String value = "value";
         putValuesToPartition(instance, proxy, value, 0, 100);

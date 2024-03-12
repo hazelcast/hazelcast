@@ -74,7 +74,7 @@ public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
     private Cache<Integer, Integer> getCache() {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<Integer, Integer> config = new CacheConfig<Integer, Integer>();
+        CacheConfig<Integer, Integer> config = new CacheConfig<>();
         return cacheManager.createCache(cacheName, config);
 
     }

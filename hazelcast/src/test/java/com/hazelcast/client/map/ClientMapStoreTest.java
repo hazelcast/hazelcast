@@ -166,7 +166,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = client.getMap(MAP_NAME);
 
         int overflow = 100;
-        List<Future> futures = new ArrayList<Future>(maxCapacity + overflow);
+        List<Future> futures = new ArrayList<>(maxCapacity + overflow);
         for (int i = 0; i < maxCapacity + overflow; i++) {
             Future future = map.putAsync(i, i).toCompletableFuture();
             futures.add(future);
@@ -322,7 +322,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
-            Map<String, String> map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             for (String key : keys) {
                 map.put(key, load(key));
             }
@@ -331,7 +331,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Set<String> loadAllKeys() {
-            Set<String> keys = new HashSet<String>();
+            Set<String> keys = new HashSet<>();
 
             for (int i = 0; i < MAX_KEYS; i++) {
                 keys.add("key" + i);
@@ -379,7 +379,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     public class MapStoreBackup implements MapStore<Object, Object> {
 
-        public final Map<Object, Object> store = new ConcurrentHashMap<Object, Object>();
+        public final Map<Object, Object> store = new ConcurrentHashMap<>();
 
         @Override
         public void store(Object key, Object value) {
@@ -412,7 +412,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Map<Object, Object> loadAll(Collection<Object> keys) {
-            Map<Object, Object> result = new HashMap<Object, Object>();
+            Map<Object, Object> result = new HashMap<>();
             for (Object key : keys) {
                 Object v = store.get(key);
                 if (v != null) {

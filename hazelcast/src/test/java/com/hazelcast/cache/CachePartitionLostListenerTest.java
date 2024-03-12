@@ -88,7 +88,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         public List<CachePartitionLostEvent> getEvents() {
             synchronized (events) {
-                return new ArrayList<CachePartitionLostEvent>(events);
+                return new ArrayList<>(events);
             }
         }
 
@@ -104,7 +104,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
         Cache<Integer, String> cache = cacheManager.createCache(getIthCacheName(0), config);
         ICache iCache = cache.unwrap(ICache.class);
 
@@ -144,7 +144,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(survivingInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        CacheConfig<Integer, String> config = new CacheConfig<>();
         config.setBackupCount(0);
         Cache<Integer, String> cache = cacheManager.createCache(getIthCacheName(0), config);
         ICache iCache = cache.unwrap(ICache.class);
@@ -152,7 +152,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
         final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
         iCache.addPartitionLostListener(listener);
 
-        final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
+        final Set<Integer> survivingPartitionIds = new HashSet<>();
         Node survivingNode = getNode(survivingInstance);
         Address survivingAddress = survivingNode.getThisAddress();
 

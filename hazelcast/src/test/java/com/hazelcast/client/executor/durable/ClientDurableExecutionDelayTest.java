@@ -49,7 +49,7 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
     private static final int CLUSTER_SIZE = 3;
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
-    private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
+    private final List<HazelcastInstance> instances = new ArrayList<>(CLUSTER_SIZE);
 
     private TestHazelcastFactory hazelcastFactory;
 

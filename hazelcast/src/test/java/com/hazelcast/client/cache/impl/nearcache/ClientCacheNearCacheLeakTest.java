@@ -118,7 +118,7 @@ public class ClientCacheNearCacheLeakTest extends AbstractNearCacheLeakTest<Data
         CachingProvider memberProvider = createServerCachingProvider(member);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         ICache<K, V> memberCache = memberCacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
-        ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<K, V>(memberCache);
+        ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<>(memberCache);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(cacheConfig);
         return builder

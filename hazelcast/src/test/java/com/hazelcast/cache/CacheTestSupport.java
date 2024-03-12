@@ -105,7 +105,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     }
 
     protected <K, V> CacheConfig<K, V> createCacheConfig() {
-        CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>();
+        CacheConfig<K, V> cacheConfig = new CacheConfig<>();
         cacheConfig.setInMemoryFormat(InMemoryFormat.BINARY);
         cacheConfig.setStatisticsEnabled(true);
         return cacheConfig;

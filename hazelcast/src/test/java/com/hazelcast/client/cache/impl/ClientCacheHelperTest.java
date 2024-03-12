@@ -81,10 +81,10 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
         exceptionThrowingClient = mock(HazelcastClientInstanceImpl.class, RETURNS_DEEP_STUBS);
         when(exceptionThrowingClient.getClientPartitionService()).thenThrow(new IllegalArgumentException("expected"));
 
-        newCacheConfig = new CacheConfig<String, String>(CACHE_NAME);
+        newCacheConfig = new CacheConfig<>(CACHE_NAME);
 
-        cacheConfig = new CacheConfig<String, String>(CACHE_NAME);
-        configs = new ConcurrentHashMap<String, CacheConfig>(singletonMap(CACHE_NAME, cacheConfig));
+        cacheConfig = new CacheConfig<>(CACHE_NAME);
+        configs = new ConcurrentHashMap<>(singletonMap(CACHE_NAME, cacheConfig));
     }
 
     @After

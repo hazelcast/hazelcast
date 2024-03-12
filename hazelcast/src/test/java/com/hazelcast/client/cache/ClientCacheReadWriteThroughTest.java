@@ -106,7 +106,7 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
 
         assertNotNull(cache);
 
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             keys.add(i);
         }
@@ -168,7 +168,7 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
 
         @Override
         public Map<Integer, String> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
-            Map<Integer, String> result = new HashMap<Integer, String>();
+            Map<Integer, String> result = new HashMap<>();
             for (Integer key : keys) {
                 String value = load(key);
                 result.put(key, value);

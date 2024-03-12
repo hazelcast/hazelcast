@@ -291,7 +291,7 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService("executor");
         TaskWithUnserializableResponse counterCallable = new TaskWithUnserializableResponse();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
         service.submit(counterCallable, new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {

@@ -69,7 +69,7 @@ public class ClientListTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll() {
-        List<String> l = new ArrayList<String>();
+        List<String> l = new ArrayList<>();
         l.add("item1");
         l.add("item2");
 
@@ -184,7 +184,7 @@ public class ClientListTest extends HazelcastTestSupport {
         assertNotContains(list, "item3");
         assertContains(list, "item2");
 
-        List<String> l = new ArrayList<String>();
+        List<String> l = new ArrayList<>();
         l.add("item4");
         l.add("item3");
 
@@ -200,7 +200,7 @@ public class ClientListTest extends HazelcastTestSupport {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
-        List<String> l = new ArrayList<String>();
+        List<String> l = new ArrayList<>();
         l.add("item4");
         l.add("item3");
 
@@ -225,7 +225,7 @@ public class ClientListTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(6);
 
-        ItemListener<String> listener = new ItemListener<String>() {
+        ItemListener<String> listener = new ItemListener<>() {
 
             public void itemAdded(ItemEvent<String> itemEvent) {
                 latch.countDown();
