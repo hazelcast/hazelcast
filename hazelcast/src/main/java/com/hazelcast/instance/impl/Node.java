@@ -187,7 +187,7 @@ public class Node {
     private final InternalSerializationService serializationService;
     private final InternalSerializationService compatibilitySerializationService;
     private final ClassLoader configClassLoader;
-    private UserCodeNamespaceService userCodeNamespaceService;
+    private final UserCodeNamespaceService userCodeNamespaceService;
     private final NodeExtension nodeExtension;
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
