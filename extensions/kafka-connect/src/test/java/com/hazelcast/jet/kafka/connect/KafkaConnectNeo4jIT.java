@@ -99,7 +99,6 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
                                                           TestUtil::convertToString))
                                                   .withoutTimestamps()
                                                   .setLocalParallelism(2);
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> assertThat(list).hasSize(2 * ITEM_COUNT)));

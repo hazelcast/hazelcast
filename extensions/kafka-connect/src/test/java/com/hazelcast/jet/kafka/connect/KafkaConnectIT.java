@@ -128,7 +128,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         StreamStage<SourceRecord> streamStage = pipeline.readFrom(connect(randomProperties))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(assertCollectedEventually(60,
                         list -> assertEquals(ITEM_COUNT, list.size())));
@@ -202,7 +201,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                 .setLocalParallelism(1)
                 .window(WindowDefinition.tumbling(5))
                 .aggregate(AggregateOperations.counting());
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(assertCollectedEventually(60,
                         list -> assertThat(list).hasSizeGreaterThan(ITEM_COUNT)));
@@ -234,8 +232,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
                         rec -> entry(convertToString(rec.keySchema(), rec.key()), new Order(rec))))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
-        streamStage
-                .writeTo(Sinks.logger());
         streamStage
                 .writeTo(Sinks.map(randomMapName()));
         streamStage

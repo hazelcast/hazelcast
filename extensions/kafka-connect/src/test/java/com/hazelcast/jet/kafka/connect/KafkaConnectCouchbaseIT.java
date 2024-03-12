@@ -160,7 +160,6 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
                 .map(base64 -> Base64.getDecoder().decode(base64))
                 .map(JsonUtil::mapFrom);
 
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(Sinks.list("results"));
 

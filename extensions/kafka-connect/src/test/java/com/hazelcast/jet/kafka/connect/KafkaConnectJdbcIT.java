@@ -132,7 +132,6 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
                         TestUtil::convertToString))
                 .withoutTimestamps();
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> assertEquals(ITEM_COUNT, list.size())));
@@ -177,7 +176,6 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
                         TestUtil::convertToString))
                 .withoutTimestamps();
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> assertEquals(2 * ITEM_COUNT, list.size())));
@@ -230,7 +228,6 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
                         TestUtil::convertToString))
                 .withoutTimestamps();
-        streamStage.writeTo(Sinks.logger());
         streamStage.writeTo(Sinks.list(sinkList));
 
         JobConfig jobConfig = new JobConfig();
@@ -271,7 +268,6 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
                         TestUtil::convertToString))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> assertEquals(3 * ITEM_COUNT, list.size())));
@@ -454,7 +450,6 @@ public class KafkaConnectJdbcIT extends JetTestSupport {
                 .window(WindowDefinition.tumbling(10))
                 .distinct()
                 .rollingAggregate(AggregateOperations.counting());
-        streamStage.writeTo(Sinks.logger());
         streamStage.writeTo(Sinks.list("windowing_test_results"));
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getConnectorURL(FILE_NAME));
