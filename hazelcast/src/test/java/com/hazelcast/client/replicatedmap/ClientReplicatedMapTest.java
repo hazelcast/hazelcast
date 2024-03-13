@@ -148,7 +148,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         ReplicatedMap<String, String> map1 = client.getReplicatedMap("default");
         ReplicatedMap<String, String> map2 = server.getReplicatedMap("default");
 
-        Map<String, String> mapTest = new HashMap<String, String>();
+        Map<String, String> mapTest = new HashMap<>();
         for (int i = 0; i < 100; i++) {
             mapTest.put("foo-" + i, "bar");
         }
@@ -399,8 +399,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             map.put(entry.getKey(), entry.getValue());
         }
 
-        Set<Integer> values1 = new HashSet<Integer>(map1.values());
-        Set<Integer> values2 = new HashSet<Integer>(map2.values());
+        Set<Integer> values1 = new HashSet<>(map1.values());
+        Set<Integer> values2 = new HashSet<>(map2.values());
 
         for (SimpleEntry<Integer, Integer> e : testValues) {
             assertContains(values1, e.getValue());
@@ -425,8 +425,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             map.put(entry.getKey(), entry.getValue());
         }
 
-        Set<Integer> keys1 = new HashSet<Integer>(map1.keySet());
-        Set<Integer> keys2 = new HashSet<Integer>(map2.keySet());
+        Set<Integer> keys1 = new HashSet<>(map1.keySet());
+        Set<Integer> keys2 = new HashSet<>(map2.keySet());
 
         for (SimpleEntry<Integer, Integer> e : testValues) {
             assertContains(keys1, e.getKey());
@@ -450,8 +450,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             map.put(entry.getKey(), entry.getValue());
         }
 
-        Set<Entry<Integer, Integer>> entrySet1 = new HashSet<Entry<Integer, Integer>>(map1.entrySet());
-        Set<Entry<Integer, Integer>> entrySet2 = new HashSet<Entry<Integer, Integer>>(map2.entrySet());
+        Set<Entry<Integer, Integer>> entrySet1 = new HashSet<>(map1.entrySet());
+        Set<Entry<Integer, Integer>> entrySet2 = new HashSet<>(map2.entrySet());
 
         for (Entry<Integer, Integer> entry : entrySet2) {
             Integer value = findValue(entry.getKey(), testValues);
@@ -1001,7 +1001,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         Random random = new Random();
         SimpleEntry<Integer, Integer>[] testValues = new SimpleEntry[100];
         for (int i = 0; i < testValues.length; i++) {
-            testValues[i] = new SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
+            testValues[i] = new SimpleEntry<>(random.nextInt(), random.nextInt());
         }
         return testValues;
     }

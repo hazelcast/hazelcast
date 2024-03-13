@@ -89,7 +89,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, String> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
-            Map<Integer, String> entries = new HashMap<Integer, String>();
+            Map<Integer, String> entries = new HashMap<>();
             for (int key : keys) {
                 entries.put(key, String.valueOf(2 * key));
             }

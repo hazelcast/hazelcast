@@ -286,7 +286,7 @@ public class ClientServiceTest extends ClientTestSupport {
         hz.getClientService().addClientListener(listenerLatch);
         hz2.getClientService().addClientListener(listenerLatch);
 
-        Collection<HazelcastInstance> clients = new LinkedList<HazelcastInstance>();
+        Collection<HazelcastInstance> clients = new LinkedList<>();
         for (int i = 0; i < clientCount; i++) {
             HazelcastInstance client = hazelcastFactory.newHazelcastClient();
             IMap<Object, Object> map = client.getMap(randomMapName());

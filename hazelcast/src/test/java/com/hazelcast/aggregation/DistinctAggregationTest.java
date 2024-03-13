@@ -46,7 +46,7 @@ public class DistinctAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() {
         List<String> values = repeatTimes(3, sampleStrings());
-        Set<String> expectation = new HashSet<String>(values);
+        Set<String> expectation = new HashSet<>(values);
 
         Aggregator<Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
@@ -65,7 +65,7 @@ public class DistinctAggregationTest {
         List<String> values = repeatTimes(3, sampleStrings());
         values.add(null);
         values.add(null);
-        Set<String> expectation = new HashSet<String>(values);
+        Set<String> expectation = new HashSet<>(values);
 
         Aggregator<Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
@@ -84,7 +84,7 @@ public class DistinctAggregationTest {
         Person[] people = {new Person(5.1), new Person(3.3)};
         Double[] ages = {5.1, 3.3};
         List<Person> values = repeatTimes(3, Arrays.asList(people));
-        Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
+        Set<Double> expectation = new HashSet<>(Arrays.asList(ages));
 
         Aggregator<Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
@@ -103,7 +103,7 @@ public class DistinctAggregationTest {
         Person[] people = {new Person(5.1), new Person(null)};
         Double[] ages = {5.1, null};
         List<Person> values = repeatTimes(3, Arrays.asList(people));
-        Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
+        Set<Double> expectation = new HashSet<>(Arrays.asList(ages));
 
         Aggregator<Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
@@ -118,7 +118,7 @@ public class DistinctAggregationTest {
     }
 
     private <T> List<T> repeatTimes(int times, List<T> values) {
-        List<T> repeatedValues = new ArrayList<T>();
+        List<T> repeatedValues = new ArrayList<>();
         for (int i = 0; i < times; i++) {
             repeatedValues.addAll(values);
         }

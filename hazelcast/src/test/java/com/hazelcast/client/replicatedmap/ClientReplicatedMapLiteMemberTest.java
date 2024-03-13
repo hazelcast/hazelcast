@@ -131,7 +131,7 @@ public class ClientReplicatedMapLiteMemberTest {
     }
 
     private List<HazelcastInstance> createNodes(int numberOfLiteNodes, int numberOfDataNodes) {
-        List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
+        List<HazelcastInstance> instances = new ArrayList<>();
 
         Config liteConfig = new Config().setLiteMember(true);
         for (int i = 0; i < numberOfLiteNodes; i++) {

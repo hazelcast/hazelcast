@@ -705,7 +705,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = createMap();
         final CountDownLatch latch1Add = new CountDownLatch(5);
         final CountDownLatch latch1Remove = new CountDownLatch(2);
-        EntryListener<String, String> listener1 = new EntryAdapter<String, String>() {
+        EntryListener<String, String> listener1 = new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<String, String> event) {
                 latch1Add.countDown();
@@ -719,7 +719,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         final CountDownLatch latch2Add = new CountDownLatch(1);
         final CountDownLatch latch2Remove = new CountDownLatch(1);
-        EntryListener<String, String> listener2 = new EntryAdapter<String, String>() {
+        EntryListener<String, String> listener2 = new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<String, String> event) {
                 latch2Add.countDown();

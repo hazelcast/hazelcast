@@ -43,7 +43,7 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
     private final IntIntConstructorFunction constructorFunction = new IntIntConstructorFunction();
 
-    private ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+    private ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<>();
 
     @Test
     public void testConstructor() {

@@ -99,7 +99,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         final HazelcastInstance client = factory.newHazelcastClient();
 
         final AtomicBoolean stop = new AtomicBoolean(false);
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         for (int i = 0; i < STRESS_TEST_THREAD_COUNT; i++) {
             Thread thread = new Thread() {
                 @Override
@@ -183,7 +183,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         populateMap(map);
 
         final AtomicBoolean stop = new AtomicBoolean(false);
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         for (int i = 0; i < STRESS_TEST_THREAD_COUNT; i++) {
             Thread thread = new Thread() {
                 @Override

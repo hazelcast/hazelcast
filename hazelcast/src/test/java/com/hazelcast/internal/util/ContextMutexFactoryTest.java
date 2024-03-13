@@ -50,7 +50,7 @@ public class ContextMutexFactoryTest {
     @Test
     public void testConcurrentMutexOperation() {
         final String[] keys = new String[]{"a", "b", "c"};
-        final Map<String, Integer> timesAcquired = new HashMap<String, Integer>();
+        final Map<String, Integer> timesAcquired = new HashMap<>();
 
         int concurrency = RuntimeAvailableProcessors.get() * 3;
         final CyclicBarrier cyc = new CyclicBarrier(concurrency + 1);

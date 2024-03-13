@@ -71,7 +71,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
 
         callerUuid = UuidUtil.newUnsecureUUID();
         partitionId = RandomPicker.getInt(271);
-        operationList = new ArrayList<Operation>(10);
+        operationList = new ArrayList<>(10);
         for (int i = 0; i < 10; i++) {
             operationList.add(new TestOperation(i));
         }

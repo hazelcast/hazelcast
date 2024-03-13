@@ -102,7 +102,7 @@ public class ClientPutAllRemoveBounceTest extends HazelcastTestSupport {
             int min = random.nextInt(keyDomain - range);
             int max = min + range;
 
-            Map<Integer, Employee> m = new HashMap<Integer, Employee>();
+            Map<Integer, Employee> m = new HashMap<>();
             for (int i = min; i < max; i++) {
                 m.put(i, new Employee(i, "name" + i, i, true, i));
             }

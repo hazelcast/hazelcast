@@ -74,7 +74,7 @@ public class DelegatingScheduledFutureStripperTest {
     @Test(expected = UnsupportedOperationException.class)
     @SuppressWarnings("ConstantConditions")
     public void compareTo() {
-        ScheduledFuture<Integer> future = new DelegatingScheduledFutureStripper<Integer>(
+        ScheduledFuture<Integer> future = new DelegatingScheduledFutureStripper<>(
                 scheduler.schedule(new SimpleCallableTestTask(), 0, TimeUnit.SECONDS));
         future.compareTo(null);
     }

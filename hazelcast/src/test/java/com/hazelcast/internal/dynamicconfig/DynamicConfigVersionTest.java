@@ -45,7 +45,7 @@ public class DynamicConfigVersionTest {
     private static final Set<Class<?>> NON_DYNAMIC_CONFIG_CLASSES;
 
     static {
-        Set<Class<?>> nonDynamicConfigClasses = new HashSet<Class<?>>();
+        Set<Class<?>> nonDynamicConfigClasses = new HashSet<>();
         nonDynamicConfigClasses.add(WanReplicationConfig.class);
         nonDynamicConfigClasses.add(SplitBrainProtectionConfig.class);
         nonDynamicConfigClasses.add(ListenerConfig.class);

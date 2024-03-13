@@ -169,7 +169,7 @@ public class EndpointConfig implements NamedConfig {
 
     public EndpointConfig addOutboundPortDefinition(String portDef) {
         if (outboundPortDefinitions == null) {
-            outboundPortDefinitions = new HashSet<String>();
+            outboundPortDefinitions = new HashSet<>();
         }
         outboundPortDefinitions.add(portDef);
         return this;
@@ -186,7 +186,7 @@ public class EndpointConfig implements NamedConfig {
 
     public EndpointConfig addOutboundPort(int port) {
         if (outboundPorts == null) {
-            outboundPorts = new HashSet<Integer>();
+            outboundPorts = new HashSet<>();
         }
         outboundPorts.add(port);
         return this;

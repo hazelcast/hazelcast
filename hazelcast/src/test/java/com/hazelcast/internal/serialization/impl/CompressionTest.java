@@ -143,7 +143,7 @@ public class CompressionTest {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         SerializationService ss = defaultSerializationServiceBuilder.setEnableCompression(true).build();
 
-        ArrayList<SampleSerializable> expected = new ArrayList<SampleSerializable>();
+        ArrayList<SampleSerializable> expected = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             expected.add(new SampleSerializable(i));
         }
@@ -170,7 +170,7 @@ public class CompressionTest {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         SerializationService ss = defaultSerializationServiceBuilder.setEnableCompression(true).build();
 
-        ArrayList<SampleExternalizable> expected = new ArrayList<SampleExternalizable>();
+        ArrayList<SampleExternalizable> expected = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             expected.add(new SampleExternalizable(i));
         }

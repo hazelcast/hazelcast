@@ -137,7 +137,7 @@ public class DuplicateDetectingMultiResultTest {
     }
 
     public void addEntry(QueryableEntry entry) {
-        ConcurrentMap<Data, QueryableEntry> values = new ConcurrentHashMap<Data, QueryableEntry>();
+        ConcurrentMap<Data, QueryableEntry> values = new ConcurrentHashMap<>();
         values.put(entry.getKeyData(), entry);
         result.addResultSet(values);
     }

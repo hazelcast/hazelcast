@@ -38,7 +38,7 @@ public class ClusterHotRestartStatusDTOTest {
 
     @Test
     public void testSerialization() {
-        Map<String, MemberHotRestartStatus> memberHotRestartStatusMap = new HashMap<String, MemberHotRestartStatus>();
+        Map<String, MemberHotRestartStatus> memberHotRestartStatusMap = new HashMap<>();
         memberHotRestartStatusMap.put("127.0.0.1:5701", MemberHotRestartStatus.PENDING);
         memberHotRestartStatusMap.put("127.0.0.1:5702", MemberHotRestartStatus.SUCCESSFUL);
 

@@ -65,7 +65,7 @@ public class DeferredValueTest {
         expected = randomString();
         serializedValue = serializationService.toData(expected);
 
-        valueSet = new HashSet<String>();
+        valueSet = new HashSet<>();
         valueSet.add("1");
         valueSet.add("2");
         valueSet.add("3");

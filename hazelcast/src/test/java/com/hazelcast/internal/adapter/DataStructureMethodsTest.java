@@ -43,7 +43,7 @@ public class DataStructureMethodsTest {
         String adapterClassName = DataStructureAdapter.class.getSimpleName();
         String methodsClassName = DataStructureMethods.class.getSimpleName();
 
-        Map<Method, DataStructureMethods> knownMethods = new HashMap<Method, DataStructureMethods>();
+        Map<Method, DataStructureMethods> knownMethods = new HashMap<>();
         for (DataStructureMethods method : DataStructureMethods.values()) {
             try {
                 Method adapterMethod = DataStructureAdapter.class.getMethod(method.getMethodName(), method.getParameterTypes());

@@ -253,8 +253,8 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 11;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> trueList = new ArrayList<Integer>();
-        List<Integer> falseList = new ArrayList<Integer>();
+        List<Integer> trueList = new ArrayList<>();
+        List<Integer> falseList = new ArrayList<>();
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
             trueList.add(i);
@@ -269,12 +269,12 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 12;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> offeredList = new LinkedList<Integer>();
+        List<Integer> offeredList = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
             offeredList.add(i);
         }
-        List<Integer> drainedList = new LinkedList<Integer>();
+        List<Integer> drainedList = new LinkedList<>();
         int totalDrained = q.drainTo(drainedList);
 
         assertEquals(maxItems, totalDrained);
@@ -288,14 +288,14 @@ public class ClientQueueTest extends HazelcastTestSupport {
 
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> expectedList = new LinkedList<Integer>();
+        List<Integer> expectedList = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
             if (i < itemsToDrain) {
                 expectedList.add(i);
             }
         }
-        List<Integer> drainedList = new LinkedList<Integer>();
+        List<Integer> drainedList = new LinkedList<>();
         int totalDrained = q.drainTo(drainedList, itemsToDrain);
 
         assertEquals(itemsToDrain, totalDrained);
@@ -377,7 +377,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 13;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        Collection<Integer> coll = new ArrayList<Integer>(maxItems);
+        Collection<Integer> coll = new ArrayList<>(maxItems);
         for (int i = 0; i < maxItems; i++) {
             coll.add(i);
         }
@@ -385,7 +385,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         assertEquals(coll.size(), q.size());
 
         // assert queue is same
-        ArrayList<Integer> actual = new ArrayList<Integer>();
+        ArrayList<Integer> actual = new ArrayList<>();
         actual.addAll(q);
 
         assertEquals(coll, actual);
@@ -407,7 +407,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 131;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> removeList = new LinkedList<Integer>();
+        List<Integer> removeList = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
             removeList.add(i);
@@ -422,7 +422,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 131;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> removeList = new LinkedList<Integer>();
+        List<Integer> removeList = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }
@@ -453,7 +453,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 181;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> retain = new LinkedList<Integer>();
+        List<Integer> retain = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
             retain.add(i);
@@ -468,7 +468,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 181;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> retain = new LinkedList<Integer>();
+        List<Integer> retain = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }
@@ -484,7 +484,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
         final int maxItems = 181;
         IQueue<Integer> q = client.getQueue(randomString());
 
-        List<Integer> retain = new LinkedList<Integer>();
+        List<Integer> retain = new LinkedList<>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }

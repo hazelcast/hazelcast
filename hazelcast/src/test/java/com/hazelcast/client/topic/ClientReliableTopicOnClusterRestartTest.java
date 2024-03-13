@@ -193,7 +193,7 @@ public class ClientReliableTopicOnClusterRestartTest {
 
     private <T> DurableMessageListener<T> createListener(boolean lossTolerant,
                                                          Consumer<Message<T>> messageListener) {
-        return new DurableMessageListener<T>() {
+        return new DurableMessageListener<>() {
             @Override
             public void onMessage(Message<T> message) {
                 messageListener.accept(message);

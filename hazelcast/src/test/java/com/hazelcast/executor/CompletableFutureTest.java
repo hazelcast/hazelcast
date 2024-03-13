@@ -71,8 +71,8 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         startLogicLatch = new CountDownLatch(1);
         executedLogic = new CountDownLatch(1);
         inExecutionLatch = new CountDownLatch(1);
-        reference1 = new AtomicReference<Object>();
-        reference2 = new AtomicReference<Object>();
+        reference1 = new AtomicReference<>();
+        reference2 = new AtomicReference<>();
     }
 
     @Test
@@ -328,7 +328,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     private BiConsumer<String, Throwable> storeTaskResponseToReference(final AtomicReference<Object> ref) {
-        return new BiConsumer<String, Throwable>() {
+        return new BiConsumer<>() {
             @Override
             public void accept(String s, Throwable throwable) {
                 if (throwable == null) {

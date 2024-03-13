@@ -42,7 +42,7 @@ public class ComplexTestDataStructure {
 
     public static class Person implements Serializable, PortableAware {
         String name;
-        List<Limb> limbs_list = new ArrayList<Limb>();
+        List<Limb> limbs_list = new ArrayList<>();
         Limb[] limbs_array;
         Limb firstLimb;
         Limb secondLimb;
@@ -129,9 +129,9 @@ public class ComplexTestDataStructure {
 
     public static class Limb implements Serializable, PortableAware, Comparable<Limb> {
         String name;
-        List<Finger> fingers_list = new ArrayList<Finger>();
+        List<Finger> fingers_list = new ArrayList<>();
         Finger[] fingers_array;
-        List<String> tattoos_list = new ArrayList<String>();
+        List<String> tattoos_list = new ArrayList<>();
         String[] tattoos_array;
 
         public String getName() {

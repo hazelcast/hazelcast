@@ -113,7 +113,7 @@ public class ClusterDataSerializationTest {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("a", "2");
         attributes.put("b", "b");
-        Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
+        Map<EndpointQualifier, Address> addressMap = new HashMap<>();
         addressMap.put(MEMBER, memberAddress);
         addressMap.put(CLIENT, clientAddress);
         addressMap.put(REST, restAddress);

@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ComposedKeyMapTest {
 
-    private ComposedKeyMap<String, String, String> map = new ComposedKeyMap<String, String, String>();
+    private ComposedKeyMap<String, String, String> map = new ComposedKeyMap<>();
 
     @Test
     public void givenEmpty_whenPut_thenReturnNull() {

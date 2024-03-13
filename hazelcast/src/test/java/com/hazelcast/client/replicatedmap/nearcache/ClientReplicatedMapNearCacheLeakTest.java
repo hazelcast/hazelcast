@@ -83,7 +83,7 @@ public class ClientReplicatedMapNearCacheLeakTest extends AbstractNearCacheLeakT
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         ReplicatedMap<K, V> memberMap = member.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
-        ReplicatedMapDataStructureAdapter<K, V> dataAdapter = new ReplicatedMapDataStructureAdapter<K, V>(memberMap);
+        ReplicatedMapDataStructureAdapter<K, V> dataAdapter = new ReplicatedMapDataStructureAdapter<>(memberMap);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder

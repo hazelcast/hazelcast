@@ -113,7 +113,7 @@ public class ClientTxnMultiMapTest {
         final int threads = 10;
         final ExecutorService ex = Executors.newFixedThreadPool(threads);
         final CountDownLatch latch = new CountDownLatch(threads);
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>(null);
+        final AtomicReference<Throwable> error = new AtomicReference<>(null);
 
         for (int i = 0; i < threads; i++) {
             final int key = i;

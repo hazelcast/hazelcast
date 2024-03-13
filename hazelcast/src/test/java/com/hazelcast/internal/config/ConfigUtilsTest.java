@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigUtilsTest extends HazelcastTestSupport {
 
-    private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
+    private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<>();
     private final ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     @Test

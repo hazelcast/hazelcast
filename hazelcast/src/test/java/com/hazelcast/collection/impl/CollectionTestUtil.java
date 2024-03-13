@@ -84,7 +84,7 @@ public final class CollectionTestUtil {
         // the replica items are retrieved via `getMap()`, the primary items via `getCollection()`
         Map<Long, CollectionItem> map = collectionContainer.getMap();
 
-        List<E> backupList = new ArrayList<E>(map.size());
+        List<E> backupList = new ArrayList<>(map.size());
         SerializationService serializationService = nodeEngine.getSerializationService();
         for (CollectionItem collectionItem : map.values()) {
             E value = serializationService.toObject(collectionItem.getValue());
@@ -171,7 +171,7 @@ public final class CollectionTestUtil {
         // the replica items are retrieved via `getMap()`, the primary items via `getCollection()`
         Map<Long, CollectionItem> map = collectionContainer.getMap();
 
-        Set<E> backupSet = new HashSet<E>();
+        Set<E> backupSet = new HashSet<>();
         SerializationService serializationService = nodeEngine.getSerializationService();
         for (CollectionItem collectionItem : map.values()) {
             E value = serializationService.toObject(collectionItem.getValue());

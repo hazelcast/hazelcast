@@ -79,13 +79,13 @@ public class ClusterListTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance();
         IList<String> list1 = instance1.getList(name);
         IList<String> list2 = instance2.getList(name);
-        List<String> listTest1 = new ArrayList<String>();
+        List<String> listTest1 = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             listTest1.add("item" + i);
         }
         assertTrue(list1.addAll(listTest1));
         assertSizeEventually(100, list2);
-        List<String> listTest2 = new ArrayList<String>();
+        List<String> listTest2 = new ArrayList<>();
         for (int i = 30; i < 40; i++) {
             listTest2.add("item" + i);
         }

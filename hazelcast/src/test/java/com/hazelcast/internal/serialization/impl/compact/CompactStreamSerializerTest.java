@@ -596,7 +596,7 @@ public class CompactStreamSerializerTest {
     public void testSchemaEvolution_variableSizeFieldAdded() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         //Using this type of serializer to mimic schema evolution. This is usage is not advised.
-        CompactSerializer<EmployeeDTO> serializer = new CompactSerializer<EmployeeDTO>() {
+        CompactSerializer<EmployeeDTO> serializer = new CompactSerializer<>() {
             @Nonnull
             @Override
             public EmployeeDTO read(@Nonnull CompactReader reader) {
@@ -654,7 +654,7 @@ public class CompactStreamSerializerTest {
     public void testSchemaEvolution_fixedSizeFieldAdded() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         //Using this type of serializer to mimic schema evolution. This is usage is not advised.
-        CompactSerializer<EmployeeDTO> serializer = new CompactSerializer<EmployeeDTO>() {
+        CompactSerializer<EmployeeDTO> serializer = new CompactSerializer<>() {
             @Nonnull
             @Override
             public EmployeeDTO read(@Nonnull CompactReader in) {
@@ -710,7 +710,7 @@ public class CompactStreamSerializerTest {
     public void testSchemaEvolution_fixedSizeFieldRemoved() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         //Using this type of serializer to mimic schema evolution. This is usage is not advised.
-        CompactSerializer<EmployeeDTO> newSerializer = new CompactSerializer<EmployeeDTO>() {
+        CompactSerializer<EmployeeDTO> newSerializer = new CompactSerializer<>() {
             @Nonnull
             @Override
             public EmployeeDTO read(@Nonnull CompactReader reader) {
@@ -736,7 +736,7 @@ public class CompactStreamSerializerTest {
             }
         };
 
-        CompactSerializer<EmployeeDTO> oldSerializer = new CompactSerializer<EmployeeDTO>() {
+        CompactSerializer<EmployeeDTO> oldSerializer = new CompactSerializer<>() {
             @Nonnull
             @Override
             public EmployeeDTO read(@Nonnull CompactReader reader) {
@@ -790,7 +790,7 @@ public class CompactStreamSerializerTest {
     public void testSchemaEvolution_variableSizeFieldRemoved() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         //Using this type of serializer to mimic schema evolution. This is usage is not advised.
-        CompactSerializer<NodeDTO> newSerializer = new CompactSerializer<NodeDTO>() {
+        CompactSerializer<NodeDTO> newSerializer = new CompactSerializer<>() {
             @Nonnull
             @Override
             public NodeDTO read(@Nonnull CompactReader in) {
@@ -816,7 +816,7 @@ public class CompactStreamSerializerTest {
             }
         };
 
-        CompactSerializer<NodeDTO> oldSerializer = new CompactSerializer<NodeDTO>() {
+        CompactSerializer<NodeDTO> oldSerializer = new CompactSerializer<>() {
             @Nonnull
             @Override
             public NodeDTO read(@Nonnull CompactReader in) {

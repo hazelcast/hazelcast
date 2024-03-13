@@ -76,7 +76,7 @@ public class ClusterNameTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch clientConnected = new CountDownLatch(1);
 
-        final AtomicReference<String> clusterName = new AtomicReference<String>();
+        final AtomicReference<String> clusterName = new AtomicReference<>();
         instance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {
@@ -104,7 +104,7 @@ public class ClusterNameTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
 
-        final AtomicReference<String> clusterName = new AtomicReference<String>();
+        final AtomicReference<String> clusterName = new AtomicReference<>();
         instance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {

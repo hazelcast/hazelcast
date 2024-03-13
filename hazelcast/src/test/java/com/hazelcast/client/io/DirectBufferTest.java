@@ -96,7 +96,7 @@ public class DirectBufferTest extends HazelcastTestSupport {
         server = Hazelcast.newHazelcastInstance(config);
         client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        List<byte[]> values = new LinkedList<byte[]>();
+        List<byte[]> values = new LinkedList<>();
 
         IMap<Integer, byte[]> map = client.getMap("foo");
         for (int k = 0; k < 24; k++) {

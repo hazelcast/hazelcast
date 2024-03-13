@@ -61,16 +61,16 @@ public class ConcurrentConveyorTest {
     OneToOneConcurrentArrayQueue<Item> defaultQ;
     ConcurrentConveyor<Item> conveyor;
 
-    private final List<Item> batch = new ArrayList<Item>(QUEUE_CAPACITY);
+    private final List<Item> batch = new ArrayList<>(QUEUE_CAPACITY);
 
     @Before
     public void before() {
         queueCount = 2;
-        defaultQ = new OneToOneConcurrentArrayQueue<Item>(QUEUE_CAPACITY);
+        defaultQ = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
 
         QueuedPipe<Item>[] qs = new QueuedPipe[queueCount];
         qs[0] = defaultQ;
-        qs[1] = new OneToOneConcurrentArrayQueue<Item>(QUEUE_CAPACITY);
+        qs[1] = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
         conveyor = concurrentConveyor(doneItem, qs);
     }
 

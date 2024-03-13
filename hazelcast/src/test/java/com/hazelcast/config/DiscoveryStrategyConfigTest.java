@@ -52,7 +52,7 @@ public class DiscoveryStrategyConfigTest {
     @Test
     public void test_DiscoveryStrategyFactory_constructor_classname_properties() {
         String discoveryStrategyFactoryClass = TestDiscoveryStrategyFactory.class.getName();
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("test", "value");
 
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(discoveryStrategyFactoryClass, properties);
@@ -74,7 +74,7 @@ public class DiscoveryStrategyConfigTest {
     @Test
     public void test_DiscoveryStrategyFactory_constructor_factory_properties() {
         DiscoveryStrategyFactory discoveryStrategyFactory = new TestDiscoveryStrategyFactory();
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("test", "value");
 
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(discoveryStrategyFactory, properties);

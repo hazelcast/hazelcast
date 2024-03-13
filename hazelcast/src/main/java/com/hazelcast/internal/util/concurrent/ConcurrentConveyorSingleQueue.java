@@ -37,7 +37,7 @@ public final class ConcurrentConveyorSingleQueue<E> extends ConcurrentConveyor<E
     public static <E1> ConcurrentConveyorSingleQueue<E1> concurrentConveyorSingleQueue(
             E1 submitterGoneItem, QueuedPipe<E1> queue
     ) {
-        return new ConcurrentConveyorSingleQueue<E1>(submitterGoneItem, queue);
+        return new ConcurrentConveyorSingleQueue<>(submitterGoneItem, queue);
     }
 
     /**

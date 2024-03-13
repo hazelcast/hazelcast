@@ -77,7 +77,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testMapConfig_Static() {
-        TestCase<MapConfig> testCase = new TestCase<MapConfig>(staticMapConfig(), dynamicMapConfig(), false) {
+        TestCase<MapConfig> testCase = new TestCase<>(staticMapConfig(), dynamicMapConfig(), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addMapConfig(this.staticConfig);
@@ -99,7 +99,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testMapConfig_Dynamic() {
-        TestCase<MapConfig> testCase = new TestCase<MapConfig>(staticMapConfig(), dynamicMapConfig(), true) {
+        TestCase<MapConfig> testCase = new TestCase<>(staticMapConfig(), dynamicMapConfig(), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addMapConfig(this.staticConfig);
@@ -131,7 +131,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCacheConfig_Static() {
-        TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
+        TestCase<CacheSimpleConfig> testCase = new TestCase<>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
                 new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(DYNAMIC_MAX_SIZE), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -154,7 +154,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCacheConfig_Dynamic() {
-        TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
+        TestCase<CacheSimpleConfig> testCase = new TestCase<>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
                 new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(DYNAMIC_MAX_SIZE), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -177,7 +177,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueConfig_Static() {
-        TestCase<QueueConfig> testCase = new TestCase<QueueConfig>(new QueueConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+        TestCase<QueueConfig> testCase = new TestCase<>(new QueueConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
                 new QueueConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -200,7 +200,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueConfig_Dynamic() {
-        TestCase<QueueConfig> testCase = new TestCase<QueueConfig>(new QueueConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+        TestCase<QueueConfig> testCase = new TestCase<>(new QueueConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
                 new QueueConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -223,7 +223,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testListConfig_Static() {
-        TestCase<ListConfig> testCase = new TestCase<ListConfig>(new ListConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+        TestCase<ListConfig> testCase = new TestCase<>(new ListConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
                 new ListConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -246,7 +246,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testListConfig_Dynamic() {
-        TestCase<ListConfig> testCase = new TestCase<ListConfig>(new ListConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+        TestCase<ListConfig> testCase = new TestCase<>(new ListConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
                 new ListConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -269,7 +269,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testSetConfig_Static() {
-        TestCase<SetConfig> testCase = new TestCase<SetConfig>(new SetConfig().setName(STATIC_NAME),
+        TestCase<SetConfig> testCase = new TestCase<>(new SetConfig().setName(STATIC_NAME),
                 new SetConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -292,7 +292,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testSetConfig_Dynamic() {
-        TestCase<SetConfig> testCase = new TestCase<SetConfig>(new SetConfig().setName(STATIC_NAME),
+        TestCase<SetConfig> testCase = new TestCase<>(new SetConfig().setName(STATIC_NAME),
                 new SetConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -315,7 +315,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapConfig_Static() {
-        TestCase<MultiMapConfig> testCase = new TestCase<MultiMapConfig>(new MultiMapConfig().setName(STATIC_NAME),
+        TestCase<MultiMapConfig> testCase = new TestCase<>(new MultiMapConfig().setName(STATIC_NAME),
                 new MultiMapConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -338,7 +338,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapConfig_Dynamic() {
-        TestCase<MultiMapConfig> testCase = new TestCase<MultiMapConfig>(new MultiMapConfig().setName(STATIC_NAME),
+        TestCase<MultiMapConfig> testCase = new TestCase<>(new MultiMapConfig().setName(STATIC_NAME),
                 new MultiMapConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -361,7 +361,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testReplicatedMapConfig_Static() {
-        TestCase<ReplicatedMapConfig> testCase = new TestCase<ReplicatedMapConfig>(new ReplicatedMapConfig().setName(STATIC_NAME),
+        TestCase<ReplicatedMapConfig> testCase = new TestCase<>(new ReplicatedMapConfig().setName(STATIC_NAME),
                 new ReplicatedMapConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -384,7 +384,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testReplicatedMapConfig_Dynamic() {
-        TestCase<ReplicatedMapConfig> testCase = new TestCase<ReplicatedMapConfig>(new ReplicatedMapConfig().setName(STATIC_NAME),
+        TestCase<ReplicatedMapConfig> testCase = new TestCase<>(new ReplicatedMapConfig().setName(STATIC_NAME),
                 new ReplicatedMapConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -407,7 +407,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testRingbufferConfig_Static() {
-        TestCase<RingbufferConfig> testCase = new TestCase<RingbufferConfig>(new RingbufferConfig().setName(STATIC_NAME),
+        TestCase<RingbufferConfig> testCase = new TestCase<>(new RingbufferConfig().setName(STATIC_NAME),
                 new RingbufferConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -430,7 +430,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testRingbufferConfig_Dynamic() {
-        TestCase<RingbufferConfig> testCase = new TestCase<RingbufferConfig>(new RingbufferConfig().setName(STATIC_NAME),
+        TestCase<RingbufferConfig> testCase = new TestCase<>(new RingbufferConfig().setName(STATIC_NAME),
                 new RingbufferConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -453,7 +453,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testTopicConfig_Static() {
-        TestCase<TopicConfig> testCase = new TestCase<TopicConfig>(new TopicConfig().setName(STATIC_NAME),
+        TestCase<TopicConfig> testCase = new TestCase<>(new TopicConfig().setName(STATIC_NAME),
                 new TopicConfig().setName(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -476,7 +476,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testTopicConfig_Dynamic() {
-        TestCase<TopicConfig> testCase = new TestCase<TopicConfig>(new TopicConfig().setName(STATIC_NAME),
+        TestCase<TopicConfig> testCase = new TestCase<>(new TopicConfig().setName(STATIC_NAME),
                 new TopicConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -499,7 +499,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testReliableTopicConfig_Static() {
-        TestCase<ReliableTopicConfig> testCase = new TestCase<ReliableTopicConfig>(new ReliableTopicConfig(STATIC_NAME),
+        TestCase<ReliableTopicConfig> testCase = new TestCase<>(new ReliableTopicConfig(STATIC_NAME),
                 new ReliableTopicConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -522,7 +522,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testReliableTopicConfig_Dynamic() {
-        TestCase<ReliableTopicConfig> testCase = new TestCase<ReliableTopicConfig>(new ReliableTopicConfig(STATIC_NAME),
+        TestCase<ReliableTopicConfig> testCase = new TestCase<>(new ReliableTopicConfig(STATIC_NAME),
                 new ReliableTopicConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -545,7 +545,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testExecutorConfig_Static() {
-        TestCase<ExecutorConfig> testCase = new TestCase<ExecutorConfig>(new ExecutorConfig(STATIC_NAME),
+        TestCase<ExecutorConfig> testCase = new TestCase<>(new ExecutorConfig(STATIC_NAME),
                 new ExecutorConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -568,7 +568,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testExecutorConfig_Dynamic() {
-        TestCase<ExecutorConfig> testCase = new TestCase<ExecutorConfig>(new ExecutorConfig(STATIC_NAME),
+        TestCase<ExecutorConfig> testCase = new TestCase<>(new ExecutorConfig(STATIC_NAME),
                 new ExecutorConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -591,7 +591,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig_Static() {
-        TestCase<DurableExecutorConfig> testCase = new TestCase<DurableExecutorConfig>(
+        TestCase<DurableExecutorConfig> testCase = new TestCase<>(
                 new DurableExecutorConfig().setName(STATIC_NAME),
                 new DurableExecutorConfig().setName(DYNAMIC_NAME), false) {
             @Override
@@ -615,7 +615,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig_Dynamic() {
-        TestCase<DurableExecutorConfig> testCase = new TestCase<DurableExecutorConfig>(
+        TestCase<DurableExecutorConfig> testCase = new TestCase<>(
                 new DurableExecutorConfig().setName(STATIC_NAME), new DurableExecutorConfig().setName(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -638,7 +638,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testScheduledExecutorConfig_Static() {
-        TestCase<ScheduledExecutorConfig> testCase = new TestCase<ScheduledExecutorConfig>(
+        TestCase<ScheduledExecutorConfig> testCase = new TestCase<>(
                 new ScheduledExecutorConfig(STATIC_NAME), new ScheduledExecutorConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -661,7 +661,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testScheduledExecutorConfig_Dynamic() {
-        TestCase<ScheduledExecutorConfig> testCase = new TestCase<ScheduledExecutorConfig>(
+        TestCase<ScheduledExecutorConfig> testCase = new TestCase<>(
                 new ScheduledExecutorConfig(STATIC_NAME), new ScheduledExecutorConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -684,7 +684,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCardinalityEstimatorConfig_Static() {
-        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<CardinalityEstimatorConfig>(
+        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<>(
                 new CardinalityEstimatorConfig().setName(STATIC_NAME),
                 new CardinalityEstimatorConfig().setName(DYNAMIC_NAME), false) {
             @Override
@@ -709,7 +709,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCardinalityEstimatorConfig_Dynamic() {
-        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<CardinalityEstimatorConfig>(
+        TestCase<CardinalityEstimatorConfig> testCase = new TestCase<>(
                 new CardinalityEstimatorConfig().setName(STATIC_NAME),
                 new CardinalityEstimatorConfig().setName(DYNAMIC_NAME), true) {
             @Override
@@ -734,7 +734,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testReliableIdGeneratorConfig_Static() {
-        TestCase<FlakeIdGeneratorConfig> testCase = new TestCase<FlakeIdGeneratorConfig>(new FlakeIdGeneratorConfig(STATIC_NAME),
+        TestCase<FlakeIdGeneratorConfig> testCase = new TestCase<>(new FlakeIdGeneratorConfig(STATIC_NAME),
                 new FlakeIdGeneratorConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -757,7 +757,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testReliableIdGeneratorConfig_Dynamic() {
-        TestCase<FlakeIdGeneratorConfig> testCase = new TestCase<FlakeIdGeneratorConfig>(new FlakeIdGeneratorConfig(STATIC_NAME),
+        TestCase<FlakeIdGeneratorConfig> testCase = new TestCase<>(new FlakeIdGeneratorConfig(STATIC_NAME),
                 new FlakeIdGeneratorConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -780,7 +780,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testPNCounterConfig_Static() {
-        TestCase<PNCounterConfig> testCase = new TestCase<PNCounterConfig>(new PNCounterConfig(STATIC_NAME),
+        TestCase<PNCounterConfig> testCase = new TestCase<>(new PNCounterConfig(STATIC_NAME),
                 new PNCounterConfig(DYNAMIC_NAME), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -804,7 +804,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testPNCounterConfig_Dynamic() {
-        TestCase<PNCounterConfig> testCase = new TestCase<PNCounterConfig>(new PNCounterConfig(STATIC_NAME),
+        TestCase<PNCounterConfig> testCase = new TestCase<>(new PNCounterConfig(STATIC_NAME),
                 new PNCounterConfig(DYNAMIC_NAME), true) {
             @Override
             void addStaticConfig(Config config) {

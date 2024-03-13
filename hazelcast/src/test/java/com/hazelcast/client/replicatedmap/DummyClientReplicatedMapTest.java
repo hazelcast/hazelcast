@@ -279,7 +279,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
         setPartitionId(map, partitionId);
         String value = randomString();
-        HashMap<String, String> m = new HashMap<String, String>();
+        HashMap<String, String> m = new HashMap<>();
         m.put(key, value);
         map.putAll(m);
 

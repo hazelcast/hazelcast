@@ -45,7 +45,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
         HazelcastInstance local = createHazelcastInstance();
 
         ITopic<String> topic = local.getReliableTopic("topic");
-        final DurableMessageListener<String> listener = new DurableMessageListener<String>();
+        final DurableMessageListener<String> listener = new DurableMessageListener<>();
 
         UUID id = topic.addMessageListener(listener);
         topic.publish("item1");
@@ -80,8 +80,8 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
 
     public static class DurableMessageListener<V> implements ReliableMessageListener<V> {
 
-        public final List<V> objects = new CopyOnWriteArrayList<V>();
-        public final List<Long> sequences = new CopyOnWriteArrayList<Long>();
+        public final List<V> objects = new CopyOnWriteArrayList<>();
+        public final List<Long> sequences = new CopyOnWriteArrayList<>();
         public volatile long sequence = -1;
 
         @Override

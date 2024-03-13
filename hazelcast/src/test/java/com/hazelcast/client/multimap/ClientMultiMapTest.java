@@ -79,7 +79,7 @@ public class ClientMultiMapTest {
     }
 
     protected <K, V> EntryListener<K, V> putAllEntryListenerBuilder(Consumer<EntryEvent<K, V>> f) {
-        return new EntryAdapter<K, V>() {
+        return new EntryAdapter<>() {
             public void entryAdded(EntryEvent<K, V> event) {
                 f.accept(event);
             }

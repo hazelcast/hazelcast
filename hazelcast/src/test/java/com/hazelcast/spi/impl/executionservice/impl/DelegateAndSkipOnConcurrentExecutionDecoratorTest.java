@@ -59,7 +59,7 @@ public class DelegateAndSkipOnConcurrentExecutionDecoratorTest
         final ResumableCountingRunnable task = new ResumableCountingRunnable();
 
         final AtomicInteger counter = new AtomicInteger();
-        SynchronousQueue<Runnable> queue = new SynchronousQueue<Runnable>() {
+        SynchronousQueue<Runnable> queue = new SynchronousQueue<>() {
             @Override
             public boolean offer(Runnable runnable) {
                 counter.incrementAndGet();

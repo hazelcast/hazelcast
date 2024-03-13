@@ -38,7 +38,7 @@ public class ConcurrentConveyorSingleQueueTest extends ConcurrentConveyorTest {
     @Override
     public void before() {
         queueCount = 1;
-        defaultQ = new OneToOneConcurrentArrayQueue<Item>(QUEUE_CAPACITY);
+        defaultQ = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
         conveyorSingleQueue = concurrentConveyorSingleQueue(doneItem, defaultQ);
         conveyor = conveyorSingleQueue;
     }

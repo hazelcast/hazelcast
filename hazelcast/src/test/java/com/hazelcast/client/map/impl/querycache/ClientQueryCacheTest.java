@@ -269,7 +269,7 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
         Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs = clientConfig.getQueryCacheConfigs();
         Map<String, QueryCacheConfig> queryCacheConfigMap = queryCacheConfigs.get(mapName);
         if (queryCacheConfigMap == null) {
-            queryCacheConfigMap = new HashMap<String, QueryCacheConfig>();
+            queryCacheConfigMap = new HashMap<>();
             queryCacheConfigs.put(mapName, queryCacheConfigMap);
         }
         queryCacheConfigMap.put(queryCacheConfig.getName(), queryCacheConfig);

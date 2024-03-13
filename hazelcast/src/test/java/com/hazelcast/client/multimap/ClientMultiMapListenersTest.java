@@ -198,7 +198,7 @@ public class ClientMultiMapListenersTest {
     public void testListenerOnKey_whenOtherKeysAdded() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
 
-        final List<EntryEvent> events = new ArrayList<EntryEvent>();
+        final List<EntryEvent> events = new ArrayList<>();
         mm.addEntryListener(new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
