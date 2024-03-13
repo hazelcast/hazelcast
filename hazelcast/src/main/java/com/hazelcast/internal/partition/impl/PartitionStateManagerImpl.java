@@ -370,6 +370,13 @@ public class PartitionStateManagerImpl implements PartitionStateManager {
         if (logger.isFinestEnabled()) {
             logger.finest("Clearing partition-migrating flag. partitionId=" + partitionId);
         }
+        if (!isMigrating(partitionId)) {
+            // If this warning is generated it means that trySetMigratingFlag and clearMigratingFlag calls
+            // were mismatched. It may indicate that there was a period of time when migration or replica
+            // sync was running and mutating operations were allowed. This means that there is a risk of
+            // data loss or inconsistency.
+            logger.warning("Partition " + partitionId + " is not migrating");
+        }
         partitions[partitionId].resetMigrating();
     }
 

@@ -18,9 +18,9 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -66,5 +66,12 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     @Override
     public int getClassId() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", migration=").append(migrationInfo);
     }
 }

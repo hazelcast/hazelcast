@@ -1190,7 +1190,7 @@ public abstract class HazelcastTestSupport {
         AssertionError error = null;
         // we are going to check five times a second
         int sleepMillis = 200;
-        long iterations = timeoutSeconds * 5;
+        long iterations = timeoutSeconds * 1000 / sleepMillis;
         long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
         boolean passedTheDeadline = false;
         for (int i = 0; i < iterations && !passedTheDeadline; i++) {
@@ -1308,7 +1308,7 @@ public abstract class HazelcastTestSupport {
     public static void assertFalseEventually(AssertTask task, long timeoutSeconds) {
         // we are going to check five times a second
         int sleepMillis = 200;
-        long iterations = timeoutSeconds * 5;
+        long iterations = timeoutSeconds * 1000 / sleepMillis;
         long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
         for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
             try {

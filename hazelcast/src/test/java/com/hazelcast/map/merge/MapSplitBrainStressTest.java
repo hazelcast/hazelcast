@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -145,11 +146,10 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
 
         for (int mapIndex = 0; mapIndex < mapCount(); mapIndex++) {
             String mapName = mapNames.get(mapIndex);
-            IMap<Integer, MyPerson> map = instances[0].getMap(mapName);
+            Map<Integer, MyPerson> map = instances[0].getMap(mapName);
             int finalMapIndex = mapIndex;
-            assertTrueEventually(() -> assertEquals(format("expected %d entries in map %d/%d (iteration %d)",
-                            ENTRY_COUNT, finalMapIndex, mapCount(), iteration),
-                    ENTRY_COUNT, map.size()));
+            assertTrueEventually(() -> assertThat(map).as(format("expected %d entries in map %d/%d (iteration %d)",
+                            ENTRY_COUNT, finalMapIndex, mapCount(), iteration)).hasSize(ENTRY_COUNT), 30);
 
             for (int key = 0; key < ENTRY_COUNT; key++) {
                 MyPerson myPerson = map.get(key);

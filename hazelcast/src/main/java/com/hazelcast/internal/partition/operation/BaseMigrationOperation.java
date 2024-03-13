@@ -223,6 +223,14 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     /** Sets the active migration and the partition migration flag. */
     void setActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
+
+        // try to set flag first as it is used also by replica sync
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        if (!partitionStateManager.trySetMigratingFlag(migrationInfo.getPartitionId())) {
+            throw new RetryableHazelcastException("Cannot set migrating flag, "
+                    + "probably previous migration's finalization is not completed yet.");
+        }
+
         MigrationManager migrationManager = partitionService.getMigrationManager();
         MigrationInfo currentActiveMigration = migrationManager.addActiveMigration(migrationInfo);
         if (currentActiveMigration != null) {
@@ -231,13 +239,13 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
                 return;
             }
 
+            // We should not be here, but if we are, restore the flag to original state.
+            // This means that some process cleared migrating flag too early, before
+            // finalizing migration, but we cannot proceed with next migration anyway until
+            // previous active migration is finalized.
+            partitionStateManager.clearMigratingFlag(migrationInfo.getPartitionId());
             throw new RetryableHazelcastException("Cannot set active migration to " + migrationInfo
                     + ". Current active migration is " + currentActiveMigration);
-        }
-        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        if (!partitionStateManager.trySetMigratingFlag(migrationInfo.getPartitionId())) {
-            throw new RetryableHazelcastException("Cannot set migrating flag, "
-                    + "probably previous migration's finalization is not completed yet.");
         }
     }
 

@@ -230,6 +230,7 @@ public final class PartitionReplicaSyncRequestOffloadable
                                 // operations while preparing replication operations
                                 if (!trySetMigratingFlag()) {
                                     sendRetryResponse();
+                                    return;
                                 }
 
                                 try {
@@ -298,5 +299,11 @@ public final class PartitionReplicaSyncRequestOffloadable
         } catch (InterruptedException | ExecutionException e) {
             throw sneakyThrow(peel(e));
         }
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+        sb.append(", [real]partitionId=").append(partitionId);
     }
 }
