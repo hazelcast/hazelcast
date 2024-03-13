@@ -820,6 +820,9 @@
         <profile>
             <!-- used by the PR builder -->
             <id>parallelTest</id>
+            <properties>
+                <skip-singlejvm-tests>false</skip-singlejvm-tests>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -882,6 +885,7 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
+                                    <skip>${skip-singlejvm-tests}</skip>
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <argLine>
