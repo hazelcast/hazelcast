@@ -1324,7 +1324,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      map-store:"
-                + (useDefault ? " {}" : "\n        offload: " + String.valueOf(value) + "\n");
+                + (useDefault ? " {}" : "\n        offload: " + value + "\n");
     }
 
     @Override

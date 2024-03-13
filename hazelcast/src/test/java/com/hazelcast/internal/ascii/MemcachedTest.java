@@ -234,7 +234,7 @@ public class MemcachedTest extends HazelcastTestSupport {
         future.get();
 
         for (int i = 0; i < 100; i++) {
-            assertNull(client.get(prefix + String.valueOf(i)));
+            assertNull(client.get(prefix + i));
         }
         assertTrue(map.isEmpty());
     }

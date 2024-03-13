@@ -71,7 +71,7 @@ public class QueueSplitBrainProtectionReadTest extends AbstractSplitBrainProtect
     @Test
     public void element_splitBrainProtection() {
         LOGGER.info(String.valueOf(queue(0).size()));
-        LOGGER.info(String.valueOf(queue(0).getPartitionKey()));
+        LOGGER.info(queue(0).getPartitionKey());
         queue(0).element();
     }
 
