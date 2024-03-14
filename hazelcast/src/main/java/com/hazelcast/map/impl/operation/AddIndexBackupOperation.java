@@ -22,11 +22,15 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-public class AddIndexBackupOperation extends MapOperation implements BackupOperation {
+public class AddIndexBackupOperation extends MapOperation implements BackupOperation,
+        // AddIndexBackupOperation is used when map proxy for IMap with indexes is initialized during passive state
+        // (eg. IMap is read for the first time after HotRestart recovery when the cluster is still in PASSIVE state)
+        AllowedDuringPassiveState {
 
     private IndexConfig config;
 

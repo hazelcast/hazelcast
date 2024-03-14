@@ -223,7 +223,14 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         warmUpPartitions(member1, member2);
         member1.getCluster().changeClusterState(restartInState);
         member1 = restartMember(member1, member2, graceful);
+
+        // do not restart the other member until proxy is fully initialized on first member
+        // so the proxy can be included in PostJoinProxyOperation. Proxy initialization may take
+        // some time (especially when backup operations fail) and is async process.
+        assertMapProxyInitializedEventually(indexMapName);
+
         member2 = restartMember(member2, member1, graceful);
+
         member1.getCluster().changeClusterState(ClusterState.ACTIVE);
 
         // Wait for proxy initialization by post join operation to avoid race condition.
