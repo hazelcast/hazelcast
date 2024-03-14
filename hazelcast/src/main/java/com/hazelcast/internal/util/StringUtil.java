@@ -253,7 +253,9 @@ public final class StringUtil {
 
 
     /**
-     * Trim whitespaces. This method (compared to {@link String#trim()}) doesn't limit to space character.
+     * Trim whitespaces using the more aggressive approach of {@link String#strip()}.
+     * This method removes leading and trailing whitespaces, including a broader set of Unicode whitespace characters,
+     * compared to {@link String#trim()}.
      *
      * @param input string to trim
      * @return {@code null} if provided value was {@code null}, input with removed leading and trailing whitespaces
@@ -262,7 +264,7 @@ public final class StringUtil {
         if (input == null) {
             return null;
         }
-        return input.replaceAll("^\\s+|\\s+$", "");
+        return input.strip();
     }
 
     /**
