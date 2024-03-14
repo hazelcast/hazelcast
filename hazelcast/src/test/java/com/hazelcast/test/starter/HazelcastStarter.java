@@ -57,7 +57,7 @@ public class HazelcastStarter {
      * Caches downloaded files and classloader used to load their classes per version string.
      */
     private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
-            new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
+            new ConcurrentHashMap<>();
 
     /**
      * Starts a new open source {@link HazelcastInstance} of the given version.

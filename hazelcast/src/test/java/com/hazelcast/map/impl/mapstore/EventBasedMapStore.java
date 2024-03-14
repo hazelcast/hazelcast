@@ -37,9 +37,9 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
         STORE, STORE_ALL, DELETE, DELETE_ALL, LOAD, LOAD_ALL, LOAD_ALL_KEYS
     }
 
-    public final Map<K, V> store = new ConcurrentHashMap<K, V>();
+    public final Map<K, V> store = new ConcurrentHashMap<>();
 
-    public final BlockingQueue<STORE_EVENTS> events = new LinkedBlockingQueue<STORE_EVENTS>();
+    public final BlockingQueue<STORE_EVENTS> events = new LinkedBlockingQueue<>();
     public final AtomicInteger storeCount = new AtomicInteger();
     public final AtomicInteger storeAllCount = new AtomicInteger();
     public final AtomicInteger loadCount = new AtomicInteger();
@@ -156,7 +156,7 @@ public class EventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapS
     }
 
     public Map<K, V> loadAll(Collection<K> keys) {
-        Map<K, V> map = new HashMap<K, V>(keys.size());
+        Map<K, V> map = new HashMap<>(keys.size());
         for (K key : keys) {
             V value = store.get(key);
             if (value != null) {

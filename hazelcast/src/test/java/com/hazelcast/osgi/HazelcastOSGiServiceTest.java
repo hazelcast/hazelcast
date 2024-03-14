@@ -462,7 +462,7 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
 
     @Test
     public void allInstancesRetrievedSuccessfully() {
-        Set<HazelcastOSGiInstance> osgiInstances = new HashSet<HazelcastOSGiInstance>();
+        Set<HazelcastOSGiInstance> osgiInstances = new HashSet<>();
 
         HazelcastInternalOSGiService service = getService();
 
@@ -522,7 +522,7 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
 
     @Test
     public void allInstancesShutdownSuccessfully() {
-        Set<HazelcastOSGiInstance> osgiInstances = new HashSet<HazelcastOSGiInstance>();
+        Set<HazelcastOSGiInstance> osgiInstances = new HashSet<>();
 
         HazelcastInternalOSGiService service = getService();
 
@@ -550,7 +550,7 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
 
     @Test
     public void allInstancesShutdownSuccessfullyAlthoughThereIsExceptionWhileDeregister() {
-        Set<HazelcastOSGiInstance> osgiInstances = new HashSet<HazelcastOSGiInstance>();
+        Set<HazelcastOSGiInstance> osgiInstances = new HashSet<>();
 
         registerDeregisterListener.throwExceptionOnDeregister = true;
 

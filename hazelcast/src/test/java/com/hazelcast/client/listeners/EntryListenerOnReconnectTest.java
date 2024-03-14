@@ -43,7 +43,7 @@ public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTe
     protected UUID addListener() {
         iMap = client.getMap(randomString());
 
-        final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+        final EntryAdapter<String, String> listener = new EntryAdapter<>() {
             public void onEntryEvent(EntryEvent<String, String> event) {
                 onEvent(event.getKey());
             }

@@ -40,7 +40,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        counter = new ItemCounter<Object>();
+        counter = new ItemCounter<>();
     }
 
     @Test
@@ -184,7 +184,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
     @Test
     public void testEquals_returnsTrueOnTheSameData() {
         Object object1 = new Object();
-        ItemCounter<Object> otherCounter = new ItemCounter<Object>();
+        ItemCounter<Object> otherCounter = new ItemCounter<>();
 
         counter.set(object1, Long.MAX_VALUE);
         otherCounter.set(object1, Long.MAX_VALUE);
@@ -195,7 +195,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
     @Test
     public void testEquals_returnsFalseOnTheDifferentData() {
         Object object1 = new Object();
-        ItemCounter<Object> otherCounter = new ItemCounter<Object>();
+        ItemCounter<Object> otherCounter = new ItemCounter<>();
 
         counter.set(object1, Long.MAX_VALUE);
         otherCounter.set(object1, Long.MIN_VALUE);
@@ -210,7 +210,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
 
     @Test
     public void testHashCode_sameHashCodeOnTheSameData() {
-        ItemCounter<Object> otherCounter = new ItemCounter<Object>();
+        ItemCounter<Object> otherCounter = new ItemCounter<>();
 
         int hashCode = counter.hashCode();
         int otherHashCode = otherCounter.hashCode();

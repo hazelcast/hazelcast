@@ -111,7 +111,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         final int nodeCount = 20;
         final int basePort = 12301;
         final CountDownLatch latch = new CountDownLatch(nodeCount);
-        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<>(nodeCount);
 
         ExecutorService ex = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() * 2);
         for (int i = 0; i < nodeCount; i++) {
@@ -314,7 +314,7 @@ public class JoinStressTest extends HazelcastTestSupport {
             instances[i] = Hazelcast.newHazelcastInstance(config);
         }
 
-        Callable<HazelcastInstance> newInstanceTask = new Callable<HazelcastInstance>() {
+        Callable<HazelcastInstance> newInstanceTask = new Callable<>() {
             @Override
             public HazelcastInstance call() {
                 return Hazelcast.newHazelcastInstance(config);

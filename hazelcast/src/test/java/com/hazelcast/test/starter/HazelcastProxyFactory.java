@@ -81,9 +81,9 @@ public class HazelcastProxyFactory {
 
     static {
         Map<String, Constructor<ConstructorFunction<Object, Object>>> notProxiedClasses
-                = new HashMap<String, Constructor<ConstructorFunction<Object, Object>>>();
-        Set<String> subclassProxiedClasses = new HashSet<String>();
-        Map<String, String> refactoredInterfaces = new HashMap<String, String>();
+                = new HashMap<>();
+        Set<String> subclassProxiedClasses = new HashSet<>();
+        Map<String, String> refactoredInterfaces = new HashMap<>();
 
         Reflections reflections = getReflectionsForTestPackage("com.hazelcast.test.starter.constructor");
         Set<Class<?>> constructorClasses = reflections.getTypesAnnotatedWith(HazelcastStarterConstructor.class);
@@ -160,7 +160,7 @@ public class HazelcastProxyFactory {
             }
             return targetCollection;
         } else if (isJDKClass(arg.getClass()) && Map.class.isAssignableFrom(arg.getClass())) {
-            Map<Object, Object> targetMap = new ConcurrentHashMap<Object, Object>();
+            Map<Object, Object> targetMap = new ConcurrentHashMap<>();
             Map mapArg = (Map) arg;
             for (Object entry : mapArg.entrySet()) {
                 Object key = proxyObjectForStarter(targetClassLoader, ((Map.Entry) entry).getKey());
@@ -335,7 +335,7 @@ public class HazelcastProxyFactory {
      * {@code type} itself if it's an interface.
      */
     private static Class<?>[] getAllInterfacesIncludingSelf(Class<?> type) {
-        Set<Class<?>> interfaces = new HashSet<Class<?>>(Arrays.asList(getAllInterfaces(type)));
+        Set<Class<?>> interfaces = new HashSet<>(Arrays.asList(getAllInterfaces(type)));
         //if the return type itself is an interface then we have to add it
         //to the list of interfaces implemented by the proxy
         if (type.isInterface()) {
@@ -434,7 +434,7 @@ public class HazelcastProxyFactory {
         @Override
         public List<MethodDescription.Token> extractConstructors(TypeDescription instrumentedType) {
             List<MethodDescription.Token> tokens = doExtractConstructors(instrumentedType);
-            List<MethodDescription.Token> stripped = new ArrayList<MethodDescription.Token>(tokens.size());
+            List<MethodDescription.Token> stripped = new ArrayList<>(tokens.size());
             for (MethodDescription.Token token : tokens) {
                 stripped.add(new MethodDescription.Token(token.getName(),
                         ACC_PUBLIC,

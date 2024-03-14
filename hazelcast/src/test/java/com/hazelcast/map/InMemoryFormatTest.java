@@ -134,7 +134,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         final HazelcastInstance hz = createHazelcastInstance(config);
         final PartitionService partitionService = hz.getPartitionService();
         final IMap<Integer, Object> m = hz.getMap("mappy");
-        final HashSet<Integer> nonEmptyPartitions = new HashSet<Integer>();
+        final HashSet<Integer> nonEmptyPartitions = new HashSet<>();
 
         for (int i = 0; i < MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT * 5; i++) {
             m.put(i, i);

@@ -43,7 +43,7 @@ public class ExpirationManagerStressTest extends HazelcastTestSupport {
         final ExpirationManager expirationManager = getExpirationManager(createHazelcastInstance());
 
         final AtomicBoolean stop = new AtomicBoolean(false);
-        LinkedList<Thread> threads = new LinkedList<Thread>();
+        LinkedList<Thread> threads = new LinkedList<>();
 
         for (int j = 0; j < 2; j++) {
             Thread thread = new Thread() {

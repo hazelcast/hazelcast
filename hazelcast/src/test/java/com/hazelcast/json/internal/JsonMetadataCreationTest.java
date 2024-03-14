@@ -249,7 +249,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAllCreatesMetadataForJson() {
-        Map<HazelcastJsonValue, HazelcastJsonValue> localMap = new HashMap<HazelcastJsonValue, HazelcastJsonValue>();
+        Map<HazelcastJsonValue, HazelcastJsonValue> localMap = new HashMap<>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             localMap.put(createJsonValue("key", i), createJsonValue("value", i));
         }
@@ -392,7 +392,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
         @Override
         public Map<HazelcastJsonValue, HazelcastJsonValue> loadAll(Collection<HazelcastJsonValue> keys) {
-            Map<HazelcastJsonValue, HazelcastJsonValue> localMap = new HashMap<HazelcastJsonValue, HazelcastJsonValue>();
+            Map<HazelcastJsonValue, HazelcastJsonValue> localMap = new HashMap<>();
             for (HazelcastJsonValue key : keys) {
                 int value = Json.parse(key.toString()).asObject().get("value").asInt();
                 localMap.put(key, createJsonValue("value", value));
@@ -403,7 +403,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
         @Override
         public Iterable<HazelcastJsonValue> loadAllKeys() {
-            Collection<HazelcastJsonValue> localKeys = new ArrayList<HazelcastJsonValue>();
+            Collection<HazelcastJsonValue> localKeys = new ArrayList<>();
             for (int i = 0; i < ENTRY_COUNT; i++) {
                 localKeys.add(createJsonValue("key", i));
             }

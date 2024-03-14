@@ -70,7 +70,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "inMemoryFormat: {0}, cacheDeserializedValues: {1}, metadataPolicy: {2}")
     public static Collection<Object[]> parametersInMemoryFormat() {
-        List<Object[]> parameters = new ArrayList<Object[]>();
+        List<Object[]> parameters = new ArrayList<>();
         for (InMemoryFormat imf: new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
             for (CacheDeserializedValues cdv: CacheDeserializedValues.values()) {
                 for (MetadataPolicy pp: MetadataPolicy.values()) {
@@ -191,7 +191,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
     private Set<QueryableEntry> getRecords(HazelcastInstance instance, String mapName, String attribute, Comparable value) {
         List<Index> indexes = getIndexOfAttributeForMap(instance, mapName, attribute);
-        Set<QueryableEntry> records = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> records = new HashSet<>();
         for (Index index : indexes) {
             records.addAll(index.getRecords(value));
         }
@@ -204,7 +204,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        List<Index> result = new ArrayList<Index>();
+        List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
             IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
 

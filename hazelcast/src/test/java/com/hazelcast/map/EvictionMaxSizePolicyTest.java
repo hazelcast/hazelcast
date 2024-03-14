@@ -424,7 +424,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
     Collection<IMap> createMaps(String mapName, Config config, int nodeCount) {
-        final List<IMap> maps = new ArrayList<IMap>();
+        final List<IMap> maps = new ArrayList<>();
         Collection<HazelcastInstance> nodes = createNodes(nodeCount, config);
         for (HazelcastInstance node : nodes) {
             final IMap map = node.getMap(mapName);

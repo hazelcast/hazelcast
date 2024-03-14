@@ -302,7 +302,7 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenInvalid_BothOfEvictionPolicyAndComparatorClassNameConfigured() {
         expectInvalid();
-        Map<String, String> props = new HashMap<String, String>();
+        Map<String, String> props = new HashMap<>();
         props.put("cache-eviction-policy", "LFU");
         props.put("cache-eviction-policy-comparator-class-name", "my-comparator");
 

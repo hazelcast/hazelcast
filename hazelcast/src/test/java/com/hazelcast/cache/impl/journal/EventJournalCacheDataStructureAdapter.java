@@ -120,7 +120,7 @@ public class EventJournalCacheDataStructureAdapter<K, V>
 
     private Set<Map.Entry<K, V>> getEntries(ICache<K, V> cache) {
         final Iterator<Cache.Entry<K, V>> it = cache.iterator();
-        final HashSet<Entry<K, V>> entries = new HashSet<Map.Entry<K, V>>(cache.size());
+        final HashSet<Entry<K, V>> entries = new HashSet<>(cache.size());
         while (it.hasNext()) {
             final Cache.Entry<K, V> e = it.next();
             entries.add(new SimpleImmutableEntry<K, V>(e.getKey(), e.getValue()));

@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class Int2ObjectHashMapTest {
-    private final Int2ObjectHashMap<String> intToObjectMap = new Int2ObjectHashMap<String>();
+    private final Int2ObjectHashMap<String> intToObjectMap = new Int2ObjectHashMap<>();
 
     @Test
     public void shouldDoPutAndThenGet() {
@@ -65,7 +65,7 @@ public class Int2ObjectHashMapTest {
     @Test
     public void shouldGrowWhenThresholdExceeded() {
         final double loadFactor = 0.5d;
-        final Int2ObjectHashMap<String> map = new Int2ObjectHashMap<String>(32, loadFactor);
+        final Int2ObjectHashMap<String> map = new Int2ObjectHashMap<>(32, loadFactor);
         for (int i = 0; i < 16; i++) {
             map.put(i, Integer.toString(i));
         }
@@ -87,7 +87,7 @@ public class Int2ObjectHashMapTest {
     @Test
     public void shouldHandleCollisionAndThenLinearProbe() {
         final double loadFactor = 0.5d;
-        final Int2ObjectHashMap<String> map = new Int2ObjectHashMap<String>(32, loadFactor);
+        final Int2ObjectHashMap<String> map = new Int2ObjectHashMap<>(32, loadFactor);
         final int key = 7;
         final String value = "Seven";
         map.put(key, value);
@@ -188,7 +188,7 @@ public class Int2ObjectHashMapTest {
 
     @Test
     public void shouldIterateValues() {
-        final Collection<String> initialSet = new HashSet<String>();
+        final Collection<String> initialSet = new HashSet<>();
 
         for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
@@ -196,7 +196,7 @@ public class Int2ObjectHashMapTest {
             initialSet.add(value);
         }
 
-        final Collection<String> copyToSet = new HashSet<String>();
+        final Collection<String> copyToSet = new HashSet<>();
 
         for (final String s : intToObjectMap.values()) {
             copyToSet.add(s);
@@ -207,7 +207,7 @@ public class Int2ObjectHashMapTest {
 
     @Test
     public void shouldIterateKeysGettingIntAsPrimitive() {
-        final Collection<Integer> initialSet = new HashSet<Integer>();
+        final Collection<Integer> initialSet = new HashSet<>();
 
         for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
@@ -215,7 +215,7 @@ public class Int2ObjectHashMapTest {
             initialSet.add(valueOf(i));
         }
 
-        final Collection<Integer> copyToSet = new HashSet<Integer>();
+        final Collection<Integer> copyToSet = new HashSet<>();
 
         for (final Int2ObjectHashMap.KeyIterator iter = intToObjectMap.keySet().iterator(); iter.hasNext(); ) {
             copyToSet.add(valueOf(iter.nextInt()));
@@ -227,7 +227,7 @@ public class Int2ObjectHashMapTest {
     @Test
     @SuppressWarnings("UseBulkOperation")
     public void shouldIterateKeys() {
-        final Collection<Integer> initialSet = new HashSet<Integer>();
+        final Collection<Integer> initialSet = new HashSet<>();
 
         for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
@@ -235,7 +235,7 @@ public class Int2ObjectHashMapTest {
             initialSet.add(i);
         }
 
-        final Collection<Integer> copyToSet = new HashSet<Integer>();
+        final Collection<Integer> copyToSet = new HashSet<>();
 
         for (final Integer aInteger : intToObjectMap.keySet()) {
             copyToSet.add(aInteger);
@@ -246,7 +246,7 @@ public class Int2ObjectHashMapTest {
 
     @Test
     public void shouldIterateAndHandleRemove() {
-        final Collection<Integer> initialSet = new HashSet<Integer>();
+        final Collection<Integer> initialSet = new HashSet<>();
 
         final int count = 11;
         for (int i = 0; i < count; i++) {
@@ -255,7 +255,7 @@ public class Int2ObjectHashMapTest {
             initialSet.add(valueOf(i));
         }
 
-        final Collection<Integer> copyOfSet = new HashSet<Integer>();
+        final Collection<Integer> copyOfSet = new HashSet<>();
 
         int i = 0;
         for (final Iterator<Integer> iter = intToObjectMap.keySet().iterator(); iter.hasNext(); ) {

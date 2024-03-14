@@ -96,7 +96,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
                 new SlowOperation(callTimeout * 3, RESPONSE),
                 getPartitionId(remote));
 
-        List<Future> futures = new LinkedList<Future>();
+        List<Future> futures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
             futures.add(spawn(() -> future.get()));
         }

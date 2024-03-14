@@ -122,7 +122,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         };
         EvictionPolicyEvaluator evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, null);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records
-                = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+                = new ArrayList<>();
 
         long baseTime = System.currentTimeMillis();
         long minCreationTime = -1;
@@ -198,7 +198,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         };
         EvictionPolicyEvaluator evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, null);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records
-                = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+                = new ArrayList<>();
 
         for (int i = 0; i < recordCount; i++) {
             CacheObjectRecord record = new CacheObjectRecord(i, System.currentTimeMillis(), Long.MAX_VALUE);

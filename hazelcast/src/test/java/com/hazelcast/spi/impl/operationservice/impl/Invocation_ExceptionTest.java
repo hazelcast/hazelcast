@@ -197,6 +197,6 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
         }
     }
     private static <T> Condition<T> nullValue(Class<T> type) {
-        return new Condition<T>(Objects::isNull, "must be null");
+        return new Condition<>(Objects::isNull, "must be null");
     }
 }

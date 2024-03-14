@@ -536,7 +536,7 @@ public class IndexTest {
         if (records.isEmpty()) {
             return null;
         }
-        Map<Data, QueryableEntry> recordMap = new HashMap<Data, QueryableEntry>(records.size());
+        Map<Data, QueryableEntry> recordMap = new HashMap<>(records.size());
         for (QueryableEntry entry : records) {
             recordMap.put(entry.getKeyData(), entry);
         }

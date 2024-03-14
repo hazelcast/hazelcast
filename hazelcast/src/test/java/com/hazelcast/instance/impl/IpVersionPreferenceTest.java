@@ -74,7 +74,7 @@ public class IpVersionPreferenceTest {
 
     @Parameters(name = "hazelcastIpv4:{0} javaIpv4:{1} javaIpv6:{2}")
     public static Collection<Object[]> parameters() {
-        List<Object[]> params = new ArrayList<Object[]>();
+        List<Object[]> params = new ArrayList<>();
         for (Boolean i : BOOL_VALUES) {
             for (Boolean j : BOOL_VALUES) {
                 for (Boolean k : BOOL_VALUES) {

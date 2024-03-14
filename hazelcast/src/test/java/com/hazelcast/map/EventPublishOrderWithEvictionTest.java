@@ -61,13 +61,13 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
     }
 
     private void assertEmittedEventsOrder(EventOrderAwareEntryListener entryListener) {
-        Map<Integer, List<EntryEventType>> eventsPerKey = new HashMap<Integer, List<EntryEventType>>();
+        Map<Integer, List<EntryEventType>> eventsPerKey = new HashMap<>();
         List<EntryEvent> events = entryListener.getOrderedEvents();
         for (EntryEvent event : events) {
             Integer key = (Integer) event.getKey();
             List<EntryEventType> eventTypes = eventsPerKey.get(key);
             if (eventTypes == null) {
-                eventTypes = new ArrayList<EntryEventType>();
+                eventTypes = new ArrayList<>();
                 eventsPerKey.put(key, eventTypes);
             }
 
@@ -110,7 +110,7 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
 
     private static final class EventOrderAwareEntryListener extends EntryAdapter {
 
-        private final List<EntryEvent> orderedEvents = new CopyOnWriteArrayList<EntryEvent>();
+        private final List<EntryEvent> orderedEvents = new CopyOnWriteArrayList<>();
 
         @Override
         public void entryEvicted(EntryEvent event) {

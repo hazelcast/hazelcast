@@ -291,7 +291,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         HazelcastInstance[] slaves = factory.newInstances(config, 5);
 
-        final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(slaves.length + 1);
+        final List<HazelcastInstance> instances = new ArrayList<>(slaves.length + 1);
         instances.add(master);
         instances.addAll(Arrays.asList(slaves));
         Collections.shuffle(instances);
@@ -509,7 +509,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         dropOperationsFrom(instances[1], ClusterDataSerializerHook.F_ID, singletonList(ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE));
 
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[1]);
-        final AtomicReference<MigrationInfo> startedMigration = new AtomicReference<MigrationInfo>();
+        final AtomicReference<MigrationInfo> startedMigration = new AtomicReference<>();
         partitionService.setMigrationInterceptor(new MigrationInterceptor() {
             @Override
             public void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {

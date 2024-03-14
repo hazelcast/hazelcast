@@ -89,7 +89,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
 
         changeClusterStateEventually(instances[0], clusterState);
-        List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(asList(instances));
+        List<HazelcastInstance> instancesList = new ArrayList<>(asList(instances));
         Collections.shuffle(instancesList);
 
         final PartitionTableView partitionTable = getPartitionTable(instances[0]);
@@ -183,7 +183,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(instances[0], clusterState);
 
-        List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(asList(instances));
+        List<HazelcastInstance> instancesList = new ArrayList<>(asList(instances));
         Collections.shuffle(instancesList);
         final HazelcastInstance instanceToShutdown = instancesList.remove(0);
         final Address addressToShutdown = getNode(instanceToShutdown).getThisAddress();

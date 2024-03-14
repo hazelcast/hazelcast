@@ -44,13 +44,13 @@ import static com.hazelcast.test.starter.HazelcastVersionLocator.locateVersion;
  */
 public class Hazelcast3Proxy {
 
-    private static final Map<String, String> TYPES_4_TO_3 = new HashMap<String, String>() {{
+    private static final Map<String, String> TYPES_4_TO_3 = new HashMap<>() {{
         put("com.hazelcast.topic.ITopic", "com.hazelcast.core.ITopic");
         put("com.hazelcast.topic.MessageListener", "com.hazelcast.core.MessageListener");
         put("com.hazelcast.topic.Message", "com.hazelcast.core.Message");
     }};
 
-    private static final Map<String, String> TYPES_3_TO_4 = new HashMap<String, String>() {{
+    private static final Map<String, String> TYPES_3_TO_4 = new HashMap<>() {{
         put("com.hazelcast.core.ITopic", "com.hazelcast.topic.ITopic");
         put("com.hazelcast.core.MessageListener", "com.hazelcast.topic.MessageListener");
         put("com.hazelcast.core.Message", "com.hazelcast.topic.Message");

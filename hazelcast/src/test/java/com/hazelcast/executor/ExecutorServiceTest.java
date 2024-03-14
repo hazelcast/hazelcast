@@ -376,7 +376,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
-        ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
+        ExecutionCallback<Object> callback = new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 if (response == null) {
                     nullResponseCount.incrementAndGet();
@@ -407,7 +407,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
-        ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
+        ExecutionCallback<Object> callback = new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 if (response == null) {
                     nullResponseCount.incrementAndGet();

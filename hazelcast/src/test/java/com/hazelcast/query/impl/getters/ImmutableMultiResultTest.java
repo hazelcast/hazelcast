@@ -38,12 +38,12 @@ public class ImmutableMultiResultTest {
 
     @Before
     public void setUp() {
-        MultiResult<Integer> multiResult = new MultiResult<Integer>();
+        MultiResult<Integer> multiResult = new MultiResult<>();
         multiResult.setNullOrEmptyTarget(false);
         multiResult.add(23);
         multiResult.add(42);
 
-        immutableMultiResult = new ImmutableMultiResult<Integer>(multiResult);
+        immutableMultiResult = new ImmutableMultiResult<>(multiResult);
     }
 
     @Test
@@ -62,8 +62,8 @@ public class ImmutableMultiResultTest {
 
     @Test
     public void testIsEmpty_whenEmpty() {
-        MultiResult<Integer> multiResult = new MultiResult<Integer>();
-        immutableMultiResult = new ImmutableMultiResult<Integer>(multiResult);
+        MultiResult<Integer> multiResult = new MultiResult<>();
+        immutableMultiResult = new ImmutableMultiResult<>(multiResult);
 
         assertTrue(immutableMultiResult.isEmpty());
     }
@@ -75,10 +75,10 @@ public class ImmutableMultiResultTest {
 
     @Test
     public void testIsNullEmptyTarget_whenEmpty() {
-        MultiResult<Integer> multiResult = new MultiResult<Integer>();
+        MultiResult<Integer> multiResult = new MultiResult<>();
         multiResult.setNullOrEmptyTarget(true);
 
-        immutableMultiResult = new ImmutableMultiResult<Integer>(multiResult);
+        immutableMultiResult = new ImmutableMultiResult<>(multiResult);
 
         assertTrue(immutableMultiResult.isNullEmptyTarget());
     }

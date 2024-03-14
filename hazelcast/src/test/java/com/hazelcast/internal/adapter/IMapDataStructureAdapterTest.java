@@ -84,8 +84,8 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map = hazelcastInstance.getMap("IMapDataStructureAdapterTest");
         mapWithLoader = hazelcastInstance.getMap("IMapDataStructureAdapterLoaderTest");
 
-        adapter = new IMapDataStructureAdapter<Integer, String>(map);
-        adapterWithLoader = new IMapDataStructureAdapter<Integer, String>(mapWithLoader);
+        adapter = new IMapDataStructureAdapter<>(map);
+        adapterWithLoader = new IMapDataStructureAdapter<>(mapWithLoader);
     }
 
     @Test
@@ -323,7 +323,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map.put(42, "value-42");
         map.put(65, "value-65");
 
-        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
         Map<Integer, Object> resultMap = adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
         assertEquals(2, resultMap.size());
         assertEquals("newValue-23", resultMap.get(23));
@@ -404,7 +404,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map.put(23, "value-23");
         map.put(42, "value-42");
 
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        Map<Integer, String> expectedResult = new HashMap<>();
         expectedResult.put(23, "value-23");
         expectedResult.put(42, "value-42");
 
@@ -414,7 +414,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAll() {
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        Map<Integer, String> expectedResult = new HashMap<>();
         expectedResult.put(23, "value-23");
         expectedResult.put(42, "value-42");
 
@@ -457,7 +457,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test(expected = MethodNotAvailableException.class)
     public void testInvokeAll() {
-        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
         adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 

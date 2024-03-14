@@ -49,7 +49,7 @@ public class GcpDiscoveryStrategyTest {
 
     @Before
     public void setUp() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("hz-port", String.format("%s-%s", PORT1, PORT2));
         gcpDiscoveryStrategy = new GcpDiscoveryStrategy(properties, gcpClient);
     }
@@ -72,7 +72,7 @@ public class GcpDiscoveryStrategyTest {
     @Test
     public void newValidProperties() {
         // given
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("projects", "project1");
         properties.put("zones", "us-east1-b");
 
@@ -86,7 +86,7 @@ public class GcpDiscoveryStrategyTest {
     @Test(expected = InvalidConfigurationException.class)
     public void newInvalidPortRangeProperty() {
         // given
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("hz-port", "invalid");
 
         // when
@@ -99,7 +99,7 @@ public class GcpDiscoveryStrategyTest {
     @Test(expected = InvalidConfigurationException.class)
     public void newInvalidLabelProperty() {
         // given
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("label", "invalid");
 
         // when

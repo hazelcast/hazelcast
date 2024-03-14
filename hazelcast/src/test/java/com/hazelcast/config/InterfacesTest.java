@@ -76,7 +76,7 @@ public class InterfacesTest extends HazelcastTestSupport {
 
     @Test
     public void testSetInterfaceList() {
-        List<String> interfaceList = new ArrayList<String>();
+        List<String> interfaceList = new ArrayList<>();
         interfaceList.add(interfaceA);
         interfaceList.add(interfaceB);
         interfaceList.add(interfaceC);

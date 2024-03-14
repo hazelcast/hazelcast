@@ -147,7 +147,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     public void test_afterConcurrentRegisterDeregister_thenInternalStructuresAreEmpty() throws Exception {
         final AtomicBoolean stop = new AtomicBoolean(false);
 
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             Thread thread = new Thread(new Runnable() {
                 @Override

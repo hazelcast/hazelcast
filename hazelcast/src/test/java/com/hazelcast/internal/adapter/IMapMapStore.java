@@ -41,7 +41,7 @@ public class IMapMapStore implements DataStructureLoader, MapStore<Integer, Stri
 
     @Override
     public Map<Integer, String> loadAll(Collection<Integer> keys) {
-        Map<Integer, String> map = new HashMap<Integer, String>(keys.size());
+        Map<Integer, String> map = new HashMap<>(keys.size());
         for (Integer key : keys) {
             map.put(key, "newValue-" + key);
         }

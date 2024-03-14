@@ -310,7 +310,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
                 .setCallTimeout(callTimeout)
                 .invoke();
         // now we are going to do a get on the future by a whole bunch of threads
-        final List<Future> futures = new LinkedList<Future>();
+        final List<Future> futures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
             futures.add(spawn(new Callable() {
                 @Override

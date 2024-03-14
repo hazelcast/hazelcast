@@ -94,7 +94,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
 
     @Test
     public void removingAPresentElementRemovesIt() {
-        final Set<Integer> jdkSet = new HashSet<Integer>();
+        final Set<Integer> jdkSet = new HashSet<>();
         final Random rnd = new Random();
         for (int i = 0; i < 1000; i++) {
             final int value = rnd.nextInt();
@@ -287,7 +287,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray();
-        final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
+        final Set<Object> fromArray = new HashSet<>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 
@@ -297,7 +297,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray(new Integer[0]);
-        final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
+        final Set<Object> fromArray = new HashSet<>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 

@@ -37,7 +37,7 @@ public class InternalSetMultiMapTest {
 
     @Before
     public void setUp() {
-        this.multiMap = new InternalSetMultimap<Integer, String>();
+        this.multiMap = new InternalSetMultimap<>();
     }
 
     @Test

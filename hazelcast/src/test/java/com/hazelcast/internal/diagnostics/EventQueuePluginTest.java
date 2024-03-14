@@ -268,7 +268,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         assertSampleRunnable("ICache 'cacheName' REMOVED", cacheEventSetRemoved, CacheService.SERVICE_NAME);
 
         List<CacheEventData> cacheEventData = asList(cacheEventCreated, cacheEventUpdated, cacheEventRemoved);
-        Set<CacheEventData> cacheEvents = new HashSet<CacheEventData>(cacheEventData);
+        Set<CacheEventData> cacheEvents = new HashSet<>(cacheEventData);
         CacheEventSet cacheEventSetAll = new CacheEventSet(CacheEventType.EXPIRED, cacheEvents, 1);
         assertCacheEventSet(cacheEventSetAll,
                 "ICache 'cacheName' CREATED",

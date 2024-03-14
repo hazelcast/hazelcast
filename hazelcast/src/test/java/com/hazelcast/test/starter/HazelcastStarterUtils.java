@@ -191,13 +191,13 @@ public class HazelcastStarterUtils {
     public static Collection<Object> newCollectionFor(Class<?> type) {
         if (Set.class.isAssignableFrom(type)) {
             // original set might be ordered
-            return new LinkedHashSet<Object>();
+            return new LinkedHashSet<>();
         } else if (List.class.isAssignableFrom(type)) {
-            return new ArrayList<Object>();
+            return new ArrayList<>();
         } else if (Queue.class.isAssignableFrom(type)) {
-            return new ConcurrentLinkedQueue<Object>();
+            return new ConcurrentLinkedQueue<>();
         } else if (Collection.class.isAssignableFrom(type)) {
-            return new LinkedList<Object>();
+            return new LinkedList<>();
         } else {
             throw new UnsupportedOperationException("Cannot locate collection type for " + type);
         }

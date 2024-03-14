@@ -46,7 +46,7 @@ public final class JsrTestUtil {
      * which are invoked before our Hazelcast {@link org.junit.runner.Runner} classes are copying the System properties
      * to restore them for us.
      */
-    private static final List<String> SYSTEM_PROPERTY_REGISTRY = new LinkedList<String>();
+    private static final List<String> SYSTEM_PROPERTY_REGISTRY = new LinkedList<>();
 
     private JsrTestUtil() {
     }

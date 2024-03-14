@@ -201,7 +201,7 @@ public class ExecutorServiceLiteMemberTest {
         newHazelcastInstance();
         final HazelcastInstance client = newHazelcastClient();
 
-        final CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
+        final CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<>(1);
         final IExecutorService executor = client.getExecutorService(randomString());
         executor.submit(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR, callback);
 

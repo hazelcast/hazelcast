@@ -47,7 +47,7 @@ public class InvalidationEventQueueTest {
     @Test
     public void itemsShouldBeOfferedCorrectly() throws InterruptedException, ExecutionException, TimeoutException {
         final InvalidationQueue queue = new InvalidationQueue();
-        List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
+        List<Future> futureList = new ArrayList<>(WORKER_COUNT);
 
         for (int i = 0; i < WORKER_COUNT; i++) {
             Future future = spawn(new Runnable() {
@@ -71,7 +71,7 @@ public class InvalidationEventQueueTest {
     @Test
     public void itemsShouldBePolledCorrectly() throws InterruptedException, ExecutionException, TimeoutException {
         final InvalidationQueue queue = new InvalidationQueue();
-        List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
+        List<Future> futureList = new ArrayList<>(WORKER_COUNT);
 
         for (int i = 0; i < WORKER_COUNT * ITEM_COUNT_PER_WORKER; i++) {
             queue.offer(newInvalidation());

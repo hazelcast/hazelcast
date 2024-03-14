@@ -25,7 +25,7 @@ import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 class JitterRecorder {
 
-    private final AtomicReferenceArray<Slot> slots = new AtomicReferenceArray<Slot>(CAPACITY);
+    private final AtomicReferenceArray<Slot> slots = new AtomicReferenceArray<>(CAPACITY);
 
     void recordPause(long startTimeMillis, long hiccupNanos) {
         Slot slot = getSlotForTimestamp(startTimeMillis);
@@ -36,7 +36,7 @@ class JitterRecorder {
         long firstBucket = getBucket(from);
         int slotIndex = toSlotIndex(firstBucket);
 
-        ArrayList<Slot> result = new ArrayList<Slot>();
+        ArrayList<Slot> result = new ArrayList<>();
 
         long minStartTime = firstBucket * AGGREGATION_INTERVAL_MILLIS;
         for (int i = 0; i < CAPACITY; i++) {

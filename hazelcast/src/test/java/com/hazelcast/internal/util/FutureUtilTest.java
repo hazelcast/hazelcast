@@ -67,7 +67,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_waitWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new SimpleTask(waitLock)));
         }
@@ -80,7 +80,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_waitWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new SimpleTask(waitLock)));
         }
@@ -92,7 +92,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_returnWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
+        List<Future<Integer>> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new SimpleCallable(waitLock, i + 1)));
         }
@@ -109,7 +109,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_returnWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
+        List<Future<Integer>> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new SimpleCallable(waitLock, i + 1)));
         }
@@ -126,7 +126,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_returnWithDeadline_timeout_exception() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
+        List<Future<Integer>> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             Future<Integer> submit = (Future<Integer>) executorService.submit(new TimeoutingTask(waitLock));
             futures.add(submit);
@@ -147,7 +147,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_waitWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new FailingCallable(waitLock)));
         }
@@ -165,7 +165,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     public void test_returnWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
 
-        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
+        List<Future<Integer>> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new FailingCallable(waitLock)));
         }
@@ -220,7 +220,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
 
     private static final class ExceptionCollector implements ExceptionHandler {
 
-        private final List<Throwable> throwables = new ArrayList<Throwable>();
+        private final List<Throwable> throwables = new ArrayList<>();
 
         @Override
         public void handleException(Throwable throwable) {

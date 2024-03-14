@@ -30,7 +30,7 @@ public class ICacheCacheLoader implements CacheLoader<Integer, String> {
 
     @Override
     public Map<Integer, String> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
-        Map<Integer, String> entries = new HashMap<Integer, String>();
+        Map<Integer, String> entries = new HashMap<>();
         for (Integer key : keys) {
             entries.put(key, "newValue-" + key);
         }

@@ -183,7 +183,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
         private final Properties globalProperties;
 
-        private final ThreadLocal<Properties> localProperties = new InheritableThreadLocal<Properties>();
+        private final ThreadLocal<Properties> localProperties = new InheritableThreadLocal<>();
 
         private ThreadLocalProperties(Properties properties) {
             this.globalProperties = properties;

@@ -171,7 +171,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
     @Test
     public void load_listener_notified_when_getAll_loads_from_map_loader() {
-        final Queue<EntryEvent> entryEvents = new ConcurrentLinkedQueue<EntryEvent>();
+        final Queue<EntryEvent> entryEvents = new ConcurrentLinkedQueue<>();
 
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_getAll");
         map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
@@ -378,7 +378,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+            HashMap<Integer, Integer> map = new HashMap<>();
             for (Integer key : keys) {
                 map.put(key, sequence.incrementAndGet());
             }
