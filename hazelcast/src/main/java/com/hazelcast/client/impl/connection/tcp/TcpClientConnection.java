@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstance;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -63,7 +64,7 @@ public class TcpClientConnection implements ClientConnection {
     private final Channel channel;
     private final TcpClientConnectionManager connectionManager;
     private final LifecycleService lifecycleService;
-    private final HazelcastClientInstanceImpl client;
+    private final HazelcastClientInstance client;
     private final long startTime = System.currentTimeMillis();
     private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
@@ -80,7 +81,7 @@ public class TcpClientConnection implements ClientConnection {
     private volatile UUID clusterUuid;
     private volatile Channel[] tpcChannels;
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
+    public TcpClientConnection(HazelcastClientInstance client, int connectionId, Channel channel) {
         this.client = client;
         this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();

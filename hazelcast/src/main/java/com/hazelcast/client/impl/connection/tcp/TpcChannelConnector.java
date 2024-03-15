@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstance;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -49,7 +49,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
  * with the connection.
  */
 public final class TpcChannelConnector {
-    private final HazelcastClientInstanceImpl client;
+    private final HazelcastClientInstance client;
     private final long authenticationTimeoutMillis;
     private final UUID clientUuid;
     private final TcpClientConnection connection;
@@ -62,7 +62,7 @@ public final class TpcChannelConnector {
     private final AtomicInteger remaining;
     private volatile boolean failed;
 
-    public TpcChannelConnector(HazelcastClientInstanceImpl client,
+    public TpcChannelConnector(HazelcastClientInstance client,
                                long authenticationTimeoutMillis,
                                UUID clientUuid,
                                TcpClientConnection connection,

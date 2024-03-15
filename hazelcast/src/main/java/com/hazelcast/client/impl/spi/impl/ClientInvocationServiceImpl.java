@@ -54,7 +54,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PR
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class ClientInvocationServiceImpl implements ClientInvocationService {
+public class ClientInvocationServiceImpl implements ClientInvocationServiceInternal {
 
     private static final ListenerMessageCodec BACKUP_LISTENER = new ListenerMessageCodec() {
         @Override
@@ -82,6 +82,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
             = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis", 100, MILLISECONDS);
 
     final HazelcastClientInstanceImpl client;
+
     final ILogger invocationLogger;
     private volatile boolean isShutdown;
 
@@ -119,6 +120,11 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         this.isBackupAckToClientEnabled = !isUnisocketClient && client.getClientConfig().isBackupAckToClientEnabled();
     }
 
+    @Override
+    public ILogger getInvocationLogger() {
+        return invocationLogger;
+    }
+
     private long initInvocationRetryPauseMillis() {
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
     }
@@ -137,15 +143,18 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         return callIdSequence.getMaxConcurrentInvocations();
     }
 
+    @Override
     public long getInvocationTimeoutMillis() {
         return invocationTimeoutMillis;
     }
 
+    @Override
     public long getInvocationRetryPauseMillis() {
         return invocationRetryPauseMillis;
     }
 
-    CallIdSequence getCallIdSequence() {
+    @Override
+    public CallIdSequence getCallIdSequence() {
         return callIdSequence;
     }
 
@@ -268,7 +277,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         }
     }
 
-    void deRegisterInvocation(long callId) {
+    @Override
+    public void deRegisterInvocation(long callId) {
         invocations.remove(callId);
     }
 
@@ -290,11 +300,13 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         }
     }
 
-    void checkInvocationAllowed() throws IOException {
+    @Override
+    public void checkInvocationAllowed() throws IOException {
         connectionManager.checkInvocationAllowed();
     }
 
-    void checkUrgentInvocationAllowed(ClientInvocation invocation) {
+    @Override
+    public void checkUrgentInvocationAllowed(ClientInvocation invocation) {
         if (connectionManager.clientInitializedOnCluster()) {
             // If the client is initialized on the cluster, that means we
             // have sent all the schemas to the cluster, even if we are
@@ -324,10 +336,12 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         }
     }
 
-    boolean shouldFailOnIndeterminateOperationState() {
+    @Override
+    public boolean shouldFailOnIndeterminateOperationState() {
         return shouldFailOnIndeterminateOperationState;
     }
 
+    @Override
     public boolean isUnisocketClient() {
         return isUnisocketClient;
     }

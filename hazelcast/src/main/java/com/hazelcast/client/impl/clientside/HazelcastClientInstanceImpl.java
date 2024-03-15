@@ -172,7 +172,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.unmodifiableSet;
 
-public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
+public class HazelcastClientInstanceImpl implements HazelcastClientInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
 
@@ -755,6 +755,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return proxyManager;
     }
 
+    @Override
     public ClientConnectionManager getConnectionManager() {
         return connectionManager;
     }
@@ -763,6 +764,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clusterService;
     }
 
+    @Override
     public TaskScheduler getTaskScheduler() {
         return executionService;
     }
@@ -771,10 +773,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return partitionService;
     }
 
+    @Override
     public ClientInvocationService getInvocationService() {
         return invocationService;
     }
 
+    @Override
     public ClientListenerService getListenerService() {
         return listenerService;
     }
