@@ -219,4 +219,35 @@ class StringUtilTest extends HazelcastTestSupport {
     private String[] arr(String... strings) {
         return strings;
     }
+
+    @Test
+    void testTrim() {
+        // Test with null input
+        assertNull(StringUtil.trim(null));
+
+        // Test with an empty string
+        assertEquals("", StringUtil.trim(""));
+
+        // Test with spaces
+        assertEquals("Hello, World!", StringUtil.trim("  Hello, World!  "));
+
+        // Test with Unicode spaces
+        // Unicode character for em quad (\u2001) used for demonstration
+        assertEquals("Hello, World!", StringUtil.trim("\u2001Hello, World!\u2001"));
+
+        // Test with tabs and newlines
+        assertEquals("Hello, World!", StringUtil.trim("\t\nHello, World!\t\n"));
+
+        // Test with only leading spaces
+        assertEquals("Hello, World!", StringUtil.trim("   Hello, World!"));
+
+        // Test with only trailing spaces
+        assertEquals("Hello, World!", StringUtil.trim("Hello, World!  "));
+
+        // Test with a mix of spaces and Unicode characters
+        assertEquals("Hello, World!", StringUtil.trim(" \tHello, World!\u2001  "));
+
+        // Test with a string containing only spaces and Unicode characters
+        assertEquals("", StringUtil.trim("  \t\u2001  "));
+    }
 }
