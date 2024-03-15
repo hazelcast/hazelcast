@@ -43,8 +43,8 @@ public class OperationQueueImplTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        normalQueue = new ArrayBlockingQueue<Object>(100);
-        priorityQueue = new ArrayBlockingQueue<Object>(100);
+        normalQueue = new ArrayBlockingQueue<>(100);
+        priorityQueue = new ArrayBlockingQueue<>(100);
         operationQueue = new OperationQueueImpl(normalQueue, priorityQueue);
     }
 
@@ -222,7 +222,7 @@ public class OperationQueueImplTest extends HazelcastTestSupport {
     }
 
     public void assertContent(Queue<Object> q, Object... expected) {
-        List<Object> actual = new LinkedList<Object>(q);
+        List<Object> actual = new LinkedList<>(q);
         assertEquals(Arrays.asList(expected), actual);
     }
 }

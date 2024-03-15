@@ -97,7 +97,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 return executor.isRunAllowed(genericOperation);
@@ -184,7 +184,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
         final DummyPartitionOperation operation = new DummyPartitionOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 return executor.isRunAllowed(operation);

@@ -42,7 +42,7 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RemoteAddressProviderTest {
 
-    private Map<Address, Address> expectedAddresses = new ConcurrentHashMap<Address, Address>();
+    private Map<Address, Address> expectedAddresses = new ConcurrentHashMap<>();
 
     @Before
     public void setUp() throws UnknownHostException {

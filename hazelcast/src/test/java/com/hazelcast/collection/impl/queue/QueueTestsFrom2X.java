@@ -324,7 +324,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
         try {
             CountDownLatch latch = new CountDownLatch(3);
-            ItemListener<VersionedObject<Integer>> listener = new ItemListener<VersionedObject<Integer>>() {
+            ItemListener<VersionedObject<Integer>> listener = new ItemListener<>() {
                 public void itemAdded(ItemEvent<VersionedObject<Integer>> itemEvent) {
                     latch.countDown();
                 }

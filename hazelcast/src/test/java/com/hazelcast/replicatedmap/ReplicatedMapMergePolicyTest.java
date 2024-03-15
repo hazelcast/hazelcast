@@ -167,7 +167,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
             sleepAtLeastSeconds(1);
             map1.put("key2", "LatestUpdatedValue2");
 
-            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            Map<Object, Object> expectedValues = new HashMap<>();
             expectedValues.put("key1", "LatestUpdatedValue");
             expectedValues.put("key2", "LatestUpdatedValue2");
             return expectedValues;
@@ -201,7 +201,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
             map2.get("key2");
             map2.get("key2");
 
-            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            Map<Object, Object> expectedValues = new HashMap<>();
             expectedValues.put("key1", "higherHitsValue");
             expectedValues.put("key2", "higherHitsValue2");
             return expectedValues;
@@ -228,7 +228,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
             map2.put("key1", "value");
             map2.put("key2", "PutIfAbsentValue2");
 
-            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            Map<Object, Object> expectedValues = new HashMap<>();
             expectedValues.put("key1", "PutIfAbsentValue1");
             expectedValues.put("key2", "PutIfAbsentValue2");
             return expectedValues;
@@ -255,7 +255,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
             map1.put(key, "value");
 
             map2.put(key, "passThroughValue");
-            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            Map<Object, Object> expectedValues = new HashMap<>();
             expectedValues.put(key, "passThroughValue");
             return expectedValues;
         }
@@ -283,7 +283,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
             map2.put(key, value);
 
-            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            Map<Object, Object> expectedValues = new HashMap<>();
             expectedValues.put(key, value);
             return expectedValues;
         }

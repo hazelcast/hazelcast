@@ -48,7 +48,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenGenericOperation_andCallingFromUserThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         Operation operation = new ThreadCapturingOperation(executingThread);
 
         executor.runOrExecute(operation);
@@ -60,10 +60,10 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenGenericOperation_andCallingFromPartitionThread_thenExecuteOnPartitionThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread);
 
-        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(0) {
+        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<>(0) {
             @Override
             public Thread call() {
                 executor.runOrExecute(operation);
@@ -85,10 +85,10 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenGenericOperation_andCallingFromGenericThread_thenExecuteOnGenericThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread);
 
-        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(GENERIC_PARTITION_ID) {
+        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<>(GENERIC_PARTITION_ID) {
             @Override
             public Thread call() {
                 executor.runOrExecute(operation);
@@ -110,7 +110,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenGenericOperation_andCallingFromOperationHostileThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread);
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(new Runnable() {
@@ -135,7 +135,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenPartitionOperation_andCallingFromUserThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
 
         executor.runOrExecute(operation);
@@ -152,7 +152,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenPartitionOperation_andCallingFromGenericThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
 
         executor.execute(new PartitionSpecificRunnable() {
@@ -179,9 +179,9 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenPartitionOperation_andCallingFromPartitionOperationThread_andCorrectPartition() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
-        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(operation.getPartitionId()) {
+        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<>(operation.getPartitionId()) {
             @Override
             public Thread call() {
                 executor.runOrExecute(operation);
@@ -203,9 +203,9 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenPartitionOperation_andCallingFromPartitionOperationThread_andWrongPartition() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
-        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(operation.getPartitionId() + 1) {
+        final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<>(operation.getPartitionId() + 1) {
             @Override
             public Thread call() {
                 executor.runOrExecute(operation);
@@ -228,7 +228,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenPartitionOperation_andCallingFromOperationHostileThread() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(new Runnable() {

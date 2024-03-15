@@ -27,7 +27,7 @@ public class PersonCacheLoaderFactory implements Factory<CacheLoader<String, Per
 
     @Override
     public CacheLoader<String, Person> create() {
-        return new CacheLoader<String, Person>() {
+        return new CacheLoader<>() {
             @Override
             public Person load(String k) throws CacheLoaderException {
                 return new Person();
@@ -35,7 +35,7 @@ public class PersonCacheLoaderFactory implements Factory<CacheLoader<String, Per
 
             @Override
             public Map<String, Person> loadAll(Iterable<? extends String> itrbl) throws CacheLoaderException {
-                Map<String, Person> rv = new HashMap<String, Person>();
+                Map<String, Person> rv = new HashMap<>();
                 for (String it : itrbl) {
                     rv.put(it, load(it));
                 }

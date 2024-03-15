@@ -245,7 +245,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
         assertEquals(expectedScheduledFutures.size(), total);
 
-        Set<String> seenSoFar = new HashSet<String>();
+        Set<String> seenSoFar = new HashSet<>();
         for (List<IScheduledFuture<Double>> memberFutures : futuresPerMember.values()) {
             for (IScheduledFuture<Double> future : memberFutures) {
                 String taskName = future.getHandler().getTaskName();

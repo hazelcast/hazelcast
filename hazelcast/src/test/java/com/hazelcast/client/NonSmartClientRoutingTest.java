@@ -67,7 +67,7 @@ public class NonSmartClientRoutingTest {
     public void test() {
         String mapName = randomString();
         // create some dummy data.
-        Map<String, String> origin = new HashMap<String, String>();
+        Map<String, String> origin = new HashMap<>();
         for (int k = 0; k < 1000; k++) {
             String value = randomString();
             origin.put(value, value);

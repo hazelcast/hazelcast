@@ -82,7 +82,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     public void testRingbufferStore() throws Exception {
         final int numItems = 2000;
 
-        final TestRingbufferStore<Integer> rbStore = new TestRingbufferStore<Integer>(2000, 0, 2000);
+        final TestRingbufferStore<Integer> rbStore = new TestRingbufferStore<>(2000, 0, 2000);
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setEnabled(true)
                 .setStoreImplementation(rbStore);
@@ -116,7 +116,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     @Test
     public void testRingbufferStoreAllAndReadFromMemory() throws Exception {
         final int numItems = 200;
-        final WriteOnlyRingbufferStore<Integer> rbStore = new WriteOnlyRingbufferStore<Integer>();
+        final WriteOnlyRingbufferStore<Integer> rbStore = new WriteOnlyRingbufferStore<>();
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setEnabled(true)
                 .setStoreImplementation(rbStore);
@@ -128,7 +128,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
         // add items to both ring buffers (master and backup) and shut down the master
         final Ringbuffer<Object> ringbuffer = instance.getRingbuffer("testRingbufferStore");
-        final ArrayList<Integer> items = new ArrayList<Integer>();
+        final ArrayList<Integer> items = new ArrayList<>();
         for (int i = 0; i < numItems; i++) {
             items.add(i);
         }
@@ -150,7 +150,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     public void testRingbufferStoreMoreThanCapacity() throws Exception {
         final int capacity = 1000;
 
-        final TestRingbufferStore<Integer> rbStore = new TestRingbufferStore<Integer>(capacity * 2, 0, 0);
+        final TestRingbufferStore<Integer> rbStore = new TestRingbufferStore<>(capacity * 2, 0, 0);
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setEnabled(true)
                 .setStoreImplementation(rbStore);
@@ -187,7 +187,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
         final String name = generateKeyOwnedBy(instance1);
         final Ringbuffer<Object> ringbuffer = instance2.getRingbuffer(name);
-        final HashMap<Long, String> addedItems = new HashMap<Long, String>();
+        final HashMap<Long, String> addedItems = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
             final String item = randomString();
@@ -219,7 +219,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
         final String name = generateKeyOwnedBy(instance1);
         final Ringbuffer<Object> masterRB = instance1.getRingbuffer(name);
-        final HashMap<Long, Integer> addedItems = new HashMap<Long, Integer>();
+        final HashMap<Long, Integer> addedItems = new HashMap<>();
 
         for (int i = 0; i < 100; i++) {
             addedItems.put(masterRB.add(i), i);
@@ -328,7 +328,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
     static class SimpleRingbufferStoreFactory implements RingbufferStoreFactory<Integer> {
 
-        private final ConcurrentMap<String, RingbufferStore> stores = new ConcurrentHashMap<String, RingbufferStore>();
+        private final ConcurrentMap<String, RingbufferStore> stores = new ConcurrentHashMap<>();
 
         @Override
         @SuppressWarnings("unchecked")
@@ -344,7 +344,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
     static class IdCheckerRingbufferStore<T> implements RingbufferStore<T> {
         long lastKey = -1;
-        final Map<Long, T> store = new LinkedHashMap<Long, T>();
+        final Map<Long, T> store = new LinkedHashMap<>();
 
         @Override
         public void store(final long sequence, final T value) {
@@ -408,7 +408,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
     static class TestRingbufferStore<T> implements RingbufferStore<T> {
 
-        final Map<Long, T> store = new LinkedHashMap<Long, T>();
+        final Map<Long, T> store = new LinkedHashMap<>();
         final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger destroyCount = new AtomicInteger();
 
@@ -472,7 +472,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
     static class WriteOnlyRingbufferStore<T> implements RingbufferStore<T> {
 
-        final Map<Long, T> store = new LinkedHashMap<Long, T>();
+        final Map<Long, T> store = new LinkedHashMap<>();
 
 
         WriteOnlyRingbufferStore() {

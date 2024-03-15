@@ -45,7 +45,7 @@ public class OAHashSetTest {
     @Test
     public void testConstructorLoadFactorIsUsed() {
         final float loadFactor = 0.9F;
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8, loadFactor);
+        final OAHashSet<Integer> set = new OAHashSet<>(8, loadFactor);
 
         assertEquals(loadFactor, set.loadFactor(), 10E-9);
     }
@@ -72,19 +72,19 @@ public class OAHashSetTest {
 
     @Test(expected = NullPointerException.class)
     public void testAddNull() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testAddWithHashNull() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(null, 1);
     }
 
     @Test
     public void testAdd() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
 
         for (int i = 0; i < 10; i++) {
             final boolean added = set.add(i);
@@ -94,7 +94,7 @@ public class OAHashSetTest {
 
     @Test
     public void testAddHashCollision() {
-        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<IntegerWithFixedHashCode>(8);
+        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<>(8);
 
         for (int i = 0; i < 10; i++) {
             final boolean added = set.add(new IntegerWithFixedHashCode(i));
@@ -109,7 +109,7 @@ public class OAHashSetTest {
 
     @Test
     public void testAddingAlreadyContainedElementDoesNotChangeTheSet() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final boolean addedFive = set.add(5);
@@ -123,7 +123,7 @@ public class OAHashSetTest {
 
     @Test
     public void testAddIncreasesSize() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
 
         for (int i = 0; i < 10; i++) {
             final boolean added = set.add(i);
@@ -138,7 +138,7 @@ public class OAHashSetTest {
 
     @Test
     public void testAddWithHashCollisionIncreasesSize() {
-        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<IntegerWithFixedHashCode>(8);
+        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<>(8);
 
         for (int i = 0; i < 10; i++) {
             final boolean added = set.add(new IntegerWithFixedHashCode(i));
@@ -153,9 +153,9 @@ public class OAHashSetTest {
 
     @Test
     public void testAddAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
 
-        Collection<Integer> elementsToAdd = new ArrayList<Integer>(10);
+        Collection<Integer> elementsToAdd = new ArrayList<>(10);
         for (int i = 0; i < 10; i++) {
             elementsToAdd.add(i);
         }
@@ -169,9 +169,9 @@ public class OAHashSetTest {
 
     @Test(expected = NullPointerException.class)
     public void testAddAllThrowsOnNullElement() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
 
-        final Collection<Integer> elementsToAdd = new ArrayList<Integer>(2);
+        final Collection<Integer> elementsToAdd = new ArrayList<>(2);
         elementsToAdd.add(1);
         elementsToAdd.add(null);
 
@@ -180,7 +180,7 @@ public class OAHashSetTest {
 
     @Test
     public void testClear() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         for (int i = 0; i < 10; i++) {
@@ -198,19 +198,19 @@ public class OAHashSetTest {
 
     @Test(expected = NullPointerException.class)
     public void testContainsNull() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.contains(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testContainsWithHashNull() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.contains(null, 1);
     }
 
     @Test
     public void testContains() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         for (int i = 0; i < 10; i++) {
@@ -221,17 +221,17 @@ public class OAHashSetTest {
 
     @Test
     public void testContainsReturnsFalseIfElementNotAdded() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
 
         assertFalse(set.contains(5));
     }
 
     @Test
     public void testContainsAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
-        Collection<Integer> elementsToCheck = new ArrayList<Integer>(10);
+        Collection<Integer> elementsToCheck = new ArrayList<>(10);
         for (int i = 0; i < 10; i++) {
             elementsToCheck.add(i);
         }
@@ -242,10 +242,10 @@ public class OAHashSetTest {
 
     @Test
     public void testContainsAllWithElementNotAdded() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
-        Collection<Integer> elementsToCheck = new ArrayList<Integer>(11);
+        Collection<Integer> elementsToCheck = new ArrayList<>(11);
         for (int i = 0; i < 11; i++) {
             elementsToCheck.add(i);
         }
@@ -256,10 +256,10 @@ public class OAHashSetTest {
 
     @Test(expected = NullPointerException.class)
     public void testContainsAllThrowsOnNullElement() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(1);
 
-        final Collection<Integer> elementsToCheck = new ArrayList<Integer>(2);
+        final Collection<Integer> elementsToCheck = new ArrayList<>(2);
         elementsToCheck.add(1);
         elementsToCheck.add(null);
 
@@ -268,7 +268,7 @@ public class OAHashSetTest {
 
     @Test
     public void testCapacityIncreasesIfNeeded() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8, 0.9F);
+        final OAHashSet<Integer> set = new OAHashSet<>(8, 0.9F);
         assertEquals(8, set.capacity());
 
         populateSet(set, 10);
@@ -278,7 +278,7 @@ public class OAHashSetTest {
 
     @Test
     public void testIsEmpty() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         assertTrue("Set should be empty", set.isEmpty());
 
         set.add(1);
@@ -287,19 +287,19 @@ public class OAHashSetTest {
 
     @Test(expected = NullPointerException.class)
     public void testRemoveNull() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.remove(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testRemoveWithHashNull() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.remove(null, 1);
     }
 
     @Test
     public void testRemove() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final boolean removed = set.remove(5);
@@ -318,7 +318,7 @@ public class OAHashSetTest {
 
     @Test
     public void testRemoveHashCollision() {
-        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<IntegerWithFixedHashCode>(8);
+        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<>(8);
 
         for (int i = 0; i < 10; i++) {
             final boolean added = set.add(new IntegerWithFixedHashCode(i));
@@ -347,7 +347,7 @@ public class OAHashSetTest {
 
     @Test
     public void testRemoveNotAddedElementRemovesNothing() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final boolean removed = set.remove(42);
@@ -361,7 +361,7 @@ public class OAHashSetTest {
 
     @Test
     public void testRemoveNotAddedElementRemovesNothingOnHashCollision() {
-        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<IntegerWithFixedHashCode>(8);
+        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<>(8);
 
         for (int i = 0; i < 10; i++) {
             final boolean added = set.add(new IntegerWithFixedHashCode(i));
@@ -379,10 +379,10 @@ public class OAHashSetTest {
 
     @Test
     public void testRemoveAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
-        Collection<Integer> elementsToRemove = new ArrayList<Integer>(10);
+        Collection<Integer> elementsToRemove = new ArrayList<>(10);
         for (int i = 0; i < 10; i++) {
             elementsToRemove.add(i);
         }
@@ -394,10 +394,10 @@ public class OAHashSetTest {
 
     @Test
     public void testRemoveAllWithElementNotAdded() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
-        Collection<Integer> elementsToRemove = new ArrayList<Integer>(10);
+        Collection<Integer> elementsToRemove = new ArrayList<>(10);
         for (int i = 5; i < 15; i++) {
             elementsToRemove.add(i);
         }
@@ -419,10 +419,10 @@ public class OAHashSetTest {
 
     @Test(expected = NullPointerException.class)
     public void testRemoveAllThrowsOnNullElement() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 1);
 
-        final Collection<Integer> elementsToRemove = new ArrayList<Integer>(2);
+        final Collection<Integer> elementsToRemove = new ArrayList<>(2);
         elementsToRemove.add(1);
         elementsToRemove.add(null);
 
@@ -431,10 +431,10 @@ public class OAHashSetTest {
 
     @Test
     public void testRetainAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
-        Collection<Integer> elementsToRetain = new ArrayList<Integer>(10);
+        Collection<Integer> elementsToRetain = new ArrayList<>(10);
         for (int i = 0; i < 10; i++) {
             elementsToRetain.add(i);
         }
@@ -446,10 +446,10 @@ public class OAHashSetTest {
 
     @Test
     public void testRetainAllWithElementNotAdded() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
-        Collection<Integer> elementsToRetain = new ArrayList<Integer>(10);
+        Collection<Integer> elementsToRetain = new ArrayList<>(10);
         for (int i = 5; i < 15; i++) {
             elementsToRetain.add(i);
         }
@@ -471,7 +471,7 @@ public class OAHashSetTest {
 
     @Test
     public void testFootprintReflectsCapacityIncrease() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         final long originalFootprint = set.footprint();
 
         populateSet(set, 10);
@@ -484,7 +484,7 @@ public class OAHashSetTest {
     public void testIterator() {
         final int elementCount = 10;
         final BitSet foundElements = new BitSet(elementCount);
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, elementCount);
 
         for (int stored : set) {
@@ -498,7 +498,7 @@ public class OAHashSetTest {
 
     @Test
     public void testIteratorHasNextReturnsTrueIfNotIteratedOverAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 2);
 
         final Iterator<Integer> iterator = set.iterator();
@@ -508,7 +508,7 @@ public class OAHashSetTest {
 
     @Test
     public void testIteratorHasNextReturnsFalseIfIteratedOverAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 1);
 
         final Iterator<Integer> iterator = set.iterator();
@@ -518,7 +518,7 @@ public class OAHashSetTest {
 
     @Test(expected = ConcurrentModificationException.class)
     public void testIteratorNextThrowsAfterAdd() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(1);
 
         Iterator<Integer> iterator = set.iterator();
@@ -529,7 +529,7 @@ public class OAHashSetTest {
 
     @Test(expected = ConcurrentModificationException.class)
     public void testIteratorNextThrowsAfterRemove() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(1);
 
         final Iterator<Integer> iterator = set.iterator();
@@ -540,7 +540,7 @@ public class OAHashSetTest {
 
     @Test(expected = ConcurrentModificationException.class)
     public void testIteratorNextThrowsAfterClear() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(1);
 
         final Iterator<Integer> iterator = set.iterator();
@@ -551,7 +551,7 @@ public class OAHashSetTest {
 
     @Test
     public void testIteratorNextThrowsIteratedOverAll() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         set.add(1);
 
         final Iterator<Integer> iterator = set.iterator();
@@ -572,7 +572,7 @@ public class OAHashSetTest {
 
     @Test
     public void testCompactionDoesNotMoveUnexpectedElements() {
-        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<IntegerWithFixedHashCode>(8);
+        final OAHashSet<IntegerWithFixedHashCode> set = new OAHashSet<>(8);
 
         // we add 3 elements:
         // 4 with hash 4
@@ -608,7 +608,7 @@ public class OAHashSetTest {
 
     @Test
     public void testToObjectArray() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final Object[] setElements = set.toArray();
@@ -626,7 +626,7 @@ public class OAHashSetTest {
 
     @Test
     public void testToGenericArray() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final Integer[] setElementsProvided = new Integer[10];
@@ -646,7 +646,7 @@ public class OAHashSetTest {
 
     @Test
     public void testToGenericArrayReturnsNewArrayWhenSmallArrayProvided() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final Integer[] setElementsProvided = new Integer[9];
@@ -666,7 +666,7 @@ public class OAHashSetTest {
 
     @Test
     public void testToGenericArraySetsNullAfterLastContainedElement() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final Integer[] setElementsProvided = new Integer[11];
@@ -678,7 +678,7 @@ public class OAHashSetTest {
 
     @Test
     public void testHashCode() {
-        final OAHashSet<Integer> set = new OAHashSet<Integer>(8);
+        final OAHashSet<Integer> set = new OAHashSet<>(8);
         populateSet(set, 10);
 
         final int expectedHashCode = 45;

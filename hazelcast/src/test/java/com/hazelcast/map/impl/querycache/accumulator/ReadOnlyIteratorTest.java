@@ -41,16 +41,16 @@ public class ReadOnlyIteratorTest {
 
     @Before
     public void setUp() {
-        CyclicBuffer<Sequenced> buffer = new DefaultCyclicBuffer<Sequenced>(1);
+        CyclicBuffer<Sequenced> buffer = new DefaultCyclicBuffer<>(1);
         sequenced.setSequence(1);
         buffer.add(sequenced);
 
-        iterator = new ReadOnlyIterator<Sequenced>(buffer);
+        iterator = new ReadOnlyIterator<>(buffer);
     }
 
     @Test(expected = NullPointerException.class)
     public void testConstructor_whenBufferIsNull_thenThrowException() {
-        iterator = new ReadOnlyIterator<Sequenced>(null);
+        iterator = new ReadOnlyIterator<>(null);
     }
 
     @Test

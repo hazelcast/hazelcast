@@ -356,7 +356,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                 + "! Before: " + beforeEventsCount + ", Commit: " + commitEventsCount
                 + ", Rollback: " + rollbackEventsCount, beforeEventsCount, commitEventsCount + rollbackEventsCount);
 
-        Collection<PartitionMigrationEvent> beforeEventsCopy = new ArrayList<PartitionMigrationEvent>(beforeEvents);
+        Collection<PartitionMigrationEvent> beforeEventsCopy = new ArrayList<>(beforeEvents);
         beforeEvents.removeAll(commitEvents);
         beforeEvents.removeAll(rollbackEvents);
         assertTrue("Remaining before events: " + beforeEvents, beforeEvents.isEmpty());

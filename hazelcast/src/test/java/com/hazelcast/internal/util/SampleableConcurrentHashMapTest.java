@@ -63,11 +63,11 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
     @Test
     public void test_applyIfAbsent() throws Throwable {
         final SampleableConcurrentHashMap<String, String> map =
-                new SampleableConcurrentHashMap<String, String>(10);
+                new SampleableConcurrentHashMap<>(10);
 
         assertEquals("value", map.applyIfAbsent("key", input -> "value"));
 
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(COUNT);
 
         for (int i = 0; i < COUNT; i++) {
@@ -100,7 +100,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         final int entryCount = 10;
         final int sampleCount = 100;
 
-        map = new SampleableConcurrentHashMap<Integer, Integer>(entryCount);
+        map = new SampleableConcurrentHashMap<>(entryCount);
 
         // put single entry
         map.put(1, 1);
@@ -115,7 +115,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void test_getRandomSamples_whenSampleCountIsNegative() {
-        map = new SampleableConcurrentHashMap<Integer, Integer>(10);
+        map = new SampleableConcurrentHashMap<>(10);
 
         map.getRandomSamples(-1);
     }
@@ -125,7 +125,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         final int entryCount = 100;
         final int sampleCount = 30;
 
-        map = new SampleableConcurrentHashMap<Integer, Integer>(100);
+        map = new SampleableConcurrentHashMap<>(100);
 
         for (int i = 0; i < entryCount; i++) {
             map.put(i, i);
@@ -140,7 +140,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
             assertTrue(iterator.hasNext());
         }
 
-        Set<Integer> set = new HashSet<Integer>();
+        Set<Integer> set = new HashSet<>();
         // should return unique samples
         for (int i = 0; i < sampleCount; i++) {
             set.add(iterator.next().key);
@@ -151,7 +151,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
     }
 
     private void testSampling(int capacity, int entryCount, int sampleCount) {
-        map = new SampleableConcurrentHashMap<Integer, Integer>(capacity);
+        map = new SampleableConcurrentHashMap<>(capacity);
 
         for (int i = 0; i < entryCount; i++) {
             map.put(i, i);
@@ -162,7 +162,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         assertNotNull(samples);
 
         int samplesObtained = 0;
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> map = new HashMap<>();
         for (SampleableConcurrentHashMap.SamplingEntry<Integer, Integer> sample : samples) {
             map.put(sample.getEntryKey(), sample.getEntryValue());
             samplesObtained++;

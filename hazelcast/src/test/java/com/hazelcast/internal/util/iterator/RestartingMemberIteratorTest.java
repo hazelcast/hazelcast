@@ -46,7 +46,7 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Set<Member> memberSet = new LinkedHashSet<Member>();
+        Set<Member> memberSet = new LinkedHashSet<>();
         mockClusterService = mock(ClusterService.class);
         when(mockClusterService.getMembers())
                 .thenReturn(memberSet);
@@ -54,7 +54,7 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
 
     private Member addClusterMember() {
         Set<Member> currentMemberSet = mockClusterService.getMembers();
-        Set<Member> newMemberSet = new LinkedHashSet<Member>(currentMemberSet);
+        Set<Member> newMemberSet = new LinkedHashSet<>(currentMemberSet);
 
         Member mockMember = mock(Member.class);
         newMemberSet.add(mockMember);

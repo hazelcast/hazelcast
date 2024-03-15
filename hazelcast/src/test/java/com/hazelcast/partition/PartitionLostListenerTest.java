@@ -126,7 +126,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
         Node survivingNode = getNode(survivingInstance);
         final Address survivingAddress = survivingNode.getThisAddress();
 
-        final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
+        final Set<Integer> survivingPartitionIds = new HashSet<>();
         for (InternalPartition partition : survivingNode.getPartitionService().getInternalPartitions()) {
             if (survivingAddress.equals(partition.getReplicaAddress(0))) {
                 survivingPartitionIds.add(partition.getPartitionId());

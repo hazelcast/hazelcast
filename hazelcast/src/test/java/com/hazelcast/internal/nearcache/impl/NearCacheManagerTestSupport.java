@@ -84,7 +84,7 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
     void doListNearCaches() {
         NearCacheManager nearCacheManager = createNearCacheManager();
 
-        Set<String> nearCacheNames = new HashSet<String>();
+        Set<String> nearCacheNames = new HashSet<>();
 
         Collection<NearCache> nearCaches1 = nearCacheManager.listAllNearCaches();
         assertEquals(0, nearCaches1.size());

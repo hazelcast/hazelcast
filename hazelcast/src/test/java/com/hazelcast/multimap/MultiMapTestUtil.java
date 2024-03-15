@@ -52,7 +52,7 @@ public final class MultiMapTestUtil {
      * @return a {@link Map} with the backup entries
      */
     public static <K, V> Map<K, Collection<V>> getBackupMultiMap(HazelcastInstance[] instances, String multiMapName) {
-        Map<K, Collection<V>> map = new HashMap<K, Collection<V>>();
+        Map<K, Collection<V>> map = new HashMap<>();
         for (HazelcastInstance instance : instances) {
             NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
             MultiMapService mapService = nodeEngine.getService(MultiMapService.SERVICE_NAME);
@@ -71,7 +71,7 @@ public final class MultiMapTestUtil {
                 for (Map.Entry<Data, MultiMapValue> entry : multiMapContainer.getMultiMapValues().entrySet()) {
                     K key = serializationService.toObject(entry.getKey());
                     Collection<MultiMapRecord> collection = entry.getValue().getCollection(false);
-                    Collection<V> values = new ArrayList<V>(collection.size());
+                    Collection<V> values = new ArrayList<>(collection.size());
                     for (MultiMapRecord record : collection) {
                         V value = serializationService.toObject(record.getObject());
                         values.add(value);

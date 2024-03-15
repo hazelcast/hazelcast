@@ -41,7 +41,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
     public void whenPartitionSpecific() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
 
         Operation op = new Operation() {
             @Override
@@ -63,7 +63,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
     public void whenGeneric() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThread = new AtomicReference<>();
 
         Operation op = new Operation() {
             @Override

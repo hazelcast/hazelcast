@@ -105,7 +105,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_Basic() {
-        Set<String> added = new HashSet<String>();
+        Set<String> added = new HashSet<>();
         added.add("item1");
         added.add("item2");
         set.addAll(added);
@@ -114,7 +114,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_whenAllElementsSame() {
-        Set<String> added = new HashSet<String>();
+        Set<String> added = new HashSet<>();
         for (int i = 1; i <= 10; i++) {
             added.add("item");
         }
@@ -124,7 +124,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_whenCollectionContainsNull() {
-        Set<String> added = new HashSet<String>();
+        Set<String> added = new HashSet<>();
         added.add("item1");
         added.add(null);
         try {
@@ -158,7 +158,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll() {
-        Set<String> removed = new HashSet<String>();
+        Set<String> removed = new HashSet<>();
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
             removed.add("item" + i);
@@ -219,7 +219,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll_whenArgumentHasSameElements() {
-        Set<String> retained = new HashSet<String>();
+        Set<String> retained = new HashSet<>();
 
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
@@ -255,7 +255,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll() {
-        Set<String> contains = new HashSet<String>();
+        Set<String> contains = new HashSet<>();
 
         contains.add("item1");
         contains.add("item2");
@@ -268,7 +268,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll_whenSetNotContains() {
-        Set<String> contains = new HashSet<String>();
+        Set<String> contains = new HashSet<>();
         contains.add("item1");
         contains.add("item100");
         for (int i = 1; i <= 10; i++) {

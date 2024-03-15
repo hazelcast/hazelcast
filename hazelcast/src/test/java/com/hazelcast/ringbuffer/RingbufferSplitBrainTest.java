@@ -341,7 +341,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private static Collection<Object> getRingbufferContent(Ringbuffer<Object> ringbuffer) {
-        List<Object> list = new LinkedList<Object>();
+        List<Object> list = new LinkedList<>();
         try {
             for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
                 list.add(ringbuffer.readOne(sequence));
@@ -365,7 +365,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
         private final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        private final ConcurrentMap<Long, Collection<Object>> store = new ConcurrentHashMap<Long, Collection<Object>>();
+        private final ConcurrentMap<Long, Collection<Object>> store = new ConcurrentHashMap<>();
 
         private String label;
 
@@ -454,7 +454,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
         private Collection<Object> getCollection(Long key) {
             Collection<Object> collection = store.get(key);
             if (collection == null) {
-                collection = new ConcurrentLinkedQueue<Object>();
+                collection = new ConcurrentLinkedQueue<>();
                 Collection<Object> candidate = store.putIfAbsent(key, collection);
                 if (candidate != null) {
                     return candidate;

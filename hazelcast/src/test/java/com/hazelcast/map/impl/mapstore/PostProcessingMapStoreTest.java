@@ -190,7 +190,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
 
     public static class SamplePPMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
 
-        Map<Integer, SampleObject> map = new ConcurrentHashMap<Integer, SampleObject>();
+        Map<Integer, SampleObject> map = new ConcurrentHashMap<>();
 
         @Override
         public void store(Integer key, SampleObject value) {
@@ -224,7 +224,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, SampleObject> loadAll(Collection<Integer> keys) {
-            HashMap<Integer, SampleObject> temp = new HashMap<Integer, SampleObject>();
+            HashMap<Integer, SampleObject> temp = new HashMap<>();
             for (Integer key : keys) {
                 temp.put(key, map.get(key));
             }

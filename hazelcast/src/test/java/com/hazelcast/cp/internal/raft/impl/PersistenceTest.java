@@ -91,7 +91,7 @@ public class PersistenceTest extends HazelcastTestSupport {
 
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
         final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final Set<RaftEndpoint> endpoints = new HashSet<RaftEndpoint>();
+        final Set<RaftEndpoint> endpoints = new HashSet<>();
         for (RaftNodeImpl node : group.getNodes()) {
             endpoints.add(node.getLocalMember());
         }

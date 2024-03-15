@@ -51,7 +51,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
     @Override
     protected UUID addListener() {
         replicatedMap = client.getReplicatedMap(randomString());
-        final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+        final EntryAdapter<String, String> listener = new EntryAdapter<>() {
             @Override
             public void onEntryEvent(EntryEvent<String, String> event) {
                 onEvent(event.getKey());

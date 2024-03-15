@@ -29,7 +29,7 @@ public class PersonCacheEntryListenerConfiguration implements CacheEntryListener
 
     @Override
     public Factory<CacheEntryListener<? super String, ? super Person>> getCacheEntryListenerFactory() {
-        return new Factory<CacheEntryListener<? super String, ? super Person>>() {
+        return new Factory<>() {
             @Override
             public CacheEntryListener<? super String, ? super Person> create() {
                 return new CacheEntryListener<String, Person>() {
@@ -47,7 +47,7 @@ public class PersonCacheEntryListenerConfiguration implements CacheEntryListener
 
     @Override
     public Factory<CacheEntryEventFilter<? super String, ? super Person>> getCacheEntryEventFilterFactory() {
-        return new Factory<CacheEntryEventFilter<? super String, ? super Person>>() {
+        return new Factory<>() {
             @Override
             public CacheEntryEventFilter<? super String, ? super Person> create() {
                 return new CacheEntryEventFilter<String, Person>() {

@@ -81,7 +81,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
 
     class MessageListenerMock implements MessageListener<String> {
 
-        private final List<String> messages = new CopyOnWriteArrayList<String>();
+        private final List<String> messages = new CopyOnWriteArrayList<>();
 
         @Override
         public void onMessage(Message<String> message) {
@@ -92,7 +92,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     @Test
     public void retrieveInitialSequence() {
         MessageListener<String> listener = createMessageListenerMock();
-        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<>(listener);
 
         assertEquals(-1, adapter.retrieveInitialSequence());
     }
@@ -100,7 +100,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     @Test
     public void isTerminal() {
         MessageListener<String> listener = createMessageListenerMock();
-        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<>(listener);
 
         assertFalse(adapter.isTerminal(new RuntimeException()));
         assertFalse(adapter.isTerminal(new Exception()));
@@ -109,7 +109,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     @Test
     public void isLossTolerant() {
         MessageListener<String> listener = createMessageListenerMock();
-        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<>(listener);
 
         assertFalse(adapter.isLossTolerant());
     }
@@ -117,9 +117,9 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     @Test
     public void onMessage() {
         MessageListener<String> listener = createMessageListenerMock();
-        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<>(listener);
 
-        Message<String> message = new Message<String>("foo", "foo", System.currentTimeMillis(), null);
+        Message<String> message = new Message<>("foo", "foo", System.currentTimeMillis(), null);
         adapter.onMessage(message);
 
         verify(listener).onMessage(message);
@@ -129,7 +129,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     public void test_toString() {
         MessageListener<String> listener = createMessageListenerMock();
         when(listener.toString()).thenReturn("foobar");
-        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<>(listener);
 
         assertEquals("foobar", adapter.toString());
     }
@@ -137,7 +137,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     @Test
     public void storeSequence() {
         MessageListener<String> listener = createMessageListenerMock();
-        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<>(listener);
         adapter.storeSequence(10);
     }
 

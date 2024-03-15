@@ -144,7 +144,7 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
 
     @Test
     public void lotsOfPackets() {
-        List<Packet> originalPackets = new LinkedList<Packet>();
+        List<Packet> originalPackets = new LinkedList<>();
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
             byte[] bytes = generateRandomString(random.nextInt(1000) + 8).getBytes();

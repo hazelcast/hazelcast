@@ -60,7 +60,7 @@ public class RaftStateTest {
     public void setup() {
         groupId = new TestRaftGroupId(name);
         localMember = newRaftMember(5000);
-        members = new HashSet<RaftEndpoint>(asList(localMember,
+        members = new HashSet<>(asList(localMember,
                 newRaftMember(5001),
                 newRaftMember(5002),
                 newRaftMember(5003),
@@ -77,7 +77,7 @@ public class RaftStateTest {
 
         assertEquals(members, state.members());
 
-        Collection<RaftEndpoint> remoteMembers = new HashSet<RaftEndpoint>(members);
+        Collection<RaftEndpoint> remoteMembers = new HashSet<>(members);
         remoteMembers.remove(localMember);
         assertEquals(remoteMembers, state.remoteMembers());
 
@@ -225,7 +225,7 @@ public class RaftStateTest {
     }
 
     private void test_majority(int count) {
-        members = new HashSet<RaftEndpoint>();
+        members = new HashSet<>();
         members.add(localMember);
 
         for (int i = 1; i < count; i++) {

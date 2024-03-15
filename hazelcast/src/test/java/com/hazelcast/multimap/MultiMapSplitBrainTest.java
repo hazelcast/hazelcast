@@ -142,7 +142,7 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         multiMapA2 = secondBrain[0].getMultiMap(multiMapNameA);
         multiMapB2 = secondBrain[0].getMultiMap(multiMapNameB);
 
-        EntryListener<Object, Object> listener = new EmptyEntryListener<Object, Object>();
+        EntryListener<Object, Object> listener = new EmptyEntryListener<>();
         multiMapA1.addEntryListener(listener, true);
         multiMapA2.addEntryListener(listener, true);
         multiMapB2.addEntryListener(listener, true);

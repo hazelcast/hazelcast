@@ -603,10 +603,10 @@ public class SerializationIssueTest extends HazelcastTestSupport {
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {
 
-        private static final Set<String> WELL_KNOWN_TEST_CLASSES = new HashSet<String>(asList(IObjectA.class.getName(),
+        private static final Set<String> WELL_KNOWN_TEST_CLASSES = new HashSet<>(asList(IObjectA.class.getName(),
                 IPrivateObjectB.class.getName(), IPrivateObjectC.class.getName()));
 
-        private final Set<String> wellKnownClasses = new HashSet<String>();
+        private final Set<String> wellKnownClasses = new HashSet<>();
 
         private DynamicProxyTestClassLoader(ClassLoader parent, String... classesToLoad) {
             super(parent);

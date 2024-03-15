@@ -160,7 +160,7 @@ public final class ReflectionUtils {
     }
 
     public static Map<String, Field> getAllFieldsByName(Class<?> clazz) {
-        ConcurrentMap<String, Field> fields = new ConcurrentHashMap<String, Field>();
+        ConcurrentMap<String, Field> fields = new ConcurrentHashMap<>();
         Field[] ownFields = clazz.getDeclaredFields();
         for (Field field : ownFields) {
             fields.put(field.getName(), field);

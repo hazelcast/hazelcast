@@ -33,7 +33,7 @@ public class ProgressMonitor {
     private static final ILogger LOGGER = Logger.getLogger(ProgressMonitor.class);
 
     private final long maximumStaleNanos;
-    private final List<BounceMemberRule.TestTaskRunnable> tasks = new ArrayList<BounceMemberRule.TestTaskRunnable>();
+    private final List<BounceMemberRule.TestTaskRunnable> tasks = new ArrayList<>();
 
     private long lastProgressLoggedNanos;
     private long progressDelta;

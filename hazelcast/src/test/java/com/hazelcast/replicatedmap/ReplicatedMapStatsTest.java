@@ -250,7 +250,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testPutOperationCount_afterPutAll() {
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> map = new HashMap<>();
         for (int i = 1; i <= OPERATION_COUNT; i++) {
             map.put(i, i);
         }

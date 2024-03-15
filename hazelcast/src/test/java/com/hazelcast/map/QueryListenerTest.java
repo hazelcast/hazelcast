@@ -59,7 +59,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -116,7 +116,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         final AtomicInteger addCount = new AtomicInteger(0);
 
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addCount.incrementAndGet();
             }

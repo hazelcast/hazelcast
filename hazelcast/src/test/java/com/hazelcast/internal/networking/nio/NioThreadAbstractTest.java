@@ -200,7 +200,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     }
 
     class MockSelector extends Selector {
-        final BlockingQueue<SelectorAction> actionQueue = new LinkedBlockingQueue<SelectorAction>();
+        final BlockingQueue<SelectorAction> actionQueue = new LinkedBlockingQueue<>();
         Set<SelectionKey> pendingKeys;
 
         void scheduleSelectAction(SelectionKey selectionKey) {
@@ -293,7 +293,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
     static class SelectorAction {
 
-        final Set<SelectionKey> keys = new HashSet<SelectionKey>();
+        final Set<SelectionKey> keys = new HashSet<>();
 
         boolean selectThrowsIOException;
         boolean selectThrowsOOME;

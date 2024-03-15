@@ -121,7 +121,7 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
         assertNotEquals("nearCacheInstance and dataInstance have to be different instances", nearCacheInstance, dataInstance);
         assertNotEquals("nearCacheAdapter and dataAdapter have to be different instances", nearCacheAdapter, dataAdapter);
 
-        NearCacheTestContext<K, V, NK, NV> context = new NearCacheTestContext<K, V, NK, NV>(
+        NearCacheTestContext<K, V, NK, NV> context = new NearCacheTestContext<>(
                 nearCacheConfig,
                 serializationService,
                 nearCacheInstance,

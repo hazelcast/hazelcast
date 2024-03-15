@@ -390,7 +390,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     private <T> ReadManyOperation<T> getReadManyOperation(long start, int min, int max, IFunction<T, Boolean> filter) {
-        final ReadManyOperation<T> op = new ReadManyOperation<T>(ringbuffer.getName(), start, min, max, filter);
+        final ReadManyOperation<T> op = new ReadManyOperation<>(ringbuffer.getName(), start, min, max, filter);
         op.setPartitionId(ringbufferService.getRingbufferPartitionId(ringbuffer.getName()));
         op.setNodeEngine(nodeEngine);
         return op;

@@ -116,7 +116,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 try {
@@ -223,7 +223,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 try {

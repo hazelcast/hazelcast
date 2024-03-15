@@ -72,7 +72,7 @@ final class RingbufferTestUtil {
         }
 
         SerializationService serializationService = nodeEngine.getSerializationService();
-        List<Object> backupRingbuffer = new ArrayList<Object>((int) container.size());
+        List<Object> backupRingbuffer = new ArrayList<>((int) container.size());
         for (long sequence = container.headSequence(); sequence <= container.tailSequence(); sequence++) {
             backupRingbuffer.add(serializationService.toObject(container.readAsData(sequence)));
         }

@@ -43,7 +43,7 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
 
-        HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+        HashMap<Integer, Integer> map = new HashMap<>();
         final int count = 100;
         for (int i = 0; i < count; i++) {
             map.put(i, i);

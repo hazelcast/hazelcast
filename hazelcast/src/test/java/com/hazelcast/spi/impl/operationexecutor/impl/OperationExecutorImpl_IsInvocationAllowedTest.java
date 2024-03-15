@@ -95,7 +95,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 return executor.isInvocationAllowed(genericOperation, false);
@@ -114,7 +114,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 return executor.isInvocationAllowed(genericOperation, true);
@@ -220,7 +220,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final Operation operation = new DummyOperation(1);
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 return executor.isInvocationAllowed(operation, false);
@@ -239,7 +239,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         final Operation operation = new DummyOperation(1);
 
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+        FutureTask<Boolean> futureTask = new FutureTask<>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 return executor.isInvocationAllowed(operation, true);

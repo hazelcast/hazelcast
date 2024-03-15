@@ -43,7 +43,7 @@ public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconne
     protected UUID addListener() {
         iQueue = client.getQueue(randomString());
 
-        ItemListener<String> listener = new ItemListener<String>() {
+        ItemListener<String> listener = new ItemListener<>() {
             @Override
             public void itemAdded(ItemEvent<String> item) {
                 onEvent(item.getItem());

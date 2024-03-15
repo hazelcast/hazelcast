@@ -115,7 +115,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     protected <K, V> EntryListener<K, V> putAllEntryListenerBuilder(Consumer<EntryEvent<K, V>> f) {
-        return new EntryAdapter<K, V>() {
+        return new EntryAdapter<>() {
             public void entryAdded(EntryEvent<K, V> event) {
                 f.accept(event);
             }
@@ -718,7 +718,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(getMultiMap(instances, name).containsValue("key3_val4"));
 
         Set<Object> localKeySet = instances[0].getMultiMap(name).localKeySet();
-        Set<Object> totalKeySet = new HashSet<Object>(localKeySet);
+        Set<Object> totalKeySet = new HashSet<>(localKeySet);
 
         localKeySet = instances[1].getMultiMap(name).localKeySet();
         totalKeySet.addAll(localKeySet);

@@ -101,7 +101,7 @@ public class PartitionStateGeneratorTest {
                         g[3].addMember(member);
                     }
                 }
-                List<MemberGroup> list = new LinkedList<MemberGroup>();
+                List<MemberGroup> list = new LinkedList<>();
                 for (MemberGroup memberGroup : g) {
                     if (memberGroup.size() > 0) {
                         list.add(memberGroup);
@@ -177,7 +177,7 @@ public class PartitionStateGeneratorTest {
         PartitionReplica[][] state = generator.arrange(groups, emptyPartitionArray(100));
 
         // unassign some partitions entirely
-        Collection<Integer> unassignedPartitions = new ArrayList<Integer>();
+        Collection<Integer> unassignedPartitions = new ArrayList<>();
         for (int i = 0; i < state.length; i++) {
             if (i % 3 == 0) {
                 state[i] = new PartitionReplica[InternalPartition.MAX_REPLICA_COUNT];
@@ -267,7 +267,7 @@ public class PartitionStateGeneratorTest {
     }
 
     private static void remove(PartitionReplica[][] state, List<Member> removedMembers) {
-        Set<Address> addresses = new HashSet<Address>();
+        Set<Address> addresses = new HashSet<>();
         for (Member member : removedMembers) {
             addresses.add(member.getAddress());
         }
@@ -301,7 +301,7 @@ public class PartitionStateGeneratorTest {
         }
         int count = 0;
         int port = 5700;
-        List<Member> members = new ArrayList<Member>();
+        List<Member> members = new ArrayList<>();
         int sameHostCount = rand.nextInt(maxSameHostCount) + 1;
         for (int i = 0; i < memberCount; i++) {
             if (count == sameHostCount) {
@@ -330,8 +330,8 @@ public class PartitionStateGeneratorTest {
             }
         }
         int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
-        Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<MemberGroup, GroupPartitionState>();
-        Set<PartitionReplica> set = new HashSet<PartitionReplica>();
+        Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<>();
+        Set<PartitionReplica> set = new HashSet<>();
         int avgPartitionPerGroup = partitionCount / groups.size();
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -446,11 +446,11 @@ public class PartitionStateGeneratorTest {
     private static class GroupPartitionState {
         MemberGroup group;
         Set<Integer>[] groupPartitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
-        Map<PartitionReplica, Set<Integer>[]> nodePartitionsMap = new HashMap<PartitionReplica, Set<Integer>[]>();
+        Map<PartitionReplica, Set<Integer>[]> nodePartitionsMap = new HashMap<>();
 
         {
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                groupPartitions[i] = new HashSet<Integer>();
+                groupPartitions[i] = new HashSet<>();
             }
         }
 
@@ -459,7 +459,7 @@ public class PartitionStateGeneratorTest {
             if (nodePartitions == null) {
                 nodePartitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
                 for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                    nodePartitions[i] = new HashSet<Integer>();
+                    nodePartitions[i] = new HashSet<>();
                 }
                 nodePartitionsMap.put(node, nodePartitions);
             }

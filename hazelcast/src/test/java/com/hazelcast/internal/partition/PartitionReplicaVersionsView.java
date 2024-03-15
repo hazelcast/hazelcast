@@ -61,7 +61,7 @@ public class PartitionReplicaVersionsView {
 
         long[] emptyVersions = new long[InternalPartition.MAX_BACKUP_COUNT];
 
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>(versions.keySet());
+        Collection<ServiceNamespace> namespaces = new HashSet<>(versions.keySet());
         namespaces.addAll(that.versions.keySet());
 
         for (ServiceNamespace ns : namespaces) {

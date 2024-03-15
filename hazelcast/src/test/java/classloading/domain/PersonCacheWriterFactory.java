@@ -27,7 +27,7 @@ public class PersonCacheWriterFactory implements Factory<CacheWriter<String, Per
 
     @Override
     public CacheWriter<String, Person> create() {
-        return new CacheWriter<String, Person>() {
+        return new CacheWriter<>() {
             @Override
             public void write(Cache.Entry<? extends String, ? extends Person> entry) throws CacheWriterException {
                 throw new UnsupportedOperationException("Not supported");

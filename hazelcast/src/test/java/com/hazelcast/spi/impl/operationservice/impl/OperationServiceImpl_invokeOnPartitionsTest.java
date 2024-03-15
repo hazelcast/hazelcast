@@ -148,7 +148,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationService(hz);
 
-        final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<Map<Integer, Object>>();
+        final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
         opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl()).whenComplete((v, t) -> {
             if (t == null) {

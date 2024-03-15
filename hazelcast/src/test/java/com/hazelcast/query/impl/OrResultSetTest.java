@@ -42,7 +42,7 @@ public class OrResultSetTest extends HazelcastTestSupport {
         int size = 100000;
         Set<QueryableEntry> entries1 = generateEntries(size);
         Set<QueryableEntry> entries2 = generateEntries(size);
-        List<Set<QueryableEntry>> indexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> indexedResults = new ArrayList<>();
         indexedResults.add(entries1);
         indexedResults.add(entries2);
 
@@ -63,12 +63,12 @@ public class OrResultSetTest extends HazelcastTestSupport {
         int size = 100000;
         Set<QueryableEntry> entries1 = generateEntries(size);
         Set<QueryableEntry> entries2 = generateEntries(size);
-        List<Set<QueryableEntry>> indexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> indexedResults = new ArrayList<>();
         indexedResults.add(entries1);
         indexedResults.add(entries2);
 
         OrResultSet resultSet = new OrResultSet(indexedResults);
-        Set<QueryableEntry> combinedEntries = new HashSet<QueryableEntry>(entries1);
+        Set<QueryableEntry> combinedEntries = new HashSet<>(entries1);
         combinedEntries.addAll(entries2);
 
         for (QueryableEntry entry : combinedEntries) {
@@ -78,7 +78,7 @@ public class OrResultSetTest extends HazelcastTestSupport {
     }
 
     private Set<QueryableEntry> generateEntries(int count) {
-        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> result = new HashSet<>();
         for (int k = 0; k < count; k++) {
             QueryableEntry entry = new DummyEntry();
             result.add(entry);

@@ -43,7 +43,7 @@ public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnect
     protected UUID addListener() {
         iSet = client.getSet(randomString());
 
-        ItemListener<String> listener = new ItemListener<String>() {
+        ItemListener<String> listener = new ItemListener<>() {
             @Override
             public void itemAdded(ItemEvent<String> item) {
                 onEvent(item.getItem());

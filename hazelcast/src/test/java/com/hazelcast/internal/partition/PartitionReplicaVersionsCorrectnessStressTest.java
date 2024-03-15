@@ -89,7 +89,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     public void testReplicaVersionsWhenNodesCrashSimultaneously() throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
-        List<HazelcastInstance> instancesCopy = new ArrayList<HazelcastInstance>(instances);
+        List<HazelcastInstance> instancesCopy = new ArrayList<>(instances);
         List<HazelcastInstance> terminatingInstances = instancesCopy.subList(0, numberOfNodesToStop);
         List<HazelcastInstance> survivingInstances = instancesCopy.subList(numberOfNodesToStop, instances.size());
         populateMaps(survivingInstances.get(0));
@@ -150,7 +150,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     private void verifyReplicaVersions(PartitionReplicaVersionsView initialReplicaVersions,
                                        PartitionReplicaVersionsView replicaVersions,
                                        int minSurvivingReplicaIndex, String message) {
-        Set<String> lostMapNames = new HashSet<String>();
+        Set<String> lostMapNames = new HashSet<>();
         for (int i = 0; i < minSurvivingReplicaIndex; i++) {
             lostMapNames.add(getIthMapName(i));
         }

@@ -151,7 +151,7 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
             map.put(i, employee);
         }
 
-        List<Long> dates = new ArrayList<Long>();
+        List<Long> dates = new ArrayList<>();
         for (SampleTestObjects.Employee employee : map.values(pred)) {
             Timestamp date = employee.getDate();
             dates.add(date == null ? null : date.getTime());

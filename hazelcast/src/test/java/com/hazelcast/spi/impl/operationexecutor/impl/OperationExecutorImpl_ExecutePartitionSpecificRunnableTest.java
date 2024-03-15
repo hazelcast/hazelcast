@@ -41,7 +41,7 @@ public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends 
     public void whenPartitionSpecific() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThead = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThead = new AtomicReference<>();
 
         PartitionSpecificRunnable task = new PartitionSpecificRunnable() {
             @Override
@@ -68,7 +68,7 @@ public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends 
     public void whenGeneric() {
         initExecutor();
 
-        final AtomicReference<Thread> executingThead = new AtomicReference<Thread>();
+        final AtomicReference<Thread> executingThead = new AtomicReference<>();
 
         PartitionSpecificRunnable task = new PartitionSpecificRunnable() {
             @Override

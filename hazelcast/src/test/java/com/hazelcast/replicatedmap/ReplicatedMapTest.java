@@ -196,7 +196,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
-        final Map<String, String> mapTest = new HashMap<String, String>();
+        final Map<String, String> mapTest = new HashMap<>();
         for (String key : keys) {
             mapTest.put(key, "bar");
         }
@@ -518,7 +518,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Set<Integer> keys = new HashSet<Integer>(map.keySet());
+                Set<Integer> keys = new HashSet<>(map.keySet());
                 assertFalse(keys.contains(1));
             }
         }, 20);
@@ -793,8 +793,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                List<Entry<String, String>> entrySet1 = new ArrayList<Entry<String, String>>(map1.entrySet());
-                List<Entry<String, String>> entrySet2 = new ArrayList<Entry<String, String>>(map2.entrySet());
+                List<Entry<String, String>> entrySet1 = new ArrayList<>(map1.entrySet());
+                List<Entry<String, String>> entrySet2 = new ArrayList<>(map2.entrySet());
                 assertEquals(keys.size(), entrySet1.size());
                 assertEquals(keys.size(), entrySet2.size());
 

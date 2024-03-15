@@ -192,7 +192,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         final int runCount = 500;
         final Config config = newConfigWithIndex("testMap", "name");
         executor = Executors.newFixedThreadPool(nodeCount);
-        List<Future<?>> futures = new ArrayList<Future<?>>();
+        List<Future<?>> futures = new ArrayList<>();
 
         for (int i = 0; i < nodeCount; i++) {
             sleepMillis(random.nextInt((i + 1) * 100) + 10);

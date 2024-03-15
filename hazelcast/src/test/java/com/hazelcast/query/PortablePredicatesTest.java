@@ -89,7 +89,7 @@ public class PortablePredicatesTest {
 
         public static final int CLASS_ID = 1;
 
-        private final Map<String, Object> data = new HashMap<String, Object>();
+        private final Map<String, Object> data = new HashMap<>();
 
         @Override
         public int getClassId() {

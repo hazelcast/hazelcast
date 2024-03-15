@@ -64,7 +64,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private static final int THREAD_COUNT = 10;
     private static final int DURATION_SECONDS = 120;
 
-    private BlockingQueue<HazelcastInstance> queue = new LinkedBlockingQueue<HazelcastInstance>();
+    private BlockingQueue<HazelcastInstance> queue = new LinkedBlockingQueue<>();
 
     private TestHazelcastInstanceFactory instanceFactory;
     private Config config;

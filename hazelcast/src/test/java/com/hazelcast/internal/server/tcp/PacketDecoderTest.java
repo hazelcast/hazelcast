@@ -120,7 +120,7 @@ public class PacketDecoderTest extends HazelcastTestSupport {
     }
 
     class ConsumerStub implements Consumer<Packet> {
-        private List<Packet> packets = new LinkedList<Packet>();
+        private List<Packet> packets = new LinkedList<>();
 
         @Override
         public void accept(Packet packet) {

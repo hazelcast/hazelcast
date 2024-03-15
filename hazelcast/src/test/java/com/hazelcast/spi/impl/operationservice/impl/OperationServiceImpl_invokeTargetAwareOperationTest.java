@@ -130,7 +130,7 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         InternalPartitionService localPartitionService = getPartitionService(local);
         InternalPartition partition = localPartitionService.getPartition(partitionId);
 
-        List<Address> expectedTargetAddresses = new ArrayList<Address>();
+        List<Address> expectedTargetAddresses = new ArrayList<>();
         for (int i = 0; i < backupCount + 1; i++) {
             expectedTargetAddresses.add(partition.getReplicaAddress(i));
         }

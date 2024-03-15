@@ -91,7 +91,7 @@ public class PacketEncoderTest extends HazelcastTestSupport {
     }
 
     static class PacketSupplier implements Supplier<Packet> {
-        Queue<Packet> queue = new LinkedBlockingQueue<Packet>();
+        Queue<Packet> queue = new LinkedBlockingQueue<>();
 
         @Override
         public Packet get() {

@@ -108,7 +108,7 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
     }
 
     public List<ReplicatedMap<String, Object>> createMapOnEachInstance(HazelcastInstance[] instances, String replicatedMapName) {
-        ArrayList<ReplicatedMap<String, Object>> maps = new ArrayList<ReplicatedMap<String, Object>>();
+        ArrayList<ReplicatedMap<String, Object>> maps = new ArrayList<>();
         for (HazelcastInstance instance : instances) {
             ReplicatedMap<String, Object> replicatedMap = instance.getReplicatedMap(replicatedMapName);
             maps.add(replicatedMap);
@@ -117,7 +117,7 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
     }
 
     public ArrayList<Integer> generateRandomIntegerList(int count) {
-        final ArrayList<Integer> keys = new ArrayList<Integer>();
+        final ArrayList<Integer> keys = new ArrayList<>();
         final Random random = new Random();
         for (int i = 0; i < count; i++) {
             keys.add(random.nextInt());
@@ -126,12 +126,12 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
     }
 
     protected Set<String> generateRandomKeys(HazelcastInstance instance, int partitionCount) {
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             keys.add(generateKeyForPartition(instance, partitionId));
         }
 
-        Set<Integer> partitionIds = new HashSet<Integer>();
+        Set<Integer> partitionIds = new HashSet<>();
         for (String key : keys) {
             assertTrue(partitionIds.add(getPartitionId(instance, key)));
         }
@@ -144,7 +144,7 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
         AbstractMap.SimpleEntry<String, String>[] testValues = new AbstractMap.SimpleEntry[keys.size()];
         int i = 0;
         for (String key : keys) {
-            testValues[i++] = new AbstractMap.SimpleEntry<String, String>(key, key);
+            testValues[i++] = new AbstractMap.SimpleEntry<>(key, key);
         }
         return testValues;
     }

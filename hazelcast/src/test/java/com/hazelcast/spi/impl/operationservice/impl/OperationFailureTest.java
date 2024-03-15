@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 public class OperationFailureTest extends HazelcastTestSupport {
 
     // static reference to store backup operation failure
-    private static final AtomicReference<Throwable> backupOperationFailure = new AtomicReference<Throwable>();
+    private static final AtomicReference<Throwable> backupOperationFailure = new AtomicReference<>();
 
     @Test
     public void onFailure_shouldBeCalled_whenOperationExecutionFails() {

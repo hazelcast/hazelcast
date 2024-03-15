@@ -56,7 +56,7 @@ public class NodeQueryCacheEventServiceTest extends HazelcastTestSupport {
                 = (NodeQueryCacheEventService) subscriberContext.getEventService();
 
         final AtomicBoolean stop = new AtomicBoolean(false);
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             Thread thread = new Thread() {
                 @Override

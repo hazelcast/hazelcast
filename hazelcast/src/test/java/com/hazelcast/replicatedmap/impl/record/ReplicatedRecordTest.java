@@ -44,12 +44,12 @@ public class ReplicatedRecordTest {
 
     @Before
     public void setUp() {
-        replicatedRecord = new ReplicatedRecord<String, String>("key", "value", 0);
-        replicatedRecordSameAttributes = new ReplicatedRecord<String, String>("key", "value", 0);
+        replicatedRecord = new ReplicatedRecord<>("key", "value", 0);
+        replicatedRecordSameAttributes = new ReplicatedRecord<>("key", "value", 0);
 
-        replicatedRecordOtherKey = new ReplicatedRecord<String, String>("otherKey", "value", 0);
-        replicatedRecordOtherValue = new ReplicatedRecord<String, String>("key", "otherValue", 0);
-        replicatedRecordOtherTtl = new ReplicatedRecord<String, String>("key", "value", 1);
+        replicatedRecordOtherKey = new ReplicatedRecord<>("otherKey", "value", 0);
+        replicatedRecordOtherValue = new ReplicatedRecord<>("key", "otherValue", 0);
+        replicatedRecordOtherTtl = new ReplicatedRecord<>("key", "value", 1);
     }
 
     @Test

@@ -200,7 +200,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
     }
 
     private static void assertPartitionsIndexedCorrectly(int expectedPartitions, IMap... maps) {
-        Map<String, BitSet> indexToPartitions = new HashMap<String, BitSet>();
+        Map<String, BitSet> indexToPartitions = new HashMap<>();
 
         for (IMap map : maps) {
             for (IndexRegistry indexes : getAllIndexes(map)) {

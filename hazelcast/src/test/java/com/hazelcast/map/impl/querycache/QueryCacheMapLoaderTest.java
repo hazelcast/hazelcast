@@ -126,7 +126,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
     static class DefaultMapLoader extends MapStoreAdapter<Integer, Integer> {
 
-        private final ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+        private final ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<>();
 
         DefaultMapLoader() {
             map.put(1, 1);
@@ -141,7 +141,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            Map<Integer, Integer> results = new HashMap<Integer, Integer>();
+            Map<Integer, Integer> results = new HashMap<>();
             for (Integer key : keys) {
                 results.put(key, map.get(key));
             }

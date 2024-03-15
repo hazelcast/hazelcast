@@ -58,7 +58,7 @@ import static java.util.Collections.newSetFromMap;
 public class SamplingSerializationService implements InternalSerializationService {
 
     static final ConcurrentMap<String, List<byte[]>> SERIALIZED_SAMPLES_PER_CLASS_NAME =
-            new ConcurrentHashMap<String, List<byte[]>>(1000);
+            new ConcurrentHashMap<>(1000);
     // cache classes for which samples have already been captured
     static final Set<String> SAMPLED_CLASSES = newSetFromMap(new ConcurrentHashMap<String, Boolean>(1000));
 

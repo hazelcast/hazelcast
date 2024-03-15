@@ -57,7 +57,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 
         map = hazelcastInstance.getReplicatedMap("ReplicatedMapDataStructureAdapterTest");
-        adapter = new ReplicatedMapDataStructureAdapter<Integer, String>(map);
+        adapter = new ReplicatedMapDataStructureAdapter<>(map);
     }
 
     @Test
@@ -199,7 +199,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
 
     @Test(expected = MethodNotAvailableException.class)
     public void testExecuteOnKeys() {
-        Set<Integer> keys = new HashSet<Integer>(singleton(23));
+        Set<Integer> keys = new HashSet<>(singleton(23));
         adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
     }
 
@@ -241,7 +241,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         map.put(23, "value-23");
         map.put(42, "value-42");
 
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        Map<Integer, String> expectedResult = new HashMap<>();
         expectedResult.put(23, "value-23");
         expectedResult.put(42, "value-42");
 
@@ -251,7 +251,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
 
     @Test
     public void testPutAll() {
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        Map<Integer, String> expectedResult = new HashMap<>();
         expectedResult.put(23, "value-23");
         expectedResult.put(42, "value-42");
 
@@ -280,7 +280,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
 
     @Test(expected = MethodNotAvailableException.class)
     public void testInvokeAll() {
-        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Set<Integer> keys = new HashSet<>(asList(23, 65, 88));
         adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 

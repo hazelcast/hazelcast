@@ -257,7 +257,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
     private static class NoReplicationService implements MigrationAwareService {
 
-        private final AtomicReference<AssertionError> replicationRequested = new AtomicReference<AssertionError>();
+        private final AtomicReference<AssertionError> replicationRequested = new AtomicReference<>();
 
         @Override
         public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
