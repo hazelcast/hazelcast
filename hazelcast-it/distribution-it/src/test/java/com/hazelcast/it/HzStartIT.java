@@ -71,13 +71,15 @@ public class HzStartIT extends HazelcastTestSupport {
         if (client != null) {
             client.shutdown();
         }
-        log.info("Destroying Hazelcast process");
-        process.destroy();
-        boolean destroyed = process.waitFor(30, TimeUnit.SECONDS);
-        if (!destroyed) {
-            log.info("Hazelcast process not destroyed, trying Process#destroyForcibly()");
-            process.destroyForcibly()
-                   .waitFor();
+        if (process != null) {
+            log.info("Destroying Hazelcast process");
+            process.destroy();
+            boolean destroyed = process.waitFor(30, TimeUnit.SECONDS);
+            if (!destroyed) {
+                log.info("Hazelcast process not destroyed, trying Process#destroyForcibly()");
+                process.destroyForcibly()
+                       .waitFor();
+            }
         }
     }
 
