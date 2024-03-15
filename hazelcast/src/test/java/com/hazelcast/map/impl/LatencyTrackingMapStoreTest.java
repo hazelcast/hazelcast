@@ -55,7 +55,7 @@ public class LatencyTrackingMapStoreTest extends HazelcastTestSupport {
         hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(MapStore.class);
-        cacheStore = new LatencyTrackingMapStore<String, String>(delegate, plugin, NAME);
+        cacheStore = new LatencyTrackingMapStore<>(delegate, plugin, NAME);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -86,7 +86,7 @@ public class LatencyTrackingMapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void storeAll() {
-        Map<String, String> values = new HashMap<String, String>();
+        Map<String, String> values = new HashMap<>();
         values.put("1", "value1");
         values.put("2", "value2");
 

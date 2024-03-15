@@ -57,12 +57,12 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
         delegate = mock(CacheWriter.class);
         TenantContextual<CacheWriter<Integer, String>> contextual = TenantContextual.create(() -> delegate,
                 () -> true, TenantControl.NOOP_TENANT_CONTROL);
-        cacheWriter = new LatencyTrackingCacheWriter<Integer, String>(contextual, plugin, NAME);
+        cacheWriter = new LatencyTrackingCacheWriter<>(contextual, plugin, NAME);
     }
 
     @Test
     public void write() {
-        Cache.Entry<Integer, String> entry = new CacheEntry<Integer, String>(1, "peter");
+        Cache.Entry<Integer, String> entry = new CacheEntry<>(1, "peter");
         cacheWriter.write(entry);
 
         verify(delegate).write(entry);
@@ -81,7 +81,7 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
 
     @Test
     public void delete() {
-        Cache.Entry<Integer, String> entry = new CacheEntry<Integer, String>(1, "peter");
+        Cache.Entry<Integer, String> entry = new CacheEntry<>(1, "peter");
         cacheWriter.delete(entry);
 
         verify(delegate).delete(entry);

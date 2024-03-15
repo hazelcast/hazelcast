@@ -43,7 +43,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        this.queue = new MPSCQueue<String>(new BusySpinIdleStrategy());
+        this.queue = new MPSCQueue<>(new BusySpinIdleStrategy());
     }
 
     @Test(expected = NullPointerException.class)

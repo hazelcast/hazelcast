@@ -86,7 +86,7 @@ public class MemberMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
         HazelcastInstance nearCachedMember = factory.newHazelcastInstance(nearCachedConfig);
         final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(mapName);
 
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
 
         // continuously adds and removes member
         Thread shadowMember = new Thread(new Runnable() {

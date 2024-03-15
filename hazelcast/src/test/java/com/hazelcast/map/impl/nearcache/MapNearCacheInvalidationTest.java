@@ -110,7 +110,7 @@ public class MapNearCacheInvalidationTest extends HazelcastTestSupport {
 
         int size = 1000;
 
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             keys.add(generateKeyOwnedBy(node1));
         }

@@ -304,7 +304,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
         IMap map = inst.getMap("default");
 
-        EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {
+        EntryListener<String, Integer> l = new EntryAdapter<>() {
         };
 
         EntryObject e = Predicates.newPredicateBuilder().getEntryObject();

@@ -71,7 +71,7 @@ public class MemberGroupFactoryTest {
     }
 
     private Collection<Member> createMembersWithNoMetadata() {
-        Collection<Member> members = new HashSet<Member>();
+        Collection<Member> members = new HashSet<>();
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
         members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
@@ -91,7 +91,7 @@ public class MemberGroupFactoryTest {
     }
 
     private Collection<Member> createMembersWithZoneAwareMetadata() {
-        Collection<Member> members = new HashSet<Member>();
+        Collection<Member> members = new HashSet<>();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-east-1");
 
@@ -120,7 +120,7 @@ public class MemberGroupFactoryTest {
     }
 
     private Collection<Member> createMembersWithNodeAwareMetadata() {
-        Collection<Member> members = new HashSet<Member>();
+        Collection<Member> members = new HashSet<>();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-f7cw");
 
@@ -216,7 +216,7 @@ public class MemberGroupFactoryTest {
     }
 
     private Collection<Member> createMembers() {
-        Collection<Member> members = new HashSet<Member>();
+        Collection<Member> members = new HashSet<>();
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
         members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
@@ -240,7 +240,7 @@ public class MemberGroupFactoryTest {
     }
 
     private Collection<MemberGroupConfig> createMemberGroupConfigs(boolean addHostnameConfigs) {
-        Collection<MemberGroupConfig> groupConfigs = new HashSet<MemberGroupConfig>();
+        Collection<MemberGroupConfig> groupConfigs = new HashSet<>();
 
         MemberGroupConfig group1 = new MemberGroupConfig();
         group1.addInterface("192.168.*.*");

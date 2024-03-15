@@ -185,7 +185,7 @@ class MockJoiner extends AbstractJoiner {
     }
 
     public void searchForOtherClusters() {
-        Collection<Address> possibleAddresses = new ArrayList<Address>(registry.getJoinAddresses());
+        Collection<Address> possibleAddresses = new ArrayList<>(registry.getJoinAddresses());
         possibleAddresses.remove(node.getThisAddress());
         possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
         SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();

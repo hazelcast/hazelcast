@@ -137,14 +137,14 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void putAll_successful_whenSplitBrainProtectionSize_met() {
-        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        HashMap<Object, Object> map = new HashMap<>();
         map.put("foo", "bar");
         map(0).putAll(map);
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void putAll_failing_whenSplitBrainProtectionSize_met() {
-        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        HashMap<Object, Object> map = new HashMap<>();
         map.put("foo", "bar");
         map(3).putAll(map);
     }
@@ -321,14 +321,14 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void executeOnKeys_successful_whenSplitBrainProtectionSize_met() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map(0).executeOnKey(keys, new TestLoggingEntryProcessor());
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void executeOnKeys_failing_whenSplitBrainProtectionSize_met() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map(3).executeOnKey(keys, new TestLoggingEntryProcessor());
     }

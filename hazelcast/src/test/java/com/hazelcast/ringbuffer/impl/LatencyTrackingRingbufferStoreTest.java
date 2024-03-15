@@ -51,7 +51,7 @@ public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(RingbufferStore.class);
-        ringbufferStore = new LatencyTrackingRingbufferStore<String>(delegate, plugin,
+        ringbufferStore = new LatencyTrackingRingbufferStore<>(delegate, plugin,
                 NAMESPACE);
     }
 

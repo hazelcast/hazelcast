@@ -59,7 +59,7 @@ public class LatencyTrackingCacheLoaderTest extends HazelcastTestSupport {
         delegate = mock(CacheLoader.class);
         TenantContextual<CacheLoader<String, String>> contextual = TenantContextual.create(() -> delegate,
                 () -> true, TenantControl.NOOP_TENANT_CONTROL);
-        cacheLoader = new LatencyTrackingCacheLoader<String, String>(contextual, plugin, NAME);
+        cacheLoader = new LatencyTrackingCacheLoader<>(contextual, plugin, NAME);
     }
 
     @Test
@@ -78,7 +78,7 @@ public class LatencyTrackingCacheLoaderTest extends HazelcastTestSupport {
     @Test
     public void loadAll() {
         Collection<String> keys = asList("key1", "key2");
-        Map<String, String> values = new HashMap<String, String>();
+        Map<String, String> values = new HashMap<>();
         values.put("key1", "value1");
         values.put("key2", "value2");
 

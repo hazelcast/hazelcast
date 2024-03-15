@@ -47,7 +47,7 @@ public class LeaderStateTest {
     @Before
     public void setUp() throws Exception {
         lastLogIndex = 123;
-        remoteEndpoints = new HashSet<RaftEndpoint>(asList(
+        remoteEndpoints = new HashSet<>(asList(
                 newRaftMember(5001),
                 newRaftMember(5002),
                 newRaftMember(5003),
@@ -73,7 +73,7 @@ public class LeaderStateTest {
 
     @Test
     public void test_nextIndex() {
-        Map<RaftEndpoint, Integer> indices = new HashMap<RaftEndpoint, Integer>();
+        Map<RaftEndpoint, Integer> indices = new HashMap<>();
         for (RaftEndpoint endpoint : remoteEndpoints) {
             int index = 1 + RandomPicker.getInt(100);
             state.getFollowerState(endpoint).nextIndex(index);
@@ -88,7 +88,7 @@ public class LeaderStateTest {
 
     @Test
     public void test_matchIndex() {
-        Map<RaftEndpoint, Long> indices = new HashMap<RaftEndpoint, Long>();
+        Map<RaftEndpoint, Long> indices = new HashMap<>();
         for (RaftEndpoint endpoint : remoteEndpoints) {
             long index = 1 + RandomPicker.getInt(100);
             state.getFollowerState(endpoint).matchIndex(index);

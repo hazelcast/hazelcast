@@ -40,9 +40,9 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
     @Test
     public void testKeySetWithPredicate_checksMapStoreLoad() {
-        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<>();
 
-        Map<String, Integer> mapForStore = new HashMap<String, Integer>();
+        Map<String, Integer> mapForStore = new HashMap<>();
         mapForStore.put("key1", 17);
         mapForStore.put("key2", 37);
         mapForStore.put("key3", 47);
@@ -66,9 +66,9 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
     @Test
     public void testValuesWithPredicate_checksMapStoreLoad() {
-        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<>();
 
-        Map<String, Integer> mapForStore = new HashMap<String, Integer>();
+        Map<String, Integer> mapForStore = new HashMap<>();
         mapForStore.put("key1", 17);
         mapForStore.put("key2", 37);
         mapForStore.put("key3", 47);
@@ -92,9 +92,9 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
     @Test
     public void testEntrySetWithPredicate_checksMapStoreLoad() {
-        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<>();
 
-        Map<String, Integer> mapForStore = new HashMap<String, Integer>();
+        Map<String, Integer> mapForStore = new HashMap<>();
         mapForStore.put("key1", 17);
         mapForStore.put("key2", 37);
         mapForStore.put("key3", 47);

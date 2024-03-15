@@ -40,7 +40,7 @@ public class LazySetTest {
     public void setUp() {
         KeySetIteratorFactory<Object, Object> keySetIteratorFactory = mock(KeySetIteratorFactory.class);
         InternalReplicatedMapStorage<Object, Object> storage = mock(InternalReplicatedMapStorage.class);
-        set = new LazySet<Object, Object, Object>(keySetIteratorFactory, storage);
+        set = new LazySet<>(keySetIteratorFactory, storage);
     }
 
     @Test(expected = UnsupportedOperationException.class)

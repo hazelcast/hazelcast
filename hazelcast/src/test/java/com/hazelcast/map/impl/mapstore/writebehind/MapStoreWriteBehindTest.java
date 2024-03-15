@@ -327,7 +327,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         final int writeDelaySeconds = 5;
         String mapName = randomMapName();
 
-        final MapStore<String, String> store = new SimpleMapStore<String, String>();
+        final MapStore<String, String> store = new SimpleMapStore<>();
 
         Config config = newConfig(mapName, store, writeDelaySeconds);
         HazelcastInstance hzInstance = createHazelcastInstance(config);
@@ -643,7 +643,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         RecordingMapStore(int expectedStore, int expectedRemove) {
             this.expectedStore = new CountDownLatch(expectedStore);
             this.expectedRemove = new CountDownLatch(expectedRemove);
-            this.store = new ConcurrentHashMap<String, String>();
+            this.store = new ConcurrentHashMap<>();
         }
 
         public ConcurrentHashMap<String, String> getStore() {
@@ -659,11 +659,11 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
             if (DEBUG) {
-                List<String> keysList = new ArrayList<String>(keys);
+                List<String> keysList = new ArrayList<>(keys);
                 Collections.sort(keysList);
                 log("loadAll(" + keysList + ") called.");
             }
-            Map<String, String> result = new HashMap<String, String>();
+            Map<String, String> result = new HashMap<>();
             for (String key : keys) {
                 String value = store.get(key);
                 if (value != null) {
@@ -676,7 +676,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         @Override
         public Set<String> loadAllKeys() {
             log("loadAllKeys() called.");
-            Set<String> result = new HashSet<String>(store.keySet());
+            Set<String> result = new HashSet<>(store.keySet());
             log("loadAllKeys result = " + result);
             return result;
         }
@@ -694,7 +694,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         @Override
         public void storeAll(Map<String, String> map) {
             if (DEBUG) {
-                TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
+                TreeSet<String> setSorted = new TreeSet<>(map.keySet());
                 log("storeAll(" + setSorted + ") called.");
             }
             store.putAll(map);
@@ -717,7 +717,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         @Override
         public void deleteAll(Collection<String> keys) {
             if (DEBUG) {
-                List<String> keysList = new ArrayList<String>(keys);
+                List<String> keysList = new ArrayList<>(keys);
                 Collections.sort(keysList);
                 log("deleteAll(" + keysList + ") called.");
             }
@@ -739,7 +739,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     public static class FailAwareMapStore implements MapStore {
 
-        public final Map<Object, Object> db = new ConcurrentHashMap<Object, Object>();
+        public final Map<Object, Object> db = new ConcurrentHashMap<>();
 
         public final AtomicLong deletes = new AtomicLong();
         public final AtomicLong deleteAlls = new AtomicLong();
@@ -750,7 +750,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         public final AtomicLong loadAllKeys = new AtomicLong();
         public final AtomicBoolean storeFail = new AtomicBoolean(false);
         public final AtomicBoolean loadFail = new AtomicBoolean(false);
-        public final List<BlockingQueue<Object>> listeners = new CopyOnWriteArrayList<BlockingQueue<Object>>();
+        public final List<BlockingQueue<Object>> listeners = new CopyOnWriteArrayList<>();
 
         public void addListener(BlockingQueue<Object> obj) {
             listeners.add(obj);
@@ -837,7 +837,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
                 if (loadFail.get()) {
                     throw new RuntimeException();
                 } else {
-                    Map<Object, Object> results = new HashMap<Object, Object>();
+                    Map<Object, Object> results = new HashMap<>();
                     for (Object key : keys) {
                         Object value = db.get(key);
                         if (value != null) {

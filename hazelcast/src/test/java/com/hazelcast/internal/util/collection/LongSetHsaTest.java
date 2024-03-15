@@ -105,7 +105,7 @@ public class LongSetHsaTest {
     public void testCursor() {
         assertFalse(set.cursor().advance());
 
-        Set<Long> expected = new HashSet<Long>();
+        Set<Long> expected = new HashSet<>();
         for (int i = 1; i <= 1000; i++) {
             set.add(i);
             expected.add((long) i);

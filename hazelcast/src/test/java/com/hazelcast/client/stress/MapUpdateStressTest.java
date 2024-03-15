@@ -99,7 +99,7 @@ public class MapUpdateStressTest extends StressTestSupport {
             t.addIncrements(increments);
         }
 
-        Set<Integer> failedKeys = new HashSet<Integer>();
+        Set<Integer> failedKeys = new HashSet<>();
         for (int k = 0; k < MAP_SIZE; k++) {
             int expectedValue = increments[k];
             Integer foundValue = map.get(k);

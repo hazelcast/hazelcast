@@ -193,7 +193,7 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialization_whenMultiAddress() throws Exception {
-        Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
+        Map<EndpointQualifier, Address> addressMap = new HashMap<>();
         addressMap.put(EndpointQualifier.MEMBER, address);
         addressMap.put(EndpointQualifier.REST, new Address("127.0.0.1", 8080));
         MemberImpl member = new MemberImpl.Builder(addressMap).version(MemberVersion.of("3.12.0")).build();

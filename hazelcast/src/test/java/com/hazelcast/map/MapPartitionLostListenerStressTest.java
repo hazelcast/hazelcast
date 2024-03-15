@@ -87,7 +87,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
     public void testMapPartitionLostListener() throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
-        List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
+        List<HazelcastInstance> survivingInstances = new ArrayList<>(instances);
         List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
@@ -122,7 +122,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
 
     private List<TestEventCollectingMapPartitionLostListener> registerListeners(HazelcastInstance instance) {
         List<TestEventCollectingMapPartitionLostListener> listeners
-                = new ArrayList<TestEventCollectingMapPartitionLostListener>();
+                = new ArrayList<>();
         for (int i = 0; i < getNodeCount(); i++) {
             TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(i);
             instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);

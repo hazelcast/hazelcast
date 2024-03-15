@@ -637,7 +637,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     private MapStore<Integer, Integer> createMapLoader(final AtomicInteger loadAllCounter) {
-        return new MapStoreAdapter<Integer, Integer>() {
+        return new MapStoreAdapter<>() {
             @Override
             public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
                 loadAllCounter.addAndGet(keys.size());

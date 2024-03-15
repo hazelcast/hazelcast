@@ -280,7 +280,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     public class InMemoryMapStore implements MapStore<String, String> {
 
-        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
+        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
         private final AtomicInteger countLoadAllKeys = new AtomicInteger(0);
 
         private final CountDownLatch halfOfKeysAreLoaded;
@@ -309,10 +309,10 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
-            List<String> keysList = new ArrayList<String>(keys);
+            List<String> keysList = new ArrayList<>(keys);
             int size = keys.size();
             Collections.sort(keysList);
-            Map<String, String> result = new HashMap<String, String>();
+            Map<String, String> result = new HashMap<>();
             int count = 0;
             for (String key : keys) {
                 if (msPerLoad > 0) {
@@ -338,8 +338,8 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
             }
 
             countLoadAllKeys.incrementAndGet();
-            Set<String> result = new HashSet<String>(store.keySet());
-            List<String> resultList = new ArrayList<String>(result);
+            Set<String> result = new HashSet<>(store.keySet());
+            List<String> resultList = new ArrayList<>(result);
             Collections.sort(resultList);
             return result;
         }
@@ -361,7 +361,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
         @Override
         public void deleteAll(Collection<String> keys) {
-            List<String> keysList = new ArrayList<String>(keys);
+            List<String> keysList = new ArrayList<>(keys);
             Collections.sort(keysList);
             for (String key : keys) {
                 store.remove(key);

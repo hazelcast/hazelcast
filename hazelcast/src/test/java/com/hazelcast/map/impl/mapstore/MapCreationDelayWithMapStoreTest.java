@@ -39,7 +39,7 @@ public class MapCreationDelayWithMapStoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testMapCreation__notAffectedByUnresponsiveLoader() {
-        final UnresponsiveLoader<Integer, Integer> unresponsiveLoader = new UnresponsiveLoader<Integer, Integer>();
+        final UnresponsiveLoader<Integer, Integer> unresponsiveLoader = new UnresponsiveLoader<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(unresponsiveLoader)
                 .withNodeCount(1)

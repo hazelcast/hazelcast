@@ -86,7 +86,7 @@ public class LiteMemberClientMapNearCacheBasicTest extends AbstractNearCacheBasi
         // create a Hazelcast client to be used in the tests
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         IMap<K, V> clientMap = client.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(clientMap);
+        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<>(clientMap);
 
         // wait until the initial load is done
         dataAdapter.waitUntilLoaded();

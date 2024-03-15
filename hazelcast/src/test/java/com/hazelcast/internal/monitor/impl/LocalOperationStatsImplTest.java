@@ -80,7 +80,7 @@ public class LocalOperationStatsImplTest extends HazelcastTestSupport {
         slowOperationInvocationDTO.startedAt = 12381912;
         slowOperationInvocationDTO.operationDetails = "TestOperationDetails";
 
-        List<SlowOperationInvocationDTO> invocationList = new ArrayList<SlowOperationInvocationDTO>();
+        List<SlowOperationInvocationDTO> invocationList = new ArrayList<>();
         invocationList.add(slowOperationInvocationDTO);
 
         SlowOperationDTO slowOperationDTO = new SlowOperationDTO();

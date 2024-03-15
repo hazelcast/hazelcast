@@ -43,7 +43,7 @@ public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnRec
     protected UUID addListener() {
         multiMap = client.getMultiMap(randomString());
 
-        EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+        EntryAdapter<String, String> listener = new EntryAdapter<>() {
             @Override
             public void onEntryEvent(EntryEvent<String, String> event) {
                 onEvent(event.getKey());

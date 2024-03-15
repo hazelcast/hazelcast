@@ -100,7 +100,7 @@ public class MapLoaderUnexpectedLoadedItemsTest extends HazelcastTestSupport {
         }
 
         public Map<Integer, String> loadAll(Collection<Integer> keys) {
-            Map<Integer, String> map = new HashMap<Integer, String>();
+            Map<Integer, String> map = new HashMap<>();
 
             for (Integer key : getKeysToLoad(keys)) {
                 map.put(key, load(key));

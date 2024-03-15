@@ -50,12 +50,12 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put("key2", "value2");
         map.put("key3", "value3");
 
-        List<String> listExpected = new ArrayList<String>();
+        List<String> listExpected = new ArrayList<>();
         listExpected.add("key1");
         listExpected.add("key2");
         listExpected.add("key3");
 
-        final List<String> list = new ArrayList<String>(map.keySet());
+        final List<String> list = new ArrayList<>(map.keySet());
 
         Collections.sort(list);
         Collections.sort(listExpected);
@@ -70,12 +70,12 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put("key2", "value2");
         map.put("key3", "value3");
 
-        List<String> listExpected = new ArrayList<String>();
+        List<String> listExpected = new ArrayList<>();
         listExpected.add("key1");
         listExpected.add("key2");
         listExpected.add("key3");
 
-        final List<String> list = new ArrayList<String>(map.keySet());
+        final List<String> list = new ArrayList<>(map.keySet());
 
         Collections.sort(list);
         Collections.sort(listExpected);
@@ -90,8 +90,8 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put("key2", "value2");
         map.put("key3", "value3");
         map.put("key4", "value3");
-        List<String> values = new ArrayList<String>(map.values());
-        List<String> expected = new ArrayList<String>();
+        List<String> values = new ArrayList<>(map.values());
+        List<String> expected = new ArrayList<>();
         expected.add("value1");
         expected.add("value2");
         expected.add("value3");
@@ -151,7 +151,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put(4, 4);
         map.put(5, 5);
 
-        Set<Map.Entry<Integer, Integer>> entrySet = new HashSet<Map.Entry<Integer, Integer>>();
+        Set<Map.Entry<Integer, Integer>> entrySet = new HashSet<>();
         entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(1, 1));
         entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(2, 2));
         entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(3, 3));

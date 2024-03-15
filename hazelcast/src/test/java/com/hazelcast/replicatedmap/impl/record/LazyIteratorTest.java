@@ -48,7 +48,7 @@ public class LazyIteratorTest extends HazelcastTestSupport {
     private static final InternalReplicatedMapStorage<String, Integer> TEST_DATA_SIMPLE;
 
     static {
-        TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<String, Integer>();
+        TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<>();
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1));
@@ -68,28 +68,28 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazyCollection_size() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<>(replicatedRecordStore);
+        LazyCollection<String, Integer> collection = new LazyCollection<>(factory, TEST_DATA_SIMPLE);
 
         assertEqualsStringFormat("Expected %d items in LazyCollection, but was %d", 100, collection.size());
     }
 
     @Test
     public void testLazyCollection_isEmpty() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<>(replicatedRecordStore);
+        LazyCollection<String, Integer> collection = new LazyCollection<>(factory, TEST_DATA_SIMPLE);
 
         assertFalse("Expected LazyCollection to no be empty", collection.isEmpty());
     }
 
     @Test
     public void testLazyCollection_withValuesIterator_hasNext() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<>(replicatedRecordStore);
+        LazyCollection<String, Integer> collection = new LazyCollection<>(factory, TEST_DATA_SIMPLE);
         Iterator<Integer> iterator = collection.iterator();
 
         int count = 0;
-        Set<Integer> values = new HashSet<Integer>();
+        Set<Integer> values = new HashSet<>();
         while (iterator.hasNext()) {
             count++;
             values.add(iterator.next());
@@ -101,11 +101,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazyCollection_withValuesIterator_hasNext_everySecondTime() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<>(replicatedRecordStore);
+        LazyCollection<String, Integer> collection = new LazyCollection<>(factory, TEST_DATA_SIMPLE);
         Iterator<Integer> iterator = collection.iterator();
 
-        Set<Integer> values = new HashSet<Integer>();
+        Set<Integer> values = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             if (i % 2 == 0) {
                 assertTrue("Expected more items in LazyCollection.iterator()", iterator.hasNext());
@@ -118,11 +118,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazyCollection_withValuesIterator_next_whenNoMoreElementsAreAvailable() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<>(replicatedRecordStore);
+        LazyCollection<String, Integer> collection = new LazyCollection<>(factory, TEST_DATA_SIMPLE);
         Iterator<Integer> iterator = collection.iterator();
 
-        Set<Integer> values = new HashSet<Integer>();
+        Set<Integer> values = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             values.add(iterator.next());
         }
@@ -139,28 +139,28 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazySet_size() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<>(replicatedRecordStore);
+        LazySet<String, Integer, String> set = new LazySet<>(factory, TEST_DATA_SIMPLE);
 
         assertEqualsStringFormat("Expected %d items in LazySet, but was %d", 100, set.size());
     }
 
     @Test
     public void testLazySet_isEmpty() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<>(replicatedRecordStore);
+        LazySet<String, Integer, String> set = new LazySet<>(factory, TEST_DATA_SIMPLE);
 
         assertFalse("Expected LazySet to no be empty", set.isEmpty());
     }
 
     @Test
     public void testLazySet_withKeySetIterator_hasNext() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<>(replicatedRecordStore);
+        LazySet<String, Integer, String> collection = new LazySet<>(factory, TEST_DATA_SIMPLE);
         Iterator<String> iterator = collection.iterator();
 
         int count = 0;
-        Set<String> values = new HashSet<String>();
+        Set<String> values = new HashSet<>();
         while (iterator.hasNext()) {
             count++;
             values.add(iterator.next());
@@ -172,11 +172,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazySet_withKeySetIterator_hasNext_everySecondTime() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<>(replicatedRecordStore);
+        LazySet<String, Integer, String> collection = new LazySet<>(factory, TEST_DATA_SIMPLE);
         Iterator<String> iterator = collection.iterator();
 
-        Set<String> values = new HashSet<String>();
+        Set<String> values = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             if (i % 2 == 0) {
                 assertTrue("Expected more items in LazySet.iterator()", iterator.hasNext());
@@ -189,11 +189,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazySet_withKeySetIterator_next_whenNoMoreElementsAreAvailable() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<>(replicatedRecordStore);
+        LazySet<String, Integer, String> collection = new LazySet<>(factory, TEST_DATA_SIMPLE);
         Iterator<String> iterator = collection.iterator();
 
-        Set<String> values = new HashSet<String>();
+        Set<String> values = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             values.add(iterator.next());
         }
@@ -210,13 +210,13 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazySet_withEntrySetIterator_hasNext() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
+        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<>(replicatedRecordStore);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_SIMPLE);
+                = new LazySet<>(factory, TEST_DATA_SIMPLE);
         Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
 
         int count = 0;
-        Set<Integer> values = new HashSet<Integer>();
+        Set<Integer> values = new HashSet<>();
         while (iterator.hasNext()) {
             count++;
             values.add(iterator.next().getValue());
@@ -228,12 +228,12 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazySet_withEntrySetIterator_hasNext_everySecondTime() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
+        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<>(replicatedRecordStore);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_SIMPLE);
+                = new LazySet<>(factory, TEST_DATA_SIMPLE);
         Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
 
-        Set<Integer> values = new HashSet<Integer>();
+        Set<Integer> values = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             if (i % 2 == 0) {
                 assertTrue("Expected more items in LazySet.iterator()", iterator.hasNext());
@@ -246,12 +246,12 @@ public class LazyIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testLazySet_withEntrySetIterator_next_whenNoMoreElementsAreAvailable() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
+        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<>(replicatedRecordStore);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_SIMPLE);
+                = new LazySet<>(factory, TEST_DATA_SIMPLE);
         Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
 
-        Set<Integer> values = new HashSet<Integer>();
+        Set<Integer> values = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             values.add(iterator.next().getValue());
         }

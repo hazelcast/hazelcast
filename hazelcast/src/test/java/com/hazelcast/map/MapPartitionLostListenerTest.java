@@ -116,7 +116,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         survivingInstance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
-        final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
+        final Set<Integer> survivingPartitionIds = new HashSet<>();
         Node survivingNode = getNode(survivingInstance);
         Address survivingAddress = survivingNode.getThisAddress();
 

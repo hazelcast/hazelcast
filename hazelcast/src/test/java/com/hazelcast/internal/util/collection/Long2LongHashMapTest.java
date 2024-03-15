@@ -174,7 +174,7 @@ public class Long2LongHashMapTest {
         map.put(1L, 1L);
         map.put(2L, 3L);
 
-        final Map<Long, Long> other = new HashMap<Long, Long>();
+        final Map<Long, Long> other = new HashMap<>();
         other.put(1L, 2L);
         other.put(3L, 4L);
 

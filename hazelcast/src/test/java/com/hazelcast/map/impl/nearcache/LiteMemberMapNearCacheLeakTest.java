@@ -93,7 +93,7 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(memberMap);
+        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<>(memberMap);
 
         // wait until the initial load is done
         dataAdapter.waitUntilLoaded();

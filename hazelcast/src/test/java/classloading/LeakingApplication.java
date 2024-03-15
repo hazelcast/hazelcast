@@ -48,7 +48,7 @@ public final class LeakingApplication {
          * Never override {@link ThreadLocal#initialValue()} in production code!
          */
         private static final ThreadLocal<ThreadLocalRandom> LOCAL_RANDOM =
-                new ThreadLocal<ThreadLocalRandom>() {
+                new ThreadLocal<>() {
                     protected ThreadLocalRandom initialValue() {
                         return new ThreadLocalRandom();
                     }

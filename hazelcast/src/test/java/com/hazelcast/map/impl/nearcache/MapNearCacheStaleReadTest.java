@@ -175,7 +175,7 @@ public class MapNearCacheStaleReadTest extends HazelcastTestSupport {
         sleepMillis(300);
 
         // start numGetters getter threads (get0-numGetters)
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < NUM_GETTERS; i++) {
             Thread thread = new Thread(new GetRunnable(), "get" + i);
             threads.add(thread);

@@ -76,7 +76,7 @@ public class MapNearCacheStalenessTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCache_notContainsStaleValue_whenUpdatedByMultipleThreads() {
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < NEAR_CACHE_INVALIDATOR_THREAD_COUNT; i++) {
             Thread putter = new NearCacheInvalidator(stop, map1, ENTRY_COUNT);
             threads.add(putter);
@@ -148,7 +148,7 @@ public class MapNearCacheStalenessTest extends HazelcastTestSupport {
     }
 
     public static HashMap<Integer, Integer> getAllEntries(IMap<Integer, Integer> map, int entryCount) {
-        HashMap<Integer, Integer> localMap = new HashMap<Integer, Integer>(entryCount);
+        HashMap<Integer, Integer> localMap = new HashMap<>(entryCount);
         for (int i = 0; i < entryCount; i++) {
             localMap.put(i, map.get(i));
         }

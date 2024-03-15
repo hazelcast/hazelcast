@@ -337,7 +337,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> multiMap = instance.getMultiMap("testMultiMapEntryListener");
 
-        final Set<String> expectedValues = new CopyOnWriteArraySet<String>();
+        final Set<String> expectedValues = new CopyOnWriteArraySet<>();
         expectedValues.add("hello");
         expectedValues.add("world");
         expectedValues.add("again");
@@ -414,7 +414,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
 
         HazelcastInstance localInstance = instances[0];
         MultiMap<String, String> localMultiMap = localInstance.getMultiMap(name);
-        KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
+        KeyCollectingListener<String> listener = new KeyCollectingListener<>();
         localMultiMap.addLocalEntryListener(listener);
         localMultiMap.put("key1", "val1");
         localMultiMap.put("key2", "val2");
@@ -452,7 +452,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances(config);
         MultiMap<String, String> multiMap = instances[0].getMultiMap(name);
 
-        KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
+        KeyCollectingListener<String> listener = new KeyCollectingListener<>();
         UUID id2 = multiMap.addEntryListener(listener, true);
         getMultiMap(instances, name).put("key3", "val3");
         getMultiMap(instances, name).put("key3", "val33");

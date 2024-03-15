@@ -127,7 +127,7 @@ public class MockServerContext implements ServerContext {
 
     @Override
     public Map<EndpointQualifier, Address> getThisAddresses() {
-        Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
+        Map<EndpointQualifier, Address> addressMap = new HashMap<>();
         addressMap.put(EndpointQualifier.MEMBER, thisAddress);
         return addressMap;
     }

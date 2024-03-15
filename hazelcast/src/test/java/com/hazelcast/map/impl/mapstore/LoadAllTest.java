@@ -223,7 +223,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     private static Set<Integer> selectKeysToLoad(int rangeStart, int rangeEnd) {
-        final Set<Integer> keysToLoad = new HashSet<Integer>();
+        final Set<Integer> keysToLoad = new HashSet<>();
         for (int i = rangeStart; i < rangeEnd; i++) {
             keysToLoad.add(i);
         }
@@ -262,7 +262,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
 
     private static class SimpleStore implements MapStore<Integer, Integer> {
 
-        private ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<Integer, Integer>();
+        private ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<>();
 
         @Override
         public void store(Integer key, Integer value) {
@@ -292,7 +292,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            final Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+            final Map<Integer, Integer> map = new HashMap<>();
             for (Integer key : keys) {
                 map.put(key, load(key));
             }

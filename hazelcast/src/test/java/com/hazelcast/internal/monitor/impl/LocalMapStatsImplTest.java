@@ -74,7 +74,7 @@ public class LocalMapStatsImplTest {
 
         localMapStats.setQueryCount(10);
         localMapStats.setIndexedQueryCount(5);
-        Map<String, PartitionedIndexStatsImpl> indexStats = new HashMap<String, PartitionedIndexStatsImpl>();
+        Map<String, PartitionedIndexStatsImpl> indexStats = new HashMap<>();
         PartitionedIndexStatsImpl index = new PartitionedIndexStatsImpl();
         indexStats.put("index", index);
         localMapStats.setIndexStats(indexStats);

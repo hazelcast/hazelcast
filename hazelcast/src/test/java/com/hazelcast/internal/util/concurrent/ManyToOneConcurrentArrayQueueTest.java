@@ -29,6 +29,6 @@ public class ManyToOneConcurrentArrayQueueTest extends AbstractConcurrentArrayQu
 
     @Before
     public void setUp() {
-        queue = new ManyToOneConcurrentArrayQueue<Integer>(CAPACITY);
+        queue = new ManyToOneConcurrentArrayQueue<>(CAPACITY);
     }
 }

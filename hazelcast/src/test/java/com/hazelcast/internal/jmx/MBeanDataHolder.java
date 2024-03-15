@@ -138,7 +138,7 @@ public final class MBeanDataHolder {
      * @return JMX object name
      */
     private ObjectName getObjectName(String type, String objectName) throws MalformedObjectNameException {
-        Hashtable<String, String> table = new Hashtable<String, String>();
+        Hashtable<String, String> table = new Hashtable<>();
         table.put("type", quote(type));
         table.put("name", quote(objectName));
         table.put("instance", quote(hz.getName()));

@@ -78,7 +78,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
     }
 
     private Set<MemberImpl> createMembers() {
-        Set<MemberImpl> members = new LinkedHashSet<MemberImpl>();
+        Set<MemberImpl> members = new LinkedHashSet<>();
         members.add(liteMember);
         members.add(thisMember);
         members.add(dataMember);
@@ -87,14 +87,14 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testSizeWhenAllSelected() {
-        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 NO_OP_MEMBER_SELECTOR);
         assertEquals(3, collection.size());
     }
 
     @Test
     public void testContainsWhenAllSelected() {
-        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 NO_OP_MEMBER_SELECTOR);
         assertContains(collection, liteMember);
         assertContains(collection, thisMember);
@@ -106,7 +106,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
     @Test
     public void testIsEmptyWhenNoMemberIsSelected() {
         members.remove(dataMember);
-        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(DATA_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertTrue(collection.isEmpty());
     }
@@ -115,7 +115,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
     public void testIsEmptyWhenLiteMembersSelectedAndNoLocalMember() {
         members.remove(liteMember);
         members.remove(dataMember);
-        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        MemberSelectingCollection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertTrue(collection.isEmpty());
     }
@@ -124,65 +124,65 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsThisMemberWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertContains(collection, thisMember);
     }
 
     @Test
     public void testDoesNotContainThisMemberWhenDataMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, DATA_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, DATA_MEMBER_SELECTOR);
         assertFalse(collection.contains(thisMember));
     }
 
     @Test
     public void testDoesNotContainThisMemberWhenLiteMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertFalse(collection.contains(thisMember));
     }
 
     @Test
     public void testDoesNotContainThisMemberDataMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(DATA_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertFalse(collection.contains(thisMember));
     }
 
     @Test
     public void testContainsMatchingMemberWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertContains(collection, liteMember);
     }
 
     @Test
     public void testContainsMatchingMemberWhenLiteMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertContains(collection, liteMember);
     }
 
     @Test
     public void testDoesNotContainNonMatchingMemberWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertFalse(collection.contains(dataMember));
     }
 
     @Test
     public void testDoesNotContainNonMatchingMemberWhenLiteMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertFalse(collection.contains(dataMember));
     }
 
     @Test
     public void testDoesNotContainOtherMemberWhenDataMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, DATA_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, DATA_MEMBER_SELECTOR);
         assertFalse(collection.contains(nonExistingMember));
     }
 
     @Test
     public void testDoesNotContainOtherMemberWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertFalse(collection.contains(nonExistingMember));
     }
 
@@ -190,20 +190,20 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAllWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertContainsAll(collection, asList(thisMember, liteMember));
     }
 
     @Test
     public void testDoesNotContainAllWhenLiteMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertNotContainsAll(collection, asList(thisMember, liteMember));
     }
 
     @Test
     public void testDoesNotContainNonMatchingMemberTypesWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertNotContainsAll(collection, asList(thisMember, dataMember));
     }
 
@@ -211,27 +211,27 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testSizeWhenThisLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         assertEquals(2, collection.size());
     }
 
     @Test
     public void testSizeWhenLiteMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertEquals(1, collection.size());
     }
 
     @Test
     public void testSizeWhenDataMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(DATA_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         assertEquals(1, collection.size());
     }
 
     @Test
     public void testSizeWhenDataMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, DATA_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, DATA_MEMBER_SELECTOR);
         assertEquals(1, collection.size());
     }
 
@@ -239,7 +239,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testToArrayWhenLiteMembersSelected() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         Object[] array = collection.toArray();
 
         assertArray(collection, array);
@@ -247,7 +247,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testToArrayWhenLiteMembersSelected2() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members, LITE_MEMBER_SELECTOR);
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members, LITE_MEMBER_SELECTOR);
         Object[] array = new Object[collection.size()];
         collection.toArray(array);
 
@@ -256,7 +256,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testToArrayWhenLiteMembersSelectedAndNoLocalMember() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         Object[] array = collection.toArray();
 
@@ -265,7 +265,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testToArrayWhenLiteMembersSelectedAndNoLocalMember2() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         Object[] array = new Object[collection.size()];
         collection.toArray(array);
@@ -275,7 +275,7 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
 
     @Test
     public void testToArrayWhenLiteMembersFilteredAndNoLocalMember3() {
-        Collection<MemberImpl> collection = new MemberSelectingCollection<MemberImpl>(members,
+        Collection<MemberImpl> collection = new MemberSelectingCollection<>(members,
                 and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR));
         Object[] array = new Object[0];
         array = collection.toArray(array);

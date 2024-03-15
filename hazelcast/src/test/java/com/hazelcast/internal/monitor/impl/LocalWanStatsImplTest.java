@@ -52,7 +52,7 @@ public class LocalWanStatsImplTest {
         singapore.setState(WanPublisherState.REPLICATING);
 
         LocalWanStatsImpl localWanStats = new LocalWanStatsImpl();
-        Map<String, LocalWanPublisherStats> localWanPublisherStatsMap = new HashMap<String, LocalWanPublisherStats>();
+        Map<String, LocalWanPublisherStats> localWanPublisherStatsMap = new HashMap<>();
         localWanPublisherStatsMap.put("tokyo", tokyo);
         localWanPublisherStatsMap.put("singapore", singapore);
         localWanStats.setLocalPublisherStatsMap(localWanPublisherStatsMap);

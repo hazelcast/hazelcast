@@ -82,7 +82,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
         IMap<K, V> dataMap = dataInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(dataMap);
+        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<>(dataMap);
 
         // wait until the initial load is done
         dataAdapter.waitUntilLoaded();

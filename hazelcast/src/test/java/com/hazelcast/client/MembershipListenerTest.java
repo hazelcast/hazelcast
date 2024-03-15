@@ -60,7 +60,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     private class MemberShipEventLogger implements MembershipListener {
 
-        public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<EventObject>();
+        public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
         public void memberAdded(MembershipEvent event) {
             events.addLast(event);
@@ -74,7 +74,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     private class InitialMemberShipEventLogger implements InitialMembershipListener {
 
-        public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<EventObject>();
+        public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
         public void memberAdded(MembershipEvent event) {
             events.addLast(event);
@@ -192,7 +192,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     private Set<Member> getMembers(HazelcastInstance... instances) {
-        Set<Member> result = new HashSet<Member>();
+        Set<Member> result = new HashSet<>();
         for (HazelcastInstance hz : instances) {
             result.add(hz.getCluster().getLocalMember());
         }

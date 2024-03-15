@@ -165,7 +165,7 @@ public class MemcachedTest extends HazelcastTestSupport {
 
     @Test
     public void testBulkGet() throws Exception {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             keys.add("key" + i);
         }
@@ -340,7 +340,7 @@ public class MemcachedTest extends HazelcastTestSupport {
     @Test
     public void testBulkSetGet_withManyKeys() throws Exception {
         int numberOfKeys = 1000;
-        Collection<String> keys = new HashSet<String>(numberOfKeys);
+        Collection<String> keys = new HashSet<>(numberOfKeys);
 
         for (int i = 0; i < numberOfKeys; i++) {
             String key = "key" + i;

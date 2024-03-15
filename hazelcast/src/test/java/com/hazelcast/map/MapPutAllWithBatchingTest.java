@@ -98,7 +98,7 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         HazelcastInstance hz = instances[0];
 
-        Map<Integer, Integer> inputMap = new HashMap<Integer, Integer>(expectedEntryCount);
+        Map<Integer, Integer> inputMap = new HashMap<>(expectedEntryCount);
         for (int i = 0; i < expectedEntryCount; i++) {
             inputMap.put(i, i);
         }

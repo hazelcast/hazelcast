@@ -418,8 +418,8 @@ public class ListenerTest extends HazelcastTestSupport {
     public void testEntryListenerEvent_getValueWhenEntryRemoved() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, String> map = instance.getMap(randomString());
-        final AtomicReference<String> valueRef = new AtomicReference<String>();
-        final AtomicReference<String> oldValueRef = new AtomicReference<String>();
+        final AtomicReference<String> valueRef = new AtomicReference<>();
+        final AtomicReference<String> oldValueRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(1);
 
         map.addEntryListener(new EntryAdapter<String, String>() {
@@ -506,7 +506,7 @@ public class ListenerTest extends HazelcastTestSupport {
         final String key = "key";
         final String value = "value";
 
-        final ConcurrentMap<String, String> resultHolder = new ConcurrentHashMap<String, String>(1);
+        final ConcurrentMap<String, String> resultHolder = new ConcurrentHashMap<>(1);
 
         map.addEntryListener(new EntryAdapter<String, String>() {
             public void entryRemoved(EntryEvent<String, String> event) {
@@ -559,7 +559,7 @@ public class ListenerTest extends HazelcastTestSupport {
 
         map.put(key, initialValue);
 
-        UpdateListenerRecordingOldValue<Integer, String> listener = new UpdateListenerRecordingOldValue<Integer, String>();
+        UpdateListenerRecordingOldValue<Integer, String> listener = new UpdateListenerRecordingOldValue<>();
         map.addEntryListener(listener, true);
 
         Map<Integer, String> newMap = createMapWithEntry(key, newValue);
@@ -686,13 +686,13 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private <K, V> Map<K, V> createMapWithEntry(K key, V newValue) {
-        Map<K, V> map = new HashMap<K, V>();
+        Map<K, V> map = new HashMap<>();
         map.put(key, newValue);
         return map;
     }
 
     private Predicate<String, String> matchingPredicate() {
-        return new Predicate<String, String>() {
+        return new Predicate<>() {
             @Override
             public boolean apply(Map.Entry<String, String> mapEntry) {
                 return true;
@@ -701,7 +701,7 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private Predicate<String, String> nonMatchingPredicate() {
-        return new Predicate<String, String>() {
+        return new Predicate<>() {
             @Override
             public boolean apply(Map.Entry<String, String> mapEntry) {
                 return false;
@@ -727,7 +727,7 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private EntryListener<String, String> createEntryListener(final boolean isLocal) {
-        return new EntryAdapter<String, String>() {
+        return new EntryAdapter<>() {
             private final boolean local = isLocal;
 
             public void entryAdded(EntryEvent<String, String> event) {

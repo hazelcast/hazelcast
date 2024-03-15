@@ -142,7 +142,7 @@ public class MigrationInterceptorTest extends HazelcastTestSupport {
 
     static class MigrationInterceptorImpl implements MigrationInterceptor {
 
-        private final List<MigrationProgressNotification> notifications = new ArrayList<MigrationProgressNotification>();
+        private final List<MigrationProgressNotification> notifications = new ArrayList<>();
 
         @Override
         public synchronized void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {
@@ -167,7 +167,7 @@ public class MigrationInterceptorTest extends HazelcastTestSupport {
         }
 
         public synchronized List<MigrationProgressNotification> getNotifications() {
-            return new ArrayList<MigrationProgressNotification>(notifications);
+            return new ArrayList<>(notifications);
         }
     }
 }

@@ -230,7 +230,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
 
         int elementCount = 10000000;
         double value = 0;
-        Map<Long, Double> values = new HashMap<Long, Double>(elementCount);
+        Map<Long, Double> values = new HashMap<>(elementCount);
         for (long i = 0L; i < elementCount; i++) {
             values.put(i, value++);
         }

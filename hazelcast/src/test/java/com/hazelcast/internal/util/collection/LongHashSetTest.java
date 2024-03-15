@@ -93,7 +93,7 @@ public class LongHashSetTest {
 
     @Test
     public void removingAPresentElementRemovesIt() {
-        final Set<Long> jdkSet = new HashSet<Long>();
+        final Set<Long> jdkSet = new HashSet<>();
         final Random rnd = new Random();
         for (int i = 0; i < 1000; i++) {
             final long value = rnd.nextInt();
@@ -285,7 +285,7 @@ public class LongHashSetTest {
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray();
-        final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
+        final Set<Object> fromArray = new HashSet<>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 
@@ -295,7 +295,7 @@ public class LongHashSetTest {
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray(new Long[0]);
-        final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
+        final Set<Object> fromArray = new HashSet<>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 

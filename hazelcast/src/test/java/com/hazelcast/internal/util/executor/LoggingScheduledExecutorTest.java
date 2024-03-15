@@ -218,9 +218,9 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     private static class TestLogger extends AbstractLogger {
 
-        private final AtomicReference<Throwable> throwableHolder = new AtomicReference<Throwable>();
-        private final AtomicReference<String> messageHolder = new AtomicReference<String>();
-        private final AtomicReference<Level> logLevelHolder = new AtomicReference<Level>();
+        private final AtomicReference<Throwable> throwableHolder = new AtomicReference<>();
+        private final AtomicReference<String> messageHolder = new AtomicReference<>();
+        private final AtomicReference<Level> logLevelHolder = new AtomicReference<>();
 
         @Override
         public void log(Level level, String message) {

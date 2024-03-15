@@ -317,7 +317,7 @@ public class KubernetesConfigTest {
     }
 
     private static Map<String, Comparable> createProperties() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         // Predefined test properties
         properties.put(KUBERNETES_API_TOKEN.key(), TEST_API_TOKEN);
         properties.put(KUBERNETES_CA_CERTIFICATE.key(), TEST_CA_CERTIFICATE);

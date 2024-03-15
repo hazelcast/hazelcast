@@ -37,7 +37,7 @@ public class MapPutDestroyTest extends HazelcastTestSupport {
     public void testConcurrentPutDestroy_doesNotCauseNPE() {
         final HazelcastInstance instance = createHazelcastInstance(getConfig());
         final String name = randomString();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>(null);
+        final AtomicReference<Throwable> error = new AtomicReference<>(null);
 
         final AtomicBoolean stop = new AtomicBoolean();
 

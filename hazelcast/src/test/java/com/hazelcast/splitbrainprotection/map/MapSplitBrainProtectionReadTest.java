@@ -88,14 +88,14 @@ public class MapSplitBrainProtectionReadTest extends AbstractSplitBrainProtectio
 
     @Test
     public void getAll_successful_whenSplitBrainProtectionSize_met() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map(0).getAll(keys);
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void getAll_failing_whenSplitBrainProtectionSize_notMet() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map(3).getAll(keys);
     }

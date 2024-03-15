@@ -477,7 +477,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void testSingleMigrationPrioritization() throws UnknownHostException {
-        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        List<MigrationInfo> migrations = new ArrayList<>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5701), uuids[0]), -1, -1, -1, 0);
         migrations.add(migration1);
 
@@ -488,7 +488,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void testNoCopyPrioritizationAgainstCopy() throws UnknownHostException {
-        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        List<MigrationInfo> migrations = new ArrayList<>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5701), uuids[0]), -1, -1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5702), uuids[1]), -1, -1, -1, 1);
         final MigrationInfo migration3 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5703), uuids[2]), -1, -1, -1, 2);
@@ -506,7 +506,7 @@ public class MigrationPlannerTest {
     @Test
     public void testCopyPrioritizationAgainstMove()
             throws UnknownHostException {
-        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        List<MigrationInfo> migrations = new ArrayList<>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5701), uuids[0]), -1, -1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5702), uuids[1]), -1, -1, -1, 1);
         final MigrationInfo migration3 = new MigrationInfo(0, new PartitionReplica(new Address("localhost", 5703), uuids[2]),
@@ -527,7 +527,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void testShiftUpPrioritizationAgainstMove() throws UnknownHostException {
-        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        List<MigrationInfo> migrations = new ArrayList<>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5701), uuids[0]), -1, -1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5702), uuids[1]), -1, -1, -1, 1);
         final MigrationInfo migration3 = new MigrationInfo(0, new PartitionReplica(new Address("localhost", 5705), uuids[4]),
@@ -545,7 +545,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void testCopyPrioritizationAgainstShiftDownToColderIndex() throws UnknownHostException {
-        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        List<MigrationInfo> migrations = new ArrayList<>();
         final MigrationInfo migration1 = new MigrationInfo(0, new PartitionReplica(new Address("localhost", 5701), uuids[0]),
                 new PartitionReplica(new Address("localhost", 5702), uuids[1]), 0, 2, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5703), uuids[2]), -1, -1, -1, 1);
@@ -560,7 +560,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void testNoCopyPrioritizationAgainstShiftDownToHotterIndex() throws UnknownHostException {
-        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        List<MigrationInfo> migrations = new ArrayList<>();
         final MigrationInfo migration1 = new MigrationInfo(0, new PartitionReplica(new Address("localhost", 5701), uuids[0]),
                 new PartitionReplica(new Address("localhost", 5702), uuids[1]), 0, 1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, new PartitionReplica(new Address("localhost", 5703), uuids[2]), -1, -1, -1, 2);

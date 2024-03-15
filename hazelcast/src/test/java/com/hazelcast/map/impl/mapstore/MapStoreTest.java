@@ -738,7 +738,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     public void testIssue1019() {
         final String keyWithNullValue = "keyWithNullValue";
 
-        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>() {
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<>() {
             @Override
             public Set<String> loadAllKeys() {
                 Set<String> keys = new HashSet<>(super.loadAllKeys());
@@ -1532,7 +1532,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
         @Override
         public MapLoader<String, String> newMapStore(String mapName, final Properties properties) {
-            return new MapStore<String, String>() {
+            return new MapStore<>() {
                 @Override
                 public void store(String key, String value) {
                 }
@@ -1565,7 +1565,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
                 @Override
                 public Set<String> loadAllKeys() {
-                    return new HashSet<String>(properties.stringPropertyNames());
+                    return new HashSet<>(properties.stringPropertyNames());
                 }
             };
         }

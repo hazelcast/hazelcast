@@ -71,12 +71,12 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
     }
 
     public void test(int producerCount, IdleStrategy idleStrategy) throws Exception {
-        MPSCQueue<Item> queue = new MPSCQueue<Item>(idleStrategy);
+        MPSCQueue<Item> queue = new MPSCQueue<>(idleStrategy);
         ConsumerThread consumers = new ConsumerThread(queue, producerCount);
         queue.setConsumerThread(consumers);
         consumers.start();
 
-        List<ProducerThread> producers = new LinkedList<ProducerThread>();
+        List<ProducerThread> producers = new LinkedList<>();
         for (int k = 0; k < producerCount; k++) {
             ProducerThread producer = new ProducerThread(queue, k);
             producer.start();

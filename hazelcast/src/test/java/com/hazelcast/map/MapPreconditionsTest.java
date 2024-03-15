@@ -115,7 +115,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testGetAll() {
-        Set<Object> set = new HashSet<Object>();
+        Set<Object> set = new HashSet<>();
         set.add(null);
 
         map.getAll(set);
@@ -611,7 +611,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnKeys() {
-        Set<Object> set = new HashSet<Object>();
+        Set<Object> set = new HashSet<>();
         set.add(null);
 
         map.executeOnKeys(set, new EntryProcessor<Object, Object, Object>() {
@@ -631,7 +631,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     public void executeOnKeys_does_execution_when_keys_are_passed_with_concurrentSkipListSet() {
         map.put(1, 1);
 
-        Set<Object> set = new ConcurrentSkipListSet<Object>();
+        Set<Object> set = new ConcurrentSkipListSet<>();
         set.add(1);
 
         map.executeOnKeys(set, entry -> entry.setValue(null));

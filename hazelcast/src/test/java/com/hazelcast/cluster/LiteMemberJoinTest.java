@@ -192,7 +192,7 @@ public class LiteMemberJoinTest {
     }
 
     private void assertLiteMemberExcluding(final Set<Member> members, final HazelcastInstance... membersToExclude) {
-        final Set<Member> membersCopy = new HashSet<Member>(members);
+        final Set<Member> membersCopy = new HashSet<>(members);
 
         assertTrue((members.size() - 1) == membersToExclude.length);
 

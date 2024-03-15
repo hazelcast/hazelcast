@@ -72,7 +72,7 @@ public class ListenerTests extends ClientTestSupport {
 
         EntryAdapter listener = new EntryAdapter();
 
-        LinkedList<UUID> registrationIds = new LinkedList<UUID>();
+        LinkedList<UUID> registrationIds = new LinkedList<>();
         while (client.getCluster().getMembers().size() == nodeCount) {
             registrationIds.add(map.addEntryListener(listener, false));
         }
@@ -104,7 +104,7 @@ public class ListenerTests extends ClientTestSupport {
 
         EntryAdapter listener = new EntryAdapter();
 
-        LinkedList<UUID> registrationIds = new LinkedList<UUID>();
+        LinkedList<UUID> registrationIds = new LinkedList<>();
 
         HazelcastClientInstanceImpl clientInstance = getHazelcastClientInstanceImpl(client);
         while (clientInstance.getConnectionManager().getActiveConnections().size() < nodeCount) {

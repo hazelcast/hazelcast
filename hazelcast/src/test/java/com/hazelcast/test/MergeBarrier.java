@@ -36,7 +36,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 class MergeBarrier {
 
     private final AtomicInteger mergedInProgress = new AtomicInteger();
-    private final Map<HazelcastInstance, UUID> registrations = new HashMap<HazelcastInstance, UUID>();
+    private final Map<HazelcastInstance, UUID> registrations = new HashMap<>();
 
     MergeBarrier(HazelcastInstance[] instances) {
         MergeCountingListener mergeCountingListener = new MergeCountingListener();

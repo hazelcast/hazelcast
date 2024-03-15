@@ -111,7 +111,7 @@ public class LifeCycleListenerTest extends HazelcastTestSupport {
 
     static class EventCountingListener implements LifecycleListener {
 
-        private final List<LifecycleState> events = new CopyOnWriteArrayList<LifecycleState>();
+        private final List<LifecycleState> events = new CopyOnWriteArrayList<>();
 
         @Override
         public void stateChanged(LifecycleEvent event) {

@@ -94,7 +94,7 @@ public class ListenerLeakTest extends ClientTestSupport {
 
     private Collection<Node> createNodes() {
         int NODE_COUNT = 3;
-        Collection<Node> nodes = new ArrayList<Node>(3);
+        Collection<Node> nodes = new ArrayList<>(3);
         for (int i = 0; i < NODE_COUNT; i++) {
             HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
             nodes.add(getNode(hazelcast));

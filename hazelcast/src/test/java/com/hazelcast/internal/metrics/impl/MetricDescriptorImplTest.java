@@ -56,7 +56,7 @@ public class MetricDescriptorImplTest {
 
     @Before
     public void setUp() {
-        supplier = new Supplier<MetricDescriptorImpl>() {
+        supplier = new Supplier<>() {
             @Override
             public MetricDescriptorImpl get() {
                 return new MetricDescriptorImpl(this);
