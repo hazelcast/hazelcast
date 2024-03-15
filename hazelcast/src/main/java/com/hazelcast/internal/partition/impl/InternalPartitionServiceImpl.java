@@ -102,7 +102,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_SERVICE_MIGRATION_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
-import static com.hazelcast.internal.partition.impl.MigrationManager.applyMigration;
+import static com.hazelcast.internal.partition.impl.MigrationManagerImpl.applyMigration;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
@@ -135,7 +135,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private final Lock partitionServiceLock = new ReentrantLock();
 
     private final PartitionStateManager partitionStateManager;
-    private final MigrationManager migrationManager;
+    private final MigrationManagerImpl migrationManager;
     private final PartitionReplicaManager replicaManager;
     private final PartitionReplicaStateChecker partitionReplicaStateChecker;
     private final PartitionEventManager partitionEventManager;
@@ -160,8 +160,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         this.logger = node.getLogger(InternalPartitionService.class);
         this.internalAsyncExecutor = nodeEngine.getExecutionService()
                 .getExecutor(ExecutionService.ASYNC_EXECUTOR);
-        partitionStateManager = new PartitionStateManager(node, this);
-        migrationManager = new MigrationManager(node, this, partitionServiceLock);
+        partitionStateManager = new PartitionStateManagerImpl(node, this);
+        migrationManager = new MigrationManagerImpl(node, this, partitionServiceLock);
         replicaManager = new PartitionReplicaManager(node, this);
 
         partitionReplicaStateChecker = new PartitionReplicaStateChecker(node.getNodeEngine(), this);

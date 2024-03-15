@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.partition.impl.MigrationManager.MigrationPlanTask;
+import com.hazelcast.internal.partition.impl.MigrationManagerImpl.MigrationPlanTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -54,7 +54,7 @@ class MigrationThread extends Thread implements Runnable {
 
         this.migrationManager = migrationManager;
         this.queue = queue;
-        this.partitionMigrationInterval = migrationManager.partitionMigrationInterval;
+        this.partitionMigrationInterval = migrationManager.getPartitionMigrationInterval();
         this.sleepTime = max(DEFAULT_MIGRATION_SLEEP_INTERVAL, partitionMigrationInterval);
         this.logger = logger;
     }

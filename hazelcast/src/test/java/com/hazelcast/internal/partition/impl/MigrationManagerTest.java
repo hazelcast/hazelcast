@@ -69,12 +69,12 @@ public class MigrationManagerTest {
     PartitionStateManager partitionStateManager;
     ClusterServiceImpl clusterService;
     Lock lock = new ReentrantLock();
-    MigrationManager.RedoPartitioningTask task;
+    MigrationManagerImpl.RedoPartitioningTask task;
 
     @Before
     public void setup() {
         setupMocks();
-        MigrationManager migrationManager = new MigrationManager(node, partitionService, lock);
+        MigrationManagerImpl migrationManager = new MigrationManagerImpl(node, partitionService, lock);
         task = migrationManager.new RedoPartitioningTask();
     }
 
