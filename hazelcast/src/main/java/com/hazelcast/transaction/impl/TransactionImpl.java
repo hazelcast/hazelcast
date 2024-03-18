@@ -72,7 +72,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class TransactionImpl implements Transaction {
 
     private static final Address[] EMPTY_ADDRESSES = new Address[0];
-    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<>();
 
     private final ExceptionHandler rollbackExceptionHandler;
     private final ExceptionHandler rollbackTxExceptionHandler;
@@ -346,7 +346,7 @@ public class TransactionImpl implements Transaction {
 
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
-        List<Future> futures = new ArrayList<Future>(backupAddresses.length);
+        List<Future> futures = new ArrayList<>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
                 Operation op = createReplicateTxBackupLogOperation();
@@ -385,7 +385,7 @@ public class TransactionImpl implements Transaction {
     private void forceCreateBackupLogs() {
         backupLogsCreated = true;
         OperationService operationService = nodeEngine.getOperationService();
-        List<Future> futures = new ArrayList<Future>(backupAddresses.length);
+        List<Future> futures = new ArrayList<>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                 final CreateTxBackupLogOperation op = createCreateTxBackupLogOperation();
@@ -404,7 +404,7 @@ public class TransactionImpl implements Transaction {
 
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
-        List<Future> futures = new ArrayList<Future>(backupAddresses.length);
+        List<Future> futures = new ArrayList<>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
                 Future f = operationService.invokeOnTarget(SERVICE_NAME, createRollbackTxBackupLogOperation(), backupAddress);

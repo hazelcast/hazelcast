@@ -57,12 +57,12 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final ConcurrentMap<String, SetContainer> containerMap = new ConcurrentHashMap<String, SetContainer>();
+    private final ConcurrentMap<String, SetContainer> containerMap = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor
-            = new ConstructorFunction<String, Object>() {
+            = new ConstructorFunction<>() {
         @Override
         public Object createNew(String name) {
                 SetConfig lockConfig = nodeEngine.getConfig().findSetConfig(name);

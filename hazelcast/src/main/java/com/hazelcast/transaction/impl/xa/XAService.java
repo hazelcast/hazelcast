@@ -55,7 +55,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     private final XAResourceImpl xaResource;
 
     private final ConcurrentMap<SerializableXID, List<XATransaction>> transactions =
-            new ConcurrentHashMap<SerializableXID, List<XATransaction>>();
+            new ConcurrentHashMap<>();
 
     public XAService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -94,7 +94,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
         SerializableXID xid = transaction.getXid();
         List<XATransaction> list = transactions.get(xid);
         if (list == null) {
-            list = new CopyOnWriteArrayList<XATransaction>();
+            list = new CopyOnWriteArrayList<>();
             transactions.put(xid, list);
         }
         list.add(transaction);
@@ -116,7 +116,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
             return null;
         }
 
-        List<XATransactionDTO> migrationData = new ArrayList<XATransactionDTO>();
+        List<XATransactionDTO> migrationData = new ArrayList<>();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<SerializableXID, List<XATransaction>> entry : transactions.entrySet()) {
             SerializableXID xid = entry.getKey();

@@ -74,7 +74,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             = InstanceProbes::new;
 
     private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap
-            = new ConcurrentHashMap<String, ServiceProbes>();
+            = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, ServiceProbes> metricsPerServiceConstructorFunction
             = ServiceProbes::new;
@@ -149,7 +149,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         // the InstanceProbes are stored in a weak reference, so that if the store/loader is gc'ed, the probes are gc'ed
         // and therefor there is no strong reference to the InstanceProbes and they get gc'ed
         private final ConcurrentReferenceHashMap<String, InstanceProbes> instanceProbesMap
-                = new ConcurrentReferenceHashMap<String, InstanceProbes>(ReferenceType.STRONG, ReferenceType.WEAK);
+                = new ConcurrentReferenceHashMap<>(ReferenceType.STRONG, ReferenceType.WEAK);
 
         protected ServiceProbes(String serviceName) {
             this.serviceName = serviceName;
@@ -192,7 +192,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     private static final class InstanceProbes {
 
         // key is the name of the probe, e.g. load
-        private final ConcurrentMap<String, LatencyProbeImpl> probes = new ConcurrentHashMap<String, LatencyProbeImpl>();
+        private final ConcurrentMap<String, LatencyProbeImpl> probes = new ConcurrentHashMap<>();
         private final String dataStructureName;
 
         InstanceProbes(String dataStructureName) {

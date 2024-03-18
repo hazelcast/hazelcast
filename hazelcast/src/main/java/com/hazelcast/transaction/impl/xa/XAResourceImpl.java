@@ -66,9 +66,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
 
-    private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
+    private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
-            = new ConcurrentHashMap<Xid, List<TransactionContext>>();
+            = new ConcurrentHashMap<>();
     private final String clusterName;
     private final AtomicInteger timeoutInSeconds = new AtomicInteger(DEFAULT_TIMEOUT_SECONDS);
     private final ILogger logger;
@@ -85,7 +85,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         TransactionContext threadContext = threadContextMap.get(currentThreadId());
         switch (flags) {
             case TMNOFLAGS:
-                List<TransactionContext> contexts = new CopyOnWriteArrayList<TransactionContext>();
+                List<TransactionContext> contexts = new CopyOnWriteArrayList<>();
                 List<TransactionContext> currentContexts = xidContextMap.putIfAbsent(xid, contexts);
                 if (currentContexts != null) {
                     throw new XAException("There is already TransactionContexts for the given xid: " + xid);
@@ -239,7 +239,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
         Collection<Member> memberList = clusterService.getMembers();
-        List<Future<SerializableList>> futureList = new ArrayList<Future<SerializableList>>();
+        List<Future<SerializableList>> futureList = new ArrayList<>();
         for (Member member : memberList) {
             if (member.localMember()) {
                 continue;
@@ -249,7 +249,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             InternalCompletableFuture<SerializableList> future = operationService.invokeOnTarget(SERVICE_NAME, op, address);
             futureList.add(future);
         }
-        Set<SerializableXID> xids = new HashSet<SerializableXID>(xaService.getPreparedXids());
+        Set<SerializableXID> xids = new HashSet<>(xaService.getPreparedXids());
 
         for (Future<SerializableList> future : futureList) {
             try {

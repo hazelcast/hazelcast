@@ -301,7 +301,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     }
 
     private Traverser<OUT> earlyWindows(K key, Windows<A> w) {
-        return new Traverser<OUT>() {
+        return new Traverser<>() {
             private int i;
 
             @Override

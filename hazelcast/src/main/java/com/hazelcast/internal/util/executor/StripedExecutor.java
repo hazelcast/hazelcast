@@ -164,7 +164,7 @@ public final class StripedExecutor implements Executor {
     }
 
     public List<BlockingQueue<Runnable>> getTaskQueues() {
-        List<BlockingQueue<Runnable>> taskQueues = new ArrayList<BlockingQueue<Runnable>>(workers.length);
+        List<BlockingQueue<Runnable>> taskQueues = new ArrayList<>(workers.length);
         for (Worker worker : workers) {
             taskQueues.add(worker.taskQueue);
         }
@@ -185,7 +185,7 @@ public final class StripedExecutor implements Executor {
 
         private Worker(String threadNamePrefix, int queueCapacity) {
             super(threadNamePrefix + "-" + THREAD_ID_GENERATOR.incrementAndGet());
-            this.taskQueue = new LinkedBlockingQueue<Runnable>(queueCapacity);
+            this.taskQueue = new LinkedBlockingQueue<>(queueCapacity);
             this.queueCapacity = queueCapacity;
         }
 

@@ -54,7 +54,7 @@ public final class SerializableList implements IdentifiedDataSerializable, Itera
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        collection = new ArrayList<Data>(size);
+        collection = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             collection.add(IOUtil.readData(in));
         }
@@ -73,7 +73,7 @@ public final class SerializableList implements IdentifiedDataSerializable, Itera
     @Override
     public Iterator<Data> iterator() {
         final Iterator<Data> iterator = collection.iterator();
-        return new UnmodifiableIterator<Data>() {
+        return new UnmodifiableIterator<>() {
             @Override
             public boolean hasNext() {
                 return iterator.hasNext();

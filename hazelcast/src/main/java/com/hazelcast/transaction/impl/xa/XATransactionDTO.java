@@ -107,7 +107,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         timeoutMilis = in.readLong();
         startTime = in.readLong();
         int size = in.readInt();
-        records = new ArrayList<TransactionLogRecord>(size);
+        records = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             TransactionLogRecord record = in.readObject();
             records.add(record);

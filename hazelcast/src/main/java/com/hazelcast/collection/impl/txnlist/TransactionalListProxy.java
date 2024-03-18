@@ -30,7 +30,7 @@ public class TransactionalListProxy<E>
         extends AbstractTransactionalCollectionProxy<ListService, E>
         implements TransactionalList<E> {
 
-    private final LinkedList<CollectionItem> list = new LinkedList<CollectionItem>();
+    private final LinkedList<CollectionItem> list = new LinkedList<>();
 
     public TransactionalListProxy(String name, Transaction tx, NodeEngine nodeEngine, ListService service) {
         super(name, tx, nodeEngine, service);

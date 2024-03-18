@@ -62,7 +62,7 @@ public class XATransactionContextProxy implements ClientTransactionContext {
     final ClientConnection connection;
 
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
-            new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+            new HashMap<>(2);
 
     public XATransactionContextProxy(ClientTransactionManagerServiceImpl transactionManager, Xid xid, int timeout) {
         this.transactionManager = transactionManager;

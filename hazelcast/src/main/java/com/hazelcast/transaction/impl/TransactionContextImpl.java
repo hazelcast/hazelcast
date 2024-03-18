@@ -47,7 +47,7 @@ final class TransactionContextImpl implements TransactionContext {
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+            = new HashMap<>(2);
 
     TransactionContextImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
                            @Nonnull NodeEngineImpl nodeEngine,

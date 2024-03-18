@@ -55,7 +55,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
     protected final String name;
     protected final MultiMapConfig config;
 
-    private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
+    private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<>();
 
     private final OperationService operationService;
     private final IPartitionService partitionService;
@@ -285,18 +285,18 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
 
     private Collection<MultiMapRecord> createCollection() {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-            return new HashSet<MultiMapRecord>();
+            return new HashSet<>();
         } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
-            return new ArrayList<MultiMapRecord>();
+            return new ArrayList<>();
         }
         return null;
     }
 
     private Collection<MultiMapRecord> createCollection(Collection<MultiMapRecord> coll) {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-            return new HashSet<MultiMapRecord>(coll);
+            return new HashSet<>(coll);
         } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
-            return new ArrayList<MultiMapRecord>(coll);
+            return new ArrayList<>(coll);
         }
         return null;
     }

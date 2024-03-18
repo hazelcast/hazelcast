@@ -95,7 +95,7 @@ public final class SlowOperationDetector {
     }
 
     public List<SlowOperationDTO> getSlowOperationDTOs() {
-        List<SlowOperationDTO> slowOperationDTOs = new ArrayList<SlowOperationDTO>(slowOperationLogs.size());
+        List<SlowOperationDTO> slowOperationDTOs = new ArrayList<>(slowOperationLogs.size());
         for (SlowOperationLog slowOperationLog : slowOperationLogs.values()) {
             slowOperationDTOs.add(slowOperationLog.createDTO());
         }

@@ -63,8 +63,8 @@ public final class UserCodeDeploymentService implements ManagedService {
         ClassLoader parent = nodeEngine.getConfigClassLoader().getParent();
         Filter<String> classNameFilter = parseClassNameFilters(config);
         Filter<Member> memberFilter = parseMemberFilter(config.getProviderFilter());
-        ConcurrentMap<String, ClassSource> classMap = new ConcurrentHashMap<String, ClassSource>();
-        ConcurrentMap<String, ClassSource> clientClassMap = new ConcurrentHashMap<String, ClassSource>();
+        ConcurrentMap<String, ClassSource> classMap = new ConcurrentHashMap<>();
+        ConcurrentMap<String, ClassSource> clientClassMap = new ConcurrentHashMap<>();
 
         UserCodeDeploymentConfig.ProviderMode providerMode = config.getProviderMode();
         ILogger providerLogger = nodeEngine.getLogger(ClassDataProvider.class);

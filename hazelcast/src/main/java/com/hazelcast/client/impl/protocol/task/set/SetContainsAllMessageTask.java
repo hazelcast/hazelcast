@@ -44,7 +44,7 @@ public class SetContainsAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Set<Data> values = new HashSet<Data>(parameters.items);
+        Set<Data> values = new HashSet<>(parameters.items);
         return new CollectionContainsOperation(parameters.name, values);
     }
 

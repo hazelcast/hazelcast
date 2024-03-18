@@ -79,7 +79,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
      */
     private static final long PERIOD_MILLIS = SECONDS.toMillis(1);
 
-    private final Queue<Object> logQueue = new ConcurrentLinkedQueue<Object>();
+    private final Queue<Object> logQueue = new ConcurrentLinkedQueue<>();
     private final ConnectionListenable connectionObservable;
     private final HazelcastInstance hazelcastInstance;
     private final Address thisAddress;

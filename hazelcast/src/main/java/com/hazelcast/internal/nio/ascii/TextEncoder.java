@@ -34,7 +34,7 @@ public class TextEncoder extends OutboundHandler<Supplier<TextCommand>, ByteBuff
     public static final String TEXT_ENCODER = "textencoder";
 
     private final ServerConnection connection;
-    private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
+    private final Map<Long, TextCommand> responses = new ConcurrentHashMap<>(100);
     private long currentRequestId;
     private TextCommand command;
 

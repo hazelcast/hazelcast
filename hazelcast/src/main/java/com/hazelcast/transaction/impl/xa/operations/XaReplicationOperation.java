@@ -71,7 +71,7 @@ public class XaReplicationOperation extends Operation implements IdentifiedDataS
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        migrationData = new ArrayList<XATransactionDTO>(size);
+        migrationData = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             XATransactionDTO transactionDTO = in.readObject();
             migrationData.add(transactionDTO);

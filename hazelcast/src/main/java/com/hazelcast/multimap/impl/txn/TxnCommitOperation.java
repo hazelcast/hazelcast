@@ -65,7 +65,7 @@ public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation imp
 
     @Override
     public Operation getBackupOperation() {
-        List<Operation> backupOpList = new ArrayList<Operation>();
+        List<Operation> backupOpList = new ArrayList<>();
         for (Operation operation : opList) {
             if (operation instanceof BackupAwareOperation) {
                 BackupAwareOperation backupAwareOperation = (BackupAwareOperation) operation;
@@ -105,7 +105,7 @@ public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation imp
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        opList = new ArrayList<Operation>(size);
+        opList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }

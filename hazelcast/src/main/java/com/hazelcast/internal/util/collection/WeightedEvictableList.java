@@ -36,13 +36,13 @@ import java.util.List;
  */
 public class WeightedEvictableList<T> {
 
-    private List<WeightedItem<T>> list = new ArrayList<WeightedItem<T>>();
+    private List<WeightedItem<T>> list = new ArrayList<>();
 
     private final int maxSize;
     private final int maxVotesBeforeReorganization;
     private int reorganizationCounter;
 
-    private final Comparator<WeightedItem<T>> itemComparator = new Comparator<WeightedItem<T>>() {
+    private final Comparator<WeightedItem<T>> itemComparator = new Comparator<>() {
         @Override
         public int compare(WeightedItem<T> o1, WeightedItem<T> o2) {
             return o2.weight - o1.weight;
@@ -125,7 +125,7 @@ public class WeightedEvictableList<T> {
         }
         WeightedItem<T> returnValue = null;
         if (item != null) {
-            returnValue = new WeightedItem<T>(item);
+            returnValue = new WeightedItem<>(item);
             returnValue.weight = 1;
             list.add(returnValue);
         }

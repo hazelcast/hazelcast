@@ -54,10 +54,10 @@ public final class SplitBrainMergePolicyProvider {
     private final ClassLoader configClassLoader;
 
     private final ConcurrentMap<String, SplitBrainMergePolicy> mergePolicyMap
-            = new ConcurrentHashMap<String, SplitBrainMergePolicy>();
+            = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, SplitBrainMergePolicy> policyConstructorFunction
-            = new ConstructorFunction<String, SplitBrainMergePolicy>() {
+            = new ConstructorFunction<>() {
         @Override
         public SplitBrainMergePolicy createNew(String className) {
             try {

@@ -72,7 +72,7 @@ public class SlowOperationDTO implements JsonSerializable {
         stackTrace = getString(json, "stackTrace");
         totalInvocations = getInt(json, "totalInvocations");
 
-        invocations = new ArrayList<SlowOperationInvocationDTO>();
+        invocations = new ArrayList<>();
         for (JsonValue jsonValue : getArray(json, "invocations")) {
             SlowOperationInvocationDTO slowOperationInvocationDTO = new SlowOperationInvocationDTO();
             slowOperationInvocationDTO.fromJson(jsonValue.asObject());

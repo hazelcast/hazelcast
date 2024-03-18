@@ -59,7 +59,7 @@ public class SetContainer extends CollectionContainer {
     public Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
         final Map<Long, Data> map = createHashMap(size);
-        List<CollectionItem> list = new ArrayList<CollectionItem>(size);
+        List<CollectionItem> list = new ArrayList<>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
             final CollectionItem item = new CollectionItem(itemId, value);
@@ -88,7 +88,7 @@ public class SetContainer extends CollectionContainer {
                 setId(maxItemId + ID_PROMOTION_OFFSET);
                 itemMap.clear();
             } else {
-                itemSet = new HashSet<CollectionItem>(INITIAL_CAPACITY);
+                itemSet = new HashSet<>(INITIAL_CAPACITY);
             }
             itemMap = null;
         }
@@ -105,7 +105,7 @@ public class SetContainer extends CollectionContainer {
                 }
                 itemSet.clear();
             } else {
-                itemMap = new HashMap<Long, CollectionItem>(INITIAL_CAPACITY);
+                itemMap = new HashMap<>(INITIAL_CAPACITY);
             }
             itemSet = null;
         }

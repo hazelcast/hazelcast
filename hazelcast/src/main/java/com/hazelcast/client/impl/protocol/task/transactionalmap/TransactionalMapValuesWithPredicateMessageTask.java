@@ -48,7 +48,7 @@ public class TransactionalMapValuesWithPredicateMessageTask
         final TransactionalMap map = context.getMap(parameters.name);
         Predicate predicate = serializationService.toObject(parameters.predicate);
         Collection values = map.values(predicate);
-        List<Data> list = new ArrayList<Data>(values.size());
+        List<Data> list = new ArrayList<>(values.size());
         for (Object o : values) {
             list.add(serializationService.toData(o));
         }

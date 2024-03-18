@@ -72,7 +72,7 @@ public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        opList = new ArrayList<Operation>(size);
+        opList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }

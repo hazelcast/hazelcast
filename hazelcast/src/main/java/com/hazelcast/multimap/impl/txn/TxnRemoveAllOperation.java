@@ -49,7 +49,7 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
 
     public TxnRemoveAllOperation(String name, Data dataKey, Collection<MultiMapRecord> records) {
         super(name, dataKey);
-        this.recordIds = new ArrayList<Long>();
+        this.recordIds = new ArrayList<>();
         for (MultiMapRecord record : records) {
             recordIds.add(record.getRecordId());
         }
@@ -69,7 +69,7 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
         response = true;
         container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        removed = new LinkedList<MultiMapRecord>();
+        removed = new LinkedList<>();
         for (Long recordId : recordIds) {
             Iterator<MultiMapRecord> iter = coll.iterator();
             while (iter.hasNext()) {

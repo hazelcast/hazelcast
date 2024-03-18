@@ -26,10 +26,10 @@ import java.util.Map;
  */
 public final class ThreadLocalClassCache {
 
-    public static final ThreadLocal<ThreadLocalClassCache> THREAD_LOCAL_CLASS_CACHE = new ThreadLocal<ThreadLocalClassCache>();
+    public static final ThreadLocal<ThreadLocalClassCache> THREAD_LOCAL_CLASS_CACHE = new ThreadLocal<>();
 
     private int counter = 1;
-    private Map<String, ClassSource> map = new HashMap<String, ClassSource>();
+    private Map<String, ClassSource> map = new HashMap<>();
 
     private ThreadLocalClassCache() {
     }

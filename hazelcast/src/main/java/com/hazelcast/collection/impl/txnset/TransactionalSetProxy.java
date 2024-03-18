@@ -38,7 +38,7 @@ public class TransactionalSetProxy<E>
         extends AbstractTransactionalCollectionProxy<SetService, E>
         implements TransactionalSet<E> {
 
-    private final HashSet<CollectionItem> set = new HashSet<CollectionItem>();
+    private final HashSet<CollectionItem> set = new HashSet<>();
 
     public TransactionalSetProxy(String name, Transaction tx, NodeEngine nodeEngine, SetService service) {
         super(name, tx, nodeEngine, service);

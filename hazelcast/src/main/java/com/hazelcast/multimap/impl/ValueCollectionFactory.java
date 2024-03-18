@@ -79,7 +79,7 @@ public final class ValueCollectionFactory {
             case SET:
                 return initialCapacity <= 0 ? new HashSet<T>() : SetUtil.<T>createHashSet(initialCapacity);
             case LIST:
-                return new LinkedList<T>();
+                return new LinkedList<>();
             default:
                 throw new IllegalArgumentException("[" + collectionType + "] is not a known MultiMapConfig.ValueCollectionType!");
         }

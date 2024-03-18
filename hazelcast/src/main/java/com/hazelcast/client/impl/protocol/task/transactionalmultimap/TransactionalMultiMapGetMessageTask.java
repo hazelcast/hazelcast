@@ -46,7 +46,7 @@ public class TransactionalMultiMapGetMessageTask
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
         Collection<Object> collection = multiMap.get(parameters.key);
-        List<Data> list = new ArrayList<Data>(collection.size());
+        List<Data> list = new ArrayList<>(collection.size());
         for (Object o : collection) {
             list.add(serializationService.toData(o));
         }

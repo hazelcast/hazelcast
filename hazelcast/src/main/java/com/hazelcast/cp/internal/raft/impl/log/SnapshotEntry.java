@@ -72,7 +72,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
         super.readData(in);
         groupMembersLogIndex = in.readLong();
         int count = in.readInt();
-        groupMembers = new LinkedHashSet<RaftEndpoint>(count);
+        groupMembers = new LinkedHashSet<>(count);
         for (int i = 0; i < count; i++) {
             RaftEndpoint endpoint = in.readObject();
             groupMembers.add(endpoint);

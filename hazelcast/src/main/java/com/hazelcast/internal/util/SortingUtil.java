@@ -225,7 +225,7 @@ public final class SortingUtil {
                                                                              PagingPredicateImpl pagingPredicateImpl,
                                                                              IterationType iterationType) {
         if (list.isEmpty()) {
-            return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(-1, -1);
+            return new AbstractMap.SimpleImmutableEntry<>(-1, -1);
         }
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicateImpl.getComparator(), iterationType);
         Collections.sort(list, comparator);
@@ -237,7 +237,7 @@ public final class SortingUtil {
         long begin = pageSize * ((long) page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
-            return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(-1, -1);
+            return new AbstractMap.SimpleImmutableEntry<>(-1, -1);
         }
         long end = begin + pageSize;
         if (end > size) {
@@ -245,7 +245,7 @@ public final class SortingUtil {
         }
         setAnchor(list, pagingPredicateImpl, nearestPage);
         // it's safe to cast begin and end back to int here since they are limited by the list size
-        return new AbstractMap.SimpleImmutableEntry<Integer, Integer>((int) begin, (int) end);
+        return new AbstractMap.SimpleImmutableEntry<>((int) begin, (int) end);
     }
 
     private static void setAnchor(List<? extends Map.Entry> list, PagingPredicateImpl pagingPredicate, int nearestPage) {

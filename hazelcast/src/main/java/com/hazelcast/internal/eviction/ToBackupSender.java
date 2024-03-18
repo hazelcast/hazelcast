@@ -56,7 +56,7 @@ public final class ToBackupSender<RS> {
                                                    BiFunction<S, Collection<ExpiredKey>, Operation> operationSupplier,
                                                    BiPredicate<Integer, Integer> backupOpFilter,
                                                    NodeEngine nodeEngine) {
-        return new ToBackupSender<S>(serviceName, operationSupplier, backupOpFilter, nodeEngine);
+        return new ToBackupSender<>(serviceName, operationSupplier, backupOpFilter, nodeEngine);
     }
 
     private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {

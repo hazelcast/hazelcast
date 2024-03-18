@@ -46,7 +46,7 @@ public class TransactionalMapValuesMessageTask
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Collection values = map.values();
-        List<Data> list = new ArrayList<Data>(values.size());
+        List<Data> list = new ArrayList<>(values.size());
         for (Object o : values) {
             list.add(serializationService.toData(o));
         }

@@ -56,7 +56,7 @@ public class TransactionContextProxy implements ClientTransactionContext {
     final ClientConnection connection;
 
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
-            new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+            new HashMap<>(2);
 
     public TransactionContextProxy(@Nonnull ClientTransactionManagerServiceImpl transactionManager,
                                    @Nonnull TransactionOptions options) {

@@ -30,8 +30,8 @@ public class TextParsers {
     private final Set<String> commandPrefixes;
 
     public TextParsers(Map<String, CommandParser> parsers) {
-        this.parsers = new HashMap<String, CommandParser>(parsers);
-        Set<String> prefixes = new HashSet<String>();
+        this.parsers = new HashMap<>(parsers);
+        Set<String> prefixes = new HashSet<>();
         for (String command : parsers.keySet()) {
             prefixes.add(command.substring(0, Protocols.PROTOCOL_LENGTH));
         }

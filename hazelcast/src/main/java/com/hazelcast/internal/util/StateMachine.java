@@ -31,7 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
  */
 public class StateMachine<T extends Enum<T>> {
 
-    private Map<T, Set<T>> transitions = new HashMap<T, Set<T>>();
+    private Map<T, Set<T>> transitions = new HashMap<>();
     private T currentState;
 
     public StateMachine(T initialState) {
@@ -39,7 +39,7 @@ public class StateMachine<T extends Enum<T>> {
     }
 
     public static <T extends Enum<T>> StateMachine<T> of(T initialState) {
-        return new StateMachine<T>(initialState);
+        return new StateMachine<>(initialState);
     }
 
     /**

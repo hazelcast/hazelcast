@@ -407,7 +407,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     }
 
     private class ResponseThreadRunnable implements Runnable {
-        private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<TextCommand>(200);
+        private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<>(200);
         private final Object stopObject = new Object();
 
         @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")

@@ -46,7 +46,7 @@ public class TransactionalMapKeySetMessageTask
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Set keySet = map.keySet();
-        List<Data> list = new ArrayList<Data>(keySet.size());
+        List<Data> list = new ArrayList<>(keySet.size());
         for (Object o : keySet) {
             list.add(serializationService.toData(o));
         }

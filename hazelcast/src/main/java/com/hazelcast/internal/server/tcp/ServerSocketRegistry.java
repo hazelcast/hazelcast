@@ -40,7 +40,7 @@ public class ServerSocketRegistry
     private final boolean unifiedSocket;
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
     private final Map<EndpointQualifier, ServerSocketChannel> serverSocketChannelMap;
-    private final Set<Pair> entries = new HashSet<Pair>();
+    private final Set<Pair> entries = new HashSet<>();
 
     public ServerSocketRegistry(Map<EndpointQualifier, ServerSocketChannel> map, boolean unifiedSocket) {
         this.unifiedSocket = unifiedSocket;

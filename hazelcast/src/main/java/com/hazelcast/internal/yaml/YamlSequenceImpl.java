@@ -76,7 +76,7 @@ class YamlSequenceImpl extends AbstractYamlNode implements MutableYamlSequence {
 
     private List<YamlNode> getOrCreateChildren() {
         if (children == Collections.<YamlNode>emptyList()) {
-            children = new ArrayList<YamlNode>();
+            children = new ArrayList<>();
         }
 
         return children;

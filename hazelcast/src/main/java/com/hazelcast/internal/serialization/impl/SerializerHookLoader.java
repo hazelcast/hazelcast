@@ -45,7 +45,7 @@ final class SerializerHookLoader {
     private final boolean useDefaultConstructorOnly =
             Boolean.getBoolean("hazelcast.compat.serializers.use.default.constructor.only");
 
-    private final Map<Class, Object> serializers = new HashMap<Class, Object>();
+    private final Map<Class, Object> serializers = new HashMap<>();
     private final Collection<SerializerConfig> serializerConfigs;
     private final ClassLoader classLoader;
 

@@ -45,7 +45,7 @@ public class XATransactionContextImpl implements TransactionContext {
     private final NodeEngineImpl nodeEngine;
     private final XATransaction transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+            = new HashMap<>(2);
 
     public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, UUID txOwnerUuid,
                                     int timeout, boolean originatedFromClient) {

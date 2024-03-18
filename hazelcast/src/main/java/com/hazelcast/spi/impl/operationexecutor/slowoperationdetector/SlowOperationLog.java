@@ -48,7 +48,7 @@ final class SlowOperationLog {
     final String stackTrace;
     final String shortStackTrace;
 
-    private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<Integer, Invocation>();
+    private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<>();
 
     SlowOperationLog(String stackTrace, Object task) {
         if (task instanceof Operation) {

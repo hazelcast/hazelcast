@@ -45,7 +45,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 final class TransactionProxy {
 
-    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<>();
 
     private final TransactionOptions options;
     private final HazelcastClientInstanceImpl client;

@@ -49,7 +49,7 @@ public class TransactionalMapKeySetWithPredicateMessageTask
 
         Predicate predicate = serializationService.toObject(parameters.predicate);
         Set keySet = map.keySet(predicate);
-        List<Data> list = new ArrayList<Data>(keySet.size());
+        List<Data> list = new ArrayList<>(keySet.size());
         for (Object o : keySet) {
             list.add(serializationService.toData(o));
         }

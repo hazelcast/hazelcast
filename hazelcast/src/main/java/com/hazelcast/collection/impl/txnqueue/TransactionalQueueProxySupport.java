@@ -55,9 +55,9 @@ public abstract class TransactionalQueueProxySupport<E>
     protected final QueueConfig config;
 
     /** The list of items offered to the transactional queue */
-    private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
+    private final LinkedList<QueueItem> offeredQueue = new LinkedList<>();
     /** The IDs of the items modified by the transaction, either added or removed from the queue */
-    private final Set<Long> itemIdSet = new HashSet<Long>();
+    private final Set<Long> itemIdSet = new HashSet<>();
 
     TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service, tx);

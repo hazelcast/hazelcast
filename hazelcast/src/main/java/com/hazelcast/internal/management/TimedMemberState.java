@@ -189,7 +189,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         master = getBoolean(json, "master");
         clusterName = getString(json, "clusterName");
         JsonArray jsonMemberList = getArray(json, "memberList");
-        memberList = new ArrayList<String>(jsonMemberList.size());
+        memberList = new ArrayList<>(jsonMemberList.size());
         for (JsonValue member : jsonMemberList.values()) {
             memberList.add(member.asString());
         }
