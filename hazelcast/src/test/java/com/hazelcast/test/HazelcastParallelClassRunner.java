@@ -130,7 +130,10 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 // save the current system properties
                 Properties currentSystemProperties = System.getProperties();
                 try {
-                    // use thread-local based system properties so parallel tests don't effect each other
+                    // use thread-local based system properties so parallel tests don't affect each other
+                    // Note that proper isolation requires that no other element of the test framework accesses
+                    // system properties too early, between creation of ThreadLocalProperties and starting test
+                    // thread. Otherwise, many threads will inherit shared Properties instance.
                     System.setProperties(new ThreadLocalProperties(currentSystemProperties));
                     HazelcastParallelClassRunner.super.childrenInvoker(notifier).evaluate();
                     // wait for all child threads (tests) to complete
