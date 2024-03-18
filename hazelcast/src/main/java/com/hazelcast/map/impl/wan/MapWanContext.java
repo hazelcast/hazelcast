@@ -42,7 +42,7 @@ public class MapWanContext {
     protected volatile ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
     private final String name;
     private final MapServiceContext mapServiceContext;
-    private MapConfig mapConfig;
+    private volatile MapConfig mapConfig;
     private volatile boolean persistWanReplicatedData;
 
     public MapWanContext(MapContainer mapContainer) {

@@ -18,6 +18,7 @@ package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.WanReplicationRef;
@@ -85,12 +86,23 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation implem
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.getById(maxSizePolicyId));
         evictionConfig.setSize(maxSize);
 
-        MapConfigReadOnly readOnlyConfig = new MapConfigReadOnly(newConfig);
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
-        mapContainer.setMapConfig(readOnlyConfig);
+        // It is possible for applying the config to fail (i.e. due to invalid WanReplicationRef merge policy),
+        //  so it's important we restore the config to its previous version in this scenario
+        try {
+            MapConfigReadOnly readOnlyConfig = new MapConfigReadOnly(newConfig);
+            applyMapConfig(mapContainer, readOnlyConfig);
+        } catch (Exception ex) {
+            applyMapConfig(mapContainer, oldConfig);
+            throw new InvalidConfigurationException("Applying the MapConfig failed: " + ex.getMessage(), ex);
+        }
+    }
+
+    private void applyMapConfig(MapContainer mapContainer, MapConfig config) {
+        mapContainer.setMapConfig(config);
         mapContainer.initEvictor();
         if (applyWanReplicationRef) {
-            mapContainer.getWanContext().setMapConfig(readOnlyConfig);
+            mapContainer.getWanContext().setMapConfig(config);
             mapContainer.getWanContext().start();
         }
     }
