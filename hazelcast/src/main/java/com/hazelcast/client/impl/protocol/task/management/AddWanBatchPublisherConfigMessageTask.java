@@ -16,19 +16,27 @@
 
 package com.hazelcast.client.impl.protocol.task.management;
 
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ManagementPermission;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
@@ -43,6 +51,13 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
 
     public AddWanBatchPublisherConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    public AddWanBatchPublisherConfigMessageTask(ClientMessage clientMessage, ILogger logger, NodeEngine nodeEngine,
+            InternalSerializationService serializationService, ClientEngine clientEngine, Connection connection,
+            NodeExtension nodeExtension, BuildInfo buildInfo, Config config, ClusterServiceImpl clusterService) {
+        super(clientMessage, logger, nodeEngine, serializationService, clientEngine, connection, nodeExtension, buildInfo,
+                config, clusterService);
     }
 
     @Override

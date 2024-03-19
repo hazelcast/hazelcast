@@ -16,9 +16,17 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.config.Config;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngine;
 
 /**
  * Base callable Message task.
@@ -28,6 +36,13 @@ public abstract class AbstractCallableMessageTask<P>
 
     protected AbstractCallableMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    protected AbstractCallableMessageTask(ClientMessage clientMessage, ILogger logger, NodeEngine nodeEngine,
+            InternalSerializationService serializationService, ClientEngine clientEngine, Connection connection,
+            NodeExtension nodeExtension, BuildInfo buildInfo, Config config, ClusterServiceImpl clusterService) {
+        super(clientMessage, logger, nodeEngine, serializationService, clientEngine, connection, nodeExtension, buildInfo,
+                config, clusterService);
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -32,6 +33,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -50,6 +52,7 @@ import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * The NodeEngine is the 'umbrella' of services/service-method that gets injected into a {@link ManagedService}.
@@ -66,6 +69,8 @@ public interface NodeEngine {
     ExecutionService getExecutionService();
 
     ClusterService getClusterService();
+
+    ManagementCenterService getManagementCenterService();
 
     IPartitionService getPartitionService();
 
@@ -334,4 +339,8 @@ public interface NodeEngine {
      * @return the {@link MetricsRegistry}
      */
     MetricsRegistry getMetricsRegistry();
+
+    void onClientDisconnected(UUID clientUuid);
+
+    TpcServerBootstrap getTpcServerBootstrap();
 }

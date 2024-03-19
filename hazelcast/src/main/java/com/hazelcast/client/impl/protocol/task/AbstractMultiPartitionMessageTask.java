@@ -23,7 +23,7 @@ import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -47,7 +47,7 @@ public abstract class AbstractMultiPartitionMessageTask<P>
     @Override
     protected CompletableFuture<Map<Integer, Object>> processInternal() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        OperationService operationService = nodeEngine.getOperationService();
         return operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions());
     }
 

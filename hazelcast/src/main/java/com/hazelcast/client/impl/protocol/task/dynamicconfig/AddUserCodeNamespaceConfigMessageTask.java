@@ -16,16 +16,24 @@
 
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.UserCodeNamespacePermission;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.security.Permission;
 
@@ -34,6 +42,13 @@ public class AddUserCodeNamespaceConfigMessageTask
 
     public AddUserCodeNamespaceConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    protected AddUserCodeNamespaceConfigMessageTask(ClientMessage clientMessage, ILogger logger, NodeEngine nodeEngine,
+            InternalSerializationService serializationService, ClientEngine clientEngine, Connection connection,
+            NodeExtension nodeExtension, BuildInfo buildInfo, Config config, ClusterServiceImpl clusterService) {
+        super(clientMessage, logger, nodeEngine, serializationService, clientEngine, connection, nodeExtension, buildInfo,
+                config, clusterService);
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -55,7 +55,7 @@ public abstract class AbstractAllPartitionsMessageTask<P>
     @Override
     protected CompletableFuture<Map<Integer, Object>> processInternal() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        OperationService operationService = nodeEngine.getOperationService();
         return operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory);
     }
 

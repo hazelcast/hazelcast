@@ -27,10 +27,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class AddWanBatchPublisherConfigMessageTaskTest extends ConfigMessageTaskTest {
-
+public class AddWanBatchPublisherConfigMessageTaskTest extends ConfigMessageTaskTest<AddWanBatchPublisherConfigMessageTask> {
     @Test
     public void testWanConfig() {
         ArgumentCaptor<WanReplicationConfig> wanCaptor = ArgumentCaptor.forClass(WanReplicationConfig.class);
@@ -47,10 +47,10 @@ public class AddWanBatchPublisherConfigMessageTaskTest extends ConfigMessageTask
                 WanQueueFullBehavior.THROW_EXCEPTION.getId(),
                 ConsistencyCheckStrategy.MERKLE_TREES.getId()
         );
-        AddWanBatchPublisherConfigMessageTask task = new AddWanBatchPublisherConfigMessageTask(message, mockNode, mockConnection);
+        AddWanBatchPublisherConfigMessageTask task = createMessageTask(message);
         task.run();
 
-        verify(mockNodeEngineImpl.getWanReplicationService()).addWanReplicationConfig(wanCaptor.capture());
+        verify(mockNodeEngine.getWanReplicationService()).addWanReplicationConfig(wanCaptor.capture());
         WanReplicationConfig wanReplicationConfig = wanCaptor.getValue();
 
         assertEquals("wan-config-name", wanReplicationConfig.getName());
@@ -65,5 +65,11 @@ public class AddWanBatchPublisherConfigMessageTaskTest extends ConfigMessageTask
         assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, publisherConfig.getAcknowledgeType());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getSyncConfig().getConsistencyCheckStrategy());
+    }
+
+    @Override
+    protected AddWanBatchPublisherConfigMessageTask createMessageTask(ClientMessage clientMessage) {
+        return new AddWanBatchPublisherConfigMessageTask(clientMessage, logger, mockNodeEngine, mock(), mockClientEngine,
+                mockConnection, mockNodeExtension, mock(), config, mock());
     }
 }

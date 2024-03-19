@@ -47,7 +47,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -151,7 +151,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
         List<Future> futures = new ArrayList<>(members.size());
-        final OperationServiceImpl operationService = nodeEngine.getOperationService();
+        final OperationService operationService = nodeEngine.getOperationService();
         final Query query = buildQuery(predicate);
 
         MapService mapService = nodeEngine.getService(getServiceName());
@@ -242,7 +242,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     private void createInvocationsForMissingPartitions(PartitionIdSet missingPartitionsList, List<Future> futures,
                                                        Predicate predicate) {
 
-        final OperationServiceImpl operationService = nodeEngine.getOperationService();
+        final OperationService operationService = nodeEngine.getOperationService();
         MapService mapService = nodeEngine.getService(getServiceName());
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 

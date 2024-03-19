@@ -38,7 +38,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ public class MapPublisherCreateMessageTask
     }
 
     private void createInvocations(Collection<MemberImpl> members, List<Future> futures) {
-        final OperationServiceImpl operationService = nodeEngine.getOperationService();
+        final OperationService operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             Predicate predicate = serializationService.toObject(parameters.predicate);
             AccumulatorInfo accumulatorInfo =

@@ -222,6 +222,7 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
+    @Override
     public TpcServerBootstrap getTpcServerBootstrap() {
         return tpcServerBootstrap;
     }
@@ -267,10 +268,12 @@ public class NodeEngineImpl implements NodeEngine {
         return new Diagnostics(name, loggingService, getHazelcastInstance().getName(), node.getProperties());
     }
 
+    @Override
     public LoggingService getLoggingService() {
         return loggingService;
     }
 
+    @Override
     public MetricsRegistry getMetricsRegistry() {
         return metricsRegistry;
     }
@@ -376,6 +379,7 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getClusterService();
     }
 
+    @Override
     public ManagementCenterService getManagementCenterService() {
         return node.getManagementCenterService();
     }
@@ -506,6 +510,7 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager.forEachMatchingService(serviceClass, consumer);
     }
 
+    @Override
     public Node getNode() {
         return node;
     }
@@ -516,6 +521,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService.onMemberLeft(member);
     }
 
+    @Override
     public void onClientDisconnected(UUID clientUuid) {
         operationParker.onClientDisconnected(clientUuid);
     }

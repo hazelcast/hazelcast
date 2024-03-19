@@ -29,7 +29,7 @@ import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.security.Permission;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
         NamespaceUtil.runWithNamespace(nodeEngine, getUserCodeNamespace(), () -> {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             OperationFactory operationFactory = createOperationFactory();
-            OperationServiceImpl operationService = nodeEngine.getOperationService();
+            OperationService operationService = nodeEngine.getOperationService();
 
             CompletableFuture<Map<Integer, Object>> future = operationService
                     .invokeOnPartitionsAsync(

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddUserCodeNamespaceConfigCodec;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespaceConfig;
@@ -24,23 +25,27 @@ import org.junit.Test;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
-public class AddUserCodeNamespaceConfigMessageTaskTest
-        extends ConfigMessageTaskTest {
+public class AddUserCodeNamespaceConfigMessageTaskTest extends ConfigMessageTaskTest<AddUserCodeNamespaceConfigMessageTask> {
     @Test
     public void test() {
         UserCodeNamespaceConfig config = new UserCodeNamespaceConfig("my-namespace");
 
-
-        AddUserCodeNamespaceConfigMessageTask task = new AddUserCodeNamespaceConfigMessageTask(
+        AddUserCodeNamespaceConfigMessageTask task = createMessageTask(
                 DynamicConfigAddUserCodeNamespaceConfigCodec.encodeRequest(config.getName(),
                         ConfigAccessor.getResourceDefinitions(config)
                                       .stream()
                                       .map(ResourceDefinitionHolder::new)
-                                      .collect(Collectors.toList())),
-                mockNode, mockConnection);
+                                      .collect(Collectors.toList())));
         task.run();
 
         assertEquals(config, task.getConfig());
+    }
+
+    @Override
+    protected AddUserCodeNamespaceConfigMessageTask createMessageTask(ClientMessage clientMessage) {
+        return new AddUserCodeNamespaceConfigMessageTask(clientMessage, logger, mockNodeEngine, mock(), mockClientEngine,
+                mockConnection, mockNodeExtension, mock(), config, mock());
     }
 }

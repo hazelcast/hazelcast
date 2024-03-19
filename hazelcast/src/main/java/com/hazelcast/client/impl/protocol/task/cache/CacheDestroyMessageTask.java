@@ -28,7 +28,7 @@ import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.security.Permission;
 
@@ -41,7 +41,7 @@ public class CacheDestroyMessageTask
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        OperationService operationService = nodeEngine.getOperationService();
 
         return operationService.createInvocationBuilder(CacheService.SERVICE_NAME, op,
                 nodeEngine.getThisAddress());

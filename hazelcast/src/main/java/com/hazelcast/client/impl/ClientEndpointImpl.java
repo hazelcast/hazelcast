@@ -27,7 +27,7 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -59,7 +59,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngine clientEngine;
     private final ILogger logger;
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     private final ServerConnection connection;
     private final ConcurrentMap<UUID, TransactionContext> transactionContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
@@ -77,7 +77,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private volatile boolean destroyed;
     private volatile TpcToken tpcToken;
 
-    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, ServerConnection connection) {
+    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngine nodeEngine, ServerConnection connection) {
         this.clientEngine = clientEngine;
         this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;

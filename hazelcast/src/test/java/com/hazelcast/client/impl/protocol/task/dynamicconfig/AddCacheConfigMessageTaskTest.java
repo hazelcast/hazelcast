@@ -24,8 +24,9 @@ import com.hazelcast.config.DataPersistenceConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
-public class AddCacheConfigMessageTaskTest extends ConfigMessageTaskTest {
+public class AddCacheConfigMessageTaskTest extends ConfigMessageTaskTest<AddCacheConfigMessageTask> {
     @Test
     public void doNotThrowException_whenNullValuesProvidedForNullableFields() throws Exception {
         CacheConfig<Object, Object> cacheConfig = new CacheConfig<>("my-cache");
@@ -60,7 +61,7 @@ public class AddCacheConfigMessageTaskTest extends ConfigMessageTaskTest {
                 cacheConfig.getDataPersistenceConfig(),
                 cacheConfig.getUserCodeNamespace()
         );
-        AddCacheConfigMessageTask addCacheConfigMessageTask = new AddCacheConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
+        AddCacheConfigMessageTask addCacheConfigMessageTask = createMessageTask(addMapConfigClientMessage);
         addCacheConfigMessageTask.run();
         CacheConfig<Object, Object> transmittedCacheConfig = new CacheConfig<>((CacheSimpleConfig) addCacheConfigMessageTask.getConfig());
         assertEquals(cacheConfig, transmittedCacheConfig);
@@ -104,9 +105,15 @@ public class AddCacheConfigMessageTaskTest extends ConfigMessageTaskTest {
                 cacheConfig.getDataPersistenceConfig(),
                 cacheConfig.getUserCodeNamespace()
         );
-        AddCacheConfigMessageTask addCacheConfigMessageTask = new AddCacheConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
+        AddCacheConfigMessageTask addCacheConfigMessageTask = createMessageTask(addMapConfigClientMessage);
         addCacheConfigMessageTask.run();
         CacheConfig<Object, Object> transmittedCacheConfig = new CacheConfig<>((CacheSimpleConfig) addCacheConfigMessageTask.getConfig());
         assertEquals(cacheConfig, transmittedCacheConfig);
+    }
+
+    @Override
+    protected AddCacheConfigMessageTask createMessageTask(ClientMessage clientMessage) {
+        return new AddCacheConfigMessageTask(clientMessage, logger, mockNodeEngine, mock(), mockClientEngine, mockConnection,
+                mockNodeExtension, mock(), config, mock());
     }
 }

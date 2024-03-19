@@ -20,8 +20,9 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
@@ -29,10 +30,11 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,49 +51,46 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public abstract class ConfigMessageTaskTest {
-    protected Node mockNode;
+public abstract class ConfigMessageTaskTest<V extends AbstractMessageTask<?>> {
     protected Connection mockConnection;
-
-    protected NodeEngineImpl mockNodeEngineImpl;
+    protected NodeEngine mockNodeEngine;
+    protected ClientEngine mockClientEngine;
+    protected Config config;
+    protected ILogger logger;
+    protected NodeExtension mockNodeExtension;
 
     @Before
     public void setup() {
         // setup mocks
-        mockNode = mock(Node.class);
         mockConnection = mock(ServerConnection.class);
-        ClientEngine mockClientEngine = mock(ClientEngine.class, RETURNS_DEEP_STUBS);
+        mockClientEngine = mock(ClientEngine.class, RETURNS_DEEP_STUBS);
+        config = new Config();
+        logger = Logger.getLogger(getClass());
         ClientEndpointManager mockClientEndpointManager = mock(ClientEndpointManager.class);
         ClientEndpoint mockClientEndpoint = mock(ClientEndpoint.class);
-        mockNodeEngineImpl = mock(NodeEngineImpl.class, RETURNS_DEEP_STUBS);
-        NodeExtension mockNodeExtension = mock(NodeExtension.class);
+        mockNodeEngine = mock(NodeEngine.class, RETURNS_DEEP_STUBS);
+        mockNodeExtension = mock(NodeExtension.class);
         ClusterWideConfigurationService mockConfigurationService = mock(ClusterWideConfigurationService.class);
         InternalCompletableFuture<Object> mockFuture = mock(InternalCompletableFuture.class);
 
-        when(mockNode.getClientEngine()).thenReturn(mockClientEngine);
-        when(mockNode.getConfig()).thenReturn(new Config());
-        when(mockNode.getLogger(any(Class.class))).thenReturn(Logger.getLogger(getClass()));
-        when(mockNode.getNodeExtension()).thenReturn(mockNodeExtension);
-        when(mockNode.getNodeEngine()).thenReturn(mockNodeEngineImpl);
-
         when(mockClientEngine.getEndpointManager()).thenReturn(mockClientEndpointManager);
         when(mockClientEngine.getExceptionFactory()).thenReturn(new ClientExceptionFactory(false,
-                new Config().getClassLoader()));
+                config.getClassLoader()));
         when(mockClientEngine.getManagementTasksChecker().isTrusted(any())).thenReturn(true);
 
         when(mockClientEndpoint.getClientType()).thenReturn(ConnectionType.JAVA_CLIENT);
         when(mockClientEndpoint.isAuthenticated()).thenReturn(true);
         when(mockClientEndpointManager.getEndpoint(mockConnection)).thenReturn(mockClientEndpoint);
 
-        when(mockNodeEngineImpl.getConfig()).thenReturn(new DynamicConfigurationAwareConfig(
-                new Config(),
-                new HazelcastProperties(new Config()))
-        );
-        when(mockNodeEngineImpl.getService(ConfigurationService.SERVICE_NAME)).thenReturn(mockConfigurationService);
+        when(mockNodeEngine.getConfig())
+                .thenReturn(new DynamicConfigurationAwareConfig(config, new HazelcastProperties(config)));
+        when(mockNodeEngine.getService(ConfigurationService.SERVICE_NAME)).thenReturn(mockConfigurationService);
 
         when(mockConfigurationService.broadcastConfigAsync(any(IdentifiedDataSerializable.class)))
                 .thenReturn(mockFuture);
         when(mockNodeExtension.isStartCompleted()).thenReturn(true);
         when(mockConnection.getRemoteAddress()).thenReturn(createUnresolvedAddress("127.0.0.1", 5701));
     }
+
+    protected abstract V createMessageTask(ClientMessage clientMessage);
 }
