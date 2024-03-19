@@ -36,13 +36,15 @@ import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import example.serialization.NodeDTO;
 import org.junit.After;
+import org.junit.Before;
 
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.getSchemasFor;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.spy;
 
 public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
 
@@ -54,12 +56,19 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
 
     private final CustomTestInstanceFactory factory = new CustomTestInstanceFactory();
 
+    protected MemberSchemaService stubbedSchemaService;
+
+    @Before
+    public void setUp() {
+        stubbedSchemaService = createSpiedMemberSchemaService();
+    }
+
     @After
     public void teardown() {
         factory.terminateAll();
     }
 
-    public void setupInstances(Function<Integer, MemberSchemaService> spyServiceCreator) {
+    public void setupInstances(IntFunction<MemberSchemaService> spyServiceCreator) {
         int instanceCount = 4;
         instances = new HazelcastInstance[instanceCount];
         for (int i = 0; i < 4; i++) {
@@ -98,6 +107,10 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName,
                     new MemberSchemaServiceMockingNodeContext(nodeContext, schemaService));
         }
+    }
+
+    protected static MemberSchemaService createSpiedMemberSchemaService() {
+        return spy(new MemberSchemaService());
     }
 
     private static class MemberSchemaServiceMockingNodeContext implements NodeContext {

@@ -73,4 +73,9 @@ public final class SchemaReplication implements IdentifiedDataSerializable {
     public int getClassId() {
         return SchemaDataSerializerHook.SCHEMA_REPLICATION;
     }
+
+    @Override
+    public String toString() {
+        return "SchemaReplication [schema=" + schema + ", status=" + status + "]";
+    }
 }

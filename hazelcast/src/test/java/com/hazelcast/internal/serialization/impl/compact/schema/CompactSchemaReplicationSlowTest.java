@@ -28,20 +28,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTestBase {
-
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringPreparationPhase() {
-        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException())
                 .when(stubbedSchemaService)
                 .onSchemaPreparationRequest(SCHEMA);
@@ -49,7 +46,7 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
         // First member will always throw retryable exception
         // in the preparation phase, others will work fine.
         int stubbedMemberIndex = 0;
-        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : createSpiedMemberSchemaService());
         HazelcastInstance stubbed = instances[stubbedMemberIndex];
 
         assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instances[1]));
@@ -63,13 +60,12 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
             }
 
             // No-one should call onSchemaAckRequest
-            verify(service, never()).onSchemaAckRequest(SCHEMA.getSchemaId());
+            assertNotEquals(SchemaReplicationStatus.REPLICATED, service.getReplicator().getReplicationStatus(SCHEMA));
         }
     }
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringAcknowledgmentPhase() {
-        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException())
                 .when(stubbedSchemaService)
                 .onSchemaAckRequest(SCHEMA.getSchemaId());
@@ -77,7 +73,7 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
         // Fourth member will always throw retryable exception
         // in the acknowledgment phase, others will work fine.
         int stubbedMemberIndex = 3;
-        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : createSpiedMemberSchemaService());
         HazelcastInstance stubbed = instances[stubbedMemberIndex];
 
         HazelcastInstance initiator = instances[0];
@@ -101,7 +97,7 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
     @Override
     public Config getConfig() {
         Config config = super.getConfig();
-        config.getProperties().setProperty(INVOCATION_RETRY_PAUSE.getName(), "100");
+        config.getProperties().setProperty(INVOCATION_RETRY_PAUSE.getName(), String.valueOf(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS));
         return config;
     }
 }

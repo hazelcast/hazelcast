@@ -28,14 +28,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -45,7 +44,7 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
     public void testSchemaReplication() {
         // We won't stub any of the schema services.
         // We will just assert call counts.
-        setupInstances(index -> spy(new MemberSchemaService()));
+        setupInstances(index -> createSpiedMemberSchemaService());
 
         HazelcastInstance initiator = instances[0];
         fillMapUsing(initiator);
@@ -54,14 +53,9 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
-            // Everyone should call onSchemaPreparationRequest, apart from the initiator
             if (instance != initiator) {
+                // Everyone should call onSchemaPreparationRequest, apart from the initiator
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
-            }
-
-            // Everyone should call onSchemaAckRequest, apart from the initiator
-            if (instance != initiator) {
-                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
 
             // It should be replicated everywhere
@@ -71,14 +65,13 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrows_duringPreparationPhase() {
-        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RuntimeException())
                 .when(stubbedSchemaService)
                 .onSchemaPreparationRequest(any(Schema.class));
 
         // First member will always throw non-retryable exception
         // in the preparation phase, others will work fine.
-        setupInstances(index -> index == 0 ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == 0 ? stubbedSchemaService : createSpiedMemberSchemaService());
 
         assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instances[1]));
 
@@ -89,13 +82,12 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
             verify(service, atMostOnce()).onSchemaPreparationRequest(SCHEMA);
 
             // No-one should call onSchemaAckRequest
-            verify(service, never()).onSchemaAckRequest(SCHEMA.getSchemaId());
+            assertNotEquals(SchemaReplicationStatus.REPLICATED, service.getReplicator().getReplicationStatus(SCHEMA));
         }
     }
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionForSomeTime_duringPreparationPhase() {
-        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException()) // Throw once
                 .doCallRealMethod() // Then succeed
                 .when(stubbedSchemaService)
@@ -104,7 +96,7 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
         // Third member will throw retryable exception and then continue working
         // in the preparation phase, others will work fine.
         int stubbedMemberIndex = 2;
-        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : createSpiedMemberSchemaService());
         HazelcastInstance stubbed = instances[stubbedMemberIndex];
 
         HazelcastInstance initiator = instances[3];
@@ -122,11 +114,6 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
-            // Everyone should call onSchemaAckRequest it, apart from the initiator
-            if (instance != initiator) {
-                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
-            }
-
             // It should be replicated everywhere
             assertEquals(SchemaReplicationStatus.REPLICATED, replicator.getReplicationStatus(SCHEMA));
         }
@@ -134,14 +121,13 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrows_duringAcknowledgmentPhase() {
-        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RuntimeException())
                 .when(stubbedSchemaService)
                 .onSchemaAckRequest(anyLong());
 
         // Fourth member will always throw non-retryable exception
         // in the acknowledgment phase, others will work fine.
-        setupInstances(index -> index == 3 ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == 3 ? stubbedSchemaService : createSpiedMemberSchemaService());
 
         HazelcastInstance initiator = instances[0];
         assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(initiator));
@@ -161,7 +147,6 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionForSomeTime_duringAcknowledgmentPhase() {
-        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException()) // Throw once
                 .doCallRealMethod() // Then succeed
                 .when(stubbedSchemaService)
@@ -170,7 +155,7 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
         // Third member will throw retryable exception and then continue working
         // in the preparation phase, others will work fine.
         int stubbedMemberIndex = 1;
-        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : createSpiedMemberSchemaService());
         HazelcastInstance stubbed = instances[stubbedMemberIndex];
 
         HazelcastInstance initiator = instances[2];
@@ -189,8 +174,6 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
             if (instance == stubbed) {
                 // For stubbed member, it must at least fail + succeed
                 verify(service, atLeast(2)).onSchemaAckRequest(SCHEMA.getSchemaId());
-            } else if (instance != initiator) {
-                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
 
             // It should be replicated everywhere

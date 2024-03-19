@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -50,8 +51,8 @@ public class SchemaReplicator {
     // Guards the modifications to replications and inFlightOperations so
     // that their contents are in valid states.
     private final Object mutex = new Object();
-    private final ConcurrentHashMap<Long, SchemaReplication> replications = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, InternalCompletableFuture<Collection<UUID>>>
+    private final ConcurrentMap<Long, SchemaReplication> replications = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, InternalCompletableFuture<Collection<UUID>>>
             inFlightOperations = new ConcurrentHashMap<>();
 
     // Not final due to late initialization with init method.
@@ -358,7 +359,7 @@ public class SchemaReplicator {
     }
 
     // Used in tests
-    ConcurrentHashMap<Long, InternalCompletableFuture<Collection<UUID>>> getInFlightOperations() {
+    ConcurrentMap<Long, InternalCompletableFuture<Collection<UUID>>> getInFlightOperations() {
         return inFlightOperations;
     }
 
