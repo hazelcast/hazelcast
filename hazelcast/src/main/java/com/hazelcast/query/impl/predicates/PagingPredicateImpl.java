@@ -209,7 +209,7 @@ public class PagingPredicateImpl<K, V>
         if (set == null || set.isEmpty()) {
             return set;
         }
-        List<QueryableEntry<K, V>> resultList = new ArrayList<QueryableEntry<K, V>>();
+        List<QueryableEntry<K, V>> resultList = new ArrayList<>();
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry();
         for (QueryableEntry<K, V> queryableEntry : set) {
             if (SortingUtil.compareAnchor(this, queryableEntry, nearestAnchorEntry)) {
@@ -219,7 +219,7 @@ public class PagingPredicateImpl<K, V>
 
         List<QueryableEntry<K, V>> sortedSubList =
                 (List) SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
-        return new LinkedHashSet<QueryableEntry<K, V>>(sortedSubList);
+        return new LinkedHashSet<>(sortedSubList);
     }
 
 

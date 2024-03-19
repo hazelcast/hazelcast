@@ -427,7 +427,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     public List<EntryListenerConfig> getEntryListenerConfigs() {
         if (entryListenerConfigs == null) {
-            entryListenerConfigs = new ArrayList<EntryListenerConfig>();
+            entryListenerConfigs = new ArrayList<>();
         }
         return entryListenerConfigs;
     }

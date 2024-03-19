@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class QueryCacheToListenerMapper {
 
     private static final ConstructorFunction<String, Collection<ListenerInfo>> LISTENER_SET_CONSTRUCTOR
-            = new ConstructorFunction<String, Collection<ListenerInfo>>() {
+            = new ConstructorFunction<>() {
         @Override
         public Collection<ListenerInfo> createNew(String arg) {
             return Collections.newSetFromMap(new ConcurrentHashMap<ListenerInfo, Boolean>());
@@ -47,7 +47,7 @@ public class QueryCacheToListenerMapper {
     private final ConcurrentMap<String, Collection<ListenerInfo>> registrations;
 
     QueryCacheToListenerMapper() {
-        this.registrations = new ConcurrentHashMap<String, Collection<ListenerInfo>>();
+        this.registrations = new ConcurrentHashMap<>();
     }
 
     public UUID addListener(String cacheId, ListenerAdapter listenerAdapter, EventFilter filter) {

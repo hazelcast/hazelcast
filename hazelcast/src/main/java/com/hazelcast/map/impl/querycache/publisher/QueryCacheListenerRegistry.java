@@ -37,7 +37,7 @@ import java.util.function.Function;
 public class QueryCacheListenerRegistry implements Registry<String, UUID> {
 
     private final ConstructorFunction<String, UUID> registryConstructorFunction =
-            new ConstructorFunction<String, UUID>() {
+            new ConstructorFunction<>() {
                 @Override
                 public UUID createNew(String ignored) {
                     Function<String, UUID> registration = context.getPublisherContext().getListenerRegistrator();

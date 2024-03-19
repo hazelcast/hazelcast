@@ -53,7 +53,7 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.pending.invocations.threshold", 1);
 
     private final InvocationRegistry invocationRegistry;
-    private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
+    private final ItemCounter<String> occurrenceMap = new ItemCounter<>();
     private final long periodMillis;
     private final int threshold;
 

@@ -60,7 +60,7 @@ public class RingbufferReadManyMessageTask
     protected ClientMessage encodeResponse(Object response) {
         // we are not deserializing the whole content, only the enclosing portable. The actual items remain un
         final ReadResultSetImpl resultSet = nodeEngine.getSerializationService().toObject(response);
-        final List<Data> items = new ArrayList<Data>(resultSet.size());
+        final List<Data> items = new ArrayList<>(resultSet.size());
         final long[] seqs = new long[resultSet.size()];
         final Data[] dataItems = resultSet.getDataItems();
 

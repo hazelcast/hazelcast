@@ -26,7 +26,7 @@ import java.util.HashSet;
  */
 public class PartitionQueryContextWithStats extends QueryContext {
 
-    private final HashSet<PerIndexStats> trackedStats = new HashSet<PerIndexStats>(8);
+    private final HashSet<PerIndexStats> trackedStats = new HashSet<>(8);
 
     /**
      * Constructs a new partition query context with stats for the given indexes.

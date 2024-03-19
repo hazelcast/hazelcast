@@ -141,7 +141,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         @Nonnull @Override
         public Iterator<Object> iterator() {
             Iterator<Object> it = wrappedInbox.iterator();
-            return new Iterator<Object>() {
+            return new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     return it.hasNext();

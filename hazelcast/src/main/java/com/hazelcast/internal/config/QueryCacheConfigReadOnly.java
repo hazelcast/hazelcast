@@ -49,7 +49,7 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
     @Override
     public List<EntryListenerConfig> getEntryListenerConfigs() {
         List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
-        List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
+        List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<>(listenerConfigs.size());
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             readOnlyListenerConfigs.add(new EntryListenerConfigReadOnly(listenerConfig));
         }

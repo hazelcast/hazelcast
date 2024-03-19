@@ -42,7 +42,7 @@ import static java.lang.String.format;
  */
 public class RestartingMemberIterator implements Iterator<Member>, ChainingFuture.ExceptionHandler {
 
-    private final Queue<Member> memberQueue = new ConcurrentLinkedQueue<Member>();
+    private final Queue<Member> memberQueue = new ConcurrentLinkedQueue<>();
     private final AtomicInteger retryCounter = new AtomicInteger();
 
     private final ClusterService clusterService;

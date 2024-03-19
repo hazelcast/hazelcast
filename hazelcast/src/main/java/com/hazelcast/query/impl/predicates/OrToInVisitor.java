@@ -129,7 +129,7 @@ public class OrToInVisitor extends AbstractVisitor {
                 EqualPredicate equalPredicate = (EqualPredicate) p;
                 String attribute = equalPredicate.attributeName;
                 if (candidates == null) {
-                    candidates = new InternalListMultiMap<String, Integer>();
+                    candidates = new InternalListMultiMap<>();
                 }
                 candidates.put(attribute, i);
             }

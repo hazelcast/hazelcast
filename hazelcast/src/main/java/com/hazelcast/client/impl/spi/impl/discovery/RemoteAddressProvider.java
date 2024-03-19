@@ -31,7 +31,7 @@ public class RemoteAddressProvider implements AddressProvider {
 
     private final Callable<Map<Address, Address>> getAddresses;
     private final boolean usePublic;
-    private volatile Map<Address, Address> privateToPublic = new HashMap<Address, Address>();
+    private volatile Map<Address, Address> privateToPublic = new HashMap<>();
 
     public RemoteAddressProvider(Callable<Map<Address, Address>> getAddresses, boolean usePublic) {
         this.getAddresses = getAddresses;

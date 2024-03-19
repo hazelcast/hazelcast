@@ -57,7 +57,7 @@ public final class OrPredicate
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
+        List<Set<QueryableEntry>> indexedResults = new LinkedList<>();
         for (Predicate predicate : predicates) {
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;

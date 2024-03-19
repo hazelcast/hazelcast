@@ -36,7 +36,7 @@ import java.util.UUID;
 
 public class PutRemoteTransactionOperation extends AbstractXAOperation implements BackupAwareOperation {
 
-    private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
+    private final List<TransactionLogRecord> records = new LinkedList<>();
 
     private SerializableXID xid;
     private UUID txnId;

@@ -49,7 +49,7 @@ public final class Projections {
      * @param <O>           output type
      */
     public static <I, O> Projection<I, O> singleAttribute(String attributePath) {
-        return new SingleAttributeProjection<I, O>(attributePath);
+        return new SingleAttributeProjection<>(attributePath);
     }
 
     /**

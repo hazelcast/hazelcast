@@ -292,7 +292,7 @@ public class PNCounterProxy extends AbstractDistributedObject<PNCounterService> 
                                                               .getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
         final int maxConfiguredReplicaCount = getNodeEngine().getConfig().findPNCounterConfig(name).getReplicaCount();
         final int currentReplicaCount = Math.min(maxConfiguredReplicaCount, dataMembers.size());
-        final ArrayList<Address> replicaAddresses = new ArrayList<Address>(currentReplicaCount);
+        final ArrayList<Address> replicaAddresses = new ArrayList<>(currentReplicaCount);
         final Iterator<Member> dataMemberIterator = dataMembers.iterator();
 
         for (int i = 0; i < currentReplicaCount; i++) {

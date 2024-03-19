@@ -175,7 +175,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport<E> implements IQueue<E>
     @Override
     public Iterator<E> iterator() {
         final NodeEngine nodeEngine = getNodeEngine();
-        return new QueueIterator<E>(listInternal().iterator(), nodeEngine.getSerializationService(), false);
+        return new QueueIterator<>(listInternal().iterator(), nodeEngine.getSerializationService(), false);
     }
 
     @Override
@@ -238,7 +238,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport<E> implements IQueue<E>
 
     private List<Data> getDataList(Collection<?> objects) {
         final NodeEngine nodeEngine = getNodeEngine();
-        List<Data> dataList = new ArrayList<Data>(objects.size());
+        List<Data> dataList = new ArrayList<>(objects.size());
         for (Object o : objects) {
             dataList.add(nodeEngine.toData(o));
         }
@@ -247,7 +247,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport<E> implements IQueue<E>
 
     private List<Data> toDataList(Collection<?> objects) {
         final NodeEngine nodeEngine = getNodeEngine();
-        List<Data> dataList = new ArrayList<Data>(objects.size());
+        List<Data> dataList = new ArrayList<>(objects.size());
         for (Object o : objects) {
             checkNotNull(o, "Object is null");
             dataList.add(nodeEngine.toData(o));

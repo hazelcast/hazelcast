@@ -74,7 +74,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     final Ringbuffer<ReliableTopicMessage> ringbuffer;
     final Executor executor;
     final ConcurrentMap<UUID, MessageRunner<E>> runnersMap
-            = new ConcurrentHashMap<UUID, MessageRunner<E>>();
+            = new ConcurrentHashMap<>();
 
     /**
      * Local statistics for this reliable topic, including
@@ -242,10 +242,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         if (listener instanceof ReliableMessageListener) {
             reliableMessageListener = (ReliableMessageListener) listener;
         } else {
-            reliableMessageListener = new ReliableMessageListenerAdapter<E>(listener);
+            reliableMessageListener = new ReliableMessageListenerAdapter<>(listener);
         }
 
-        MessageRunner<E> runner = new ReliableMessageRunner<E>(id, reliableMessageListener,
+        MessageRunner<E> runner = new ReliableMessageRunner<>(id, reliableMessageListener,
                 nodeEngine.getSerializationService(), executor, nodeEngine.getLogger(this.getClass()),
                 nodeEngine.getClusterService(), this);
         runnersMap.put(id, runner);

@@ -33,8 +33,8 @@ public final class PortableHookLoader {
     private static final String FACTORY_ID = "com.hazelcast.PortableHook";
 
     private final Map<Integer, ? extends PortableFactory> configuredFactories;
-    private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
-    private final Collection<ClassDefinition> definitions = new HashSet<ClassDefinition>();
+    private final Map<Integer, PortableFactory> factories = new HashMap<>();
+    private final Collection<ClassDefinition> definitions = new HashSet<>();
     private final ClassLoader classLoader;
 
     public PortableHookLoader(Map<Integer, ? extends PortableFactory> configuredFactories, ClassLoader classLoader) {

@@ -146,7 +146,7 @@ public class PartitionGroupConfig {
 
     private MemberGroupType groupType = MemberGroupType.PER_MEMBER;
 
-    private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<MemberGroupConfig>();
+    private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<>();
 
     /**
      * Type of member groups.

@@ -32,10 +32,10 @@ public final class OutOfMemoryErrorDispatcher {
     private static final HazelcastInstance[] EMPTY_INSTANCES = new HazelcastInstance[0];
 
     private static final AtomicReference<HazelcastInstance[]> SERVER_INSTANCES_REF =
-            new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
+            new AtomicReference<>(EMPTY_INSTANCES);
 
     private static final AtomicReference<HazelcastInstance[]> CLIENT_INSTANCES_REF =
-            new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
+            new AtomicReference<>(EMPTY_INSTANCES);
 
     private static volatile OutOfMemoryHandler handler = new DefaultOutOfMemoryHandler();
 

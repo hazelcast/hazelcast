@@ -30,7 +30,7 @@ public class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
     private final String threadNamePrefix;
     private final AtomicInteger idGen = new AtomicInteger(0);
     // to reuse previous thread IDs
-    private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000);
+    private final Queue<Integer> idQ = new LinkedBlockingQueue<>(1000);
 
     private final NodeEngine nodeEngine;
 

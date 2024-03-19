@@ -108,7 +108,7 @@ public final class ReflectionHelper {
 
         try {
             Getter parent = null;
-            List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
+            List<String> possibleMethodNames = new ArrayList<>(INITIAL_CAPACITY);
             for (final String fullname : attribute.split("\\.")) {
                 String baseName = removeModifierSuffix(fullname);
                 String modifier = getModifierSuffix(fullname, baseName);

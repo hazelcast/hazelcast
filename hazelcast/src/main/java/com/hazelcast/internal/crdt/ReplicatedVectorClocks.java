@@ -44,7 +44,7 @@ class ReplicatedVectorClocks {
      * which CRDT state has not yet been replicated and to which replicas.
      */
     private ConcurrentMap<ReplicatedVectorClockId, Map<String, VectorClock>> replicatedVectorClocks
-            = new ConcurrentHashMap<ReplicatedVectorClockId, Map<String, VectorClock>>();
+            = new ConcurrentHashMap<>();
 
     /**
      * Returns the vector clocks for the given {@code serviceName} and

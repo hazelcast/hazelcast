@@ -82,7 +82,7 @@ public class SendMemberHandshakeTask implements Runnable {
     }
 
     Map<ProtocolType, Collection<Address>> getConfiguredLocalAddresses() {
-        Map<ProtocolType, Collection<Address>> addressMap = new HashMap<ProtocolType, Collection<Address>>();
+        Map<ProtocolType, Collection<Address>> addressMap = new HashMap<>();
         Map<EndpointQualifier, Address> addressesPerEndpointQualifier = serverContext.getThisAddresses();
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressesPerEndpointQualifier.entrySet()) {
             Collection<Address> addresses = addressMap.computeIfAbsent(addressEntry.getKey().getType(), k -> new ArrayList<>());

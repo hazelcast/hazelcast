@@ -77,11 +77,11 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty SAMPLES
             = new HazelcastProperty("hazelcast.diagnostics.overloaded.connections.samples", 1000);
 
-    private static final Queue<OutboundFrame> EMPTY_QUEUE = new LinkedList<OutboundFrame>();
+    private static final Queue<OutboundFrame> EMPTY_QUEUE = new LinkedList<>();
 
     private final SerializationService serializationService;
-    private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
-    private final ArrayList<OutboundFrame> packets = new ArrayList<OutboundFrame>();
+    private final ItemCounter<String> occurrenceMap = new ItemCounter<>();
+    private final ArrayList<OutboundFrame> packets = new ArrayList<>();
     private final Random random = new Random();
     private final NumberFormat defaultFormat = NumberFormat.getPercentInstance();
     private final NodeEngineImpl nodeEngine;

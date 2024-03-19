@@ -66,7 +66,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
 
     /** Constructor function for counter implementations */
     private final ConstructorFunction<String, PNCounterImpl> counterConstructorFn =
-            new ConstructorFunction<String, PNCounterImpl>() {
+            new ConstructorFunction<>() {
                 @Override
                 public PNCounterImpl createNew(String name) {
                     if (isShuttingDown) {
@@ -170,8 +170,8 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
     @Override
     public CRDTReplicationContainer prepareReplicationOperation(
             Map<String, VectorClock> previouslyReplicatedVectorClocks, int targetIndex) {
-        final HashMap<String, VectorClock> currentVectorClocks = new HashMap<String, VectorClock>();
-        final HashMap<String, PNCounterImpl> counters = new HashMap<String, PNCounterImpl>();
+        final HashMap<String, VectorClock> currentVectorClocks = new HashMap<>();
+        final HashMap<String, PNCounterImpl> counters = new HashMap<>();
         final Config config = nodeEngine.getConfig();
 
         for (Entry<String, PNCounterImpl> counterEntry : this.counters.entrySet()) {

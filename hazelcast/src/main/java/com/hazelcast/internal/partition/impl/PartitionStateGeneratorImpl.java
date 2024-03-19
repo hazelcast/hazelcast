@@ -497,7 +497,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         @Override
         public Iterator<Integer> getPartitionsIterator(final int index) {
             final Iterator<Integer> iterator = groupPartitionTable.getPartitions(index).iterator();
-            return new Iterator<Integer>() {
+            return new Iterator<>() {
                 Integer current;
 
                 @Override

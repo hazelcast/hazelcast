@@ -73,13 +73,13 @@ public final class RaftLog {
 
     private RaftLog(int capacity, RaftStateStore store) {
         checkNotNull(store);
-        this.logs = new ArrayRingbuffer<LogEntry>(capacity);
+        this.logs = new ArrayRingbuffer<>(capacity);
         this.store = store;
     }
 
     private RaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftStateStore store) {
         checkNotNull(store);
-        this.logs = new ArrayRingbuffer<LogEntry>(capacity);
+        this.logs = new ArrayRingbuffer<>(capacity);
         long snapshotIndex;
         if (isNonInitial(snapshot)) {
             this.snapshot = snapshot;

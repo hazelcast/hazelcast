@@ -224,7 +224,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
         // an array with the partitionCount as length, so we can quickly do a lookup for a given partitionId.
         // it will store all the 'sub' responses.
-        private final AtomicReferenceArray<Object> responseArray = new AtomicReferenceArray<Object>(
+        private final AtomicReferenceArray<Object> responseArray = new AtomicReferenceArray<>(
                 getNodeEngine().getPartitionService().getPartitionCount());
 
         // contains the number of pending operations. If it hits zero, all responses have been received.

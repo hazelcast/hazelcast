@@ -120,7 +120,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         this(namespace, partitionId);
 
         this.inMemoryFormat = config.getInMemoryFormat();
-        this.ringbuffer = new ArrayRingbuffer<E>(config.getCapacity());
+        this.ringbuffer = new ArrayRingbuffer<>(config.getCapacity());
 
         final long ttlMs = SECONDS.toMillis(config.getTimeToLiveSeconds());
         if (ttlMs != TTL_DISABLED) {

@@ -32,7 +32,7 @@ public class RestApiTextDecoder extends TextDecoder {
     public static final TextParsers TEXT_PARSERS;
 
     static {
-        Map<String, CommandParser> parsers = new HashMap<String, CommandParser>();
+        Map<String, CommandParser> parsers = new HashMap<>();
         parsers.put("GET", new HttpGetCommandParser());
         parsers.put("POST", new HttpPostCommandParser());
         parsers.put("PUT", new HttpPostCommandParser());

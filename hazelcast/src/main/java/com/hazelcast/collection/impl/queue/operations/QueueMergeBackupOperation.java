@@ -86,7 +86,7 @@ public class QueueMergeBackupOperation extends QueueOperation implements Mutatin
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        backupItems = new ArrayList<QueueItem>(size);
+        backupItems = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             QueueItem backupItem = in.readObject();
             backupItems.add(backupItem);

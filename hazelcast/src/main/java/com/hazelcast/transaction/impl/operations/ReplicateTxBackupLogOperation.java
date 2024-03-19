@@ -42,7 +42,7 @@ import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLI
 public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     // todo: probably we don't want to use linked list.
-    private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
+    private final List<TransactionLogRecord> records = new LinkedList<>();
     private UUID callerUuid;
     private UUID txnId;
     private long timeoutMillis;

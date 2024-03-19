@@ -56,7 +56,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     private static final long INITIAL_TIME_MILLIS = Clock.currentTimeMillis();
 
-    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
+    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
             if (o1.getScheduleId() > o2.getScheduleId()) {

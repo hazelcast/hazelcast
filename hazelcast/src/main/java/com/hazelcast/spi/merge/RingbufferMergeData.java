@@ -224,6 +224,6 @@ public class RingbufferMergeData implements Iterable<Object> {
      */
     @Override
     public Iterator<Object> iterator() {
-        return new RingbufferMergeDataReadOnlyIterator<Object>(this);
+        return new RingbufferMergeDataReadOnlyIterator<>(this);
     }
 }
