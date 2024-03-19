@@ -57,9 +57,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-@SuppressWarnings("SqlNoDataSourceInspection")
 @Category({NightlyTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     private static final DockerImageName MYSQL_IMAGE =
             DockerImageName.parse("debezium/example-mysql:2.3.0.Final").asCompatibleSubstituteFor("mysql");
@@ -506,13 +506,50 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         }
     }
 
+    @Test
+    public void schemaChangesArePassed() {
+        final String listName = "schemaChangesArePassed";
+        try (MySQLContainer<?> container = mySqlContainer()) {
+            container.start();
+
+            HazelcastInstance hz = createHazelcastInstance();
+            IList<ChangeRecord> changeRecordList = hz.getList(listName);
+
+            StreamSource<ChangeRecord> source = mySqlSource(container);
+            Pipeline p = Pipeline.create();
+            p
+                    .readFrom(source)
+                    .withIngestionTimestamps()
+                    .setLocalParallelism(1)
+                    .writeTo(Sinks.list(changeRecordList));
+
+            Job job = hz.getJet().newJob(p);
+            assertJobStatusEventually(job, JobStatus.RUNNING);
+
+            String query = "CREATE TABLE `inventory`.`tableForSchemaChangesArePassed` (id INT)";
+            runQuery(container, query);
+
+            try {
+                assertTrueEventually(() -> {
+                    logger.info(String.format("List size: %s", changeRecordList.size()));
+                    assertThat(changeRecordList).as(listName).isNotEmpty();
+
+                    assertThat(changeRecordList).anyMatch(r ->
+                            r.value().toJson().contains("CREATE TABLE `tableForSchemaChangesArePassed`"));
+                });
+            } finally {
+                runQuery(container, "DROP TABLE IF EXISTS inventory.tableForSchemaChangesArePassed");
+            }
+        }
+    }
+
     /**
      * {@code before} field in MongoDB CDC is not present at all
      */
     @Test
     public void noFailWhenBeforeIsNotPresent() {
-        try (MongoDBContainer container =  new MongoDBContainer(MONGODB_IMAGE).withExposedPorts(27017)
-                                                                              .withNetworkAliases("mongo")) {
+        try (MongoDBContainer container = new MongoDBContainer(MONGODB_IMAGE).withExposedPorts(27017)
+                                                                             .withNetworkAliases("mongo")) {
             container.start();
             String connectionString = container.getConnectionString();
 

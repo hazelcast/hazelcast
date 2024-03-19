@@ -33,11 +33,13 @@ import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MySQLContainer;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -176,6 +178,18 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         properties.put("useSSL", "false");
 
         return DriverManager.getConnection(url, properties);
+    }
+    protected static void runQuery(MySQLContainer<?> container, String query) {
+        try (Connection connection = getMySqlConnection(container.getJdbcUrl(), container.getUsername(),
+                container.getPassword())) {
+            connection.setSchema("inventory");
+            try (Statement statement = connection.createStatement()) {
+                //noinspection SqlSourceToSinkFlow
+                statement.execute(query);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected static Connection getPostgreSqlConnection(String url, String user, String password) throws SQLException {
