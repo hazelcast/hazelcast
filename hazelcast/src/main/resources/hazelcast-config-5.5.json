@@ -156,6 +156,9 @@
         },
         "user-code-namespaces": {
           "$ref": "#/definitions/UserCodeNamespacesConfig"
+        },
+        "rest": {
+          "$ref": "#/definitions/RestConfig"
         }
       }
     },
@@ -4450,7 +4453,9 @@
           "description": "Enables or disables the TPC-aware mode."
         }
       },
-      "required": ["enabled"],
+      "required": [
+        "enabled"
+      ],
       "description": "Configures the client for TPC, which is the next generation Hazelcast that uses thread-per-core model. TPC-aware clients will maintain connections to all cores of all cluster members. The client will route partition-specific invocations to the correct core of the correct member in the best effort basis. This configuration is introduced as BETA, and it might be subject to changes, or it can be removed in future releases without a prior notice."
     },
     "OutboundPortDefinition": {
@@ -5257,6 +5262,121 @@
         "url"
       ],
       "description": "The base definition for a resource, which can either be a single JAR file or a ZIP archive of JAR files."
+    },
+    "RestConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enables the REST API. The default value is false.",
+          "default": false
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port number on which the REST API will be available. The default value is 8080.",
+          "default": 8080
+        },
+        "security-realm": {
+          "type": "string",
+          "description": "The security realm used for securing the REST API."
+        },
+        "token-validity-seconds": {
+          "type": "integer",
+          "description": "The validity of the token in seconds.",
+          "default": 300
+        },
+        "ssl": {
+          "$ref": "#/definitions/RestSSLConfig"
+        }
+      },
+      "required": [
+        "security-realm"
+      ],
+      "description": "The configuration for the REST server. This feature is only available in Hazelcast Enterprise."
+    },
+    "RestSSLConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Indicates whether SSL is enabled for the REST API.",
+          "default": false
+        },
+        "client-auth": {
+          "type": "string",
+          "description": "Specifies the client authentication requirement. Possible values could be 'NONE', 'OPTIONAL', or 'REQUIRED'."
+        },
+        "ciphers": {
+          "type": "string",
+          "description": "A comma separated list of cipher suites to use."
+        },
+        "enabled-protocols": {
+          "type": "string",
+          "description": "A comma separated list of enabled protocols."
+        },
+        "key-alias": {
+          "type": "string",
+          "description": "The alias of the key in the keystore."
+        },
+        "key-password": {
+          "type": "string",
+          "description": "The password of the key in the keystore."
+        },
+        "key-store": {
+          "type": "string",
+          "description": "The path to the keystore file."
+        },
+        "key-store-password": {
+          "type": "string",
+          "description": "The password of the keystore."
+        },
+        "key-store-type": {
+          "type": "string",
+          "description": "The type of the keystore."
+        },
+        "key-store-provider": {
+          "type": "string",
+          "description": "The provider of the keystore."
+        },
+        "trust-store": {
+          "type": "string",
+          "description": "The path to the truststore file."
+        },
+        "trust-store-password": {
+          "type": "string",
+          "description": "The password of the truststore."
+        },
+        "trust-store-type": {
+          "type": "string",
+          "description": "The type of the truststore."
+        },
+        "trust-store-provider": {
+          "type": "string",
+          "description": "The provider of the truststore."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "The SSL protocol to use."
+        },
+        "certificate": {
+          "type": "string",
+          "description": "The path to the certificate file."
+        },
+        "certificate-key": {
+          "type": "string",
+          "description": "The path to the certificate key file."
+        },
+        "trust-certificate": {
+          "type": "string",
+          "description": "The path to the trust certificate file."
+        },
+        "trust-certificate-key": {
+          "type": "string",
+          "description": "The path to the trust certificate key file."
+        }
+      }
     }
   }
 }

@@ -75,7 +75,8 @@ public enum ConfigSections {
     DATA_CONNECTION("data-connection", true),
     TPC("tpc", false),
     USER_CODE_NAMESPACES("user-code-namespaces", false),
-    USER_CODE_NAMESPACE("namespace", true);
+    USER_CODE_NAMESPACE("namespace", true),
+    REST("rest", false);
 
     final boolean multipleOccurrence;
     private final String name;

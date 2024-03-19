@@ -77,10 +77,11 @@
                 <xs:element name="jet" type="jet" minOccurs="0"/>
                 <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
-                <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0"/>
                 <xs:element name="data-connection" type="data-connection" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="tpc" type="tpc" minOccurs="0"/>
                 <xs:element name="user-code-namespaces" type="namespaces-type" minOccurs="0"/>
+                <xs:element name="rest" type="rest-type" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -6410,4 +6411,210 @@
             </xs:documentation>
         </xs:annotation>
     </xs:element>
+
+    <xs:simpleType name="client-auth-type">
+        <xs:annotation>
+            <xs:documentation>
+                The enumeration value whether client authentication is needed or not.
+                    NONE: No client authentication is needed.
+                    WANT: Client authentication is wanted.
+                    NEED: Client authentication is needed.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="WANT"/>
+            <xs:enumeration value="NEED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ssl-type">
+        <xs:annotation>
+            <xs:documentation>
+                SSL configuration options.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="client-auth" type="client-auth-type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The enumeration value whether client authentication is needed or not.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ciphers" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The list of supported SSL ciphers.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-alias" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The alias of the key in the keystore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-password" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The password of the key in the keystore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-store" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the keystore file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-store-password" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The password of the keystore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-store-type" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The type of the keystore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-store-provider" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The provider of the keystore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="protocol" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The protocol to be used for SSL.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="trust-store" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the truststore file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="trust-store-password" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The password of the truststore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="trust-store-type" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The type of the truststore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="trust-store-provider" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The provider of the truststore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enabled-protocols" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The list of enabled protocols.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="certificate" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the PEM formatted certificate file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="certificate-key" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the PEM formatted certificate private key file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="trust-certificate" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the PEM formatted trust certificate file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="trust-certificate-key" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the PEM formatted trust certificate private key file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the SSL is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="rest-type">
+        <xs:annotation>
+            <xs:documentation>
+                REST server configuration options.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="port" type="xs:int" minOccurs="0" default="8443">
+                <xs:annotation>
+                    <xs:documentation>
+                        The port number that the REST server will listen on.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="security-realm" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The security realm that the REST server will use.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="token-validity-seconds" type="xs:int" minOccurs="0" default="900">
+                <xs:annotation>
+                    <xs:documentation>
+                        The validity of the user token in seconds.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ssl" type="ssl-type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        SSL configuration options for the REST server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the REST server is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+
 </xs:schema>

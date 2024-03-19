@@ -14,8 +14,8 @@
 
 # A comprehensive example of Hazelcast configuration without network configuration.
 # This file is complete if included into either of the following:
-#   - hazelcast-fullconfig.xml
-#   - hazelcast-fullconfig-advanced-network-config.xml
+#   - hazelcast-fullconfig.yaml
+#   - hazelcast-fullconfig-advanced-network-config.yaml
 #
 # Hazelcast resolves configuration using the following approach:
 #
@@ -1113,3 +1113,30 @@ hazelcast:
       - id: "test3"
         resource-type: "jars_in_zip"
         url: "file://home/hazelcast/test3.zip"
+
+  rest:
+    enabled: false
+    port: 8080
+    security-realm: realmName
+    token-validity-seconds: 300
+    ssl:
+      enabled: false
+      client-auth: NONE
+      ciphers: TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256
+      enabled-protocols: TLSv1.2, TLSv1.3
+      key-alias: myKeyAlias
+      key-password: myKeyPassword
+      key-store: /path/to/keystore
+      key-store-password: myKeyStorePassword
+      key-store-type: JKS
+      key-store-provider: SUN
+      trust-store: /path/to/truststore
+      trust-store-password: myTrustStorePassword
+      trust-store-type: JKS
+      trust-store-provider: SUN
+      protocol: TLS
+      certificate: /path/to/certificate
+      certificate-key: /path/to/certificate-key
+      trust-certificate: /path/to/trust-certificate
+      trust-certificate-key: /path/to/trust-certificate-key
+

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -718,6 +719,33 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(1, map1.getAttributeConfigs().size());
     }
 
+    protected static void validateRestConfig(Config config) {
+        RestConfig restConfig = config.getRestConfig();
+        assertTrue(restConfig.isEnabled());
+        assertEquals(8080, restConfig.getPort());
+        assertEquals("realmName", restConfig.getSecurityRealm());
+        assertEquals(500, restConfig.getTokenValidityDuration().toSeconds());
+        assertTrue(restConfig.getSsl().isEnabled());
+        assertEquals(RestConfig.Ssl.ClientAuth.NEED, restConfig.getSsl().getClientAuth());
+        assertEquals("TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256", restConfig.getSsl().getCiphers());
+        assertEquals("TLSv1.2, TLSv1.3", restConfig.getSsl().getEnabledProtocols());
+        assertEquals("myKeyAlias", restConfig.getSsl().getKeyAlias());
+        assertEquals("myKeyPassword", restConfig.getSsl().getKeyPassword());
+        assertEquals("/path/to/keystore", restConfig.getSsl().getKeyStore());
+        assertEquals("myKeyStorePassword", restConfig.getSsl().getKeyStorePassword());
+        assertEquals("JKS", restConfig.getSsl().getKeyStoreType());
+        assertEquals("SUN", restConfig.getSsl().getKeyStoreProvider());
+        assertEquals("/path/to/truststore", restConfig.getSsl().getTrustStore());
+        assertEquals("myTrustStorePassword", restConfig.getSsl().getTrustStorePassword());
+        assertEquals("JKS", restConfig.getSsl().getTrustStoreType());
+        assertEquals("SUN", restConfig.getSsl().getTrustStoreProvider());
+        assertEquals("TLS", restConfig.getSsl().getProtocol());
+        assertEquals("/path/to/certificate", restConfig.getSsl().getCertificate());
+        assertEquals("/path/to/certificate-key", restConfig.getSsl().getCertificatePrivateKey());
+        assertEquals("/path/to/trust-certificate", restConfig.getSsl().getTrustCertificate());
+        assertEquals("/path/to/trust-certificate-key", restConfig.getSsl().getTrustCertificatePrivateKey());
+    }
+
     @Test
     public abstract void testMapExpiryConfig();
 
@@ -741,6 +769,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testNamespaceConfigs() throws IOException;
+
+    @Test
+    public abstract void testRestConfig() throws IOException;
 
     protected abstract Config buildAuditlogConfig();
 

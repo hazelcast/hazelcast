@@ -130,6 +130,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPMapConfig;
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -169,6 +170,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -191,6 +193,7 @@ import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMo
 import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
+import static com.hazelcast.internal.config.ConfigSections.REST;
 import static com.hazelcast.internal.config.ConfigSections.TPC;
 import static com.hazelcast.internal.config.ConfigSections.AUDITLOG;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
@@ -259,6 +262,7 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 @SuppressWarnings({
         "checkstyle:cyclomaticcomplexity",
@@ -402,6 +406,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleTpc(node);
         } else if (matches(USER_CODE_NAMESPACES.getName(), nodeName)) {
             handleNamespaces(node);
+        } else if (matches(REST.getName(), nodeName)) {
+            handleRest(node);
         } else {
             return true;
         }
@@ -3649,6 +3655,78 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 fillProperties(child, dataConnectionConfig.getProperties());
             } else if (matches("shared", childName)) {
                 dataConnectionConfig.setShared(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
+    private void handleRest(Node node) {
+        Node enabledNode = getNamedItemNode(node, "enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        RestConfig restConfig = config.getRestConfig();
+        restConfig.setEnabled(enabled);
+
+        final String portName = "port";
+        final String securityRealmName = "security-realm";
+        final String tokenValiditySecondsName = "token-validity-seconds";
+
+        for (Node child : childElements(node)) {
+            String childName = cleanNodeName(child);
+            if (matches(portName, childName)) {
+                restConfig.setPort(getIntegerValue(portName, getTextContent(child)));
+            } else if (matches(securityRealmName, childName)) {
+                restConfig.setSecurityRealm(getTextContent(child));
+            } else if (matches(tokenValiditySecondsName, childName)) {
+                int durationSeconds = getIntegerValue(tokenValiditySecondsName, getTextContent(child));
+                restConfig.setTokenValidityDuration(Duration.of(durationSeconds, SECONDS));
+            } else if (matches("ssl", childName)) {
+                handleRestSsl(restConfig.getSsl(), child);
+            }
+        }
+    }
+
+    private void handleRestSsl(RestConfig.Ssl ssl, Node node) {
+        Node enabledNode = getNamedItemNode(node, "enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        ssl.setEnabled(enabled);
+
+        for (Node child : childElements(node)) {
+            String childName = cleanNodeName(child);
+            if (matches("client-auth", childName)) {
+                ssl.setClientAuth(RestConfig.Ssl.ClientAuth.valueOf(getTextContent(child)));
+            } else if (matches("ciphers", childName)) {
+                ssl.setCiphers(getTextContent(child));
+            } else if (matches("enabled-protocols", childName)) {
+                ssl.setEnabledProtocols(getTextContent(child));
+            } else if (matches("key-alias", childName)) {
+                ssl.setKeyAlias(getTextContent(child));
+            } else if (matches("key-password", childName)) {
+                ssl.setKeyPassword(getTextContent(child));
+            } else if (matches("key-store", childName)) {
+                ssl.setKeyStore(getTextContent(child));
+            } else if (matches("key-store-password", childName)) {
+                ssl.setKeyStorePassword(getTextContent(child));
+            } else if (matches("key-store-type", childName)) {
+                ssl.setKeyStoreType(getTextContent(child));
+            } else if (matches("key-store-provider", childName)) {
+                ssl.setKeyStoreProvider(getTextContent(child));
+            } else if (matches("trust-store", childName)) {
+                ssl.setTrustStore(getTextContent(child));
+            } else if (matches("trust-store-password", childName)) {
+                ssl.setTrustStorePassword(getTextContent(child));
+            } else if (matches("trust-store-type", childName)) {
+                ssl.setTrustStoreType(getTextContent(child));
+            } else if (matches("trust-store-provider", childName)) {
+                ssl.setTrustStoreProvider(getTextContent(child));
+            } else if (matches("protocol", childName)) {
+                ssl.setProtocol(getTextContent(child));
+            } else if (matches("certificate", childName)) {
+                ssl.setCertificate(getTextContent(child));
+            } else if (matches("certificate-key", childName)) {
+                ssl.setCertificatePrivateKey(getTextContent(child));
+            } else if (matches("trust-certificate", childName)) {
+                ssl.setTrustCertificate(getTextContent(child));
+            } else if (matches("trust-certificate-key", childName)) {
+                ssl.setTrustCertificatePrivateKey(getTextContent(child));
             }
         }
     }

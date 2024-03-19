@@ -18,7 +18,6 @@ package com.hazelcast.config.rest;
 
 import com.hazelcast.spi.annotation.Beta;
 
-import java.util.Arrays;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
@@ -35,9 +34,9 @@ public class RestConfig {
 
         private ClientAuth clientAuth = ClientAuth.NONE;
 
-        private String[] ciphers;
+        private String ciphers;
 
-        private String[] enabledProtocols;
+        private String enabledProtocols;
 
         private String keyAlias;
 
@@ -114,19 +113,19 @@ public class RestConfig {
         /**
          * Return the supported SSL ciphers.
          *
-         * @return the supported SSL ciphers
+         * @return Comma separated list of the supported SSL ciphers list
          */
-        public String[] getCiphers() {
+        public String getCiphers() {
             return this.ciphers;
         }
 
         /**
          * Set the supported SSL ciphers.
          *
-         * @param ciphers the supported SSL ciphers
+         * @param ciphers Comma seperated list of supported SSL ciphers
          * @return the {@link Ssl} to use
          */
-        public Ssl setCiphers(String[] ciphers) {
+        public Ssl setCiphers(String ciphers) {
             this.ciphers = ciphers;
             return this;
         }
@@ -134,19 +133,19 @@ public class RestConfig {
         /**
          * Return the enabled SSL protocols.
          *
-         * @return the enabled SSL protocols.
+         * @return Comma separated list of the enabled SSL protocols.
          */
-        public String[] getEnabledProtocols() {
+        public String getEnabledProtocols() {
             return this.enabledProtocols;
         }
 
         /**
          * Set the enabled SSL protocols.
          *
-         * @param enabledProtocols the enabled SSL protocols
+         * @param enabledProtocols Comma separated list of the enabled SSL protocols
          * @return the {@link Ssl} to use
          */
-        public Ssl setEnabledProtocols(String[] enabledProtocols) {
+        public Ssl setEnabledProtocols(String enabledProtocols) {
             this.enabledProtocols = enabledProtocols;
             return this;
         }
@@ -475,8 +474,8 @@ public class RestConfig {
             return "Ssl{"
                     + "enabled=" + enabled
                     + ", clientAuth=" + clientAuth
-                    + ", ciphers=" + Arrays.toString(ciphers)
-                    + ", enabledProtocols=" + Arrays.toString(enabledProtocols)
+                    + ", ciphers=" + ciphers
+                    + ", enabledProtocols=" + enabledProtocols
                     + ", keyAlias='" + keyAlias + '\''
                     + ", keyPassword='" + keyPassword + '\''
                     + ", keyStore='" + keyStore + '\''

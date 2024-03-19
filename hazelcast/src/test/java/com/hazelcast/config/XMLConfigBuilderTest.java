@@ -4947,6 +4947,40 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testRestConfig() throws IOException {
+        String xml = HAZELCAST_START_TAG
+                + "    <rest enabled=\"true\">\n"
+                + "        <port>8080</port>\n"
+                + "        <security-realm>realmName</security-realm>\n"
+                + "        <token-validity-seconds>500</token-validity-seconds>\n"
+                + "        <ssl enabled=\"true\">\n"
+                + "            <client-auth>NEED</client-auth>\n"
+                + "            <ciphers>TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256</ciphers>\n"
+                + "            <enabled-protocols>TLSv1.2, TLSv1.3</enabled-protocols>\n"
+                + "            <key-alias>myKeyAlias</key-alias>\n"
+                + "            <key-password>myKeyPassword</key-password>\n"
+                + "            <key-store>/path/to/keystore</key-store>\n"
+                + "            <key-store-password>myKeyStorePassword</key-store-password>\n"
+                + "            <key-store-type>JKS</key-store-type>\n"
+                + "            <key-store-provider>SUN</key-store-provider>\n"
+                + "            <trust-store>/path/to/truststore</trust-store>\n"
+                + "            <trust-store-password>myTrustStorePassword</trust-store-password>\n"
+                + "            <trust-store-type>JKS</trust-store-type>\n"
+                + "            <trust-store-provider>SUN</trust-store-provider>\n"
+                + "            <protocol>TLS</protocol>\n"
+                + "            <certificate>/path/to/certificate</certificate>\n"
+                + "            <certificate-key>/path/to/certificate-key</certificate-key>\n"
+                + "            <trust-certificate>/path/to/trust-certificate</trust-certificate>\n"
+                + "            <trust-certificate-key>/path/to/trust-certificate-key</trust-certificate-key>\n"
+                + "        </ssl>\n"
+                + "    </rest>\n"
+                + HAZELCAST_END_TAG;
+
+        final Config config = buildConfig(xml);
+        validateRestConfig(config);
+    }
+
+    @Override
     protected Config buildMapWildcardConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"map*\">\n"

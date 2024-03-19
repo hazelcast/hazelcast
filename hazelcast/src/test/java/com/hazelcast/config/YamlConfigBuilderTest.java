@@ -4868,6 +4868,39 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testRestConfig() throws IOException {
+        String yaml = "hazelcast:\n"
+                + "  rest:\n"
+                + "    enabled: true\n"
+                + "    port: 8080\n"
+                + "    security-realm: realmName\n"
+                + "    token-validity-seconds: 500\n"
+                + "    ssl:\n"
+                + "      enabled: true\n"
+                + "      client-auth: NEED\n"
+                + "      ciphers: TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256\n"
+                + "      enabled-protocols: TLSv1.2, TLSv1.3\n"
+                + "      key-alias: myKeyAlias\n"
+                + "      key-password: myKeyPassword\n"
+                + "      key-store: /path/to/keystore\n"
+                + "      key-store-password: myKeyStorePassword\n"
+                + "      key-store-type: JKS\n"
+                + "      key-store-provider: SUN\n"
+                + "      trust-store: /path/to/truststore\n"
+                + "      trust-store-password: myTrustStorePassword\n"
+                + "      trust-store-type: JKS\n"
+                + "      trust-store-provider: SUN\n"
+                + "      protocol: TLS\n"
+                + "      certificate: /path/to/certificate\n"
+                + "      certificate-key: /path/to/certificate-key\n"
+                + "      trust-certificate: /path/to/trust-certificate\n"
+                + "      trust-certificate-key: /path/to/trust-certificate-key\n";
+
+        Config config = buildConfig(yaml);
+        validateRestConfig(config);
+    }
+
+    @Override
     public void testMapExpiryConfig() {
         String yaml = ""
                 + "hazelcast:\n"
