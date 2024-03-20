@@ -719,7 +719,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(1, map1.getAttributeConfigs().size());
     }
 
-    protected static void validateRestConfig(Config config) {
+    static void validateRestConfig(Config config) {
         RestConfig restConfig = config.getRestConfig();
         assertTrue(restConfig.isEnabled());
         assertEquals(8080, restConfig.getPort());

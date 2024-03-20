@@ -6585,7 +6585,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="security-realm" type="xs:string">
+            <xs:element name="security-realm" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         The security realm that the REST server will use.

@@ -1115,13 +1115,13 @@ hazelcast:
         url: "file://home/hazelcast/test3.zip"
 
   rest:
-    enabled: false
+    enabled: true
     port: 8080
     security-realm: realmName
     token-validity-seconds: 300
     ssl:
-      enabled: false
-      client-auth: NONE
+      enabled: true
+      client-auth: NEED
       ciphers: TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256
       enabled-protocols: TLSv1.2, TLSv1.3
       key-alias: myKeyAlias

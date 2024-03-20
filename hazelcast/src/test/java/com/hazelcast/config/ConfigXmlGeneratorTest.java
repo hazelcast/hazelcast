@@ -1570,6 +1570,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getNamespacesConfig(), actualConfig.getNamespacesConfig());
     }
 
+    @Test
+    public void testRestConfig() {
+        Config expectedConfig = XMLConfigBuilderTest.buildRestConfigFromXmlString();
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig, false);
+        AbstractConfigBuilderTest.validateRestConfig(actualConfig);
+    }
+
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }

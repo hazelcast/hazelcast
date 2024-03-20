@@ -4948,6 +4948,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     public void testRestConfig() throws IOException {
+        final Config config = buildRestConfigFromXmlString();
+        validateRestConfig(config);
+    }
+
+    static Config buildRestConfigFromXmlString() {
         String xml = HAZELCAST_START_TAG
                 + "    <rest enabled=\"true\">\n"
                 + "        <port>8080</port>\n"
@@ -4977,7 +4982,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         final Config config = buildConfig(xml);
-        validateRestConfig(config);
+        return config;
     }
 
     @Override

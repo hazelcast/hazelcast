@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.cp.CPMapConfig;
+import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -205,6 +206,7 @@ public class ConfigXmlGenerator {
         dataConnectionConfiguration(gen, config);
         tpcConfiguration(gen, config);
         namespacesConfiguration(gen, config);
+        restServerConfiguration(gen, config);
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();
@@ -1286,6 +1288,40 @@ public class ConfigXmlGenerator {
 
         namespaceConfigurations(gen, config);
         gen.close();
+    }
+
+
+    private void restServerConfiguration(final XmlGenerator gen, final Config config) {
+        RestConfig restConfig = config.getRestConfig();
+        gen.open("rest", "enabled", restConfig.isEnabled())
+                .node("port", restConfig.getPort())
+                .node("security-realm", restConfig.getSecurityRealm())
+                .node("token-validity-seconds", restConfig.getTokenValidityDuration().toSeconds());
+        restServerSslConfiguration(gen, restConfig.getSsl());
+        gen.close();
+    }
+
+    private void restServerSslConfiguration(XmlGenerator gen, RestConfig.Ssl ssl) {
+        gen.open("ssl", "enabled", ssl.isEnabled())
+                .node("client-auth", ssl.getClientAuth().name())
+                .node("ciphers", ssl.getCiphers())
+                .node("enabled-protocols", ssl.getEnabledProtocols())
+                .node("key-alias", ssl.getKeyAlias())
+                .node("key-password", getOrMaskValue(ssl.getKeyPassword()))
+                .node("key-store", ssl.getKeyStore())
+                .node("key-store-password", getOrMaskValue(ssl.getKeyStorePassword()))
+                .node("key-store-type", ssl.getKeyStoreType())
+                .node("key-store-provider", ssl.getKeyStoreProvider())
+                .node("trust-store", ssl.getTrustStore())
+                .node("trust-store-password", getOrMaskValue(ssl.getTrustStorePassword()))
+                .node("trust-store-type", ssl.getTrustStoreType())
+                .node("trust-store-provider", ssl.getTrustStoreProvider())
+                .node("protocol", ssl.getProtocol())
+                .node("certificate", ssl.getCertificate())
+                .node("certificate-key", ssl.getCertificatePrivateKey())
+                .node("trust-certificate", ssl.getTrustCertificate())
+                .node("trust-certificate-key", ssl.getTrustCertificatePrivateKey())
+                .close();
     }
 
     public static void namespaceConfigurations(XmlGenerator gen, Config config) {
