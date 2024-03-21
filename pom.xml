@@ -97,7 +97,7 @@
         <debezium.version>1.9.8.Final</debezium.version>
         <grpc.version>1.60.0</grpc.version>
         <guava.version>33.1.0-jre</guava.version>
-        <hadoop.version>3.3.6</hadoop.version>
+        <hadoop.version>3.4.0</hadoop.version>
         <h2.version>2.2.224</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
