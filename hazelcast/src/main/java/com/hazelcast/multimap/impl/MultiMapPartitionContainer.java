@@ -37,7 +37,7 @@ public class MultiMapPartitionContainer {
     final int partitionId;
 
     private final ConstructorFunction<String, MultiMapContainer> containerConstructor
-            = new ConstructorFunction<String, MultiMapContainer>() {
+            = new ConstructorFunction<>() {
         public MultiMapContainer createNew(String name) {
             return new MultiMapContainer(name, service, partitionId);
         }

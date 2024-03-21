@@ -75,7 +75,7 @@ public class MultiMapGetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        List<Data> collection = new ArrayList<Data>();
+        List<Data> collection = new ArrayList<>();
         Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
         if (responseCollection != null) {
             for (MultiMapRecord record : responseCollection) {

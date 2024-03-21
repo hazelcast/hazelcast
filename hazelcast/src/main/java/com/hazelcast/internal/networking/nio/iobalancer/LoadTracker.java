@@ -43,15 +43,15 @@ class LoadTracker {
     private final Map<NioThread, Set<MigratablePipeline>> ownerToPipelines;
 
     //load per pipeline since an instance started
-    private final ItemCounter<MigratablePipeline> lastLoadCounter = new ItemCounter<MigratablePipeline>();
+    private final ItemCounter<MigratablePipeline> lastLoadCounter = new ItemCounter<>();
 
     //load per NioThread since last calculation
-    private final ItemCounter<NioThread> ownerLoad = new ItemCounter<NioThread>();
+    private final ItemCounter<NioThread> ownerLoad = new ItemCounter<>();
     //load per pipeline since last calculation
-    private final ItemCounter<MigratablePipeline> pipelineLoadCount = new ItemCounter<MigratablePipeline>();
+    private final ItemCounter<MigratablePipeline> pipelineLoadCount = new ItemCounter<>();
 
     //contains all known pipelines
-    private final Set<MigratablePipeline> pipelines = new HashSet<MigratablePipeline>();
+    private final Set<MigratablePipeline> pipelines = new HashSet<>();
 
     private final LoadImbalance imbalance;
 

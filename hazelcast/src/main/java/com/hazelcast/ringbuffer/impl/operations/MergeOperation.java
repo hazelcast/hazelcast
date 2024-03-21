@@ -257,7 +257,7 @@ public class MergeOperation extends Operation
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
-        mergingRingbuffer = new ArrayRingbuffer<Object>(capacity);
+        mergingRingbuffer = new ArrayRingbuffer<>(capacity);
         mergingRingbuffer.setTailSequence(tailSequence);
         mergingRingbuffer.setHeadSequence(headSequence);
 

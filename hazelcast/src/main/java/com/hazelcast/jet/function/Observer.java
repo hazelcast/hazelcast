@@ -48,7 +48,7 @@ public interface Observer<T> {
             @Nonnull ConsumerEx<? super Throwable> onError,
             @Nonnull RunnableEx onComplete
     ) {
-        return new Observer<T>() {
+        return new Observer<>() {
             @Override
             public void onNext(@Nonnull T t) {
                 onNext.accept(t);

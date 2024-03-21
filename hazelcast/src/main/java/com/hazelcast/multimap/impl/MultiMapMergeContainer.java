@@ -105,7 +105,7 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readData(in);
         int size = in.readInt();
-        records = new ArrayList<MultiMapRecord>(size);
+        records = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             MultiMapRecord record = in.readObject();
             records.add(record);

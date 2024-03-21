@@ -93,7 +93,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
         for (int i = 0; i < size; i++) {
             Data key = IOUtil.readData(in);
             int collectionSize = in.readInt();
-            Collection<MultiMapRecord> collection = new ArrayList<MultiMapRecord>(collectionSize);
+            Collection<MultiMapRecord> collection = new ArrayList<>(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
                 MultiMapRecord record = in.readObject();
                 collection.add(record);

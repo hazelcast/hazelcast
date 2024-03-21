@@ -443,7 +443,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
 
         @Override
         public Iterator<V> iterator() {
-            return new ValueIterator<V>();
+            return new ValueIterator<>();
         }
 
         @Override

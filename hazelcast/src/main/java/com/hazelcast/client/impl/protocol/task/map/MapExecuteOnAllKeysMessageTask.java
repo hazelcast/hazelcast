@@ -52,7 +52,7 @@ public class MapExecuteOnAllKeysMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Map.Entry<Data, Data>> dataMap = new ArrayList<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> dataMap = new ArrayList<>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {

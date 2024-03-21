@@ -45,7 +45,7 @@ public class MemcacheTextDecoder extends TextDecoder {
     public static final TextParsers TEXT_PARSERS;
 
     static {
-        Map<String, CommandParser> parsers = new HashMap<String, CommandParser>();
+        Map<String, CommandParser> parsers = new HashMap<>();
         parsers.put("get", new GetCommandParser());
         parsers.put("gets", new GetCommandParser());
         parsers.put("set", new SetCommandParser(SET));

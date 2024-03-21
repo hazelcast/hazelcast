@@ -77,7 +77,7 @@ public class OnJoinRegistrationOperation extends Operation implements Identified
         super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
-            registrations = new ArrayList<Registration>(len);
+            registrations = new ArrayList<>(len);
             for (int i = 0; i < len; i++) {
                 Registration reg = new Registration();
                 registrations.add(reg);

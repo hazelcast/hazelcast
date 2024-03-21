@@ -516,7 +516,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     private MapDelegatingSet<Entry<Long, Long>> entrySetSingleton() {
-        return new MapDelegatingSet<Entry<Long, Long>>(this, new EntryIteratorSupplier(new EntryIterator()),
+        return new MapDelegatingSet<>(this, new EntryIteratorSupplier(new EntryIterator()),
                 new Predicate() {
                     @SuppressWarnings("unchecked")
                     @Override public boolean test(Object e) {
@@ -526,7 +526,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     private MapDelegatingSet<Long> keySetSingleton() {
-        return new MapDelegatingSet<Long>(this, new IteratorSupplier(new LongIterator(0)), new Predicate() {
+        return new MapDelegatingSet<>(this, new IteratorSupplier(new LongIterator(0)), new Predicate() {
             @Override public boolean test(Object value) {
                 return containsValue(value);
             }
@@ -534,7 +534,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     private MapDelegatingSet<Long> valuesSingleton() {
-        return new MapDelegatingSet<Long>(this, new Supplier<Iterator<Long>>() {
+        return new MapDelegatingSet<>(this, new Supplier<Iterator<Long>>() {
             @Override public Iterator<Long> get() {
                 return valueIterator.reset();
             }

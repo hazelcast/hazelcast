@@ -183,7 +183,7 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     protected ObjectName createObjectName(String type, String name) {
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        Hashtable<String, String> properties = new Hashtable<>(INITIAL_CAPACITY);
         properties.put("instance", quote(instance.getName()));
         if (type != null) {
             properties.put("type", quote(type));

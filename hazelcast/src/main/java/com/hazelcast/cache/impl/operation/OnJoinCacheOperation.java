@@ -49,7 +49,7 @@ import static com.hazelcast.internal.cluster.Versions.V5_4;
  */
 public class OnJoinCacheOperation extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState, Versioned {
 
-    private List<CacheConfig> configs = new ArrayList<CacheConfig>();
+    private List<CacheConfig> configs = new ArrayList<>();
 
     public void addCacheConfig(CacheConfig cacheConfig) {
         configs.add(cacheConfig);

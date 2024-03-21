@@ -78,8 +78,8 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
     public static final float HUNDRED = 100f;
 
     protected final long samplerPeriodMillis;
-    protected final ConcurrentItemCounter<String> partitionSpecificSamples = new ConcurrentItemCounter<String>();
-    protected final ConcurrentItemCounter<String> genericSamples = new ConcurrentItemCounter<String>();
+    protected final ConcurrentItemCounter<String> partitionSpecificSamples = new ConcurrentItemCounter<>();
+    protected final ConcurrentItemCounter<String> genericSamples = new ConcurrentItemCounter<>();
     protected final OperationExecutor executor;
     protected final NodeEngineImpl nodeEngine;
     protected final boolean includeName;

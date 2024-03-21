@@ -153,7 +153,7 @@ public class MultiMapMergingEntryImpl<K, V> implements MultiMapMergeTypes<K, V>,
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readObject(in);
         int size = in.readInt();
-        value = new ArrayList<Object>(size);
+        value = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             value.add(in.readObject());
         }

@@ -890,7 +890,7 @@ public class Object2LongHashMap<K>
             final K k = getKey();
             final long v = getLongValue();
 
-            return new Entry<K, Long>()
+            return new Entry<>()
             {
                 public K getKey()
                 {

@@ -65,7 +65,7 @@ public class MapPublisherCreateMessageTask
     protected Object call() throws Exception {
         ClusterService clusterService = clientEngine.getClusterService();
         Collection<MemberImpl> members = clusterService.getMemberImpls();
-        List<Future> futures = new ArrayList<Future>(members.size());
+        List<Future> futures = new ArrayList<>(members.size());
         NamespaceUtil.runWithNamespace(nodeEngine,
                 MapService.lookupNamespace(nodeEngine, parameters.mapName),
                 () -> createInvocations(members, futures));
@@ -93,7 +93,7 @@ public class MapPublisherCreateMessageTask
     }
 
     private static Set<Data> fetchMapSnapshotFrom(List<Future> futures) {
-        List<Object> queryResults = new ArrayList<Object>(futures.size());
+        List<Object> queryResults = new ArrayList<>(futures.size());
         int queryResultSize = 0;
 
         for (Future future : futures) {

@@ -34,7 +34,7 @@ public class MultiMapMBean extends HazelcastMBean<MultiMap> {
         this.objectName = service.createObjectName("MultiMap", managedObject.getName());
         StatsSupplier<LocalMultiMapStats> localMultiMapStatsSupplier = new LocalMultiMapStatsSupplier(managedObject);
         this.localMultiMapStatsDelegate
-                = new LocalStatsDelegate<LocalMultiMapStats>(localMultiMapStatsSupplier, updateIntervalSec);
+                = new LocalStatsDelegate<>(localMultiMapStatsSupplier, updateIntervalSec);
     }
 
     @ManagedAnnotation("localOwnedEntryCount")

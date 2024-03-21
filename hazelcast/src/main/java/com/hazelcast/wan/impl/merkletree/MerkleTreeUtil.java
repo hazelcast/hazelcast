@@ -322,7 +322,7 @@ public final class MerkleTreeUtil {
      * @return the order of the leaves found to be different
      */
     public static Collection<Integer> compareTrees(MerkleTreeView local, MerkleTreeView remote) {
-        Collection<Integer> deltaOrders = new LinkedList<Integer>();
+        Collection<Integer> deltaOrders = new LinkedList<>();
         MerkleTreeView baseTree = local.depth() <= remote.depth() ? local : remote;
         MerkleTreeView otherTree = local.depth() <= remote.depth() ? remote : local;
         int leafLevel = baseTree.depth() - 1;

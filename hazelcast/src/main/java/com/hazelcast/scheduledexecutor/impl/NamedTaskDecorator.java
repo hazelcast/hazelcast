@@ -74,6 +74,6 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
     }
 
     public static <V> Callable<V> named(String name, Callable<V> callable) {
-        return new NamedTaskDecorator<V>(name, callable);
+        return new NamedTaskDecorator<>(name, callable);
     }
 }

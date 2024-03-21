@@ -70,7 +70,7 @@ public class MergeBackupOperation
             throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        descriptors = new ArrayList<ScheduledTaskDescriptor>(size);
+        descriptors = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             ScheduledTaskDescriptor descriptor = in.readObject();
             descriptors.add(descriptor);

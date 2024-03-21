@@ -40,7 +40,7 @@ public final class LockStoreContainer {
 
     private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<>();
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
-            new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
+            new ConstructorFunction<>() {
                 public LockStoreImpl createNew(ObjectNamespace namespace) {
                     final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor =
                             lockService.getConstructor(namespace.getServiceName());

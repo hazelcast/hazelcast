@@ -82,7 +82,7 @@ public class MultiResult<T> {
     private boolean nullOrEmptyTarget;
 
     public MultiResult() {
-        this.results = new ArrayList<T>();
+        this.results = new ArrayList<>();
     }
 
     public MultiResult(List<T> results) {

@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
 public class MapListenerRegistry implements Registry<String, QueryCacheListenerRegistry> {
 
     private final ConstructorFunction<String, QueryCacheListenerRegistry> registryConstructorFunction =
-            new ConstructorFunction<String, QueryCacheListenerRegistry>() {
+            new ConstructorFunction<>() {
                 @Override
                 public QueryCacheListenerRegistry createNew(String mapName) {
                     return new QueryCacheListenerRegistry(context, mapName);

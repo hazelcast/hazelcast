@@ -91,7 +91,7 @@ public class MergeBackupOperation extends AbstractRingBufferOperation implements
         if (capacity > 0) {
             final long tailSequence = in.readLong();
             final long headSequence = in.readLong();
-            ringbuffer = new ArrayRingbuffer<Object>(capacity);
+            ringbuffer = new ArrayRingbuffer<>(capacity);
             ringbuffer.setTailSequence(tailSequence);
             ringbuffer.setHeadSequence(headSequence);
 

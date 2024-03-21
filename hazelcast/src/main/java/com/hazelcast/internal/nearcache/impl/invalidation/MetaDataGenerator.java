@@ -39,16 +39,16 @@ public class MetaDataGenerator {
 
     private final int partitionCount;
     private final ConstructorFunction<String, AtomicLongArray> sequenceGeneratorConstructor
-            = new ConstructorFunction<String, AtomicLongArray>() {
+            = new ConstructorFunction<>() {
         @Override
         public AtomicLongArray createNew(String arg) {
             return new AtomicLongArray(partitionCount);
         }
     };
-    private final ConcurrentMap<Integer, UUID> uuids = new ConcurrentHashMap<Integer, UUID>();
-    private final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<String, AtomicLongArray>();
+    private final ConcurrentMap<Integer, UUID> uuids = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<>();
     private final ConstructorFunction<Integer, UUID> uuidConstructor
-            = new ConstructorFunction<Integer, UUID>() {
+            = new ConstructorFunction<>() {
         @Override
         public UUID createNew(Integer partitionId) {
             return newUnsecureUUID();

@@ -31,7 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  */
 public class MemberGroupConfig {
 
-    private final Set<String> interfaces = new HashSet<String>();
+    private final Set<String> interfaces = new HashSet<>();
 
     /**
      * Adds an interface to the member group. Duplicate elements are ignored.

@@ -43,7 +43,7 @@ public class MapKeySetMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        List<Data> keys = new ArrayList<Data>(result.size());
+        List<Data> keys = new ArrayList<>(result.size());
         for (QueryResultRow resultEntry : result) {
             keys.add(resultEntry.getKey());
         }

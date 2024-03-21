@@ -97,7 +97,7 @@ public class MembershipChangeTask implements Runnable {
                 return;
             }
 
-            Collection<RaftEndpoint> members = new LinkedHashSet<RaftEndpoint>(state.members());
+            Collection<RaftEndpoint> members = new LinkedHashSet<>(state.members());
             boolean memberExists = members.contains(member);
 
             switch (membershipChangeMode) {

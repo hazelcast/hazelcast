@@ -57,11 +57,11 @@ public class ListService extends CollectionService implements DynamicMetricsProv
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final ConcurrentMap<String, ListContainer> containerMap = new ConcurrentHashMap<String, ListContainer>();
-    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, ListContainer> containerMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
-            new ConstructorFunction<String, Object>() {
+            new ConstructorFunction<>() {
         @Override
         public Object createNew(String name) {
                 ListConfig lockConfig = nodeEngine.getConfig().findListConfig(name);

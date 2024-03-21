@@ -51,12 +51,12 @@ public class MapExecuteOnKeysMessageTask
         EntryProcessor processor = serializationService.toObject(parameters.entryProcessor);
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         return operationProvider.createMultipleEntryOperationFactory(parameters.name,
-                new HashSet<Data>(parameters.keys), processor);
+                new HashSet<>(parameters.keys), processor);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> entries = new ArrayList<>();
 
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {

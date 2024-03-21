@@ -36,7 +36,7 @@ public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFacto
     private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
 
     static {
-        List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
+        List<PropertyDefinition> propertyDefinitions = new ArrayList<>();
         propertyDefinitions.add(MulticastProperties.GROUP);
         propertyDefinitions.add(MulticastProperties.PORT);
         propertyDefinitions.add(MulticastProperties.SAFE_SERIALIZATION);

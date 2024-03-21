@@ -54,7 +54,7 @@ public class MultiMapKeySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
+        List<Data> keys = new ArrayList<>();
 
         for (Object obj : map.values()) {
             if (obj == null) {

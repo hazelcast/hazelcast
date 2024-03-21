@@ -74,7 +74,7 @@ public class MapPublisherCreateWithValueMessageTask
     }
 
     private List<Future> createPublishersAndGetSnapshotOf(Collection<MemberImpl> members) {
-        List<Future> futures = new ArrayList<Future>(members.size());
+        List<Future> futures = new ArrayList<>(members.size());
         OperationService operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             Predicate predicate = serializationService.toObject(parameters.predicate);
@@ -96,7 +96,7 @@ public class MapPublisherCreateWithValueMessageTask
     }
 
     private static Set<Map.Entry<Data, Data>> fetchMapSnapshotFrom(List<Future> futures) {
-        List<Object> queryResults = new ArrayList<Object>(futures.size());
+        List<Object> queryResults = new ArrayList<>(futures.size());
         int queryResultSize = 0;
 
         for (Future future : futures) {

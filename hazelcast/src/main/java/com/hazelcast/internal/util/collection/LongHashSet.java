@@ -209,7 +209,7 @@ public final class LongHashSet implements Set<Long> {
     }
 
     private <E extends Long> boolean addAllCapture(final Collection<E> coll) {
-        final Predicate<E> p = new Predicate<E>() {
+        final Predicate<E> p = new Predicate<>() {
             @Override
             public boolean test(E x) {
                 return add(x);

@@ -34,7 +34,7 @@ import java.util.LinkedList;
 public class LockReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
 
-    private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
+    private final Collection<LockStoreImpl> locks = new LinkedList<>();
 
     public LockReplicationOperation() {
     }

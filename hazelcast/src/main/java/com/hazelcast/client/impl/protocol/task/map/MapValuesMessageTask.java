@@ -43,7 +43,7 @@ public class MapValuesMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        List<Data> values = new ArrayList<Data>(result.size());
+        List<Data> values = new ArrayList<>(result.size());
         for (QueryResultRow resultEntry : result) {
             values.add(resultEntry.getValue());
         }

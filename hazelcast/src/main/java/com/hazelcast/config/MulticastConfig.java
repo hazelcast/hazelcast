@@ -67,7 +67,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
 
     private int multicastTimeToLive = DEFAULT_MULTICAST_TTL;
 
-    private final Set<String> trustedInterfaces = new HashSet<String>();
+    private final Set<String> trustedInterfaces = new HashSet<>();
 
     private Boolean loopbackModeEnabled;
 
