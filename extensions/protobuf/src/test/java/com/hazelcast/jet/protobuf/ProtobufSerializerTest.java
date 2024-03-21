@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.protobuf;
 
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.GeneratedMessage;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
@@ -79,7 +79,7 @@ public class ProtobufSerializerTest {
         assertThat(transformed).isEqualTo(original);
     }
 
-    private static <T extends GeneratedMessageV3> byte[] serialize(StreamSerializer<T> serializer, T object) {
+    private static <T extends GeneratedMessage> byte[] serialize(StreamSerializer<T> serializer, T object) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ObjectDataOutputStream output = new ObjectDataOutputStream(baos, SERIALIZATION_SERVICE)) {
             serializer.write(output, object);
@@ -89,7 +89,7 @@ public class ProtobufSerializerTest {
         }
     }
 
-    private static <T extends GeneratedMessageV3> T deserialize(StreamSerializer<T> serializer, byte[] bytes) {
+    private static <T extends GeneratedMessage> T deserialize(StreamSerializer<T> serializer, byte[] bytes) {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
              ObjectDataInputStream input = new ObjectDataInputStream(bais, SERIALIZATION_SERVICE)) {
             return serializer.read(input);
