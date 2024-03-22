@@ -6,10 +6,10 @@
 | Related Github issues          | _GH issue list_                                           |
 | Document Status / Completeness | IN PROGRESS                                               |
 | Requirement owner              | Sandeep Akhouri                                           |
-| Developer(s)                   | Krzystof Jamróz, Ivan Yaschishin, Sasha Syrotenko         |
+| Developer(s)                   | Krzysztof Jamróz, Ivan Yaschishin, Sasha Syrotenko        |
 | Quality Engineer               | Isaac Sumner                                              |
 | Support Engineer               | _Support Engineer_                                        |
-| Technical Reviewers            | Krzystof Jamróz, Sasha Syrotenko                          |
+| Technical Reviewers            | Krzysztof Jamróz, Sasha Syrotenko                         |
 | Simulator or Soak Test PR(s)   | _Link to Simulator or Soak test PR_                       |
 
 ### Background
@@ -18,7 +18,7 @@
 
 In practice many queries for large data sets do not need to scan all data.
 Very often data is partitioned and only limited subset of partitions needs to accessed during the query.
-Also some other operations like joins or aggregations can benefit from the knowledge about data partitioning.
+Also, some other operations like joins or aggregations can benefit from the knowledge about data partitioning.
 Using such knowledge makes it possible to run a query faster and using less resources (network, IO).
 This will make SQL queries eligible for partition pruning comparable in performance to
 Predicate API queries using `PartitionPredicate`.
@@ -26,12 +26,28 @@ Predicate API queries using `PartitionPredicate`.
 Knowing which partitions are needed allows also to eliminate some members completely from the query execution.
 Such members do not have any data related to the query.
 
+
+#### Goals
+
+- Improve performance of queries using IMap with `AttributePartitioningStrategy` which use attributes defined in it
+
+#### Non-goals
+
+- Improve performance of queries using IMap `__key` which are not eligible to be converted to `IMapSelectPlan`
+  and have to create a Jet job
+- Support partition pruning for other sources than IMap (can be considered in the future)
+- Complex expression transformations of filters to extract partitioning information
+  (for complex cases users will have to write their predicates in supported form)
+- Tracking of functional dependencies between attributes
+- Building a `__key` from constituent attributes, eg. if `__key` has 2 attributes, we could convert
+  `__key.a1=X and __key.a2=Y` to `__key=(X,Y)`.
+
 #### Terminology
 
 | Term             | Definition                                       |
 |------------------|--------------------------------------------------|
 | item, entry, row | Single element of data which is treated as whole |
-|                  |                                                  |
+| prunable         | Eligible for partition pruning optimization      |
 
 *Definition: Partitioning column*
 
@@ -50,7 +66,7 @@ Set of partitioning keys is defined as a set containing:
 - `__key`
 
 _Clarification:_
-For IMap, partitioning columns may be attributes of IMap key.
+For IMap, partitioning columns may be attributes of IMap key, attributes of IMap value cannot be used.
 If IMap uses `AttributePartitioningStrategy`, partitioning columns are functionally dependent on entire `__key`.
 However, for the sake of simplicity in the SQL optimizer we currently do not track functional dependencies
 and assume that both `__key` and `AttributePartitioningStrategy` define a partitioning key.
@@ -59,20 +75,27 @@ Partition id calculation will take that into account and use a correct strategy 
 *Definition: Partition-complete expression*
 
 Expression `E` is *partition-complete* when there exists partitioning key
-`PRK = {partColumn1, ..., partColumnM}`
+
+`PK = {partColumn1, ..., partColumnM}`
+
 for which the expression can be transformed to form:
+
 `E = partKeyExp1 OR partKeyExp2 OR ... OR partKeyExpN`
-where `partKeyExpN` is in form
-(there must be sub-expression for each of partitioning columns forming `PRK`):
-`partColumn1Expr AND partColumn1Expr AND ... AND partColumnMExpr AND residualFilter`
-where `partColumnMExpr` is in form
+
+where `partKeyExpN` is in form:
+
+`partKeyExpN = partColumn1Expr AND partColumn2Expr AND ... AND partColumnMExpr AND residualFilter`
+
+(there must be a sub-expression for each of partitioning columns making up `PK`)
+and where `partColumnMExpr` is in form:
+
 `partColumnM <operator> <arguments>`
+
 where `operator` is one of the following operators:
 
 - `=`
 - `SEARCH` with `Sarg`
-- `BETWEEN` for integer types (TODO: if we want to support this in the first version, makes sense only for reasonably small range)
-- TODO: `IS NULL`?
+- `BETWEEN` for integer types (will not be support in the first version, it makes sense only for reasonably small range)
 
 and operator `arguments` are:
 
@@ -86,28 +109,12 @@ also the partitioning columns.
 
 Clarifications:
 
-- range partitioning (eg. `order_date between day1 and day1`) currently is not supported,
+- range partitioning (eg. `order_date between day1 and day2`) currently is not supported,
   only hash/equality based partitioning is supported.
 - each `OR` branch in `E` might use different partitioning key. Currently, such case is not supported.
 - `partCol1 = partCol2 AND partCol2 = constantX` is not partition-complete, but can be transformed to such form
-  by inlining constant: `partCol1 = constantX AND partCol2 = constantX`. Such transformations are out-of-scope
+  by propagating the constant: `partCol1 = constantX AND partCol2 = constantX`. Such transformations are out-of-scope
   for this TDD, but may be performed now or in future by the SQL optimizer independently.
-
-#### Goals
-
-- Improve performance of queries using IMap with `AttributePartitioningStrategy` which use attributes defined in it
-- Improve performance of queries using IMap `__key` which are not eligible to be converted to `IMapSelectPlan`
-  and have to create a Jet job
-
-#### Non-goals
-
-- Support partition pruning for other sources than IMap (can be considered in the future)
-- Complex expression transformations of filters to extract partitioning information
-  (for complex cases users will have to write their predicates in supported form)
-- Tracking of functional dependencies between attributes
-- Building a `__key` from constituent attributes, eg. if `__key` has 2 attributes, we could convert
-  `__key.a1=X and __key.a2=Y` to `__key=(X,Y)`.
-  TODO: maybe we already do that?
 
 ### Technical Design
 
@@ -122,7 +129,7 @@ Range-partitioning (eg. for date ranges) will be not supported.
 
 Calcite SQL optimizer need to know how IMap is partitioned.
 
-List of columns comprising `AttributePartitioningStrategy` of the IMap will be available in `PartitionedMapTable`.
+List of columns comprising `AttributePartitioningStrategy` of the IMap will be available in `PartitionedMapTable`
 (note that `__key` is a special case that should be handled with either an extension to `AttributePartitioningStrategy`
 or in a separate specialized Partitioning Strategy that will explicitly ignore case when whole key object implements
 `PartitionAware` interface).
@@ -165,14 +172,14 @@ General rules:
   as its input. More detail description of rules that are applied to filter analysis is available in the Filter Analysis
   section. In general a Scan rel is considered prunable when its filter limits the scan to finite number of rows, that
   can be calculated during Optimization. 
-- Aggregate queries prunability is based off their Scan inputs prunability because filters in these Scans are applied 
+- Aggregate queries prunability is based on their Scan inputs prunability because filters in these Scans are applied 
   before the execution of the aggregation, therefore any aggregation is executed on top of already Filtered Scans. 
   If the input Scan of the Aggregation Rel is prunable, then the Aggregation is considered prunable as well. 
 - Join Relations are considered prunable only when BOTH input Scans (or nested JOINs or other rels) are Prunable.
   If only one input is prunable, but other is not, then the whole query is considered non-prunable. 
 - Union Relations are similar to Joins - ALL of their inputs have to be prunable for the query to be considered Prunable
 - Calc relations and other support relations are treated as a single FullScan wrapper and therefore its prunability is 
-  determined based off Scan prunability. 
+  determined based on Scan prunability. 
 
 Rels Prunability summarized:
 
@@ -185,7 +192,7 @@ Rels Prunability summarized:
 | CalcPhysicalRel      | Prunable if the Scan input is Prunable                                                        |
 | AggregatePhysicalRel | Prunable if the Scan input is Prunable                                                        |
 
-Prunability of the single input rels is based off their Filter (described below in the Filter Analysis section in detail).
+Prunability of the single input rels is based on their Filter (described below in the Filter Analysis section in detail).
 
 #### Partition information in EXPLAIN PLAN
 
@@ -209,13 +216,11 @@ CalcPhysicalRel(expr#0..2=[{inputs}], EXPR$0=[$t1], EXPR$1=[$t2], priority=[$t0]
 
 Desired plan:
 
-TODO: partitioning info not only on scans?
-
 ```
 CalcPhysicalRel(expr#0..2=[{inputs}], EXPR$0=[$t1], EXPR$1=[$t2], priority=[$t0])
   AggregateCombineByKeyPhysicalRel(group=[{0}], EXPR$0=[COUNT()], EXPR$1=[SUM($1)])
     AggregateAccumulateByKeyPhysicalRel(group=[{0}])
-      FullScanPhysicalRel(table=[[hazelcast, public, orders[projects=[$7, $4], filter==($1, _UTF-16LE'C2')]]], partitionedBy=[$1], discriminator=[0])
+      FullScanPhysicalRel(table=[[hazelcast, public, orders[projects=[$7, $4], filter==($1, _UTF-16LE'C2')]]], partitioningKey=[$1], partitioningKeyValues=[_UTF-16LE'C2'], discriminator=[0])
 ```
 
 #### Filter Analysis and Transformation for Partition Pruning
@@ -336,48 +341,6 @@ Data Types play a big role in partition-boundness:
   product of extraction instead of EQUALS conditions and merge corresponding ranges according to rules
   of the underlying conditions. For AND e.g. a > 20 AND a < 30 would be merging [20, inf) and (-inf, 30] into b = [20,30].
 
-#### Rel node rules
-
-Below rules apply only to rel nodes operating on IMaps.
-For other connectors similar rules may be defined in the future.
-
-##### ValuesPhysicalRel
-
-Input: N/A
-Output: Not partitioned.
-
-Should be executed only members that are needed because of other considerations.
-
-##### InsertPhysicalRel
-
-Input:
-
-- partitioned in the same way as target IMap
-- partition key expressions determined by the input Rel. In some cases (eg. `ValuesPhysicalRel`) it may be possible
-  to statically determine to which partitions inserts will be needed.
-
-Output: N/A
-
-Can drive partitioning of `ValuesPhysicalRel` which does not care how it is partitioned.
-
-##### SinkPhysicalRel
-
-Same as `InsertPhysicalRel`. We assume that `__key` columns cannot be updated, so the entry never changes partition to which it belongs.
-
-##### UpdatePhysicalRel and DeletePhysicalRel
-
-Same as `SinkPhysicalRel`.
-
-##### FullScanPhysicalRel
-
-Input: N/A
-Output:
-
-Full scan is eligible for partition pruning if the predicate is *Complete partitioning expression*.
-
-Full scan should be executed only on members that contain needed partitions
-and access only those partitions.
-
 #### SQL-side for support scan processor partition pruning
 
 Our goal is to have a **precise** partition set to scan for all prunable `FullScan`-s in resulting plan.
@@ -385,7 +348,7 @@ To make it possible, and also isolate the implementation for each specific conne
 the computational process to `SqlConnector`. We extended `fullScanReader` method in `SqlConnector` interface
 to accept extracted all partition pruning candidates as a parameter and calculate it in connector-specific way:
 
-```
+```java
     @Override
     @Nonnull
     public Vertex fullScanReader(
@@ -405,15 +368,13 @@ if the partitioning strategy key is **composite**. If we have more than one prun
 outer list will be multi-element. This list would be passed to corresponding scan processor meta supplier,
 which supports partition pruning.
 
-[//]: # TODO:(Rephrase this paragraph, too complex and lack of abstractions.)
-
 **Currently, it is implemented only for IMap connector, where all expressions are supported.**
 
 For better imagination we prepared an example below.
 
 #### Successful case example
 
-Let's assume we have an IMap `map` with composite key {comp1, comp2, comp3} and applied partitioning strategy for
+Let's assume we have an IMap `map` with composite key `{comp1, comp2, comp3}` and applied attribute partitioning strategy with
 `comp1` and `comp2`. Let's have the following synthetic query, where filter matches the partitioning strategy:
 
 ```
@@ -444,10 +405,8 @@ information about members and partitions needed for query execution.
 
 Performance will compared for the same cluster topology (in particular with more that 1 member, ideally 3-5),
 same IMap with the same data and data layout (ie. the same partitioning strategy).
-The same queries will be issued with and without partition pruning optimization. (TODO: feature flag? hint?)
+The same queries will be issued with and without partition pruning optimization.
 Throughput and latency will be compared.
-
-TDB: is it possible to measure impact for query optimization time?
 
 #### Soak tests
 
