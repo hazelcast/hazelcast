@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.config;
 
+import com.hazelcast.jet.JetMemberSelector;
+
 /**
  * Some constants for the {@link JobConfig#getArgument(String)} method.
  */
@@ -51,6 +53,13 @@ public final class JobConfigArguments {
      * By default, any normal Jet job is suspendable.
      */
     public static final String KEY_JOB_IS_SUSPENDABLE = "__jet.jobIsSuspendable";
+
+    /**
+     * The key under which caller provides a {@link JetMemberSelector} for an isolated job.
+     * <p>
+     * Isolated jobs are available only in Enterprise Edition.
+     */
+    public static final String KEY_ISOLATED_JOB_MEMBER_SELECTOR = "__jet.isolatedJobMemberSelector";
 
     private JobConfigArguments() {
     }

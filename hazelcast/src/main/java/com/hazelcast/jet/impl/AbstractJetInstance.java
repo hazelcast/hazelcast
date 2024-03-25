@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -52,11 +53,13 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD_RESOURCES;
@@ -410,4 +413,66 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     public abstract Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
 
     public abstract M getMasterId();
+
+    @Override
+    public JobBuilderImpl newJobBuilder(@Nonnull DAG dag) {
+        return new JobBuilderImpl(dag);
+    }
+
+    @Override
+    public JobBuilderImpl newJobBuilder(@Nonnull Pipeline pipeline) {
+        return new JobBuilderImpl(pipeline);
+    }
+
+    public class JobBuilderImpl implements JobBuilder {
+        private final @Nonnull Object jobDefinition;
+        private @Nullable JobConfig config;
+        private @Nullable JetMemberSelector memberSelector;
+        private boolean isLightJob;
+
+        JobBuilderImpl(@Nonnull DAG dag) {
+            jobDefinition = dag;
+        }
+
+        JobBuilderImpl(@Nonnull Pipeline pipeline) {
+            jobDefinition = pipeline;
+        }
+
+        @Override
+        public JobBuilderImpl withConfig(@Nonnull JobConfig jobConfig) {
+            this.config = jobConfig;
+            return this;
+        }
+
+        @Override
+        public JobBuilderImpl withMemberSelector(@Nonnull JetMemberSelector memberSelector) {
+            this.memberSelector = memberSelector;
+            return this;
+        }
+
+        @Override
+        public JobBuilderImpl asLightJob() {
+            isLightJob = true;
+            return this;
+        }
+
+        @Nonnull
+        private JobConfig getConfig() {
+            return Objects.requireNonNullElseGet(config, JobConfig::new)
+                    .setArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR, memberSelector);
+        }
+
+        @Override
+        public Job start() {
+            return newJobInt(newJobId(), jobDefinition, getConfig(), isLightJob);
+        }
+
+        @Override
+        public Job startIfAbsent() {
+            if (isLightJob) {
+                throw new UnsupportedOperationException();
+            }
+            return newJobIfAbsent(jobDefinition, getConfig(), null);
+        }
+    }
 }
