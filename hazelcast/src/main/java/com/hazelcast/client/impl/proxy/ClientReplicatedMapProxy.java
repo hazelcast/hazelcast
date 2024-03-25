@@ -100,6 +100,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings("MethodCount")
 public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
 
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";

@@ -187,6 +187,7 @@ public final class CustomTypeFactory {
         return eventData;
     }
 
+    @SuppressWarnings("MagicNumber")
     public static DurationConfig createDurationConfig(long durationAmount, int timeUnitId) {
         TimeUnit timeUnit;
         if (timeUnitId == 0) {

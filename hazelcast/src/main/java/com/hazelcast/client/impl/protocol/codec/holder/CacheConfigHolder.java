@@ -69,6 +69,7 @@ public class CacheConfigHolder {
     private final boolean isNamespaceExists;
     private final @Nullable String userCodeNamespace;
 
+    @SuppressWarnings({"ParameterNumber", "ExecutableStatementCount"})
     public CacheConfigHolder(String name, String managerPrefix, String uriString, int backupCount, int asyncBackupCount,
                              String inMemoryFormat, EvictionConfigHolder evictionConfigHolder,
                              WanReplicationRef wanReplicationRef, String keyClassName, String valueClassName,

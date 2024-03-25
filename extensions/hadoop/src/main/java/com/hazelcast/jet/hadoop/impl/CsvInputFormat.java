@@ -55,6 +55,7 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
     public static final String CSV_INPUT_FORMAT_FIELD_LIST_PREFIX = "csv.field.list.";
 
     @Override
+    @SuppressWarnings("AnonInnerLength")
     public RecordReader<NullWritable, Object> createRecordReader(InputSplit split, TaskAttemptContext context) {
 
         return new RecordReader<NullWritable, Object>() {

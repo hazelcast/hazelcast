@@ -69,6 +69,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.testcontainers.utility.DockerImageName.parse;
 
+@SuppressWarnings("StaticVariableName")
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;

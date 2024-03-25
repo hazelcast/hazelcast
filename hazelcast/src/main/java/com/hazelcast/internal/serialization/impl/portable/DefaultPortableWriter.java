@@ -42,6 +42,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
+@SuppressWarnings("MethodCount")
 public class DefaultPortableWriter implements PortableWriter {
 
     private final PortableSerializer serializer;
@@ -53,6 +54,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
     private boolean raw;
 
+    @SuppressWarnings("MagicNumber")
     DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) throws IOException {
         this.serializer = serializer;
         this.out = out;
@@ -290,6 +292,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
+    @SuppressWarnings("MagicNumber")
     public void writePortableArray(@Nonnull String fieldName, @Nullable Portable[] portables) throws IOException {
         FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE_ARRAY);
         final int len = portables == null ? NULL_ARRAY_LENGTH : portables.length;
@@ -362,6 +365,7 @@ public class DefaultPortableWriter implements PortableWriter {
         writeObjectArrayField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY, values, PortableUtil::writeOffsetDateTime);
     }
 
+    @SuppressWarnings("MagicNumber")
     void writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] portables) throws IOException {
         FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE_ARRAY);
         final int len = portables == null ? NULL_ARRAY_LENGTH : portables.length;

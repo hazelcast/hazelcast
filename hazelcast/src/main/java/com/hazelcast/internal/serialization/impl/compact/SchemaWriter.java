@@ -35,6 +35,7 @@ import java.util.Set;
  * A CompactWriter that constructs a schema from Compact
  * serializable objects.
  */
+@SuppressWarnings("MethodCount")
 public final class SchemaWriter implements CompactWriter {
 
     private final ArrayList<FieldDescriptor> fields = new ArrayList<>();

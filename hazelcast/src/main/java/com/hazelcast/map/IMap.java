@@ -225,6 +225,7 @@ import java.util.function.Function;
  * @param <V> value type
  * @see java.util.concurrent.ConcurrentMap
  */
+@SuppressWarnings("MethodCount")
 public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable<Map.Entry<K, V>> {
 
     /**

@@ -72,6 +72,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> the key type for this {@code IMap} proxy.
  * @param <V> the value type for this {@code IMap} proxy.
  */
+@SuppressWarnings("MethodCount")
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     private boolean serializeKeys;

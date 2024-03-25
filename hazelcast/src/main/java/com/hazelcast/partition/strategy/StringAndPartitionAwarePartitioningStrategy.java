@@ -21,6 +21,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
 @SerializableByConvention
+@SuppressWarnings("JavadocVariable")
 public final class StringAndPartitionAwarePartitioningStrategy implements PartitioningStrategy {
 
     //since the StringAndPartitionAwarePartitioningStrategy is stateless, we can just create an instance up front

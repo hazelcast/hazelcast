@@ -117,7 +117,7 @@ import static java.lang.Thread.currentThread;
 /**
  * Default implementation of {@link MapServiceContext}.
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
 class MapServiceContextImpl implements MapServiceContext {
 
     private static final long DESTROY_TIMEOUT_SECONDS = 30;

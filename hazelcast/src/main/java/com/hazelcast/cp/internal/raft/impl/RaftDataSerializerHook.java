@@ -61,6 +61,7 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings({"CyclomaticComplexity", "ReturnCount"})
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {

@@ -68,6 +68,7 @@ import static com.hazelcast.internal.util.XmlUtil.format;
  * The ClientConfigXmlGenerator is responsible for transforming a
  * {@link ClientConfig} to a Hazelcast Client XML string.
  */
+@SuppressWarnings("ClassFanOutComplexity")
 public final class ClientConfigXmlGenerator {
 
     private ClientConfigXmlGenerator() {

@@ -35,6 +35,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
 /**
  * A Serializable DTO for {@link com.hazelcast.client.impl.ClientEndpoint}.
  */
+@SuppressWarnings("VisibilityModifier")
 public class ClientEndPointDTO implements JsonSerializable {
 
     public UUID uuid;

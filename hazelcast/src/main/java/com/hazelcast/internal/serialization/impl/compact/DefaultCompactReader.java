@@ -33,6 +33,7 @@ import java.time.OffsetDateTime;
  * <p>
  * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
+@SuppressWarnings("MethodCount")
 public class DefaultCompactReader extends CompactInternalGenericRecord implements CompactReader {
 
     public DefaultCompactReader(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,

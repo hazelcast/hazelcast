@@ -69,6 +69,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNull
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
+@SuppressWarnings("MethodCount")
 public abstract class AbstractSerializationService implements InternalSerializationService {
 
     protected final ManagedContext managedContext;

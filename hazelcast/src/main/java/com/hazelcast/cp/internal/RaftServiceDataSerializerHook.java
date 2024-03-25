@@ -65,7 +65,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 
-@SuppressWarnings("checkstyle:declarationorder")
+@SuppressWarnings({"checkstyle:declarationorder", "ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public final class RaftServiceDataSerializerHook implements DataSerializerHook {
 
     private static final int RAFT_DS_FACTORY_ID = -1002;
@@ -133,6 +133,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings({"MethodLength", "ReturnCount", "CyclomaticComplexity"})
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {

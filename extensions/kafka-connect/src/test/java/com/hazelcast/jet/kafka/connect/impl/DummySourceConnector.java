@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressWarnings("StaticVariableName")
 public final class DummySourceConnector extends SourceConnector {
 
     static final String ITEMS_SIZE = "dummy.source.connector.items.size";

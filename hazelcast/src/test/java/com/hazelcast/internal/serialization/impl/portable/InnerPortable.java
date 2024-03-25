@@ -48,6 +48,7 @@ public class InnerPortable implements Portable {
     InnerPortable() {
     }
 
+    @SuppressWarnings("ParameterNumber")
     public InnerPortable(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedPortable[] nn,
                          BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
                          LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes) {

@@ -47,6 +47,7 @@ public class QueryCacheConfigHolder {
     public QueryCacheConfigHolder() {
     }
 
+    @SuppressWarnings("ParameterNumber")
     public QueryCacheConfigHolder(int batchSize, int bufferSize, int delaySeconds, boolean includeValue,
                                   boolean populate, boolean coalesce, String inMemoryFormat, String name,
                                   PredicateConfigHolder predicateConfigHolder, EvictionConfigHolder evictionConfigHolder,

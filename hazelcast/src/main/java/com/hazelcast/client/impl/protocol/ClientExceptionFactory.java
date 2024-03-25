@@ -209,6 +209,7 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.XA;
  * 1) creating exception from error code
  * 2) getting the error code of given exception
  */
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class ClientExceptionFactory {
 
     public interface ExceptionFactory {
@@ -219,6 +220,7 @@ public class ClientExceptionFactory {
     private final Map<Class, Integer> classToInt = new HashMap<>();
     private final ClassLoader classLoader;
 
+    @SuppressWarnings({"ExecutableStatementCount", "MethodLength"})
     public ClientExceptionFactory(boolean jcacheAvailable, ClassLoader classLoader) {
         this.classLoader = classLoader;
         if (jcacheAvailable) {
@@ -228,7 +230,8 @@ public class ClientExceptionFactory {
             register(ENTRY_PROCESSOR, EntryProcessorException.class, EntryProcessorException::new);
         }
 
-        register(ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class, (message, cause) -> new ArrayIndexOutOfBoundsException(message));
+        register(ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class,
+                (message, cause) -> new ArrayIndexOutOfBoundsException(message));
         register(ARRAY_STORE, ArrayStoreException.class, (message, cause) -> new ArrayStoreException(message));
         register(AUTHENTICATION, AuthenticationException.class, (message, cause) -> new AuthenticationException(message));
         register(CACHE_NOT_EXISTS, CacheNotExistsException.class, (message, cause) -> new CacheNotExistsException(message));
@@ -236,51 +239,68 @@ public class ClientExceptionFactory {
         register(CANCELLATION, CancellationException.class, (message, cause) -> new CancellationException(message));
         register(CLASS_CAST, ClassCastException.class, (message, cause) -> new ClassCastException(message));
         register(CLASS_NOT_FOUND, ClassNotFoundException.class, ClassNotFoundException::new);
-        register(CONCURRENT_MODIFICATION, ConcurrentModificationException.class, (message, cause) -> new ConcurrentModificationException(message));
+        register(CONCURRENT_MODIFICATION, ConcurrentModificationException.class,
+                (message, cause) -> new ConcurrentModificationException(message));
         register(CONFIG_MISMATCH, ConfigMismatchException.class, (message, cause) -> new ConfigMismatchException(message));
-        register(DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class, (message, cause) -> new DistributedObjectDestroyedException(message));
+        register(DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class,
+                (message, cause) -> new DistributedObjectDestroyedException(message));
         register(EOF, EOFException.class, (message, cause) -> new EOFException(message));
         register(EXECUTION, ExecutionException.class, ExecutionException::new);
         register(HAZELCAST, HazelcastException.class, HazelcastException::new);
-        register(HAZELCAST_INSTANCE_NOT_ACTIVE, HazelcastInstanceNotActiveException.class, (message, cause) -> new HazelcastInstanceNotActiveException(message));
-        register(HAZELCAST_OVERLOAD, HazelcastOverloadException.class, (message, cause) -> new HazelcastOverloadException(message));
+        register(HAZELCAST_INSTANCE_NOT_ACTIVE, HazelcastInstanceNotActiveException.class,
+                (message, cause) -> new HazelcastInstanceNotActiveException(message));
+        register(HAZELCAST_OVERLOAD, HazelcastOverloadException.class,
+                (message, cause) -> new HazelcastOverloadException(message));
         register(HAZELCAST_SERIALIZATION, HazelcastSerializationException.class, HazelcastSerializationException::new);
         register(IO, IOException.class, IOException::new);
         register(ILLEGAL_ARGUMENT, IllegalArgumentException.class, IllegalArgumentException::new);
-        register(ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class, (message, cause) -> new IllegalAccessException(message));
+        register(ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class,
+                (message, cause) -> new IllegalAccessException(message));
         register(ILLEGAL_ACCESS_ERROR, IllegalAccessError.class, (message, cause) -> new IllegalAccessError(message));
-        register(ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class, (message, cause) -> new IllegalMonitorStateException(message));
+        register(ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class,
+                (message, cause) -> new IllegalMonitorStateException(message));
         register(ILLEGAL_STATE, IllegalStateException.class, IllegalStateException::new);
-        register(ILLEGAL_THREAD_STATE, IllegalThreadStateException.class, (message, cause) -> new IllegalThreadStateException(message));
-        register(INDEX_OUT_OF_BOUNDS, IndexOutOfBoundsException.class, (message, cause) -> new IndexOutOfBoundsException(message));
+        register(ILLEGAL_THREAD_STATE, IllegalThreadStateException.class,
+                (message, cause) -> new IllegalThreadStateException(message));
+        register(INDEX_OUT_OF_BOUNDS, IndexOutOfBoundsException.class,
+                (message, cause) -> new IndexOutOfBoundsException(message));
         register(INTERRUPTED, InterruptedException.class, (message, cause) -> new InterruptedException(message));
-        register(INVALID_ADDRESS, AddressUtil.InvalidAddressException.class, (message, cause) -> new AddressUtil.InvalidAddressException(message, false));
+        register(INVALID_ADDRESS, AddressUtil.InvalidAddressException.class,
+                (message, cause) -> new AddressUtil.InvalidAddressException(message, false));
         register(INVALID_CONFIGURATION, InvalidConfigurationException.class, InvalidConfigurationException::new);
         register(MEMBER_LEFT, MemberLeftException.class, (message, cause) -> new MemberLeftException(message));
-        register(NEGATIVE_ARRAY_SIZE, NegativeArraySizeException.class, (message, cause) -> new NegativeArraySizeException(message));
+        register(NEGATIVE_ARRAY_SIZE, NegativeArraySizeException.class,
+                (message, cause) -> new NegativeArraySizeException(message));
         register(NO_SUCH_ELEMENT, NoSuchElementException.class, (message, cause) -> new NoSuchElementException(message));
         register(NOT_SERIALIZABLE, NotSerializableException.class, (message, cause) -> new NotSerializableException(message));
         register(NULL_POINTER, NullPointerException.class, (message, cause) -> new NullPointerException(message));
-        register(OPERATION_TIMEOUT, OperationTimeoutException.class, (message, cause) -> new OperationTimeoutException(message));
-        register(PARTITION_MIGRATING, PartitionMigratingException.class, (message, cause) -> new PartitionMigratingException(message));
+        register(OPERATION_TIMEOUT, OperationTimeoutException.class,
+                (message, cause) -> new OperationTimeoutException(message));
+        register(PARTITION_MIGRATING, PartitionMigratingException.class,
+                (message, cause) -> new PartitionMigratingException(message));
         register(QUERY, QueryException.class, QueryException::new);
-        register(QUERY_RESULT_SIZE_EXCEEDED, QueryResultSizeExceededException.class, (message, cause) -> new QueryResultSizeExceededException(message));
-        register(SPLIT_BRAIN_PROTECTION, SplitBrainProtectionException.class, (message, cause) -> new SplitBrainProtectionException(message));
+        register(QUERY_RESULT_SIZE_EXCEEDED, QueryResultSizeExceededException.class,
+                (message, cause) -> new QueryResultSizeExceededException(message));
+        register(SPLIT_BRAIN_PROTECTION, SplitBrainProtectionException.class,
+                (message, cause) -> new SplitBrainProtectionException(message));
         register(REACHED_MAX_SIZE, ReachedMaxSizeException.class, (message, cause) -> new ReachedMaxSizeException(message));
         register(REJECTED_EXECUTION, RejectedExecutionException.class, RejectedExecutionException::new);
-        register(RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class, (message, cause) -> new ResponseAlreadySentException(message));
+        register(RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class,
+                (message, cause) -> new ResponseAlreadySentException(message));
         register(RETRYABLE_HAZELCAST, RetryableHazelcastException.class, RetryableHazelcastException::new);
         register(RETRYABLE_IO, RetryableIOException.class, RetryableIOException::new);
         register(RUNTIME, RuntimeException.class, RuntimeException::new);
         register(SECURITY, SecurityException.class, SecurityException::new);
         register(SOCKET, SocketException.class, (message, cause) -> new SocketException(message));
         register(STALE_SEQUENCE, StaleSequenceException.class, (message, cause) -> new StaleSequenceException(message, 0));
-        register(TARGET_DISCONNECTED, TargetDisconnectedException.class, (message, cause) -> new TargetDisconnectedException(message));
+        register(TARGET_DISCONNECTED, TargetDisconnectedException.class,
+                (message, cause) -> new TargetDisconnectedException(message));
         register(TARGET_NOT_MEMBER, TargetNotMemberException.class, (message, cause) -> new TargetNotMemberException(message));
         register(TIMEOUT, TimeoutException.class, (message, cause) -> new TimeoutException(message));
         register(TOPIC_OVERLOAD, TopicOverloadException.class, (message, cause) -> new TopicOverloadException(message));
         register(TRANSACTION, TransactionException.class, TransactionException::new);
-        register(TRANSACTION_NOT_ACTIVE, TransactionNotActiveException.class, (message, cause) -> new TransactionNotActiveException(message));
+        register(TRANSACTION_NOT_ACTIVE, TransactionNotActiveException.class,
+                (message, cause) -> new TransactionNotActiveException(message));
         register(TRANSACTION_TIMED_OUT, TransactionTimedOutException.class, TransactionTimedOutException::new);
         register(URI_SYNTAX, URISyntaxException.class, (message, cause) -> new URISyntaxException("not available", message));
         register(UTF_DATA_FORMAT, UTFDataFormatException.class, (message, cause) -> new UTFDataFormatException(message));
@@ -289,11 +309,16 @@ public class ClientExceptionFactory {
         register(XA, XAException.class, (message, cause) -> new XAException(message));
         register(ACCESS_CONTROL, AccessControlException.class, (message, cause) -> new AccessControlException(message));
         register(LOGIN, LoginException.class, (message, cause) -> new LoginException(message));
-        register(UNSUPPORTED_CALLBACK, UnsupportedCallbackException.class, (message, cause) -> new UnsupportedCallbackException(null, message));
-        register(NO_DATA_MEMBER, NoDataMemberInClusterException.class, (message, cause) -> new NoDataMemberInClusterException(message));
-        register(REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class, (message, cause) -> new ReplicatedMapCantBeCreatedOnLiteMemberException(message));
-        register(MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class, (message, cause) -> new MaxMessageSizeExceeded(message));
-        register(WAN_REPLICATION_QUEUE_FULL, WanQueueFullException.class, (message, cause) -> new WanQueueFullException(message));
+        register(UNSUPPORTED_CALLBACK, UnsupportedCallbackException.class,
+                (message, cause) -> new UnsupportedCallbackException(null, message));
+        register(NO_DATA_MEMBER, NoDataMemberInClusterException.class,
+                (message, cause) -> new NoDataMemberInClusterException(message));
+        register(REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class,
+                (message, cause) -> new ReplicatedMapCantBeCreatedOnLiteMemberException(message));
+        register(MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class,
+                (message, cause) -> new MaxMessageSizeExceeded(message));
+        register(WAN_REPLICATION_QUEUE_FULL, WanQueueFullException.class,
+                (message, cause) -> new WanQueueFullException(message));
         register(ASSERTION_ERROR, AssertionError.class, (message, cause) -> new AssertionError(message));
         register(OUT_OF_MEMORY_ERROR, OutOfMemoryError.class, (message, cause) -> new OutOfMemoryError(message));
         register(STACK_OVERFLOW_ERROR, StackOverflowError.class, (message, cause) -> new StackOverflowError(message));
@@ -302,24 +327,38 @@ public class ClientExceptionFactory {
         register(STALE_TASK_ID, StaleTaskIdException.class, (message, cause) -> new StaleTaskIdException(message));
         register(DUPLICATE_TASK, DuplicateTaskException.class, (message, cause) -> new DuplicateTaskException(message));
         register(STALE_TASK, StaleTaskException.class, (message, cause) -> new StaleTaskException(message));
-        register(LOCAL_MEMBER_RESET, LocalMemberResetException.class, (message, cause) -> new LocalMemberResetException(message));
-        register(INDETERMINATE_OPERATION_STATE, IndeterminateOperationStateException.class, IndeterminateOperationStateException::new);
-        register(FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, NodeIdOutOfRangeException.class, (message, cause) -> new NodeIdOutOfRangeException(message));
-        register(TARGET_NOT_REPLICA_EXCEPTION, TargetNotReplicaException.class, (message, cause) -> new TargetNotReplicaException(message));
-        register(MUTATION_DISALLOWED_EXCEPTION, MutationDisallowedException.class, (message, cause) -> new MutationDisallowedException(message));
-        register(CONSISTENCY_LOST_EXCEPTION, ConsistencyLostException.class, (message, cause) -> new ConsistencyLostException(message));
+        register(LOCAL_MEMBER_RESET, LocalMemberResetException.class,
+                (message, cause) -> new LocalMemberResetException(message));
+        register(INDETERMINATE_OPERATION_STATE, IndeterminateOperationStateException.class,
+                IndeterminateOperationStateException::new);
+        register(FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, NodeIdOutOfRangeException.class,
+                (message, cause) -> new NodeIdOutOfRangeException(message));
+        register(TARGET_NOT_REPLICA_EXCEPTION, TargetNotReplicaException.class,
+                (message, cause) -> new TargetNotReplicaException(message));
+        register(MUTATION_DISALLOWED_EXCEPTION, MutationDisallowedException.class,
+                (message, cause) -> new MutationDisallowedException(message));
+        register(CONSISTENCY_LOST_EXCEPTION, ConsistencyLostException.class,
+                (message, cause) -> new ConsistencyLostException(message));
         register(SESSION_EXPIRED_EXCEPTION, SessionExpiredException.class, SessionExpiredException::new);
         register(WAIT_KEY_CANCELLED_EXCEPTION, WaitKeyCancelledException.class, WaitKeyCancelledException::new);
-        register(LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION, LockAcquireLimitReachedException.class, (message, cause) -> new LockAcquireLimitReachedException(message));
-        register(LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class, (message, cause) -> new LockOwnershipLostException(message));
-        register(CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class, (message, cause) -> new CPGroupDestroyedException());
-        register(CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class, (message, cause) -> new CannotReplicateException(null));
-        register(LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class, (message, cause) -> new LeaderDemotedException(null, null));
-        register(STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class, (message, cause) -> new StaleAppendRequestException(null));
+        register(LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION, LockAcquireLimitReachedException.class,
+                (message, cause) -> new LockAcquireLimitReachedException(message));
+        register(LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class,
+                (message, cause) -> new LockOwnershipLostException(message));
+        register(CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class,
+                (message, cause) -> new CPGroupDestroyedException());
+        register(CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class,
+                (message, cause) -> new CannotReplicateException(null));
+        register(LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class,
+                (message, cause) -> new LeaderDemotedException(null, null));
+        register(STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class,
+                (message, cause) -> new StaleAppendRequestException(null));
         register(NOT_LEADER_EXCEPTION, NotLeaderException.class, (message, cause) -> new NotLeaderException(null, null, null));
-        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class, ((message, cause) -> new VersionMismatchException(message)));
+        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class,
+                ((message, cause) -> new VersionMismatchException(message)));
         register(NO_SUCH_METHOD_ERROR, NoSuchMethodError.class, ((message, cause) -> new NoSuchMethodError(message)));
-        register(NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class, ((message, cause) -> new NoSuchMethodException(message)));
+        register(NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class,
+                ((message, cause) -> new NoSuchMethodException(message)));
         register(NO_SUCH_FIELD_ERROR, NoSuchFieldError.class, ((message, cause) -> new NoSuchFieldError(message)));
         register(NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class, ((message, cause) -> new NoSuchFieldException(message)));
         register(NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class, ((message, cause) -> new NoClassDefFoundError(message)));

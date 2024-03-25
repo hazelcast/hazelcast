@@ -30,6 +30,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
 /**
  * A serializable DTO that describes client B/W list filtering configuration received from Management Center.
  */
+@SuppressWarnings("VisibilityModifier")
 public class ClientBwListDTO implements JsonSerializable {
 
     public Mode mode;

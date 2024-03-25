@@ -60,6 +60,7 @@ import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 /**
  * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
+@SuppressWarnings("MethodCount")
 public class PortableInternalGenericRecord extends PortableGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;

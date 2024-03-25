@@ -46,6 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
+@SuppressWarnings("MethodCount")
 public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned, UserCodeNamespaceAwareConfig<MapConfig> {
 
     /**
@@ -156,6 +157,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         setName(name);
     }
 
+    @SuppressWarnings("ExecutableStatementCount")
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
@@ -864,7 +866,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     }
 
     @Override
-    @SuppressWarnings("checkstyle:methodlength")
+    @SuppressWarnings({"checkstyle:methodlength", "CyclomaticComplexity", "NPathComplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -965,6 +967,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
+    @SuppressWarnings("NPathComplexity")
     @Override
     public final int hashCode() {
         int result = (name != null ? name.hashCode() : 0);

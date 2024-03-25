@@ -47,6 +47,7 @@ public class LockDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings("ReturnCount")
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {

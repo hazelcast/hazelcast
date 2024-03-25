@@ -45,6 +45,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY_ID;
 
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public class ScheduledExecutorDataSerializerHook
         implements DataSerializerHook {
 
@@ -103,6 +104,7 @@ public class ScheduledExecutorDataSerializerHook
     }
 
     @Override
+    @SuppressWarnings({"MethodLength", "AnonInnerLength", "CyclomaticComplexity", "MethodLength", "ReturnCount"})
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
             @Override

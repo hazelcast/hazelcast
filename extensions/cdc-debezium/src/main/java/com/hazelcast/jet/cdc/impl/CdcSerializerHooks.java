@@ -48,6 +48,7 @@ public class CdcSerializerHooks {
         }
 
         @Override
+        @SuppressWarnings("AnonInnerLength")
         public Serializer createSerializer() {
             return new StreamSerializer<ChangeRecordImpl>() {
                 @Override
@@ -137,6 +138,7 @@ public class CdcSerializerHooks {
         }
 
         @Override
+        @SuppressWarnings("AnonInnerLength")
         public Serializer createSerializer() {
             return new StreamSerializer<CdcSourceP.State>() {
                 @Override

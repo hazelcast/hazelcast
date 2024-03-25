@@ -69,9 +69,6 @@ public class PersonWithId {
 
     @Override
     public String toString() {
-        return "PersonWithObjectId{" +
-                ", personId=" + personId +
-                ", name='" + name + '\'' +
-                '}';
+        return "PersonWithObjectId{" + ", personId=" + personId + ", name='" + name + '\'' + '}';
     }
 }

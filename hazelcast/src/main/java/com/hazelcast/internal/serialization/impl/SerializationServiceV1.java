@@ -141,6 +141,7 @@ import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaD
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OffsetDateTimeSerializer;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class SerializationServiceV1 extends AbstractSerializationService {
 
     private static final int FACTORY_AND_CLASS_ID_BYTE_LENGTH = 8;

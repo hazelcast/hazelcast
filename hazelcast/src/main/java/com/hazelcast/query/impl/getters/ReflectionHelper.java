@@ -52,6 +52,7 @@ public final class ReflectionHelper {
     private ReflectionHelper() {
     }
 
+    @SuppressWarnings({"CyclomaticComplexity", "ReturnCount"})
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
             return AttributeType.STRING;
@@ -97,6 +98,7 @@ public final class ReflectionHelper {
         return null;
     }
 
+    @SuppressWarnings({"CyclomaticComplexity", "MethodLength", "NPathComplexity"})
     public static Getter createGetter(Object obj, String attribute, boolean failOnMissingAttribute) {
         if (obj == null || obj == NULL) {
             return NULL_GETTER;

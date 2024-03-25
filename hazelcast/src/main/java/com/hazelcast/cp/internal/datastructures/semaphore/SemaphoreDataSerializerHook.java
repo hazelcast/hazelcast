@@ -50,6 +50,7 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings("ReturnCount")
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {

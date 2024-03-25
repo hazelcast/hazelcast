@@ -35,6 +35,7 @@ import java.time.OffsetDateTime;
  *
  * @since 5.2
  */
+@SuppressWarnings("MethodCount")
 public interface GenericRecordBuilder {
 
     /**

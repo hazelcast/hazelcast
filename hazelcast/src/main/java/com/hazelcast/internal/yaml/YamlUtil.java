@@ -158,6 +158,7 @@ public final class YamlUtil {
      * @param right The right-side node of the check
      * @return {@code true} if the provided nodes are of the same type
      */
+    @SuppressWarnings("BooleanExpressionComplexity")
     public static boolean isOfSameType(YamlNode left, YamlNode right) {
         return left instanceof YamlMapping && right instanceof YamlMapping
                 || left instanceof YamlSequence && right instanceof YamlSequence

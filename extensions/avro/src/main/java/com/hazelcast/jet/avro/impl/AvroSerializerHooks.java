@@ -87,6 +87,7 @@ public final class AvroSerializerHooks {
         }
 
         @Override
+        @SuppressWarnings("AnonInnerLength")
         public Serializer createSerializer(SerializationService serializationService) {
             ((AbstractSerializationService) serializationService)
                     .registerFromSuperType(SpecificRecordBase.class, Externalizable.class);

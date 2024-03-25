@@ -49,6 +49,7 @@ public class MongoObjectProvider implements TestDatabaseRecordProvider {
     }
 
     @Override
+    @SuppressWarnings("OperatorWrap")
     public void createObject(ObjectSpec spec) {
         String objectName = spec.name;
         List<Column> columns = spec.columns;

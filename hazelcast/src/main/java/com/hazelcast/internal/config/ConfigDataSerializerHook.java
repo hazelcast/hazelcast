@@ -184,6 +184,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings("MethodLength")
     public DataSerializableFactory createFactory() {
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 

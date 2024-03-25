@@ -79,7 +79,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Special thanks to Alexandre Vasseur for providing this very nice test application.
  */
-@SuppressWarnings("checkstyle:magicnumber")
+@SuppressWarnings({"checkstyle:magicnumber", "ClassFanOutComplexity", "MethodCount"})
 public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<Object>, MessageListener<Object> {
 
     private static final String EXECUTOR_NAMESPACE = "Sample Executor";

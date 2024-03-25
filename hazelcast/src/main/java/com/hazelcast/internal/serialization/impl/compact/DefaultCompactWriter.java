@@ -87,6 +87,7 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
  * The writer can also handle compact serializable classes that we want to
  * include schema in it.
  */
+@SuppressWarnings("MethodCount")
 public class DefaultCompactWriter implements CompactWriter {
 
     private final CompactStreamSerializer serializer;

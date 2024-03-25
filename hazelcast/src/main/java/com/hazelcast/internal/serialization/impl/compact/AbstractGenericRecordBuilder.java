@@ -34,6 +34,7 @@ import java.time.OffsetDateTime;
  * interface. It leaves the responsibility of building the actual {@link GenericRecord}
  * to the child classes.
  */
+@SuppressWarnings("MethodCount")
 abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull

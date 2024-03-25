@@ -53,6 +53,7 @@ import java.util.Set;
 /**
  * Provide operations other then {@link InMemoryFormat#NATIVE}
  */
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public class DefaultOperationProvider implements CacheOperationProvider {
 
     protected final String nameWithPrefix;

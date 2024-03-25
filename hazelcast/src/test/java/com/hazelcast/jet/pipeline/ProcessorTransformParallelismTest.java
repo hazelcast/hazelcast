@@ -45,6 +45,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("ParameterName")
 public class ProcessorTransformParallelismTest {
 
     private static final int DEFAULT_PARALLELISM = 8;

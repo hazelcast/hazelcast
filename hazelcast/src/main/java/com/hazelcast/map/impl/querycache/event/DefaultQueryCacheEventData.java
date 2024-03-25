@@ -35,6 +35,7 @@ import static com.hazelcast.internal.cluster.Versions.V5_4;
  * Default implementation of {@link QueryCacheEventData} which is sent to subscriber.
  */
 @BinaryInterface
+@SuppressWarnings({"CyclomaticComplexity", "DefaultQueryCacheEventData", "NPathComplexity"})
 public class DefaultQueryCacheEventData implements QueryCacheEventData, Versioned {
 
     private Object key;

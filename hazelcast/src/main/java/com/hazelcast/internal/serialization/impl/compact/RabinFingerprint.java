@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
  * A very collision-resistant fingerprint method used to create automatic
  * schema ids for the Compact format.
  */
+@SuppressWarnings("MagicNumber")
 public final class RabinFingerprint {
 
     private static final long INIT = 0xc15d213aa4d7a795L;

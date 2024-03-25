@@ -84,6 +84,7 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 /**
  * A Factory for creating {@link TimedMemberState} instances.
  */
+@SuppressWarnings("ClassFanOutComplexity")
 public class TimedMemberStateFactory {
 
     private static final int INITIAL_PARTITION_SAFETY_CHECK_DELAY = 15;
@@ -228,6 +229,7 @@ public class TimedMemberStateFactory {
         memberState.setNodeState(nodeState);
     }
 
+    @SuppressWarnings("CyclomaticComplexity")
     private void createMemState(MemberStateImpl memberState,
                                 Collection<StatisticsAwareService> services) {
         Config config = instance.getConfig();

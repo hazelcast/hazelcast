@@ -88,6 +88,7 @@ public final class FixedSizeTypesCodec {
         encodeInt(buffer, pos, fieldKind.getId());
     }
 
+    @SuppressWarnings("MagicNumber")
     public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {
         int timeUnitId;
         if (TimeUnit.NANOSECONDS.equals(timeUnit)) {

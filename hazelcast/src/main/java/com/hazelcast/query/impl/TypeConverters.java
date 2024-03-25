@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.TimeZone;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public final class TypeConverters {
 
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();

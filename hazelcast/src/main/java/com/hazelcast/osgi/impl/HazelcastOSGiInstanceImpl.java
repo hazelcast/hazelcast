@@ -63,7 +63,7 @@ import java.util.concurrent.ConcurrentMap;
  * {@link com.hazelcast.osgi.HazelcastOSGiInstance} implementation
  * as proxy of delegated {@link com.hazelcast.core.HazelcastInstance} for getting from OSGi service.
  */
-@SuppressWarnings({"checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "MethodCount"})
 class HazelcastOSGiInstanceImpl
         implements HazelcastOSGiInstance {
 

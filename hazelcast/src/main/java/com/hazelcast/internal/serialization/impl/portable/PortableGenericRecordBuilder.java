@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+@SuppressWarnings("MethodCount")
 public class PortableGenericRecordBuilder implements GenericRecordBuilder {
 
     private final ClassDefinition classDefinition;

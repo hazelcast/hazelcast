@@ -26,6 +26,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
 /**
  * A Serializable DTO for {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationLog.Invocation}.
  */
+@SuppressWarnings("VisibilityModifier")
 public class SlowOperationInvocationDTO implements JsonSerializable {
 
     public int id;

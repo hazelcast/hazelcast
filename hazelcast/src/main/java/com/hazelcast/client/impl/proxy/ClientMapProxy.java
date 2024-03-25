@@ -196,7 +196,7 @@ import static java.util.stream.Collectors.groupingBy;
  * @param <K> key
  * @param <V> value
  */
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "ClassFanOutComplexity", "MethodCount"})
 public class ClientMapProxy<K, V> extends ClientProxy
         implements IMap<K, V>, EventJournalReader<EventJournalMapEvent<K, V>> {
 

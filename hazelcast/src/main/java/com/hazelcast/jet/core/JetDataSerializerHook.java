@@ -79,6 +79,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
         return new Factory();
     }
 
+    @SuppressWarnings("ReturnCount")
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {

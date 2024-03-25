@@ -73,6 +73,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@SuppressWarnings("StaticVariableName")
 public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     private static final int ITEM_COUNT = 20;

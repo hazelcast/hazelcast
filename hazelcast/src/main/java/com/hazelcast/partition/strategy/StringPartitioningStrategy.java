@@ -20,6 +20,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
 @SerializableByConvention
+@SuppressWarnings("JavadocVariable")
 public class StringPartitioningStrategy implements PartitioningStrategy {
 
     public static final StringPartitioningStrategy INSTANCE = new StringPartitioningStrategy();

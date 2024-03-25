@@ -92,7 +92,7 @@ import static java.util.Arrays.asList;
 /**
  * The ConfigXmlGenerator is responsible for transforming a {@link Config} to a Hazelcast XML string.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings({"checkstyle:methodcount", "ClassFanOutComplexity"})
 public class ConfigXmlGenerator {
 
     /**

@@ -28,7 +28,6 @@ import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CARDINALITY_ESTIMATOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CARDINALITY_ESTIMATOR_DS_FACTORY_ID;
@@ -56,35 +55,20 @@ public final class CardinalityEstimatorDataSerializerHook
     }
 
     @Override
+    @SuppressWarnings("ReturnCount")
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case ADD:
-                        return new AggregateOperation();
-                    case ESTIMATE:
-                        return new EstimateOperation();
-                    case AGGREGATE_BACKUP:
-                        return new AggregateBackupOperation();
-                    case REPLICATION:
-                        return new ReplicationOperation();
-                    case CARDINALITY_EST_CONTAINER:
-                        return new CardinalityEstimatorContainer();
-                    case HLL:
-                        return new HyperLogLogImpl();
-                    case HLL_DENSE_ENC:
-                        return new DenseHyperLogLogEncoder();
-                    case HLL_SPARSE_ENC:
-                        return new SparseHyperLogLogEncoder();
-                    case MERGE:
-                        return new MergeOperation();
-                    case MERGE_BACKUP:
-                        return new MergeBackupOperation();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case ADD -> new AggregateOperation();
+            case ESTIMATE -> new EstimateOperation();
+            case AGGREGATE_BACKUP -> new AggregateBackupOperation();
+            case REPLICATION -> new ReplicationOperation();
+            case CARDINALITY_EST_CONTAINER -> new CardinalityEstimatorContainer();
+            case HLL -> new HyperLogLogImpl();
+            case HLL_DENSE_ENC -> new DenseHyperLogLogEncoder();
+            case HLL_SPARSE_ENC -> new SparseHyperLogLogEncoder();
+            case MERGE -> new MergeOperation();
+            case MERGE_BACKUP -> new MergeBackupOperation();
+            default -> null;
         };
     }
 }

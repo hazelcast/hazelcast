@@ -49,6 +49,7 @@ import com.hazelcast.spi.tenantcontrol.TenantControl;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
 
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SPI_DS_FACTORY, SPI_DS_FACTORY_ID);
@@ -88,69 +89,37 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
         return FACTORY;
     }
 
+    @SuppressWarnings({"MethodLength", "AnonInnerLength", "CyclomaticComplexity", "ReturnCount"})
     private static DataSerializableFactory createFactoryInternal() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case NORMAL_RESPONSE:
-                        return new NormalResponse();
-                    case BACKUP:
-                        return new Backup();
-                    case BACKUP_ACK_RESPONSE:
-                        return new BackupAckResponse();
-                    case PARTITION_ITERATOR:
-                        return new PartitionIteratingOperation();
-                    case PARTITION_RESPONSE:
-                        return new PartitionResponse();
-                    case PARALLEL_OPERATION_FACTORY:
-                        return new BinaryOperationFactory();
-                    case EVENT_ENVELOPE:
-                        return new EventEnvelope();
-                    case COLLECTION:
-                        return new SerializableList();
-                    case CALL_TIMEOUT_RESPONSE:
-                        return new CallTimeoutResponse();
-                    case ERROR_RESPONSE:
-                        return new ErrorResponse();
-                    case DEREGISTRATION:
-                        return new DeregistrationOperation();
-                    case ON_JOIN_REGISTRATION:
-                        return new OnJoinRegistrationOperation();
-                    case REGISTRATION_OPERATION:
-                        return new RegistrationOperation();
-                    case SEND_EVENT:
-                        return new SendEventOperation();
-                    case DIST_OBJECT_INIT:
-                        return new InitializeDistributedObjectOperation();
-                    case DIST_OBJECT_DESTROY:
-                        return new DistributedObjectDestroyOperation();
-                    case POST_JOIN_PROXY:
-                        return new PostJoinProxyOperation();
-                    case TRUE_EVENT_FILTER:
-                        return new TrueEventFilter();
-                    case UNMODIFIABLE_LAZY_LIST:
-                        return new UnmodifiableLazyList();
-                    case OPERATION_CONTROL:
-                        return new OperationControl();
-                    case DISTRIBUTED_OBJECT_NS:
-                        return new DistributedObjectNamespace();
-                    case REGISTRATION:
-                        return new Registration();
-                    case NOOP_TENANT_CONTROL:
-                        return (IdentifiedDataSerializable) TenantControl.NOOP_TENANT_CONTROL;
-                    case USERNAME_PWD_CRED:
-                        return new UsernamePasswordCredentials();
-                    case SIMPLE_TOKEN_CRED:
-                        return new SimpleTokenCredentials();
-                    case DISTRIBUTED_OBJECT_EVENT_PACKET:
-                        return new DistributedObjectEventPacket();
-                    case APPEND_TENANT_CONTROL_OPERATION:
-                        return new TenantControlReplicationOperation();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case NORMAL_RESPONSE -> new NormalResponse();
+            case BACKUP -> new Backup();
+            case BACKUP_ACK_RESPONSE -> new BackupAckResponse();
+            case PARTITION_ITERATOR -> new PartitionIteratingOperation();
+            case PARTITION_RESPONSE -> new PartitionResponse();
+            case PARALLEL_OPERATION_FACTORY -> new BinaryOperationFactory();
+            case EVENT_ENVELOPE -> new EventEnvelope();
+            case COLLECTION -> new SerializableList();
+            case CALL_TIMEOUT_RESPONSE -> new CallTimeoutResponse();
+            case ERROR_RESPONSE -> new ErrorResponse();
+            case DEREGISTRATION -> new DeregistrationOperation();
+            case ON_JOIN_REGISTRATION -> new OnJoinRegistrationOperation();
+            case REGISTRATION_OPERATION -> new RegistrationOperation();
+            case SEND_EVENT -> new SendEventOperation();
+            case DIST_OBJECT_INIT -> new InitializeDistributedObjectOperation();
+            case DIST_OBJECT_DESTROY -> new DistributedObjectDestroyOperation();
+            case POST_JOIN_PROXY -> new PostJoinProxyOperation();
+            case TRUE_EVENT_FILTER -> new TrueEventFilter();
+            case UNMODIFIABLE_LAZY_LIST -> new UnmodifiableLazyList();
+            case OPERATION_CONTROL -> new OperationControl();
+            case DISTRIBUTED_OBJECT_NS -> new DistributedObjectNamespace();
+            case REGISTRATION -> new Registration();
+            case NOOP_TENANT_CONTROL -> (IdentifiedDataSerializable) TenantControl.NOOP_TENANT_CONTROL;
+            case USERNAME_PWD_CRED -> new UsernamePasswordCredentials();
+            case SIMPLE_TOKEN_CRED -> new SimpleTokenCredentials();
+            case DISTRIBUTED_OBJECT_EVENT_PACKET -> new DistributedObjectEventPacket();
+            case APPEND_TENANT_CONTROL_OPERATION -> new TenantControlReplicationOperation();
+            default -> null;
         };
     }
 

@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
  *
  * @since Hazelcast 5.2
  */
+@SuppressWarnings("JavadocVariable")
 public enum FieldKind {
 
     /**

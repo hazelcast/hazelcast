@@ -39,8 +39,8 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_enum_constants=49
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_array_initializer=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_for_loop_header=0
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_arrow=0
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_colon=0
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_arrow=16
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_colon=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_logical_operator=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_method_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_module_statements=16
@@ -60,7 +60,7 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_enum_declaration=48
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_record_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_type_declaration=16
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_switch_case_with_arrow=0
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_switch_case_with_arrow=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_throws_clause_in_constructor_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_throws_clause_in_method_declaration=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_type_annotations=0
@@ -86,6 +86,7 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_array_initializer=end_of_line
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_block=end_of_line
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_block_in_case=end_of_line
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_block_in_case_after_arrow=end_of_line
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_constructor_declaration=end_of_line
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_enum_constant=end_of_line
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.brace_position_for_enum_declaration=end_of_line
@@ -403,6 +404,7 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.wrap_before_relational_operator=true
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.wrap_before_shift_operator=true
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.wrap_before_string_concatenation=true
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.wrap_before_switch_case_arrow_operator=false
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.wrap_before_switch_case_arrow_operator=false
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.wrap_outer_expressions_when_nested=true
 /instance/org.eclipse.jdt.ui/cleanup.add_all=false

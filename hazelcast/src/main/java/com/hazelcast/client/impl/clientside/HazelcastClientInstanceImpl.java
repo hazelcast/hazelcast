@@ -172,6 +172,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.unmodifiableSet;
 
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
 public class HazelcastClientInstanceImpl implements HazelcastClientInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
@@ -213,6 +214,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue<>();
     private final SqlClientService sqlService;
 
+    @SuppressWarnings("ExecutableStatementCount")
     public HazelcastClientInstanceImpl(String instanceName, ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,

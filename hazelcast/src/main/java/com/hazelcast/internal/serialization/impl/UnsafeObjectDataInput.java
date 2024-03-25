@@ -74,11 +74,13 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     }
 
     @Override
+    @SuppressWarnings("MagicNumber")
     public int read() {
         return (pos < size) ? MEM.getByte(data, ARRAY_BYTE_BASE_OFFSET + pos++) & 0xFF : -1;
     }
 
     @Override
+    @SuppressWarnings("MagicNumber")
     public int read(int position) {
         return (position < size) ? MEM.getByte(data, ARRAY_BYTE_BASE_OFFSET + position) & 0xFF : NULL_ARRAY_LENGTH;
     }

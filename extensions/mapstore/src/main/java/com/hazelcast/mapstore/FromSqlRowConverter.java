@@ -32,6 +32,7 @@ final class FromSqlRowConverter {
 
     // Convert SqlRow to GenericRecord
     @Nonnull
+    @SuppressWarnings("CyclomaticComplexity")
     public static GenericRecord toGenericRecord(SqlRow sqlRow, GenericMapStoreProperties properties) {
         GenericRecordBuilder builder = GenericRecordBuilder.compact(properties.compactTypeName);
 

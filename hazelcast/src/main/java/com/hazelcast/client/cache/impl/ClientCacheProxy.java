@@ -90,7 +90,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "MethodCount"})
 public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>>, CacheSyncListenerCompleter {
 

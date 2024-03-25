@@ -38,7 +38,8 @@ public class TpcTestSupport {
 
     // the unit of the above 2 timeouts is milliseconds.
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
-    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY = getInteger("hazelcast.assertTrueEventually.timeout.nightly", 240);
+    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY =
+            getInteger("hazelcast.assertTrueEventually.timeout.nightly", 240);
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 30;
 

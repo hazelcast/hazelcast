@@ -42,6 +42,7 @@ import static java.util.Collections.singletonList;
 /**
  * Creates map operations.
  */
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
 public class DefaultMapOperationProvider implements MapOperationProvider {
 
     public DefaultMapOperationProvider() {

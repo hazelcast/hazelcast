@@ -95,7 +95,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "ClassFanOutComplexity", "MethodCount"})
 public abstract class AbstractCacheService implements ICacheService,
         PreJoinAwareService<OnJoinCacheOperation>, PartitionAwareService,
         SplitBrainProtectionAwareService, SplitBrainHandlerService,

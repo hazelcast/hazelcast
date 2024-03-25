@@ -91,6 +91,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS
  * <p>CacheProxy operations are mapped here. This factory class is used by internal serialization system to create
  * {@link IdentifiedDataSerializable} classes without using reflection.</p>
  */
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public final class CacheDataSerializerHook
         implements DataSerializerHook {
 
@@ -172,7 +173,7 @@ public final class CacheDataSerializerHook
     }
 
     // squid:S1612 https://github.com/hazelcast/hazelcast/issues/25834
-    @SuppressWarnings("squid:S1612")
+    @SuppressWarnings({"squid:S1612", "MethodLength"})
     @Override
     public DataSerializableFactory createFactory() {
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];

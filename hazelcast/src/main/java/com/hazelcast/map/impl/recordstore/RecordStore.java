@@ -56,6 +56,7 @@ import java.util.function.BiConsumer;
 /**
  * Defines a record-store.
  */
+@SuppressWarnings("MethodCount")
 public interface RecordStore<R extends Record> {
 
     ExpirySystem getExpirySystem();

@@ -122,6 +122,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         );
     }
 
+    @SuppressWarnings("AnonInnerLength")
     private static <T> ConsumerEx<Configuration> configureFn(
             FileSourceConfiguration<T> fsc, JobConfigurer configurer, FileFormat<T> fileFormat) {
         return new ConsumerEx<>() {

@@ -36,6 +36,7 @@ import java.util.UUID;
  * Provides {@link com.hazelcast.config.InMemoryFormat InMemoryFormat} specific
  * operations for {@link IMap IMap}.
  */
+@SuppressWarnings("MethodCount")
 public interface MapOperationProvider {
 
     MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle);

@@ -31,6 +31,7 @@ import java.io.IOException;
  * @see com.hazelcast.cache.impl.CacheEventData
  */
 @BinaryInterface
+@SuppressWarnings({"CyclomaticComplexity", "NPathComplexity"})
 public class CacheEventDataImpl
         implements CacheEventData {
 

@@ -883,6 +883,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private static final int MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY = 500;
 
@@ -984,6 +985,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new RingbufferSizeMessageTask(cm, node, con));
     }
 
+    @SuppressWarnings("MethodLength")
     private void initializeCacheTaskFactories() {
         factories.put(CacheClearCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CacheClearMessageTask(cm, node, con));
@@ -1362,6 +1364,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TransactionalSetRemoveMessageTask(cm, node, con));
     }
 
+    @SuppressWarnings("MethodLength")
     private void initializeMapTaskFactories() {
         factories.put(MapEntriesWithPagingPredicateCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapEntriesWithPagingPredicateMessageTask(cm, node, con));
@@ -1813,6 +1816,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReleasePermitsMessageTask(cm, node, con));
     }
 
+    @SuppressWarnings("MethodLength")
     private void initializeManagementCenterTaskFactories() {
         factories.put(MCReadMetricsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReadMetricsMessageTask(cm, node, con));

@@ -57,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.testcontainers.utility.DockerImageName.parse;
 
+@SuppressWarnings("StaticVariableName")
 public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule

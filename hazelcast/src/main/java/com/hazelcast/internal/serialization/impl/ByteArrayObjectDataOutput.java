@@ -36,6 +36,7 @@ import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.version.Version.UNKNOWN;
 
+@SuppressWarnings("MethodCount")
 public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
 
     final int initialSize;
@@ -457,6 +458,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    @SuppressWarnings("MagicNumber")
     public void clear() {
         pos = 0;
         if (buffer != null && buffer.length > initialSize * 8) {

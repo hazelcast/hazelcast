@@ -19,7 +19,6 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
 import com.hazelcast.transaction.impl.operations.CreateAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
@@ -42,6 +41,7 @@ import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
 
+@SuppressWarnings("ClassDataAbstractionCoupling")
 public final class TransactionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(TRANSACTION_DS_FACTORY, TRANSACTION_DS_FACTORY_ID);
@@ -73,51 +73,30 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings("CyclomaticComplexity")
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case CREATE_TX_BACKUP_LOG:
-                        return new CreateTxBackupLogOperation();
-                    case BROADCAST_TX_ROLLBACK:
-                        return new BroadcastTxRollbackOperation();
-                    case PURGE_TX_BACKUP_LOG:
-                        return new PurgeTxBackupLogOperation();
-                    case REPLICATE_TX_BACKUP_LOG:
-                        return new ReplicateTxBackupLogOperation();
-                    case ROLLBACK_TX_BACKUP_LOG:
-                        return new RollbackTxBackupLogOperation();
-                    case CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
-                        return new CreateAllowedDuringPassiveStateTxBackupLogOperation();
-                    case PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
-                        return new PurgeAllowedDuringPassiveStateTxBackupLogOperation();
-                    case REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
-                        return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation();
-                    case ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
-                        return new RollbackAllowedDuringPassiveStateTxBackupLogOperation();
-                    case CLEAR_REMOTE_TX_BACKUP:
-                        return new ClearRemoteTransactionBackupOperation();
-                    case CLEAR_REMOTE_TX:
-                        return new ClearRemoteTransactionOperation();
-                    case COLLECT_REMOTE_TX:
-                        return new CollectRemoteTransactionsOperation();
-                    case FINALIZE_REMOTE_TX_BACKUP:
-                        return new FinalizeRemoteTransactionBackupOperation();
-                    case FINALIZE_REMOTE_TX:
-                        return new FinalizeRemoteTransactionOperation();
-                    case PUT_REMOTE_TX_BACKUP:
-                        return new PutRemoteTransactionBackupOperation();
-                    case PUT_REMOTE_TX:
-                        return new PutRemoteTransactionOperation();
-                    case XA_REPLICATION:
-                        return new XaReplicationOperation();
-                    case XA_TRANSACTION_DTO:
-                        return new XATransactionDTO();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case CREATE_TX_BACKUP_LOG -> new CreateTxBackupLogOperation();
+            case BROADCAST_TX_ROLLBACK -> new BroadcastTxRollbackOperation();
+            case PURGE_TX_BACKUP_LOG -> new PurgeTxBackupLogOperation();
+            case REPLICATE_TX_BACKUP_LOG -> new ReplicateTxBackupLogOperation();
+            case ROLLBACK_TX_BACKUP_LOG -> new RollbackTxBackupLogOperation();
+            case CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG -> new CreateAllowedDuringPassiveStateTxBackupLogOperation();
+            case PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG -> new PurgeAllowedDuringPassiveStateTxBackupLogOperation();
+            case REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG
+                    -> new ReplicateAllowedDuringPassiveStateTxBackupLogOperation();
+            case ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG
+                    -> new RollbackAllowedDuringPassiveStateTxBackupLogOperation();
+            case CLEAR_REMOTE_TX_BACKUP -> new ClearRemoteTransactionBackupOperation();
+            case CLEAR_REMOTE_TX -> new ClearRemoteTransactionOperation();
+            case COLLECT_REMOTE_TX -> new CollectRemoteTransactionsOperation();
+            case FINALIZE_REMOTE_TX_BACKUP -> new FinalizeRemoteTransactionBackupOperation();
+            case FINALIZE_REMOTE_TX -> new FinalizeRemoteTransactionOperation();
+            case PUT_REMOTE_TX_BACKUP -> new PutRemoteTransactionBackupOperation();
+            case PUT_REMOTE_TX -> new PutRemoteTransactionOperation();
+            case XA_REPLICATION -> new XaReplicationOperation();
+            case XA_TRANSACTION_DTO -> new XATransactionDTO();
+            default -> null;
         };
     }
 }

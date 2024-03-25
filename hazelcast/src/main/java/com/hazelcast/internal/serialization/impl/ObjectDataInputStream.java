@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 
+@SuppressWarnings("MethodCount")
 public class ObjectDataInputStream extends VersionedObjectDataInput
         implements Closeable, DataReader, SerializationServiceSupport {
 

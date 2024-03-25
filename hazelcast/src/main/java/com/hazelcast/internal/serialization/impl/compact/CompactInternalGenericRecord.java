@@ -89,6 +89,7 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  * <p>
  * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
+@SuppressWarnings("MethodCount")
 public class CompactInternalGenericRecord extends CompactGenericRecord implements InternalGenericRecord {
 
     private final OffsetReader offsetReader;
@@ -101,6 +102,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final @Nullable
     Class associatedClass;
 
+    @SuppressWarnings("ExecutableStatementCount")
     protected CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
                                            @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
         this.in = in;

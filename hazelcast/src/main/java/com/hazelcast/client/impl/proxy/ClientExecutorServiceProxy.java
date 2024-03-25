@@ -62,6 +62,7 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
 /**
  * @author ali 5/24/13
  */
+@SuppressWarnings("MethodCount")
 public class ClientExecutorServiceProxy extends ClientProxy implements IExecutorService {
 
     private final Random random = new Random(-System.currentTimeMillis());

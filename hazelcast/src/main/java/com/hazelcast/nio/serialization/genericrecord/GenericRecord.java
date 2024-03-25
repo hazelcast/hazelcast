@@ -80,6 +80,7 @@ import java.util.Set;
  *
  * @since 5.2
  */
+@SuppressWarnings("MethodCount")
 public interface GenericRecord {
 
     /**

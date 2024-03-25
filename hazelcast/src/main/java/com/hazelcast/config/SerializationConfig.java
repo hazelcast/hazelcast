@@ -36,6 +36,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the serialization configuration of {@link com.hazelcast.core.HazelcastInstance}.
  */
+@SuppressWarnings("MethodCount")
 public class SerializationConfig {
 
     private int portableVersion;

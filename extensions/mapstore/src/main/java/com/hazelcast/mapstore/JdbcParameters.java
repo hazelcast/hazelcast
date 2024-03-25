@@ -48,6 +48,7 @@ class JdbcParameters {
     }
 
     // Convert key and GenericRecord to JDBC parameter values
+    @SuppressWarnings({"CyclomaticComplexity", "MethodLength"})
     static <K, V> JdbcParameters convert(
             K key,
             V value,

@@ -150,7 +150,8 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
 
     private long initTimeoutMillis;
 
-    private Exception initFailure; // uses initFinished latch to ensure visibility
+    // uses initFinished latch to ensure visibility
+    private Exception initFailure;
 
     private final CountDownLatch initFinished = new CountDownLatch(1);
 
@@ -177,6 +178,7 @@ public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecyc
         asyncExecutor.submit(this::createOrReadMapping);
     }
 
+    @SuppressWarnings("OperatorWrap")
     private void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();

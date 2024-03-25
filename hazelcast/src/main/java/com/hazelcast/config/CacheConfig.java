@@ -68,6 +68,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
+@SuppressWarnings("MethodCount")
 public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Versioned,
                                                                             UserCodeNamespaceAwareConfig<CacheConfig<K, V>> {
 
@@ -102,6 +103,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         setName(name);
     }
 
+    @SuppressWarnings("ExecutableStatementCount")
     public CacheConfig(CompleteConfiguration<K, V> configuration) {
         super(configuration);
         if (configuration instanceof CacheConfig) {
@@ -136,7 +138,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         }
     }
 
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "ExecutableStatementCount"})
     public CacheConfig(CacheSimpleConfig simpleConfig) throws Exception {
         this.name = simpleConfig.getName();
         if (simpleConfig.getKeyType() != null) {

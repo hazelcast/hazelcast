@@ -39,6 +39,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains configuration parameters for client network related behaviour
  */
+@SuppressWarnings("MethodCount")
 public class ClientNetworkConfig {
 
     private static final int CONNECTION_TIMEOUT = 5000;

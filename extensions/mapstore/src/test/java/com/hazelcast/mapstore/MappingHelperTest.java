@@ -49,6 +49,7 @@ public class MappingHelperTest {
     }
 
     @Test
+    @SuppressWarnings("OperatorWrap")
     public void when_createMapping_then_quoteParameters() {
         mappingHelper.createMapping(
                 "myMapping",
@@ -70,6 +71,7 @@ public class MappingHelperTest {
     }
 
     @Test
+    @SuppressWarnings("OperatorWrap")
     public void when_createMappingWithTwoColumns_then_quoteParameters() {
         mappingHelper.createMapping(
                 "myMapping",
@@ -94,6 +96,7 @@ public class MappingHelperTest {
     }
 
     @Test
+    @SuppressWarnings("OperatorWrap")
     public void when_createMapping_then_escapeParameters() {
         mappingHelper.createMapping(
                 "my\"Mapping",

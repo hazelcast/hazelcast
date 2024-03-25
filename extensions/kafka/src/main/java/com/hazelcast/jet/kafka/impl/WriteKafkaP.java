@@ -238,6 +238,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     /**
      * Use {@link KafkaProcessors#writeKafkaP(DataConnectionRef, FunctionEx, boolean)}
      */
+    @SuppressWarnings("AnonInnerLength")
     public static <T, K, V> ProcessorSupplier supplier(
             @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
@@ -280,6 +281,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     /**
      * Use {@link KafkaProcessors#writeKafkaP(DataConnectionRef, Properties, FunctionEx, boolean)}
      */
+    @SuppressWarnings("AnonInnerLength")
     public static <T, K, V> ProcessorSupplier supplier(
             @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull Properties properties,

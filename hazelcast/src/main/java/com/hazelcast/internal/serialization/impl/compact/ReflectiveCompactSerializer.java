@@ -165,6 +165,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
         return fields;
     }
 
+    @SuppressWarnings("MethodLength")
     private void createFastReadWriteCaches(Class clazz) {
         // The top level class might not be Compact serializable
         CompactUtil.verifyClassIsCompactSerializable(clazz);

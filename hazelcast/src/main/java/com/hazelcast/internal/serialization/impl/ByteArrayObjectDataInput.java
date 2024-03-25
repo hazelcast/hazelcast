@@ -35,6 +35,7 @@ import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.version.Version.UNKNOWN;
 
+@SuppressWarnings({"MagicNumber", "MethodCount"})
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];

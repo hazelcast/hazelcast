@@ -22,6 +22,7 @@ import java.io.IOException;
  * This interface allows deserialization of a binary data with a provided class type.
  */
 @FunctionalInterface
+@SuppressWarnings("JavadocType")
 public interface TypedByteArrayDeserializer<T>  {
     /**
      * Reads object from objectDataInputStream

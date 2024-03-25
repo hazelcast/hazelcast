@@ -74,7 +74,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *
  * @see MapManagedService
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "MethodCount"})
 public interface MapServiceContext extends MapServiceContextInterceptorSupport,
         MapServiceContextEventListenerSupport {
 

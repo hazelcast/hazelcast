@@ -142,6 +142,7 @@ import static java.lang.Math.log10;
 import static java.lang.Math.min;
 import static java.util.Collections.singletonMap;
 
+@SuppressWarnings({"ClassDataAbstractionCoupling", "ClassFanOutComplexity", "MethodCount"})
 abstract class MapProxySupport<K, V>
         extends AbstractDistributedObject<MapService>
         implements IMap<K, V>, InitializingObject {

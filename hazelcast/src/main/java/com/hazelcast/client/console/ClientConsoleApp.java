@@ -96,7 +96,7 @@ import static org.jline.utils.AttributedStyle.BRIGHT;
 /**
  * A demo application to demonstrate a Hazelcast client. This is probably NOT something you want to use in production.
  */
-@SuppressWarnings({"WeakerAccess", "unused", "checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"WeakerAccess", "unused", "checkstyle:ClassFanOutComplexity", "MethodCount"})
 public class ClientConsoleApp implements EntryListener, ItemListener, MessageListener {
 
     private static final int ONE_KB = 1024;

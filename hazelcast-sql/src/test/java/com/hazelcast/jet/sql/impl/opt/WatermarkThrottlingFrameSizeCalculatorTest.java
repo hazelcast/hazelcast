@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("StaticVariableName")
 public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerTestSupport {
     private static ExpressionEvalContext MOCK_EEC;
 

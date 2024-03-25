@@ -49,7 +49,8 @@ public class SocketTest {
         Executor oldExecutor = mock(Executor.class);
         channel.setCloseListener(oldCloseListener, oldExecutor);
 
-        assertThrows(IllegalStateException.class, () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), mock(Executor.class)));
+        assertThrows(IllegalStateException.class,
+                () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), mock(Executor.class)));
     }
 
     @Test
@@ -63,7 +64,8 @@ public class SocketTest {
     public void test_setCloseListener_whenExecutorNull() {
         MockChannel channel = new MockChannel();
 
-        assertThrows(NullPointerException.class, () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), null));
+        assertThrows(NullPointerException.class,
+                () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), null));
     }
 
     @Test

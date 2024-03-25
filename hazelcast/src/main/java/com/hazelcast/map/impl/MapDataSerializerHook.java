@@ -336,6 +336,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
+    @SuppressWarnings("MethodLength")
     public DataSerializableFactory createFactory() {
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 

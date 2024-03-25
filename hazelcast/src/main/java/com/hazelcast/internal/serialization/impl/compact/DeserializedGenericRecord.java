@@ -82,6 +82,7 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
 /**
  * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
+@SuppressWarnings("MethodCount")
 public class DeserializedGenericRecord extends CompactGenericRecord {
 
     private static final String METHOD_PREFIX_FOR_ERROR_MESSAGES = "get";

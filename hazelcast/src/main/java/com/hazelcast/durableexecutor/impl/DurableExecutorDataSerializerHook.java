@@ -29,7 +29,6 @@ import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.DURABLE_EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.DURABLE_EXECUTOR_DS_FACTORY_ID;
@@ -56,34 +55,18 @@ public class DurableExecutorDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case DISPOSE_RESULT_BACKUP:
-                        return new DisposeResultBackupOperation();
-                    case DISPOSE_RESULT:
-                        return new DisposeResultOperation();
-                    case PUT_RESULT:
-                        return new PutResultOperation();
-                    case PUT_RESULT_BACKUP:
-                        return new PutResultBackupOperation();
-                    case REPLICATION:
-                        return new ReplicationOperation();
-                    case RETRIEVE_DISPOSE_RESULT:
-                        return new RetrieveAndDisposeResultOperation();
-                    case RETRIEVE_RESULT:
-                        return new RetrieveResultOperation();
-                    case SHUTDOWN:
-                        return new ShutdownOperation();
-                    case TASK_BACKUP:
-                        return new TaskBackupOperation();
-                    case TASK:
-                        return new TaskOperation();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case DISPOSE_RESULT_BACKUP -> new DisposeResultBackupOperation();
+            case DISPOSE_RESULT -> new DisposeResultOperation();
+            case PUT_RESULT -> new PutResultOperation();
+            case PUT_RESULT_BACKUP -> new PutResultBackupOperation();
+            case REPLICATION -> new ReplicationOperation();
+            case RETRIEVE_DISPOSE_RESULT -> new RetrieveAndDisposeResultOperation();
+            case RETRIEVE_RESULT -> new RetrieveResultOperation();
+            case SHUTDOWN -> new ShutdownOperation();
+            case TASK_BACKUP -> new TaskBackupOperation();
+            case TASK -> new TaskOperation();
+            default -> null;
         };
     }
 }

@@ -90,7 +90,7 @@ import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 /**
  * Class that requests, listeners from client handled in node side.
  */
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "ClassFanOutComplexity", "MethodCount"})
 public class ClientEngineImpl implements ClientEngine, CoreService,
         ManagedService, EventPublishingService<ClientEvent, ClientListener> {
 

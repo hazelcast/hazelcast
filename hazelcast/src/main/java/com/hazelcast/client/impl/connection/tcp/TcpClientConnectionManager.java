@@ -126,7 +126,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Implementation of {@link ClientConnectionManager}.
  */
-@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
+@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity", "ClassDataAbstractionCoupling",
+        "ClassFanOutComplexity", "MethodCount"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
     /**

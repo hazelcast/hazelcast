@@ -52,10 +52,7 @@ public class Person {
 
     @Override
     public String toString() {
-        return "Person{" +
-                "personId=" + id +
-                ", name='" + name + '\'' +
-                '}';
+        return "Person{" + "personId=" + id + ", name='" + name + '\'' + '}';
     }
 
     @Override

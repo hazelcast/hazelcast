@@ -48,6 +48,7 @@ import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 /**
  * Can't be accessed concurrently.
  */
+@SuppressWarnings("MethodCount")
 public class DefaultPortableReader implements PortableReader {
 
     protected final ClassDefinition cd;
@@ -58,6 +59,7 @@ public class DefaultPortableReader implements PortableReader {
     private final int offset;
     private boolean raw;
 
+    @SuppressWarnings("MagicNumber")
     DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;

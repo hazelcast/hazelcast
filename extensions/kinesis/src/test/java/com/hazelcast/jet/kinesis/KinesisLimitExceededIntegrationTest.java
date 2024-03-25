@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 @Category(SlowTest.class)
+@SuppressWarnings("StaticVariableName")
 public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;

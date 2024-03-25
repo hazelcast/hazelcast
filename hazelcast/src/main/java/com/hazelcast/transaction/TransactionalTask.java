@@ -28,6 +28,7 @@ package com.hazelcast.transaction;
  * @see com.hazelcast.core.HazelcastInstance#executeTransaction(TransactionOptions, TransactionalTask)
  */
 @FunctionalInterface
+@SuppressWarnings("JavadocType")
 public interface TransactionalTask<T> {
 
     /**
