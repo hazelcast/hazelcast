@@ -53,7 +53,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    @Test
+    @Test(timeout = 12 * 60 * 1000)
     public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
         config.setClusterName(randomName());
