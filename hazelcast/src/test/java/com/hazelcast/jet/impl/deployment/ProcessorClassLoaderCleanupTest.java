@@ -40,9 +40,11 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import uk.org.webcompere.systemstubs.rules.SystemPropertiesRule;
 
 import java.io.File;
 
@@ -58,12 +60,15 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
     private JetService jet;
     private HazelcastInstance member;
 
+    @ClassRule
+    public static final SystemPropertiesRule systemProperties = new SystemPropertiesRule(
+            ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(),
+            System.getProperty("java.io.tmpdir"));
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         jarFile = File.createTempFile("resources_", ".jar");
         JarUtil.createResourcesJarFile(jarFile);
-
-        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
     }
 
     @AfterClass
@@ -81,7 +86,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
     }
 
     @Test
-    public void processorClassLoaderRemovedAfterJobFinished() throws Exception {
+    public void processorClassLoaderRemovedAfterJobFinished() {
         Pipeline p = Pipeline.create();
 
         StreamSource<SimpleEvent> source = TestSources.itemStream(1);

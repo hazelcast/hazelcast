@@ -44,10 +44,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import uk.org.webcompere.systemstubs.rules.SystemPropertiesRule;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -64,6 +66,13 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
 
     @ClassRule
     public static final TemporaryFolder tempDir = new TemporaryFolder();
+
+    // Set up the path for custom lib directory, this is by default set to `custom-lib` directory in hazelcast
+    // distribution zip
+    @Rule
+    public final SystemPropertiesRule systemProperties = new SystemPropertiesRule(
+            ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(),
+            tempDir.getRoot().getAbsolutePath());
     private static final ILogger LOGGER = Logger.getLogger(ProcessorClassLoaderTest.class);
     private static final String SOURCE_NAME = "test-source";
 
@@ -92,10 +101,6 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
 
         resourcesJarFile = tempDir.newFile("resources_ " + System.currentTimeMillis() + ".jar");
         JarUtil.createResourcesJarFile(resourcesJarFile);
-
-        // Setup the path for custom lib directory, this is by default set to `custom-lib` directory in hazelcast
-        // distribution zip
-        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), tempDir.getRoot().getAbsolutePath());
 
         assertThat(tempDir.getRoot()).exists().isReadable();
     }
