@@ -124,7 +124,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
         DummyOperationHostileThread hostileThread = new DummyOperationHostileThread(futureTask);
         hostileThread.start();
 
-        assertEqualsEventually(futureTask, TRUE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 
     // ===================== partition specific operations ========================
@@ -249,6 +249,6 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, TRUE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 }

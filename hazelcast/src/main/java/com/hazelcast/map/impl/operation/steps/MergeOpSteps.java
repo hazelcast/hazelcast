@@ -31,7 +31,6 @@ import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +84,6 @@ public enum MergeOpSteps implements IMapOpStep {
                 outcomes.add(oldValue);
                 outcomes.add(newValue);
                 outcomes.add(mergingEntry);
-                outcomes.add(existingEntry);
             }
 
             state.setResult(outcomes);
@@ -120,8 +118,8 @@ public enum MergeOpSteps implements IMapOpStep {
                 assert key instanceof Data
                         : "Expect key instanceOf Data but found " + key;
 
-                Object oldValue = outcomes.get(i + OLD_VALUE_OFFSET);
-                Object newValue = outcomes.get(i + NEW_VALUE_OFFSET);
+                Object oldValue = outcomes.get(i + 1);
+                Object newValue = outcomes.get(i + 2);
 
                 perKeyState.setKey((Data) key)
                         .setOldValue(oldValue)
@@ -132,7 +130,7 @@ public enum MergeOpSteps implements IMapOpStep {
                     // put or update
                     PutOpSteps.STORE.runStep(perKeyState);
                     //set new value returned from map-store
-                    outcomes.set(i + NEW_VALUE_OFFSET, perKeyState.getNewValue());
+                    outcomes.set(i + 2, perKeyState.getNewValue());
                 } else if (oldValue != null && newValue == null) {
                     // remove
                     DeleteOpSteps.DELETE.runStep(perKeyState);
@@ -150,7 +148,6 @@ public enum MergeOpSteps implements IMapOpStep {
 
     PROCESS() {
         @Override
-        @SuppressWarnings("checkstyle:NestedIfDepth")
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -167,8 +164,8 @@ public enum MergeOpSteps implements IMapOpStep {
                 assert key instanceof Data
                         : "Expect key instanceOf Data but found " + key;
 
-                Object oldValue = outcomes.get(i + OLD_VALUE_OFFSET);
-                Object newValue = outcomes.get(i + NEW_VALUE_OFFSET);
+                Object oldValue = outcomes.get(i + 1);
+                Object newValue = outcomes.get(i + 2);
 
                 perKeyState.setKey((Data) key)
                         .setOldValue(oldValue)
@@ -179,20 +176,12 @@ public enum MergeOpSteps implements IMapOpStep {
                         || oldValue != null && newValue != null) {
 
                     SplitBrainMergeTypes.MapMergeTypes mergingEntry
-                            = (SplitBrainMergeTypes.MapMergeTypes) outcomes.get(i + MERGING_ENTRY_OFFSET);
+                            = (SplitBrainMergeTypes.MapMergeTypes) outcomes.get(i + 3);
                     // if same values, merge expiry and continue with next entry
                     if (recordStore.getValueComparator().isEqual(newValue, oldValue, serializationService)) {
-                        SplitBrainMergeTypes.MapMergeTypes existingEntry =
-                                (SplitBrainMergeTypes.MapMergeTypes) outcomes.get(i + EXISTING_ENTRY_OFFSET);
-                        // see: DefaultRecordStore#merge comments for more details on reasoning
-                        boolean shouldMergeExpiration = state.getCallerProvenance() != CallerProvenance.WAN
-                                || recordStore.getValueComparator().isEqual(existingEntry.getRawValue(),
-                                mergingEntry.getRawValue(), serializationService);
-                        if (shouldMergeExpiration) {
-                            Record record = recordStore.getRecord((Data) key);
-                            if (record != null) {
-                                recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
-                            }
+                        Record record = recordStore.getRecord((Data) key);
+                        if (record != null) {
+                            recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
                         }
                         continue;
                     }
@@ -250,9 +239,9 @@ public enum MergeOpSteps implements IMapOpStep {
 
                 Data dataKey = ((Data) outcomes.get(i));
 
-                Object oldValue = outcomes.get(i + OLD_VALUE_OFFSET);
+                Object oldValue = outcomes.get(i + 1);
                 // TODO can't we use this newValue directly.
-                Object newValue = outcomes.get(i + NEW_VALUE_OFFSET);
+                Object newValue = outcomes.get(i + 2);
 
                 Data dataValue = operation.getValueOrPostProcessedValue(dataKey, operation.getValue(dataKey));
                 mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
@@ -293,11 +282,7 @@ public enum MergeOpSteps implements IMapOpStep {
         }
     };
 
-    private static final int NUMBER_OF_ITEMS = 5;
-    private static final int OLD_VALUE_OFFSET = 1;
-    private static final int NEW_VALUE_OFFSET = 2;
-    private static final int MERGING_ENTRY_OFFSET = 3;
-    private static final int EXISTING_ENTRY_OFFSET = 4;
+    private static final int NUMBER_OF_ITEMS = 4;
 
     MergeOpSteps() {
     }

@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>5.3.8-SNAPSHOT</version>
+    <version>5.3.6</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -73,16 +73,16 @@
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.0.0</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.2</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>${maven.surefire.plugin.version}</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.2.1</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>8.4.3</owasp.dependency-check.version>
+        <owasp.dependency-check.version>8.4.2</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.1</codehause.license.plugin.version>
 
@@ -93,11 +93,11 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
-        <aws.sdk.version>1.12.650</aws.sdk.version>
+        <aws.sdk.version>1.12.467</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.158</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
-        <grpc.version>1.60.0</grpc.version>
+        <grpc.version>1.58.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <hadoop.version>3.3.5</hadoop.version>
         <h2.version>2.1.214</h2.version>
@@ -121,7 +121,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.0</parquet.version>
         <picocli.version>4.7.3</picocli.version>
-        <postgresql.version>42.7.3</postgresql.version>
+        <postgresql.version>42.5.4</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
 
         <!--
@@ -749,7 +749,6 @@
                         <maxmemory>1024</maxmemory>
                         <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
                         <doclint>-missing</doclint>
-                        <quiet>true</quiet>
                     </configuration>
                     <executions>
                         <execution>
@@ -822,9 +821,6 @@
         <profile>
             <!-- used by the PR builder -->
             <id>parallelTest</id>
-            <properties>
-                <skip-singlejvm-tests>false</skip-singlejvm-tests>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -882,7 +878,6 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
-                                    <skip>${skip-singlejvm-tests}</skip>
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <argLine>
@@ -1646,7 +1641,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.53.v20231009</version>
+                <version>9.4.51.v20230217</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1921,10 +1916,8 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
+                <artifactId>log4j-api</artifactId>
                 <version>${log4j2.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.jline</groupId>

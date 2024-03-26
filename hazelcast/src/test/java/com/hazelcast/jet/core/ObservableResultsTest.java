@@ -54,12 +54,12 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ObservableResultsTest extends TestInClusterSupport {
@@ -517,19 +517,19 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(o));
         //then
         o.configureCapacity(20_000); //still possible, pipeline not executing yet
-        assertThatThrownBy(o::getConfiguredCapacity).isInstanceOf(IllegalStateException.class);
+        assertThrowsException(o::getConfiguredCapacity, IllegalStateException.class);
 
         //when
         Job job = hz().getJet().newJob(pipeline);
         assertExecutionStarted(job);
         //then
-        assertThatThrownBy(() -> o.configureCapacity(30_000)).isInstanceOf(IllegalStateException.class);
+        assertThrowsException(() -> o.configureCapacity(30_000), IllegalStateException.class);
         assertEquals(20_000, o.getConfiguredCapacity());
 
         //when
         job.join();
         ///then
-        assertThatThrownBy(() -> o.configureCapacity(30_000)).isInstanceOf(IllegalStateException.class);
+        assertThrowsException(() -> o.configureCapacity(30_000), IllegalStateException.class);
         assertEquals(20_000, o.getConfiguredCapacity());
     }
 
@@ -537,7 +537,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
     public void configureCapacityMultipleTimes() {
         Observable<Object> o = hz().getJet().newObservable();
         o.configureCapacity(10);
-        assertThatThrownBy(() -> o.configureCapacity(20)).isInstanceOf(RuntimeException.class);
+        assertThrowsException(() -> o.configureCapacity(20), RuntimeException.class);
     }
 
     @Test
@@ -600,6 +600,16 @@ public class ObservableResultsTest extends TestInClusterSupport {
     private void assertExecutionStarted(Job job) {
         assertTrueEventually(() -> assertTrue(JobStatus.RUNNING.equals(job.getStatus())
                 || JobStatus.COMPLETED.equals(job.getStatus())));
+    }
+
+    private void assertThrowsException(Runnable action, Class<? extends Throwable> exceptionClass) {
+        //then
+        try {
+            action.run();
+            fail("Expected exception not thrown");
+        } catch (Throwable t) {
+            assertEquals(exceptionClass, t.getClass());
+        }
     }
 
     private static void assertSortedValues(TestObserver observer, Long... values) {

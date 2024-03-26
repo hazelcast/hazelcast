@@ -28,7 +28,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -121,7 +121,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     private boolean isNodeStartCompleted() {
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         boolean startCompleted = nodeEngine.getNode().getNodeExtension().isStartCompleted();
         if (!startCompleted) {
             ILogger logger = getLogger();

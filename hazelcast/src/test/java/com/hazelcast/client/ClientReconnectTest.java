@@ -133,7 +133,9 @@ public class ClientReconnectTest extends ClientTestSupport {
     @Test
     public void testCallbackAfterServerShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");
         UUID serverUuid = server.getLocalEndpoint().getUuid();
@@ -144,7 +146,6 @@ public class ClientReconnectTest extends ClientTestSupport {
         // before the connection on the client side is closed.
         makeSureDisconnectedFromServer(client, serverUuid);
         CompletionStage<Object> future = test.putAsync("key", "value");
-        client.shutdown();
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> reference = new AtomicReference<>();
         future.exceptionally(t -> {

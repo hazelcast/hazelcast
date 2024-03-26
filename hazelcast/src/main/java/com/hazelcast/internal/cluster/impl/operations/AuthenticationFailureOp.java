@@ -19,7 +19,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class AuthenticationFailureOp extends AbstractClusterOperation {
 
@@ -28,7 +28,7 @@ public class AuthenticationFailureOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        final NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.severe("Node could not join cluster. Authentication failed on master node! Node is going to shutdown now!");

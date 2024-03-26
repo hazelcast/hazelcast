@@ -1344,18 +1344,9 @@ public final class RaftNodeImpl implements RaftNode {
         }
     }
 
-    public boolean isHeartbeatTimedOut(long timestamp) {
+    private boolean isHeartbeatTimedOut(long timestamp) {
         long missedHeartbeatThreshold = maxMissedLeaderHeartbeatCount * heartbeatPeriodInMillis;
         return timestamp + missedHeartbeatThreshold < Clock.currentTimeMillis();
-    }
-
-    public boolean isHeartbeatTimedOut() {
-        return isHeartbeatTimedOut(lastAppendEntriesTimestamp);
-    }
-
-    public boolean isLeaderAvailable() {
-        RaftEndpoint leader = state.leader();
-        return (leader != null) && raftIntegration.isReachable(leader) && !isHeartbeatTimedOut();
     }
 
     /**
@@ -1412,7 +1403,7 @@ public final class RaftNodeImpl implements RaftNode {
                 } else if (!raftIntegration.isReachable(leader)) {
                     logger.warning("Current leader " + leader + " is not reachable. Will start new election round...");
                     resetLeaderAndStartElection();
-                } else if (isHeartbeatTimedOut()) {
+                } else if (isHeartbeatTimedOut(lastAppendEntriesTimestamp)) {
                     // Even though leader endpoint is reachable by raft-integration,
                     // leader itself may be crashed and another member may be restarted on the same endpoint.
                     logger.warning("Current leader " + leader + "'s heartbeats are timed-out. Will start new election round...");

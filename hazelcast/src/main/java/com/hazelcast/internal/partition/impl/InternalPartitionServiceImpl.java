@@ -50,7 +50,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
@@ -103,7 +102,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_SERVICE_MIGRATION_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
-import static com.hazelcast.internal.partition.impl.MigrationManagerImpl.applyMigration;
+import static com.hazelcast.internal.partition.impl.MigrationManager.applyMigration;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
@@ -136,7 +135,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private final Lock partitionServiceLock = new ReentrantLock();
 
     private final PartitionStateManager partitionStateManager;
-    private final MigrationManagerImpl migrationManager;
+    private final MigrationManager migrationManager;
     private final PartitionReplicaManager replicaManager;
     private final PartitionReplicaStateChecker partitionReplicaStateChecker;
     private final PartitionEventManager partitionEventManager;
@@ -161,11 +160,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         this.logger = node.getLogger(InternalPartitionService.class);
         this.internalAsyncExecutor = nodeEngine.getExecutionService()
                 .getExecutor(ExecutionService.ASYNC_EXECUTOR);
-        partitionStateManager = new PartitionStateManagerImpl(node, this);
-        migrationManager = new MigrationManagerImpl(node, this, partitionServiceLock);
+        partitionStateManager = new PartitionStateManager(node, this);
+        migrationManager = new MigrationManager(node, this, partitionServiceLock);
         replicaManager = new PartitionReplicaManager(node, this);
 
-        partitionReplicaStateChecker = new PartitionReplicaStateChecker(node.getNodeEngine(), this);
+        partitionReplicaStateChecker = new PartitionReplicaStateChecker(node, this);
         partitionEventManager = new PartitionEventManager(node);
 
         masterTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(), TRIGGER_MASTER_DELAY_MILLIS,
@@ -742,13 +741,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
      * @see MigrationManager#scheduleActiveMigrationFinalization(MigrationInfo)
      * @return whether or not the new partition table is accepted
      */
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private boolean updatePartitionsAndFinalizeMigrations(InternalPartition[] partitions,
             Collection<MigrationInfo> completedMigrations, Address sender) {
 
         boolean applied = false;
         boolean accepted = false;
-        PartitionIdSet changedOwnerPartitions = new PartitionIdSet(partitionCount);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartition newPartition = partitions[partitionId];
@@ -779,9 +776,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             applied = true;
             accepted = true;
-            if (currentPartition.setReplicasAndVersion(newPartition)) {
-                changedOwnerPartitions.add(partitionId);
-            }
+            currentPartition.setReplicasAndVersion(newPartition);
         }
 
         for (MigrationInfo migration : completedMigrations) {
@@ -791,11 +786,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             }
         }
 
+        // Manually trigger partition stamp calculation.
         // Because partition versions are explicitly set to master's versions
-        // while applying the partition table updates, we need to
-        // (1) cancel any ongoing replica syncs (for partitions whose owners changed) and
-        // (2) update the partition state stamp.
-        partitionStateManager.partitionOwnersChanged(changedOwnerPartitions);
+        // while applying the partition table updates.
+        partitionStateManager.updateStamp();
 
         if (logger.isFineEnabled()) {
             if (applied) {
@@ -1223,8 +1217,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return partitionEventManager;
     }
 
-    @Override
-    public boolean isFetchMostRecentPartitionTableTaskRequired() {
+    boolean isFetchMostRecentPartitionTableTaskRequired() {
         return shouldFetchPartitionTables;
     }
 

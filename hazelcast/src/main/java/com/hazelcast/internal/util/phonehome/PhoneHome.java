@@ -83,8 +83,7 @@ public class PhoneHome {
                 new BuildInfoCollector(new HashMap<>(envVars)), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
                 new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
-                new SqlInfoCollector(), new StorageInfoCollector(), new DynamicConfigInfoCollector(),
-                new VMMetricsCollector());
+                new SqlInfoCollector(), new StorageInfoCollector(), new DynamicConfigInfoCollector());
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 

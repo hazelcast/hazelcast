@@ -35,6 +35,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -124,16 +125,16 @@ public final class ImdgUtil {
     public static List<Address> getRemoteMembers(@Nonnull NodeEngine engine) {
         final Member localMember = engine.getLocalMember();
         return engine.getClusterService().getMembers().stream()
-                .filter(m -> !m.equals(localMember))
-                .map(Member::getAddress)
-                .collect(toList());
+                     .filter(m -> !m.equals(localMember))
+                     .map(Member::getAddress)
+                     .collect(toList());
     }
 
     public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
-        return engine.getNode()
-                .getServer()
-                .getConnectionManager(EndpointQualifier.MEMBER)
-                .get(memberAddr);
+        return ((NodeEngineImpl) engine).getNode()
+                                        .getServer()
+                                        .getConnectionManager(EndpointQualifier.MEMBER)
+                                        .get(memberAddr);
     }
 
     @Nonnull
@@ -204,8 +205,8 @@ public final class ImdgUtil {
      * Writes given array into the ObjectDataOutput to be later read by {@linkplain #readArray}.
      *
      * @param output output to which we write
-     * @param array  array what will be written, must not be null
-     * @param <E>    element type of the array
+     * @param array array what will be written, must not be null
+     * @param <E> element type of the array
      */
     public static <E> void writeArray(@Nonnull ObjectDataOutput output, @Nonnull E[] array) throws IOException {
         output.writeInt(array.length);
@@ -217,10 +218,10 @@ public final class ImdgUtil {
     /**
      * Reads array of type {@code E[]} from given ObjectDataInput, written by {@linkplain #writeArray}.
      *
-     * @param input            input from which the array will be read.
+     * @param input input from which the array will be read.
      * @param arrayConstructor constructor used to construct new instance of E[], returned value should not be null.
-     * @param <E>              element type of the array
      * @return array read from input
+     * @param <E> element type of the array
      */
     @Nonnull
     public static <E> E[] readArray(@Nonnull ObjectDataInput input, @Nonnull IntFunction<E[]> arrayConstructor)

@@ -234,11 +234,6 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     }
 
     @Override
-    public WanSyncStateResult getSyncResult(UUID syncUUID) {
-        throw new UnsupportedOperationException("WAN sync is not supported.");
-    }
-
-    @Override
     public UUID consistencyCheck(String wanReplicationName, String wanPublisherId, String mapName) {
         node.getManagementCenterService().log(
                 WanConsistencyCheckIgnoredEvent.enterpriseOnly(wanReplicationName, wanPublisherId, mapName));

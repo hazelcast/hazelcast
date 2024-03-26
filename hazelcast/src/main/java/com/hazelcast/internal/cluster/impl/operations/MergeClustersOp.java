@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.auditlog.AuditlogTypeIds;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -44,7 +44,7 @@ public class MergeClustersOp extends AbstractClusterOperation {
     @Override
     public void run() {
         final Address caller = getCallerAddress();
-        final NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         final ClusterServiceImpl clusterService = node.getClusterService();
         final Address masterAddress = clusterService.getMasterAddress();

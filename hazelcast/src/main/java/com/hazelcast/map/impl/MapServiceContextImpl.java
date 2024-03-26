@@ -221,7 +221,7 @@ class MapServiceContextImpl implements MapServiceContext {
     // this method is overridden in another context
     MapContainer createMapContainer(String mapName) {
         MapServiceContext mapServiceContext = getService().getMapServiceContext();
-        return new MapContainerImpl(mapName, nodeEngine.getConfig(), mapServiceContext);
+        return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
     }
 
     // this method is overridden in another context
@@ -332,7 +332,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     protected PartitionContainer createPartitionContainer(MapService service, int partitionId) {
-        return new PartitionContainerImpl(service, partitionId);
+        return new PartitionContainer(service, partitionId);
     }
 
     /**

@@ -85,7 +85,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = createPausedMigrationCluster(factory, null);
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
         hz1.getPartitionService().addMigrationListener(listener);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -125,7 +125,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             }
         });
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(true);
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
         hz1.getPartitionService().addMigrationListener(listener);
 
         // trigger migrations
@@ -174,7 +174,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         waitAllForSafeState(Arrays.asList(hz1, hz2, hz3));
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
         hz1.getPartitionService().addMigrationListener(listener);
 
         hz3.getLifecycleService().terminate();
@@ -542,39 +542,21 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     // So we can rely on that here...
     public static class EventCollectingMigrationListener implements MigrationListener {
         final List<MigrationEventsPack> allEventPacks = Collections.synchronizedList(new ArrayList<>());
-        final ILogger logger = Logger.getLogger(PartitionMigrationListenerTest.class);
         volatile MigrationEventsPack currentEvents;
-
-        final boolean shouldRecordIncompleteEvents;
-
-        public EventCollectingMigrationListener(boolean shouldRecordIncompleteEvents) {
-            this.shouldRecordIncompleteEvents = shouldRecordIncompleteEvents;
-        }
 
         @Override
         public void migrationStarted(MigrationState state) {
             assertNull(currentEvents);
             currentEvents = new MigrationEventsPack();
             currentEvents.migrationProcessStarted = state;
-            logger.info("Migration started: " + state);
         }
 
         @Override
         public void migrationFinished(MigrationState state) {
             assertNotNull(currentEvents);
             currentEvents.migrationProcessCompleted = state;
-            // As per contract of MigrationListener#migrationFinished:
-            //      "Not all of the planned migrations have to be completed.
-            //      Some of them can be skipped because of a newly created migration plan."
-            // Due to this, we should only record fully completed migrations, otherwise
-            //   this test will inconsistently fail when a new migration plan is created
-            boolean migrationCompleted = state.getPlannedMigrations() == state.getCompletedMigrations();
-            if (shouldRecordIncompleteEvents || migrationCompleted) {
-                allEventPacks.add(currentEvents);
-            }
+            allEventPacks.add(currentEvents);
             currentEvents = null;
-            logger.info(migrationCompleted ? "Migration finished: " + state
-                    : "Migration finished but NOT completed, not adding to event tracker: " + state);
         }
 
         @Override
@@ -587,7 +569,6 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         public void replicaMigrationFailed(ReplicaMigrationEvent event) {
             assertNotNull(currentEvents);
             currentEvents.migrationsCompleted.add(event);
-            logger.info("Replica Migration failed (1 of " + currentEvents.migrationsCompleted.size() + "): " + event);
         }
 
         List<MigrationEventsPack> ensureAndGetEventPacks(int count) {

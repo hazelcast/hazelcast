@@ -179,11 +179,9 @@
             <filtered>true</filtered>
         </fileSet>
 
-        <fileSet> <!-- Create empty directory -->
+        <fileSet>
+            <directory>${project.build.directory}/custom-lib</directory>
             <outputDirectory>custom-lib</outputDirectory>
-            <excludes>
-                <exclude>**/*</exclude>
-            </excludes>
         </fileSet>
         <fileSet> <!-- Create empty directory -->
             <outputDirectory>bin/user-lib</outputDirectory>

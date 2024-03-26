@@ -230,7 +230,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         assertEquals(PERSON_COUNT, rowCount());
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_withNonTransientException() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -245,7 +245,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_withNonTransientExceptionCause() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -260,7 +260,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_withNonTransientExceptionNext() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -277,7 +277,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_withNonTransientExceptionNextChain() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -316,7 +316,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         assertJobStatusEventually(job, JobStatus.RUNNING, 5);
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_whenGetConnection_withNonTransientException() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -335,7 +335,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_whenGetConnection_withNonTransientExceptionCause() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -354,7 +354,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_whenGetConnection_withNonTransientExceptionNext() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))

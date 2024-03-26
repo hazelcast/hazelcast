@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.executionservice.impl;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -34,7 +35,7 @@ import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
@@ -76,7 +77,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private static final int JOB_OFFLOADABLE_QUEUE_CAPACITY = 100000;
 
     private final ILogger logger;
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final TaskScheduler globalTaskScheduler;
     private final ExecutorService cachedExecutorService;
     private final LoggingScheduledExecutor scheduledExecutorService;
@@ -110,13 +111,14 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
 
-    public ExecutionServiceImpl(NodeEngine nodeEngine) {
+    public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
 
-        this.logger = nodeEngine.getLogger(ExecutionService.class.getName());
+        Node node = nodeEngine.getNode();
+        this.logger = node.getLogger(ExecutionService.class.getName());
 
         String hzName = nodeEngine.getHazelcastInstance().getName();
-        ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
+        ClassLoader configClassLoader = node.getConfigClassLoader();
         ThreadFactory threadFactory = new PoolExecutorThreadFactory(createThreadPoolName(hzName, "cached"),
                 configClassLoader);
         this.cachedExecutorService = new ThreadPoolExecutor(

@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql_nightly;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.AbstractJobProxy;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
@@ -30,8 +29,8 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -49,7 +48,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -63,19 +61,15 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(NightlyTest.class)
-public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport {
-    protected static final int INSTANCE_COUNT = 5;
+@Category({NightlyTest.class, ParallelJVMTest.class})
+public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
     protected static final String JOB_NAME = "s2s_join";
     protected static final String EXACTLY_ONCE = "exactlyOnce";
     protected static final String AT_LEAST_ONCE = "atLeastOnce";
 
-    protected HazelcastInstance[] instances;
-    protected HazelcastInstance coordinator;
-
-    protected int eventsPerSink = 100;
-    protected int sinkCount = 100;
+    protected final int eventsPerSink = 500;
+    protected int sinkCount = 400;
     protected int eventsToProcess = eventsPerSink * sinkCount;
 
     private static KafkaTestSupport kafkaTestSupport;
@@ -110,6 +104,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
     @BeforeClass
     public static void beforeClass() throws IOException {
+        initialize(5, null);
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
     }
@@ -121,20 +116,10 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
     @Before
     public void setUp() throws Exception {
-        // https://hazelcast.atlassian.net/browse/HZ-3187
-        if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
-            logger.warning("Test skipped: https://hazelcast.atlassian.net/browse/HZ-3187");
-            return;
-        }
-
-        assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
-
-        instances = createHazelcastInstances(INSTANCE_COUNT);
-        coordinator = instances[0];
-        sqlService = coordinator.getSql();
+        sqlService = instance().getSql();
 
         // Kafka source definition
-        sourceTopic = "source_topic_" + SqlTestSupport.randomName();
+        sourceTopic = "source_topic_" + randomName();
         kafkaTestSupport.createTopic(sourceTopic, 5);
         sqlService.execute("CREATE MAPPING " + sourceTopic + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
@@ -149,7 +134,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         kafkaFeedThread.start();
 
         // Kafka sink topic definition
-        sinkTopic = "sink_topic_" + SqlTestSupport.randomName();
+        sinkTopic = "sink_topic_" + randomName();
         kafkaTestSupport.createTopic(sinkTopic, 5);
         sqlService.execute("CREATE MAPPING " + sinkTopic
                 + " TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
@@ -166,16 +151,12 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         sqlService.execute("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), 4))");
 
-        jobRestarter = new JobRestarter(coordinator);
+        jobRestarter = new JobRestarter(instance());
         jobRestarter.start();
     }
 
     @After
     public void after() throws InterruptedException {
-        // https://hazelcast.atlassian.net/browse/HZ-3187
-        if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
-            return;
-        }
         kafkaFeedThread.join();
         kafkaFeedThread = null;
 
@@ -184,25 +165,13 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         jobRestarter.join();
         jobRestarter = null;
 
-        try {
-            super.shutdownFactory();
-        } catch (Exception e) {
-            ex = e;
-        }
-
         if (ex != null) {
             throw new RuntimeException(ex);
         }
-
-        assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
-    @Test
+    @Test(timeout = 1_200_000L)
     public void stressTest() throws Exception {
-        // https://hazelcast.atlassian.net/browse/HZ-3187
-        if (Objects.equals(processingGuarantee, EXACTLY_ONCE) && !restartGraceful) {
-            return;
-        }
         sqlService.execute(setupFetchingQuery());
 
         try (SqlResult result = sqlService.execute("SELECT * FROM " + sinkTopic)) {
@@ -215,7 +184,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
             }
         }
 
-        Job job = coordinator.getJet().getJob(JOB_NAME);
+        Job job = instance().getJet().getJob(JOB_NAME);
         jobRestarter.finish();
         jobRestarter.join();
         assertNotNull(job);
@@ -248,7 +217,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
 
     protected String setupFetchingQuery() {
         return "CREATE JOB " + JOB_NAME +
-                " OPTIONS ('processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500')" +
+                " OPTIONS ('processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000')" +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
     }
@@ -277,7 +246,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 while (!finished) {
                     waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, true);
                     job.restart(restartGraceful);
-                    lastExecutionId = assertJobRunningEventually(coordinator, job, lastExecutionId);
+                    lastExecutionId = assertJobRunningEventually(instance(), job, lastExecutionId);
                 }
             } catch (NullPointerException e) {
                 System.err.println(e);
@@ -306,7 +275,6 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 assertEquals(itemsSank, eventsPerSink * sink);
                 sqlService.execute(queryBuilder.toString());
                 logger.info("Items sank " + itemsSank);
-                sleepMillis(500);
             }
         } catch (Throwable e) {
             logger.warning(null, e);

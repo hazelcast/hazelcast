@@ -30,7 +30,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.3.8-SNAPSHOT</version>
+        <version>5.3.6</version>
     </parent>
 
     <modules>

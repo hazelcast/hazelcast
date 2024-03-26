@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -50,7 +51,7 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
 
     @Override
     public void run() throws Exception {
-        Node node = getNodeEngine().getNode();
+        Node node = ((NodeEngineImpl) getNodeEngine()).getNode();
         try {
             node.securityContext.refreshPermissions(permissionConfigs);
         } catch (IllegalStateException e) {

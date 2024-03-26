@@ -156,16 +156,6 @@ public interface WanReplicationService extends CoreService,
      */
     UUID syncAllMaps(String wanReplicationName, String wanPublisherId);
 
-
-    /**
-     * Retrieve wan sync result.
-     * NOTE: not supported on OS, only on EE
-     *
-     * @param syncUUID the UUID of the synchronization.
-     * @return the result of the synchronization.
-     */
-    WanSyncStateResult getSyncResult(UUID syncUUID);
-
     /**
      * Initiate WAN consistency check for a specific map.
      * NOTE: not supported on OS, only on EE

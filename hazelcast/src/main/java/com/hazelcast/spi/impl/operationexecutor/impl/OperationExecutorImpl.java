@@ -520,14 +520,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
         Thread currentThread = Thread.currentThread();
 
-        // if it is async we don't need to check if it is PartitionOperationThread or not
-        if (isAsync) {
-            return true;
-        }
-
         // IO threads are not allowed to run any operation
         if (currentThread instanceof OperationHostileThread) {
             return false;
+        }
+
+        // if it is async we don't need to check if it is PartitionOperationThread or not
+        if (isAsync) {
+            return true;
         }
 
         // allowed to invoke non partition specific task

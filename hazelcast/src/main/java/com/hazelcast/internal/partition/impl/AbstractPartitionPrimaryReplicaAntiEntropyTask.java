@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
@@ -24,7 +24,7 @@ import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -47,13 +47,13 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
 
     private static final int OPERATION_TRY_PAUSE_MILLIS = 250;
 
-    protected final NodeEngine nodeEngine;
+    protected final NodeEngineImpl nodeEngine;
 
     protected final InternalPartitionServiceImpl partitionService;
 
     protected final int partitionId;
 
-    public AbstractPartitionPrimaryReplicaAntiEntropyTask(NodeEngine nodeEngine, int partitionId) {
+    public AbstractPartitionPrimaryReplicaAntiEntropyTask(NodeEngineImpl nodeEngine, int partitionId) {
         this.nodeEngine = nodeEngine;
         this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         this.partitionId = partitionId;
@@ -134,7 +134,7 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
     }
 
     private boolean skipSendingToTarget(PartitionReplica target) {
-        ClusterService clusterService = nodeEngine.getClusterService();
+        ClusterServiceImpl clusterService = nodeEngine.getNode().getClusterService();
 
         assert !target.isIdentical(nodeEngine.getLocalMember()) : "Could not send anti-entropy operation, because "
                 + target + " is local member itself! Local-member: " + clusterService.getLocalMember()

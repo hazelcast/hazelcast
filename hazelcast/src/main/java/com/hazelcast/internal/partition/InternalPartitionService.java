@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
@@ -139,12 +138,4 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
 
     @Nullable
     PartitionTableView getLeftMemberSnapshot(UUID uuid);
-
-    PartitionStateManager getPartitionStateManager();
-
-    MigrationManager getMigrationManager();
-
-    boolean isFetchMostRecentPartitionTableTaskRequired();
-
-    boolean isLocalMemberMaster();
 }

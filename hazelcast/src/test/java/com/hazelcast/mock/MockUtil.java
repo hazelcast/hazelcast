@@ -64,12 +64,4 @@ public class MockUtil {
             return rm.invoke(delegated, inv.getArguments());
         }
     }
-
-    public static void closeMocks(AutoCloseable closeable) {
-        try {
-            closeable.close();
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to close Mockito mocks", ex);
-        }
-    }
 }

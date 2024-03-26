@@ -24,6 +24,7 @@ import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
+import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 
@@ -55,13 +56,15 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
         RaftState state = raftNode.state();
         RaftEndpoint localMember = localMember();
 
-        // Reply false if the leader is available (leader stickiness) (Raft thesis - Section 4.2.3)
-        // This check conflicts with the leadership transfer mechanism, in which a server legitimately
-        // starts an election without waiting an election timeout.
+        // Reply false if last AppendEntries call was received less than election timeout ago (leader stickiness)
+        // (Raft thesis - Section 4.2.3) This check conflicts with the leadership transfer mechanism,
+        // in which a server legitimately starts an election without waiting an election timeout.
         // Those VoteRequest objects are marked with a special flag ("disruptive") to bypass leader stickiness.
         // Also if request comes from the current leader, then stickiness check is skipped.
         // Since current leader may have restarted by recovering its persistent state.
-        if (!req.isDisruptive() && raftNode.isLeaderAvailable() && !req.candidate().equals(state.leader())) {
+        long leaderElectionTimeoutDeadline = Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis();
+        if (!req.isDisruptive() && raftNode.lastAppendEntriesTimestamp() > leaderElectionTimeoutDeadline
+                && !req.candidate().equals(state.leader())) {
             logger.info("Rejecting " + req + " since received append entries recently.");
             raftNode.send(new VoteResponse(localMember, state.term(), false), req.candidate());
             return;

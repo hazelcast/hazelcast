@@ -65,7 +65,7 @@ public class MapServiceContextImplTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testCreateRecordStore_withGenericPartitionId() {
         Config config = mapServiceContext.getNodeEngine().getConfig();
-        MapContainer mapContainer = new MapContainerImpl("anyName", config, mapServiceContext);
+        MapContainer mapContainer = new MapContainer("anyName", config, mapServiceContext);
 
         mapServiceContext.createRecordStore(mapContainer, GENERIC_PARTITION_ID, null);
     }

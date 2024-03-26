@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
 import java.util.function.BiConsumer;
@@ -33,7 +33,7 @@ final class CheckPartitionReplicaVersionTask extends AbstractPartitionPrimaryRep
 
     private final BiConsumer<Object, Throwable> callback;
 
-    CheckPartitionReplicaVersionTask(NodeEngine nodeEngine, int partitionId, int replicaIndex,
+    CheckPartitionReplicaVersionTask(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex,
                                      BiConsumer<Object, Throwable> callback) {
         super(nodeEngine, partitionId);
         if (replicaIndex < 1 || replicaIndex > InternalPartition.MAX_BACKUP_COUNT) {

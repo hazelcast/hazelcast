@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE;
@@ -35,10 +34,10 @@ import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_STATISTICS_ENABLE
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_TOPIC_OVERLOAD_POLICY;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.topic.TopicOverloadPolicy.DISCARD_NEWEST;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
@@ -55,19 +54,6 @@ public class ReliableTopicConfigTest {
         assertEquals("foo", config.getName());
         assertEquals(DEFAULT_TOPIC_OVERLOAD_POLICY, config.getTopicOverloadPolicy());
         assertEquals(DEFAULT_STATISTICS_ENABLED, config.isStatisticsEnabled());
-    }
-
-    @Test
-    public void testConstructorWithEmptyName() {
-        ReliableTopicConfig config = new ReliableTopicConfig("");
-        assertTrue(config.getName().isEmpty());
-    }
-
-    @Test
-    public void testSetEmptyName() {
-        ReliableTopicConfig config = new ReliableTopicConfig("abc");
-        config.setName("");
-        assertTrue(config.getName().isEmpty());
     }
 
     @Test
@@ -164,7 +150,7 @@ public class ReliableTopicConfigTest {
         ListenerConfig listenerConfig = new ListenerConfig("foobar");
         config.addMessageListenerConfig(listenerConfig);
 
-        assertEquals(Collections.singletonList(listenerConfig), config.getMessageListenerConfigs());
+        assertEquals(asList(listenerConfig), config.getMessageListenerConfigs());
     }
 
     // ==================== setExecutor =============================
@@ -204,31 +190,31 @@ public class ReliableTopicConfigTest {
         try {
             readOnly.setExecutor(null);
             fail();
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
         }
 
         try {
             readOnly.setReadBatchSize(3);
             fail();
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
         }
 
         try {
             readOnly.setStatisticsEnabled(true);
             fail();
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
         }
 
         try {
             readOnly.addMessageListenerConfig(new ListenerConfig("foobar"));
             fail();
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
         }
 
         try {
             readOnly.setTopicOverloadPolicy(null);
             fail();
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
         }
     }
 

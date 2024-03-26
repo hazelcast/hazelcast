@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
@@ -58,7 +57,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
 
     @Override
     public void run() throws Exception {
-        if (isJCacheAvailable()) {
+        if (isJCacheAvailable(getNodeEngine().getConfigClassLoader())) {
             ICacheService cacheService = getService();
             for (CacheConfig cacheConfig : configs) {
                 cacheService.putCacheConfigIfAbsent(cacheConfig);
@@ -79,10 +78,6 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
                         new ServiceNotFoundException("Service with name '" + SERVICE_NAME + "' not found!"));
             }
         }
-    }
-
-    public boolean isJCacheAvailable() {
-        return JCacheDetector.isJCacheAvailable(getNodeEngine().getConfigClassLoader());
     }
 
     @Override

@@ -41,13 +41,14 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private final Int2ObjectHashMap<MessageTaskFactory> factories = new Int2ObjectHashMap<>(50);
     private final Node node;
 
     public JetMessageTaskFactoryProvider(NodeEngine nodeEngine) {
-        this.node = nodeEngine.getNode();
+        this.node = ((NodeEngineImpl) nodeEngine).getNode();
         initFactories();
     }
 

@@ -26,25 +26,19 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
-import com.hazelcast.client.impl.protocol.codec.ReplicatedMapFetchEntryViewsCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
-import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.map.impl.iterator.ClientReplicatedMapEntryViewIterator;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
@@ -54,19 +48,13 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
@@ -76,14 +64,11 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
@@ -482,80 +467,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     public UUID addNearCacheInvalidationListener(EventHandler handler) {
         return registerListener(createNearCacheInvalidationListenerCodec(), handler);
-    }
-
-    /**
-     * Uses {@link ReplicatedRecordStore#putRecord(RecordMigrationInfo)} in the server side to put the entry views you provided
-     * into the record store. This API will send multiple invocations if the entry views you provided belong to multiple
-     * partitions. The client messages are invoked to partition owners.
-     * <p>
-     * @param entryViewHolders the entry views to put into the replicated map
-     * @throws IllegalArgumentException if the entry views you provided belong to different partitions
-     */
-    public CompletableFuture<Void> putAllWithMetadataAsync(
-            @Nonnull Collection<ReplicatedMapEntryViewHolder> entryViewHolders) {
-        checkNotNull(entryViewHolders, "Null argument entryViewHolders is not allowed");
-        InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
-        if (entryViewHolders.isEmpty()) {
-            resultFuture.complete(null);
-            return resultFuture;
-        }
-
-        ClientPartitionService partitionService = getContext().getPartitionService();
-
-        Map<Integer, List<ReplicatedMapEntryViewHolder>> partitionToList = new HashMap<>();
-        for (ReplicatedMapEntryViewHolder holder : entryViewHolders) {
-            Data key = holder.getKey();
-            int partitionId = partitionService.getPartitionId(key);
-            if (!partitionToList.containsKey(partitionId)) {
-                partitionToList.put(partitionId, new ArrayList<>());
-            }
-            partitionToList.get(partitionId).add(holder);
-        }
-        AtomicInteger counter = new AtomicInteger(partitionToList.size());
-
-        for (int partitionId : partitionToList.keySet()) {
-            List<ReplicatedMapEntryViewHolder> entryViews = partitionToList.get(partitionId);
-            ClientMessage request = ReplicatedMapPutAllWithMetadataCodec.encodeRequest(name, entryViews, partitionId);
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            future.whenCompleteAsync((clientMessage, throwable) -> {
-                if (throwable != null) {
-                    resultFuture.completeExceptionally(throwable);
-                    return;
-                }
-                if (counter.decrementAndGet() == 0) {
-                    if (!resultFuture.isDone()) {
-                        resultFuture.complete(null);
-                    }
-                }
-            }, ConcurrencyUtil.getDefaultAsyncExecutor());
-        }
-
-        return resultFuture;
-    }
-
-    /**
-     * Fetches the {@link ReplicatedMapEntryViewHolder}s in a single partition by doing multiple
-     * remote calls. This API sends the invocations to the partition owner.
-     * Changes during the iteration is not guaranteed to be included.
-     * <p>
-     * If the partition owner changes during iteration, the iteration will fail
-     * with a {@link IllegalStateException} stating that there is no iteration with
-     * the provided cursor id.
-     * <p>
-     * @param partitionId The partition id to fetch entry views from
-     * @param fetchSize The maximum amount of entry views to fetch in one remote call
-     * @return an iterator of entry views that'll fetch new pages during iteration
-     */
-    public Iterable<ReplicatedMapEntryViewHolder> entryViews(int partitionId, int fetchSize) {
-        UUID iteratorId = UuidUtil.newUnsecureUUID();
-        ClientMessage message = ReplicatedMapFetchEntryViewsCodec.encodeRequest(name, iteratorId, true,
-                partitionId, fetchSize);
-        ClientMessage responseMessage = invokeOnPartition(message, partitionId);
-        ReplicatedMapFetchEntryViewsCodec.ResponseParameters response =
-                ReplicatedMapFetchEntryViewsCodec.decodeResponse(responseMessage);
-        return () -> new ClientReplicatedMapEntryViewIterator(name, partitionId, iteratorId, response.cursorId,
-                response.entryViews, fetchSize, getContext());
     }
 
     private void registerInvalidationListener() {

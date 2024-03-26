@@ -55,7 +55,7 @@ import static java.util.Collections.singleton;
 abstract class AbstractPartitionOperation extends Operation implements IdentifiedDataSerializable {
 
     final Collection<MigrationAwareService> getMigrationAwareServices() {
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         return nodeEngine.getServices(MigrationAwareService.class);
     }
 
@@ -227,7 +227,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for fragmented services!";
 
         Collection<Operation> operations = emptySet();
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         for (String serviceName : serviceNames) {
             FragmentedMigrationAwareService service = nodeEngine.getService(serviceName);
             assert service.isKnownServiceNamespace(ns) : ns + " should be known by " + service;

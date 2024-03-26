@@ -139,20 +139,18 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                     ditchJob(job, instances.toArray(new HazelcastInstance[0]));
                 }
 
-                if (instance instanceof HazelcastInstanceImpl) {
-                    JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
-                            .getNodeEngine()
-                            .<JetServiceBackend>getService(SERVICE_NAME)
-                            .getJobClassLoaderService();
+                JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
+                        .getNodeEngine()
+                        .<JetServiceBackend>getService(SERVICE_NAME)
+                        .getJobClassLoaderService();
 
-                    Map<Long, ?> classLoaders = jobClassLoaderService.getClassLoaders();
-                    // The classloader cleanup is done asynchronously in some cases, wait up to 10s
-                    for (int i = 0; i < 100 && !classLoaders.isEmpty(); i++) {
-                        sleepMillis(100);
-                    }
-                    for (Entry<Long, ?> entry : classLoaders.entrySet()) {
-                        leakedClassloaders.put(entry.getKey(), entry.toString());
-                    }
+                Map<Long, ?> classLoaders = jobClassLoaderService.getClassLoaders();
+                // The classloader cleanup is done asynchronously in some cases, wait up to 10s
+                for (int i = 0; i < 100 && !classLoaders.isEmpty(); i++) {
+                    sleepMillis(100);
+                }
+                for (Entry<Long, ?> entry : classLoaders.entrySet()) {
+                    leakedClassloaders.put(entry.getKey(), entry.toString());
                 }
             }
         }

@@ -57,7 +57,7 @@ import static java.util.stream.Collectors.joining;
 public class MetricsService implements ManagedService, LiveOperationsTracker {
     public static final String SERVICE_NAME = "hz:impl:metricsService";
 
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final MetricsConfig config;
     private final LiveOperationRegistry liveOperationRegistry;
@@ -82,7 +82,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     }
 
     public MetricsService(NodeEngine nodeEngine, Supplier<MetricsRegistry> metricsRegistrySupplier) {
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.config = nodeEngine.getConfig().getMetricsConfig();
         this.liveOperationRegistry = new LiveOperationRegistry();

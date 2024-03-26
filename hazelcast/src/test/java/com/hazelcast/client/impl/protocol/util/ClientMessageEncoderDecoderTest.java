@@ -354,7 +354,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         return message;
     }
 
-    public static HeapData randomData() {
+    private HeapData randomData() {
         Random random = new Random();
         byte[] key = new byte[100];
         random.nextBytes(key);

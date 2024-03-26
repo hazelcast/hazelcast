@@ -51,6 +51,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
         implements PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     protected transient boolean dontCreateCacheRecordStoreIfNotExist;
+    protected transient ICacheService cacheService;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
 
@@ -73,9 +74,9 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
     @Override
     public final void beforeRun() throws Exception {
-        ICacheService cacheService = getService();
+        cacheService = getService();
         try {
-            recordStore = getOrCreateStoreIfAllowed(cacheService);
+            recordStore = getOrCreateStoreIfAllowed();
         } catch (CacheNotExistsException e) {
             dispose();
             rethrowOrSwallowIfBackup(e);
@@ -106,12 +107,12 @@ public abstract class CacheOperation extends AbstractNamedOperation
         }
     }
 
-    private ICacheRecordStore getOrCreateStoreIfAllowed(ICacheService service) {
+    private ICacheRecordStore getOrCreateStoreIfAllowed() {
         if (dontCreateCacheRecordStoreIfNotExist) {
-            return service.getRecordStore(name, getPartitionId());
+            return cacheService.getRecordStore(name, getPartitionId());
         }
 
-        return service.getOrCreateRecordStore(name, getPartitionId());
+        return cacheService.getOrCreateRecordStore(name, getPartitionId());
     }
 
     /**

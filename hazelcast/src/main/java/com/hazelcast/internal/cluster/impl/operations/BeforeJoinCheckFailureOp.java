@@ -21,7 +21,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -48,7 +48,7 @@ public class BeforeJoinCheckFailureOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        final NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         if (node.getClusterService().isJoined()) {
             throw new IllegalStateException("Node is already joined but received a termination message! "

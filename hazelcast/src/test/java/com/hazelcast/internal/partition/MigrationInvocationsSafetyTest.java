@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.MigrationManager;
-import com.hazelcast.internal.partition.impl.MigrationManagerImpl;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -417,7 +416,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
     private void setMigrationCommitTimeoutMillis(HazelcastInstance master, long timeout) throws Exception {
         MigrationManager migrationManager = getPartitionServiceImpl(master).getMigrationManager();
-        Field field = MigrationManagerImpl.class.getDeclaredField("memberHeartbeatTimeoutMillis");
+        Field field = MigrationManager.class.getDeclaredField("memberHeartbeatTimeoutMillis");
         field.setAccessible(true);
         field.setLong(migrationManager, timeout);
     }
