@@ -1585,10 +1585,24 @@
                 </property>
             </activation>
             <properties>
+                <!-- https://maven.apache.org/plugins/maven-checkstyle-plugin/checkstyle-mojo.html#skip -->
                 <checkstyle.skip>true</checkstyle.skip>
+                <!-- https://www.mojohaus.org/xml-maven-plugin/validate-mojo.html#skip -->
+                <xml.skip>true</xml.skip>
+                <!-- https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#skipTests -->
                 <skipTests>true</skipTests>
+                <!-- https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html#skip -->
                 <maven.javadoc.skip>true</maven.javadoc.skip>
+                <!-- https://maven.apache.org/plugins/maven-source-plugin/jar-mojo.html#skipSource -->
                 <maven.source.skip>true</maven.source.skip>
+                <!-- https://maven.apache.org/enforcer/maven-enforcer-plugin/enforce-mojo.html#skip -->
+                <enforcer.skip>true</enforcer.skip>
+                <!-- https://github.com/hazelcast/attribution-maven-plugin?tab=readme-ov-file#configuration-properties -->
+                <attribution.skip>true</attribution.skip>
+                <!-- https://www.mojohaus.org/license-maven-plugin/add-third-party-mojo.html#skipAddThirdParty -->
+                <license.skipAddThirdParty>true</license.skipAddThirdParty>
+                <!-- https://www.mojohaus.org/license-maven-plugin/aggregate-add-third-party-mojo.html -->
+                <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
             </properties>
         </profile>
         <profile>

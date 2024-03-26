@@ -306,8 +306,9 @@ It is also possible to use local Maven distribution with the same
 version that is used in the Maven wrapper script.
 
 Additionally, there is a `quick` build activated by setting the `-Dquick` system
-property that skips tests, checkstyle validation, javadoc and source plugins and
-does not build `extensions` and `distribution` modules.
+property that skips validation tasks for faster local builds (e.g. tests, checkstyle
+validation, javadoc, source plugins etc) and does not build `extensions` and `distribution` 
+modules.
 
 ### Testing
 

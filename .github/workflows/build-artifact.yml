@@ -89,20 +89,7 @@ jobs:
         run: |
           HAZELCAST_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "HAZELCAST_VERSION=${HAZELCAST_VERSION}" >> $GITHUB_ENV
-           ./mvnw -T 4 -B -V -e clean install \
-           -Dfindbugs.skip \
-           -Dcheckstyle.skip \
-           -Dpmd.skip=true \
-           -Dspotbugs.skip \
-           -Denforcer.skip \
-           -Dmaven.javadoc.skip \
-           -DskipTests \
-           -Dlicense.skip=true \
-           -Drat.skip=true \
-           -Dspotless.check.skip=true \
-           -Dattribution.skip \
-           -Danimal.sniffer.skip=true \
-           -Dmaven.source.skip=true
+           ./mvnw -T 4 -B -V -e clean install --activate-profiles quick \
             cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ${GITHUB_WORKSPACE}/aws-discovery-suite/terraform/tools/hazelcast.jar
 
       - name: Build client jar
