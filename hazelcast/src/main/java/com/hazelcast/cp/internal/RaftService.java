@@ -133,6 +133,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEM
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.MANAGEMENT_TASK_PERIOD_IN_MILLIS;
+import static com.hazelcast.cp.internal.kubernetes.CPKubernetesUtil.isKubernetesContext;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
@@ -201,7 +202,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private final Map<CPGroupAvailabilityEventKey, Long> recentAvailabilityEvents = new ConcurrentHashMap<>();
     private int cpMemberPriority;
     private final Executor internalAsyncExecutor;
+    private final boolean kubernetesContext;
 
+    @SuppressWarnings("ExecutableStatementCount")
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
@@ -222,6 +225,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 unsafeModeStates[i] = new UnsafeModePartitionState();
             }
         }
+        this.kubernetesContext = isKubernetesContext(nodeEngine.getConfig());
 
         MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
         metricsRegistry.registerStaticMetrics(this, CP_PREFIX_RAFT);
@@ -1190,12 +1194,58 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return cpSubsystemEnabled;
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
     public void handleActiveCPMembers(RaftGroupId receivedMetadataGroupId, long membersCommitIndex,
                                       Collection<CPMemberInfo> members) {
         if (!metadataGroupManager.isDiscoveryCompleted()) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Ignoring received active CP members: " + members + " since discovery is in progress.");
+            if (kubernetesContext && getCPPersistenceService().isEnabled()) {
+                // Under k8s there can be a substantial delay in when pods are created - it's possible to have this semantics
+                // outside k8s but for now we've restricted the following specifically to when operating within k8s.
+                //
+                // Reasoning.
+                // =========
+                // We have a bootstrap sequence when using persistence on a restart which broadcasts our new IP should
+                // our IP have changed between our last execution. Under k8s this will almost always be the case. See
+                // PublishLocalCPMemberOp which carries the CPMember with the updated IP.
+                //
+                // During the bootstrap sequence a member will broadcast its IP change until one of the following is true:
+                //
+                //   1. We managed to verify ourselves on the METADATA GP Group; or
+                //   2. We timed out in the bootstrapping phase
+                //
+                // Let's discard (2) as that's a case that covers a much broader category of issue. For (1) the verification is
+                // the successful invocation of VerifyRestartCPMemberOp. The successful invocation implies majority on the
+                // METADATA CP Group. So, assuming a 3-member CP Group and a podManagementPolicy like OrderedReady you can have
+                // the following on a cluster wide startup (post previous start-pause):
+                //
+                //  1. pod-0 (starts at time 1): starts broadcasting IP change; starts attempting to verify itself on
+                //     METADATA CP Group
+                //  2. pod-1 (starts at time 2): starts broadcasting IP change; starts attempting to verify itself on
+                //     METADATA CP Group
+                //  3. (at time 3) pod-0 + pod-1 form majority on METADATA; stop broadcasting their respective IP changes
+                //  3. pod-2 (starts at time 4): starts broadcasting IP change; starts attempting to verify itself on
+                //     METADATA CP Group, however it will not update the new IP coordinates as coordinated by METADATA leader as
+                //     discovery is not complete.
+                //
+                //  Note. It's still possible that the reliance on the leader of METADATA broadcasting this information is an
+                //  issue in which case the broadcasting of the updated IPs in the bootstrapping phase as described earlier needs
+                //  to be revisited to remove condition (1) for when ceasing to broadcast our IP change. This is because that
+                //  operation has no invariant on who publishes the IP change -- each member does this.
+                if (members != null) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("CP restore...(k8s) updating active member invocation contexts: " + members);
+                    }
+                    // Update our invocation contexts for the member UUIDs and their respective IP that form the METADATA CP
+                    // group. Note: for k8s currently we only support deployments whose number of members is the same as the CP
+                    // group size. The below logic mirrors that of PublishLocalCPMemberOp but for each of the active CP members.
+                    for (CPMember member : members) {
+                        invocationManager.getRaftInvocationContext().updateMember(member);
+                    }
+                }
+            } else {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Ignoring received active CP members: " + members + " since discovery is in progress.");
+                }
             }
             return;
         }

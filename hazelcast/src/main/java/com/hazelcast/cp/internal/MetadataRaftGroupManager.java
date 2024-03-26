@@ -76,6 +76,7 @@ import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.cp.internal.RaftService.EVENT_TOPIC_MEMBERSHIP;
 import static com.hazelcast.cp.internal.RaftService.SERVICE_NAME;
+import static com.hazelcast.cp.internal.kubernetes.CPKubernetesUtil.isKubernetesContext;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS;
@@ -137,6 +138,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private volatile MetadataRaftGroupInitStatus initializationStatus = MetadataRaftGroupInitStatus.IN_PROGRESS;
     private final Set<CPMemberInfo> initializedCPMembers = newSetFromMap(new ConcurrentHashMap<>());
     private final Set<Long> initializationCommitIndices = newSetFromMap(new ConcurrentHashMap<>());
+    private final boolean kubernetesContext;
 
     MetadataRaftGroupManager(NodeEngineImpl nodeEngine, RaftService raftService, CPSubsystemConfig config) {
         this.nodeEngine = nodeEngine;
@@ -145,6 +147,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         this.logger = nodeEngine.getLogger(getClass());
         this.config = config;
         this.cpSubsystemEnabled = raftService.isCpSubsystemEnabled();
+        this.kubernetesContext = isKubernetesContext(nodeEngine.getConfig());
     }
 
     boolean init() {
@@ -1108,7 +1111,16 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     void broadcastActiveCPMembers() {
-        if (!(isDiscoveryCompleted() && isMetadataGroupLeader())) {
+        if (!isDiscoveryCompleted()) {
+            if (!kubernetesContext) {
+                // See the commentary in RaftService#handleActiveCPMembers(...) for why we treat k8s differently.
+                // Note. The k8s treatment can be observed outside k8s but as it's not a reported issue it's been kept specific
+                // to k8s.
+                return;
+            }
+        }
+
+        if (!isMetadataGroupLeader()) {
             return;
         }
 
