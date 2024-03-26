@@ -67,7 +67,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         this.name = name;
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
-        this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
+        this.taskQ = new LinkedBlockingQueue<>(queueCapacity);
         this.nodeEngine = nodeEngine;
     }
 
@@ -115,7 +115,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task);
+        final RunnableFuture<T> rf = new CompletableFutureTask<>(task);
         execute(rf);
         return rf;
     }
@@ -161,7 +161,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         if (!shutdown.compareAndSet(false, true)) {
             return Collections.emptyList();
         }
-        List<Runnable> tasks = new LinkedList<Runnable>();
+        List<Runnable> tasks = new LinkedList<>();
         taskQ.drainTo(tasks);
         for (Runnable task : tasks) {
             if (task instanceof RunnableFuture) {

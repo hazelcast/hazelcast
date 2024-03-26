@@ -51,7 +51,7 @@ public class CacheRemoveAllOperation
     private Set<Data> keys;
     private int completionId;
 
-    private transient Set<Data> filteredKeys = new HashSet<Data>();
+    private transient Set<Data> filteredKeys = new HashSet<>();
     private transient ICacheService service;
     private transient ICacheRecordStore cache;
 

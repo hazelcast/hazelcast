@@ -51,7 +51,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
     @Override
     public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
         final List<CacheSimpleEntryListenerConfig> listenerConfigs = super.getCacheEntryListeners();
-        final List<CacheSimpleEntryListenerConfig> readOnlyListenerConfigs = new ArrayList<CacheSimpleEntryListenerConfig>(
+        final List<CacheSimpleEntryListenerConfig> readOnlyListenerConfigs = new ArrayList<>(
                 listenerConfigs.size());
         for (CacheSimpleEntryListenerConfig listenerConfig : listenerConfigs) {
             readOnlyListenerConfigs.add(new CacheSimpleEntryListenerConfigReadOnly(listenerConfig));

@@ -112,7 +112,7 @@ public final class AndPredicate
 
     private static <T> List<T> initOrGetListOf(List<T> list) {
         if (list == null) {
-            list = new LinkedList<T>();
+            list = new LinkedList<>();
         }
         return list;
     }

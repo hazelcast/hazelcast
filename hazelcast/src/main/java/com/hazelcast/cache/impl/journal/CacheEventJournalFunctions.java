@@ -65,7 +65,7 @@ public final class CacheEventJournalFunctions {
         @Override
         public Entry<K, V> apply(EventJournalCacheEvent<K, V> e) {
             DeserializingEventJournalCacheEvent<K, V> casted = (DeserializingEventJournalCacheEvent<K, V>) e;
-            return new DeserializingEntry<K, V>(casted.getDataKey(), casted.getDataNewValue());
+            return new DeserializingEntry<>(casted.getDataKey(), casted.getDataNewValue());
         }
     }
 

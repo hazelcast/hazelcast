@@ -157,7 +157,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
 
     @Override
     public Iterator<E> iterator() {
-        return new ReadOnlyRingbufferIterator<E>(this);
+        return new ReadOnlyRingbufferIterator<>(this);
     }
 
     @Override

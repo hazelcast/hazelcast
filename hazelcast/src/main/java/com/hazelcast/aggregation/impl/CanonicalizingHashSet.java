@@ -45,7 +45,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
      * Constructs a new empty instance of canonicalizing hash set.
      */
     public CanonicalizingHashSet() {
-        this.map = new HashMap<Object, E>();
+        this.map = new HashMap<>();
     }
 
     /**
@@ -54,7 +54,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
      * @param capacity the expected capacity
      */
     public CanonicalizingHashSet(int capacity) {
-        this.map = new HashMap<Object, E>(capacity);
+        this.map = new HashMap<>(capacity);
     }
 
     /**
@@ -88,7 +88,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        this.map = new HashMap<Object, E>(MapUtil.calculateInitialCapacity(count));
+        this.map = new HashMap<>(MapUtil.calculateInitialCapacity(count));
         for (int i = 0; i < count; i++) {
             E element = in.readObject();
             addInternal(element);

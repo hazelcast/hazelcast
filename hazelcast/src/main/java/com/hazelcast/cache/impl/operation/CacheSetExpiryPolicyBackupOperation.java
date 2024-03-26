@@ -88,7 +88,7 @@ public class CacheSetExpiryPolicyBackupOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int s = in.readInt();
-        keys = new ArrayList<Data>(s);
+        keys = new ArrayList<>(s);
         while (s-- > 0) {
             keys.add(IOUtil.readData(in));
         }

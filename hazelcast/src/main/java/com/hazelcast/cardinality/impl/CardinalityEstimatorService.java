@@ -67,9 +67,9 @@ public class CardinalityEstimatorService
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
-            new ConcurrentHashMap<String, CardinalityEstimatorContainer>();
+            new ConcurrentHashMap<>();
     private final ConstructorFunction<String, CardinalityEstimatorContainer> cardinalityEstimatorContainerConstructorFunction =
-            new ConstructorFunction<String, CardinalityEstimatorContainer>() {
+            new ConstructorFunction<>() {
                 @Override
                 public CardinalityEstimatorContainer createNew(String name) {
                     CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
@@ -77,10 +77,10 @@ public class CardinalityEstimatorService
                 }
             };
 
-    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
-            new ConstructorFunction<String, Object>() {
+            new ConstructorFunction<>() {
         @Override
         public Object createNew(String name) {
             CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);

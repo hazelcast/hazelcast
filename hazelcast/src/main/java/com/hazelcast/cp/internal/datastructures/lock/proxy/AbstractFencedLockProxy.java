@@ -53,7 +53,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
     protected final String proxyName;
     protected final String objectName;
     // thread id -> id of the session that has acquired the lock
-    private final Map<Long, Long> lockedSessionIds = new ConcurrentHashMap<Long, Long>();
+    private final Map<Long, Long> lockedSessionIds = new ConcurrentHashMap<>();
 
     public AbstractFencedLockProxy(AbstractProxySessionManager sessionManager, RaftGroupId groupId, String proxyName,
                                        String objectName) {

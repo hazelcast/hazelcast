@@ -274,7 +274,7 @@ public final class AddressUtil {
             throw new IllegalArgumentException("Cannot wildcard matching for IPv6: "
                     + addressMatcher);
         }
-        final Collection<String> addresses = new HashSet<String>();
+        final Collection<String> addresses = new HashSet<>();
         final String first3 = addressMatcher.address[0] + '.'
                 + addressMatcher.address[1]
                 + '.'

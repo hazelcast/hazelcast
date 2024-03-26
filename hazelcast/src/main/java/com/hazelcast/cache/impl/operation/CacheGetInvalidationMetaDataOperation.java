@@ -122,11 +122,11 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             int size1 = in.readInt();
-            namePartitionSequenceList = new HashMap<String, List<Map.Entry<Integer, Long>>>(size1);
+            namePartitionSequenceList = new HashMap<>(size1);
             for (int i = 0; i < size1; i++) {
                 String name = in.readString();
                 int size2 = in.readInt();
-                List<Map.Entry<Integer, Long>> innerList = new ArrayList<Map.Entry<Integer, Long>>(size2);
+                List<Map.Entry<Integer, Long>> innerList = new ArrayList<>(size2);
                 for (int j = 0; j < size2; j++) {
                     int partition = in.readInt();
                     long seq = in.readLong();
@@ -136,7 +136,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
             }
 
             int size3 = in.readInt();
-            partitionUuidList = new HashMap<Integer, UUID>(size3);
+            partitionUuidList = new HashMap<>(size3);
             for (int i = 0; i < size3; i++) {
                 int partition = in.readInt();
                 UUID uuid = new UUID(in.readLong(), in.readLong());
@@ -154,7 +154,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
 
     private Map<Integer, UUID> getPartitionUuidList(List<Integer> ownedPartitionIds) {
         MetaDataGenerator metaDataGenerator = getPartitionMetaDataGenerator();
-        Map<Integer, UUID> partitionUuids = new HashMap<Integer, UUID>(ownedPartitionIds.size());
+        Map<Integer, UUID> partitionUuids = new HashMap<>(ownedPartitionIds.size());
         for (Integer partitionId : ownedPartitionIds) {
             UUID uuid = metaDataGenerator.getOrCreateUuid(partitionId);
             partitionUuids.put(partitionId, uuid);
@@ -164,11 +164,11 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
 
     private Map<String, List<Map.Entry<Integer, Long>>> getNamePartitionSequenceList(List<Integer> ownedPartitionIds) {
         MetaDataGenerator metaDataGenerator = getPartitionMetaDataGenerator();
-        Map<String, List<Map.Entry<Integer, Long>>> sequences = new HashMap<String, List<Map.Entry<Integer, Long>>>(
+        Map<String, List<Map.Entry<Integer, Long>>> sequences = new HashMap<>(
                 ownedPartitionIds.size());
 
         for (String name : names) {
-            List<Map.Entry<Integer, Long>> mapSequences = new ArrayList<Map.Entry<Integer, Long>>();
+            List<Map.Entry<Integer, Long>> mapSequences = new ArrayList<>();
             for (Integer partitionId : ownedPartitionIds) {
                 long partitionSequence = metaDataGenerator.currentSequence(name, partitionId);
                 if (partitionSequence != 0) {
@@ -208,7 +208,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
 
         int size = in.readInt();
 
-        List<String> mapNames = new ArrayList<String>(size);
+        List<String> mapNames = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             mapNames.add(in.readString());
         }

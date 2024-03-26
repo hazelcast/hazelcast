@@ -81,7 +81,7 @@ public class CacheLoadAllOperation
 
         Set<Data> filteredKeys = null;
         if (keys != null) {
-            filteredKeys = new HashSet<Data>();
+            filteredKeys = new HashSet<>();
             for (Data k : keys) {
                 if (partitionService.getPartitionId(k) == partitionId) {
                     filteredKeys.add(k);

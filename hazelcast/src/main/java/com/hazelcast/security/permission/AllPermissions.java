@@ -81,7 +81,7 @@ public final class AllPermissions extends ClusterPermission {
 
         @Override
         public Enumeration<Permission> elements() {
-            return new Enumeration<Permission>() {
+            return new Enumeration<>() {
                 boolean more = all;
 
                 @Override

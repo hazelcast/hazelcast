@@ -64,8 +64,8 @@ import com.hazelcast.nio.serialization.impl.Versioned;
  */
 public class CacheReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned {
 
-    private final List<CacheConfig> configs = new ArrayList<CacheConfig>();
-    private final Map<String, Map<Data, CacheRecord>> data = new HashMap<String, Map<Data, CacheRecord>>();
+    private final List<CacheConfig> configs = new ArrayList<>();
+    private final Map<String, Map<Data, CacheRecord>> data = new HashMap<>();
     private CacheNearCacheStateHolder nearCacheStateHolder;
     private transient boolean classesAlwaysAvailable = true;
 

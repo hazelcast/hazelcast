@@ -29,8 +29,8 @@ import java.util.List;
  * primary group of addresses could not be connected to).
  */
 public class Addresses {
-    private final List<Address> primary = new LinkedList<Address>();
-    private final List<Address> secondary = new LinkedList<Address>();
+    private final List<Address> primary = new LinkedList<>();
+    private final List<Address> secondary = new LinkedList<>();
 
     public Addresses() {
     }

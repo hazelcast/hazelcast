@@ -44,7 +44,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E>
         extends TransactionalDistributedObject<S> {
 
-    protected final Set<Long> itemIdSet = new HashSet<Long>();
+    protected final Set<Long> itemIdSet = new HashSet<>();
     protected final String name;
     protected final int partitionId;
     protected final OperationService operationService;

@@ -91,7 +91,7 @@ public class CacheEventSet
      */
     public void addEventData(CacheEventData cacheEventData) {
         if (events == null) {
-            events = new HashSet<CacheEventData>();
+            events = new HashSet<>();
         }
         this.events.add(cacheEventData);
     }

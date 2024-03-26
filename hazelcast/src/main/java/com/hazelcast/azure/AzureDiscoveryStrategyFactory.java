@@ -55,7 +55,7 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
     @Override
     public Collection<PropertyDefinition> getConfigurationProperties() {
-        List<PropertyDefinition> result = new ArrayList<PropertyDefinition>();
+        List<PropertyDefinition> result = new ArrayList<>();
         for (AzureProperties property : AzureProperties.values()) {
             result.add(property.getDefinition());
         }

@@ -92,7 +92,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private final ConcurrentMap<Class, SerializerAdapter> typeMap =
             new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.STRONG);
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
-    private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
+    private final AtomicReference<SerializerAdapter> global = new AtomicReference<>();
 
     //Global serializer may override Java Serialization or not
     private boolean overrideJavaSerialization;
@@ -646,7 +646,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         // look for super classes
         Class typeSuperclass = type.getSuperclass();
-        final Set<Class> interfaces = new LinkedHashSet<Class>(5);
+        final Set<Class> interfaces = new LinkedHashSet<>(5);
         getInterfaces(type, interfaces);
         while (typeSuperclass != null) {
             serializer = registerFromSuperType(type, typeSuperclass);

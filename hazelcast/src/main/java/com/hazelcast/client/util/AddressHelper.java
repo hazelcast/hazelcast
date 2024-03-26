@@ -75,7 +75,7 @@ public final class AddressHelper {
         if (possiblePort == -1) {
             possiblePort = INITIAL_FIRST_PORT;
         }
-        LinkedList<Address> addressList = new LinkedList<Address>();
+        LinkedList<Address> addressList = new LinkedList<>();
 
         if (inetAddress == null) {
             for (int i = 0; i < portTryCount; i++) {

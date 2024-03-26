@@ -59,7 +59,7 @@ public final class AggregatingMap<K, V> implements Map<K, V> {
      * @return
      */
     public static <K, V> Map<K, V> aggregate(Map<K, V> map1, Map<K, V> map2) {
-        return new AggregatingMap<K, V>(map1, map2);
+        return new AggregatingMap<>(map1, map2);
     }
 
     @Override
@@ -110,14 +110,14 @@ public final class AggregatingMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<K> keySet() {
-        HashSet<K> keys = new HashSet<K>(map1.keySet());
+        HashSet<K> keys = new HashSet<>(map1.keySet());
         keys.addAll(map2.keySet());
         return unmodifiableSet(keys);
     }
 
     @Override
     public Collection<V> values() {
-        ArrayList<V> values = new ArrayList<V>(map1.values());
+        ArrayList<V> values = new ArrayList<>(map1.values());
         values.addAll(map2.values());
         return unmodifiableCollection(values);
     }
@@ -127,7 +127,7 @@ public final class AggregatingMap<K, V> implements Map<K, V> {
         Set<Entry<K, V>> entrySet1 = map1.entrySet();
         Set<Entry<K, V>> entrySet2 = map2.entrySet();
 
-        HashSet<Entry<K, V>> aggregatedEntrySet = new HashSet<Entry<K, V>>();
+        HashSet<Entry<K, V>> aggregatedEntrySet = new HashSet<>();
         copyEntries(entrySet1, aggregatedEntrySet);
         copyEntries(entrySet2, aggregatedEntrySet);
         return unmodifiableSet(aggregatedEntrySet);

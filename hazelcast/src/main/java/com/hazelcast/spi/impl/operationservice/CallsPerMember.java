@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class CallsPerMember implements LiveOperations {
     private final Address localAddress;
-    private final Map<Address, CategorizedCallIds> callIdsByMember = new HashMap<Address, CategorizedCallIds>();
+    private final Map<Address, CategorizedCallIds> callIdsByMember = new HashMap<>();
 
     public CallsPerMember(Address localAddress) {
         this.localAddress = checkNotNull(localAddress, "local address can't be null");
@@ -100,7 +100,7 @@ public final class CallsPerMember implements LiveOperations {
     }
 
     private static final class CategorizedCallIds {
-        final List<Long> liveOps = new ArrayList<Long>();
-        final List<Long> opsToCancel = new ArrayList<Long>();
+        final List<Long> liveOps = new ArrayList<>();
+        final List<Long> opsToCancel = new ArrayList<>();
     }
 }

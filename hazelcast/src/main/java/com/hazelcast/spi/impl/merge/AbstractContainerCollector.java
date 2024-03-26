@@ -69,7 +69,7 @@ import java.util.concurrent.CountDownLatch;
 public abstract class AbstractContainerCollector<C> {
 
     private final ConcurrentMap<Integer, Collection<C>> containersByPartitionId
-            = new ConcurrentHashMap<Integer, Collection<C>>();
+            = new ConcurrentHashMap<>();
 
     private final OperationExecutor operationExecutor;
     private final IPartitionService partitionService;
@@ -213,7 +213,7 @@ public abstract class AbstractContainerCollector<C> {
      */
     private final class CollectContainerRunnable implements PartitionSpecificRunnable {
 
-        private final Collection<C> containers = new LinkedList<C>();
+        private final Collection<C> containers = new LinkedList<>();
 
         private final int partitionId;
 

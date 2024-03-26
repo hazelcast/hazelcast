@@ -124,7 +124,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        expiredKeys = new LinkedList<ExpiredKey>();
+        expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {
             expiredKeys.add(new ExpiredKey(IOUtil.readData(in), in.readLong()));
         }

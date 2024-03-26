@@ -125,7 +125,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
                 this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
             }
             if (config.partitionLostListenerConfigs != null) {
-                this.partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>(
+                this.partitionLostListenerConfigs = new ArrayList<>(
                         config.partitionLostListenerConfigs);
             }
             this.splitBrainProtectionName = config.splitBrainProtectionName;

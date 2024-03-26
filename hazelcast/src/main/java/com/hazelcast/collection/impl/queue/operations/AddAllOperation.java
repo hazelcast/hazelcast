@@ -110,7 +110,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
+        dataList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readData(in));
         }

@@ -163,7 +163,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean addAll(@Nonnull Collection<? extends E> c) {
         checkNotNull(c, "Null collection is not allowed");
 
-        List<Data> valueList = new ArrayList<Data>(c.size());
+        List<Data> valueList = new ArrayList<>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
             checkNotNull(e, "Null collection element is not allowed");

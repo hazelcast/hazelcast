@@ -44,7 +44,7 @@ public class CacheGetAllOperationFactory
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllOperationFactory() {
-        keys = new HashSet<Data>();
+        keys = new HashSet<>();
     }
 
     public CacheGetAllOperationFactory(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {

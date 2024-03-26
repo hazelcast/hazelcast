@@ -134,7 +134,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
-    protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
+    protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<>();
     protected final CompositeCacheRSMutationObserver compositeCacheRSMutationObserver;
 
     protected boolean primary;
@@ -147,7 +147,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected CacheStatisticsImpl statistics;
     protected TenantContextual<ExpiryPolicy> defaultExpiryPolicy;
     protected Iterator<Map.Entry<Data, R>> expirationIterator;
-    protected InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
+    protected InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
     protected boolean hasEntryWithExpiration;
     protected boolean wanReplicateEvictions;
 
@@ -410,7 +410,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public void sampleAndForceRemoveEntries(int entryCountToRemove) {
         assertRunningOnPartitionThread();
 
-        Queue<Data> keysToRemove = new LinkedList<Data>();
+        Queue<Data> keysToRemove = new LinkedList<>();
         Iterable<EvictionCandidate<Data, R>> entries = records.sample(entryCountToRemove);
         for (EvictionCandidate<Data, R> entry : entries) {
             keysToRemove.add(entry.getAccessor());
@@ -659,7 +659,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                 cacheEventContext.isOldValueAvailable());
                 Set<CacheEventData> cacheEventDataSet = batchEvent.remove(cacheEventContext.getEventType());
                 if (cacheEventDataSet == null) {
-                    cacheEventDataSet = new HashSet<CacheEventData>();
+                    cacheEventDataSet = new HashSet<>();
                     batchEvent.put(cacheEventContext.getEventType(), cacheEventDataSet);
                 }
                 cacheEventDataSet.add(cacheEventData);
@@ -1259,7 +1259,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     private int evictExpiredInternal(int maxIterationCount, long now) {
         initExpirationIterator();
         int processedCount = 0;
-        LinkedList<Map.Entry<Data, R>> records = new LinkedList<Map.Entry<Data, R>>();
+        LinkedList<Map.Entry<Data, R>> records = new LinkedList<>();
         while (expirationIterator.hasNext() && processedCount < maxIterationCount) {
             Map.Entry<Data, R> record = expirationIterator.next();
             records.add(record);
@@ -1731,11 +1731,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void removeAll(Set<Data> keys, int completionId) {
         long now = Clock.currentTimeMillis();
-        Set<Data> localKeys = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys);
+        Set<Data> localKeys = new HashSet<>(keys.isEmpty() ? records.keySet() : keys);
         try {
             deleteAllCacheEntry(localKeys);
         } finally {
-            Set<Data> keysToClean = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys);
+            Set<Data> keysToClean = new HashSet<>(keys.isEmpty() ? records.keySet() : keys);
             for (Data key : keysToClean) {
                 eventsBatchingEnabled = true;
                 R record = records.get(key);

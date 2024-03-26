@@ -58,7 +58,7 @@ public class BatchNearCacheInvalidation extends Invalidation {
 
         int size = in.readInt();
         if (size != 0) {
-            List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
+            List<Invalidation> invalidations = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 Invalidation invalidation = in.readObject();
                 invalidations.add(invalidation);

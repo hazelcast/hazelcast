@@ -61,7 +61,7 @@ public class CacheLoadAllMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        Set<Data> keys = new HashSet<Data>(parameters.keys);
+        Set<Data> keys = new HashSet<>(parameters.keys);
         return operationProvider.createLoadAllOperationFactory(keys, parameters.replaceExistingValues);
     }
 

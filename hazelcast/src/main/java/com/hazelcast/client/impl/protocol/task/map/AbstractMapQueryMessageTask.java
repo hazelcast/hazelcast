@@ -99,7 +99,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     @Override
     protected final Object call() throws Exception {
-        Collection<AccumulatedResults> result = new LinkedList<AccumulatedResults>();
+        Collection<AccumulatedResults> result = new LinkedList<>();
         try {
             NamespaceUtil.setupNamespace(nodeEngine, getUserCodeNamespace());
             Predicate predicate = getPredicate();

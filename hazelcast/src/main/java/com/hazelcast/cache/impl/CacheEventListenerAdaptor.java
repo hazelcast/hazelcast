@@ -186,7 +186,7 @@ public class CacheEventListenerAdaptor<K, V>
     }
 
     private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
-        HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
+        HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<>();
         for (CacheEventData cacheEventData : keys) {
             EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
             K key = toObject(cacheEventData.getDataKey());
@@ -212,7 +212,7 @@ public class CacheEventListenerAdaptor<K, V>
                 }
             }
             final CacheEntryEventImpl<K, V> event =
-                    new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+                    new CacheEntryEventImpl<>(source, eventType, key, newValue, oldValue);
             if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }

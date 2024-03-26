@@ -47,6 +47,6 @@ public class AutoDisposableTaskDecorator<V>
     }
 
     public static <V> Callable<V> autoDisposable(Callable<V> callable) {
-        return new AutoDisposableTaskDecorator<V>(callable);
+        return new AutoDisposableTaskDecorator<>(callable);
     }
 }

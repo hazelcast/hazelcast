@@ -50,7 +50,7 @@ public class AdvancedNetworkConfig {
     private boolean enabled;
 
     private final Map<EndpointQualifier, EndpointConfig> endpointConfigs
-            = new ConcurrentHashMap<EndpointQualifier, EndpointConfig>();
+            = new ConcurrentHashMap<>();
 
     private JoinConfig join = new JoinConfig();
 

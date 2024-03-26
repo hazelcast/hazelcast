@@ -54,7 +54,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalCacheEvent e = (InternalEventJournalCacheEvent) item;
         final DeserializingEventJournalCacheEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalCacheEvent<K, V>(serializationService, e);
+                = new DeserializingEventJournalCacheEvent<>(serializationService, e);
         super.addItem(seq, deserialisingEvent);
     }
 

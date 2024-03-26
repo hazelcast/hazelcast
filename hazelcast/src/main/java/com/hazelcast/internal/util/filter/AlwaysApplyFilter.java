@@ -27,7 +27,7 @@ public final class AlwaysApplyFilter<T> implements Filter<T> {
     }
 
     public static <T> AlwaysApplyFilter<T> newInstance() {
-        return new AlwaysApplyFilter<T>();
+        return new AlwaysApplyFilter<>();
     }
 
     @Override

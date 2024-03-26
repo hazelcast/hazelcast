@@ -118,7 +118,7 @@ public class CachePutAllOperation extends CacheOperation
         expiryPolicy = in.readObject();
         completionId = in.readInt();
         int size = in.readInt();
-        entries = new ArrayList<Map.Entry<Data, Data>>(size);
+        entries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Data key = IOUtil.readData(in);
             Data value = IOUtil.readData(in);
