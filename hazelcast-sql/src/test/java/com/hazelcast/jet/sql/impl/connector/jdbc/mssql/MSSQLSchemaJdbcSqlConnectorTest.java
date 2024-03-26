@@ -27,8 +27,6 @@ public class MSSQLSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
 
     @BeforeClass
     public static void beforeClass() {
-        //There is no arm64 image for mssql server
-        assumeNoArm64Architecture();
         initialize(new MSSQLDatabaseProvider());
     }
 

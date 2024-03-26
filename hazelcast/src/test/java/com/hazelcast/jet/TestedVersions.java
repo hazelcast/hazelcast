@@ -31,4 +31,8 @@ public final class TestedVersions {
     public static final String DEFAULT_ORACLE_IMAGE_NAME = "gvenzl/oracle-xe:21-slim-faststart";
     public static final String ORACLE_PROPERTY_NAME = "test.oracle.version";
     public static final String TEST_ORACLE_VERSION = System.getProperty(ORACLE_PROPERTY_NAME, DEFAULT_ORACLE_IMAGE_NAME);
+
+    public static final String TEST_AZURE_SQL_EDGE_VERSION = System.getProperty("test.azuresqledge.version", "1.0.7");
+
+    public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2022-latest");
 }
