@@ -196,6 +196,9 @@
     <suppress checks="OperatorWrap" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
     <suppress checks="VisibilityModifier" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]"/>
 
+    <suppress checks="" files="target[\\/]generated-sources"/>
+    <suppress checks="" files="target[\\/]generated-test-sources"/>
+
     <!-- Javadoc suppressions -->
     <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]security[\\/]"/>
 
