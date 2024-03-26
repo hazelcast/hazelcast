@@ -19,7 +19,7 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +48,7 @@ public class TcpServerContextTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Node mockNode = mock(Node.class);
-        NodeEngineImpl mockNodeEngine = mock(NodeEngineImpl.class);
+        NodeEngine mockNodeEngine = mock(NodeEngine.class);
         Config config = new Config();
         HazelcastProperties properties = new HazelcastProperties(config);
         networkConfig = config.getNetworkConfig();

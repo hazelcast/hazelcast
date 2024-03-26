@@ -19,7 +19,7 @@ package com.hazelcast.test.starter.answer;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import org.mockito.invocation.InvocationOnMock;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
@@ -53,7 +53,7 @@ public class NodeAnswer extends AbstractAnswer {
             return mock(InternalPartitionService.class, new PartitionServiceAnswer(partitionService));
         } else if (arguments.length == 0 && methodName.equals("getNodeEngine")) {
             Object nodeEngine = invokeForMock(invocation);
-            return mock(NodeEngineImpl.class, new NodeEngineAnswer(nodeEngine));
+            return mock(NodeEngine.class, new NodeEngineAnswer(nodeEngine));
         } else if (arguments.length == 1 && methodName.equals("getConnectionManager")) {
             arguments = proxyArgumentsIfNeeded(arguments, delegateClassloader);
             Object endpointManager = invokeForMock(invocation, arguments);

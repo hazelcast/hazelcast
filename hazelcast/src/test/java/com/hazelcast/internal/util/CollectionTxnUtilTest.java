@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CollectionTxnUtilTest extends HazelcastTestSupport {
 
-    private NodeEngineImpl nodeEngine = mock(NodeEngineImpl.class);
+    private NodeEngine nodeEngine = mock(NodeEngine.class);
 
     private RemoteService remoteService = mock(RemoteService.class);
 

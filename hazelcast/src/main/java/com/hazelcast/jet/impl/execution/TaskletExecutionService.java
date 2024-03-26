@@ -33,7 +33,7 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -94,7 +94,7 @@ public class TaskletExecutionService {
     private final IdleStrategy idlerCooperative;
     private final IdleStrategy idlerNonCooperative;
 
-    public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
+    public TaskletExecutionService(NodeEngine nodeEngine, int threadCount, HazelcastProperties properties) {
         hzExecutionService = nodeEngine.getExecutionService();
         hzExecutionService.register(TASKLET_INIT_CLOSE_EXECUTOR_NAME,
                 RuntimeAvailableProcessors.get(), Integer.MAX_VALUE, CACHED);

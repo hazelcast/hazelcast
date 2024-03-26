@@ -25,7 +25,7 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -85,7 +85,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
     @Before
     public void before() {
         executor = Executors.newCachedThreadPool();
-        NodeEngineImpl neMock = mock(NodeEngineImpl.class);
+        NodeEngine neMock = mock(NodeEngine.class);
 
         HazelcastInstance hzMock = mock(HazelcastInstance.class);
         when(neMock.getHazelcastInstance()).thenReturn(hzMock);
