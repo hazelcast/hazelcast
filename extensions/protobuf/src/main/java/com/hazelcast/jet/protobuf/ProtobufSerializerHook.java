@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.protobuf;
 
-import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.GeneratedMessageV3;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 
@@ -32,11 +32,11 @@ import com.hazelcast.nio.serialization.SerializerHook;
  * href="https://jet-start.sh/docs/api/serialization#google-protocol-buffers">
  * Serialization Guide</a> for more details.
  *
- * @param <T> the Protocol Buffers {@link GeneratedMessage} type handled by
+ * @param <T> the Protocol Buffers {@link GeneratedMessageV3} type handled by
  *            this {@link SerializerHook}.
  * @since Jet 4.1
  */
-public abstract class ProtobufSerializerHook<T extends GeneratedMessage> implements SerializerHook<T> {
+public abstract class ProtobufSerializerHook<T extends GeneratedMessageV3> implements SerializerHook<T> {
 
     private final Class<T> clazz;
     private final int typeId;
@@ -44,7 +44,7 @@ public abstract class ProtobufSerializerHook<T extends GeneratedMessage> impleme
     /**
      * Creates Protocol Buffers v3 serializer hook.
      *
-     * @param clazz  {@link \} serialization type registered
+     * @param clazz  {@link GeneratedMessageV3} serialization type registered
      *               by this hook
      * @param typeId unique type id of serializer registered by this hook
      */

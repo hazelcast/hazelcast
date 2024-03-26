@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.protobuf;
 
-import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Parser;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -48,11 +48,11 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
  *     {@linkplain ProtobufSerializerHook}
  * </li></ol>
  *
- * @param <T> the Protocol Buffers {@link GeneratedMessage} type handled by
+ * @param <T> the Protocol Buffers {@link GeneratedMessageV3} type handled by
  *            this {@link StreamSerializer}.
  * @since Jet 4.1
  */
-public abstract class ProtobufSerializer<T extends GeneratedMessage> implements StreamSerializer<T> {
+public abstract class ProtobufSerializer<T extends GeneratedMessageV3> implements StreamSerializer<T> {
 
     private static final String DEFAULT_INSTANCE_METHOD_NAME = "getDefaultInstance";
 
@@ -62,12 +62,12 @@ public abstract class ProtobufSerializer<T extends GeneratedMessage> implements 
     /**
      * Called by the subclass to initialize this protobuf serializer.
      *
-     * @param clazz  {@link GeneratedMessage} type handled by this serializer
+     * @param clazz  {@link GeneratedMessageV3} type handled by this serializer
      * @param typeId unique type ID of this serializer
      */
     protected ProtobufSerializer(@Nonnull Class<T> clazz, int typeId) {
-        checkTrue(GeneratedMessage.class.isAssignableFrom(clazz), clazz.getName() + " is not supported, " +
-                "provide a Protocol Buffers " + GeneratedMessage.class.getName() + " type");
+        checkTrue(GeneratedMessageV3.class.isAssignableFrom(clazz), clazz.getName() + " is not supported, " +
+                "provide a Protocol Buffers " + GeneratedMessageV3.class.getName() + " type");
 
         this.typeId = typeId;
         this.parser = parser(clazz);
@@ -101,13 +101,13 @@ public abstract class ProtobufSerializer<T extends GeneratedMessage> implements 
     /**
      * An utility method that creates an anonymous {@link ProtobufSerializer}.
      *
-     * @param clazz  {@link GeneratedMessage} type of created serializer
+     * @param clazz  {@link GeneratedMessageV3} type of created serializer
      * @param typeId unique type id of created serializer
-     * @param <T>    the Protocol Buffers {@link GeneratedMessage} type
+     * @param <T>    the Protocol Buffers {@link GeneratedMessageV3} type
      *               handled by created {@link StreamSerializer}
      */
     @Nonnull
-    public static <T extends GeneratedMessage> ProtobufSerializer<T> from(@Nonnull Class<T> clazz, int typeId) {
+    public static <T extends GeneratedMessageV3> ProtobufSerializer<T> from(@Nonnull Class<T> clazz, int typeId) {
         return new ProtobufSerializer<T>(clazz, typeId) {
         };
     }
