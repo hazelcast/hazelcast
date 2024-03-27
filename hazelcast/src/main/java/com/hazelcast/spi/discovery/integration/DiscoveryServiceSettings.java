@@ -85,7 +85,7 @@ public final class DiscoveryServiceSettings {
     }
 
     public List<DiscoveryStrategyConfig> getAllDiscoveryConfigs() {
-        List<DiscoveryStrategyConfig> result = new ArrayList<DiscoveryStrategyConfig>();
+        List<DiscoveryStrategyConfig> result = new ArrayList<>();
         result.addAll(discoveryConfig.getDiscoveryStrategyConfigs());
         result.addAll(aliasedDiscoveryConfigs);
         return result;

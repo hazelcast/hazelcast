@@ -62,8 +62,8 @@ public final class InvokeOnMembers {
         this.serviceName = serviceName;
         this.operationFactory = operationFactory;
         this.targets = targets;
-        this.futures = new HashMap<Member, Future>(targets.size());
-        this.results = new HashMap<Member, Object>(targets.size());
+        this.futures = new HashMap<>(targets.size());
+        this.results = new HashMap<>(targets.size());
     }
 
     /**
@@ -107,7 +107,7 @@ public final class InvokeOnMembers {
 
     private void retryFailedTargets()
             throws InterruptedException, ExecutionException {
-        List<Member> failedMembers = new LinkedList<Member>();
+        List<Member> failedMembers = new LinkedList<>();
         for (Map.Entry<Member, Object> memberResult : results.entrySet()) {
             Member member = memberResult.getKey();
             Object result = memberResult.getValue();

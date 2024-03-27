@@ -38,7 +38,7 @@ public final class EntryTaskSchedulerFactory {
     public static <K, V> EntryTaskScheduler<K, V> newScheduler(TaskScheduler taskScheduler,
                                                                ScheduledEntryProcessor<K, V> entryProcessor,
                                                                ScheduleType scheduleType) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(taskScheduler, entryProcessor, scheduleType);
+        return new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, scheduleType);
     }
 
 }

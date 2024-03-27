@@ -55,7 +55,7 @@ public class GcpDiscoveryStrategyFactory
 
     @Override
     public Collection<PropertyDefinition> getConfigurationProperties() {
-        List<PropertyDefinition> result = new ArrayList<PropertyDefinition>();
+        List<PropertyDefinition> result = new ArrayList<>();
         for (GcpProperties property : GcpProperties.values()) {
             result.add(property.getDefinition());
         }

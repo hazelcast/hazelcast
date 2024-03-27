@@ -46,8 +46,8 @@ import java.util.Map;
  */
 public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistration {
 
-    protected HashMap<String, BeanInfo> attributeMap = new HashMap<String, BeanInfo>();
-    protected HashMap<String, BeanInfo> operationMap = new HashMap<String, BeanInfo>();
+    protected HashMap<String, BeanInfo> attributeMap = new HashMap<>();
+    protected HashMap<String, BeanInfo> operationMap = new HashMap<>();
 
     protected final long updateIntervalSec;
 

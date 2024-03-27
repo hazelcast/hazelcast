@@ -64,8 +64,8 @@ public class InvocationSamplePlugin extends DiagnosticsPlugin {
     private final long samplePeriodMillis;
     private final long thresholdMillis;
     private final int maxCount;
-    private final ItemCounter<String> slowOccurrences = new ItemCounter<String>();
-    private final ItemCounter<String> occurrences = new ItemCounter<String>();
+    private final ItemCounter<String> slowOccurrences = new ItemCounter<>();
+    private final ItemCounter<String> occurrences = new ItemCounter<>();
 
     public InvocationSamplePlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));

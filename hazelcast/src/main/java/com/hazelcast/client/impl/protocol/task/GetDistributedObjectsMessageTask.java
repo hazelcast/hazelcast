@@ -43,7 +43,7 @@ public class GetDistributedObjectsMessageTask
             throws Exception {
         Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
 
-        List<DistributedObjectInfo> coll = new ArrayList<DistributedObjectInfo>(distributedObjects.size());
+        List<DistributedObjectInfo> coll = new ArrayList<>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {
             String name = DistributedObjectUtil.getName(distributedObject);
             coll.add(new DistributedObjectInfo(distributedObject.getServiceName(), name));

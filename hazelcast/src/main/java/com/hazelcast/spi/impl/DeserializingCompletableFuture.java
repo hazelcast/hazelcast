@@ -288,7 +288,7 @@ public class DeserializingCompletableFuture<V> extends InternalCompletableFuture
         if (!deserialize) {
             return super.whenCompleteAsync(new DeserializingBiConsumer<>(action), executor);
         } else {
-            return new DelegatingCompletableFuture<V>(serializationService,
+            return new DelegatingCompletableFuture<>(serializationService,
                     super.whenCompleteAsync(new DeserializingBiConsumer<>(action), executor));
         }
     }

@@ -42,7 +42,7 @@ public class GetAllScheduledOnMemberOperation
     @Override
     public void run()
             throws Exception {
-        List<ScheduledTaskHandler> handlers = new ArrayList<ScheduledTaskHandler>();
+        List<ScheduledTaskHandler> handlers = new ArrayList<>();
         DistributedScheduledExecutorService service = getService();
 
         populateScheduledForHolder(handlers, service, MEMBER_BIN);

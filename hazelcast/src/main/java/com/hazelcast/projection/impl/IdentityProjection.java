@@ -23,7 +23,7 @@ import com.hazelcast.projection.Projection;
 
 public final class IdentityProjection<I> implements Projection<I, I>, IdentifiedDataSerializable {
 
-    public static final IdentityProjection<Object> INSTANCE = new IdentityProjection<Object>();
+    public static final IdentityProjection<Object> INSTANCE = new IdentityProjection<>();
 
     private IdentityProjection() {
     }

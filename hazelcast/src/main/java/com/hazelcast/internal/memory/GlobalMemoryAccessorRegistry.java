@@ -57,7 +57,7 @@ public final class GlobalMemoryAccessorRegistry {
     public static final boolean AMEM_AVAILABLE;
 
     private static final Map<GlobalMemoryAccessorType, GlobalMemoryAccessor> STORAGE =
-            new EnumMap<GlobalMemoryAccessorType, GlobalMemoryAccessor>(GlobalMemoryAccessorType.class);
+            new EnumMap<>(GlobalMemoryAccessorType.class);
 
     static {
         final boolean unalignedAccessAllowed = AlignmentUtil.isUnalignedAccessAllowed();

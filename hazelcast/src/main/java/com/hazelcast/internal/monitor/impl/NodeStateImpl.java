@@ -119,12 +119,12 @@ public class NodeStateImpl implements NodeState {
             memberVersion = MemberVersion.of(jsonNodeVersion);
         }
 
-        weakSecretsConfigs = new HashMap<String, List<String>>();
+        weakSecretsConfigs = new HashMap<>();
         JsonValue jsonWeakConfigs = json.get("weakConfigs");
         if (jsonWeakConfigs != null) {
             JsonObject weakConfigsJsObj = jsonWeakConfigs.asObject();
             for (JsonObject.Member member : weakConfigsJsObj) {
-                List<String> weaknesses = new ArrayList<String>();
+                List<String> weaknesses = new ArrayList<>();
                 for (JsonValue value : member.getValue().asArray()) {
                     weaknesses.add(value.asString());
                 }

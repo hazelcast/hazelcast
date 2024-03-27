@@ -185,7 +185,7 @@ public final class IntHashSet implements Set<Integer> {
     }
 
     private <E extends Integer> boolean addAllCapture(final Collection<E> coll) {
-        final Predicate<E> p = new Predicate<E>() {
+        final Predicate<E> p = new Predicate<>() {
             @Override
             public boolean test(E x) {
                 return add(x);

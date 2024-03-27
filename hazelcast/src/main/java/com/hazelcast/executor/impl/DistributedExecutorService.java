@@ -71,7 +71,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             AtomicReferenceFieldUpdater.newUpdater(Processor.class, Boolean.class, "responseFlag");
 
     // package-local access to allow test to inspect the map's values
-    final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<String, ExecutorConfig>();
+    final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<>();
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
@@ -79,10 +79,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private final Set<String> shutdownExecutors
             = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final ExecutorStats executorStats = new ExecutorStats();
-    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
-            new ConstructorFunction<String, Object>() {
+            new ConstructorFunction<>() {
                 @Override
                 public Object createNew(String name) {
                     ExecutorConfig executorConfig = nodeEngine.getConfig().findExecutorConfig(name);

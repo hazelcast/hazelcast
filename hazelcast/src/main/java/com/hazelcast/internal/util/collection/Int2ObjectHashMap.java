@@ -444,7 +444,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
 
         @Override
         public ValueIterator<V> iterator() {
-            return new ValueIterator<V>();
+            return new ValueIterator<>();
         }
 
         @Override

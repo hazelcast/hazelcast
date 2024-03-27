@@ -99,20 +99,20 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
      * @param other other InflatableSet which should be cloned
      */
     private InflatableSet(InflatableSet<T> other) {
-        compactList = new ArrayList<T>(other.compactList.size());
+        compactList = new ArrayList<>(other.compactList.size());
         compactList.addAll(other.compactList);
         if (other.inflatedSet != null) {
-            inflatedSet = new HashSet<T>(other.inflatedSet);
+            inflatedSet = new HashSet<>(other.inflatedSet);
         }
         state = other.state;
     }
 
     public static <T> Builder<T> newBuilder(int initialCapacity) {
-        return new Builder<T>(initialCapacity);
+        return new Builder<>(initialCapacity);
     }
 
     public static <T> Builder<T> newBuilder(List<T> list) {
-        return new Builder<T>(list);
+        return new Builder<>(list);
     }
 
     @Override
@@ -198,7 +198,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
 
     private void inflateIfNeeded() {
         if (inflatedSet == null) {
-            inflatedSet = new HashSet<T>(compactList);
+            inflatedSet = new HashSet<>(compactList);
         }
     }
 

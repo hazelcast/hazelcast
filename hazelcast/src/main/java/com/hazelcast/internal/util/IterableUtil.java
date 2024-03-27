@@ -52,7 +52,7 @@ public final class IterableUtil {
      * Transform the Iterator by applying a function to each element
      **/
     public static <T, R> Iterator<R> map(Iterator<T> iterator, Function<T, R> mapper) {
-        return new Iterator<R>() {
+        return new Iterator<>() {
             @Override
             public boolean hasNext() {
                 return iterator.hasNext();
@@ -80,7 +80,7 @@ public final class IterableUtil {
         Iterator<T> givenIterator = iterable.iterator();
 
         @SuppressWarnings("checkstyle:anoninnerlength")
-        Iterator<T> filteringIterator = new Iterator<T>() {
+        Iterator<T> filteringIterator = new Iterator<>() {
             private T next;
 
             @Override
@@ -133,7 +133,7 @@ public final class IterableUtil {
     }
 
     public static <R> Iterator<R> limit(final Iterator<R> iterator, final int limit) {
-        return new Iterator<R>() {
+        return new Iterator<>() {
             private int iterated;
 
             @Override
@@ -170,7 +170,7 @@ public final class IterableUtil {
             return iterator;
         }
 
-        return new UnmodifiableIterator<T>() {
+        return new UnmodifiableIterator<>() {
             @Override
             public boolean hasNext() {
                 return iterator.hasNext();

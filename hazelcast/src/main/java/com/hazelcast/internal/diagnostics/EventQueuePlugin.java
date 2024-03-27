@@ -76,7 +76,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty SAMPLES
             = new HazelcastProperty("hazelcast.diagnostics.event.queue.samples", 100);
 
-    private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
+    private final ItemCounter<String> occurrenceMap = new ItemCounter<>();
     private final Random random = new Random();
     private final NumberFormat defaultFormat = NumberFormat.getPercentInstance();
 
@@ -177,7 +177,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
      * @return the number of samples, or -1 if there were not sufficient samples
      */
     private int sample(BlockingQueue<Runnable> queue) {
-        ArrayList<Runnable> events = new ArrayList<Runnable>(queue);
+        ArrayList<Runnable> events = new ArrayList<>(queue);
         eventCount = events.size();
         if (eventCount < threshold) {
             return -1;

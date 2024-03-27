@@ -207,7 +207,7 @@ public class NetworkConfig {
 
     public NetworkConfig addOutboundPortDefinition(String portDef) {
         if (outboundPortDefinitions == null) {
-            outboundPortDefinitions = new HashSet<String>();
+            outboundPortDefinitions = new HashSet<>();
         }
         outboundPortDefinitions.add(portDef);
         return this;
@@ -224,7 +224,7 @@ public class NetworkConfig {
 
     public NetworkConfig addOutboundPort(int port) {
         if (outboundPorts == null) {
-            outboundPorts = new HashSet<Integer>();
+            outboundPorts = new HashSet<>();
         }
         outboundPorts.add(port);
         return this;

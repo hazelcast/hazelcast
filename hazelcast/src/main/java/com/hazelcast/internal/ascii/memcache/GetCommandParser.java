@@ -34,7 +34,7 @@ public class GetCommandParser implements CommandParser {
             decoder.publishRequest(r);
         } else {
             StringTokenizer st = new StringTokenizer(key);
-            List<String> keys = new ArrayList<String>();
+            List<String> keys = new ArrayList<>();
             while (st.hasMoreTokens()) {
                 String singleKey = st.nextToken();
                 keys.add(singleKey);

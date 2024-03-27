@@ -82,7 +82,7 @@ public final class DistinctValuesAggregator<I, R>
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readString();
         int count = in.readInt();
-        this.values = new CanonicalizingHashSet<R>(MapUtil.calculateInitialCapacity(count));
+        this.values = new CanonicalizingHashSet<>(MapUtil.calculateInitialCapacity(count));
         for (int i = 0; i < count; i++) {
             R value = in.readObject();
             values.addInternal(value);

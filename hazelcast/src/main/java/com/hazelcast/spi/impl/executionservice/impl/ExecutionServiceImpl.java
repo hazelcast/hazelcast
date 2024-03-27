@@ -85,7 +85,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> durableExecutors = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
+            new ConstructorFunction<>() {
                 @Override
                 public ManagedExecutorService createNew(String name) {
                     ExecutorConfig config = nodeEngine.getConfig().findExecutorConfig(name);
@@ -94,7 +94,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
     private final ConstructorFunction<String, ManagedExecutorService> durableConstructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
+            new ConstructorFunction<>() {
                 @Override
                 public ManagedExecutorService createNew(String name) {
                     DurableExecutorConfig cfg = nodeEngine.getConfig().findDurableExecutorConfig(name);
@@ -102,7 +102,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
     private final ConstructorFunction<String, ManagedExecutorService> scheduledDurableConstructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
+            new ConstructorFunction<>() {
                 @Override
                 public ManagedExecutorService createNew(String name) {
                     ScheduledExecutorConfig cfg = nodeEngine.getConfig().findScheduledExecutorConfig(name);

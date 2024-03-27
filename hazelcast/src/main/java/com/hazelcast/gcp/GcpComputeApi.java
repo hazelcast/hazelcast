@@ -54,7 +54,7 @@ class GcpComputeApi {
                 .get()
                 .getBody();
 
-        List<GcpAddress> result = new ArrayList<GcpAddress>();
+        List<GcpAddress> result = new ArrayList<>();
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("items"))) {
             if ("RUNNING".equals(item.asObject().get("status").asString())) {
                 String privateAddress = null;

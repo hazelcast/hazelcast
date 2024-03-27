@@ -39,7 +39,7 @@ public class ListConfigReadOnly extends ListConfig {
     public List<ItemListenerConfig> getItemListenerConfigs() {
         final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
         final List<ItemListenerConfig> readOnlyItemListenerConfigs =
-                new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
+                new ArrayList<>(itemListenerConfigs.size());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             readOnlyItemListenerConfigs.add(new ItemListenerConfigReadOnly(itemListenerConfig));
         }

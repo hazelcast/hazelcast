@@ -264,7 +264,7 @@ public final class FutureUtil {
         // Common deadline for all futures
         long deadline = System.nanoTime() + overallTimeoutNanos;
 
-        List<V> results = new ArrayList<V>(futures.size());
+        List<V> results = new ArrayList<>(futures.size());
         for (Future<V> future : futures) {
             try {
                 long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, deadline);

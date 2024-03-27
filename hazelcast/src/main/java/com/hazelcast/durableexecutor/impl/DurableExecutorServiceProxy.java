@@ -269,7 +269,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
             sequence = future.join();
         } catch (CompletionException t) {
             InternalCompletableFuture<T> completedFuture = completedExceptionally(t.getCause());
-            return new DurableExecutorServiceDelegateFuture<T>(completedFuture, serializationService, null, -1);
+            return new DurableExecutorServiceDelegateFuture<>(completedFuture, serializationService, null, -1);
         } catch (CancellationException e) {
             return new DurableExecutorServiceDelegateFuture<>(future, serializationService, null, -1);
         }

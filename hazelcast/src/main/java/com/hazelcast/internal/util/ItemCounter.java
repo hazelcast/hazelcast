@@ -32,7 +32,7 @@ import static java.util.Collections.sort;
  */
 public final class ItemCounter<T> {
 
-    protected final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
+    protected final Map<T, MutableLong> map = new HashMap<>();
     private long total;
 
     /**
@@ -61,7 +61,7 @@ public final class ItemCounter<T> {
      * @return the list of keys
      */
     public List<T> descendingKeys() {
-        List<T> list = new ArrayList<T>(map.keySet());
+        List<T> list = new ArrayList<>(map.keySet());
 
         sort(list, new Comparator<T>() {
             @Override

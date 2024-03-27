@@ -53,9 +53,9 @@ class HazelcastOSGiServiceImpl
     private final BundleContext ownerBundleContext;
     private final String id;
     private final ConcurrentMap<HazelcastOSGiInstance, ServiceRegistration> instanceServiceRegistrationMap
-            = new ConcurrentHashMap<HazelcastOSGiInstance, ServiceRegistration>();
+            = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, HazelcastOSGiInstance> instanceMap
-            = new ConcurrentHashMap<String, HazelcastOSGiInstance>();
+            = new ConcurrentHashMap<>();
 
     // No need to "volatile" since this field is guarded and happens-before is handled by
     // `synchronized` blocks of `serviceMutex` instance.
@@ -256,7 +256,7 @@ class HazelcastOSGiServiceImpl
         // No need to synchronization since this is not a mutating operation on instances.
         // If at this time service is deactivated, this method just returns terminated instances.
 
-        return new HashSet<HazelcastOSGiInstance>(instanceMap.values());
+        return new HashSet<>(instanceMap.values());
     }
 
     @Override

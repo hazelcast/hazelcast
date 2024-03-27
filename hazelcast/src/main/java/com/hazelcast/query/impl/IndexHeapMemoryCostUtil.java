@@ -51,7 +51,7 @@ public final class IndexHeapMemoryCostUtil {
     private static final Map<Class, Integer> KNOWN_FINAL_CLASSES_COSTS;
 
     static {
-        KNOWN_FINAL_CLASSES_COSTS = new HashMap<Class, Integer>();
+        KNOWN_FINAL_CLASSES_COSTS = new HashMap<>();
         KNOWN_FINAL_CLASSES_COSTS.put(Boolean.class, 16);
         KNOWN_FINAL_CLASSES_COSTS.put(Character.class, 16);
         KNOWN_FINAL_CLASSES_COSTS.put(Byte.class, 16);

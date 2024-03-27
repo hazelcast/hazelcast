@@ -41,11 +41,11 @@ public class SecurityConfig {
 
     private boolean enabled;
 
-    private List<SecurityInterceptorConfig> securityInterceptorConfigs = new ArrayList<SecurityInterceptorConfig>();
+    private List<SecurityInterceptorConfig> securityInterceptorConfigs = new ArrayList<>();
 
     private PermissionPolicyConfig clientPolicyConfig = new PermissionPolicyConfig();
 
-    private Set<PermissionConfig> clientPermissionConfigs = new HashSet<PermissionConfig>();
+    private Set<PermissionConfig> clientPermissionConfigs = new HashSet<>();
 
     private Map<String, RealmConfig> realmConfigs = new HashMap<>();
 

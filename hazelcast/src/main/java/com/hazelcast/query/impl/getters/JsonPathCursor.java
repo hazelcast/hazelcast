@@ -62,7 +62,7 @@ public class JsonPathCursor {
      * @param attributePath
      */
     public static JsonPathCursor createCursor(String attributePath) {
-        ArrayList<Triple> triples = new ArrayList<Triple>(DEFAULT_PATH_ELEMENT_COUNT);
+        ArrayList<Triple> triples = new ArrayList<>(DEFAULT_PATH_ELEMENT_COUNT);
         int start = 0;
         int end;
         while (start < attributePath.length()) {

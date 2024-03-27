@@ -80,7 +80,7 @@ public class IdBatch implements Iterable<Long> {
      */
     @Nonnull
     public Iterator<Long> iterator() {
-        return new Iterator<Long>() {
+        return new Iterator<>() {
             private long base2 = base;
             private int remaining = batchSize;
 

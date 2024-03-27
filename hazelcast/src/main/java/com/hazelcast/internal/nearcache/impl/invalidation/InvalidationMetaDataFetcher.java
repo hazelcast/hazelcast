@@ -139,7 +139,7 @@ public abstract class InvalidationMetaDataFetcher {
     }
 
     private List<String> getDataStructureNames(ConcurrentMap<String, RepairingHandler> handlers) {
-        List<String> names = new ArrayList<String>(handlers.size());
+        List<String> names = new ArrayList<>(handlers.size());
         for (RepairingHandler handler : handlers.values()) {
             names.add(handler.getName());
         }

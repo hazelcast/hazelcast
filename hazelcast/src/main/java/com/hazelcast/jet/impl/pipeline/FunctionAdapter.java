@@ -242,7 +242,7 @@ public class FunctionAdapter {
         @Nonnull @Override
         public Iterator<Object> iterator() {
             Iterator<Object> iterator = wrapped.iterator();
-            return new Iterator<Object>() {
+            return new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     return iterator.hasNext();

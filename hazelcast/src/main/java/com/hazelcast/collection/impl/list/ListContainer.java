@@ -133,7 +133,7 @@ public class ListContainer extends CollectionContainer {
     public Map<Long, Data> addAll(int index, List<Data> valueList) {
         final int size = valueList.size();
         final Map<Long, Data> map = createHashMap(size);
-        List<CollectionItem> list = new ArrayList<CollectionItem>(size);
+        List<CollectionItem> list = new ArrayList<>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
             list.add(new CollectionItem(itemId, value));
@@ -154,7 +154,7 @@ public class ListContainer extends CollectionContainer {
         } else {
             list = getCollection().subList(from, to);
         }
-        final ArrayList<Data> sub = new ArrayList<Data>(list.size());
+        final ArrayList<Data> sub = new ArrayList<>(list.size());
         for (CollectionItem item : list) {
             sub.add(item.getValue());
         }
@@ -165,13 +165,13 @@ public class ListContainer extends CollectionContainer {
     public List<CollectionItem> getCollection() {
         if (itemList == null) {
             if (itemMap != null && !itemMap.isEmpty()) {
-                itemList = new ArrayList<CollectionItem>(itemMap.values());
+                itemList = new ArrayList<>(itemMap.values());
                 sort(itemList);
                 CollectionItem lastItem = itemList.get(itemList.size() - 1);
                 setId(lastItem.getItemId() + ID_PROMOTION_OFFSET);
                 itemMap.clear();
             } else {
-                itemList = new ArrayList<CollectionItem>(INITIAL_CAPACITY);
+                itemList = new ArrayList<>(INITIAL_CAPACITY);
             }
             itemMap = null;
         }
@@ -188,7 +188,7 @@ public class ListContainer extends CollectionContainer {
                 }
                 itemList.clear();
             } else {
-                itemMap = new HashMap<Long, CollectionItem>(INITIAL_CAPACITY);
+                itemMap = new HashMap<>(INITIAL_CAPACITY);
             }
             itemList = null;
         }

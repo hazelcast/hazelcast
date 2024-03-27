@@ -78,7 +78,7 @@ final class InvokeOnPartitions {
         for (List<Integer> mp : memberPartitions.values()) {
             actualPartitionCount += mp.size();
         }
-        this.partitionResults = new AtomicReferenceArray<Object>(partitionCount);
+        this.partitionResults = new AtomicReferenceArray<>(partitionCount);
         this.latch = new AtomicInteger(actualPartitionCount);
         this.future = new CompletableFuture();
         this.internalAsyncExecutor = operationService.nodeEngine.getExecutionService()

@@ -100,7 +100,7 @@ public class FlatteningVisitor extends AbstractVisitor {
         predicates[position] = subPredicates[0];
         for (int j = 1; j < subPredicates.length; j++) {
             if (store == null) {
-                store = new ArrayList<Predicate>();
+                store = new ArrayList<>();
             }
             store.add(subPredicates[j]);
         }

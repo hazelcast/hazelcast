@@ -116,7 +116,7 @@ class ExecutionCallbackAdapterFactory {
     }
 
     <V> ExecutionCallback<V> callbackFor(Member member) {
-        return new InnerExecutionCallback<V>(member);
+        return new InnerExecutionCallback<>(member);
     }
 
     private static final class ValueWrapper {

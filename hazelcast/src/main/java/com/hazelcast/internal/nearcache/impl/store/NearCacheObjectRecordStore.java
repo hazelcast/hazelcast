@@ -56,9 +56,9 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
         value = toValue(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
-            return new NearCacheObjectRecord<V>(value, creationTime, creationTime + timeToLiveMillis);
+            return new NearCacheObjectRecord<>(value, creationTime, creationTime + timeToLiveMillis);
         } else {
-            return new NearCacheObjectRecord<V>(value, creationTime, TIME_NOT_SET);
+            return new NearCacheObjectRecord<>(value, creationTime, TIME_NOT_SET);
         }
     }
 

@@ -42,7 +42,7 @@ public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
             }
             group.addMember(member);
         }
-        return new HashSet<MemberGroup>(groups.values());
+        return new HashSet<>(groups.values());
     }
 }
 

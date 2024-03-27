@@ -104,7 +104,7 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
     private void enableStatisticManagementOnOtherNodes(String cacheName, boolean statOrMan, boolean enabled) {
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<Future> futures = new ArrayList<Future>();
+        Collection<Future> futures = new ArrayList<>();
         for (Member member : nodeEngine.getClusterService().getMembers()) {
             if (!member.localMember()) {
                 CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);

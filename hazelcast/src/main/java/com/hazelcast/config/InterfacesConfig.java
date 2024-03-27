@@ -27,7 +27,7 @@ public class InterfacesConfig {
 
     private boolean enabled;
 
-    private final Set<String> interfaceSet = new HashSet<String>();
+    private final Set<String> interfaceSet = new HashSet<>();
 
     /**
      * @return {@code true} if the interface is enabled, {@code false} otherwise

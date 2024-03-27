@@ -40,7 +40,7 @@ public class InternalListMultiMap<K, V> {
     private final Map<K, List<V>> backingMap;
 
     public InternalListMultiMap() {
-        this.backingMap = new HashMap<K, List<V>>();
+        this.backingMap = new HashMap<>();
     }
 
     /**

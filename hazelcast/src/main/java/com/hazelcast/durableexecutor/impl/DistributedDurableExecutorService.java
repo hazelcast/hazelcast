@@ -64,7 +64,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
-            new ConstructorFunction<String, Object>() {
+            new ConstructorFunction<>() {
                 @Override
                 public Object createNew(String name) {
                     DurableExecutorConfig executorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);

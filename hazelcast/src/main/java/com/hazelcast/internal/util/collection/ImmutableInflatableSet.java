@@ -39,7 +39,7 @@ public final class ImmutableInflatableSet<T> extends InflatableSet<T> {
     }
 
     public static <T> ImmutableSetBuilder<T> newImmutableSetBuilder(int initialCapacity) {
-        return new ImmutableSetBuilder<T>(initialCapacity);
+        return new ImmutableSetBuilder<>(initialCapacity);
     }
 
     @Override

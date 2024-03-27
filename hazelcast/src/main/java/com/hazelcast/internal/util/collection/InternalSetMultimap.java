@@ -41,7 +41,7 @@ public class InternalSetMultimap<K, V> {
     private final Map<K, Set<V>> backingMap;
 
     public InternalSetMultimap() {
-        this.backingMap = new HashMap<K, Set<V>>();
+        this.backingMap = new HashMap<>();
     }
 
     /**
