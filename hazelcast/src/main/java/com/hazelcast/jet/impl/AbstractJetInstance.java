@@ -53,7 +53,6 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -458,8 +457,11 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
         @Nonnull
         private JobConfig getConfig() {
-            return Objects.requireNonNullElseGet(config, JobConfig::new)
-                    .setArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR, memberSelector);
+            JobConfig jobConfig = config != null ? config : new JobConfig();
+            if (memberSelector != null) {
+                jobConfig.setArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR, memberSelector);
+            }
+            return jobConfig;
         }
 
         @Override

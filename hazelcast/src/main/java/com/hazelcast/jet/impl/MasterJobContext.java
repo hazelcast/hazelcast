@@ -260,11 +260,12 @@ public class MasterJobContext {
      */
     void tryStartJob() {
         JobCoordinationService coordinator = mc.coordinationService();
-        MembersView membersView = Util.getMembersView(mc.nodeEngine());
 
         mc.coordinationService()
           .submitToCoordinatorThread(() -> {
               try {
+                  MembersView membersView = mc.membersView();
+
                   executionStartTime = System.currentTimeMillis();
                   JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                   jobExecRec.markExecuted();
@@ -344,7 +345,7 @@ public class MasterJobContext {
         Set<MemberInfo> participants = mc.executionPlanMap().keySet();
         Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
         mc.coordinationService().jobInvocationObservers.forEach(obs ->
-                obs.onLightJobInvocation(mc.jobId(), participants, dag, mc.jobConfig()));
+                obs.onJobInvocation(mc.jobId(), mc.executionPlanMap(), dag, mc.jobConfig()));
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 InitExecutionOperation.forNormalJob(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
                         participants, mc.nodeEngine().getSerializationService().toData(plan));

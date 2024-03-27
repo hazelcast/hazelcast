@@ -19,9 +19,11 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.spi.annotation.Beta;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,6 +38,7 @@ import java.util.Set;
 @Beta
 public interface JobInvocationObserver {
 
-    void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
+    void onJobInvocation(long jobId, Map<MemberInfo, ExecutionPlan> executionPlanMap, DAG dag, JobConfig jobConfig);
+
     void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
 }

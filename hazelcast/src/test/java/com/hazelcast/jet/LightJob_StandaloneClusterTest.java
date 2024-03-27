@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,8 +46,8 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
         HazelcastInstance liteInst = createHazelcastInstance(smallInstanceConfig().setLiteMember(true));
 
         assertThatThrownBy(() -> liteInst.getJet().newLightJob(batchDag()).join())
-                .hasRootCauseInstanceOf(JetException.class)
-                .hasRootCauseMessage("No data member with version equal to the coordinator version found");
+                .hasRootCauseInstanceOf(NoDataMemberInClusterException.class)
+                .hasRootCauseMessage("Partitions can't be assigned since all nodes in the cluster are lite members");
     }
 
     @Test

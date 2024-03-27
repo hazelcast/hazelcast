@@ -37,8 +37,7 @@ import static java.util.Collections.unmodifiableCollection;
  * A special, immutable {@link MemberImpl} map type,
  * that allows querying members using address or UUID.
  */
-final class MemberMap {
-
+public final class MemberMap {
     static final int SINGLETON_MEMBER_LIST_VERSION = 1;
 
     private final int version;
@@ -194,7 +193,7 @@ final class MemberMap {
         return uuidToMemberMap.containsKey(uuid);
     }
 
-    Set<MemberImpl> getMembers() {
+    public Set<MemberImpl> getMembers() {
         return members;
     }
 
@@ -206,7 +205,7 @@ final class MemberMap {
         return members.size();
     }
 
-    int getVersion() {
+    public int getVersion() {
         return version;
     }
 

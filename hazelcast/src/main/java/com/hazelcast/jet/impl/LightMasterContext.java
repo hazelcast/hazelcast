@@ -33,7 +33,6 @@ import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -131,15 +130,14 @@ public final class LightMasterContext {
         String jobIdString = idToString(jobId);
 
         // find a subset of members with version equal to the coordinator version.
-        MembersView membersView = Util.getMembersView(nodeEngine);
+        MembersView membersView = coordinationService.membersView(jobConfig);
         Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         List<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion)
-                        && !m.isLiteMember()
                         && !coordinationService.isMemberShuttingDown(m.getUuid()))
                 .collect(Collectors.toList());
         if (members.isEmpty()) {
-            throw new JetException("No data member with version equal to the coordinator version found");
+            throw new JetException("No members with version equal to the coordinator version found");
         }
         if (members.size() < membersView.size()) {
             logger.fine("Light job %s will run on a subset of members: %d out of %d members with version %s",
@@ -353,7 +351,7 @@ public final class LightMasterContext {
         if (result != null
                 && !(result instanceof CancellationException)
                 && !(result instanceof JobTerminateRequestedException)) {
-            // We must wrap the exception. Otherwise the error will become the error of the SubmitJobOp. And
+            // We must wrap the exception. Otherwise, the error will become the error of the SubmitJobOp. And
             // if the error is, for example, MemberLeftException, the job will be resubmitted even though it
             // was already running. Fixes https://github.com/hazelcast/hazelcast/issues/18844
             result = new JetException("Execution on a member failed: " + result, result);

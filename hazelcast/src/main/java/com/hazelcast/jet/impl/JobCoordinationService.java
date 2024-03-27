@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -109,6 +110,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -230,6 +232,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             JobConfig jobConfig,
             Subject subject
     ) {
+        checkIsolatedJobPermission(jobConfig);
+
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
@@ -321,6 +325,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             JobConfig jobConfig,
             Subject subject
     ) {
+        checkIsolatedJobPermission(jobConfig);
+
         if (deserializedJobDefinition == null) {
             deserializedJobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         }
@@ -356,6 +362,13 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                                 unscheduleJobTimeout(jobId);
                             });
                 }, coordinationExecutor());
+    }
+
+    protected void checkIsolatedJobPermission(JobConfig config) {
+        if (config.getArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR) != null) {
+            throw new UnsupportedOperationException(
+                    "The Isolated Jobs feature is only available in Hazelcast Enterprise Edition.");
+        }
     }
 
     public long getJobSubmittedCount() {
@@ -1079,16 +1092,20 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         });
     }
 
+    MembersView membersView(JobConfig jobConfig) {
+        return Util.getMembersView(nodeEngine);
+    }
+
     void onMemberAdded(MemberImpl addedMember) {
         // the member can re-join with the same UUID in certain scenarios
         membersShuttingDown.remove(addedMember.getUuid());
         removedMembers.remove(addedMember.getUuid());
+        scheduleScaleUp(config.getScaleUpDelayMillis());
         if (addedMember.isLiteMember()) {
             return;
         }
 
         updateQuorumValues();
-        scheduleScaleUp(config.getScaleUpDelayMillis());
     }
 
     void onMemberRemoved(UUID uuid) {

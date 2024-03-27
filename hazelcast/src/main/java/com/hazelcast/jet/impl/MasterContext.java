@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -290,6 +291,10 @@ public class MasterContext implements DynamicMetricsProvider {
 
     Map<MemberInfo, ExecutionPlan> executionPlanMap() {
         return executionPlanMap;
+    }
+
+    MembersView membersView() {
+        return coordinationService.membersView(jobConfig());
     }
 
     boolean hasTimeout() {

@@ -185,7 +185,7 @@ public class MembershipManager {
         return (Set) memberMapRef.get().getMembers();
     }
 
-    MemberMap getMemberMap() {
+    public MemberMap getMemberMap() {
         return memberMapRef.get();
     }
 

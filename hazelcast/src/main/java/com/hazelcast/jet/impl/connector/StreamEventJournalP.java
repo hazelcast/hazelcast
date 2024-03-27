@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
@@ -64,6 +65,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
@@ -395,6 +397,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
+            checkUseFullCluster(context);
+
             if (isRemote(dataConnectionName, clientXml)) {
                 initRemote(context);
             } else {
@@ -432,8 +436,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
             // Return a new factory per member owning the given partitions
             return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address),
-                    dataConnectionName, clientXml, eventJournalReaderSupplier, predicate, projection, initialPos,
-                    eventTimePolicy);
+                    dataConnectionName, clientXml, eventJournalReaderSupplier,
+                    predicate, projection, initialPos, eventTimePolicy);
         }
 
         @Override
@@ -452,6 +456,19 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         public boolean closeIsCooperative() {
             return true;
+        }
+
+        private void checkUseFullCluster(Context context) {
+            Set<Address> dataMembers = context.hazelcastInstance()
+                    .getCluster()
+                    .getMembers()
+                    .stream()
+                    .filter(m -> !m.isLiteMember())
+                    .map(Member::getAddress)
+                    .collect(Collectors.toSet());
+            if (!context.partitionAssignment().keySet().containsAll(dataMembers)) {
+                throw new JetException("IMap Journal can only be used if all data members participate in job execution");
+            }
         }
     }
 
