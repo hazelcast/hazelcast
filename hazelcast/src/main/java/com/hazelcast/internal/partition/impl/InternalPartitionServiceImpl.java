@@ -50,6 +50,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
@@ -741,11 +742,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
      * @see MigrationManager#scheduleActiveMigrationFinalization(MigrationInfo)
      * @return whether or not the new partition table is accepted
      */
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private boolean updatePartitionsAndFinalizeMigrations(InternalPartition[] partitions,
             Collection<MigrationInfo> completedMigrations, Address sender) {
 
         boolean applied = false;
         boolean accepted = false;
+        PartitionIdSet changedOwnerPartitions = new PartitionIdSet(partitionCount);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartition newPartition = partitions[partitionId];
@@ -776,7 +779,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             applied = true;
             accepted = true;
-            currentPartition.setReplicasAndVersion(newPartition);
+            if (currentPartition.setReplicasAndVersion(newPartition)) {
+                changedOwnerPartitions.add(partitionId);
+            }
         }
 
         for (MigrationInfo migration : completedMigrations) {
@@ -786,10 +791,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             }
         }
 
-        // Manually trigger partition stamp calculation.
         // Because partition versions are explicitly set to master's versions
-        // while applying the partition table updates.
-        partitionStateManager.updateStamp();
+        // while applying the partition table updates, we need to
+        // (1) cancel any ongoing replica syncs (for partitions whose owners changed) and
+        // (2) update the partition state stamp.
+        partitionStateManager.partitionOwnersChanged(changedOwnerPartitions);
 
         if (logger.isFineEnabled()) {
             if (applied) {
