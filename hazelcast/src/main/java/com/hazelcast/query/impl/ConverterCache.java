@@ -35,7 +35,7 @@ public final class ConverterCache {
 
     private final IndexRegistry indexRegistry;
 
-    private final Map<String, TypeConverter> cache = new ConcurrentHashMap<String, TypeConverter>();
+    private final Map<String, TypeConverter> cache = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new converters cache for the given indexes.

@@ -589,7 +589,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         void setTable(HashEntry<K, V>[] newTable) {
             threshold = (int) (newTable.length * loadFactor);
             table = newTable;
-            refQueue = new ReferenceQueue<Object>();
+            refQueue = new ReferenceQueue<>();
         }
 
         /**
@@ -601,7 +601,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
         HashEntry<K, V> newHashEntry(K key, int hash, HashEntry<K, V> next, V value) {
-            return new HashEntry<K, V>(key, hash, next, value, keyType, valueType, refQueue);
+            return new HashEntry<>(key, hash, next, value, keyType, valueType, refQueue);
         }
 
         /**
@@ -987,7 +987,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                     }
                     ++modCount;
                     // replace the reference queue to avoid unnecessary stale cleanups
-                    refQueue = new ReferenceQueue<Object>();
+                    refQueue = new ReferenceQueue<>();
                     // write-volatile
                     count = 0;
                 } finally {
@@ -1054,7 +1054,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
         identityComparisons = options != null && options.contains(Option.IDENTITY_COMPARISONS);
         for (int i = 0; i < this.segments.length; ++i) {
-            this.segments[i] = new Segment<K, V>(cap, loadFactor, keyType, valueType, identityComparisons);
+            this.segments[i] = new Segment<>(cap, loadFactor, keyType, valueType, identityComparisons);
         }
     }
 

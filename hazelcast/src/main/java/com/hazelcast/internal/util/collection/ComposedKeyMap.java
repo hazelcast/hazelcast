@@ -39,7 +39,7 @@ public class ComposedKeyMap<K1, K2, V> {
     private final Map<K1, Map<K2, V>> backingMap;
 
     public ComposedKeyMap() {
-        backingMap = new HashMap<K1, Map<K2, V>>();
+        backingMap = new HashMap<>();
     }
 
     public V put(K1 key1, K2 key2, V value) {

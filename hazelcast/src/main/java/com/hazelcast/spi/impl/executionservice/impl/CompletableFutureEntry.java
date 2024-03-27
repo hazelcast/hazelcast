@@ -25,7 +25,7 @@ final class CompletableFutureEntry<V> {
     final InternalCompletableFuture<V> completableFuture;
 
     CompletableFutureEntry(Future<V> future) {
-        this.completableFuture = new BasicCompletableFuture<V>(future);
+        this.completableFuture = new BasicCompletableFuture<>(future);
     }
 
     boolean processState() {

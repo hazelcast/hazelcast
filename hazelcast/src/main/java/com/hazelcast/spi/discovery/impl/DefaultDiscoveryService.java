@@ -192,7 +192,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
                 .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, classloader);
 
         // Collect possible factories
-        List<DiscoveryStrategyFactory> factories = new ArrayList<DiscoveryStrategyFactory>();
+        List<DiscoveryStrategyFactory> factories = new ArrayList<>();
         while (iterator.hasNext()) {
             factories.add(iterator.next());
         }

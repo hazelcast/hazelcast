@@ -39,7 +39,7 @@ public class CollectRemoteTransactionsOperation extends AbstractXAOperation {
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
         Set<SerializableXID> xids = xaService.getPreparedXids();
-        List<Data> xidSet = new ArrayList<Data>();
+        List<Data> xidSet = new ArrayList<>();
         for (SerializableXID xid : xids) {
             xidSet.add(nodeEngine.toData(xid));
         }

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 public final class ConcurrentItemCounter<T> {
 
-    protected final ConcurrentMap<T, AtomicLong> map = new ConcurrentHashMap<T, AtomicLong>();
+    protected final ConcurrentMap<T, AtomicLong> map = new ConcurrentHashMap<>();
 
     /**
      * Returns the total counts.

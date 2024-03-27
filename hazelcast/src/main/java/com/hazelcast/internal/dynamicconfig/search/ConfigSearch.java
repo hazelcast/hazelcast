@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount"})
 public final class ConfigSearch {
-    private static final Map<Class, ConfigSupplier> CONFIG_SUPPLIERS = new ConcurrentHashMap<Class, ConfigSupplier>();
+    private static final Map<Class, ConfigSupplier> CONFIG_SUPPLIERS = new ConcurrentHashMap<>();
 
     private ConfigSearch() {
     }

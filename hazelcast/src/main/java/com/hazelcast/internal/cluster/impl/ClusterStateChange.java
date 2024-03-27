@@ -76,7 +76,7 @@ public class ClusterStateChange<T> implements IdentifiedDataSerializable {
     }
 
     public static <T> ClusterStateChange<T> from(T object) {
-        return new ClusterStateChange<T>(object);
+        return new ClusterStateChange<>(object);
     }
 
     @Override

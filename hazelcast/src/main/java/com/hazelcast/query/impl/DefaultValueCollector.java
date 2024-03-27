@@ -33,7 +33,7 @@ public class DefaultValueCollector implements ValueCollector {
         } else if (value == null) {
             value = valueToCollect;
         } else {
-            values = new ArrayList<Object>();
+            values = new ArrayList<>();
             values.add(value);
             values.add(valueToCollect);
             value = null;

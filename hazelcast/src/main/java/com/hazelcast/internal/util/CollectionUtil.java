@@ -89,7 +89,7 @@ public final class CollectionUtil {
      */
     public static <C> Collection<Data> objectToDataCollection(Collection<C> collection,
                                                               SerializationService serializationService) {
-        List<Data> dataCollection = new ArrayList<Data>(collection.size());
+        List<Data> dataCollection = new ArrayList<>(collection.size());
         objectToDataCollection(collection, dataCollection, serializationService, null);
         return dataCollection;
     }
@@ -136,7 +136,7 @@ public final class CollectionUtil {
      */
     public static List<Integer> asIntegerList(int[] array) {
         checkNotNull(array, "null array");
-        return new AbstractList<Integer>() {
+        return new AbstractList<>() {
             @Override
             public Integer get(int index) {
                 return array[index];

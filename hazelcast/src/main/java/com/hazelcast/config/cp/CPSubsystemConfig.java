@@ -300,12 +300,12 @@ public class CPSubsystemConfig {
     /**
      * Configurations for CP {@link ISemaphore} instances.
      */
-    private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
+    private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<>();
 
     /**
      * Configurations for {@link FencedLock} instances.
      */
-    private final Map<String, FencedLockConfig> lockConfigs = new ConcurrentHashMap<String, FencedLockConfig>();
+    private final Map<String, FencedLockConfig> lockConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 

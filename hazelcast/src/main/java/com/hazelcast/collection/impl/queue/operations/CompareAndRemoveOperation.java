@@ -110,7 +110,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         super.readInternal(in);
         retain = in.readBoolean();
         int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
+        dataList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readData(in));
         }

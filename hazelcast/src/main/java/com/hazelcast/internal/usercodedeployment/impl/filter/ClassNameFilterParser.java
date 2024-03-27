@@ -44,7 +44,7 @@ public final class ClassNameFilterParser {
         Set<String> whitelistSet = parsePrefixes(whitelistedPrefixes);
         if (!whitelistSet.isEmpty()) {
             ClassWhitelistFilter whitelistFilter = new ClassWhitelistFilter(whitelistSet.toArray(new String[0]));
-            classFilter = new AndFilter<String>(classFilter, whitelistFilter);
+            classFilter = new AndFilter<>(classFilter, whitelistFilter);
         }
         return classFilter;
     }
@@ -58,7 +58,7 @@ public final class ClassNameFilterParser {
 
     private static Set<String> parsePrefixes(String prefixes) {
         if (prefixes == null) {
-            return new HashSet<String>();
+            return new HashSet<>();
         }
 
         prefixes = prefixes.trim();

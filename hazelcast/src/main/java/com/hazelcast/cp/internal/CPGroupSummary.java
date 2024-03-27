@@ -96,7 +96,7 @@ public class CPGroupSummary implements CPGroup, IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readObject();
         int initialMemberCount = in.readInt();
-        Set<RaftEndpoint> initialMembers = new LinkedHashSet<RaftEndpoint>();
+        Set<RaftEndpoint> initialMembers = new LinkedHashSet<>();
         for (int i = 0; i < initialMemberCount; i++) {
             RaftEndpoint member = in.readObject();
             initialMembers.add(member);
@@ -104,7 +104,7 @@ public class CPGroupSummary implements CPGroup, IdentifiedDataSerializable {
         this.initialMembers = unmodifiableSet(initialMembers);
 
         int memberCount = in.readInt();
-        members = new LinkedHashSet<CPMember>(memberCount);
+        members = new LinkedHashSet<>(memberCount);
         for (int i = 0; i < memberCount; i++) {
             CPMember member = in.readObject();
             members.add(member);

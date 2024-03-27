@@ -53,7 +53,7 @@ public class ClientRaftProxyFactory {
     protected ClientContext context;
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, FencedLockProxy> lockProxies
-            = new ConcurrentHashMap<String, FencedLockProxy>();
+            = new ConcurrentHashMap<>();
 
     public ClientRaftProxyFactory(HazelcastClientInstanceImpl client) {
         this.client = client;

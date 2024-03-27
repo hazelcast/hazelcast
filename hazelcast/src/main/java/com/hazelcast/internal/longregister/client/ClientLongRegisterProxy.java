@@ -208,7 +208,7 @@ public class ClientLongRegisterProxy extends ClientProxy implements IAtomicLong 
             ClientMessageDecoder clientMessageDecoder) {
         try {
             ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-            return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);
         }

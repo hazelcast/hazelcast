@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class ClusterPermissionCollection extends PermissionCollection {
 
-    final Set<Permission> perms = new HashSet<Permission>();
+    final Set<Permission> perms = new HashSet<>();
     final Class<? extends Permission> permClass;
 
     public ClusterPermissionCollection() {

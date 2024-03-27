@@ -96,7 +96,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation im
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();
-        valueList = new ArrayList<Data>(size);
+        valueList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Data value = IOUtil.readData(in);
             valueList.add(value);

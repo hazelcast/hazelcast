@@ -84,7 +84,7 @@ public class ClassData implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         mainClassDefinition = in.readByteArray();
         int size = in.readInt();
-        innerClassDefinitions = new HashMap<String, byte[]>();
+        innerClassDefinitions = new HashMap<>();
         for (int i = 0; i < size; i++) {
             innerClassDefinitions.put(in.readString(), in.readByteArray());
         }

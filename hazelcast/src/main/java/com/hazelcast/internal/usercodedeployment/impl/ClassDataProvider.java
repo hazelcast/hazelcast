@@ -112,7 +112,7 @@ public final class ClassDataProvider {
 
             byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
             if (innerClassDefinitions == null) {
-                innerClassDefinitions = new HashMap<String, byte[]>();
+                innerClassDefinitions = new HashMap<>();
             }
             innerClassDefinitions.put(innerClassName, innerByteCode);
             i++;
@@ -139,7 +139,7 @@ public final class ClassDataProvider {
                 String innerClassName = declaredClass.getName();
                 byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
                 if (innerClassDefinitions == null) {
-                    innerClassDefinitions = new HashMap<String, byte[]>();
+                    innerClassDefinitions = new HashMap<>();
                 }
                 innerClassDefinitions.put(innerClassName, innerByteCode);
             }

@@ -36,7 +36,7 @@ public class DenyAllPermissionCollection extends PermissionCollection {
 
     @Override
     public Enumeration<Permission> elements() {
-        return new Enumeration<Permission>() {
+        return new Enumeration<>() {
             @Override
             public boolean hasMoreElements() {
                 return false;

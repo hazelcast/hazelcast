@@ -32,7 +32,7 @@ import static java.util.Collections.sort;
 public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
 
     private final HazelcastProperties properties;
-    private final List<String> keyList = new ArrayList<String>();
+    private final List<String> keyList = new ArrayList<>();
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(ConfigPropertiesPlugin.class), nodeEngine.getProperties());

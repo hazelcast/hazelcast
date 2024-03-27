@@ -63,11 +63,11 @@ public class ClientNetworkConfig {
     private ClientIcmpPingConfig clientIcmpPingConfig = new ClientIcmpPingConfig();
 
     public ClientNetworkConfig() {
-        addressList = new ArrayList<String>();
+        addressList = new ArrayList<>();
     }
 
     public ClientNetworkConfig(ClientNetworkConfig networkConfig) {
-        addressList = new ArrayList<String>(networkConfig.addressList);
+        addressList = new ArrayList<>(networkConfig.addressList);
         smartRouting = networkConfig.smartRouting;
         redoOperation = networkConfig.redoOperation;
         connectionTimeout = networkConfig.connectionTimeout;
@@ -489,7 +489,7 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig addOutboundPort(int port) {
         if (outboundPorts == null) {
-            outboundPorts = new HashSet<Integer>();
+            outboundPorts = new HashSet<>();
         }
         outboundPorts.add(port);
         return this;
@@ -503,7 +503,7 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig addOutboundPortDefinition(String portDef) {
         if (outboundPortDefinitions == null) {
-            outboundPortDefinitions = new HashSet<String>();
+            outboundPortDefinitions = new HashSet<>();
         }
         outboundPortDefinitions.add(portDef);
         return this;

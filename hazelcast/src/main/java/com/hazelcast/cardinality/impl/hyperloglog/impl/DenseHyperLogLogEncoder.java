@@ -182,7 +182,7 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
         int i = 0;
         double[] rawEstimates = DenseHyperLogLogConstants.RAW_ESTIMATE_DATA[p - 4];
         double closestToZero = Math.abs(e - rawEstimates[0]);
-        NavigableMap<Double, Integer> distances = new TreeMap<Double, Integer>();
+        NavigableMap<Double, Integer> distances = new TreeMap<>();
         for (double est : rawEstimates) {
             double distance = e - est;
             distances.put(distance, i++);

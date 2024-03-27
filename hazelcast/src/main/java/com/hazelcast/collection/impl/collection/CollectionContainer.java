@@ -44,7 +44,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public static final int ID_PROMOTION_OFFSET = 100000;
 
-    protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
+    protected final Map<Long, TxCollectionItem> txMap = new HashMap<>();
     protected String name;
     protected NodeEngine nodeEngine;
     protected ILogger logger;
@@ -143,7 +143,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     public Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
         final Map<Long, Data> map = createHashMap(size);
-        List<CollectionItem> list = new ArrayList<CollectionItem>(size);
+        List<CollectionItem> list = new ArrayList<>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
             list.add(new CollectionItem(itemId, value));
@@ -164,7 +164,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>();
+        Map<Long, Data> itemIdMap = new HashMap<>();
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();
@@ -178,7 +178,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public List<Data> getAll() {
-        ArrayList<Data> sub = new ArrayList<Data>(size());
+        ArrayList<Data> sub = new ArrayList<>(size());
         for (CollectionItem item : getCollection()) {
             sub.add(item.getValue());
         }

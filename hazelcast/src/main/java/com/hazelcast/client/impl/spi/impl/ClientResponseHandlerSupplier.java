@@ -63,7 +63,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
-    private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<MutableInteger>() {
+    private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<>() {
         @Override
         protected MutableInteger initialValue() {
             return new MutableInteger();
@@ -183,7 +183,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         ResponseThread(String name) {
             super(name);
             setContextClassLoader(client.getClientConfig().getClassLoader());
-            this.responseQueue = new MPSCQueue<ClientMessage>(this,
+            this.responseQueue = new MPSCQueue<>(this,
                     getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }
 

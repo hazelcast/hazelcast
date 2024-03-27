@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class DefaultMemberGroup implements MemberGroup {
 
-    private final Set<Member> members = new HashSet<Member>();
+    private final Set<Member> members = new HashSet<>();
 
     public DefaultMemberGroup() {
     }

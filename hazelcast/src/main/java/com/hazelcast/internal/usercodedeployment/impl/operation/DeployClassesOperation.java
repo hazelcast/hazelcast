@@ -66,7 +66,7 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int length = in.readInt();
-        classDefinitions = new ArrayList<Map.Entry<String, byte[]>>(length);
+        classDefinitions = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
             String className = in.readString();
             byte[] classDefinition = in.readByteArray();

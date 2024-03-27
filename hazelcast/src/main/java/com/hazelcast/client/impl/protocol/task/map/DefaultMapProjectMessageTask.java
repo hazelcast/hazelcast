@@ -83,7 +83,7 @@ public abstract class DefaultMapProjectMessageTask<P>
         Set result = QueryResultUtils.transformToSet(nodeEngine.getSerializationService(), combinedResult,
                 getPredicate(), IterationType.VALUE, false, true);
 
-        List<Data> serialized = new ArrayList<Data>(result.size());
+        List<Data> serialized = new ArrayList<>(result.size());
 
         for (Object row : result) {
             serialized.add((Data) row);

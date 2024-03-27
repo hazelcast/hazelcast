@@ -78,7 +78,7 @@ class CRDTReplicationTask implements Runnable {
      */
     private List<Member> getNonLocalReplicaAddresses() {
         final Collection<Member> dataMembers = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        final ArrayList<Member> nonLocalDataMembers = new ArrayList<Member>(dataMembers);
+        final ArrayList<Member> nonLocalDataMembers = new ArrayList<>(dataMembers);
         nonLocalDataMembers.remove(nodeEngine.getLocalMember());
         return nonLocalDataMembers;
     }

@@ -79,7 +79,7 @@ public class DeferredValue<V> {
      * @return
      */
     public DeferredValue<V> shallowCopy(boolean resolved, SerializationService serializationService) {
-        DeferredValue<V> copy = new DeferredValue<V>();
+        DeferredValue<V> copy = new DeferredValue<>();
         if (serializedValueExists) {
             copy.serializedValueExists = true;
             copy.serializedValue = serializedValue;
@@ -128,7 +128,7 @@ public class DeferredValue<V> {
         if (serializedValue == null || isNullData(serializedValue)) {
             return NULL_VALUE;
         }
-        DeferredValue<V> deferredValue = new DeferredValue<V>();
+        DeferredValue<V> deferredValue = new DeferredValue<>();
         deferredValue.serializedValue = serializedValue;
         deferredValue.serializedValueExists = true;
         return deferredValue;
@@ -138,7 +138,7 @@ public class DeferredValue<V> {
         if (value == null) {
             return NULL_VALUE;
         }
-        DeferredValue<V> deferredValue = new DeferredValue<V>();
+        DeferredValue<V> deferredValue = new DeferredValue<>();
         deferredValue.value = value;
         deferredValue.valueExists = true;
         return deferredValue;
@@ -167,7 +167,7 @@ public class DeferredValue<V> {
      * @return                      a {@code Set<V>} that wraps the {@code deferredValues} set.
      */
     public static <V> Set<V> asPassThroughSet(Set<DeferredValue<V>> deferredValues, SerializationService serializationService) {
-        return new DeferredValueSet<V>(serializationService, deferredValues);
+        return new DeferredValueSet<>(serializationService, deferredValues);
     }
 
     private static class DeferredValueSet<V> extends AbstractSet<V> {
@@ -186,7 +186,7 @@ public class DeferredValue<V> {
 
         @Override
         public Iterator<V> iterator() {
-            return new DeferredValueIterator<V>(serializationService, delegate.iterator());
+            return new DeferredValueIterator<>(serializationService, delegate.iterator());
         }
 
         public boolean add(V v) {
@@ -204,7 +204,7 @@ public class DeferredValue<V> {
         }
 
         private Collection<DeferredValue<?>> asDeferredValues(Collection<?> collection) {
-            Collection<DeferredValue<?>> deferredValues = new ArrayList<DeferredValue<?>>();
+            Collection<DeferredValue<?>> deferredValues = new ArrayList<>();
             for (Object object : collection) {
                 deferredValues.add(DeferredValue.withValue(object));
             }

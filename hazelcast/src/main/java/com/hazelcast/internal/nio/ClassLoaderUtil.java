@@ -55,8 +55,8 @@ public final class ClassLoaderUtil {
     private static final Map<String, Class> PRIMITIVE_CLASSES;
     private static final int MAX_PRIM_CLASS_NAME_LENGTH = 7;
 
-    private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<Constructor>();
-    private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
+    private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<>();
+    private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<>();
     private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
 
     private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0],
@@ -71,7 +71,7 @@ public final class ClassLoaderUtil {
             throw new Error("Couldn't initialize irresolvable constructor.", e);
         }
 
-        final Map<String, Class> primitives = new HashMap<String, Class>(10, 1.0f);
+        final Map<String, Class> primitives = new HashMap<>(10, 1.0f);
         primitives.put("boolean", boolean.class);
         primitives.put("byte", byte.class);
         primitives.put("int", int.class);
@@ -384,7 +384,7 @@ public final class ClassLoaderUtil {
     }
 
     public static Class<?>[] getAllInterfaces(Class<?> clazz) {
-        Collection<Class<?>> interfaces = new HashSet<Class<?>>();
+        Collection<Class<?>> interfaces = new HashSet<>();
         addOwnInterfaces(clazz, interfaces);
         addInterfacesOfSuperclasses(clazz, interfaces);
         return interfaces.toArray(new Class<?>[0]);
@@ -412,7 +412,7 @@ public final class ClassLoaderUtil {
 
         private ClassLoaderWeakCache() {
             // let's guess 16 class loaders to not waste too much memory (16 is default concurrency level)
-            cache = new ConcurrentReferenceHashMap<ClassLoader, ConcurrentMap<String, WeakReference<V>>>(16);
+            cache = new ConcurrentReferenceHashMap<>(16);
         }
 
         private void put(ClassLoader classLoader, String className, V value) {
@@ -420,7 +420,7 @@ public final class ClassLoaderUtil {
             ConcurrentMap<String, WeakReference<V>> innerCache = cache.get(cl);
             if (innerCache == null) {
                 // let's guess a start of 100 classes per classloader
-                innerCache = new ConcurrentHashMap<String, WeakReference<V>>(100);
+                innerCache = new ConcurrentHashMap<>(100);
                 ConcurrentMap<String, WeakReference<V>> old = cache.putIfAbsent(cl, innerCache);
                 if (old != null) {
                     innerCache = old;

@@ -449,7 +449,7 @@ public class ClientScheduledExecutorProxy
                                                            UUID uuid) {
         try {
             ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), uuid).invoke();
-            return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);
         }

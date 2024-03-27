@@ -57,7 +57,7 @@ public class ChannelInitializerFunction implements Function<EndpointQualifier, C
             return;
         }
 
-        Map<EndpointQualifier, ChannelInitializer> map = new HashMap<EndpointQualifier, ChannelInitializer>();
+        Map<EndpointQualifier, ChannelInitializer> map = new HashMap<>();
         for (EndpointConfig endpointConfig : advancedNetworkConfig.getEndpointConfigs().values()) {
             checkSslConfigAvailability(endpointConfig.getSSLConfig());
 

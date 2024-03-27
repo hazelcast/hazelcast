@@ -54,7 +54,7 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
 
     @Override
     public Operation get() {
-        List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(filteredProxies.size());
+        List<ProxyInfo> proxyInfos = new ArrayList<>(filteredProxies.size());
         for (Map.Entry<String, String> proxy : filteredProxies) {
             proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey(), endpoint.getUuid()));
         }

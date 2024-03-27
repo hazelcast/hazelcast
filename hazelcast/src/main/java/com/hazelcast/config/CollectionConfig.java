@@ -71,7 +71,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
 
     protected CollectionConfig(CollectionConfig config) {
         this.name = config.name;
-        this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
+        this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
@@ -108,7 +108,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      */
     public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<ItemListenerConfig>();
+            listenerConfigs = new ArrayList<>();
         }
         return listenerConfigs;
     }

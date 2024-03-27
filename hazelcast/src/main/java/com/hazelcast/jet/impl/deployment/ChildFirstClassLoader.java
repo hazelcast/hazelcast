@@ -116,7 +116,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
             }
         }
 
-        return new Enumeration<URL>() {
+        return new Enumeration<>() {
             final Iterator<URL> it = allRes.iterator();
 
             @Override

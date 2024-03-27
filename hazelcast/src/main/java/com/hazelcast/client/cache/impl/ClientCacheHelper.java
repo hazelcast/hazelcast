@@ -121,7 +121,7 @@ final class ClientCacheHelper {
     static void enableStatisticManagementOnNodes(HazelcastClientInstanceImpl client, String cacheName,
                                                  boolean statOrMan, boolean enabled) {
         Collection<Member> members = client.getClientClusterService().getMemberList();
-        Collection<Future> futures = new ArrayList<Future>();
+        Collection<Future> futures = new ArrayList<>();
         for (Member member : members) {
             try {
                 UUID uuid = member.getUuid();

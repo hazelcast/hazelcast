@@ -496,8 +496,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         long startMs = System.currentTimeMillis();
 
         IExecutorService executor = client.getExecutorService(executorNamespace + ' ' + threadCount);
-        List<Future> futures = new LinkedList<Future>();
-        List<Member> members = new LinkedList<Member>(client.getCluster().getMembers());
+        List<Future> futures = new LinkedList<>();
+        List<Member> members = new LinkedList<>(client.getCluster().getMembers());
 
         int totalThreadCount = client.getCluster().getMembers().size() * threadCount;
 
@@ -636,7 +636,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handlePartitions(String[] args) {
         Set<Partition> partitions = client.getPartitionService().getPartitions();
-        Map<Member, Integer> partitionCounts = new HashMap<Member, Integer>();
+        Map<Member, Integer> partitionCounts = new HashMap<>();
         for (Partition partition : partitions) {
             Member owner = partition.getOwner();
             if (owner != null) {

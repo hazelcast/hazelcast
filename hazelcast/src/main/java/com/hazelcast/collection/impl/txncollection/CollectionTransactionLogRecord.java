@@ -52,7 +52,7 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
         this.transactionId = transactionId;
         this.name = name;
         this.partitionId = partitionId;
-        this.operationList = new ArrayList<Operation>();
+        this.operationList = new ArrayList<>();
     }
 
     @Override

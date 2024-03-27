@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ClientCacheProxyFactory implements ClientProxyFactory {
 
     private final HazelcastClientInstanceImpl client;
-    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
+    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<>();
 
     public ClientCacheProxyFactory(HazelcastClientInstanceImpl client) {
         this.client = client;

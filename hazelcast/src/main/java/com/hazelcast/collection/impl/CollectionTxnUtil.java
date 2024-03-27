@@ -61,7 +61,7 @@ public final class CollectionTxnUtil {
     }
 
     public static List<Operation> run(List<Operation> operationList) throws Exception {
-        List<Operation> backupList = new LinkedList<Operation>();
+        List<Operation> backupList = new LinkedList<>();
         for (Operation operation : operationList) {
             operation.run();
             if (operation instanceof BackupAwareOperation) {
@@ -89,7 +89,7 @@ public final class CollectionTxnUtil {
 
     public static List<Operation> read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        List<Operation> operationList = new ArrayList<Operation>(size);
+        List<Operation> operationList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Operation operation = in.readObject();
             operationList.add(operation);

@@ -45,7 +45,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> members) {
-        Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
+        Map<Integer, MemberGroup> memberGroups = new HashMap<>();
         for (Member member : members) {
             String host = ((MemberImpl) member).getAddress().getHost();
             for (Entry<Integer, MemberGroupConfig> entry : memberGroupConfigMap.entrySet()) {
@@ -67,6 +67,6 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
                 }
             }
         }
-        return new HashSet<MemberGroup>(memberGroups.values());
+        return new HashSet<>(memberGroups.values());
     }
 }

@@ -607,7 +607,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
                                                   Data mergingValueData, int eventType, Member member) {
-            return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
+            return new DataAwareEntryEvent<>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
                     getSerializationService());
         }
     }

@@ -108,7 +108,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     @Override
     public void dispatchEvent(CollectionEvent event, ItemListener<Data> listener) {
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-        ItemEvent<Data> itemEvent = new DataAwareItemEvent<Data>(event.getName(), event.getEventType(), event.getData(),
+        ItemEvent<Data> itemEvent = new DataAwareItemEvent<>(event.getName(), event.getEventType(), event.getData(),
                 member, serializationService);
         if (member == null) {
             if (logger.isInfoEnabled()) {
@@ -146,7 +146,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     protected Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
-        Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
+        Map<String, CollectionContainer> migrationData = new HashMap<>();
         for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));

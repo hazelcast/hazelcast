@@ -60,7 +60,7 @@ import java.util.Map;
  */
 public final class ContextMutexFactory {
 
-    final Map<Object, Mutex> mutexMap = new HashMap<Object, Mutex>();
+    final Map<Object, Mutex> mutexMap = new HashMap<>();
 
     // synchronizes access to mutexMap and Mutex.referenceCount
     private final Object mainMutex = new Object();

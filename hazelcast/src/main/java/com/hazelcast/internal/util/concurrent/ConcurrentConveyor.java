@@ -171,7 +171,7 @@ public class ConcurrentConveyor<E> {
     public static <E1> ConcurrentConveyor<E1> concurrentConveyor(
             E1 submitterGoneItem, QueuedPipe<E1>... queues
     ) {
-        return new ConcurrentConveyor<E1>(submitterGoneItem, queues);
+        return new ConcurrentConveyor<>(submitterGoneItem, queues);
     }
 
     /**

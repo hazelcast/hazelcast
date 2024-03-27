@@ -41,14 +41,14 @@ public class ClientUserCodeDeploymentConfig {
     private final List<String> jarPaths;
 
     public ClientUserCodeDeploymentConfig() {
-        classNames = new ArrayList<String>();
-        jarPaths = new ArrayList<String>();
+        classNames = new ArrayList<>();
+        jarPaths = new ArrayList<>();
     }
 
     public ClientUserCodeDeploymentConfig(ClientUserCodeDeploymentConfig userCodeDeploymentConfig) {
         enabled = userCodeDeploymentConfig.enabled;
-        classNames = new ArrayList<String>(userCodeDeploymentConfig.classNames);
-        jarPaths = new ArrayList<String>(userCodeDeploymentConfig.jarPaths);
+        classNames = new ArrayList<>(userCodeDeploymentConfig.classNames);
+        jarPaths = new ArrayList<>(userCodeDeploymentConfig.jarPaths);
     }
 
     /**

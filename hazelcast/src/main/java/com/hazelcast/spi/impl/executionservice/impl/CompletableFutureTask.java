@@ -23,7 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class CompletableFutureTask implements Runnable {
-    private final List<CompletableFutureEntry> entries = new ArrayList<CompletableFutureEntry>();
+    private final List<CompletableFutureEntry> entries = new ArrayList<>();
     private final Lock entriesLock = new ReentrantLock();
 
     <V> void registerCompletableFutureEntry(CompletableFutureEntry<V> entry) {
@@ -61,7 +61,7 @@ class CompletableFutureTask implements Runnable {
         for (CompletableFutureEntry entry : entries) {
             if (entry.processState()) {
                 if (removableEntries.isEmpty()) {
-                    removableEntries = new ArrayList<CompletableFutureEntry>(entries.length / 2);
+                    removableEntries = new ArrayList<>(entries.length / 2);
                 }
 
                 removableEntries.add(entry);

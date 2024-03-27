@@ -57,7 +57,7 @@ public interface ChunkedMigrationAwareService
     default ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
                                            Collection<ServiceNamespace> namespaces) {
         return ChunkSuppliers.newSingleChunkSupplier(
-                new Supplier<Operation>() {
+                new Supplier<>() {
                     @Override
                     public Operation get() {
                         return ChunkedMigrationAwareService.this.prepareReplicationOperation(event, namespaces);

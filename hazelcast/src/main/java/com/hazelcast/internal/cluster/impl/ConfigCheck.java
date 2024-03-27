@@ -45,13 +45,13 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private PartitionGroupConfig.MemberGroupType memberGroupType;
 
-    private Map<String, String> properties = new HashMap<String, String>();
+    private Map<String, String> properties = new HashMap<>();
 
     // TODO: The actual map/queue configuration needs to be added
 
-    private final Map<String, Object> maps = new HashMap<String, Object>();
+    private final Map<String, Object> maps = new HashMap<>();
 
-    private final Map<String, Object> queues = new HashMap<String, Object>();
+    private final Map<String, Object> queues = new HashMap<>();
 
     public ConfigCheck() {
     }
