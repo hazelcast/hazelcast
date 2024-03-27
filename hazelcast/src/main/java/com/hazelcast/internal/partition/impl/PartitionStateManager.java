@@ -21,7 +21,9 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 import java.util.Set;
@@ -57,6 +59,19 @@ public interface PartitionStateManager {
      * @throws HazelcastException if the partition state generator failed to arrange the partitions
      */
     boolean initializePartitionAssignments(Set<Member> excludedMembers);
+
+    /**
+     * Called after a batch of partition replica assignments have been applied. This is an optimization for batch
+     * changes, to avoid repeatedly performing costly computations (like updating partition assignments stamp).
+     * <p><b>
+     * If this logic changes, consider also changing the implementation of
+     * {@link PartitionReplicaInterceptor#replicaChanged(int, int, PartitionReplica, PartitionReplica)}, which should apply
+     * the same logic per partition.
+     * </b></p>
+     *
+     * @param partitionIdSet
+     */
+    void partitionOwnersChanged(PartitionIdSet partitionIdSet);
 
     /**
      * Sets the initial partition table and state version. If any partition has a replica, the partition state manager is
@@ -122,6 +137,9 @@ public interface PartitionStateManager {
     PartitionTableView getSnapshot(UUID crashedMemberUuid);
 
     void removeSnapshot(UUID memberUuid);
+
+    /** For test usage only */
+    void setReplicaUpdateInterceptor(ReplicaUpdateInterceptor interceptor);
 
     interface ReplicaUpdateInterceptor {
         void onPartitionOwnersChanged();
