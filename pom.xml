@@ -97,7 +97,7 @@
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.158</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
-        <grpc.version>1.58.0</grpc.version>
+        <grpc.version>1.60.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <hadoop.version>3.3.5</hadoop.version>
         <h2.version>2.1.214</h2.version>
