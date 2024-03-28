@@ -1,5 +1,10 @@
-This document lists the enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.6 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
+This document lists the enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.7 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
 
-## Fixes
+## Enhancements
 
-* Fixed a WAN replication failure - when using maps with WAN replication enabled, and BINARY or NATIVE in-memory formats for the entries, WAN replication was failing when an entry is updated with the same key/value pair, and the cluster members lack serialization information. [#25899]
+* Improved the time spent on the first partition migration, in case a new member joins a cluster with high partition count. [#1201]
+* Updated the versions of following dependencies:
+  * gRPC to 1.60.0
+  * Jetty to 9.4.53.v20231009
+  * AWS SDK to 1.12.688
+  [#1207], [#1208], [#1209]
