@@ -267,6 +267,13 @@
             <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <!-- Exclude the dependency reported by the enforcer plugin -->
+                <exclusion>
+                    <artifactId>log4j-core</artifactId>
+                    <groupId>org.apache.logging.log4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
