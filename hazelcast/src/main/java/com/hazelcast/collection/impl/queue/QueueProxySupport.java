@@ -147,7 +147,7 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     List<Data> listInternal() {
         IteratorOperation operation = new IteratorOperation(name);
         SerializableList collectionContainer = invokeAndGet(operation);
-        return (List<Data>) collectionContainer.getCollection();
+        return collectionContainer.getCollection();
     }
 
     Collection<Data> drainInternal(int maxSize) {

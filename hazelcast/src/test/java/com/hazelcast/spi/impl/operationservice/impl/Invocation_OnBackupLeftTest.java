@@ -80,7 +80,7 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         Operation op = new PrimaryOperation(backupId)
                 .setPrimaryResponseDelaySeconds(responseDelaySeconds)
                 .setPartitionId(getPartitionId(local));
-        InvocationFuture f = (InvocationFuture) localOperationService.invokeOnPartition(op);
+        InvocationFuture f = localOperationService.invokeOnPartition(op);
 
         waitForBackupRunning(backupId);
 
@@ -94,7 +94,7 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         String backupId = newUnsecureUuidString();
         Operation op = new PrimaryOperation(backupId)
                 .setPartitionId(getPartitionId(local));
-        InvocationFuture f = (InvocationFuture) localOperationService.invokeOnPartition(op);
+        InvocationFuture f = localOperationService.invokeOnPartition(op);
 
         waitForPrimaryResponse(f);
 

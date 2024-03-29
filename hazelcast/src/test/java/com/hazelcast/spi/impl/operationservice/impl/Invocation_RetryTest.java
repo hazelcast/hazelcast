@@ -111,13 +111,13 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         NodeEngineImpl localNodeEngine = getNodeEngineImpl(local);
         NodeEngineImpl remoteNodeEngine = getNodeEngineImpl(remote);
-        final OperationServiceImpl operationService = (OperationServiceImpl) localNodeEngine.getOperationService();
+        final OperationServiceImpl operationService = localNodeEngine.getOperationService();
 
         NonResponsiveOperation op = new NonResponsiveOperation();
         op.setValidateTarget(false);
         op.setPartitionId(1);
 
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, remoteNodeEngine.getThisAddress());
+        InvocationFuture future = operationService.invokeOnTarget(null, op, remoteNodeEngine.getThisAddress());
 
         Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
         invocationField.setAccessible(true);

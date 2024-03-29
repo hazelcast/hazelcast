@@ -186,7 +186,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
     }
 
     public static void assertNoLitterInOpService(HazelcastInstance hz) {
-        final OperationServiceImpl operationService = (OperationServiceImpl) getNode(hz).nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = getNode(hz).nodeEngine.getOperationService();
 
         // we need to do this with an assertTrueEventually because it can happen that system calls are being send
         // and this leads to the maps not being empty. But eventually they will be empty at some moment in time.

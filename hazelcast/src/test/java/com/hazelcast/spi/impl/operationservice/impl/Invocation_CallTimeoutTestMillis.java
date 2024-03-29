@@ -60,7 +60,7 @@ public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
     @Test
     public void callTimeout_whenDefaults() {
         Operation op = new DummyOperation();
-        InvocationFuture future = (InvocationFuture) opService.invokeOnTarget(null, op, thisAddress);
+        InvocationFuture future = opService.invokeOnTarget(null, op, thisAddress);
 
         assertEquals(CALL_TIMEOUT, future.invocation.callTimeoutMillis);
         assertEquals(CALL_TIMEOUT, future.invocation.op.getCallTimeout());
@@ -74,7 +74,7 @@ public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
         int explicitCallTimeout = 12;
         setCallTimeout(op, explicitCallTimeout);
 
-        InvocationFuture future = (InvocationFuture) opService.invokeOnTarget(null, op, thisAddress);
+        InvocationFuture future = opService.invokeOnTarget(null, op, thisAddress);
 
         assertEquals(explicitCallTimeout, future.invocation.callTimeoutMillis);
         assertEquals(explicitCallTimeout, future.invocation.op.getCallTimeout());
@@ -85,7 +85,7 @@ public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
         Operation op = new DummyOperation();
         int explicitCallTimeout = 12;
 
-        InvocationFuture future = (InvocationFuture) opService.createInvocationBuilder(null, op, thisAddress)
+        InvocationFuture future = opService.createInvocationBuilder(null, op, thisAddress)
                 .setCallTimeout(explicitCallTimeout)
                 .invoke();
 

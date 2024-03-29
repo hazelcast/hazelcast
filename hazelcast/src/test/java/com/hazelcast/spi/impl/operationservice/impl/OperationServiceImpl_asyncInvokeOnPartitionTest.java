@@ -78,7 +78,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
         private Data generateKey_FallsToSamePartitionThread_ButDifferentPartition(NodeEngineImpl nodeEngine, Data sourceKey) {
             InternalPartitionService partitionService = nodeEngine.getPartitionService();
             int sourcePartitionId = partitionService.getPartitionId(sourceKey);
-            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            OperationServiceImpl operationService = nodeEngine.getOperationService();
             int threadCount = operationService.operationExecutor.getPartitionThreadCount();
             int sourceThreadId = sourcePartitionId % threadCount;
 

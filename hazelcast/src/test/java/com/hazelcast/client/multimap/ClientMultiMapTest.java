@@ -133,8 +133,8 @@ public class ClientMultiMapTest {
 
         final CountDownLatch latchAdded = new CountDownLatch(totalItems);
         mmap1.addEntryListener(putAllEntryListenerBuilder((event) -> {
-                    String key = (String) event.getKey();
-                    Integer value = (Integer) event.getValue();
+                    String key = event.getKey();
+                    Integer value = event.getValue();
                     Collection<Integer> c;
                     if (!resultMap1.containsKey(key)) {
                         c = new ArrayList<>();
@@ -147,8 +147,8 @@ public class ClientMultiMapTest {
                 }
         ), true);
         mmap2.addEntryListener(putAllEntryListenerBuilder((event) -> {
-                    String key = (String) event.getKey();
-                    Integer value = (Integer) event.getValue();
+                    String key = event.getKey();
+                    Integer value = event.getValue();
                     Collection<Integer> c;
                     if (!resultMap2.containsKey(key)) {
                         c = new ArrayList<>();

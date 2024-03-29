@@ -55,7 +55,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new VoidOperation();
-        InvocationFuture future = (InvocationFuture) opService.createInvocationBuilder(
+        InvocationFuture future = opService.createInvocationBuilder(
                 null, operation, getPartitionId(remote))
                 .setCallTimeout(Long.MAX_VALUE)
                 .invoke();
@@ -76,7 +76,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new SlowOperation(SECONDS.toMillis(60));
-        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        InvocationFuture future = opService.invokeOnPartition(null, operation, getPartitionId(remote));
 
         Invocation invocation = future.invocation;
         invocation.pendingResponse = "foo";
@@ -94,7 +94,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new SlowOperation(SECONDS.toMillis(60));
-        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        InvocationFuture future = opService.invokeOnPartition(null, operation, getPartitionId(remote));
 
         Invocation invocation = future.invocation;
 
@@ -112,7 +112,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance remote = factory.newHazelcastInstance(config);
 
         OperationService opService = getOperationService(local);
-        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(new SlowOperation(SECONDS.toMillis(60))
+        InvocationFuture future = opService.invokeOnPartition(new SlowOperation(SECONDS.toMillis(60))
                 .setPartitionId(getPartitionId(remote)));
 
         assertDetectHeartbeatTimeoutEventually(future.invocation, NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED);
@@ -136,7 +136,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new VoidOperation(SECONDS.toMillis(20));
-        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        InvocationFuture future = opService.invokeOnPartition(null, operation, getPartitionId(remote));
         Invocation invocation = future.invocation;
 
         assertDetectHeartbeatTimeoutEventually(invocation, NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED);

@@ -409,7 +409,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
             // bring null local cache
             String expectedNull = map.get(key);
             assertNull(expectedNull);
-            String newValue = (String) map.executeOnKey(key, new WritingEntryProcessor());
+            String newValue = map.executeOnKey(key, new WritingEntryProcessor());
             String value = map.get(key);
             assertEquals(newValue, value);
         }
@@ -427,7 +427,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
             assertNull(expectedNull);
             HashSet<String> keys = new HashSet<>();
             keys.add(key);
-            Map<String, String> result = (Map) map.executeOnKeys(keys, new WritingEntryProcessor());
+            Map<String, String> result = map.executeOnKeys(keys, new WritingEntryProcessor());
             for (Map.Entry<String, String> e : result.entrySet()) {
                 String newValue = e.getValue();
                 String cachedValue = map.get(e.getKey());

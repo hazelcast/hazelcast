@@ -212,7 +212,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
 
     private void assertNonEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
         final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();
 
@@ -233,7 +233,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
 
     private void assertEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
         final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();
 

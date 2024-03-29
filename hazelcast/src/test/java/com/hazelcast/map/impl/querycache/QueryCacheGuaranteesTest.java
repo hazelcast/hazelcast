@@ -108,7 +108,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
         mapConfig.addQueryCacheConfig(queryCacheConfig);
 
         HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
-        IMap<Integer, Integer> map = (IMap<Integer, Integer>) node.<Integer, Integer>getMap(mapName);
+        IMap<Integer, Integer> map = node.getMap(mapName);
 
         final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
 
