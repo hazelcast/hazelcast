@@ -874,7 +874,7 @@ public class ClientMapTest extends HazelcastTestSupport {
      * Issue #996
      */
     @Test
-    public void testEntryListener() throws Exception {
+    public void testEntryListener() {
         CountDownLatch gateAdd = new CountDownLatch(3);
         CountDownLatch gateRemove = new CountDownLatch(1);
         CountDownLatch gateEvict = new CountDownLatch(1);

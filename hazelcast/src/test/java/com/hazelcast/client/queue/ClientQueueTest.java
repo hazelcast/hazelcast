@@ -159,13 +159,13 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEmptyPeak() throws InterruptedException {
+    public void testEmptyPeak() {
         IQueue<Integer> q = client.getQueue(randomString());
         assertNull(q.peek());
     }
 
     @Test
-    public void testPeak() throws InterruptedException {
+    public void testPeak() {
         IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
         assertEquals(1, q.peek().intValue());
@@ -174,20 +174,20 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void testEmptyElement() throws InterruptedException {
+    public void testEmptyElement() {
         IQueue<Integer> q = client.getQueue(randomString());
         q.element();
     }
 
     @Test
-    public void testElement() throws InterruptedException {
+    public void testElement() {
         IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
         assertEquals(1, q.element().intValue());
     }
 
     @Test
-    public void testPoll() throws InterruptedException {
+    public void testPoll() {
         IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
         assertEquals(1, q.poll().intValue());
@@ -202,14 +202,14 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOfferWithTimeOut() throws IOException, InterruptedException {
+    public void testOfferWithTimeOut() throws InterruptedException {
         IQueue<Integer> q = client.getQueue(randomString());
         boolean result = q.offer(1, 50, TimeUnit.MILLISECONDS);
         assertTrue(result);
     }
 
     @Test
-    public void testRemainingCapacity() throws IOException {
+    public void testRemainingCapacity() {
         final IQueue<String> q = client.getQueue(randomString());
 
         assertEquals(Integer.MAX_VALUE, q.remainingCapacity());
@@ -218,13 +218,13 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void testEmptyRemove() throws IOException {
+    public void testEmptyRemove() {
         IQueue<Integer> q = client.getQueue(randomString());
         q.remove();
     }
 
     @Test
-    public void testRemoveTop() throws IOException, InterruptedException {
+    public void testRemoveTop() {
         IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
         assertEquals(1, q.remove().intValue());
@@ -373,7 +373,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAddAll() throws IOException {
+    public void testAddAll() {
         final int maxItems = 13;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -403,7 +403,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveList() throws IOException {
+    public void testRemoveList() {
         final int maxItems = 131;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -418,7 +418,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveList_whereNotFound() throws IOException {
+    public void testRemoveList_whereNotFound() {
         final int maxItems = 131;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -434,7 +434,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRetainEmptyList() throws IOException {
+    public void testRetainEmptyList() {
         final int maxItems = 131;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -449,7 +449,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRetainAllList() throws IOException {
+    public void testRetainAllList() {
         final int maxItems = 181;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -464,7 +464,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRetainAll_ListNotFound() throws IOException {
+    public void testRetainAll_ListNotFound() {
         final int maxItems = 181;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -480,7 +480,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRetainAll_mixedList() throws IOException {
+    public void testRetainAll_mixedList() {
         final int maxItems = 181;
         IQueue<Integer> q = client.getQueue(randomString());
 
@@ -584,7 +584,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOfferPoll() throws IOException, InterruptedException {
+    public void testOfferPoll() throws InterruptedException {
         final IQueue<String> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
 
         for (int i = 0; i < 10; i++) {

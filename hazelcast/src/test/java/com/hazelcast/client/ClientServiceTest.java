@@ -180,7 +180,7 @@ public class ClientServiceTest extends ClientTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testClientListener() throws InterruptedException {
+    public void testClientListener() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientService clientService = instance.getClientService();
         final CountDownLatch latchAdd = new CountDownLatch(2);
@@ -220,7 +220,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, clientService.getConnectedClients().size());
             }
         });
@@ -229,7 +229,7 @@ public class ClientServiceTest extends ClientTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testConnectedClientsWithReAuth() throws InterruptedException {
+    public void testConnectedClientsWithReAuth() {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE)
                 .setMultiplier(1).setInitialBackoffMillis(5000);
@@ -274,7 +274,7 @@ public class ClientServiceTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientListenerDisconnected() throws InterruptedException {
+    public void testClientListenerDisconnected() {
         Config config = new Config();
         config.setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "1");
 
@@ -313,13 +313,13 @@ public class ClientServiceTest extends ClientTestSupport {
 
             assertTrueEventually("First server still have connected clients", new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(0, hz.getClientService().getConnectedClients().size());
                 }
             });
             assertTrueEventually("Second server still have connected clients", new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(0, hz2.getClientService().getConnectedClients().size());
                 }
             });
@@ -332,7 +332,7 @@ public class ClientServiceTest extends ClientTestSupport {
         for (final ClientService service : services) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(1, service.getConnectedClients().size());
                 }
             });
@@ -451,14 +451,14 @@ public class ClientServiceTest extends ClientTestSupport {
         //client events will only be fired from one of the nodes.
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, eventCount.get());
             }
         }, 4);
     }
 
     @Test
-    public void testClientListener_withShuttingDownOwnerMember() throws InterruptedException {
+    public void testClientListener_withShuttingDownOwnerMember() {
         Config config = new Config();
         final AtomicInteger atomicInteger = new AtomicInteger();
         ListenerConfig listenerConfig = new ListenerConfig(new ClientListener() {
@@ -488,7 +488,7 @@ public class ClientServiceTest extends ClientTestSupport {
         //Testing that shutting down first member does not cause any client connected/disconnected event
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, atomicInteger.get());
             }
         }, 4);

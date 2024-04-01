@@ -48,7 +48,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testConfigAttributes() throws Exception {
+    public void testConfigAttributes() {
         Config c = new Config();
         JoinConfig join = c.getNetworkConfig().getJoin();
         join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);

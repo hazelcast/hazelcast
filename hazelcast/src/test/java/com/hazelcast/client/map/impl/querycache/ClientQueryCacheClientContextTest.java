@@ -83,7 +83,7 @@ public class ClientQueryCacheClientContextTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void same_context_object_is_used_by_all_query_caches() throws Exception {
+    public void same_context_object_is_used_by_all_query_caches() {
         ClientQueryCacheContext instance1 = getQueryCacheContext(map1);
         ClientQueryCacheContext instance2 = getQueryCacheContext(map2);
         ClientQueryCacheContext instance3 = getQueryCacheContext(map3);

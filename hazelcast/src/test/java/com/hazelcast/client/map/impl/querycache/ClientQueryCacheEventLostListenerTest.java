@@ -61,7 +61,7 @@ public class ClientQueryCacheEventLostListenerTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testListenerNotified_onEventLoss() throws Exception {
+    public void testListenerNotified_onEventLoss() {
         int count = 30;
         String mapName = randomString();
         String queryCacheName = randomString();

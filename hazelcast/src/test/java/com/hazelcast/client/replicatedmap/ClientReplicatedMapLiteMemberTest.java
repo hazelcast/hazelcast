@@ -123,7 +123,7 @@ public class ClientReplicatedMapLiteMemberTest {
         map.put(1, 2);
     }
 
-    private void configureDummyClientConnection(HazelcastInstance instance) throws UnknownHostException {
+    private void configureDummyClientConnection(HazelcastInstance instance) {
         Address memberAddress = getAddress(instance);
         dummyClientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         ClientNetworkConfig networkConfig = dummyClientConfig.getNetworkConfig();

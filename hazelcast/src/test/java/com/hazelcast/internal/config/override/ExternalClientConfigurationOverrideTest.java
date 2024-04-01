@@ -37,7 +37,7 @@ import static org.junit.Assert.assertFalse;
 public class ExternalClientConfigurationOverrideTest extends HazelcastTestSupport {
 
     @Test
-    public void shouldExtractConfigFromEnv() throws Exception {
+    public void shouldExtractConfigFromEnv() {
         ClientConfig config = new ClientConfig();
 
         Map<String, String> systemEnvs = new HashMap<>();
@@ -50,7 +50,7 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
     }
 
     @Test
-    public void shouldHandleConnectionStrategy() throws Exception {
+    public void shouldHandleConnectionStrategy() {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig()
                 .setReconnectMode(ASYNC)
@@ -65,7 +65,7 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
         assertEquals(ASYNC, config.getConnectionStrategyConfig().getReconnectMode());
     }
     @Test
-    public void shouldHandleCustomPropertiesConfig() throws Exception {
+    public void shouldHandleCustomPropertiesConfig() {
         ClientConfig config = new ClientConfig();
 
         Map<String, String> systemEnvs = new HashMap<>();

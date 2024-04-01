@@ -52,7 +52,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNumberOfConnectedClients() throws Exception {
+    public void testNumberOfConnectedClients() {
         HazelcastInstance h1 = factory.newHazelcastInstance();
         HazelcastInstance h2 = factory.newHazelcastInstance();
         assertClusterSize(2, h1, h2);

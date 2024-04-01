@@ -214,7 +214,7 @@ public class CPGroupAvailabilityListenerTest extends HazelcastRaftTestSupport {
     }
 
     @Test
-    public void whenMemberExitsNormally_thenReceiveEventsCommunityTest() throws Exception {
+    public void whenMemberExitsNormally_thenReceiveEventsCommunityTest() {
         GracefulShutdownAvailabilityListener listener = new GracefulShutdownAvailabilityListener();
 
         HazelcastInstance[] instances = newInstances(3);

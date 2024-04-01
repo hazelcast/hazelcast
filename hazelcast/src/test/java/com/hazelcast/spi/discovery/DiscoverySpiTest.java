@@ -180,7 +180,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_metadata_discovery_on_node_startup() throws Exception {
+    public void test_metadata_discovery_on_node_startup() {
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
@@ -198,7 +198,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_metadata_discovery_on_node_startup_overrides_what_is_configured_on_member() throws Exception {
+    public void test_metadata_discovery_on_node_startup_overrides_what_is_configured_on_member() {
         final String overridenAttribute = "test-string";
 
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
@@ -235,7 +235,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testParsing() throws Exception {
+    public void testParsing() {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
@@ -313,7 +313,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_AbstractDiscoveryStrategy_getOrNull() throws Exception {
+    public void test_AbstractDiscoveryStrategy_getOrNull() {
         PropertyDefinition first = new SimplePropertyDefinition("first", PropertyTypeConverter.STRING);
         PropertyDefinition second = new SimplePropertyDefinition("second", BOOLEAN);
         PropertyDefinition third = new SimplePropertyDefinition("third", PropertyTypeConverter.INTEGER);
@@ -356,7 +356,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_AbstractDiscoveryStrategy_getOrDefault() throws Exception {
+    public void test_AbstractDiscoveryStrategy_getOrDefault() {
         PropertyDefinition value = new SimplePropertyDefinition("value", PropertyTypeConverter.INTEGER);
 
         Map<String, Comparable> properties = Collections.emptyMap();

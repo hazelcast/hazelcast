@@ -108,7 +108,7 @@ public class CountingMigrationAwareServiceTest {
     }
 
     @Test
-    public void beforeMigration() throws Exception {
+    public void beforeMigration() {
         // when: countingMigrationAwareService.beforeMigration was invoked (in setUp method)
         // then: if event involves primary replica, stamp should change.
         if (isPrimaryReplicaMigrationEvent(event)) {
@@ -121,7 +121,7 @@ public class CountingMigrationAwareServiceTest {
     }
 
     @Test
-    public void commitMigration() throws Exception {
+    public void commitMigration() {
         // when: before - commit migration methods have been executed
         try {
             countingMigrationAwareService.commitMigration(event);
@@ -140,7 +140,7 @@ public class CountingMigrationAwareServiceTest {
     }
 
     @Test
-    public void rollbackMigration() throws Exception {
+    public void rollbackMigration() {
         // when: before - rollback migration methods have been executed
         try {
             countingMigrationAwareService.rollbackMigration(event);

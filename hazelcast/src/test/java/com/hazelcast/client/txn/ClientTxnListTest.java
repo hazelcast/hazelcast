@@ -57,7 +57,7 @@ public class ClientTxnListTest {
     }
 
     @Test
-    public void testAddRemove() throws Exception {
+    public void testAddRemove() {
         String listName = randomString();
         final IList l = client.getList(listName);
         l.add("item1");
@@ -77,7 +77,7 @@ public class ClientTxnListTest {
     }
 
     @Test
-    public void testAddAndRoleBack() throws Exception {
+    public void testAddAndRoleBack() {
         final String listName = randomString();
         final IList l = client.getList(listName);
         l.add("item1");

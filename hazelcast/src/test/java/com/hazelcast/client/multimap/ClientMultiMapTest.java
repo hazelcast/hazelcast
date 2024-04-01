@@ -117,7 +117,7 @@ public class ClientMultiMapTest {
     }
 
     public void testMultiMapPutAllTemplate(Map<String, Collection<? extends Integer>> expectedMultiMap,
-                                           Consumer<MultiMap<String, Integer>> putAllOperation) throws InterruptedException {
+                                           Consumer<MultiMap<String, Integer>> putAllOperation) {
         MultiMap<String, Integer> mmap1 = client.getMultiMap("testMultiMapList");
         MultiMap<String, Integer> mmap2 = client.getMultiMap("testMultiMapSet");
         Map<String, Collection<Integer>> resultMap1 = new ConcurrentHashMap<>();
@@ -175,7 +175,7 @@ public class ClientMultiMapTest {
     }
 
     @Test
-    public void testMultiMapPutAllAsyncMap() throws InterruptedException {
+    public void testMultiMapPutAllAsyncMap() {
         testMultiMapPutAllSetup();
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
@@ -188,7 +188,7 @@ public class ClientMultiMapTest {
     }
 
     @Test
-    public void testMultiMapPutAllAsyncKey() throws InterruptedException {
+    public void testMultiMapPutAllAsyncKey() {
         testMultiMapPutAllSetup();
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));

@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
 
     @Test
-    public void testEntryEvictEventsEmitted_afterAddEvents() throws Exception {
+    public void testEntryEvictEventsEmitted_afterAddEvents() {
         final int maxSize = 10;
         IMap<Integer, Integer> map = createMap(maxSize);
         EventOrderAwareEntryListener entryListener = new EventOrderAwareEntryListener();

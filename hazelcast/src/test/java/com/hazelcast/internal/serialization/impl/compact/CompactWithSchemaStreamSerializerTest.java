@@ -30,7 +30,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.nio.ByteOrder;
 
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
@@ -49,7 +48,7 @@ public class CompactWithSchemaStreamSerializerTest {
     }
 
     @Test
-    public void testReadAsGenericRecord() throws IOException {
+    public void testReadAsGenericRecord() {
         SerializationService serializationService = createSerializationService();
 
         GenericRecord expected = compact("fooBarTypeName")

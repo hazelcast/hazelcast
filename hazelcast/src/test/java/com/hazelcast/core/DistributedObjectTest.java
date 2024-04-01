@@ -195,7 +195,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
     @Test
     public void testDistributedObjectDestroyed_whenDestroyDuringInitialization()
-            throws InterruptedException, ExecutionException {
+            throws InterruptedException {
         final CountDownLatch initializationStarted = new CountDownLatch(1);
         final CountDownLatch objectDestroyed = new CountDownLatch(1);
         Config config = new Config();

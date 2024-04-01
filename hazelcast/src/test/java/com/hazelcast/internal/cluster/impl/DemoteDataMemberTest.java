@@ -376,7 +376,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_data_member_demotion_causes_no_data_loss_on_three_members() throws InterruptedException {
+    public void test_data_member_demotion_causes_no_data_loss_on_three_members() {
         int entryCount = 1000;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -412,7 +412,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_data_member_demotion_causes_no_data_loss_on_two_members() throws InterruptedException {
+    public void test_data_member_demotion_causes_no_data_loss_on_two_members() {
         int entryCount = 1000;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();

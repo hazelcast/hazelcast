@@ -826,7 +826,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 20000)
-    public void testClientShutdown_shouldNotWaitForNextConnectionAttempt() throws InterruptedException {
+    public void testClientShutdown_shouldNotWaitForNextConnectionAttempt() {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();

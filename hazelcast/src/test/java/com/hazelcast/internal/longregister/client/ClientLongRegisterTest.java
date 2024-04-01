@@ -54,7 +54,7 @@ public class ClientLongRegisterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         assertEquals(0, longRegister.getAndAdd(2));
         assertEquals(2, longRegister.get());
         longRegister.set(5);

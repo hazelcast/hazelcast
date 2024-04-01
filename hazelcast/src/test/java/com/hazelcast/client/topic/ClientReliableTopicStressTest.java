@@ -79,7 +79,7 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test() throws InterruptedException {
+    public void test() {
         final StressMessageListener listener1 = new StressMessageListener(1);
         topic.addMessageListener(listener1);
         final StressMessageListener listener2 = new StressMessageListener(2);
@@ -100,7 +100,7 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(produceThread.send, listener1.received);
                 assertEquals(produceThread.send, listener2.received);
 

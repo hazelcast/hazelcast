@@ -47,7 +47,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
     private static final int MAX_TASKS = 20;
 
     @Test
-    public void droppedEntryProcessorTest_withKeyOwningNodeTermination() throws Exception {
+    public void droppedEntryProcessorTest_withKeyOwningNodeTermination() {
         String mapName = randomString();
 
         Config config = new Config();
@@ -72,7 +72,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
             }
 
             assertTrueEventually(new AssertTask() {
-                public void run() throws Exception {
+                public void run() {
                     // using >= for the test, as it can be the case that an EntryProcessor could be executed more than once,
                     // when the owning node is terminated after running the EntryProcessor (and the backup),
                     // but before the response is sent

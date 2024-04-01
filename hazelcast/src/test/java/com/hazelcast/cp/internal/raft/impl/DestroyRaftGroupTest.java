@@ -56,7 +56,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_destroyOpIsAppendedButNotCommitted_then_cannotAppendNewEntry() throws ExecutionException, InterruptedException {
+    public void when_destroyOpIsAppendedButNotCommitted_then_cannotAppendNewEntry() {
         group = newGroup(2);
         group.start();
 

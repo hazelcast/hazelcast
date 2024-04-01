@@ -173,7 +173,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOwnerAndBackupEntryCountsAreEqualAfterEviction_whenPerNodeMaxSizePolicyIsUsed() throws Exception {
+    public void testOwnerAndBackupEntryCountsAreEqualAfterEviction_whenPerNodeMaxSizePolicyIsUsed() {
         String mapName = randomMapName();
         Config config = createConfig(PER_NODE, 300, mapName);
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
@@ -476,7 +476,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     void assertPerNodePolicyWorks(final Collection<IMap> maps, final int perNodeMaxSize, final int nodeCount) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int mapSize = getSize(maps);
                 final String message = format("map size is %d and it should be smaller "
                                 + "than perNodeMaxSize * nodeCount which is %d",
@@ -490,7 +490,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     void assertPerPartitionPolicyWorks(final Collection<IMap> maps, final int perPartitionMaxSize) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int mapSize = getSize(maps);
                 final String message = format("map size is %d and it should be smaller "
                                 + "than perPartitionMaxSize * PARTITION_COUNT which is %d",
@@ -505,7 +505,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
 
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final long heapCost = getHeapCost(maps);
                 final String message = format("heap cost is %d and it should be smaller "
                                 + "than allowed max heap size %d in bytes",
@@ -519,7 +519,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     void assertUsedHeapPercentagePolicyTriggersEviction(final Collection<IMap> maps, final int putCount) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int size = getSize(maps);
                 final long heapCost = getHeapCost(maps);
                 final String message = format("map size is %d, heap cost is %d in "
@@ -534,7 +534,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     void assertUsedFreeHeapPolicyTriggersEviction(final Collection<IMap> maps) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int size = getSize(maps);
                 final String message = format("map size is %d", size);
 

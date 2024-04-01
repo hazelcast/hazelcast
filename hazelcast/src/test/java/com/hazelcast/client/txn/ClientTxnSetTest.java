@@ -56,7 +56,7 @@ public class ClientTxnSetTest {
 
 
     @Test
-    public void testAdd_withinTxn() throws Exception {
+    public void testAdd_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -72,7 +72,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testSetSizeAfterAdd_withinTxn() throws Exception {
+    public void testSetSizeAfterAdd_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -89,7 +89,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testRemove_withinTxn() throws Exception {
+    public void testRemove_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -106,7 +106,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testSetSizeAfterRemove_withinTxn() throws Exception {
+    public void testSetSizeAfterRemove_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -124,7 +124,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testAddDuplicateElement_withinTxn() throws Exception {
+    public void testAddDuplicateElement_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
 
@@ -139,7 +139,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testAddExistingElement_withinTxn() throws Exception {
+    public void testAddExistingElement_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -156,7 +156,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testSetSizeAfterAddingDuplicateElement_withinTxn() throws Exception {
+    public void testSetSizeAfterAddingDuplicateElement_withinTxn() {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -173,7 +173,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testAddRollBack() throws Exception {
+    public void testAddRollBack() {
         final String setName = randomString();
         final ISet set = client.getSet(setName);
 

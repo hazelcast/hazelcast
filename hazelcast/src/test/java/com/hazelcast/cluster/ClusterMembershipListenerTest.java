@@ -159,7 +159,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMembershipListenerSequentialInvocation() throws Exception {
+    public void testMembershipListenerSequentialInvocation() {
 
         final int nodeCount = 10;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);

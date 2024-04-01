@@ -55,16 +55,16 @@ public class ClientMapTryLockConcurrentTests {
     }
 
     @Test
-    public void concurrent_MapTryLockTest() throws InterruptedException {
+    public void concurrent_MapTryLockTest() {
         concurrent_MapTryLock(false);
     }
 
     @Test
-    public void concurrent_MapTryLockTimeOutTest() throws InterruptedException {
+    public void concurrent_MapTryLockTimeOutTest() {
         concurrent_MapTryLock(true);
     }
 
-    private void concurrent_MapTryLock(boolean withTimeOut) throws InterruptedException {
+    private void concurrent_MapTryLock(boolean withTimeOut) {
         final int maxThreads = 8;
         final IMap<String, Integer> map = client.getMap(randomString());
         final String upKey = "upKey";

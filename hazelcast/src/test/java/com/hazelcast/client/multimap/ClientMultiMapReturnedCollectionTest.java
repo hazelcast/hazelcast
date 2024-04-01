@@ -60,7 +60,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testGet_withSetBackedValueCollection() throws Exception {
+    public void testGet_withSetBackedValueCollection() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
 
         multiMap.put(0, 1);
@@ -73,7 +73,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testGet_withSetBackedValueCollection_onEmptyMultiMap() throws Exception {
+    public void testGet_withSetBackedValueCollection_onEmptyMultiMap() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
         Collection<Integer> collection = multiMap.get(0);
 
@@ -81,7 +81,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testGet_withListBackedValueCollection() throws Exception {
+    public void testGet_withListBackedValueCollection() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
 
         multiMap.put(0, 1);
@@ -94,7 +94,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testGet_withListBackedValueCollection_onEmptyMultiMap() throws Exception {
+    public void testGet_withListBackedValueCollection_onEmptyMultiMap() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
         Collection<Integer> collection = multiMap.get(0);
 
@@ -102,7 +102,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testRemove_withSetBackedValueCollection() throws Exception {
+    public void testRemove_withSetBackedValueCollection() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
 
         multiMap.put(0, 1);
@@ -115,7 +115,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testRemove_withSetBackedValueCollection_onEmptyMultiMap() throws Exception {
+    public void testRemove_withSetBackedValueCollection_onEmptyMultiMap() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
         Collection<Integer> collection = multiMap.remove(0);
 
@@ -123,7 +123,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testRemove_withListBackedValueCollection() throws Exception {
+    public void testRemove_withListBackedValueCollection() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
 
         multiMap.put(0, 1);
@@ -136,7 +136,7 @@ public class ClientMultiMapReturnedCollectionTest {
     }
 
     @Test
-    public void testRemove_withListBackedValueCollection_onEmptyMultiMap() throws Exception {
+    public void testRemove_withListBackedValueCollection_onEmptyMultiMap() {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
         Collection<Integer> collection = multiMap.remove(0);
 

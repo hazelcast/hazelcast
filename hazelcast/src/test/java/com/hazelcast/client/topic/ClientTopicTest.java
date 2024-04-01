@@ -105,14 +105,14 @@ public class ClientTopicTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testGetLocalTopicStats() throws Exception {
+    public void testGetLocalTopicStats() {
         ITopic topic = client.getTopic(randomString());
 
         topic.getLocalTopicStats();
     }
 
     @Test
-    public void testPublish() throws InterruptedException {
+    public void testPublish() {
         String publishValue = "message";
         final AtomicInteger count = new AtomicInteger(0);
         final Collection<String> receivedValues = new ArrayList<>();

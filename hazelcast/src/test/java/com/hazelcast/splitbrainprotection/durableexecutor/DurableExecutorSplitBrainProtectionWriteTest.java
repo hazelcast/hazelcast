@@ -98,7 +98,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     }
 
     @Test
-    public void retrieveAndDisposeResult_noSplitBrainProtection() throws Exception {
+    public void retrieveAndDisposeResult_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).disposeResult(125L)).isInstanceOf(SplitBrainProtectionException.class);
     }
 

@@ -63,7 +63,7 @@ public class ClientMultiMapListenerStressTest {
     }
 
     @Test
-    public void listenerAddStressTest() throws InterruptedException {
+    public void listenerAddStressTest() {
         final PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
 
         int idx = 0;
@@ -118,7 +118,7 @@ public class ClientMultiMapListenerStressTest {
         public void assertResult(final int target) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(target, listener.add.get());
                 }
             });

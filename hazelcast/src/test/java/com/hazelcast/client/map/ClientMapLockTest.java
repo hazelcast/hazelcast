@@ -404,7 +404,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testLockKey_thenTryPutOnKey() throws Exception {
+    public void testLockKey_thenTryPutOnKey() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
         final String value = "value";
@@ -425,21 +425,21 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testLockTTLExpires_usingIsLocked() throws Exception {
+    public void testLockTTLExpires_usingIsLocked() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
         map.lock(key, 2, TimeUnit.SECONDS);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(map.isLocked(key));
             }
         });
     }
 
     @Test
-    public void testLockTTLExpires() throws Exception {
+    public void testLockTTLExpires() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
         final String oldValue = "value";
@@ -461,7 +461,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testLockTTLExpires_onAbsentKey() throws Exception {
+    public void testLockTTLExpires_onAbsentKey() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
         final String value = "value";
@@ -481,7 +481,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testisLocked_whenLockedFromOtherThread() throws Exception {
+    public void testisLocked_whenLockedFromOtherThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
 
@@ -498,7 +498,7 @@ public class ClientMapLockTest {
     }
 
     @Test(expected = IllegalMonitorStateException.class)
-    public void testUnLocked_whenLockedFromOtherThread() throws Exception {
+    public void testUnLocked_whenLockedFromOtherThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
 
@@ -534,7 +534,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testTryPut_whenLockedFromOtherThread() throws Exception {
+    public void testTryPut_whenLockedFromOtherThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
 
@@ -551,7 +551,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testTryRemove_whenLockedFromOtherThread() throws Exception {
+    public void testTryRemove_whenLockedFromOtherThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
 
@@ -568,7 +568,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testTryLock_whenLockedFromOtherThread() throws Exception {
+    public void testTryLock_whenLockedFromOtherThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
 
@@ -637,21 +637,21 @@ public class ClientMapLockTest {
         map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Assert.assertFalse(map.isLocked(key));
             }
         }, 30);
     }
 
     @Test
-    public void testExecuteOnKeyWhenLock() throws InterruptedException {
+    public void testExecuteOnKeyWhenLock() {
         final IMap map = getMapForLock();
         final String key = randomString();
 
         map.lock(key);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 String payload = randomString();
                 Object ret = map.executeOnKey(key, new LockEntryProcessor(payload));
                 assertEquals(payload, ret);

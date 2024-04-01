@@ -64,7 +64,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void throws_exception_whenPredicateNull() throws Exception {
+    public void throws_exception_whenPredicateNull() {
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("predicate cannot be null");
 
@@ -73,7 +73,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_all_entries_whenPredicateTrue() throws Exception {
+    public void removes_all_entries_whenPredicateTrue() {
         IMap map = client.getMap("test");
 
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -86,7 +86,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_no_entries_whenPredicateFalse() throws Exception {
+    public void removes_no_entries_whenPredicateFalse() {
         IMap map = client.getMap("test");
 
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -99,7 +99,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_odd_keys_whenPredicateOdd() throws Exception {
+    public void removes_odd_keys_whenPredicateOdd() {
         IMap<Integer, Integer> map = client.getMap("test");
 
         for (int i = 0; i < MAP_SIZE; i++) {

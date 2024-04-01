@@ -132,7 +132,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     // ============================================
 
     @Test
-    public void publishSingle() throws InterruptedException {
+    public void publishSingle() {
         ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
@@ -143,7 +143,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void publishMultiple() throws InterruptedException {
+    public void publishMultiple() {
         ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
@@ -233,7 +233,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testGetLocalTopicStats() throws Exception {
+    public void testGetLocalTopicStats() {
         ITopic topic = client.getReliableTopic(randomString());
 
         topic.getLocalTopicStats();

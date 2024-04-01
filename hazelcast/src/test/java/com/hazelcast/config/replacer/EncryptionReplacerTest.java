@@ -80,7 +80,7 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testNoPasswordInputProvided() throws Exception {
+    public void testNoPasswordInputProvided() {
         EncryptionReplacer replacer = new EncryptionReplacer();
         Properties properties = new Properties();
         properties.setProperty(EncryptionReplacer.PROPERTY_PASSWORD_USER_PROPERTIES, "false");
@@ -110,7 +110,7 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
     }
 
     @Test
-    public void testUserChanged() throws Exception {
+    public void testUserChanged() {
         assumeDefaultAlgorithmsSupported();
         AbstractPbeReplacer replacer = createAndInitReplacer(new Properties());
         userNameProperty.setOrClearProperty("somebodyElse");

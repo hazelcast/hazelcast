@@ -155,7 +155,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTxnMapPut() throws Exception {
+    public void testTxnMapPut() {
         final String mapName = randomString();
         final String key = "key";
         final String value = "Value";
@@ -171,7 +171,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTxnMapPut_BeforeCommit() throws Exception {
+    public void testTxnMapPut_BeforeCommit() {
         final String mapName = randomString();
         final String key = "key";
         final String value = "Value";
@@ -187,7 +187,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTxnMapGet_BeforeCommit() throws Exception {
+    public void testTxnMapGet_BeforeCommit() {
         final String mapName = randomString();
         final String key = "key";
         final String value = "Value";
@@ -226,7 +226,7 @@ public class ClientTxnMapTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map.get(key));
             }
         });
@@ -279,7 +279,7 @@ public class ClientTxnMapTest {
 
 
     @Test
-    public void testKeySetValues() throws Exception {
+    public void testKeySetValues() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
         map.put("key1", "value1");
@@ -302,7 +302,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testKeysetAndValuesWithPredicates() throws Exception {
+    public void testKeysetAndValuesWithPredicates() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
 
@@ -330,7 +330,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testDuplicateValuesWithPredicates() throws Exception {
+    public void testDuplicateValuesWithPredicates() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
 
@@ -355,7 +355,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testPutAndRoleBack() throws Exception {
+    public void testPutAndRoleBack() {
         final String mapName = randomString();
         final String key = "key";
         final String value = "value";
@@ -371,7 +371,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapContainsKey() throws Exception {
+    public void testTnxMapContainsKey() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
         map.put("key1", "value1");
@@ -388,7 +388,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapIsEmpty() throws Exception {
+    public void testTnxMapIsEmpty() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
 
@@ -400,7 +400,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapPutIfAbsent() throws Exception {
+    public void testTnxMapPutIfAbsent() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
         final String keyValue1 = "keyValue1";
@@ -421,7 +421,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapReplace() throws Exception {
+    public void testTnxMapReplace() {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
         final String key1 = "key1";
@@ -443,7 +443,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapReplaceKeyValue() throws Exception {
+    public void testTnxMapReplaceKeyValue() {
         final String mapName = randomString();
         final String key1 = "key1";
         final String oldValue1 = "old1";
@@ -469,7 +469,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapRemove() throws Exception {
+    public void testTnxMapRemove() {
         final String mapName = randomString();
         final String key = "key1";
         final String value = "old1";
@@ -489,7 +489,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapRemoveKeyValue() throws Exception {
+    public void testTnxMapRemoveKeyValue() {
         final String mapName = randomString();
         final String key1 = "key1";
         final String oldValue1 = "old1";
@@ -514,7 +514,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testTnxMapDelete() throws Exception {
+    public void testTnxMapDelete() {
         final String mapName = randomString();
         final String key = "key1";
         final String value = "old1";
@@ -534,7 +534,7 @@ public class ClientTxnMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testKeySetPredicateNull() throws Exception {
+    public void testKeySetPredicateNull() {
         final String mapName = randomString();
 
         final TransactionContext context = client.newTransactionContext();
@@ -545,7 +545,7 @@ public class ClientTxnMapTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testKeyValuesPredicateNull() throws Exception {
+    public void testKeyValuesPredicateNull() {
         final String mapName = randomString();
 
         final TransactionContext context = client.newTransactionContext();

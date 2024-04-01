@@ -73,7 +73,7 @@ public class ClientProxyDestroyTest {
     }
 
     @Test
-    public void testOperationAfterDestroy() throws Exception {
+    public void testOperationAfterDestroy() {
         final String mapName = randomMapName();
         final IMap<Object, Object> clientMap = client.getMap(mapName);
         clientMap.destroy();

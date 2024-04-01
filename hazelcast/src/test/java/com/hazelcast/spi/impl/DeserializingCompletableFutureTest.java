@@ -98,7 +98,7 @@ public class DeserializingCompletableFutureTest {
     }
 
     @Test
-    public void test_getNow_Object() throws Exception {
+    public void test_getNow_Object() {
         Object value = "value";
         DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
 
@@ -107,7 +107,7 @@ public class DeserializingCompletableFutureTest {
     }
 
     @Test
-    public void test_getNow_Data() throws Exception {
+    public void test_getNow_Data() {
         Object value = "value";
         DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
 
@@ -121,7 +121,7 @@ public class DeserializingCompletableFutureTest {
     }
 
     @Test
-    public void test_joinInternal() throws Exception {
+    public void test_joinInternal() {
         Object value = "value";
         DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
 
