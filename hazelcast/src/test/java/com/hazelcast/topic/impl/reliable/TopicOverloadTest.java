@@ -54,7 +54,7 @@ public class TopicOverloadTest extends TopicOverloadAbstractTest {
         serializationService = getSerializationService(hz);
 
         String topicName = getTestMethodName();
-        topic = hz.<String>getReliableTopic(topicName);
+        topic = hz.getReliableTopic(topicName);
 
         ringbuffer = ((ReliableTopicProxy<String>) topic).ringbuffer;
     }

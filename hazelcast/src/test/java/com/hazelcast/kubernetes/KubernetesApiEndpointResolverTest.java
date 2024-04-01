@@ -51,7 +51,7 @@ public class KubernetesApiEndpointResolverTest {
     @Test
     public void resolveWhenNodeInFound() {
         // given
-        List<Endpoint> endpoints = Collections.<Endpoint>emptyList();
+        List<Endpoint> endpoints = Collections.emptyList();
         given(client.endpoints()).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null, null, null, null, client);

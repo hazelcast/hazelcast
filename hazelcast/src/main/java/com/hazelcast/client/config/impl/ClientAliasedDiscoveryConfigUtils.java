@@ -65,7 +65,7 @@ public final class ClientAliasedDiscoveryConfigUtils {
      * Gets a list of all aliased discovery configs from {@code config}.
      */
     public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(ClientNetworkConfig networkConfig) {
-        return Arrays.<AliasedDiscoveryConfig<?>>asList(networkConfig.getAwsConfig(), networkConfig.getGcpConfig(),
+        return Arrays.asList(networkConfig.getAwsConfig(), networkConfig.getGcpConfig(),
                 networkConfig.getAzureConfig(), networkConfig.getKubernetesConfig(), networkConfig.getEurekaConfig());
     }
 

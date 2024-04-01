@@ -70,13 +70,13 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     @Test(expected = AssertionError.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexNegative_thenThrowException() {
-        Set<ServiceNamespace> namespaces = Collections.<ServiceNamespace>singleton(INSTANCE);
+        Set<ServiceNamespace> namespaces = Collections.singleton(INSTANCE);
         manager.triggerPartitionReplicaSync(PARTITION_ID, namespaces, -1);
     }
 
     @Test(expected = AssertionError.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexTooLarge_thenThrowException() {
-        Set<ServiceNamespace> namespaces = Collections.<ServiceNamespace>singleton(INSTANCE);
+        Set<ServiceNamespace> namespaces = Collections.singleton(INSTANCE);
         manager.triggerPartitionReplicaSync(PARTITION_ID, namespaces, InternalPartition.MAX_REPLICA_COUNT + 1);
     }
 

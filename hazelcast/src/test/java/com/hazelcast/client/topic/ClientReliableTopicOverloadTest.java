@@ -62,7 +62,7 @@ public class ClientReliableTopicOverloadTest extends TopicOverloadAbstractTest {
         serializationService = ((HazelcastClientProxy) client).getSerializationService();
 
         String topicName = getTestMethodName();
-        topic = client.<String>getReliableTopic(topicName);
+        topic = client.getReliableTopic(topicName);
 
         ringbuffer = ((ClientReliableTopicProxy<String>) topic).getRingbuffer();
     }

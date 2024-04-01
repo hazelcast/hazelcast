@@ -45,7 +45,7 @@ public class ServerSocketRegistry
     public ServerSocketRegistry(Map<EndpointQualifier, ServerSocketChannel> map, boolean unifiedSocket) {
         this.unifiedSocket = unifiedSocket;
         this.serverSocketChannelMap = map == null
-                ? Collections.<EndpointQualifier, ServerSocketChannel>emptyMap()
+                ? Collections.emptyMap()
                 : map;
         buildEntries();
     }

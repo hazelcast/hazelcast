@@ -149,7 +149,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
         List<Integer> ownedPartitions = memberPartitionsMap.get(getNodeEngine().getThisAddress());
-        return ownedPartitions == null ? Collections.<Integer>emptyList() : ownedPartitions;
+        return ownedPartitions == null ? Collections.emptyList() : ownedPartitions;
     }
 
     private Map<Integer, UUID> getPartitionUuidList(List<Integer> ownedPartitionIds) {

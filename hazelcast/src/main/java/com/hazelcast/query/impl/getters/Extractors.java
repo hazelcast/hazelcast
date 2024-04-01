@@ -65,7 +65,7 @@ public final class Extractors {
             Supplier<GetterCache> getterCacheSupplier
     ) {
         this.extractors = attributeConfigs == null
-                ? Collections.<String, ValueExtractor>emptyMap()
+                ? Collections.emptyMap()
                 : instantiateExtractors(attributeConfigs, classLoader);
         this.getterCache = getterCacheSupplier.get();
         this.argumentsParser = new DefaultArgumentParser();
