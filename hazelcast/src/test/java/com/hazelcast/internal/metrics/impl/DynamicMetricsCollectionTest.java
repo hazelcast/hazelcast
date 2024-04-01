@@ -52,9 +52,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         CapturingCollector collector = new CapturingCollector();
         MetricsRegistry registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        registry.registerDynamicMetricsProvider((descriptor, context) -> {
-            context.collect(descriptor.withPrefix("test"), source);
-        });
+        registry.registerDynamicMetricsProvider((descriptor, context) -> context.collect(descriptor.withPrefix("test"), source));
         registry.collect(collector);
 
         assertEquals(42L, collector.captures()

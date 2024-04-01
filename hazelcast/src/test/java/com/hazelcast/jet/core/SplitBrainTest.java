@@ -114,9 +114,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
                 minorityJobFutureRef.set(masterContext.jobContext().jobCompletionFuture());
             });
 
-            assertTrueAllTheTime(() -> {
-                assertStatusNotRunningOrStarting(service2.getJobCoordinationService().getJobStatus(jobId).get());
-            }, 20);
+            assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(service2.getJobCoordinationService().getJobStatus(jobId).get()), 20);
         };
 
         Consumer<HazelcastInstance[]> afterMerge = instances -> {

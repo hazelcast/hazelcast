@@ -92,12 +92,8 @@ public class ClientContext {
     }
 
     private void registerDisposalTasksTo(HazelcastClientInstanceImpl client) {
-        client.disposeOnClusterChange(() -> {
-            nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches);
-        });
-        client.disposeOnClientShutdown(() -> {
-            nearCacheManagers.values().forEach(NearCacheManager::destroyAllNearCaches);
-        });
+        client.disposeOnClusterChange(() -> nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches));
+        client.disposeOnClientShutdown(() -> nearCacheManagers.values().forEach(NearCacheManager::destroyAllNearCaches));
     }
 
     public ClientQueryCacheContext getQueryCacheContext() {

@@ -57,12 +57,8 @@ public class StatefulMappingStressTest extends JetTestSupport {
         stressTest(
                 streamStageWithKey -> streamStageWithKey.mapStateful(TTL,
                         Object::new,
-                        (state, key, input) -> {
-                            return entry(0, 1);
-                        },
-                        (state, key, wm) -> {
-                            return entry(1, 1);
-                        }));
+                        (state, key, input) -> entry(0, 1),
+                        (state, key, wm) -> entry(1, 1)));
     }
 
     @Test
@@ -70,12 +66,8 @@ public class StatefulMappingStressTest extends JetTestSupport {
         stressTest(
                 streamStageWithKey -> streamStageWithKey.flatMapStateful(TTL,
                         Object::new,
-                        (state, key, input) -> {
-                            return Traversers.singleton(entry(0, 1));
-                        },
-                        (state, key, wm) -> {
-                            return Traversers.singleton(entry(1, 1));
-                        }));
+                        (state, key, input) -> Traversers.singleton(entry(0, 1)),
+                        (state, key, wm) -> Traversers.singleton(entry(1, 1))));
     }
 
     private void stressTest(

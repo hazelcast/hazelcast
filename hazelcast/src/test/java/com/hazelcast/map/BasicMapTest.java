@@ -2122,9 +2122,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final IMap<String, Integer> sourceMap = getSourceMapFor_ForEach_Test();
         final IMap<String, Integer> targetMap = getTargetMapFor_ForEach_Test();
 
-        sourceMap.forEach((k, v) -> {
-            targetMap.put(k, v);
-        });
+        sourceMap.forEach((k, v) -> targetMap.put(k, v));
 
         assertEntriesEqual(sourceMap, targetMap);
     }

@@ -64,7 +64,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
         public Object process(Map.Entry entry) {
             Node node = getNode(instance);
             NodeEngineImpl nodeEngine = node.nodeEngine;
-            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            OperationServiceImpl operationService = nodeEngine.getOperationService();
             Data sourceKey = nodeEngine.toData(entry.getKey());
             Data key = generateKey_FallsToSamePartitionThread_ButDifferentPartition(nodeEngine, sourceKey);
             Data val = nodeEngine.toData(randomString());

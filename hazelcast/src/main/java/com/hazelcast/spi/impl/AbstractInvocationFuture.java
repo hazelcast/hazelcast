@@ -1009,9 +1009,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenCompleteAsync((v, t) -> {
-                future.completeExceptionally(t);
-            }, CALLER_RUNS);
+            otherFuture.whenCompleteAsync((v, t) -> future.completeExceptionally(t), CALLER_RUNS);
             return;
         }
         U otherValue = otherFuture.join();
@@ -1057,9 +1055,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenCompleteAsync((v, t) -> {
-                future.completeExceptionally(t);
-            }, CALLER_RUNS);
+            otherFuture.whenCompleteAsync((v, t) -> future.completeExceptionally(t), CALLER_RUNS);
             return;
         }
         U otherValue = otherFuture.join();
@@ -1104,9 +1100,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenCompleteAsync((v, t) -> {
-                future.completeExceptionally(t);
-            }, CALLER_RUNS);
+            otherFuture.whenCompleteAsync((v, t) -> future.completeExceptionally(t), CALLER_RUNS);
             return;
         }
         runAfter0(future, action, executor);

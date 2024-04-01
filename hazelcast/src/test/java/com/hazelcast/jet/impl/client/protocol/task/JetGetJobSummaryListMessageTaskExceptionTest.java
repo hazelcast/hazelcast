@@ -49,9 +49,7 @@ public class JetGetJobSummaryListMessageTaskExceptionTest extends AbstractJetMul
         JetGetJobSummaryListMessageTask task = new JetGetJobSummaryListMessageTask(null, node, connection);
 
         assertThatExceptionOfType(OtherException.class)
-                .isThrownBy(() -> {
-                    task.reduce(OTHER_EXCEPTION_RESULT);
-                })
+                .isThrownBy(() -> task.reduce(OTHER_EXCEPTION_RESULT))
                 .withMessage(OTHER_EXCEPTION_MESSAGE);
     }
 

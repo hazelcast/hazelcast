@@ -455,9 +455,7 @@ public class HTTPCommunicator {
         @Override
         public String toString() {
             StringBuilder str = new StringBuilder("HTTP ").append(responseCode).append("\r\n");
-            responseHeaders.forEach((name, values) -> {
-                values.forEach(headerValue -> str.append(name).append(": ").append(headerValue).append("\r\n"));
-            });
+            responseHeaders.forEach((name, values) -> values.forEach(headerValue -> str.append(name).append(": ").append(headerValue).append("\r\n")));
             str.append("\r\n");
             return str.append(response).toString();
         }

@@ -127,10 +127,7 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
             MapEntries responses = new MapEntries(recordStore.size());
             state.setResult(responses);
 
-            recordStore.forEach((key, record) -> {
-                processInternal(state, toHeapData(key), record);
-
-            }, false);
+            recordStore.forEach((key, record) -> processInternal(state, toHeapData(key), record), false);
         }
 
         private void processInternal(State state, Data key, Record record) {

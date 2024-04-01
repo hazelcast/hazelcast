@@ -59,9 +59,8 @@ public interface OffsetReader {
         return Short.toUnsignedInt(offset);
     };
 
-    OffsetReader INT_OFFSET_READER = (in, varSizedOffsetsOffset, index) -> {
-        return in.readInt(varSizedOffsetsOffset + index * Bits.INT_SIZE_IN_BYTES);
-    };
+    OffsetReader INT_OFFSET_READER = (in, varSizedOffsetsOffset, index) ->
+            in.readInt(varSizedOffsetsOffset + index * Bits.INT_SIZE_IN_BYTES);
 
     /**
      * Returns the offset reader to use for the given data length.

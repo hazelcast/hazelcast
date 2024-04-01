@@ -104,9 +104,7 @@ public class MCEventStoreTest {
             assertPolledEventCount(0, MC_2_UUID);
         });
         logEvent();
-        inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_UUID);
-        });
+        inNextMilli(() -> assertPolledEventCount(1, MC_1_UUID));
         inNextMilli(() -> {
             logEvent();
             assertPolledEventCount(1, MC_1_UUID);
@@ -122,9 +120,7 @@ public class MCEventStoreTest {
             assertPolledEventCount(0, MC_1_UUID);
             assertPolledEventCount(0, MC_2_UUID);
         });
-        inNextMilli(() -> {
-            assertPolledEventCount(0, MC_1_UUID);
-        });
+        inNextMilli(() -> assertPolledEventCount(0, MC_1_UUID));
         inNextMilli(() -> {
             logEvent();
             assertPolledEventCount(1, MC_1_UUID);

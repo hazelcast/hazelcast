@@ -183,9 +183,7 @@ public class ClientMultiMapTest {
         expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
 
         testMultiMapPutAllTemplate(expectedMultiMap,
-                (o) -> {
-                    o.putAllAsync(expectedMultiMap);
-                }
+                (o) -> o.putAllAsync(expectedMultiMap)
         );
     }
 
@@ -198,11 +196,9 @@ public class ClientMultiMapTest {
         expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
 
         testMultiMapPutAllTemplate(expectedMultiMap,
-                (o) -> {
-                    expectedMultiMap.keySet().forEach(
-                            (v) -> o.putAllAsync(v, expectedMultiMap.get(v))
-                    );
-                }
+                (o) -> expectedMultiMap.keySet().forEach(
+                        (v) -> o.putAllAsync(v, expectedMultiMap.get(v))
+                )
         );
     }
 

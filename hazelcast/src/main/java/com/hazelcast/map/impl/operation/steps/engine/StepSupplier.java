@@ -204,9 +204,7 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
                 }
             } catch (NativeOutOfMemoryError e) {
                 if (runningOnPartitionThread) {
-                    rerunWithForcedEviction(() -> {
-                        step.runStep(state);
-                    });
+                    rerunWithForcedEviction(() -> step.runStep(state));
                 } else {
                     throw e;
                 }

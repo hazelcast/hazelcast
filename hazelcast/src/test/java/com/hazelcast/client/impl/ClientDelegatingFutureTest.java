@@ -132,9 +132,7 @@ public class ClientDelegatingFutureTest {
 
     @Test
     public void whenComplete() {
-        CompletableFuture<String> nextStage = delegatingFuture.whenComplete((v, t) -> {
-            assertEquals(DESERIALIZED_VALUE, v);
-        });
+        CompletableFuture<String> nextStage = delegatingFuture.whenComplete((v, t) -> assertEquals(DESERIALIZED_VALUE, v));
         invocationFuture.complete(response);
 
         assertTrueEventually(() -> assertTrue(nextStage.isDone()));
@@ -143,9 +141,7 @@ public class ClientDelegatingFutureTest {
 
     @Test
     public void whenComplete_whenExceptional() {
-        CompletableFuture<String> nextStage = delegatingFuture.whenComplete((v, t) -> {
-            assertInstanceOf(IllegalArgumentException.class, t);
-        });
+        CompletableFuture<String> nextStage = delegatingFuture.whenComplete((v, t) -> assertInstanceOf(IllegalArgumentException.class, t));
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
         assertTrueEventually(() -> assertTrue(nextStage.isDone()));

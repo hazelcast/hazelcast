@@ -116,9 +116,8 @@ public enum EntryOpSteps implements IMapOpStep {
                 // When stats are enabled, to update
                 // the stats wrap execution inside a
                 // StatsAwareRunnable and run directly here
-                StatsAwareRunnable statsAwareRunnable = new StatsAwareRunnable(() -> {
-                    runStepInternal(state);
-                }, getExecutorName(state), executorStats);
+                StatsAwareRunnable statsAwareRunnable = new StatsAwareRunnable(() ->
+                        runStepInternal(state), getExecutorName(state), executorStats);
                 // directly run StatsAwareRunnable
                 statsAwareRunnable.run();
             } else {

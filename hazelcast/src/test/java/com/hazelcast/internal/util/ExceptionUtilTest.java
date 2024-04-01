@@ -122,17 +122,11 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     @Test
     public void testRethrowFromCollection_when_notIgnoredThrowableOnList_then_isRethrown() {
         assertThatExceptionOfType(TestException.class)
-                .isThrownBy(() -> {
-                    rethrowFromCollection(Collections.singleton(new TestException()));
-                });
+                .isThrownBy(() -> rethrowFromCollection(Collections.singleton(new TestException())));
         assertThatExceptionOfType(TestException.class)
-                .isThrownBy(() -> {
-                    rethrowFromCollection(Collections.singleton(new TestException()), NullPointerException.class);
-                });
+                .isThrownBy(() -> rethrowFromCollection(Collections.singleton(new TestException()), NullPointerException.class));
         assertThatExceptionOfType(TestException.class)
-                .isThrownBy(() -> {
-                    rethrowFromCollection(asList(new NullPointerException(), new TestException()), NullPointerException.class);
-                });
+                .isThrownBy(() -> rethrowFromCollection(asList(new NullPointerException(), new TestException()), NullPointerException.class));
     }
 
     @Test

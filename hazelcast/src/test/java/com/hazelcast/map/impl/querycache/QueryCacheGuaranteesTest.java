@@ -24,7 +24,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -85,12 +84,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
             map3.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(36, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(36, queryCache.size()));
     }
 
     @Test
@@ -136,11 +130,6 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
             map2.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(43, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(43, queryCache.size()));
     }
 }

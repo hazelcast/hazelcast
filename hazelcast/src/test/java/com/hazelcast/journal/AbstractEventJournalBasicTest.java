@@ -130,9 +130,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final Runnable ec = () -> {
-            latch.countDown();
-        };
+        final Runnable ec = latch::countDown;
 
         Thread consumer = new Thread(
                 () -> readFromEventJournal(context.dataAdapter, 0, 10, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION)

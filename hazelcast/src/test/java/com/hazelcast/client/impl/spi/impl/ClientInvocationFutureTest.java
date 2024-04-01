@@ -172,9 +172,7 @@ public class ClientInvocationFutureTest {
 
     @Test
     public void test_whenComplete() throws Exception {
-        CompletableFuture nextStage = invocationFuture.whenComplete((value, throwable) -> {
-            assertEquals(response, value);
-        });
+        CompletableFuture nextStage = invocationFuture.whenComplete((value, throwable) -> assertEquals(response, value));
         invocationFuture.complete(response);
 
         assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
@@ -184,9 +182,7 @@ public class ClientInvocationFutureTest {
 
     @Test
     public void test_thenRun() throws Exception {
-        CompletableFuture nextStage = invocationFuture.thenRun(() -> {
-            ignore(null);
-        });
+        CompletableFuture nextStage = invocationFuture.thenRun(() -> ignore(null));
         invocationFuture.complete(response);
 
         assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));

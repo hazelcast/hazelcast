@@ -140,9 +140,7 @@ public class ClientInvocationTest extends ClientTestSupport {
             // submitStage is completed with HazelcastClientNotActiveException
             CompletionStage<Object> submitStage = map.submitToKey(randomString(), new DummyEntryProcessor());
             // a user-supplied callback submitted to default executor will not be executed with RejectedExecutionException
-            CompletableFuture<Object> userCallbackFuture = submitStage.whenCompleteAsync((v, t) -> {
-                fail("This must not be executed");
-            }).toCompletableFuture();
+            CompletableFuture<Object> userCallbackFuture = submitStage.whenCompleteAsync((v, t) -> fail("This must not be executed")).toCompletableFuture();
             userCallbackFutures[i] = userCallbackFuture;
             userCallbackFuture.whenCompleteAsync((v, t) -> {
                 if (t instanceof HazelcastClientNotActiveException) {

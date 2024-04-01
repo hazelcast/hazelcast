@@ -112,9 +112,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
         int initialMapSize = map.size();
 
-        nodes.get(1).getMap(mapName).addEntryListener((EntryEvictedListener) event -> {
-            evictedKeySet.add(event.getKey());
-        }, true);
+        nodes.get(1).getMap(mapName).addEntryListener((EntryEvictedListener) event -> evictedKeySet.add(event.getKey()), true);
 
         nodes.get(0).shutdown();
 

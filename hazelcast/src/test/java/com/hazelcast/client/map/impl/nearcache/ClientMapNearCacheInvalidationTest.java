@@ -280,16 +280,12 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
     @Test
     public void testMapExecuteOnEntriesWithPredicate_withReadOnlyProcessor_noInvalidations() {
-        verifyNoInvalidationsWith((map, size) -> {
-            map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
-        });
+        verifyNoInvalidationsWith((map, size) -> map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue()));
     }
 
     @Test
     public void testMapExecuteOnEntriesWithoutPredicate_withReadOnlyProcessor_noInvalidations() {
-        verifyNoInvalidationsWith((map, size) -> {
-            map.executeOnEntries(new TestReadOnlyProcessor());
-        });
+        verifyNoInvalidationsWith((map, size) -> map.executeOnEntries(new TestReadOnlyProcessor()));
     }
 
     @Test
