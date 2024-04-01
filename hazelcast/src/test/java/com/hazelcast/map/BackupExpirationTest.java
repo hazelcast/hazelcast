@@ -97,7 +97,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void all_backups_should_be_empty_eventually() throws Exception {
+    public void all_backups_should_be_empty_eventually() {
         configureAndStartNodes(3, 11, 1);
 
         IMap map = nodes[0].getMap(MAP_NAME);
@@ -201,7 +201,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dont_collect_expired_keys_if_expiration_reason_is_TTL() throws Exception {
+    public void dont_collect_expired_keys_if_expiration_reason_is_TTL() {
         configureAndStartNodes(30, 1, 5);
 
         IMap map = nodes[0].getMap(MAP_NAME);

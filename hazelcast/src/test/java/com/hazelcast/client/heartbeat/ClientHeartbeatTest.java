@@ -154,7 +154,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testInvocation_whenHeartbeatResumed() throws InterruptedException {
+    public void testInvocation_whenHeartbeatResumed() {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
@@ -178,8 +178,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         // Verify that the client received partition update for instance2
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(instance2.getCluster().getLocalMember(),
                         client.getPartitionService().getPartition(keyOwnedByInstance2).getOwner());
             }
@@ -195,7 +194,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientEndpointsDelaySeconds_whenHeartbeatResumed() throws Exception {
+    public void testClientEndpointsDelaySeconds_whenHeartbeatResumed() {
         int delaySeconds = 2;
         Config config = new Config();
         config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(delaySeconds)));
@@ -237,14 +236,14 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         //We are specifically testing for scheduled ClientDisconnectionOperation not to take action when run
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, stateChangeCount.get());
             }
         }, delaySeconds * 2);
     }
 
     @Test
-    public void testAddingListenerToNewConnectionFailedBecauseOfHeartbeat() throws Exception {
+    public void testAddingListenerToNewConnectionFailedBecauseOfHeartbeat() {
         hazelcastFactory.newHazelcastInstance();
 
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());

@@ -1353,35 +1353,35 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnValueForPagingPredicate() throws Exception {
+    public void github_11489_verifyNoFailingCastOnValueForPagingPredicate() {
         PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(100);
         github_11489_verifyNoFailingCastOnValue(map -> map.values(predicate));
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnValueForTruePredicate() throws Exception {
+    public void github_11489_verifyNoFailingCastOnValueForTruePredicate() {
         github_11489_verifyNoFailingCastOnValue(map -> map.values(Predicates.alwaysTrue()));
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnKeySetForPagingPredicate() throws Exception {
+    public void github_11489_verifyNoFailingCastOnKeySetForPagingPredicate() {
         PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(100);
         github_11489_verifyNoFailingCastOnValue(map -> map.keySet(predicate));
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnKeySetForTruePredicate() throws Exception {
+    public void github_11489_verifyNoFailingCastOnKeySetForTruePredicate() {
         github_11489_verifyNoFailingCastOnValue(map -> map.keySet(Predicates.alwaysTrue()));
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnEntriesForPagingPredicate() throws Exception {
+    public void github_11489_verifyNoFailingCastOnEntriesForPagingPredicate() {
         PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(100);
         github_11489_verifyNoFailingCastOnValue(map -> map.entrySet(predicate));
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnEntriesForTruePredicate() throws Exception {
+    public void github_11489_verifyNoFailingCastOnEntriesForTruePredicate() {
         github_11489_verifyNoFailingCastOnValue(map -> map.entrySet(Predicates.alwaysTrue()));
     }
 

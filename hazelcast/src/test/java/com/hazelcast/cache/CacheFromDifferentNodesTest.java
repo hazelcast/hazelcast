@@ -81,8 +81,7 @@ public class CacheFromDifferentNodesTest
     }
 
     @Test
-    public void testJSRExample1()
-            throws InterruptedException {
+    public void testJSRExample1() {
         final String cacheName = randomString();
 
         CacheManager cacheManager = cachingProvider1.getCacheManager();
@@ -96,7 +95,7 @@ public class CacheFromDifferentNodesTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 CacheManager cm2 = cachingProvider2.getCacheManager();
                 assertNotNull(cm2.getCache(cacheName));
             }
@@ -130,8 +129,7 @@ public class CacheFromDifferentNodesTest
 
     // Issue https://github.com/hazelcast/hazelcast/issues/5865
     @Test
-    public void testCompletionTestByPuttingAndRemovingFromDifferentNodes()
-            throws InterruptedException {
+    public void testCompletionTestByPuttingAndRemovingFromDifferentNodes() {
         String cacheName = "simpleCache";
 
         CacheManager cacheManager1 = cachingProvider1.getCacheManager();
@@ -156,7 +154,7 @@ public class CacheFromDifferentNodesTest
         cache1.put(key1, value1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.created.get());
             }
         });
@@ -166,7 +164,7 @@ public class CacheFromDifferentNodesTest
         cache1.put(key2, value2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.created.get());
             }
         });
@@ -177,7 +175,7 @@ public class CacheFromDifferentNodesTest
         cache2.removeAll(keys);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.removed.get());
             }
         });
@@ -194,7 +192,7 @@ public class CacheFromDifferentNodesTest
         cacheManager.destroyCache("c1");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 try {
                     c2.get("key");
                     throw new AssertionError("get should throw IllegalStateException");
@@ -217,7 +215,7 @@ public class CacheFromDifferentNodesTest
         cacheManager.close();
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 c2.get("key");
             }
         }, 10);

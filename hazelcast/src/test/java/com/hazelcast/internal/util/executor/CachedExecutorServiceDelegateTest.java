@@ -176,7 +176,7 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     @Test
-    public void execute() throws Exception {
+    public void execute() {
         final int taskCount = 10;
         ManagedExecutorService executorService = newManagedExecutorService(1, taskCount);
 

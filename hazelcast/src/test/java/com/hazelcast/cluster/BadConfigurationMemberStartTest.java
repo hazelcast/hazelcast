@@ -42,7 +42,7 @@ public class BadConfigurationMemberStartTest {
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMulticastAndTcpEnabled() throws Exception {
+    public void testMulticastAndTcpEnabled() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();

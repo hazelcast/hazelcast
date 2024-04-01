@@ -59,7 +59,7 @@ public class ClientEvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMaxSizeEvictionWorks() throws Exception {
+    public void testMaxSizeEvictionWorks() {
         final int maxSize = 1000;
         final int populationCount = 5000;
 

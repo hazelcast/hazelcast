@@ -89,7 +89,7 @@ public class ClientDelegatingFutureTest {
     }
 
     @Test
-    public void get_whenCompletedExceptionally() throws Exception {
+    public void get_whenCompletedExceptionally() {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
         assertTrue(delegatingFuture.isDone());
@@ -117,13 +117,13 @@ public class ClientDelegatingFutureTest {
     }
 
     @Test
-    public void getNow_whenNotDoneShouldReturnDefaultValue() throws Exception {
+    public void getNow_whenNotDoneShouldReturnDefaultValue() {
         assertTrue(!delegatingFuture.isDone());
         assertEquals(DESERIALIZED_DEFAULT_VALUE, delegatingFuture.getNow(DESERIALIZED_DEFAULT_VALUE));
     }
 
     @Test
-    public void getNow_whenDoneReturnValue() throws Exception {
+    public void getNow_whenDoneReturnValue() {
         invocationFuture.complete(response);
 
         assertTrue(delegatingFuture.isDone());

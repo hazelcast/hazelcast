@@ -32,7 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -326,7 +325,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
-    public void testReentrantLockFails_whenSessionClosed() throws ExecutionException, InterruptedException {
+    public void testReentrantLockFails_whenSessionClosed() {
         long fence = lock.lockAndGetFence();
         assertValidFence(fence);
 
@@ -346,7 +345,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
-    public void testReentrantTryLockFails_whenSessionClosed() throws ExecutionException, InterruptedException {
+    public void testReentrantTryLockFails_whenSessionClosed() {
         long fence = lock.lockAndGetFence();
         assertValidFence(fence);
 
@@ -366,7 +365,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
-    public void testReentrantTryLockWithTimeoutFails_whenSessionClosed() throws ExecutionException, InterruptedException {
+    public void testReentrantTryLockWithTimeoutFails_whenSessionClosed() {
         long fence = lock.lockAndGetFence();
         assertValidFence(fence);
 
@@ -386,7 +385,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
-    public void testUnlockFails_whenSessionClosed() throws ExecutionException, InterruptedException {
+    public void testUnlockFails_whenSessionClosed() {
         long fence = lock.lockAndGetFence();
         assertValidFence(fence);
 
@@ -410,7 +409,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
-    public void testUnlockFails_whenNewSessionCreated() throws ExecutionException, InterruptedException {
+    public void testUnlockFails_whenNewSessionCreated() {
         long fence = lock.lockAndGetFence();
         assertValidFence(fence);
 
@@ -436,7 +435,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
-    public void testGetFenceFails_whenNewSessionCreated() throws ExecutionException, InterruptedException {
+    public void testGetFenceFails_whenNewSessionCreated() {
         long fence = lock.lockAndGetFence();
         assertValidFence(fence);
 

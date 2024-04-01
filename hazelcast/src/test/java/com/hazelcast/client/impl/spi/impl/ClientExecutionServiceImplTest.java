@@ -81,7 +81,7 @@ public class ClientExecutionServiceImplTest {
     }
 
     @Test
-    public void testScheduleWithRepetition() throws Exception {
+    public void testScheduleWithRepetition() {
         TestRunnable runnable = new TestRunnable(5);
 
         ScheduledFuture<?> future = executionService.scheduleWithRepetition(runnable, 0, 100, MILLISECONDS);

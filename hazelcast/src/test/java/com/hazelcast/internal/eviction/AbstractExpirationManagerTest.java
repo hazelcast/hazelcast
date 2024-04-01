@@ -57,7 +57,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
     }
 
     @Test
-    public void testTaskPeriodSeconds_throwsIllegalArgumentException_whenNotPositive() throws Exception {
+    public void testTaskPeriodSeconds_throwsIllegalArgumentException_whenNotPositive() {
         String previous = getProperty(taskPeriodSecondsPropName());
         try {
             setProperty(taskPeriodSecondsPropName(), valueOf(0));
@@ -209,7 +209,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int expirationCount = expirationCounter.get();
                 assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
             }

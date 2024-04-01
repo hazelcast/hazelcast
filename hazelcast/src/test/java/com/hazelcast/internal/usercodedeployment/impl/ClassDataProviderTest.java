@@ -41,7 +41,7 @@ import static org.mockito.Mockito.mock;
 public class ClassDataProviderTest {
 
     @Test
-    public void givenProviderModeSetToOFF_whenMapClassContainsClass_thenReturnNull() throws Exception {
+    public void givenProviderModeSetToOFF_whenMapClassContainsClass_thenReturnNull() {
         UserCodeDeploymentConfig.ProviderMode providerMode = OFF;
         String className = "className";
         ClassSource classSource = newMockClassSource();
@@ -52,7 +52,7 @@ public class ClassDataProviderTest {
     }
 
     @Test
-    public void givenProviderModeSetToLOCAL_CLASSES_ONLY_whenMapClassContainsClass_thenReturnNull() throws Exception {
+    public void givenProviderModeSetToLOCAL_CLASSES_ONLY_whenMapClassContainsClass_thenReturnNull() {
         UserCodeDeploymentConfig.ProviderMode providerMode = LOCAL_CLASSES_ONLY;
         String className = "className";
         ClassSource classSource = newMockClassSource();
@@ -63,7 +63,7 @@ public class ClassDataProviderTest {
     }
 
     @Test
-    public void givenProviderModeSetToLOCAL_AND_CACHED_CLASSES_whenMapClassContainsClass_thenReturnIt() throws Exception {
+    public void givenProviderModeSetToLOCAL_AND_CACHED_CLASSES_whenMapClassContainsClass_thenReturnIt() {
         UserCodeDeploymentConfig.ProviderMode providerMode = LOCAL_AND_CACHED_CLASSES;
         String className = "className";
         ClassSource classSource = newMockClassSource();

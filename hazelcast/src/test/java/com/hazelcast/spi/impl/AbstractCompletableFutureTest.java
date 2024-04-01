@@ -168,7 +168,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void get_exceptionResultSet_exceptionThrown() throws Exception {
+    public void get_exceptionResultSet_exceptionThrown() {
         TestFutureImpl future = new TestFutureImpl();
         future.completeExceptionally(EXCEPTION);
 

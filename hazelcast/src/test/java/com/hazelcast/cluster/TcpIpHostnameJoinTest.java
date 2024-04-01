@@ -75,7 +75,7 @@ public class TcpIpHostnameJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenNoExplicitPortConfigured() throws Exception {
+    public void test_whenNoExplicitPortConfigured() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -88,7 +88,7 @@ public class TcpIpHostnameJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenExplicitPortConfigured() throws Exception {
+    public void test_whenExplicitPortConfigured() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -102,7 +102,7 @@ public class TcpIpHostnameJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenExplicitPortConfiguredMixedHostnames() throws Exception {
+    public void test_whenExplicitPortConfiguredMixedHostnames() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();

@@ -189,7 +189,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() {
         BiConsumer<String, Throwable> callback = getStringExecutionCallback();
 
         delegateFuture.run();

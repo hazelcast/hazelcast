@@ -102,7 +102,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryListener_withPortableNotRegisteredInNode() throws Exception {
+    public void testEntryListener_withPortableNotRegisteredInNode() {
         final IMap<Object, Object> map = client.getMap(randomMapName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -118,7 +118,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryMergeListener_withPortableNotRegisteredInNode() throws Exception {
+    public void testEntryMergeListener_withPortableNotRegisteredInNode() {
         final IMap<Object, Object> map = client.getMap(randomMapName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -146,7 +146,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testItemListener_withPortableNotRegisteredInNode() throws Exception {
+    public void testItemListener_withPortableNotRegisteredInNode() {
         final IQueue<Object> queue = client.getQueue(randomMapName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -167,7 +167,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetListener_withPortableNotRegisteredInNode() throws Exception {
+    public void testSetListener_withPortableNotRegisteredInNode() {
         final ISet<Object> set = client.getSet(randomMapName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -188,7 +188,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListListener_withPortableNotRegisteredInNode() throws Exception {
+    public void testListListener_withPortableNotRegisteredInNode() {
         final IList<Object> list = client.getList(randomMapName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -209,7 +209,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopic_withPortableNotRegisteredInNode() throws Exception {
+    public void testTopic_withPortableNotRegisteredInNode() {
         final ITopic<Object> topic = client.getTopic(randomMapName());
         final CountDownLatch latch = new CountDownLatch(1);
 

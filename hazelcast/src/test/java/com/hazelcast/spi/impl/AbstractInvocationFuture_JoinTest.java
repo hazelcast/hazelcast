@@ -106,12 +106,12 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
     }
 
     @Test
-    public void whenInterrupted() throws Exception {
+    public void whenInterrupted() {
         final AtomicReference<Thread> thread = new AtomicReference<>();
         final AtomicBoolean interrupted = new AtomicBoolean();
         Future getFuture = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 thread.set(Thread.currentThread());
                 try {
                     return future.join();
@@ -123,7 +123,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(UNRESOLVED, future.getState());
             }
         });

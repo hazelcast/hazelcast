@@ -136,13 +136,13 @@ public class AbstractSerializationServiceTest {
     }
 
     @Test(expected = HazelcastSerializationException.class)
-    public void testToBytesHandleThrowable() throws Exception {
+    public void testToBytesHandleThrowable() {
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(true));
         abstractSerializationService.toBytes(new StringBuffer());
     }
 
     @Test
-    public void testToObject_ServiceInactive() throws Exception {
+    public void testToObject_ServiceInactive() {
         expectedException.expect(HazelcastInstanceNotActiveException.class);
 
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
@@ -152,14 +152,14 @@ public class AbstractSerializationServiceTest {
     }
 
     @Test(expected = HazelcastSerializationException.class)
-    public void testWriteObject_serializerFail() throws Exception {
+    public void testWriteObject_serializerFail() {
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(true));
         BufferObjectDataOutput out = abstractSerializationService.createObjectDataOutput();
         abstractSerializationService.writeObject(out, new StringBuffer());
     }
 
     @Test
-    public void testReadObject_ServiceInactive() throws Exception {
+    public void testReadObject_ServiceInactive() {
         expectedException.expect(HazelcastInstanceNotActiveException.class);
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
@@ -171,48 +171,48 @@ public class AbstractSerializationServiceTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRegister_nullType() throws Exception {
+    public void testRegister_nullType() {
         abstractSerializationService.register(null, new StringBufferSerializer(true));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRegister_typeIdNegative() throws Exception {
+    public void testRegister_typeIdNegative() {
         StringBufferSerializer serializer = new StringBufferSerializer(true);
         serializer.typeId = -10000;
         abstractSerializationService.register(StringBuffer.class, serializer);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGlobalRegister_doubleRegistration() throws Exception {
+    public void testGlobalRegister_doubleRegistration() {
         abstractSerializationService.registerGlobal(new StringBufferSerializer(true));
         abstractSerializationService.registerGlobal(new StringBufferSerializer(true));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGlobalRegister_alreadyRegisteredType() throws Exception {
+    public void testGlobalRegister_alreadyRegisteredType() {
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(true));
         abstractSerializationService.registerGlobal(new TheOtherGlobalSerializer(true));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSafeRegister_ConstantType() throws Exception {
+    public void testSafeRegister_ConstantType() {
         abstractSerializationService.safeRegister(Integer.class, new StringBufferSerializer(true));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testSafeRegister_alreadyRegisteredType() throws Exception {
+    public void testSafeRegister_alreadyRegisteredType() {
         abstractSerializationService.safeRegister(StringBuffer.class, new StringBufferSerializer(true));
         abstractSerializationService.safeRegister(StringBuffer.class, new TheOtherGlobalSerializer(true));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testSafeRegister_alreadyRegisteredTypeId() throws Exception {
+    public void testSafeRegister_alreadyRegisteredTypeId() {
         abstractSerializationService.safeRegister(StringBuffer.class, new StringBufferSerializer(true));
         abstractSerializationService.safeRegister(StringBuilder.class, new TheOtherGlobalSerializer(true));
     }
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
-    public void testSerializerFor_ServiceInactive() throws Exception {
+    public void testSerializerFor_ServiceInactive() {
         abstractSerializationService.dispose();
         abstractSerializationService.serializerFor(new CustomSerializationTest.Foo(), false);
     }

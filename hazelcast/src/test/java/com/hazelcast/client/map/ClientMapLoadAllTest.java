@@ -59,7 +59,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testGetMap_issue_3031() throws Exception {
+    public void testGetMap_issue_3031() {
         final int itemCount = 1000;
         final String mapName = randomMapName();
 
@@ -85,7 +85,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testLoadAll_givenKeys() throws Exception {
+    public void testLoadAll_givenKeys() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         hazelcastFactory.newHazelcastInstance(config);
@@ -132,7 +132,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testLoadAll_allKeys() throws Exception {
+    public void testLoadAll_allKeys() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         hazelcastFactory.newHazelcastInstance(config);

@@ -132,7 +132,7 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test
-    public void test_whenRingBufferIsFull_thenThrowRejectedExecutionException() throws Exception {
+    public void test_whenRingBufferIsFull_thenThrowRejectedExecutionException() {
         String key = randomString();
         DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
         service.submitToKeyOwner(new SleepingTask(100), key);

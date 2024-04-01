@@ -352,7 +352,7 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testReadLine() throws Exception {
+    public void testReadLine() {
         in.readLine();
     }
 

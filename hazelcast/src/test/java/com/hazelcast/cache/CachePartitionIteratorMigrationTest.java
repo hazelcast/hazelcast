@@ -73,7 +73,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DoesNotReturn_DuplicateEntry_When_Rehashing_Happens() throws Exception {
+    public void test_DoesNotReturn_DuplicateEntry_When_Rehashing_Happens() {
         HazelcastInstance instance = createHazelcastInstance();
         CacheProxy<String, String> proxy = getCacheProxy(createCachingProvider(instance));
         HashSet<String> readKeys = new HashSet<>();
@@ -89,7 +89,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() throws Exception {
+    public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() {
         Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();

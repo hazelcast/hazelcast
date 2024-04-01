@@ -16,25 +16,24 @@
 
 package com.hazelcast.it;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Enumeration;
-
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class CheckNoticeFileIT {
 
     @Test
     @Category(QuickTest.class)
-    public void verifyNoticeFile() throws IOException, InterruptedException {
+    public void verifyNoticeFile() throws IOException {
         assertResourcePresence(true, "META-INF/NOTICE");
         assertResourcePresence(false, "META-INF/NOTICE.txt");
     }

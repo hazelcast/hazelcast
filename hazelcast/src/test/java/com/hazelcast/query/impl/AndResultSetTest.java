@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -173,7 +172,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void removeUnsupported() throws IOException {
+    public void removeUnsupported() {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, null, asList(Predicates.alwaysTrue()));
 

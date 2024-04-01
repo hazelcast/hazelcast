@@ -54,7 +54,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenNoExplicitPortConfigured() throws Exception {
+    public void test_whenNoExplicitPortConfigured() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -67,7 +67,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenExplicitPortConfigured() throws Exception {
+    public void test_whenExplicitPortConfigured() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -81,7 +81,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenPortAndInterfacesConfigured() throws Exception {
+    public void test_whenPortAndInterfacesConfigured() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -99,7 +99,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenHostAndInterfacesConfigured() throws Exception {
+    public void test_whenHostAndInterfacesConfigured() {
         System.clearProperty("hazelcast.local.localAddress");
 
         final Config config = new Config();

@@ -59,7 +59,7 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExpirationListener_notified_afterExpirationOfEntries() throws Exception {
+    public void testExpirationListener_notified_afterExpirationOfEntries() {
         int numberOfPutOperations = 1000;
         CountDownLatch expirationEventArrivalCount = new CountDownLatch(numberOfPutOperations);
 

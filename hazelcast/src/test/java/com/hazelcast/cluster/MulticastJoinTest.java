@@ -94,7 +94,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenDifferentClusterNames() throws Exception {
+    public void test_whenDifferentClusterNames() {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -113,7 +113,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatiblePartitionGroups() throws Exception {
+    public void test_whenIncompatiblePartitionGroups() {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -136,7 +136,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
      * Test for issue #247
      */
     @Test
-    public void test_issue247() throws Exception {
+    public void test_issue247() {
         Config c1 = new Config();
         c1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         c1.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);
@@ -207,7 +207,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
      * multicast used.
      */
     @Test
-    public void testErrorInMulticastSocket_whenAutodiscovery() throws Exception {
+    public void testErrorInMulticastSocket_whenAutodiscovery() {
         Config config = new Config();
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(70000);
@@ -227,7 +227,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
      * When the multicast discovery is enabled and the MulticastService initialization fails, then the instance fails to start.
      */
     @Test
-    public void testErrorInMulticastSocket_whenExplicitMulticast() throws Exception {
+    public void testErrorInMulticastSocket_whenExplicitMulticast() {
         Config config = new Config();
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(70000).setEnabled(true);

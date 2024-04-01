@@ -70,12 +70,12 @@ public class ClientMapLoaderExceptionHandlingTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void test_initial_map_load_propagates_exception_to_client() throws Exception {
+    public void test_initial_map_load_propagates_exception_to_client() {
         final IMap<Integer, Integer> map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Exception exception = null;
                 try {
                     map.get(1);
@@ -89,7 +89,7 @@ public class ClientMapLoaderExceptionHandlingTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testClientGetsException_whenLoadAllKeysThrowsOne() throws Exception {
+    public void testClientGetsException_whenLoadAllKeysThrowsOne() {
         mapStore.setLoadAllKeysThrows(true);
 
         IMap<Integer, Integer> map = client.getMap(mapName);

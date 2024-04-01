@@ -37,7 +37,7 @@ import static org.junit.Assert.assertFalse;
 public class ClientMapEvictAllTest extends AbstractClientMapTest {
 
     @Test
-    public void evictAll_firesEvent() throws Exception {
+    public void evictAll_firesEvent() {
         final String mapName = randomMapName();
         final IMap<Object, Object> map = client.getMap(mapName);
         final CountDownLatch evictedEntryCount = new CountDownLatch(3);

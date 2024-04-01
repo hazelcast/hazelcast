@@ -42,7 +42,6 @@ import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.spi.CachingProvider;
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
@@ -70,7 +69,7 @@ public class CacheResourceTest
     }
 
     @Test
-    public void testCloseableCacheLoader() throws InterruptedException {
+    public void testCloseableCacheLoader() {
         CachingProvider provider =
                 createServerCachingProvider(factory.newHazelcastInstance());
 
@@ -120,14 +119,14 @@ public class CacheResourceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
 
     }
 
     @Test
-    public void testCloseableCacheWriter() throws InterruptedException {
+    public void testCloseableCacheWriter() {
         CachingProvider provider =
                 createServerCachingProvider(factory.newHazelcastInstance());
 
@@ -189,7 +188,7 @@ public class CacheResourceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
 
@@ -227,7 +226,7 @@ public class CacheResourceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
 

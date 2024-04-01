@@ -63,7 +63,7 @@ public class BackupListenerLeakTest {
     }
 
     @Test
-    public void testBackupListenerIsNotRemoved_afterClientRestart() throws InterruptedException {
+    public void testBackupListenerIsNotRemoved_afterClientRestart() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();

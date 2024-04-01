@@ -60,7 +60,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void testMembersFormAClusterWhenHostIsTrusted() throws Exception {
+    public void testMembersFormAClusterWhenHostIsTrusted() {
         Config config2 = newConfig("*.*.*.*"); //matching everything
 
         testJoin(config2);
@@ -127,8 +127,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
                                                final MulticastJoiner[] joiners) {
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length; i++) {
                     // a master can have at most (clusterSize-1) split brain join messages
                     if (getNode(instances[i]).isMaster()) {

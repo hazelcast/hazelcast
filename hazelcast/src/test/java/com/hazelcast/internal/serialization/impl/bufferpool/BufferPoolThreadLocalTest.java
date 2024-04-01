@@ -69,7 +69,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
         BufferPool pool1 = bufferPoolThreadLocal.get();
         BufferPool pool2 = spawn(new Callable<BufferPool>() {
             @Override
-            public BufferPool call() throws Exception {
+            public BufferPool call() {
                 return bufferPoolThreadLocal.get();
             }
         }).get();
@@ -78,7 +78,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void get_whenCleared() throws Exception {
+    public void get_whenCleared() {
         // forces the creation of a bufferpool.
         bufferPoolThreadLocal.get();
 
@@ -88,7 +88,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
         // then eventually when we try to get the pool, we should get a HazelcastInstanceNotActiveException
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 System.gc();
                 try {
                     bufferPoolThreadLocal.get();
@@ -103,7 +103,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     // we need to make sure that different instances return different bufferpool (each hz
     // instance should gets its own bufferpool).
     @Test
-    public void get_whenDifferentThreadLocals_thenDifferentInstances() throws Exception {
+    public void get_whenDifferentThreadLocals_thenDifferentInstances() {
         BufferPoolThreadLocal bufferPoolThreadLocal2 = new BufferPoolThreadLocal(
                 serializationService, new BufferPoolFactoryImpl(), null);
 
@@ -125,7 +125,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 System.gc();
                 // eventually the reference should point to zero; indicating that the pool is gc'ed.
                 assertNull(poolRef.get());

@@ -51,7 +51,7 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void differentClusterNames() throws Exception {
+    public void differentClusterNames() {
         Config config1 = new Config();
         config1.setClusterName("cluster1");
 
@@ -62,7 +62,7 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void autoDetectionDisabled() throws Exception {
+    public void autoDetectionDisabled() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
@@ -70,7 +70,7 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void notUsedWhenOtherDiscoveryEnabled() throws Exception {
+    public void notUsedWhenOtherDiscoveryEnabled() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
 

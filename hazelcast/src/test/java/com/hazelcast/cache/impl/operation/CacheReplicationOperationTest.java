@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 public class CacheReplicationOperationTest extends HazelcastTestSupport {
 
     @Test
-    public void sendsConfigObjectOverWire() throws Exception {
+    public void sendsConfigObjectOverWire() {
         // new config
         CacheConfig config = new CacheConfig("test-cache");
 

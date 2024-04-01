@@ -48,7 +48,7 @@ public class ByteArrayObjectDataInputIntegrationTest {
         readDataAsObject(null);
     }
 
-    public void readDataAsObject(Object value) throws Exception {
+    public void readDataAsObject(Object value) {
         Data data = serializationService.toData(value);
         MyObject myObject = new MyObject(data);
         Data myObjectData = serializationService.toData(myObject);

@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 public class ClientExtensionTest extends HazelcastTestSupport {
 
     @Test
-    public void test_createServiceProxyFactory() throws Exception {
+    public void test_createServiceProxyFactory() {
         ClientExtension clientExtension = new DefaultClientExtension();
         assertInstanceOf(ClientProxyFactory.class, clientExtension.createServiceProxyFactory(MapService.class));
     }

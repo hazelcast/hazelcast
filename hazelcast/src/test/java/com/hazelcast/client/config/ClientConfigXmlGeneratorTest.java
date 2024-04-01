@@ -76,7 +76,6 @@ import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Collections;
 import java.util.Comparator;
@@ -239,7 +238,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static class TestSSLContextFactory implements SSLContextFactory {
         @Override
-        public void init(Properties properties) throws Exception { }
+        public void init(Properties properties) { }
 
         @Override
         public SSLContext getSSLContext() {
@@ -471,12 +470,12 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static class TestSerializer implements StreamSerializer {
         @Override
-        public void write(ObjectDataOutput out, Object object) throws IOException {
+        public void write(ObjectDataOutput out, Object object) {
 
         }
 
         @Override
-        public Object read(ObjectDataInput in) throws IOException {
+        public Object read(ObjectDataInput in) {
             return null;
         }
 

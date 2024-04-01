@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
 
 public class AbstractJoinTest extends HazelcastTestSupport {
 
-    protected void testJoin(Config config) throws Exception {
+    protected void testJoin(Config config) {
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);

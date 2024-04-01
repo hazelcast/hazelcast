@@ -33,12 +33,12 @@ public class AttributeConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setNameOfReadOnlyAttributeConfigShouldFail() throws Exception {
+    public void setNameOfReadOnlyAttributeConfigShouldFail() {
         getReadOnlyConfig().setName("extractedName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setExtractorOfReadOnlyAttributeConfigShouldFail() throws Exception {
+    public void setExtractorOfReadOnlyAttributeConfigShouldFail() {
         getReadOnlyConfig().setExtractorClassName("com.test.Extractor");
     }
 }

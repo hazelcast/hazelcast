@@ -213,8 +213,7 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    public void testSubmitFailingCallableException_withExecutionCallback()
-            throws InterruptedException {
+    public void testSubmitFailingCallableException_withExecutionCallback() {
         IExecutorService service = client.getExecutorService(randomString());
         final CountDownLatch latch = new CountDownLatch(1);
         service.submit(new FailingCallable(), new ExecutionCallback<String>() {

@@ -65,7 +65,7 @@ public class BackupEntryProcessorInstanceAwareTest extends HazelcastTestSupport 
         for (final String key : m1.keySet()) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     final Integer k = m1.get(key);
                     final Integer v = m2.get(key);
                     assertEquals(k, v);
