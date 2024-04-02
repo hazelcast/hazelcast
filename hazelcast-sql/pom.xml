@@ -641,10 +641,6 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
-                <!--
-                Some JLine classes *technically* require Java 21 causing Enforcer failures
-                https://github.com/jline/jline3/issues/924
-                -->
                 <exclusion>
                     <groupId>org.jline</groupId>
                     <artifactId>jline</artifactId>
@@ -819,14 +815,6 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-reload4j</artifactId>
-                </exclusion>
-                <!--
-                Some JLine classes *technically* require Java 21 causing Enforcer failures
-                https://github.com/jline/jline3/issues/924
-                -->
-                <exclusion>
-                    <groupId>org.jline</groupId>
-                    <artifactId>jline</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

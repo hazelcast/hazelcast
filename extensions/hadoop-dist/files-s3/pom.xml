@@ -49,8 +49,8 @@
             <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>bundle</artifactId>
+                    <groupId>com.amazonaws</groupId>
+                    <artifactId>aws-java-sdk-bundle</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
