@@ -33,6 +33,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static com.hazelcast.jet.cdc.MySQLTestUtils.getMySqlConnection;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
 @Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})

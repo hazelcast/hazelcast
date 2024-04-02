@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.cdc.PostgresTestUtils.getPostgreSqlConnection;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 @Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})

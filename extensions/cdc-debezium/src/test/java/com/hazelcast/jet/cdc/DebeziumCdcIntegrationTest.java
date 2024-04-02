@@ -51,7 +51,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import static com.hazelcast.jet.cdc.MySQLTestUtils.getMySqlConnection;
 import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
+import static com.hazelcast.jet.cdc.MySQLTestUtils.runQuery;
+import static com.hazelcast.jet.cdc.PostgresTestUtils.getPostgreSqlConnection;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;

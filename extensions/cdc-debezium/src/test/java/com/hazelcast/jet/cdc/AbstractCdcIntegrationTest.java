@@ -33,17 +33,11 @@ import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MySQLContainer;
 
 import javax.annotation.Nonnull;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -150,6 +144,7 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
      * and this matters for some tests.
      */
     protected static void stopContainer(GenericContainer<?> container) {
+        //noinspection resource
         DockerClient dockerClient = DockerClientFactory.instance().client();
         dockerClient.stopContainerCmd(container.getContainerId()).exec();
 
@@ -157,43 +152,20 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
     }
 
     protected <T> T namedTestContainer(GenericContainer<?> container) {
-        if (container instanceof JdbcDatabaseContainer) {
-            container = ((JdbcDatabaseContainer) container)
+        GenericContainer<?> cont = container;
+        if (container instanceof JdbcDatabaseContainer<?> jdbcCont) {
+            cont = jdbcCont
                     .withConnectTimeoutSeconds(300)
                     .withStartupTimeoutSeconds(300);
         }
-        return (T) container
+        //noinspection unchecked
+        return (T) cont
                 .withStartupAttempts(5)
                 .withCreateContainerCmdModifier(createContainerCmd -> {
-            String source = AbstractCdcIntegrationTest.this.getClass().getSimpleName() + "." + testName.getMethodName()
-                .replaceAll("\\[|\\]|\\/| ", "_");
-            createContainerCmd.withName(source + "___" + randomName());
-        });
-    }
-
-    protected static Connection getMySqlConnection(String url, String user, String password) throws SQLException {
-        Properties properties = new Properties();
-        properties.put("user", user);
-        properties.put("password", password);
-        properties.put("useSSL", "false");
-
-        return DriverManager.getConnection(url, properties);
-    }
-    protected static void runQuery(MySQLContainer<?> container, String query) {
-        try (Connection connection = getMySqlConnection(container.getJdbcUrl(), container.getUsername(),
-                container.getPassword())) {
-            connection.setSchema("inventory");
-            try (Statement statement = connection.createStatement()) {
-                //noinspection SqlSourceToSinkFlow
-                statement.execute(query);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected static Connection getPostgreSqlConnection(String url, String user, String password) throws SQLException {
-        return DriverManager.getConnection(url, user, password);
+                    final String methodName = testName.getMethodName().replaceAll("[\\[\\]/ ]", "_");
+                    final String source = AbstractCdcIntegrationTest.this.getClass().getSimpleName() + "." + methodName;
+                    createContainerCmd.withName(source + "___" + randomName());
+                });
     }
 
 }

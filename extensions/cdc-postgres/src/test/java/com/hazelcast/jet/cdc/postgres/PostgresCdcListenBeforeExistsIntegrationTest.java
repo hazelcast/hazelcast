@@ -43,7 +43,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertTrue;
 
-@SuppressWarnings("SameParameterValue")
+@SuppressWarnings({"SameParameterValue", "SqlResolve"})
 @Category(NightlyTest.class)
 public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
