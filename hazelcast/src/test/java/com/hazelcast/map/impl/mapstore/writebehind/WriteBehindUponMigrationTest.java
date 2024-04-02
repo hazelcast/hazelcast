@@ -41,14 +41,14 @@ import static org.junit.Assert.assertNull;
 public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
 
     @Test
-    public void testRemovedEntry_shouldNotBeReached_afterMigration_entryStore() throws Exception {
+    public void testRemovedEntry_shouldNotBeReached_afterMigration_entryStore() {
         TestEntryStore<Integer, Integer> store = new TestEntryStore<>();
         store.putExternally(1, 0);
         testRemovedEntry_shouldNotBeReached_afterMigration(store);
     }
 
     @Test
-    public void testEntryStoreShouldExpireEntryTimely_afterMigration() throws Exception {
+    public void testEntryStoreShouldExpireEntryTimely_afterMigration() {
         TemporaryBlockerEntryStore<Integer, Integer> store = new TemporaryBlockerEntryStore<>();
         String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -80,14 +80,14 @@ public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemovedEntry_shouldNotBeReached_afterMigration_mapStore() throws Exception {
+    public void testRemovedEntry_shouldNotBeReached_afterMigration_mapStore() {
         MapStoreTest.SimpleMapStore<Integer, Integer> store
                 = new MapStoreTest.SimpleMapStore<>();
         store.store.put(1, 0);
         testRemovedEntry_shouldNotBeReached_afterMigration(store);
     }
 
-    public void testRemovedEntry_shouldNotBeReached_afterMigration(MapStore store) throws Exception {
+    public void testRemovedEntry_shouldNotBeReached_afterMigration(MapStore store) {
         String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 

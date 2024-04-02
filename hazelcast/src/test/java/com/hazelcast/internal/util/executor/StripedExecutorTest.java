@@ -37,21 +37,21 @@ public class StripedExecutorTest extends HazelcastTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void throws_illegalArgumentException_whenThreadCount_isNotPositive() throws Exception {
+    public void throws_illegalArgumentException_whenThreadCount_isNotPositive() {
         expectedException.expect(IllegalArgumentException.class);
 
         new StripedExecutor(getLogger(getClass()), "", 0, 0);
     }
 
     @Test
-    public void throws_illegalArgumentException_whenMaximumQueueCapacity_isNotPositive() throws Exception {
+    public void throws_illegalArgumentException_whenMaximumQueueCapacity_isNotPositive() {
         expectedException.expect(IllegalArgumentException.class);
 
         new StripedExecutor(getLogger(getClass()), "", 0, 0);
     }
 
     @Test
-    public void total_worker_queue_size_equals_max_queue_capacity() throws Exception {
+    public void total_worker_queue_size_equals_max_queue_capacity() {
         int threadCount = 5;
         int maximumQueueCapacity = 1000000;
 

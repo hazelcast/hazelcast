@@ -64,7 +64,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
     // Expiration is given a 2 second martin of error. So we have a ttl of
     // 10 seconds, then we expect that within 12 seconds the buffer is empty.
     @Test
-    public void whenTTLEnabled_thenEventuallyRingbufferEmpties() throws Exception {
+    public void whenTTLEnabled_thenEventuallyRingbufferEmpties() {
         int ttl = 10;
         int maximumVisibleTTL = ttl + 2;
 
@@ -78,7 +78,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(tail, ringbuffer.tailSequence());
                 assertEquals(tail + 1, ringbuffer.headSequence());
                 assertEquals(0, ringbuffer.size());

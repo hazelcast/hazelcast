@@ -50,7 +50,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnReplace_whenReplaceIfSameFails_keyShouldRemainUnlocked() throws InterruptedException {
+    public void testTxnReplace_whenReplaceIfSameFails_keyShouldRemainUnlocked() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);
@@ -67,7 +67,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnReplace_whenReplaceIfSameFails_keyShouldRemainUnlockedDuringTransaction() throws InterruptedException {
+    public void testTxnReplace_whenReplaceIfSameFails_keyShouldRemainUnlockedDuringTransaction() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
@@ -84,7 +84,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnReplace_whenReplaceIfSameFails_keyShouldRemainLocked_whenExplicitlyLocked() throws InterruptedException {
+    public void testTxnReplace_whenReplaceIfSameFails_keyShouldRemainLocked_whenExplicitlyLocked() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
@@ -101,7 +101,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnReplace_whenReplaceFails_keyShouldRemainUnlocked() throws InterruptedException {
+    public void testTxnReplace_whenReplaceFails_keyShouldRemainUnlocked() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         IMap<String, Object> map = hazelcastInstance.getMap(mapName);
 
@@ -117,7 +117,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnReplace_whenReplaceFails_keyShouldRemainUnlockedDuringTransaction() throws InterruptedException {
+    public void testTxnReplace_whenReplaceFails_keyShouldRemainUnlockedDuringTransaction() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
 
@@ -133,7 +133,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnReplace_whenReplaceFails_keyShouldRemainLocked_whenExplicitlyLocked() throws InterruptedException {
+    public void testTxnReplace_whenReplaceFails_keyShouldRemainLocked_whenExplicitlyLocked() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
 
@@ -150,7 +150,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnPutIfAbsent_whenPutFails_keyShouldRemainUnlocked() throws InterruptedException {
+    public void testTxnPutIfAbsent_whenPutFails_keyShouldRemainUnlocked() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);
@@ -167,7 +167,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnPutIfAbsent_whenPutFails_keyShouldRemainUnlockedDuringTransaction() throws InterruptedException {
+    public void testTxnPutIfAbsent_whenPutFails_keyShouldRemainUnlockedDuringTransaction() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);
@@ -184,7 +184,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnPutIfAbsent_whenPutFails_keyShouldRemainLocked_whenExplicitlyLocked() throws InterruptedException {
+    public void testTxnPutIfAbsent_whenPutFails_keyShouldRemainLocked_whenExplicitlyLocked() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);
@@ -202,7 +202,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnRemoveIfSame_whenRemoveFails_keyShouldRemainUnlocked() throws InterruptedException {
+    public void testTxnRemoveIfSame_whenRemoveFails_keyShouldRemainUnlocked() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);
@@ -220,7 +220,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testTxnRemoveIfSame_whenRemoveFails_keyShouldRemainUnlockedDuringTransaction() throws InterruptedException {
+    public void testTxnRemoveIfSame_whenRemoveFails_keyShouldRemainUnlockedDuringTransaction() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);
@@ -237,7 +237,7 @@ public class MapTransactionLockingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnRemoveIfSame_whenRemoveFails_keyShouldRemainLocked_whenExplicitlyLocked() throws InterruptedException {
+    public void testTxnRemoveIfSame_whenRemoveFails_keyShouldRemainLocked_whenExplicitlyLocked() {
         final HazelcastInstance hazelcastInstance = createHazelcastInstance(getConfig());
         final IMap<String, Object> map = hazelcastInstance.getMap(mapName);
         map.put(key, value);

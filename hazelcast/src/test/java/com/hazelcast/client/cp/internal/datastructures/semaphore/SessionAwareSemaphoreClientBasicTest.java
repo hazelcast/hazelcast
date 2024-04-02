@@ -71,7 +71,7 @@ public class SessionAwareSemaphoreClientBasicTest extends SessionAwareSemaphoreB
 
 
     @Test
-    public void testDrain_ReleasesSessionProperly() throws InterruptedException {
+    public void testDrain_ReleasesSessionProperly() {
         int permits = 20;
 
         assertTrue(semaphore.init(permits));

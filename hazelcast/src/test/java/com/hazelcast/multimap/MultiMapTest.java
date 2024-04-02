@@ -157,8 +157,7 @@ public class MultiMapTest extends HazelcastTestSupport {
 
     public void testMultiMapPutAllTemplate(HazelcastInstance instance1,
                                            Map<String, Collection<? extends Integer>> expectedMultiMap,
-                                           Consumer<MultiMap<String, Integer>> putAllOperation)
-            throws InterruptedException {
+                                           Consumer<MultiMap<String, Integer>> putAllOperation) {
 
         MultiMap<String, Integer> mmap1 = instance1.getMultiMap("testMultiMapPutAllMapList");
         MultiMap<String, Integer> mmap2 = instance1.getMultiMap("testMultiMapPutAllMapSet");
@@ -218,7 +217,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultiMapPutAllAsyncMap() throws InterruptedException {
+    public void testMultiMapPutAllAsyncMap() {
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
         expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
@@ -231,7 +230,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultiMapPutAllAsyncKey() throws InterruptedException {
+    public void testMultiMapPutAllAsyncKey() {
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
         expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));

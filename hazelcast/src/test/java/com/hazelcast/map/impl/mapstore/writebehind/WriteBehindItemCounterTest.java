@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class WriteBehindItemCounterTest extends HazelcastTestSupport {
 
     @Test
-    public void testCounter_against_one_node_zero_backup() throws Exception {
+    public void testCounter_against_one_node_zero_backup() {
         final int maxCapacityPerNode = 100;
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
@@ -57,7 +57,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCounter_against_many_nodes() throws Exception {
+    public void testCounter_against_many_nodes() {
         final int maxCapacityPerNode = 100;
         final int nodeCount = 2;
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();

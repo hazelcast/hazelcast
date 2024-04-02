@@ -96,7 +96,7 @@ public class MulticastDiscoveryStrategyDeserializationTest {
     }
 
     @Test
-    public void testDefaultPacketFormat() throws Exception {
+    public void testDefaultPacketFormat() {
         Config config = createConfig(null);
         Hazelcast.newHazelcastInstance(config);
         assertTrueEventually(() -> assertTrue("Object was not deserialized", TestDeserialized.isDeserialized), 15);

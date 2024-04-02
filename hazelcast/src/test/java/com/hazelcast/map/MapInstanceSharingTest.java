@@ -28,7 +28,6 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -49,7 +48,7 @@ public class MapInstanceSharingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationToLocalMember() throws ExecutionException, InterruptedException {
+    public void invocationToLocalMember() {
         String localKey = generateKeyOwnedBy(local);
         IMap<String, DummyObject> map = local.getMap(UUID.randomUUID().toString());
 
@@ -67,7 +66,7 @@ public class MapInstanceSharingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
+    public void invocationToRemoteMember() {
         String remoteKey = generateKeyOwnedBy(remote);
         IMap<String, DummyObject> map = local.getMap(UUID.randomUUID().toString());
 

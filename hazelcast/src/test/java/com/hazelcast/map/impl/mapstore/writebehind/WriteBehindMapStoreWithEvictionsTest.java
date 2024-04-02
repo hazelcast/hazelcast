@@ -45,7 +45,7 @@ import static org.junit.Assert.assertNull;
 public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBehind_callEvictBeforePersisting() throws Exception {
+    public void testWriteBehind_callEvictBeforePersisting() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -63,7 +63,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehind_callEvictBeforePersisting_onSameKey() throws Exception {
+    public void testWriteBehind_callEvictBeforePersisting_onSameKey() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -83,7 +83,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemove() throws Exception {
+    public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemove() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -104,7 +104,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemoveMultipleTimes() throws Exception {
+    public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemoveMultipleTimes() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -125,7 +125,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void evict_then_loadAll_onSameKey() throws Exception {
+    public void evict_then_loadAll_onSameKey() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -153,7 +153,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void evictAll_then_loadAll_onSameKey() throws Exception {
+    public void evictAll_then_loadAll_onSameKey() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -181,7 +181,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehindFlushPersistsAllRecords_afterShutdownAll() throws Exception {
+    public void testWriteBehindFlushPersistsAllRecords_afterShutdownAll() {
         int nodeCount = 2;
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -203,7 +203,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < 1000; i++) {
                     assertEquals(valueOf(i), mapStore.store.get(i));
                 }
@@ -213,7 +213,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehind_shouldNotMakeDuplicateStoreOperationForAKey_uponEviction() throws Exception {
+    public void testWriteBehind_shouldNotMakeDuplicateStoreOperationForAKey_uponEviction() {
         final AtomicInteger storeCount = new AtomicInteger(0);
         MapStore<Integer, Integer> store = createSlowMapStore(storeCount);
 
@@ -235,7 +235,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTransientlyPutKeysAreNotReachable_afterEviction() throws Exception {
+    public void testTransientlyPutKeysAreNotReachable_afterEviction() {
         int numberOfItems = 1000;
         IMap<Integer, Integer> map = createMapBackedByWriteBehindStore();
         // 1. these puts are used to create write-behind-queues on partitions
@@ -273,7 +273,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     private void assertStoreCount(final int expected, final AtomicInteger storeCount) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, storeCount.get());
             }
         });
@@ -292,7 +292,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, actual);
             }
         }, 20);

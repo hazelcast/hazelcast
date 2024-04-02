@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNotNull;
 public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
-    public void testConfigAttributes() throws Exception {
+    public void testConfigAttributes() {
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
@@ -85,7 +85,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
 
     @Test(timeout = 120000)
-    public void testCommandLineAttributes() throws Exception {
+    public void testCommandLineAttributes() {
         System.setProperty("hazelcast.member.attribute.Test-2", "1234");
         System.setProperty("hazelcast.member.attribute.Test-3", "12345");
         System.setProperty("hazelcast.member.attribute.Test-4", "123456");

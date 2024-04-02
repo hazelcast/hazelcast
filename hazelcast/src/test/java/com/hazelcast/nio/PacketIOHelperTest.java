@@ -19,12 +19,12 @@ package com.hazelcast.nio;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
@@ -89,16 +88,16 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPacketWriteRead() throws IOException {
+    public void testPacketWriteRead() {
         testPacketWriteRead(person);
     }
 
     @Test
-    public void testPacketWriteRead_usingPortable() throws IOException {
+    public void testPacketWriteRead_usingPortable() {
         testPacketWriteRead(portablePerson);
     }
 
-    private void testPacketWriteRead(Object originalObject) throws IOException {
+    private void testPacketWriteRead(Object originalObject) {
         InternalSerializationService ss = createSerializationServiceBuilder().build();
         byte[] originalPayload = ss.toBytes(originalObject);
 

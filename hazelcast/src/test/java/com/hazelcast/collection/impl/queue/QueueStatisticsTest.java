@@ -152,8 +152,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAge()
-            throws InterruptedException {
+    public void testAge() {
         IQueue<VersionedObject<String>> queue = newQueue();
         queue.offer(new VersionedObject<>("maxAgeItem", 0));
         queue.offer(new VersionedObject<>("minAgeItem", 1));

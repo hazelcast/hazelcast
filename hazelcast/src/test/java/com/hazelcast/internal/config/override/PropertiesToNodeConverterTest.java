@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNull;
 public class PropertiesToNodeConverterTest {
 
     @Test(expected = InvalidConfigurationException.class)
-    public void shouldThrowWhenParsingEmptyMap() throws Exception {
+    public void shouldThrowWhenParsingEmptyMap() {
         ConfigNode configNode = PropertiesToNodeConverter.propsToNode(Collections.emptyMap());
     }
 

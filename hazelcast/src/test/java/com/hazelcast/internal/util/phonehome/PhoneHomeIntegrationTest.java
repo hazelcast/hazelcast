@@ -304,7 +304,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPhoneHomeCalledTwice() throws IOException {
+    public void testPhoneHomeCalledTwice() {
         node.hazelcastInstance.getMap("hazelcast");
 
         phoneHome.phoneHome(false);

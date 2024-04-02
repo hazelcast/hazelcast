@@ -16,15 +16,11 @@
 
 package com.hazelcast.instance.impl;
 
-import static com.hazelcast.instance.impl.NodeSecurityBanner.SECURITY_BANNER_CATEGORY;
-import static com.hazelcast.spi.properties.ClusterProperty.LOG_EMOJI_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.SECURITY_RECOMMENDATIONS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -37,11 +33,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.hazelcast.instance.impl.NodeSecurityBanner.SECURITY_BANNER_CATEGORY;
+import static com.hazelcast.spi.properties.ClusterProperty.LOG_EMOJI_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SECURITY_RECOMMENDATIONS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test that security banners are logged on proper levels.
@@ -81,17 +80,17 @@ public class NodeSecurityBannerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSystemPropertyWithoutEmojis() throws Exception {
+    public void testSystemPropertyWithoutEmojis() {
         testSystemPropertyInternal(false);
     }
 
     @Test
-    public void testTestWithEmojis() throws Exception {
+    public void testTestWithEmojis() {
         testSystemPropertyInternal(true);
     }
 
     @Test
-    public void testDefault() throws Exception {
+    public void testDefault() {
         TestAppender appender = configureTestAppender();
         createHazelcastInstance();
         assertEquals(1, appender.events.size());

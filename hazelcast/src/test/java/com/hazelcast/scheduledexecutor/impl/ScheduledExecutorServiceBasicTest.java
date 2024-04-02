@@ -123,8 +123,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void exception_suppressesFutureExecutions()
-            throws ExecutionException, InterruptedException {
+    public void exception_suppressesFutureExecutions() {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(ANY_EXECUTOR_NAME);
 
@@ -569,7 +568,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void capacity_whenAutoDisposable_Callable() throws Exception {
+    public void capacity_whenAutoDisposable_Callable() {
         String schedulerName = ANY_EXECUTOR_NAME;
         int capacity = 10;
 
@@ -602,7 +601,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void capacity_whenAutoDisposable_Runnable() throws Exception {
+    public void capacity_whenAutoDisposable_Runnable() {
         String schedulerName = ANY_EXECUTOR_NAME;
         int capacity = 10;
 
@@ -955,7 +954,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void schedule_whenAutoDisposable_thenGet() throws Exception {
+    public void schedule_whenAutoDisposable_thenGet() {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
@@ -966,7 +965,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
 
     @Test
-    public void scheduleOnMember_whenAutoDisposable_thenGet() throws Exception {
+    public void scheduleOnMember_whenAutoDisposable_thenGet() {
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member localMember = instances[0].getCluster().getLocalMember();
         IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
@@ -978,7 +977,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void scheduleOnKeyOwner_whenAutoDisposable_thenGet() throws Exception {
+    public void scheduleOnKeyOwner_whenAutoDisposable_thenGet() {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         String key = generateKeyOwnedBy(instances[1]);
@@ -1250,7 +1249,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void schedule_getHandlerDisposeThenRecreateFutureAndGet() throws Exception {
+    public void schedule_getHandlerDisposeThenRecreateFutureAndGet() {
         int delay = 1;
         String taskName = "Test";
 
@@ -1550,7 +1549,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void getErroneous() throws Exception {
+    public void getErroneous() {
         int delay = 2;
         String taskName = "Test";
         String completionLatchName = "completionLatch";

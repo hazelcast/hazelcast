@@ -36,7 +36,7 @@ public class UnsafeUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testUnsafe() throws Exception {
+    public void testUnsafe() {
         if (UnsafeUtil.UNSAFE_AVAILABLE) {
             assertNotNull(UnsafeUtil.UNSAFE);
         } else {

@@ -53,7 +53,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
      * </pre>
      */
     @Test
-    public void testRestApiDefaults() throws Exception {
+    public void testRestApiDefaults() {
         RestApiConfig restApiConfig = new RestApiConfig();
         assertFalse("REST should be disabled by default", restApiConfig.isEnabled());
         for (RestEndpointGroup endpointGroup : RestEndpointGroup.values()) {

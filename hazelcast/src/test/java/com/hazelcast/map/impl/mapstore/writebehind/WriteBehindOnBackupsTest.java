@@ -55,7 +55,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
      * Normally backup nodes don't store entries only remove them from wbq-s. Here, we are testing removal of entries occurred or not.
      */
     @Test
-    public void testBackupRemovesEntries_afterProcessingDelay() throws Exception {
+    public void testBackupRemovesEntries_afterProcessingDelay() {
         final int numberOfItems = 10;
         final String mapName = randomMapName();
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();

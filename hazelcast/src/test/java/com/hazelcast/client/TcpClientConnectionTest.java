@@ -34,7 +34,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +43,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -180,7 +178,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
     }
 
     @Test
-    public void testAsyncConnectionCreationInAsyncMethods() throws ExecutionException, InterruptedException {
+    public void testAsyncConnectionCreationInAsyncMethods() throws InterruptedException {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
@@ -190,7 +188,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, client.getCluster().getMembers().size());
             }
         });
@@ -208,7 +206,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         try {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertNotNull(atomicReference.get());
                 }
             }, 30);

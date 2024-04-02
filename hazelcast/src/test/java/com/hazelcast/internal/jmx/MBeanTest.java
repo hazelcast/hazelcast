@@ -59,7 +59,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultiMap() throws Exception {
+    public void testMultiMap() {
         MultiMap map = holder.getHz().getMultiMap("multimap");
         map.size();
 
@@ -67,7 +67,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopic() throws Exception {
+    public void testTopic() {
         ITopic<String> topic = holder.getHz().getTopic("topic");
         topic.publish("foo");
 
@@ -107,7 +107,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReplicatedMap() throws Exception {
+    public void testReplicatedMap() {
         String replicatedMapName = randomString();
         ReplicatedMap replicatedMap = holder.getHz().getReplicatedMap(replicatedMapName);
         replicatedMap.size();

@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBatching() throws Exception {
+    public void testWriteBatching() {
         final int writeBatchSize = 8;
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
@@ -48,7 +48,7 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
         populateMap(map, numberOfItems);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 // expecting more than half of operations should have the write batch size.
                 // takes this a lower bound.
                 final int expectedBatchOpCount = (numberOfItems / writeBatchSize) / 2;

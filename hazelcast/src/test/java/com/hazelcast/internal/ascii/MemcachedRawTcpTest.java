@@ -92,7 +92,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetAndGet() throws Exception {
+    public void testSetAndGet() {
         sendLine("set key 123 0 5");
         sendLine("value");
         assertEquals("STORED", receiveLine());
@@ -106,7 +106,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAddAndGet() throws Exception {
+    public void testAddAndGet() {
         sendLine("set key 123 0 3");
         sendLine("foo");
         assertEquals("STORED", receiveLine());
@@ -176,7 +176,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBulkGet() throws Exception {
+    public void testBulkGet() {
         sendLine("get k0 k1 k2 k3 k4 k5 k6 k7 k8 k9");
         assertEquals("END", receiveLine());
 
@@ -215,17 +215,17 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetGetDelete_WithDefaultIMap() throws Exception {
+    public void testSetGetDelete_WithDefaultIMap() {
         testSetGetDelete_WithIMap(MemcacheCommandProcessor.DEFAULT_MAP_NAME, "");
     }
 
     @Test
-    public void testSetGetDelete_WithCustomIMap() throws Exception {
+    public void testSetGetDelete_WithCustomIMap() {
         String mapName = randomMapName();
         testSetGetDelete_WithIMap(MemcacheCommandProcessor.MAP_NAME_PREFIX + mapName, mapName + ":");
     }
 
-    private void testSetGetDelete_WithIMap(String mapName, String prefix) throws Exception {
+    private void testSetGetDelete_WithIMap(String mapName, String prefix) {
         String key = "key";
         String value = "value";
         String value2 = "value2";
@@ -253,7 +253,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement() throws Exception {
+    public void testIncrement() {
         sendLine("incr key 1");
         assertEquals("NOT_FOUND", receiveLine());
 
@@ -276,7 +276,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_byLargerThanLongMax() throws Exception {
+    public void testIncrement_byLargerThanLongMax() {
         sendLine("set key 0 0 2");
         sendLine("42");
         assertEquals("STORED", receiveLine());
@@ -286,7 +286,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_byNegativeNumber_shouldFail() throws Exception {
+    public void testIncrement_byNegativeNumber_shouldFail() {
         sendLine("set key 0 0 2");
         sendLine("42");
         assertEquals("STORED", receiveLine());
@@ -296,7 +296,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_onNegativeNumber_shouldFail() throws Exception {
+    public void testIncrement_onNegativeNumber_shouldFail() {
         sendLine("set key 0 0 3");
         sendLine("-42");
         assertEquals("STORED", receiveLine());
@@ -306,7 +306,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_onNonDecimal_shouldFail() throws Exception {
+    public void testIncrement_onNonDecimal_shouldFail() {
         sendLine("set key 0 0 3");
         sendLine("foo");
         assertEquals("STORED", receiveLine());
@@ -316,7 +316,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_onEmptyValue_shouldFail() throws Exception {
+    public void testIncrement_onEmptyValue_shouldFail() {
         sendLine("set key 0 0 0");
         sendLine("");
         assertEquals("STORED", receiveLine());
@@ -326,7 +326,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_onLargerThanLongMax() throws Exception {
+    public void testIncrement_onLargerThanLongMax() {
         sendLine("set key 0 0 20");
         sendLine("18446744073709551614"); // 2^64 - 2
         assertEquals("STORED", receiveLine());
@@ -341,7 +341,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIncrement_withOverFlow() throws Exception {
+    public void testIncrement_withOverFlow() {
         sendLine("set key 0 0 20");
         sendLine("18446744073709551615"); // 2^64 - 1
         assertEquals("STORED", receiveLine());
@@ -352,7 +352,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testDecrement() throws Exception {
+    public void testDecrement() {
         sendLine("decr key 1");
         assertEquals("NOT_FOUND", receiveLine());
 
@@ -376,7 +376,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDecrement_byNegativeNumber_shouldFail() throws Exception {
+    public void testDecrement_byNegativeNumber_shouldFail() {
         sendLine("set key 0 0 2");
         sendLine("42");
         assertEquals("STORED", receiveLine());
@@ -386,7 +386,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDecrement_onNegativeNumber_shouldFail() throws Exception {
+    public void testDecrement_onNegativeNumber_shouldFail() {
         sendLine("set key 0 0 3");
         sendLine("-42");
         assertEquals("STORED", receiveLine());
@@ -396,7 +396,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDecrement_onNonDecimal_shouldFail() throws Exception {
+    public void testDecrement_onNonDecimal_shouldFail() {
         sendLine("set key 0 0 3");
         sendLine("foo");
         assertEquals("STORED", receiveLine());
@@ -406,7 +406,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDecrement_onLargerThanLongMax() throws Exception {
+    public void testDecrement_onLargerThanLongMax() {
         sendLine("set key 0 0 20");
         sendLine("18446744073709551615"); // 2^64 - 1
         assertEquals("STORED", receiveLine());
@@ -421,7 +421,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDecrement_withUnderFlow() throws Exception {
+    public void testDecrement_withUnderFlow() {
         sendLine("set key 0 0 2");
         sendLine("42");
         assertEquals("STORED", receiveLine());
@@ -436,7 +436,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAppend() throws Exception {
+    public void testAppend() {
         sendLine("append key 0 0 3");
         sendLine("bar");
         assertEquals("NOT_STORED", receiveLine());
@@ -456,7 +456,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPrepend() throws Exception {
+    public void testPrepend() {
         sendLine("prepend key 0 0 3");
         sendLine("bar");
         assertEquals("NOT_STORED", receiveLine());
@@ -476,7 +476,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExpiration() throws Exception {
+    public void testExpiration() {
         sendLine("set key 0 3 3");
         sendLine("foo");
         assertEquals("STORED", receiveLine());
@@ -492,7 +492,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetGet_withLargeValue() throws Exception {
+    public void testSetGet_withLargeValue() {
         int capacity = 10000;
         StringBuilder value = new StringBuilder(capacity);
         while (value.length() < capacity) {
@@ -509,7 +509,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBulkSetGet_withManyKeys() throws Exception {
+    public void testBulkSetGet_withManyKeys() {
         int numberOfKeys = 1000;
 
         Map<String, String> entries = new HashMap<>();
@@ -558,7 +558,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     /**
      * Receives a response line from the server
      */
-    private String receiveLine() throws Exception {
+    private String receiveLine() {
         if (scanner.hasNextLine()) {
             return scanner.nextLine();
         } else {
@@ -568,7 +568,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
 
     @SuppressWarnings("checkstyle:parameternumber")
     private void checkStats(int sets, int gets, int getHits, int getMisses, int deleteHits, int deleteMisses,
-                            int incHits, int incMisses, int decHits, int decMisses) throws Exception {
+                            int incHits, int incMisses, int decHits, int decMisses) {
         sendLine("stats");
 
         Map<String, Integer> expectedStats = new HashMap<>();

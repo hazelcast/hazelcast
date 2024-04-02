@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
 
     @Test
-    public void testUpdatesInWriteDelayWindowDone_withStoreAllMethod() throws Exception {
+    public void testUpdatesInWriteDelayWindowDone_withStoreAllMethod() {
         final TestMapStore store = new TestMapStore();
         Config config = newMapStoredConfig(store, 20);
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -57,7 +57,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(store.toString(), 1, store.getStoreAllMethodCallCount());
             }
         });
@@ -112,7 +112,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
      * Updates on same key should not shift store time.
      */
     @Test
-    public void continuouslyUpdatedKey_shouldBeStored_inEveryWriteDelayTimeWindow() throws Exception {
+    public void continuouslyUpdatedKey_shouldBeStored_inEveryWriteDelayTimeWindow() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -139,7 +139,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
                                                   final MapStoreWithCounter mapStore) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final Object value = mapStore.store.get(1);
                 final int countStore = mapStore.countStore.get();
 

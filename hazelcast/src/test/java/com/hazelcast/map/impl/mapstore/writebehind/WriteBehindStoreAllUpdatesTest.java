@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
 
     @Test
-    public void testAllUpdatesReflectedToMapStore() throws Exception {
+    public void testAllUpdatesReflectedToMapStore() {
         int nodeCount = 3;
         final MapStoreWithCounter<Integer, String> mapStore = new MapStoreWithCounter<>();
         TestMapUsingMapStoreBuilder<Integer, String> builder = TestMapUsingMapStoreBuilder.<Integer, String>create()

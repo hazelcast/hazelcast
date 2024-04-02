@@ -229,11 +229,11 @@ public class SerializationIssueTest extends HazelcastTestSupport {
                 new SerializerConfig().setTypeClass(SingletonValue.class)
                         .setImplementation(new StreamSerializer<SingletonValue>() {
                             @Override
-                            public void write(ObjectDataOutput out, SingletonValue v) throws IOException {
+                            public void write(ObjectDataOutput out, SingletonValue v) {
                             }
 
                             @Override
-                            public SingletonValue read(ObjectDataInput in) throws IOException {
+                            public SingletonValue read(ObjectDataInput in) {
                                 return new SingletonValue();
                             }
 
@@ -414,7 +414,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        public void readExternal(ObjectInput in) throws IOException {
             value = in.readUTF();
         }
     }

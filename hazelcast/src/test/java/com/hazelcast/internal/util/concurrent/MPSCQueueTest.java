@@ -74,7 +74,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void pollWithTimeout_thenUnsupportedOperation() throws InterruptedException {
+    public void pollWithTimeout_thenUnsupportedOperation() {
         queue.setConsumerThread(Thread.currentThread());
 
         queue.poll(1, TimeUnit.SECONDS);
@@ -152,7 +152,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isEmpty_whenSomeItemsOnPutStack() throws InterruptedException {
+    public void isEmpty_whenSomeItemsOnPutStack() {
         queue.put("item1");
         assertFalse(queue.isEmpty());
 
@@ -194,7 +194,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void size_whenSomeItemsOnPutStack() throws InterruptedException {
+    public void size_whenSomeItemsOnPutStack() {
         queue.setConsumerThread(Thread.currentThread());
 
         queue.put("item1");
@@ -247,7 +247,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     // ============= offer ====================================
 
     @Test
-    public void offer_withTimeout() throws InterruptedException {
+    public void offer_withTimeout() {
         assertTrue(queue.offer("item1", 1, MINUTES));
         assertTrue(queue.offer("item2", 1, MINUTES));
         assertTrue(queue.offer("item3", 3, MINUTES));
@@ -256,7 +256,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void offer_noTimeout() throws InterruptedException {
+    public void offer_noTimeout() {
         assertTrue(queue.offer("item1"));
         assertTrue(queue.offer("item2"));
         assertTrue(queue.offer("item3"));

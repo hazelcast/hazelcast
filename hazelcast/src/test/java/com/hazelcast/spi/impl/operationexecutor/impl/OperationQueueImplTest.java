@@ -56,7 +56,7 @@ public class OperationQueueImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void add_whenPriority() throws InterruptedException {
+    public void add_whenPriority() {
         Object task = new Object();
         operationQueue.add(task, true);
 

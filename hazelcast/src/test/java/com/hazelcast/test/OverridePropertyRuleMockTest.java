@@ -89,7 +89,7 @@ public class OverridePropertyRuleMockTest {
         assertEquals("true", testClass.getProperty("java.net.preferIPv4Stack"));
     }
 
-    private TestClass createTestClass() throws Exception {
+    private TestClass createTestClass() {
         when(OtherClass.getName()).thenReturn("mocked-name");
         return new TestClass();
     }

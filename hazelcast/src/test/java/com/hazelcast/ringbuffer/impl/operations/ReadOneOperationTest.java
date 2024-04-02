@@ -96,7 +96,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTail() throws Exception {
+    public void whenOneAfterTail() {
         ringbuffer.add("tail");
 
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 1);
@@ -119,7 +119,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTailAndBufferEmpty() throws Exception {
+    public void whenOneAfterTailAndBufferEmpty() {
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 1);
 
         // since there is an item, we don't need to wait

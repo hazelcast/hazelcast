@@ -339,7 +339,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_thereIsNoCommitInTheCurrentTerm_then_cannotMakeMemberChange() throws ExecutionException, InterruptedException {
+    public void when_thereIsNoCommitInTheCurrentTerm_then_cannotMakeMemberChange() {
         // https://groups.google.com/forum/#!msg/raft-dev/t4xj6dJTP6E/d2D9LrWRza8J
 
         group = newGroup(3);
@@ -518,7 +518,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_leaderIsSteppingDown_then_itDoesNotAcceptNewAppends() throws ExecutionException, InterruptedException {
+    public void when_leaderIsSteppingDown_then_itDoesNotAcceptNewAppends() {
         group = new LocalRaftGroupBuilder(3).setAppendNopEntryOnLeaderElection(true).build();
         group.start();
 

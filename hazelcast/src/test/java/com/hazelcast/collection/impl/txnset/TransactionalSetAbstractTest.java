@@ -62,7 +62,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     protected abstract HazelcastInstance[] newInstances(Config config);
 
     @Test
-    public void testAdd_withinTxn() throws Exception {
+    public void testAdd_withinTxn() {
         TransactionContext context = local.newTransactionContext();
         context.beginTransaction();
         TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -79,7 +79,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
 
         Future<Integer> f = spawn(new Callable<Integer>() {
             @Override
-            public Integer call() throws Exception {
+            public Integer call() {
                 ISet<Object> set = local.getSet(setName);
                 while (!set.remove("item-1")) {
                 }
@@ -101,7 +101,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testSetSizeAfterAdd_withinTxn() throws Exception {
+    public void testSetSizeAfterAdd_withinTxn() {
         TransactionContext context = local.newTransactionContext();
         context.beginTransaction();
         TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -112,7 +112,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testRemove_withinTxn() throws Exception {
+    public void testRemove_withinTxn() {
         set.add(ELEMENT);
 
         TransactionContext context = local.newTransactionContext();
@@ -126,7 +126,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testSetSizeAfterRemove_withinTxn() throws Exception {
+    public void testSetSizeAfterRemove_withinTxn() {
         set.add(ELEMENT);
 
         TransactionContext context = local.newTransactionContext();
@@ -138,7 +138,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testAddDuplicateElement_withinTxn() throws Exception {
+    public void testAddDuplicateElement_withinTxn() {
         TransactionContext context = local.newTransactionContext();
         context.beginTransaction();
         TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -149,7 +149,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testAddExistingElement_withinTxn() throws Exception {
+    public void testAddExistingElement_withinTxn() {
         set.add(ELEMENT);
 
         TransactionContext context = local.newTransactionContext();
@@ -161,7 +161,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testSetSizeAfterAddingDuplicateElement_withinTxn() throws Exception {
+    public void testSetSizeAfterAddingDuplicateElement_withinTxn() {
         set.add(ELEMENT);
 
         TransactionContext context = local.newTransactionContext();
@@ -173,7 +173,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testAddRollBack() throws Exception {
+    public void testAddRollBack() {
         set.add(ELEMENT);
 
         TransactionContext context = local.newTransactionContext();

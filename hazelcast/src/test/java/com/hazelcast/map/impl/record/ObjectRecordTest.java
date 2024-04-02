@@ -53,14 +53,14 @@ public class ObjectRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetValue() throws Exception {
+    public void testGetValue() {
         map.put(1, new SampleTestObjects.Employee("alex", 26, true, 25));
         map.get(1);
         assertSizeEventually(1, map);
     }
 
     @Test
-    public void testSetValue() throws Exception {
+    public void testSetValue() {
         map.put(1, new SampleTestObjects.Employee("alex", 26, true, 25));
         map.put(1, new SampleTestObjects.Employee("tom", 24, true, 10));
         assertSizeEventually(1, map);

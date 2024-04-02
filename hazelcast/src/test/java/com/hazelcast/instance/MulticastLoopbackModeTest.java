@@ -63,7 +63,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    private void createTestEnvironment(boolean loopbackMode) throws Exception {
+    private void createTestEnvironment(boolean loopbackMode) {
         Config config = new Config();
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
@@ -78,7 +78,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEnabledMode() throws Exception {
+    public void testEnabledMode() {
         createTestEnvironment(true);
 
         assertClusterSize(2, hz1, hz2);
@@ -92,7 +92,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDisabledMode() throws Exception {
+    public void testDisabledMode() {
         createTestEnvironment(false);
 
         assertClusterSize(1, hz1);

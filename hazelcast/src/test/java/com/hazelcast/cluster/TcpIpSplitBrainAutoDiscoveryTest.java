@@ -16,19 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -43,6 +30,16 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -74,7 +71,7 @@ public class TcpIpSplitBrainAutoDiscoveryTest extends HazelcastTestSupport {
      * know the master address of the bigger split.
      */
     @Test
-    public void regressionTest18661() throws IOException {
+    public void regressionTest18661() {
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(createConfig(5801, 5701));
         hz2.getMap("hz2").put("key", "value");
         HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(createConfig(5901, 5701, 5801));
@@ -93,14 +90,14 @@ public class TcpIpSplitBrainAutoDiscoveryTest extends HazelcastTestSupport {
      * should be able to merge.
      */
     @Test
-    public void regressionTest20331() throws IOException {
+    public void regressionTest20331() {
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(createConfig(5701, 5801));
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(createConfig(5801));
         assertClusterSizeEventually(2, hz1, hz2);
     }
 
     @Test
-    public void regressionTest20331Reverse() throws IOException {
+    public void regressionTest20331Reverse() {
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(createConfig(5801, 5701));
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(createConfig(5701));
         assertClusterSizeEventually(2, hz1, hz2);

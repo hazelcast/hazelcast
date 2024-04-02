@@ -73,7 +73,7 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void clientMapInterceptorTestIssue1238() throws InterruptedException {
+    public void clientMapInterceptorTestIssue1238() {
         final IMap<Object, Object> map = client.getMap("clientMapInterceptorTest");
 
         String id = map.addInterceptor(interceptor);

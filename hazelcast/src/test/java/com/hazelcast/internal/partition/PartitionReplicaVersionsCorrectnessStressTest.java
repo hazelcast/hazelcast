@@ -86,7 +86,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     public NodeLeaveType nodeLeaveType;
 
     @Test(timeout = TEST_TIMEOUT_SECONDS * 1000)
-    public void testReplicaVersionsWhenNodesCrashSimultaneously() throws InterruptedException {
+    public void testReplicaVersionsWhenNodesCrashSimultaneously() {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> instancesCopy = new ArrayList<>(instances);
@@ -112,8 +112,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                                          List<HazelcastInstance> survivingInstances,
                                          Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId,
                                          Map<Integer, List<Address>> partitionReplicaAddresses,
-                                         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId)
-            throws InterruptedException {
+                                         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId) {
         for (HazelcastInstance instance : survivingInstances) {
             Node node = getNode(instance);
             Address address = node.getThisAddress();

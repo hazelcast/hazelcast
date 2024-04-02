@@ -45,7 +45,7 @@ public class NullQueryCacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContainsValue() throws Exception {
+    public void testContainsValue() {
         assertFalse(NULL_QUERY_CACHE.containsValue(1));
     }
 
@@ -80,7 +80,7 @@ public class NullQueryCacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetName() throws Exception {
+    public void testGetName() {
         assertNull(NULL_QUERY_CACHE.getName());
     }
 }

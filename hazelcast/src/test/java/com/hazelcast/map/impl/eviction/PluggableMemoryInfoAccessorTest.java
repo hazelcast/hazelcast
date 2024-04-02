@@ -51,7 +51,7 @@ public class PluggableMemoryInfoAccessorTest extends HazelcastTestSupport {
      * Used {@link ZeroMemoryInfoAccessor} to evict every put, map should not contain any entry after this test run.
      */
     @Test
-    public void testPluggedMemoryInfoAccessorUsed() throws Exception {
+    public void testPluggedMemoryInfoAccessorUsed() {
         Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig("test");
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();

@@ -57,7 +57,7 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultiMap() throws Exception {
+    public void testMultiMap() {
         MultiMap map = holder.getHz().getMultiMap("multimap");
         map.size();
         holder.assertMBeanExistEventually("MultiMap", map.getName());
@@ -66,7 +66,7 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopic() throws Exception {
+    public void testTopic() {
         ITopic<String> topic = holder.getHz().getTopic("topic");
         topic.publish("foo");
         holder.assertMBeanExistEventually("ITopic", topic.getName());
@@ -111,7 +111,7 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReplicatedMap() throws Exception {
+    public void testReplicatedMap() {
         String replicatedMapName = randomString();
         ReplicatedMap replicatedMap = holder.getHz().getReplicatedMap(replicatedMapName);
         replicatedMap.size();

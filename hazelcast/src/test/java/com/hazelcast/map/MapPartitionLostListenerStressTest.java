@@ -84,7 +84,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
     }
 
     @Test
-    public void testMapPartitionLostListener() throws InterruptedException {
+    public void testMapPartitionLostListener() {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> survivingInstances = new ArrayList<>(instances);
@@ -111,8 +111,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
             for (final TestEventCollectingMapPartitionLostListener listener : listeners) {
                 assertTrueAllTheTime(new AssertTask() {
                     @Override
-                    public void run()
-                            throws Exception {
+                    public void run() {
                         assertTrue(listener.getEvents().isEmpty());
                     }
                 }, 1);
@@ -152,8 +151,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
                                                             final Map<Integer, Integer> survivingPartitions) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 if (index < numberOfNodesToCrash) {
                     assertLostPartitions(log, listener, survivingPartitions);
                 } else {

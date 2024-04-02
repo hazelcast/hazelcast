@@ -202,7 +202,7 @@ public class MemberVersionTest {
     }
 
     @Test
-    public void toStringTest() throws Exception {
+    public void toStringTest() {
         assertEquals("3.8.2", MemberVersion.of(3, 8, 2).toString());
     }
 }

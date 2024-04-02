@@ -128,7 +128,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         Future<Object> future = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 IMap<Object, Object> map = instance.getMap("map");
                 return map.get("key");
             }
@@ -237,7 +237,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnBackupDies() throws TransactionException, InterruptedException {
+    public void testTxnBackupDies() throws TransactionException {
         Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);

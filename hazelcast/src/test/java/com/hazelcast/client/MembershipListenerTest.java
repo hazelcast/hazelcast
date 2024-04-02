@@ -91,7 +91,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
+    public void whenMemberAdded_thenMemberAddedEvent() {
         final HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
         final MemberShipEventLogger listener = new MemberShipEventLogger();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
@@ -114,7 +114,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void givenMixOfListenerExists_whenConnect_thenCallInitialMembershipListener() throws Exception {
+    public void givenMixOfListenerExists_whenConnect_thenCallInitialMembershipListener() {
         hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig config = new ClientConfig();
@@ -135,7 +135,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("Expecting one event", 1, initialListener.events.size());
                 InitialMembershipEvent event = (InitialMembershipEvent) initialListener.events.getLast();
                 assertEquals(1, event.getMembers().size());
@@ -144,7 +144,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
+    public void whenMemberRemoved_thenMemberRemovedEvent() {
         final HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
         final MemberShipEventLogger listener = new MemberShipEventLogger();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
@@ -171,21 +171,21 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removedPhantomListener_thenFalse() throws Exception {
+    public void removedPhantomListener_thenFalse() {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         assertFalse(client.getCluster().removeMembershipListener(UuidUtil.newUnsecureUUID()));
     }
 
     @Test(expected = NullPointerException.class)
-    public void removedNullListener_thenException() throws Exception {
+    public void removedNullListener_thenException() {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         assertFalse(client.getCluster().removeMembershipListener(null));
     }
 
     @Test(expected = java.lang.NullPointerException.class)
-    public void addNullListener_thenException() throws Exception {
+    public void addNullListener_thenException() {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         client.getCluster().addMembershipListener(null);
@@ -203,7 +203,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
      * related to issue #1181
      */
     @Test
-    public void testAddInitialMembership_whenListenerAddedViaClientConfig() throws InterruptedException {
+    public void testAddInitialMembership_whenListenerAddedViaClientConfig() {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig().setImplementation(mock(InitialMembershipListener.class)));

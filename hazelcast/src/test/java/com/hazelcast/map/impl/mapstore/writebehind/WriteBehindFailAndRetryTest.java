@@ -108,7 +108,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {
+    public void testStoreOperationDone_afterTemporaryMapStoreFailure() {
         final SelfHealingMapStore<Integer, Integer> mapStore = new SelfHealingMapStore<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -122,14 +122,14 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, mapStore.size());
             }
         });
     }
 
     @Test
-    public void testStoreOperationDone_afterTemporaryMapStoreFailure_whenNonWriteCoalescingModeOn() throws Exception {
+    public void testStoreOperationDone_afterTemporaryMapStoreFailure_whenNonWriteCoalescingModeOn() {
         final SelfHealingMapStore<Integer, Integer> mapStore = new SelfHealingMapStore<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -146,7 +146,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, mapStore.size());
             }
         });
@@ -204,7 +204,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOOMHandlerCalled_whenOOMEOccursDuringStoreOperations() throws Exception {
+    public void testOOMHandlerCalled_whenOOMEOccursDuringStoreOperations() {
         LeakyMapStore<Integer, Integer> mapStore = new LeakyMapStore<>();
         IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -240,7 +240,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPartialStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {
+    public void testPartialStoreOperationDone_afterTemporaryMapStoreFailure() {
         final int numEntriesToStore = 6;
         final SequentialMapStore<Integer, Integer> mapStore
                 = new SequentialMapStore<>(5, numEntriesToStore);
@@ -257,7 +257,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         }
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(numEntriesToStore, mapStore.storeCount());
             }
         });
