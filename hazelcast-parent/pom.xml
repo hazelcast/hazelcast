@@ -97,7 +97,7 @@
         <git.commit.id.maven.plugin.version>2.1.10</git.commit.id.maven.plugin.version>
         <jacoco.maven.plugin.version>0.8.11</jacoco.maven.plugin.version>
         <cobertura.maven.plugin.version>2.7</cobertura.maven.plugin.version>
-        <dependency.check.maven.plugin.version>9.0.10</dependency.check.maven.plugin.version>
+        <dependency.check.maven.plugin.version>9.1.0</dependency.check.maven.plugin.version>
         <license.maven.plugin.version>2.4.0</license.maven.plugin.version>
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
 
