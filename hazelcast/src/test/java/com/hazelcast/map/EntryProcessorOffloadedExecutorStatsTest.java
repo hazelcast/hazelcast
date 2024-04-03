@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR;
-import static com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceBasicTest.assertMetricsCollected;
-import static com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceBasicTest.collectMetrics;
+import static com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceTestSupport.assertMetricsCollected;
+import static com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceTestSupport.collectMetrics;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)

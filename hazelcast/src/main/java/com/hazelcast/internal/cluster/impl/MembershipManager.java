@@ -22,7 +22,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cp.internal.RaftServiceUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -45,6 +46,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -257,7 +261,7 @@ public class MembershipManager {
                 logger.fine("Cannot publish member list to cluster. Is-master: "
                         + clusterService.isMaster() + ", joined: " + clusterService.isJoined()
                         + " , mastership claim in progress: " + clusterService.getClusterJoinManager()
-                                                                              .isMastershipClaimInProgress());
+                        .isMastershipClaimInProgress());
             }
 
             return;
@@ -423,13 +427,13 @@ public class MembershipManager {
         }
 
         return builder.version(memberInfo.getVersion())
-                      .localMember(localMember)
-                      .uuid(memberInfo.getUuid())
-                      .attributes(attributes)
-                      .liteMember(memberInfo.isLiteMember())
-                      .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
-                      .instance(node.hazelcastInstance)
-                      .build();
+                .localMember(localMember)
+                .uuid(memberInfo.getUuid())
+                .attributes(attributes)
+                .liteMember(memberInfo.isLiteMember())
+                .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
+                .instance(node.hazelcastInstance)
+                .build();
     }
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
@@ -518,7 +522,7 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             if (!isMemberSuspected(member)) {
-                 return true;
+                return true;
             }
 
             MemberMap memberMap = getMemberMap();
@@ -542,7 +546,7 @@ public class MembershipManager {
     }
 
     void handleExplicitSuspicionTrigger(Address caller, int callerMemberListVersion,
-            MembersViewMetadata suspectedMembersViewMetadata) {
+                                        MembersViewMetadata suspectedMembersViewMetadata) {
         clusterServiceLock.lock();
         try {
             Address masterAddress = clusterService.getMasterAddress();
@@ -681,7 +685,7 @@ public class MembershipManager {
     }
 
     private boolean addSuspectedMember(MemberImpl suspectedMember, String reason,
-            boolean shouldCloseConn) {
+                                       boolean shouldCloseConn) {
 
         Address address = suspectedMember.getAddress();
         if (getMember(address, suspectedMember.getUuid()) == null) {
@@ -699,10 +703,10 @@ public class MembershipManager {
                 logger.warning(suspectedMember + " is suspected to be dead");
             }
             node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_SUSPECTED)
-                .message("Member is suspected")
-                .addParameter("address", address)
-                .addParameter("reason", reason)
-                .log();
+                    .message("Member is suspected")
+                    .addParameter("address", address)
+                    .addParameter("reason", reason)
+                    .log();
             clusterService.getClusterJoinManager().addLeftMember(suspectedMember);
         }
 
@@ -747,10 +751,10 @@ public class MembershipManager {
             setMembers(newMembers);
 
             node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_SUSPECTED)
-                .message("Member is removed")
-                .addParameter("address", address)
-                .addParameter("reason", reason)
-                .log();
+                    .message("Member is removed")
+                    .addParameter("address", address)
+                    .addParameter("reason", reason)
+                    .log();
 
             if (logger.isFineEnabled()) {
                 logger.fine(member + " is removed. Publishing new member list.");
@@ -1025,9 +1029,9 @@ public class MembershipManager {
         Operation op = new FetchMembersViewOp(targetUuid).setCallerUuid(clusterService.getThisUuid());
 
         return nodeEngine.getOperationService()
-                         .createInvocationBuilder(SERVICE_NAME, op, target)
-                         .setTryCount(mastershipClaimTimeoutSeconds)
-                         .setCallTimeout(SECONDS.toMillis(mastershipClaimTimeoutSeconds)).invoke();
+                .createInvocationBuilder(SERVICE_NAME, op, target)
+                .setTryCount(mastershipClaimTimeoutSeconds)
+                .setCallTimeout(SECONDS.toMillis(mastershipClaimTimeoutSeconds)).invoke();
     }
 
     /**
@@ -1092,9 +1096,24 @@ public class MembershipManager {
     }
 
     private void removeFromCPMissingMembers(MembersView membersView) {
-        RaftService raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
+        Object raftService;
+        try {
+            raftService = nodeEngine.getService(RaftServiceUtil.SERVICE_NAME);
+        } catch (HazelcastException e) {
+            return;
+        }
+
         List<MemberInfo> membersInfo = membersView.getMembers();
-        raftService.removeFromMissingMembers(membersInfo);
+
+        // Lookup to invoke EE RaftService#removeFromMissingMembers method
+        MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+        MethodType mt = MethodType.methodType(void.class, List.class);
+        try {
+            MethodHandle removeFromMissingMembers = publicLookup.bind(raftService, "removeFromMissingMembers", mt);
+            removeFromMissingMembers.invoke(membersInfo);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private boolean isHotRestartEnabled() {
@@ -1295,9 +1314,9 @@ public class MembershipManager {
 
         MemberMap memberMap = getMemberMap();
         List<MemberImpl> suspectedMembers = suspectedMemberInfos.stream()
-                                                                .map(m -> memberMap.getMember(m.getAddress(), m.getUuid()))
-                                                                .filter(Objects::nonNull)
-                                                                .collect(toList());
+                .map(m -> memberMap.getMember(m.getAddress(), m.getUuid()))
+                .filter(Objects::nonNull)
+                .collect(toList());
 
         if (partialDisconnectionHandler.update(sender, timestamp, suspectedMembers)) {
             logger.warning("Received suspected members: " + suspectedMembers + " from " + sender);

@@ -35,8 +35,6 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
-import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.util.IterationType;
@@ -220,25 +218,6 @@ public class EnumCompatibilityTest {
         mappings.put(SqlColumnType.JSON, 15);
         mappings.put(SqlColumnType.ROW, 16);
         verifyCompatibility(SqlColumnType.values(), SqlColumnType::getId, mappings);
-    }
-
-    @Test
-    public void testAtomicLongAlterOpAlterResultType() {
-        // Used in AtomicLongAlterCodec
-        Map<AlterOp.AlterResultType, Integer> mappings = new HashMap<>();
-        mappings.put(AlterOp.AlterResultType.OLD_VALUE, 0);
-        mappings.put(AlterOp.AlterResultType.NEW_VALUE, 1);
-        verifyCompatibility(AlterOp.AlterResultType.values(), AlterOp.AlterResultType::value, mappings);
-    }
-
-    @Test
-    public void testAtomicRefApplyOpReturnValueType() {
-        // Used in AtomicRefApplyCodec
-        Map<ApplyOp.ReturnValueType, Integer> mappings = new HashMap<>();
-        mappings.put(ApplyOp.ReturnValueType.NO_RETURN_VALUE, 0);
-        mappings.put(ApplyOp.ReturnValueType.RETURN_OLD_VALUE, 1);
-        mappings.put(ApplyOp.ReturnValueType.RETURN_NEW_VALUE, 2);
-        verifyCompatibility(ApplyOp.ReturnValueType.values(), ApplyOp.ReturnValueType::value, mappings);
     }
 
     @Test

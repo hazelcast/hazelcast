@@ -20,11 +20,11 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongServiceUtil;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefServiceUtil;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchServiceUtil;
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
-import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreServiceUtil;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -95,7 +95,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_AtomicLong() {
-        Permission permission = ActionConstants.getPermission("foo", AtomicLongService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", AtomicLongServiceUtil.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof AtomicLongPermission);
@@ -103,7 +103,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_Semaphore() {
-        Permission permission = ActionConstants.getPermission("foo", SemaphoreService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", SemaphoreServiceUtil.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof SemaphorePermission);
@@ -151,7 +151,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_AtomicReference() {
-        Permission permission = ActionConstants.getPermission("foo", AtomicRefService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", AtomicRefServiceUtil.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof AtomicReferencePermission);
@@ -159,7 +159,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_CountdownLatch() {
-        Permission permission = ActionConstants.getPermission("foo", CountDownLatchService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", CountDownLatchServiceUtil.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof CountDownLatchPermission);

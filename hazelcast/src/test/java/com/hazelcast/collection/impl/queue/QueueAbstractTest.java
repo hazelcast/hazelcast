@@ -22,7 +22,6 @@ import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +53,6 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     public String comparatorClassName;
 
     protected HazelcastInstance[] instances;
-    protected IAtomicLong atomicLong;
     private IQueue<VersionedObject<String>> queue;
     private QueueConfig queueConfig;
 

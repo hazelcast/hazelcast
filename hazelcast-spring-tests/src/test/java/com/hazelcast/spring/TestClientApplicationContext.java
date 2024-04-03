@@ -61,10 +61,6 @@ import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
@@ -239,22 +235,6 @@ public class TestClientApplicationContext {
     private ExecutorService executorService;
 
     @Autowired
-    @Qualifier(value = "atomicLong")
-    private IAtomicLong atomicLong;
-
-    @Autowired
-    @Qualifier(value = "atomicReference")
-    private IAtomicReference atomicReference;
-
-    @Autowired
-    @Qualifier(value = "countDownLatch")
-    private ICountDownLatch countDownLatch;
-
-    @Autowired
-    @Qualifier(value = "semaphore")
-    private ISemaphore semaphore;
-
-    @Autowired
     @Qualifier(value = "reliableTopic")
     private ITopic reliableTopic;
 
@@ -388,10 +368,6 @@ public class TestClientApplicationContext {
         assertNotNull(set);
         assertNotNull(list);
         assertNotNull(executorService);
-        assertNotNull(atomicLong);
-        assertNotNull(atomicReference);
-        assertNotNull(countDownLatch);
-        assertNotNull(semaphore);
         assertNotNull(reliableTopic);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
@@ -400,10 +376,6 @@ public class TestClientApplicationContext {
         assertEquals("topic", topic.getName());
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
-        assertEquals("atomicLong", atomicLong.getName());
-        assertEquals("atomicReference", atomicReference.getName());
-        assertEquals("countDownLatch", countDownLatch.getName());
-        assertEquals("semaphore", semaphore.getName());
         assertEquals("reliableTopic", reliableTopic.getName());
     }
 

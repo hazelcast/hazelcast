@@ -133,11 +133,6 @@ import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -259,21 +254,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Autowired
     private FlakeIdGenerator flakeIdGenerator;
-
-    @Autowired
-    private IAtomicLong atomicLong;
-
-    @Autowired
-    private IAtomicReference atomicReference;
-
-    @Autowired
-    private ICountDownLatch countDownLatch;
-
-    @Autowired
-    private ISemaphore semaphore;
-
-    @Autowired
-    private FencedLock lock;
 
     @Autowired
     private MapStore dummyMapStore;
@@ -1017,11 +997,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(flakeIdGenerator);
-        assertNotNull(atomicLong);
-        assertNotNull(atomicReference);
-        assertNotNull(countDownLatch);
-        assertNotNull(semaphore);
-        assertNotNull(lock);
         assertNotNull(pnCounter);
         assertNotNull(jet);
         assertEquals(config.getJetConfig(), jet.getConfig());
@@ -1034,11 +1009,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("flakeIdGenerator", flakeIdGenerator.getName());
-        assertEquals("testAtomicLong", atomicLong.getName());
-        assertEquals("testAtomicReference", atomicReference.getName());
-        assertEquals("countDownLatch", countDownLatch.getName());
-        assertEquals("semaphore", semaphore.getName());
-
     }
 
     @Test
@@ -1585,8 +1555,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testCPSubsystemConfig() {
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
-        assertEquals(0, cpSubsystemConfig.getCPMemberCount());
-        assertEquals(0, cpSubsystemConfig.getGroupSize());
+        assertEquals(4, cpSubsystemConfig.getCPMemberCount());
+        assertEquals(3, cpSubsystemConfig.getGroupSize());
         assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());

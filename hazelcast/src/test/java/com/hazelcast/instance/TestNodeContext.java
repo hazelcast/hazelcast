@@ -19,7 +19,6 @@ package com.hazelcast.instance;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
@@ -94,7 +93,6 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
         when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
-        when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
         when(nodeExtension.getNamespaceService()).thenReturn(new NoOpUserCodeNamespaceService(TestNodeContext.class.getClassLoader()));

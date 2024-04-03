@@ -46,8 +46,7 @@ public class Echo implements Callable<String>, DataSerializable, HazelcastInstan
 
     @Override
     public String call() {
-        hz.getCPSubsystem().getCountDownLatch("latch").countDown();
-        return hz.getCluster().getLocalMember().toString() + ":" + input;
+        return hz.getCluster().getLocalMember() + ":" + input;
     }
 
     @Override

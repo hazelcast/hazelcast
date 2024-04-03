@@ -19,7 +19,6 @@ package com.hazelcast.collection.impl.set;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -42,7 +41,6 @@ import static org.junit.Assert.assertTrue;
 public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
-    protected IAtomicLong atomicLong;
 
     private ISet<String> set;
     private Config config;

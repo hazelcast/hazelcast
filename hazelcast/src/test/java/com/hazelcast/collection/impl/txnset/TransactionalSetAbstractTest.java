@@ -19,7 +19,6 @@ package com.hazelcast.collection.impl.txnset;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,7 +40,6 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
     static final String ELEMENT = "item";
 
     protected HazelcastInstance[] instances;
-    protected IAtomicLong atomicLong;
     private ISet<String> set;
     private String setName;
     private HazelcastInstance local;

@@ -19,7 +19,6 @@ package com.hazelcast.collection.impl.list;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.collection.IList;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
@@ -40,7 +39,6 @@ import static org.junit.Assert.fail;
 public abstract class ListAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
-    protected IAtomicLong atomicLong;
 
     private IList<String> list;
 

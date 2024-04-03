@@ -16,10 +16,10 @@
 
 package com.hazelcast.cp.internal.raft.impl.log;
 
+import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 
 import java.io.IOException;
 
@@ -72,12 +72,12 @@ public class LogEntry implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return RaftDataSerializerHook.F_ID;
+        return RaftDataSerializerConstants.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftDataSerializerHook.LOG_ENTRY;
+        return RaftDataSerializerConstants.LOG_ENTRY;
     }
 
     @Override

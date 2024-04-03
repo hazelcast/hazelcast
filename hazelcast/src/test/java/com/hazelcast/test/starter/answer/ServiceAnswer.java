@@ -116,12 +116,12 @@ class ServiceAnswer extends AbstractAnswer {
         } else if (arguments.length == 0 && methodName.startsWith("isDiscoveryCompleted")) {
             // RaftService
             return invoke(invocation);
-        } else if (arguments.length == 0 && methodName.startsWith("getInvocationManager")) {
-            // RaftService
-            Object raftInvocationManager = invokeForMock(invocation);
-            Object delegateSerializationService = getSerializationService();
-            return createMockForTargetClass(raftInvocationManager,
-                    new RaftInvocationManagerAnswer(raftInvocationManager, delegateSerializationService));
+//        } else if (arguments.length == 0 && methodName.startsWith("getInvocationManager")) {
+//            // RaftService
+//            Object raftInvocationManager = invokeForMock(invocation);
+//            Object delegateSerializationService = getSerializationService();
+//            return createMockForTargetClass(raftInvocationManager,
+//                    new RaftInvocationManagerAnswer(raftInvocationManager, delegateSerializationService));
         } else if (arguments.length == 1 && methodName.equals("getSession")) {
             // ProxySessionManagerService
             return invoke(invocation, arguments);

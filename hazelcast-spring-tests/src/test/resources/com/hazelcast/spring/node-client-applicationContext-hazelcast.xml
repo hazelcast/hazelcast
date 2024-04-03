@@ -675,10 +675,16 @@
     <hz:list id="list" instance-ref="client" name="list"/>
     <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
     <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="client" name="flakeIdGenerator"/>
-    <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
-    <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
-    <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
-    <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
+    <!--
+        Not supported in open source. Defining this here would result in a UnsupportedOperationException
+
+        <hz:atomicLong id="atomicLong" instance-ref="client" name="testAtomicLong"/>
+        <hz:atomicReference id="atomicReference" instance-ref="client" name="testAtomicReference"/>
+        <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
+        <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
+        <hz:lock id="lock" instance-ref="client" name="lock"/>
+        <hz:cpmap id="cpMap" instance-ref="client" name="cpmap"/>
+        -->
     <hz:reliableTopic id="reliableTopic" instance-ref="client" name="reliableTopic"/>
 
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>

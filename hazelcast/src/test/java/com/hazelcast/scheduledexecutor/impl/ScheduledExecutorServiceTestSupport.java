@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.scheduledexecutor.AutoDisposableTask;
@@ -27,11 +29,14 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -39,8 +44,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CANCELLED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_COMPLETED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_PENDING;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_STARTED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_START_LATENCY;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Common methods used in ScheduledExecutorService tests.
@@ -531,4 +544,87 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
             }
         }
     }
+
+    public static Map<String, List<Long>> collectMetrics(String prefix, HazelcastInstance... instances) {
+        Map<String, List<Long>> metricsMap = new HashMap<>();
+
+        for (HazelcastInstance instance : instances) {
+            Accessors.getMetricsRegistry(instance).collect(new MetricsCollector() {
+                @Override
+                public void collectLong(MetricDescriptor descriptor, long value) {
+                    if (prefix.equals(descriptor.prefix())) {
+                        metricsMap.compute(descriptor.metric(), (metricName, values) -> {
+                            if (values == null) {
+                                values = new ArrayList<>();
+                            }
+                            values.add(value);
+                            return values;
+                        });
+                    }
+                }
+
+                @Override
+                public void collectDouble(MetricDescriptor descriptor, double value) {
+                }
+
+                @Override
+                public void collectException(MetricDescriptor descriptor, Exception e) {
+                }
+
+                @Override
+                public void collectNoValue(MetricDescriptor descriptor) {
+                }
+            });
+        }
+        return metricsMap;
+    }
+
+    public static void assertMetricsCollected(Map<String, List<Long>> metricsMap,
+                                              long expectedTotalExecutionTime,
+                                              long expectedPending,
+                                              long expectedStarted,
+                                              long expectedCompleted,
+                                              long expectedCancelled,
+                                              long expectedCreationTime,
+                                              long expectedTotalStartLatency) {
+
+        List<Long> totalExecutionTimes = metricsMap.get(EXECUTOR_METRIC_TOTAL_EXECUTION_TIME);
+        for (long totalExecutionTime : totalExecutionTimes) {
+            assertGreaterOrEquals(EXECUTOR_METRIC_TOTAL_EXECUTION_TIME + "::" + metricsMap,
+                    totalExecutionTime, expectedTotalExecutionTime);
+        }
+
+        List<Long> pendingCount = metricsMap.get(EXECUTOR_METRIC_PENDING);
+        for (long pending : pendingCount) {
+            assertEquals(EXECUTOR_METRIC_PENDING, expectedPending, pending);
+        }
+
+        List<Long> startedCount = metricsMap.get(EXECUTOR_METRIC_STARTED);
+        for (long started : startedCount) {
+            assertEquals(EXECUTOR_METRIC_STARTED, expectedStarted, started);
+        }
+
+        List<Long> completedCount = metricsMap.get(EXECUTOR_METRIC_COMPLETED);
+        for (long completed : completedCount) {
+            assertEquals(EXECUTOR_METRIC_COMPLETED, expectedCompleted, completed);
+        }
+
+        List<Long> cancelledCount = metricsMap.get(EXECUTOR_METRIC_CANCELLED);
+        for (long cancelled : cancelledCount) {
+            assertEquals(EXECUTOR_METRIC_CANCELLED, expectedCancelled, cancelled);
+        }
+
+        List<Long> creationTimes = metricsMap.get(EXECUTOR_METRIC_CREATION_TIME);
+        for (long creationTime : creationTimes) {
+            assertGreaterOrEquals(EXECUTOR_METRIC_CREATION_TIME,
+                    creationTime, expectedCreationTime);
+        }
+
+        List<Long> totalStartLatencies = metricsMap.get(EXECUTOR_METRIC_TOTAL_START_LATENCY);
+        for (long totalStartLatency : totalStartLatencies) {
+            assertGreaterOrEquals(EXECUTOR_METRIC_TOTAL_START_LATENCY,
+                    totalStartLatency, expectedTotalStartLatency);
+        }
+    }
+
 }

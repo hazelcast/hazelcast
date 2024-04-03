@@ -28,7 +28,6 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
 import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -39,10 +38,7 @@ import com.hazelcast.client.impl.protocol.codec.MCInterruptHotRestartBackupCodec
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
-import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
@@ -178,11 +174,6 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetCPMembersMessageTask() throws Exception {
-        assertFailureOnUntrustedInterface(MCGetCPMembersCodec.encodeRequest());
-    }
-
-    @Test
     public void testGetMapConfigMessageTask() throws Exception {
         assertFailureOnUntrustedInterface(MCGetMapConfigCodec.encodeRequest(randomString()));
     }
@@ -240,21 +231,6 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     @Test
     public void testPromoteLiteMemberMessageTask() throws Exception {
         assertFailureOnUntrustedInterface(MCPromoteLiteMemberCodec.encodeRequest());
-    }
-
-    @Test
-    public void testPromoteToCPMemberMessageTask() throws Exception {
-        assertFailureOnUntrustedInterface(MCPromoteToCPMemberCodec.encodeRequest());
-    }
-
-    @Test
-    public void testRemoveCPMemberMessageTask() throws Exception {
-        assertFailureOnUntrustedInterface(MCRemoveCPMemberCodec.encodeRequest(randomUUID()));
-    }
-
-    @Test
-    public void testResetCPSubsystemMessageTask() throws Exception {
-        assertFailureOnUntrustedInterface(MCResetCPSubsystemCodec.encodeRequest());
     }
 
     @Test

@@ -34,13 +34,13 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
-import com.hazelcast.cp.internal.CPMemberInfo;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -438,11 +438,11 @@ public class Node {
                 known = true;
             }
             if (listener instanceof CPMembershipListener) {
-                hazelcastInstance.cpSubsystem.addMembershipListener((CPMembershipListener) listener);
+                hazelcastInstance.getCPSubsystem().addMembershipListener((CPMembershipListener) listener);
                 known = true;
             }
             if (listener instanceof CPGroupAvailabilityListener) {
-                hazelcastInstance.cpSubsystem.addGroupAvailabilityListener((CPGroupAvailabilityListener) listener);
+                hazelcastInstance.getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener);
                 known = true;
             }
             if (nodeExtension.registerListener(listener)) {
@@ -832,8 +832,8 @@ public class Node {
                         && shutdownIntent != ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT) {
                     final ClusterState clusterState = clusterService.getClusterState();
                     logger.info("Running shutdown hook... Current node state: " + state
-                                + ", detected shutdown intent: " + shutdownIntent
-                                + ", cluster state: " + clusterState);
+                            + ", detected shutdown intent: " + shutdownIntent
+                            + ", cluster state: " + clusterState);
                     clusterTopologyIntentTracker.shutdownWithIntent(shutdownIntent);
                 } else {
                     logger.info("Running shutdown hook... Current node state: " + state);
@@ -905,7 +905,7 @@ public class Node {
         final Set<UUID> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
         MemberImpl localMember = getLocalMember();
-        CPMemberInfo localCPMember = getLocalCPMember();
+        CPMember localCPMember = getLocalCPMember();
         UUID cpMemberUUID = localCPMember != null ? localCPMember.getUuid() : null;
         OnJoinRegistrationOperation preJoinOps = nodeEngine.getEventService().getPreJoinOperation();
         OnJoinOp onJoinOp = preJoinOps != null ? new OnJoinOp(Collections.singletonList(preJoinOps)) : null;
@@ -914,10 +914,12 @@ public class Node {
                 localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap(), cpMemberUUID, onJoinOp);
     }
 
-    private CPMemberInfo getLocalCPMember() {
-        RaftService raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
-        CPMemberInfo localCPMember = raftService.getLocalCPMember();
-        return localCPMember;
+    private CPMember getLocalCPMember() {
+        try {
+            return hazelcastInstance.getCPSubsystem().getLocalCPMember();
+        } catch (HazelcastException e) {
+            return null;
+        }
     }
 
     public ConfigCheck createConfigCheck() {

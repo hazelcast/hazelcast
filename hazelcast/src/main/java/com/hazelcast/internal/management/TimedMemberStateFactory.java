@@ -29,7 +29,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.cp.CPMember;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
@@ -160,12 +159,7 @@ public class TimedMemberStateFactory {
         memberState.setClients(serializableClientEndPoints);
         memberState.setName(instance.getName());
         memberState.setUuid(node.getThisUuid());
-        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
-            memberState.setCpMemberUuid(null);
-        } else {
-            CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
-            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid() : null);
-        }
+        setCPMemberUuid(memberState);
 
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
@@ -191,6 +185,10 @@ public class TimedMemberStateFactory {
         createClusterHotRestartStatus(memberState);
 
         memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
+    }
+
+    protected void setCPMemberUuid(MemberStateImpl memberState) {
+        memberState.setCpMemberUuid(null);
     }
 
     private Map<UUID, String> getClientAttributes(Map<UUID, ClientStatistics> allClientStatistics) {
@@ -283,7 +281,7 @@ public class TimedMemberStateFactory {
     }
 
     private void handleUserCodeNamespaces(MemberStateImpl memberState,
-                                        Map<String, LocalUserCodeNamespaceStats> nsStats) {
+                                          Map<String, LocalUserCodeNamespaceStats> nsStats) {
         memberState.setUserCodeNamespacesWithStats(nsStats.keySet());
     }
 

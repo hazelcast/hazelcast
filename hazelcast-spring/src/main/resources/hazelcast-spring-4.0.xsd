@@ -3049,10 +3049,17 @@
         <xs:union memberTypes="xs:nonNegativeInteger parameterizedValueType"/>
     </xs:simpleType>
     <xs:simpleType name="cp-group-size">
-        <xs:restriction base="xs:unsignedInt">
-            <xs:minInclusive value="0"/>
-            <xs:maxInclusive value="7"/>
-        </xs:restriction>
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="7"/>
+                </xs:restriction>
+            </xs:simpleType>
+            <xs:simpleType>
+                <xs:restriction base="parameterized-non-negative-integer"/>
+            </xs:simpleType>
+        </xs:union>
     </xs:simpleType>
 
     <xs:complexType name="listeners">
@@ -4458,7 +4465,7 @@
 
     <xs:complexType name="cp-subsystem">
         <xs:all>
-            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
+            <xs:element name="cp-member-count" type="parameterized-non-negative-integer" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Number of CP members to initialize CP Subsystem. It is 0 by default,

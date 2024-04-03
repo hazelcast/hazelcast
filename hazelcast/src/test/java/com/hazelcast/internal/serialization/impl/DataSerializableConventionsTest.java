@@ -18,6 +18,8 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.hazelcast.cp.internal.CPMemberInfo;
+import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.internal.locksupport.operations.LocalLockCleanupOperation;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -91,10 +93,15 @@ public class DataSerializableConventionsTest {
      */
     private final Set<Class> classWhiteList;
     private final Set<String> packageWhiteList;
+    /**
+     * Classes contained in these packages have serialization implemented in EE modules.
+     */
+    private final Set<Package> enterprisePackages;
 
     public DataSerializableConventionsTest() {
         classWhiteList = Collections.unmodifiableSet(getWhitelistedClasses());
         packageWhiteList = Collections.unmodifiableSet(getWhitelistedPackageNames());
+        enterprisePackages = Collections.unmodifiableSet(getEnterprisePackages());
     }
 
     /**
@@ -279,6 +286,9 @@ public class DataSerializableConventionsTest {
             if (isReadOnlyConfig(klass)) {
                 continue;
             }
+            if (enterprisePackages.contains(klass.getPackage())) {
+                continue;
+            }
             // wrap all of this in try-catch, as it is legitimate for some classes to throw UnsupportedOperationException
             try {
                 Constructor<? extends IdentifiedDataSerializable> ctor = klass.getDeclaredConstructor();
@@ -383,6 +393,10 @@ public class DataSerializableConventionsTest {
 
     protected Set<String> getWhitelistedPackageNames() {
         return Collections.singleton(JET_PACKAGE);
+    }
+
+    protected Set<? extends Package> getEnterprisePackages() {
+        return Set.of(CPMemberInfo.class.getPackage(), LogEntry.class.getPackage());
     }
 
     /**

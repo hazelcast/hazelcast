@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.internal.session.ProxySessionManager;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -118,4 +119,6 @@ public interface ClientExtension {
      * Creates the relevant CP subsystem implementation.
      */
     CPSubsystem createCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance);
+
+    ProxySessionManager createProxySessionManager(HazelcastClientInstanceImpl hazelcastClientInstance);
 }

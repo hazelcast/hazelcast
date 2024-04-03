@@ -90,6 +90,7 @@ public final class MetricDescriptorConstants {
     // ===[/CLUSTER]====================================================
 
     // ===[CP SUBSYSTEM]================================================
+    // TODO should be removed, because moved to CPMetricDescriptorConstants. Left here for MC compatibility
     public static final String CP_PREFIX_RAFT = "raft";
     public static final String CP_PREFIX_RAFT_GROUP = "raft.group";
     public static final String CP_PREFIX_RAFT_METADATA = "raft.metadata";

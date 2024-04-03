@@ -22,7 +22,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
-import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -307,7 +306,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     public CPPersistenceService getCPPersistenceService() {
-        return NopCPPersistenceService.INSTANCE;
+        return null;
     }
 
     @Override

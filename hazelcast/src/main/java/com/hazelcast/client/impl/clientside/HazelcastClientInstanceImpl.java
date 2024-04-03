@@ -25,8 +25,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
-import com.hazelcast.client.cp.internal.CPSubsystemImpl;
-import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
+import com.hazelcast.cp.internal.session.ProxySessionManager;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
@@ -156,6 +155,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_MS;
@@ -208,8 +208,8 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
     private final ClientExceptionFactory clientExceptionFactory;
     private final ClientUserCodeDeploymentService userCodeDeploymentService;
     private final ClusterDiscoveryService clusterDiscoveryService;
-    private final ClientProxySessionManager proxySessionManager;
-    private final CPSubsystemImpl cpSubsystem;
+    private final ProxySessionManager proxySessionManager;
+    private final CPSubsystem cpSubsystem;
     private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue<>();
     private final SqlClientService sqlService;
@@ -274,8 +274,8 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         clientExceptionFactory = initClientExceptionFactory();
         clientStatisticsService = new ClientStatisticsService(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
-        proxySessionManager = new ClientProxySessionManager(this);
-        cpSubsystem = (CPSubsystemImpl) clientExtension.createCPSubsystem(this);
+        cpSubsystem = clientExtension.createCPSubsystem(this);
+        proxySessionManager = clientExtension.createProxySessionManager(this);
         sqlService = new SqlClientService(this);
     }
 
@@ -425,7 +425,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
             loadBalancer.init(getCluster(), config);
             clientStatisticsService.start();
             clientExtension.afterStart(this);
-            cpSubsystem.init(clientContext);
+            ((Consumer<ClientContext>) cpSubsystem).accept(clientContext);
             addClientConfigAddedListeners(configuredListeners);
             if (!asyncStart) {
                 sendStateToCluster();
@@ -749,7 +749,7 @@ public class HazelcastClientInstanceImpl implements HazelcastClientInstance, Ser
         return userCodeDeploymentService;
     }
 
-    public ClientProxySessionManager getProxySessionManager() {
+    public ProxySessionManager getProxySessionManager() {
         return proxySessionManager;
     }
 

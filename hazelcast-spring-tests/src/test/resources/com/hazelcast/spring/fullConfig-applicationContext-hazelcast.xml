@@ -1059,8 +1059,8 @@
             </hz:pn-counter>
 
             <hz:cp-subsystem>
-                <hz:cp-member-count>0</hz:cp-member-count>
-                <hz:group-size>0</hz:group-size>
+                <hz:cp-member-count>${cp.member.count:0}</hz:cp-member-count>
+                <hz:group-size>${cp.group.size:0}</hz:group-size>
                 <hz:map-limit>20</hz:map-limit>
                 <hz:session-time-to-live-seconds>15</hz:session-time-to-live-seconds>
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
@@ -1203,15 +1203,16 @@
     <hz:scheduledExecutorService id="scheduledExec" instance-ref="instance" name="scheduledExec"/>
     <hz:durableExecutorService id="durableExec" instance-ref="instance" name="durableExec"/>
     <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="instance" name="flakeIdGenerator"/>
-    <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
-    <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>
-    <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
-    <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
-    <hz:lock id="lock" instance-ref="instance" name="lock"/>
     <!--
-    Not supported in open source. Defining this here would result in a UnsupportedOperationException
-    <hz:cpmap id="cpmap" instance-ref="instance" name="cpmap"/>
-    -->
+        Not supported in open source. Defining this here would result in a UnsupportedOperationException
+
+        <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
+        <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>
+        <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
+        <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
+        <hz:lock id="lock" instance-ref="instance" name="lock"/>
+        <hz:cpmap id="cpmap" instance-ref="instance" name="cpmap"/>
+       -->
     <hz:cardinalityEstimator id="cardinality" instance-ref="instance" name="cardinality"/>
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>

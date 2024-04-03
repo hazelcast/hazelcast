@@ -37,9 +37,8 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.internal.CPSubsystemImpl;
+import com.hazelcast.cp.CPSubsystemStubImpl;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
-import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -678,12 +677,12 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public CPPersistenceService getCPPersistenceService() {
-        return NopCPPersistenceService.INSTANCE;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
-        return new CPSubsystemImpl(nodeEngine);
+        return new CPSubsystemStubImpl();
     }
 
     protected void createAndSetPhoneHome() {

@@ -32,7 +32,7 @@ import java.util.UUID;
 
 public class StaticMemberNodeContext implements NodeContext {
     private final NodeContext delegate;
-    private final UUID uuid;
+    protected final UUID uuid;
 
     public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, Member member) {
         this(factory, member.getUuid(), member.getAddress());

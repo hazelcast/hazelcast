@@ -54,7 +54,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -77,6 +76,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -197,7 +197,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetCPMembersMessageTask() throws Exception {
-        assertFailure(MCGetCPMembersCodec.encodeRequest(), HazelcastException.class, "CP Subsystem is not enabled!");
+        assertFailure(MCGetCPMembersCodec.encodeRequest(), UnsupportedOperationException.class, CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
     }
 
     @Test
@@ -403,17 +403,17 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testPromoteToCPMemberMessageTask() throws Exception {
-        assertFailure(MCPromoteToCPMemberCodec.encodeRequest(), HazelcastException.class, "CP Subsystem is not enabled!");
+        assertFailure(MCPromoteToCPMemberCodec.encodeRequest(), UnsupportedOperationException.class, CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
     }
 
     @Test
     public void testRemoveCPMemberMessageTask() throws Exception {
-        assertFailure(MCRemoveCPMemberCodec.encodeRequest(UUID.randomUUID()), HazelcastException.class, "CP Subsystem is not enabled!");
+        assertFailure(MCRemoveCPMemberCodec.encodeRequest(UUID.randomUUID()), UnsupportedOperationException.class, CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
     }
 
     @Test
     public void testResetCPSubsystemMessageTask() throws Exception {
-        assertFailure(MCResetCPSubsystemCodec.encodeRequest(), HazelcastException.class, "CP Subsystem is not enabled!");
+        assertFailure(MCResetCPSubsystemCodec.encodeRequest(), UnsupportedOperationException.class, CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
     }
 
     @Test

@@ -16,9 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl.log;
 
-import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerConstants;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
-import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -46,7 +45,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
                          Collection<RaftEndpoint> groupMembers) {
         super(term, index, operation);
         this.groupMembersLogIndex = groupMembersLogIndex;
-        this.groupMembers = unmodifiableCollection(new LinkedHashSet<RaftEndpoint>(groupMembers));
+        this.groupMembers = unmodifiableCollection(new LinkedHashSet<>(groupMembers));
     }
 
     public long groupMembersLogIndex() {
@@ -82,7 +81,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
 
     @Override
     public int getClassId() {
-        return RaftDataSerializerHook.SNAPSHOT_ENTRY;
+        return RaftDataSerializerConstants.SNAPSHOT_ENTRY;
     }
 
     public String toString(boolean detailed) {

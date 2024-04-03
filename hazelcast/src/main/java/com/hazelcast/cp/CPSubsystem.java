@@ -26,12 +26,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
-import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongServiceUtil;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefServiceUtil;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchServiceUtil;
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
-import com.hazelcast.cp.internal.datastructures.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
+import com.hazelcast.cp.internal.datastructures.lock.LockServiceUtil;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreServiceUtil;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
@@ -381,31 +381,31 @@ public interface CPSubsystem {
      * Constant identifying service for {@link IAtomicLong},
      * to be used with {@link #getObjectInfos(CPGroupId, String)}
      */
-    String ATOMIC_LONG = AtomicLongService.SERVICE_NAME;
+    String ATOMIC_LONG = AtomicLongServiceUtil.SERVICE_NAME;
 
     /**
      * Constant identifying service for {@link IAtomicReference},
      * to be used with {@link #getObjectInfos(CPGroupId, String)}
      */
-    String ATOMIC_REFERENCE = AtomicRefService.SERVICE_NAME;
+    String ATOMIC_REFERENCE = AtomicRefServiceUtil.SERVICE_NAME;
 
     /**
      * Constant identifying service for {@link ICountDownLatch},
      * to be used with {@link #getObjectInfos(CPGroupId, String)}
      */
-    String COUNT_DOWN_LATCH = CountDownLatchService.SERVICE_NAME;
+    String COUNT_DOWN_LATCH = CountDownLatchServiceUtil.SERVICE_NAME;
 
     /**
      * Constant identifying service for {@link ISemaphore},
      * to be used with {@link #getObjectInfos(CPGroupId, String)}
      */
-    String SEMAPHORE = SemaphoreService.SERVICE_NAME;
+    String SEMAPHORE = SemaphoreServiceUtil.SERVICE_NAME;
 
     /**
      * Constant identifying service for {@link FencedLock},
      * to be used with {@link #getObjectInfos(CPGroupId, String)}
      */
-    String LOCK = LockService.SERVICE_NAME;
+    String LOCK = LockServiceUtil.SERVICE_NAME;
 
     /**
      * Constant identifying service for {@link CPMap},

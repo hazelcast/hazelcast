@@ -91,12 +91,12 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
 
     @Override
     public int getFactoryId() {
-        return RaftServiceDataSerializerHook.F_ID;
+        return RaftServiceSerializerConstants.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftServiceDataSerializerHook.GROUP_ID;
+        return RaftServiceSerializerConstants.GROUP_ID;
     }
 
     @Override
