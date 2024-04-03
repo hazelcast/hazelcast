@@ -20,7 +20,13 @@
                       http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.hazelcast</groupId>
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-parent</artifactId>
+        <version>5.5.0-SNAPSHOT</version>
+        <relativePath>hazelcast-parent/pom.xml</relativePath>
+    </parent>
+
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
     <version>5.5.0-SNAPSHOT</version>
@@ -40,12 +46,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
-
-        <jdk.version>17</jdk.version>
         <target.dir>target</target.dir>
-        <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
@@ -53,10 +54,6 @@
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
         <hazelcast.previous.version>5.3.0</hazelcast.previous.version>
 
-        <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
-        <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -64,106 +61,8 @@
             *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>
-        <maven.antrun.plugin.version>3.1.0</maven.antrun.plugin.version>
-        <maven.gpg.plugin.version>3.2.2</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>3.7.1</maven.assembly.plugin.version>
-        <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.5.2</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.6.1</maven.dependency.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
-        <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
-        <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
-
-        <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.3.1</maven.checkstyle.plugin.version>
-        <maven.jacoco.plugin.version>0.8.11</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>3.2.5</maven.failsafe.plugin.version>
-        <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.4.1</maven.enforcer.plugin.version>
-        <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
-        <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
-        <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
-        <owasp.dependency-check.version>9.0.10</owasp.dependency-check.version>
-        <codehause.license.plugin.version>2.4.0</codehause.license.plugin.version>
-
-        <!-- Third-party dependencies (sorted alphabetically) -->
-        <!--<affinity.version>3.2.3</affinity.version>-->
-        <antlr4.version>4.9.3</antlr4.version>
-        <avro.version>1.11.3</avro.version>
-        <aws.sdk.version>1.12.689</aws.sdk.version>
-        <calcite.version>1.35.0</calcite.version>
-        <classgraph.version>4.8.168</classgraph.version>
-        <debezium.version>1.9.8.Final</debezium.version>
-        <grpc.version>1.60.0</grpc.version>
-        <guava.version>33.1.0-jre</guava.version>
-        <hadoop.version>3.3.6</hadoop.version>
-        <h2.version>2.2.224</h2.version>
-        <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
-        <jackson.version>2.14.2</jackson.version>
-        <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
-        <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>3.25.1</jline.version>
-        <jms.api.version>3.1.0</jms.api.version>
-        <json-surfer.version>0.11</json-surfer.version>
-        <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
-        <kafka.version>3.6.1</kafka.version>
-        <kotlin.version>1.9.23</kotlin.version>
-        <reload4j.version>1.2.25</reload4j.version>
-        <mssql.version>12.6.1.jre11</mssql.version>
-        <mysql.connector.version>8.3.0</mysql.connector.version>
-        <netty.version>4.1.108.Final</netty.version>
-        <objenesis.version>3.3</objenesis.version>
-        <oracle.version>23.3.0.23.09</oracle.version>
-        <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.13.1</parquet.version>
-        <picocli.version>4.7.5</picocli.version>
-        <postgresql.version>42.7.3</postgresql.version>
-        <prometheus.version>0.20.0</prometheus.version>
-
-        <!--
-        Protobuf libraries for each language have own major version, but share minor and patch
-        See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
-        -->
-        <protobuf.version>23.2</protobuf.version>
-        <java.protobuf.version>3.25.3</java.protobuf.version>
-        <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
-
-        <scala.version>2.13</scala.version>
-        <slf4j.version>2.0.12</slf4j.version>
-        <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
-        <snakeyaml.engine.version>2.7</snakeyaml.engine.version>
-        <mongodb.version>4.11.1</mongodb.version>
-
-        <!-- test dependencies -->
-        <activemq-artemis.version>2.33.0</activemq-artemis.version>
-        <assertj.version>3.25.3</assertj.version>
-        <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.14.12</bytebuddy.version>
-        <commons-codec.version>1.16.1</commons-codec.version>
-        <commons-io.version>2.15.1</commons-io.version>
-        <commons-lang3.version>3.14.0</commons-lang3.version>
-        <confluent.version>7.6.0</confluent.version>
-        <felix.utils.version>1.11.6</felix.utils.version>
-        <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
-        <http.core.version>4.4.16</http.core.version>
-        <http.client.version>4.5.14</http.client.version>
-        <jsr107.tck.version>1.1.1</jsr107.tck.version>
-        <mockito.version>5.11.0</mockito.version>
-        <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
-        <jna.version>5.14.0</jna.version>
-        <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
-        <archunit.version>1.2.1</archunit.version>
-        <errorprone.version>2.26.1</errorprone.version>
-        <awaitility.version>4.2.1</awaitility.version>
-        <hikari.version>5.1.0</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
-
-        <!-- The path to relocated external dependencies. -->
-        <relocation.root>com.hazelcast.shaded</relocation.root>
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
@@ -172,20 +71,12 @@
         <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
 
         <!-- needed for CheckStyle -->
-        <checkstyle.version>10.14.0</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
-
-        <!--
-        License plugin is not thread-safe, leads to flaky failures when checking licenses, so it is skipped by default.
-        to run the build with license plugin run with `-T1 -Dlicense.skipAddThirdParty=false`.
-        The `-T1` parameter disables the parallel build.
-        -->
-        <license.skipAddThirdParty>true</license.skipAddThirdParty>
 
         <!--
         Allow access to Operating system metrics:
@@ -640,7 +531,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>${owasp.dependency-check.version}</version>
+                <version>${dependency.check.maven.plugin.version}</version>
                 <configuration>
                     <format>ALL</format>
                     <skipProvidedScope>true</skipProvidedScope>
@@ -765,7 +656,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${maven.jacoco.plugin.version}</version>
+                    <version>${jacoco.maven.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -780,7 +671,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>${codehause.license.plugin.version}</version>
+                    <version>${license.maven.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.hazelcast.maven</groupId>
@@ -1098,7 +989,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>${maven.cobertura.plugin.version}</version>
+                        <version>${cobertura.maven.plugin.version}</version>
                         <configuration>
                             <instrumentation>
                                 <ignores/>
@@ -1149,7 +1040,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>${maven.cobertura.plugin.version}</version>
+                        <version>${cobertura.maven.plugin.version}</version>
                     </plugin>
                 </plugins>
             </reporting>
@@ -1178,7 +1069,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${maven.jacoco.plugin.version}</version>
+                        <version>${jacoco.maven.plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>**DummyProperty**</exclude>
