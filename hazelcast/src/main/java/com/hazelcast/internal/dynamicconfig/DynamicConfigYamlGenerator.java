@@ -57,7 +57,6 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -85,11 +84,14 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.namespace.ResourceDefinition;
@@ -102,6 +104,7 @@ import org.snakeyaml.engine.v2.common.FlowStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -170,6 +173,7 @@ public class DynamicConfigYamlGenerator {
         namespacesConfigGenerator(root, config);
         metricsConfigGenerator(root, config);
         splitBrainProtectionConfigsGenerator(root, config);
+        vectorCollectionYamlGenerator(root, config);
 
         // Reset maskSensitiveFields to default
         DynamicConfigYamlGenerator.maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
@@ -1189,6 +1193,35 @@ public class DynamicConfigYamlGenerator {
                 configMap.put("listeners", listenersList);
             }
         }
+    }
+
+
+    public static void vectorCollectionYamlGenerator(Map<String, Object> parent, Config config) {
+        var vectorsConfigAsMap = config.getVectorCollectionConfigs().values().stream().collect(
+                Collectors.toMap(
+                        VectorCollectionConfig::getName,
+                        entry -> {
+                            Map<String, Object> vectorConfigAsMap = new LinkedHashMap<>();
+                            addNonNullToMap(
+                                    vectorConfigAsMap,
+                                    "indexes",
+                                    vectorIndexesToList(entry.getVectorIndexConfigs())
+                            );
+                            return vectorConfigAsMap;
+                        }
+                )
+        );
+        parent.put("vector-collection", vectorsConfigAsMap);
+    }
+
+    private static List<Map<String, Object>> vectorIndexesToList(List<VectorIndexConfig> vectorIndexesConfigs) {
+        return vectorIndexesConfigs.stream().map(entry -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("metric", entry.getMetric().name());
+            map.put("dimension", entry.getDimension());
+            addNonNullToMap(map, "name", entry.getName());
+            return map;
+        }).collect(Collectors.toList());
     }
 
     private static Map<String, Object> getWanConsumerConfigsAsMap(WanConsumerConfig wanConsumerConfig) {

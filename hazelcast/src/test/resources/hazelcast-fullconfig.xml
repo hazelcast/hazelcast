@@ -182,5 +182,4 @@
             <send-buffer-size-kb>256</send-buffer-size-kb>
         </tpc-socket>
     </network>
-
 </hazelcast>

@@ -4112,3 +4112,10 @@ hazelcast:
       - id: jarId3
         resource-type: JAR
         url: "file:///etc/hazelcast/jar3.jar"
+
+  vector-collection:
+    vector-1:
+      indexes:
+        - name: index-1
+          dimension: 2
+          metric: DOT

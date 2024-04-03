@@ -38,6 +38,7 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.internal.util.XmlUtil;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
@@ -65,6 +66,7 @@ import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SE
 import static com.hazelcast.internal.config.ConfigSections.SET;
 import static com.hazelcast.internal.config.ConfigSections.TCP_IP;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
+import static com.hazelcast.internal.config.ConfigSections.VECTOR;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 
 public final class DynamicConfigGeneratorUtil {
@@ -281,6 +283,18 @@ public final class DynamicConfigGeneratorUtil {
                     config.getNamespacesConfig().addNamespaceConfig(userCodeNamespaceConfig);
                 },
                 ConfigXmlGenerator::namespaceConfigurations, DynamicConfigYamlGenerator::namespaceConfigGenerator);
+    }
+
+    public static String vectorCollectionConfigGenerator(VectorCollectionConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(
+                subConfig,
+                configIsXml,
+                indent,
+                VECTOR.getName(),
+                Config::addVectorCollectionConfig,
+                DynamicConfigXmlGenerator::vectorCollectionXmlGenerator,
+                DynamicConfigYamlGenerator::vectorCollectionYamlGenerator
+        );
     }
 
     private static <T> String configGenerator(

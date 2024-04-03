@@ -31,7 +31,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.4.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.5.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -1048,7 +1048,8 @@
         </queue-store>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>
+        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator
+        </priority-comparator-class-name>
         <user-code-namespace>ns1</user-code-namespace>
     </queue>
 
@@ -1468,9 +1469,9 @@
                 </attributes>
                 <btree-index>
                     <memory-tier>
-                        <capacity value="128" unit="BYTES" />
+                        <capacity value="128" unit="BYTES"/>
                     </memory-tier>
-                    <page-size value="1024" unit="BYTES" />
+                    <page-size value="1024" unit="BYTES"/>
                 </btree-index>
             </index>
         </indexes>
@@ -2908,11 +2909,11 @@
         * <backup-count>:
             How many backups will be kept. Default is 5. You can set this to zero to disable backups.
     -->
-        <dynamic-configuration>
-            <persistence-enabled>true</persistence-enabled>
-            <backup-dir>/mnt/dynamic/backup-dir</backup-dir>
-            <backup-count>7</backup-count>
-        </dynamic-configuration>
+    <dynamic-configuration>
+        <persistence-enabled>true</persistence-enabled>
+        <backup-dir>/mnt/dynamic/backup-dir</backup-dir>
+        <backup-count>7</backup-count>
+    </dynamic-configuration>
 
     <!--
         ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
@@ -4235,5 +4236,12 @@
             </jar>
         </namespace>
     </user-code-namespaces>
-
+    <vector-collection name="vector-1">
+        <indexes>
+            <index name="index-1">
+                <dimension>2</dimension>
+                <metric>DOT</metric>
+            </index>
+        </indexes>
+    </vector-collection>
 </hazelcast>

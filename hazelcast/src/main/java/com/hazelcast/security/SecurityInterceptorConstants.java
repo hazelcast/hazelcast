@@ -187,6 +187,7 @@ public final class SecurityInterceptorConstants {
     public static final String FETCH_ENTRY_VIEWS = "fetchEntryViews";
     public static final String END_ENTRYVIEW_ITERATION = "endEntryViewIteration";
     public static final String ADD_NAMESPACE_CONFIG = "addNamespaceConfig";
+    public static final String ADD_VECTOR_COLLECTION_CONFIG = "addVectorCollectionConfig";
 
     private SecurityInterceptorConstants() {
     }

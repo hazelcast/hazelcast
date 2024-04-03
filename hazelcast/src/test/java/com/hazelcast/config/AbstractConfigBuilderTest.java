@@ -17,6 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.rest.RestConfig;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,6 +30,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -35,6 +39,7 @@ import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.instance.ProtocolType.CLIENT;
 import static com.hazelcast.instance.ProtocolType.MEMCACHE;
 import static com.hazelcast.instance.ProtocolType.WAN;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -772,6 +777,40 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testRestConfig() throws IOException;
+
+    @Test
+    public abstract void testVectorCollectionConfig();
+
+    protected void validateVectorCollectionConfig(Config config) {
+        var vectorCollectionConfigs = config.getVectorCollectionConfigs();
+        var expectedCollectionConfigs = new HashMap<String, VectorCollectionConfig>();
+        expectedCollectionConfigs.put(
+                "vector-1",
+                new VectorCollectionConfig("vector-1")
+                        .addVectorIndexConfig(
+                                new VectorIndexConfig()
+                                        .setName("index-1-1")
+                                        .setDimension(2)
+                                        .setMetric(Metric.DOT)
+                        )
+                        .addVectorIndexConfig(
+                                new VectorIndexConfig()
+                                        .setName("index-1-2")
+                                        .setDimension(3)
+                                        .setMetric(Metric.EUCLIDEAN)
+                        )
+        );
+        expectedCollectionConfigs.put(
+                "vector-2",
+                new VectorCollectionConfig("vector-2")
+                        .addVectorIndexConfig(
+                                new VectorIndexConfig()
+                                        .setDimension(4)
+                                        .setMetric(Metric.COSINE)
+                        )
+        );
+        assertThat(vectorCollectionConfigs).usingRecursiveComparison().isEqualTo(expectedCollectionConfigs);
+    }
 
     protected abstract Config buildAuditlogConfig();
 

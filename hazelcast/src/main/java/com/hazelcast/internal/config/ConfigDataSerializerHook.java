@@ -81,6 +81,8 @@ import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigPreJoinOperation;
 import com.hazelcast.internal.namespace.impl.ResourceDefinitionImpl;
@@ -175,8 +177,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int PARTITION_ATTRIBUTE_CONFIG = 69;
     public static final int NAMESPACE_CONFIG = 70;
     public static final int RESOURCE_DEFINITION = 71;
+    public static final short VECTOR_COLLECTION_CONFIG = 72;
+    public static final short VECTOR_INDEX_CONFIG = 73;
 
-    private static final int LEN = RESOURCE_DEFINITION + 1;
+    private static final int LEN = VECTOR_INDEX_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -259,6 +263,8 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[PARTITION_ATTRIBUTE_CONFIG] = PartitioningAttributeConfig::new;
         constructors[NAMESPACE_CONFIG] = UserCodeNamespaceConfig::new;
         constructors[RESOURCE_DEFINITION] = ResourceDefinitionImpl::new;
+        constructors[VECTOR_COLLECTION_CONFIG] = VectorCollectionConfig::new;
+        constructors[VECTOR_INDEX_CONFIG] = VectorIndexConfig::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -65,6 +65,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.DataConnectionConfigReadOnly;
@@ -101,6 +102,7 @@ import static com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceM
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
 import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings({"unchecked",
         "checkstyle:methodcount",
@@ -299,6 +301,42 @@ public class DynamicConfigurationAwareConfig extends Config {
             configurationService.broadcastConfig(mapConfig);
         }
         return this;
+    }
+
+    @Override
+    public VectorCollectionConfig getVectorCollectionConfigOrNull(String collectionName) {
+        return (VectorCollectionConfig) configSearcher.getConfig(
+                collectionName,
+                collectionName,
+                requireNonNull(supplierFor(VectorCollectionConfig.class)
+                )
+        );
+    }
+
+    @Override
+    public Map<String, VectorCollectionConfig> getVectorCollectionConfigs() {
+        Map<String, VectorCollectionConfig> staticVectorConfig = staticConfig.getVectorCollectionConfigs();
+        Map<String, VectorCollectionConfig> dynamicVectorConfig = configurationService.getVectorCollectionConfigs();
+        return aggregate(staticVectorConfig, dynamicVectorConfig);
+    }
+
+    @Override
+    @Nonnull
+    public Config addVectorCollectionConfig(@Nonnull VectorCollectionConfig vectorCollectionConfig) {
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(
+                staticConfig.getVectorCollectionConfigs(),
+                vectorCollectionConfig.getName(),
+                vectorCollectionConfig
+        );
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(vectorCollectionConfig);
+        }
+        return this;
+    }
+
+    @Override
+    public Config setVectorCollectionConfigs(List<VectorCollectionConfig> vectorConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 
     public static <T> boolean checkStaticConfigDoesNotExist(

@@ -204,7 +204,8 @@
 
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>
+        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator
+        </priority-comparator-class-name>
         <user-code-namespace>ns1</user-code-namespace>
     </queue>
 
@@ -395,9 +396,9 @@
                     <attribute>age</attribute>
                 </attributes>
                 <btree-index>
-                    <page-size value="16" unit="KILOBYTES" />
+                    <page-size value="16" unit="KILOBYTES"/>
                     <memory-tier>
-                        <capacity value="3000" unit="GIGABYTES" />
+                        <capacity value="3000" unit="GIGABYTES"/>
                     </memory-tier>
                 </btree-index>
             </index>
@@ -420,7 +421,8 @@
             <query-cache name="query-cache-name">
                 <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
                 <entry-listeners>
-                    <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+                    <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener
+                    </entry-listener>
                 </entry-listeners>
                 <include-value>true</include-value>
                 <batch-size>1</batch-size>
@@ -737,7 +739,7 @@
             </realm>
             <realm name="usernamePasswordIdentityRealm">
                 <identity>
-                    <username-password username="user" password="Hazelcast" />
+                    <username-password username="user" password="Hazelcast"/>
                 </identity>
             </realm>
             <realm name="tokenIdentityRealm">
@@ -1224,4 +1226,12 @@
             <trust-certificate-key>/path/to/trust-certificate-key</trust-certificate-key>
         </ssl>
     </rest>
+    <vector-collection name="vector-1">
+        <indexes>
+            <index name="index-1">
+                <dimension>2</dimension>
+                <metric>DOT</metric>
+            </index>
+        </indexes>
+    </vector-collection>
 </hazelcast>

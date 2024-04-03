@@ -33,6 +33,8 @@ import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.TieredStoreConfig;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
@@ -328,5 +330,13 @@ public final class CustomTypeFactory {
         return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
                 completionTime, failureText, sqlSummary, isSuspensionCauseExists ? suspensionCause : null,
                 isUserCancelledExists ? userCancelled : false);
+    }
+
+    public static VectorIndexConfig createVectorIndexConfig(String name, int metric, int dimension) {
+        var vectorConfig = new VectorIndexConfig().setMetric(Metric.getById(metric)).setDimension(dimension);
+        if (name != null) {
+            vectorConfig.setName(name);
+        }
+        return vectorConfig;
     }
 }

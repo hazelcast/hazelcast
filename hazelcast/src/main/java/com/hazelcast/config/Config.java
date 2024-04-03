@@ -23,6 +23,7 @@ import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -82,6 +83,8 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
@@ -209,6 +212,8 @@ public class Config {
     private CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
 
     private SqlConfig sqlConfig = new SqlConfig();
+
+    private final Map<String, VectorCollectionConfig> vectorCollectionConfigs = new ConcurrentHashMap<>();
 
     private AuditlogConfig auditlogConfig = new AuditlogConfig();
 
@@ -3044,6 +3049,57 @@ public class Config {
     public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
         Preconditions.checkNotNull(sqlConfig, "sqlConfig");
         this.sqlConfig = sqlConfig;
+        return this;
+    }
+
+    /**
+     * Get vector collection config.
+     * If no configuration is found for the given name, returns null.
+     *
+     * @return vector collection config or {@code null}
+     * @since 5.5
+     */
+    public VectorCollectionConfig getVectorCollectionConfigOrNull(String name) {
+        return vectorCollectionConfigs.getOrDefault(name, null);
+    }
+
+    /**
+     * Retrieve configurations for all vector collections.
+     *
+     * @return a map where the key represents the name of the vector collection config
+     * and the value corresponds to the respective vector collection config.
+     * @since 5.5
+     */
+    public Map<String, VectorCollectionConfig> getVectorCollectionConfigs() {
+        return vectorCollectionConfigs;
+    }
+
+    /**
+     * Add vector collection config.
+     *
+     * @param vectorCollectionConfig the vector configuration to add
+     * @return this config instance
+     * @since 5.5
+     */
+    @Nonnull
+    public Config addVectorCollectionConfig(@Nonnull VectorCollectionConfig vectorCollectionConfig) {
+        Preconditions.checkNotNull(vectorCollectionConfig, "vectorCollectionConfig");
+        this.vectorCollectionConfigs.put(vectorCollectionConfig.getName(), vectorCollectionConfig);
+        return this;
+    }
+
+    /**
+     * Set the list of vector collection configurations.
+     *
+     * @param vectorConfigs the list of vector configuration to set
+     * @return this config instance
+     * @since 5.5
+     */
+    public Config setVectorCollectionConfigs(List<VectorCollectionConfig> vectorConfigs) {
+        this.vectorCollectionConfigs.clear();
+        this.vectorCollectionConfigs.putAll(
+                vectorConfigs.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, Function.identity()))
+        );
         return this;
     }
 

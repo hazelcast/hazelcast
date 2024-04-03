@@ -34,6 +34,7 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
@@ -148,6 +149,8 @@ public class ConfigCompatibilityChecker {
                 singletonMap("", c2.getTpcConfig()), new TpcConfigChecker());
         checkCompatibleConfigs("user-code-namespaces", c1, c2, singletonMap("", c1.getNamespacesConfig()),
                 singletonMap("", c2.getNamespacesConfig()), new UserCodeNamespacesConfigChecker());
+        checkCompatibleConfigs("vector collections", c1.getVectorCollectionConfigs(), c2.getVectorCollectionConfigs(),
+                new VectorCollectionConfigsChecker());
         return true;
     }
 
@@ -2014,6 +2017,14 @@ public class ConfigCompatibilityChecker {
         boolean check(PartitioningAttributeConfig c1, PartitioningAttributeConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getAttributeName(), c2.getAttributeName());
+        }
+    }
+
+
+    private static class VectorCollectionConfigsChecker extends ConfigChecker<Map<String, VectorCollectionConfig>> {
+        @Override
+        boolean check(Map<String, VectorCollectionConfig> t1, Map<String, VectorCollectionConfig> t2) {
+            return Objects.equals(t1, t2);
         }
     }
 

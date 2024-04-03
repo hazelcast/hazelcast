@@ -1140,3 +1140,10 @@ hazelcast:
       trust-certificate: /path/to/trust-certificate
       trust-certificate-key: /path/to/trust-certificate-key
 
+  vector-collection:
+    vector-1:
+      indexes:
+        - name: index-1
+          dimension: 2
+          metric: DOT
+

@@ -41,7 +41,8 @@
                 <xs:element name="network" type="network" minOccurs="0"/>
                 <xs:element name="partition-group" type="partition-group" minOccurs="0"/>
                 <xs:element name="executor-service" type="executor-service" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="durable-executor-service" type="durable-executor-service" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="durable-executor-service" type="durable-executor-service" minOccurs="0"
+                            maxOccurs="unbounded"/>
                 <xs:element name="scheduled-executor-service" type="scheduled-executor-service" minOccurs="0"
                             maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
@@ -64,7 +65,8 @@
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0"/>
                 <xs:element name="persistence" type="persistence" minOccurs="0"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0"/>
-                <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0"
+                            maxOccurs="unbounded"/>
                 <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0"/>
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
@@ -82,6 +84,7 @@
                 <xs:element name="tpc" type="tpc" minOccurs="0"/>
                 <xs:element name="user-code-namespaces" type="namespaces-type" minOccurs="0"/>
                 <xs:element name="rest" type="rest-type" minOccurs="0"/>
+                <xs:element name="vector-collection" type="vector-collection" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -124,10 +127,12 @@
                 <xs:annotation>
                     <xs:documentation>
                         Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
-                        create additional metadata about them. This metadata then is used to make querying and indexing faster.
+                        create additional metadata about them. This metadata then is used to make querying and indexing
+                        faster.
                         Metadata creation may decrease put throughput.
                         Valid values are:
-                        CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+                        CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created
+                        and updated.
                         OFF: No metadata is created.
                     </xs:documentation>
                 </xs:annotation>
@@ -161,7 +166,8 @@
                         default="INDEX-ONLY">
                 <xs:annotation>
                     <xs:documentation>
-                        Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+                        Control caching of de-serialized values. Caching makes query evaluation faster, but it cost
+                        memory.
                         Possible Values:
                         NEVER: Never cache de-serialized object
                         INDEX-ONLY: Cache values only when they are inserted into an index.
@@ -294,7 +300,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -304,7 +311,8 @@
             <xs:element name="partition-attributes" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the
+                        List of key attributes to use for partitioning the data in the maps. Providing this list
+                        automatically sets the
                         strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless
                         of the class name provided in the `partition-strategy` property.
                     </xs:documentation>
@@ -526,12 +534,16 @@
                         max-size-policy:
                         max-size-policy has these valid values:
                         ENTRY_COUNT (Maximum number of cache entries in the cache),
-                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes per cache for each Hazelcast
+                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes per cache for each
+                        Hazelcast
                         instance),
-                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per cache for each Hazelcast
+                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per cache for each
+                        Hazelcast
                         instance),
-                        FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each Hazelcast instance),
-                        FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each Hazelcast instance).
+                        FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each Hazelcast
+                        instance),
+                        FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each Hazelcast
+                        instance).
 
                         Default value is "ENTRY_COUNT".
 
@@ -554,7 +566,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -590,17 +603,17 @@
 
     <xs:complexType name="queue">
         <xs:all>
-        	<xs:element name="priority-comparator-class-name" type="non-space-string" minOccurs="0">
-	            <xs:annotation>
-	                <xs:documentation>
-	                    Fully-qualified comparator's class name to be used for the priority queue.
-	                    If nothing is provided, then queue behaves as a FIFO queue.
+            <xs:element name="priority-comparator-class-name" type="non-space-string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Fully-qualified comparator's class name to be used for the priority queue.
+                        If nothing is provided, then queue behaves as a FIFO queue.
 
                         If this value is non-null, then Hazelcast will ignore the queue store
                         "memory-limit" configuration value.
-	                </xs:documentation>
-	            </xs:annotation>
-	        </xs:element>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
@@ -646,7 +659,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Lets you add listeners (listener classes) for the queue items. You can also set the attribute
-                        include-value to true if the updated item should be passed to the item listener. Its default value is true.
+                        include-value to true if the updated item should be passed to the item listener. Its default
+                        value is true.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -680,7 +694,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -738,7 +753,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Lets you add listeners (listener classes) for the list items. You can also set the attribute
-                        include-value to true if the updated item should be passed to the item listener. Its default value is true.
+                        include-value to true if the updated item should be passed to the item listener. Its default
+                        value is true.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -750,7 +766,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -808,7 +825,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Lets you add listeners (listener classes) for the set items. You can also set the attribute
-                        include-value to true if the updated item should be passed to the item listener. Its default value is true.
+                        include-value to true if the updated item should be passed to the item listener. Its default
+                        value is true.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -820,7 +838,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -901,7 +920,8 @@
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Lets you add listeners (listener classes) for the multimap entries. You can also set the attribute
+                        Lets you add listeners (listener classes) for the multimap entries. You can also set the
+                        attribute
                         include-value to true if you want the item event to contain the entry values, and you can set
                         local to true if you want to listen to the entries on the local node.
                     </xs:documentation>
@@ -910,7 +930,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -973,7 +994,8 @@
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Lets you add listeners (listener classes) for the replicated map entries. You can also set the attribute
+                        Lets you add listeners (listener classes) for the replicated map entries. You can also set the
+                        attribute
                         include-value to true if you want the item event to contain the entry values, and you can set
                         local to true if you want to listen to the entries on the local node.
                     </xs:documentation>
@@ -982,7 +1004,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -1033,7 +1056,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Default is `false`, meaning only one dedicated thread will handle topic messages.
-                        When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
+                        When multi-threading enabled (true) all threads from event thread pool can be used for message
+                        handling.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1105,7 +1129,8 @@
             <xs:element name="topic-overload-policy" type="topic-overload-policy" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        A policy to deal with an overloaded topic; so topic where there is no place to store new messages.
+                        A policy to deal with an overloaded topic; so topic where there is no place to store new
+                        messages.
                         This policy can only be used in combination with the
                         com.hazelcast.core.HazelcastInstance#getReliableTopic(String).
                         The reliable topic uses a com.hazelcast.ringbuffer.Ringbuffer to
@@ -1235,7 +1260,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -1270,7 +1296,8 @@
                     <br/>LatestAccessMergePolicy: the entry with the latest access wins.
                     <br/>LatestUpdateMergePolicy: the entry with the latest update wins.
                     <br/>PassThroughMergePolicy: the entry from the smaller cluster wins.
-                    <br/>PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+                    <br/>PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the
+                    cluster.
                     <br/>The default policy is: PutIfAbsentMergePolicy
                 </p>
             </xs:documentation>
@@ -1290,7 +1317,8 @@
                         as its public address. But behind a network address translation (NAT), two endpoints (nodes)
                         may not be able to see/access each other. If both nodes set their public addresses to their
                         defined addresses on NAT, then they can communicate with each other. In this case, their
-                        public addresses are not an address of a local network interface but a virtual address defined by NAT.
+                        public addresses are not an address of a local network interface but a virtual address defined
+                        by NAT.
                         This is optional to set and useful when you have a private cloud.
                     </xs:documentation>
                 </xs:annotation>
@@ -1298,7 +1326,8 @@
             <xs:element name="port" type="port" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        The ports which Hazelcast will use to communicate between cluster members. Its default value is 5701.
+                        The ports which Hazelcast will use to communicate between cluster members. Its default value is
+                        5701.
                         It has the following attributes.
                         port-count: The default value is 100, meaning that Hazelcast will try to bind 100 ports.
                         If you set the value of port as 5701, as members join the cluster, Hazelcast tries to find
@@ -1485,7 +1514,8 @@
             <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" default="54327">
                 <xs:annotation>
                     <xs:documentation>
-                        The multicast socket port through which the Hazelcast member listens and sends discovery messages.
+                        The multicast socket port through which the Hazelcast member listens and sends discovery
+                        messages.
                         Default value is 54327.
                     </xs:documentation>
                 </xs:annotation>
@@ -1657,7 +1687,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -1706,7 +1737,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -1774,7 +1806,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -1814,7 +1847,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -1822,17 +1856,21 @@
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        While recovering from split-brain (network partitioning), CardinalityEstimator in the small cluster
-                        merge into the bigger cluster based on the policy set here. When an estimator merges into the cluster,
+                        While recovering from split-brain (network partitioning), CardinalityEstimator in the small
+                        cluster
+                        merge into the bigger cluster based on the policy set here. When an estimator merges into the
+                        cluster,
                         an estimator with the same name might already exist in the cluster.
                         The merge policy resolves these conflicts with different out-of-the-box strategies.
                         The out-of-the-box merge polices can be references by their simple class name.
                         <p>
                             The out-of-the-box policies are:
                             <br/>DiscardMergePolicy: the estimator from the smaller cluster will be discarded.
-                            <br/>HyperLogLogMergePolicy: the estimator will merge with the existing one, using the algorithmic merge for HyperLogLog.
+                            <br/>HyperLogLogMergePolicy: the estimator will merge with the existing one, using the
+                            algorithmic merge for HyperLogLog.
                             <br/>PassThroughMergePolicy: the estimator from the smaller cluster wins.
-                            <br/>PutIfAbsentMergePolicy: the estimator from the smaller cluster wins if it doesn't exist in the cluster.
+                            <br/>PutIfAbsentMergePolicy: the estimator from the smaller cluster wins if it doesn't exist
+                            in the cluster.
                             <br/>The default policy is: HyperLogLogMergePolicy
                         </p>
                     </xs:documentation>
@@ -1948,13 +1986,15 @@
             </xs:element>
             <xs:element name="parallel-mode" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
-                    <xs:documentation>Run ICMP detection in parallel with the Heartbeat failure detector</xs:documentation>
+                    <xs:documentation>Run ICMP detection in parallel with the Heartbeat failure detector
+                    </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="fail-fast-on-startup" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
+                        Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is
+                        enabled.
                         Failure is usually due to OS level restrictions.
                     </xs:documentation>
                 </xs:annotation>
@@ -2004,7 +2044,8 @@
             <xs:element name="write-coalescing" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        Setting this is meaningful if you are using write behind in MapStore. When write-coalescing is true,
+                        Setting this is meaningful if you are using write behind in MapStore. When write-coalescing is
+                        true,
                         only the latest store operation on a key in the write-delay-seconds time-window will be
                         reflected to MapStore. Default value is true.
                     </xs:documentation>
@@ -2246,14 +2287,18 @@
                     <xs:documentation>
                         Defines the initial state in which a WAN publisher is started.
                         - REPLICATING (default):
-                        State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
+                        State where both enqueuing new events is allowed, enqueued events are replicated to the target
+                        cluster
                         and WAN sync is enabled.
                         - PAUSED:
-                        State where new events are enqueued but they are not dequeued. Some events which have been dequeued before
-                        the state was switched may still be replicated to the target cluster but further events will not be
+                        State where new events are enqueued but they are not dequeued. Some events which have been
+                        dequeued before
+                        the state was switched may still be replicated to the target cluster but further events will not
+                        be
                         replicated. WAN sync is enabled.
                         - STOPPED:
-                        State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
+                        State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events
+                        might
                         still be replicated after the publisher has switched to this state. WAN sync is enabled.
                     </xs:documentation>
                 </xs:annotation>
@@ -2471,7 +2516,8 @@
     </xs:complexType>
     <xs:complexType name="wan-sync">
         <xs:all>
-            <xs:element name="consistency-check-strategy" type="consistency-check-strategy" minOccurs="0" default="NONE">
+            <xs:element name="consistency-check-strategy" type="consistency-check-strategy" minOccurs="0"
+                        default="NONE">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the strategy for checking consistency of data between source and
@@ -2714,7 +2760,9 @@
         <xs:attribute name="data-access-enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
-                    True to allow Management Center access to contents of Hazelcast data structures (for instance map entries), false to disallow. Management Center can't access the data if at least one member has the data access disabled.
+                    True to allow Management Center access to contents of Hazelcast data structures (for instance map
+                    entries), false to disallow. Management Center can't access the data if at least one member has the
+                    data access disabled.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2727,7 +2775,8 @@
             <xs:element name="client-block-unmapped-actions" type="xs:boolean" default="true" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Block or allow actions, submitted as tasks in an Executor from clients and have no permission mappings.
+                        Block or allow actions, submitted as tasks in an Executor from clients and have no permission
+                        mappings.
 
                         true: Blocks all actions that have no permission mapping
                         false: Allows all actions that have no permission mapping
@@ -2786,31 +2835,38 @@
             <xs:element name="set-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="lock-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="atomic-long-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="atomic-reference-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="atomic-reference-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="cpmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="durable-executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
-            <xs:element name="cardinality-estimator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cardinality-estimator-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
+            <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="pn-counter-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0"/>
             <xs:element name="cache-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0"/>
             <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="replicatedmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="management-permission" type="management-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="job-permission" type="job-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="connector-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="sql-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="user-code-namespace-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="user-code-namespace-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
         <xs:attribute name="priority-grant" type="xs:boolean" default="false">
@@ -3099,7 +3155,8 @@
             <xs:element name="use-native-byte-order" type="xs:boolean" minOccurs="0" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        True to use native byte order of the underlying platform, false otherwise. Default value is false.
+                        True to use native byte order of the underlying platform, false otherwise. Default value is
+                        false.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3155,7 +3212,8 @@
                                     maxOccurs="unbounded">
                             <xs:annotation>
                                 <xs:documentation>
-                                    Custom classes implementing com.hazelcast.nio.serialization.DataSerializableFactory to be
+                                    Custom classes implementing com.hazelcast.nio.serialization.DataSerializableFactory
+                                    to be
                                     registered. These can be used to speed up serialization/deserialization of objects.
                                 </xs:documentation>
                             </xs:annotation>
@@ -3208,7 +3266,8 @@
             <xs:element name="java-serialization-filter" type="java-serialization-filter" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Basic protection against untrusted deserialization based on class/package blacklisting and whitelisting.
+                        Basic protection against untrusted deserialization based on class/package blacklisting and
+                        whitelisting.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3299,15 +3358,18 @@
             <xs:element name="blacklist" type="filter-list" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Blacklisted class names, package names, and prefixes, which are not allowed to be loaded by Namespaces.
+                        Blacklisted class names, package names, and prefixes, which are not allowed to be loaded by
+                        Namespaces.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="whitelist" type="filter-list" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Whitelisted class names, package names, and prefixes, which are allowed to be loaded by Namespaces.
-                        If the list is empty (no class, package, or prefix patterns provided) then all classes are allowed.
+                        Whitelisted class names, package names, and prefixes, which are allowed to be loaded by
+                        Namespaces.
+                        If the list is empty (no class, package, or prefix patterns provided) then all classes are
+                        allowed.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3410,7 +3472,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="capacity" type="capacity" minOccurs="0" />
+            <xs:element name="capacity" type="capacity" minOccurs="0"/>
             <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="metadata-space-percentage" minOccurs="0">
@@ -3740,7 +3802,8 @@
 
     <xs:element name="choice-of-split-brain-protection-function" abstract="true"/>
 
-    <xs:element name="member-count-split-brain-protection" substitutionGroup="choice-of-split-brain-protection-function">
+    <xs:element name="member-count-split-brain-protection"
+                substitutionGroup="choice-of-split-brain-protection-function">
         <xs:complexType>
             <xs:annotation>
                 <xs:documentation>
@@ -3755,44 +3818,54 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="probabilistic-split-brain-protection" substitutionGroup="choice-of-split-brain-protection-function">
+    <xs:element name="probabilistic-split-brain-protection"
+                substitutionGroup="choice-of-split-brain-protection-function">
         <xs:complexType>
             <xs:annotation>
                 <xs:documentation>
                     A probabilistic split brain protection function based on Phi Accrual failure detector. See
                     com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector for implementation
-                    details. Configuration:<br/>
+                    details. Configuration:
+                    <br/>
                     - <code>acceptable-heartbeat-pause-millis</code>: duration in milliseconds corresponding to number
                     of potentially lost/delayed heartbeats that will be accepted before considering it to be an anomaly.
                     This margin is important to be able to survive sudden, occasional, pauses in heartbeat arrivals,
-                    due to for example garbage collection or network drops.<br/>
-                    - <code>suspicion-threshold</code>: threshold for suspicion level. A low threshold is prone to generate
+                    due to for example garbage collection or network drops.
+                    <br/>
+                    - <code>suspicion-threshold</code>: threshold for suspicion level. A low threshold is prone to
+                    generate
                     many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high
-                    threshold generates fewer mistakes but needs more time to detect actual crashes.<br/>
+                    threshold generates fewer mistakes but needs more time to detect actual crashes.
+                    <br/>
                     - <code>max-sample-size</code>: number of samples to use for calculation of mean and standard
-                    deviation of inter-arrival times.<br/>
+                    deviation of inter-arrival times.
+                    <br/>
                     - <code>heartbeat-interval-millis</code>: bootstrap the stats with heartbeats that corresponds to
                     this duration in milliseconds, with a rather high standard deviation (since environment is unknown
-                    in the beginning)<br/>
-                    - <code>min-std-deviation-millis</code>: minimum standard deviation (in milliseconds) to use for the normal
+                    in the beginning)
+                    <br/>
+                    - <code>min-std-deviation-millis</code>: minimum standard deviation (in milliseconds) to use for the
+                    normal
                     distribution used when calculating phi. Too low standard deviation might result in too much
                     sensitivity for sudden, but normal, deviations in heartbeat inter arrival times.
                 </xs:documentation>
             </xs:annotation>
             <xs:attribute name="acceptable-heartbeat-pause-millis" type="xs:unsignedLong" default="60000"/>
-            <xs:attribute name="suspicion-threshold" type="xs:double" default="10" />
+            <xs:attribute name="suspicion-threshold" type="xs:double" default="10"/>
             <xs:attribute name="max-sample-size" type="xs:unsignedInt" default="200"/>
-            <xs:attribute name="min-std-deviation-millis" type="xs:unsignedLong" default="100" />
+            <xs:attribute name="min-std-deviation-millis" type="xs:unsignedLong" default="100"/>
             <xs:attribute name="heartbeat-interval-millis" type="xs:unsignedLong" default="5000"/>
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="recently-active-split-brain-protection" substitutionGroup="choice-of-split-brain-protection-function">
+    <xs:element name="recently-active-split-brain-protection"
+                substitutionGroup="choice-of-split-brain-protection-function">
         <xs:complexType>
             <xs:annotation>
                 <xs:documentation>
                     A split brain protection function that keeps track of the last heartbeat timestamp per each member.
-                    For a member to be considered live (for the purpose to conclude whether the minimum cluster size property is satisfied)
+                    For a member to be considered live (for the purpose to conclude whether the minimum cluster size
+                    property is satisfied)
                     a heartbeat must have been received at most <code>heartbeat-tolerance</code> milliseconds before
                     current time.
                 </xs:documentation>
@@ -3861,7 +3934,8 @@
                         members.
                         LOCAL_CLASSES_ONLY: Serve classes from local classpath only. Classes loaded from other members
                         will be used locally, but they won't be served to other members.
-                        LOCAL_AND_CACHED_CLASSES: Server classes loaded from both local classpath and from other members.
+                        LOCAL_AND_CACHED_CLASSES: Server classes loaded from both local classpath and from other
+                        members.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
@@ -4093,7 +4167,8 @@
             <xs:element name="backup-dir" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Base directory for hot backups. Each new backup will be created in a separate directory inside this one.
+                        Base directory for hot backups. Each new backup will be created in a separate directory inside
+                        this one.
                         Can be an absolute or relative path to the node startup directory.
                     </xs:documentation>
                 </xs:annotation>
@@ -4132,11 +4207,15 @@
                         FULL_RECOVERY_ONLY : Starts the cluster only when all expected nodes are present and correct.
                         Otherwise, it fails.
                         PARTIAL_RECOVERY_MOST_RECENT : Starts the cluster with the members which have most up-to-date
-                        partition table and successfully restored their data. All other members will leave the cluster and
+                        partition table and successfully restored their data. All other members will leave the cluster
+                        and
                         force-start themselves. If no member restores its data successfully, cluster start fails.
-                        PARTIAL_RECOVERY_MOST_COMPLETE : Starts the cluster with the largest group of members which have the
-                        same partition table version and successfully restored their data. All other members will leave the
-                        cluster and force-start themselves. If no member restores its data successfully, cluster start fails.
+                        PARTIAL_RECOVERY_MOST_COMPLETE : Starts the cluster with the largest group of members which have
+                        the
+                        same partition table version and successfully restored their data. All other members will leave
+                        the
+                        cluster and force-start themselves. If no member restores its data successfully, cluster start
+                        fails.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4194,7 +4273,8 @@
             <xs:element name="backup-dir" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Base directory for persistence backups. Each new backup will be created in a separate directory inside this one.
+                        Base directory for persistence backups. Each new backup will be created in a separate directory
+                        inside this one.
                         Can be an absolute or relative path to the node startup directory.
                     </xs:documentation>
                 </xs:annotation>
@@ -4234,11 +4314,15 @@
                         FULL_RECOVERY_ONLY : Starts the cluster only when all expected nodes are present and correct.
                         Otherwise, it fails.
                         PARTIAL_RECOVERY_MOST_RECENT : Starts the cluster with the members which have most up-to-date
-                        partition table and successfully restored their data. All other members will leave the cluster and
+                        partition table and successfully restored their data. All other members will leave the cluster
+                        and
                         force-start themselves. If no member restores its data successfully, cluster start fails.
-                        PARTIAL_RECOVERY_MOST_COMPLETE : Starts the cluster with the largest group of members which have the
-                        same partition table version and successfully restored their data. All other members will leave the
-                        cluster and force-start themselves. If no member restores its data successfully, cluster start fails.
+                        PARTIAL_RECOVERY_MOST_COMPLETE : Starts the cluster with the largest group of members which have
+                        the
+                        same partition table version and successfully restored their data. All other members will leave
+                        the
+                        cluster and force-start themselves. If no member restores its data successfully, cluster start
+                        fails.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4576,7 +4660,8 @@
             <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        The capacity of the event journal. The capacity is the total number of items that the event journal
+                        The capacity of the event journal. The capacity is the total number of items that the event
+                        journal
                         can hold at any moment. The actual number of items contained in the journal can be lower.
                         Its default value is 10000. The capacity is shared equally between all partitions.
                         This is done by assigning each partition getCapacity() / partitionCount
@@ -4690,7 +4775,7 @@
                 </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:int">
-                        <xs:minInclusive value="1" />
+                        <xs:minInclusive value="1"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
@@ -4738,7 +4823,7 @@
                 </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:int">
-                        <xs:minInclusive value="0" />
+                        <xs:minInclusive value="0"/>
                         <xs:maxInclusive value="63"/>
                     </xs:restriction>
                 </xs:simpleType>
@@ -4752,7 +4837,7 @@
                 </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:int">
-                        <xs:minInclusive value="0" />
+                        <xs:minInclusive value="0"/>
                         <xs:maxInclusive value="63"/>
                     </xs:restriction>
                 </xs:simpleType>
@@ -4761,7 +4846,8 @@
             <xs:element name="allowed-future-millis" minOccurs="0" default="15000">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15 seconds.
+                        Sets how far to the future is the generator allowed to go to generate IDs without blocking,
+                        default is 15 seconds.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
@@ -4806,7 +4892,8 @@
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                        Adds the Split Brain Protection for this data-structure which you configure using the
+                        split-brain-protection element.
                         You should set the split-brain-protection-ref's value as the split brain protection's name.
                     </xs:documentation>
                 </xs:annotation>
@@ -4883,11 +4970,14 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="wan-endpoint-config" type="endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="wan-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="wan-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="member-server-socket-endpoint-config" type="server-socket-endpoint-config"/>
             <xs:element name="client-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0"/>
-            <xs:element name="rest-server-socket-endpoint-config" type="rest-server-socket-endpoint-config" minOccurs="0"/>
-            <xs:element name="memcache-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0"/>
+            <xs:element name="rest-server-socket-endpoint-config" type="rest-server-socket-endpoint-config"
+                        minOccurs="0"/>
+            <xs:element name="memcache-server-socket-endpoint-config" type="server-socket-endpoint-config"
+                        minOccurs="0"/>
         </xs:choice>
         <xs:attribute name="enabled" type="xs:boolean" default="false">
             <xs:annotation>
@@ -4904,8 +4994,9 @@
                 Controls access to Hazelcast HTTP REST API.
                 The methods available through REST API are grouped to several REST endpoint groups.
                 There are 2 levels of configuration:
-                 - a global switch which enables/disables access to the REST API;
-                 - REST endpoint group level switch. It is used to check which groups are allowed once the global switch is enabled.
+                - a global switch which enables/disables access to the REST API;
+                - REST endpoint group level switch. It is used to check which groups are allowed once the global switch
+                is enabled.
             </xs:documentation>
         </xs:annotation>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -4913,7 +5004,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Enables or disables named REST endpoint group.
-                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is
+                        used
                         to control the behavior of the group.
                     </xs:documentation>
                 </xs:annotation>
@@ -5012,7 +5104,8 @@
                         as its public address. But behind a network address translation (NAT), two endpoints (nodes)
                         may not be able to see/access each other. If both nodes set their public addresses to their
                         defined addresses on NAT, then they can communicate with each other. In this case, their
-                        public addresses are not an address of a local network interface but a virtual address defined by
+                        public addresses are not an address of a local network interface but a virtual address defined
+                        by
                         NAT.
                         This is optional to set and useful when you have a private cloud.
                     </xs:documentation>
@@ -5073,7 +5166,8 @@
         <xs:annotation>
             <xs:documentation>
                 Controls access to Hazelcast HTTP REST API.
-                The methods available through REST API are grouped to several REST endpoint groups, which can be specified
+                The methods available through REST API are grouped to several REST endpoint groups, which can be
+                specified
                 in this section.
             </xs:documentation>
         </xs:annotation>
@@ -5102,7 +5196,8 @@
                         as its public address. But behind a network address translation (NAT), two endpoints (nodes)
                         may not be able to see/access each other. If both nodes set their public addresses to their
                         defined addresses on NAT, then they can communicate with each other. In this case, their
-                        public addresses are not an address of a local network interface but a virtual address defined by
+                        public addresses are not an address of a local network interface but a virtual address defined
+                        by
                         NAT.
                         This is optional to set and useful when you have a private cloud.
                     </xs:documentation>
@@ -5139,7 +5234,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Enables or disables named REST endpoint groups.
-                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is
+                        used
                         to control the behavior of the group.
                     </xs:documentation>
                 </xs:annotation>
@@ -5161,7 +5257,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Enables or disables named REST endpoint group.
-                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is
+                        used
                         to control the behavior of the group.
                     </xs:documentation>
                 </xs:annotation>
@@ -5322,10 +5419,14 @@
             <xs:element name="map-limit" type="xs:positiveInteger" minOccurs="0" default="10">
                 <xs:annotation>
                     <xs:documentation>
-                        The maximum number of CP Maps that are permitted. The default of 10 is not necessarily applicable
-                        for a wide variety of usages. Please note when defining this limit: take into consideration the maps
-                        you are to create, their capacities and the number of members their host CP groups entail. The latter
-                        is important as you will currently need memory headroom per-map, then a multiple of that map's size
+                        The maximum number of CP Maps that are permitted. The default of 10 is not necessarily
+                        applicable
+                        for a wide variety of usages. Please note when defining this limit: take into consideration the
+                        maps
+                        you are to create, their capacities and the number of members their host CP groups entail. The
+                        latter
+                        is important as you will currently need memory headroom per-map, then a multiple of that map's
+                        size
                         required for publishing snapshots, e.g. (group size - 1) * map size, per-map.
                     </xs:documentation>
                 </xs:annotation>
@@ -5425,7 +5526,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="commit-index-advance-count-to-snapshot" type="xs:unsignedInt" minOccurs="0" default="10000">
+            <xs:element name="commit-index-advance-count-to-snapshot" type="xs:unsignedInt" minOccurs="0"
+                        default="10000">
                 <xs:annotation>
                     <xs:documentation>
                         Number of new commits to initiate a new snapshot after the last snapshot
@@ -5442,7 +5544,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="uncommitted-entry-count-to-reject-new-appends" type="xs:unsignedInt" minOccurs="0" default="100">
+            <xs:element name="uncommitted-entry-count-to-reject-new-appends" type="xs:unsignedInt" minOccurs="0"
+                        default="100">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of uncommitted log entries in the leader's Raft log
@@ -5456,7 +5559,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="append-request-backoff-timeout-in-millis" type="xs:unsignedInt" minOccurs="0" default="100">
+            <xs:element name="append-request-backoff-timeout-in-millis" type="xs:unsignedInt" minOccurs="0"
+                        default="100">
                 <xs:annotation>
                     <xs:documentation>
                         Timeout duration in milliseconds to apply backoff on append entries
@@ -5713,7 +5817,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Sets the timeout in milliseconds that is applied to SQL statements without an explicit timeout.
-                        It is possible to set a timeout through the SqlStatement.setTimeout(long) method. If the statement
+                        It is possible to set a timeout through the SqlStatement.setTimeout(long) method. If the
+                        statement
                         timeout is not set, then the value of this parameter will be used.
                         Zero value means no timeout. Negative values are prohibited.
                     </xs:documentation>
@@ -5736,7 +5841,8 @@
             <xs:element name="java-reflection-filter" type="java-serialization-filter" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Basic protection against untrusted reflection based on class/package blacklisting and whitelisting.
+                        Basic protection against untrusted reflection based on class/package blacklisting and
+                        whitelisting.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6041,7 +6147,7 @@
     <xs:complexType name="tls-authentication">
         <xs:complexContent>
             <xs:extension base="basic-authentication">
-                <xs:attribute name="roleAttribute" type="xs:string" default="cn" />
+                <xs:attribute name="roleAttribute" type="xs:string" default="cn"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -6142,8 +6248,8 @@
         </xs:all>
     </xs:complexType>
     <xs:complexType name="username-password">
-        <xs:attribute name="username" type="xs:string" use="required" />
-        <xs:attribute name="password" type="xs:string" use="required" />
+        <xs:attribute name="username" type="xs:string" use="required"/>
+        <xs:attribute name="password" type="xs:string" use="required"/>
     </xs:complexType>
     <xs:complexType name="token">
         <xs:simpleContent>
@@ -6294,7 +6400,8 @@
             <xs:element name="url" type="xs:anyURI">
                 <xs:annotation>
                     <xs:documentation>
-                        The URL must be a valid URI that points to the location of the resource. This is a required property.
+                        The URL must be a valid URI that points to the location of the resource. This is a required
+                        property.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6302,7 +6409,8 @@
         <xs:attribute name="id" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    An optional identifier for the resource. It must be unique within the namespace. If a value is not set, the URL is used as the identifier.
+                    An optional identifier for the resource. It must be unique within the namespace. If a value is not
+                    set, the URL is used as the identifier.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -6380,24 +6488,26 @@
     <xs:complexType name="namespaces-type">
         <xs:annotation>
             <xs:documentation>
-                Encapsulates multiple namespace configurations. The 'enabled' attribute toggles the namespaces on or off.
+                Encapsulates multiple namespace configurations. The 'enabled' attribute toggles the namespaces on or
+                off.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
             <xs:element name="class-filter" type="class-filter" minOccurs="0">
-            <xs:annotation>
-                <xs:documentation>
-                    Allows to configure blacklisting and whitelisting by class, package or prefix.
-                    If a filtered class has been blacklisted, a SecurityException will be thrown.
-                    If whitelisting is enabled, either by explicit declaration under whitelist or setting defaults-disabled=false,
-                    a SecurityException will be thrown if a filtered class has not been whitelisted.
+                <xs:annotation>
+                    <xs:documentation>
+                        Allows to configure blacklisting and whitelisting by class, package or prefix.
+                        If a filtered class has been blacklisted, a SecurityException will be thrown.
+                        If whitelisting is enabled, either by explicit declaration under whitelist or setting
+                        defaults-disabled=false,
+                        a SecurityException will be thrown if a filtered class has not been whitelisted.
 
-                    If defaults-disabled is set to true, the default whitelist will not be used.
-                    If set to false, the default whitelist will be used. In such cases that a class name
-                    does not match any of the whitelisted classes, packages or prefixes, a SecurityException
-                    will be thrown.
-                </xs:documentation>
-            </xs:annotation>
+                        If defaults-disabled is set to true, the default whitelist will not be used.
+                        If set to false, the default whitelist will be used. In such cases that a class name
+                        does not match any of the whitelisted classes, packages or prefixes, a SecurityException
+                        will be thrown.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="namespace" type="namespace-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
@@ -6416,9 +6526,9 @@
         <xs:annotation>
             <xs:documentation>
                 The enumeration value whether client authentication is needed or not.
-                    NONE: No client authentication is needed.
-                    WANT: Client authentication is wanted.
-                    NEED: Client authentication is needed.
+                NONE: No client authentication is needed.
+                WANT: Client authentication is wanted.
+                NEED: Client authentication is needed.
             </xs:documentation>
         </xs:annotation>
         <xs:restriction base="non-space-string">
@@ -6613,6 +6723,43 @@
                     Specifies whether the REST server is enabled or not. Values can be true or false.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="vector-index">
+        <xs:all>
+            <xs:element name="dimension" type="xs:int"/>
+            <xs:element name="metric" type="xs:string"/>
+        </xs:all>
+        <xs:attribute name="name">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the index.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="vector-collection">
+        <xs:all>
+            <xs:element name="indexes" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="index" type="vector-index" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the vector.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
 

@@ -85,6 +85,8 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -107,6 +109,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlSequence;
@@ -137,7 +140,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
     }
 
-    @SuppressWarnings({ "checkstyle:npathcomplexity", "checkstyle:methodlength" })
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength"})
     protected void handleSecurityPermissions(Node node) {
         String onJoinOp = getAttribute(node, "on-join-operation");
         if (onJoinOp != null) {
@@ -1032,6 +1035,38 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
         } else {
             persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
+        }
+    }
+
+    @Override
+    protected void handleVector(Node node) {
+        for (Node vectorNode : childElements(node)) {
+            String name = vectorNode.getNodeName();
+            VectorCollectionConfig vectorConfig = ConfigUtils.getByNameOrNew(
+                    config.getVectorCollectionConfigs(),
+                    name,
+                    VectorCollectionConfig.class
+            );
+            handleVectorNode(vectorNode, vectorConfig);
+        }
+    }
+
+    @Override
+    protected void handleVectorNode(Node node, VectorCollectionConfig collectionConfig) {
+        var indexesNode = firstChildElement(node);
+        if (indexesNode == null) {
+            return;
+        }
+        handleVectorIndex(indexesNode, collectionConfig);
+        config.addVectorCollectionConfig(collectionConfig);
+    }
+
+    @Override
+    protected void handleVectorIndex(Node node, VectorCollectionConfig collectionConfig) {
+        for (Node indexNode : childElements(node)) {
+            VectorIndexConfig indexConfig = new VectorIndexConfig();
+            handleVectorIndexNode(indexNode, indexConfig);
+            collectionConfig.addVectorIndexConfig(indexConfig);
         }
     }
 

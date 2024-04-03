@@ -67,6 +67,8 @@ import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
@@ -886,6 +888,22 @@ public final class DynamicConfigXmlGenerator {
                 gen.node("item-listener", classNameOrImplClass(lc.getClassName(), lc.getImplementation()),
                         "include-value", lc.isIncludeValue());
             }
+            gen.close();
+        }
+    }
+
+    public static void vectorCollectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        Collection<VectorCollectionConfig> vectorCollectionConfigs = config.getVectorCollectionConfigs().values();
+        for (VectorCollectionConfig collectionConfig : vectorCollectionConfigs) {
+            gen.open("vector-collection", "name", collectionConfig.getName());
+            gen.open("indexes");
+            for (VectorIndexConfig index: collectionConfig.getVectorIndexConfigs()) {
+                gen.open("index", "name", index.getName())
+                        .node("dimension", index.getDimension())
+                        .node("metric", index.getMetric());
+                gen.close();
+            }
+            gen.close();
             gen.close();
         }
     }

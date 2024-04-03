@@ -36,6 +36,9 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
@@ -75,6 +78,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
@@ -85,6 +89,8 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.function.Function.identity;
+import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1575,6 +1581,33 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config expectedConfig = XMLConfigBuilderTest.buildRestConfigFromXmlString();
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig, false);
         AbstractConfigBuilderTest.validateRestConfig(actualConfig);
+    }
+
+
+    @Test
+    public void testVectorConfig() {
+        Config config = new Config();
+        var vectorCollection = range(0, 2).mapToObj(
+                        i -> new VectorCollectionConfig("name-" + i)
+                                .addVectorIndexConfig(
+                                        new VectorIndexConfig()
+                                                .setDimension(2)
+                                                .setMetric(Metric.EUCLIDEAN)
+                                                .setName("index-1-" + i)
+                                )
+                                .addVectorIndexConfig(
+                                        new VectorIndexConfig()
+                                                .setDimension(5)
+                                                .setMetric(Metric.DOT)
+                                )
+                )
+                .collect(Collectors.toList());
+        config.setVectorCollectionConfigs(vectorCollection);
+
+        var generatedConfig = getNewConfigViaXMLGenerator(config).getVectorCollectionConfigs();
+        assertThat(generatedConfig)
+                .usingRecursiveComparison()
+                .isEqualTo(vectorCollection.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, identity())));
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

@@ -43,6 +43,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeNamespaceAwareConfig;
 import com.hazelcast.config.UserCodeNamespaceConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
@@ -80,6 +81,7 @@ import java.util.function.BiFunction;
 import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.cluster.Versions.V5_4;
+import static com.hazelcast.internal.cluster.Versions.V5_5;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -129,6 +131,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, UserCodeNamespaceConfig> namespaceConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, VectorCollectionConfig> vectorCollectionConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -371,6 +374,8 @@ public class ClusterWideConfigurationService implements
             if (isNamespaceReferencedWithHRPersistence(nodeEngine, config)) {
                 listener.onConfigRegistered(config);
             }
+        } else if (newConfig instanceof VectorCollectionConfig newVectorCollectionConfig) {
+            currentConfig = vectorCollectionConfigs.putIfAbsent(newVectorCollectionConfig.getName(), newVectorCollectionConfig);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -635,6 +640,16 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
+    public VectorCollectionConfig findVectorCollectionConfig(String name) {
+        return lookupByPattern(configPatternMatcher, vectorCollectionConfigs, name);
+    }
+
+    @Override
+    public Map<String, VectorCollectionConfig> getVectorCollectionConfigs() {
+        return vectorCollectionConfigs;
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
@@ -701,6 +716,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(DataConnectionConfig.class, V5_2);
         configToVersion.put(WanReplicationConfig.class, V5_4);
         configToVersion.put(UserCodeNamespaceConfig.class, V5_4);
+        configToVersion.put(VectorCollectionConfig.class, V5_5);
 
         return Collections.unmodifiableMap(configToVersion);
     }

@@ -18,10 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.Sets;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.tpc.TpcConfig;
-import com.hazelcast.config.tpc.TpcSocketConfig;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -32,6 +30,8 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.namespace.ResourceDefinition;
@@ -5002,6 +5002,28 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
             assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
             assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
+    }
+
+    @Override
+    public void testVectorCollectionConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  vector-collection:\n"
+                + "    vector-1:\n"
+                + "      indexes:\n"
+                + "        - name: index-1-1\n"
+                + "          dimension: 2\n"
+                + "          metric: DOT\n"
+                + "        - name: index-1-2\n"
+                + "          dimension: 3\n"
+                + "          metric: EUCLIDEAN\n"
+                + "    vector-2:\n"
+                + "      indexes:\n"
+                + "        - dimension: 4\n"
+                + "          metric: COSINE\n";
+
+        Config config = buildConfig(yaml);
+        validateVectorCollectionConfig(config);
     }
 
     public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {

@@ -82,6 +82,9 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorTestHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
@@ -112,6 +115,7 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.T
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -936,6 +940,25 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
         DataConnectionConfig actualConfig = decConfig.getDataConnectionConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testVectorCollection() {
+        String vectorCollection = "vector-collection-1";
+        VectorCollectionConfig originVectorCollectionConfig = VectorTestHelper.buildVectorCollectionConfig(
+                vectorCollection,
+                "index-1",
+                2,
+                Metric.COSINE
+        );
+
+        Config config = new Config()
+                .addVectorCollectionConfig(originVectorCollectionConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        VectorCollectionConfig actual = decConfig.getVectorCollectionConfigOrNull(vectorCollection);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(originVectorCollectionConfig);
     }
 
     // UTILITY - GENERATOR

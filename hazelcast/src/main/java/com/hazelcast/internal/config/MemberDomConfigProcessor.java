@@ -147,6 +147,9 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
@@ -241,6 +244,7 @@ import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTIO
 import static com.hazelcast.internal.config.ConfigSections.SQL;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
+import static com.hazelcast.internal.config.ConfigSections.VECTOR;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
@@ -408,6 +412,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNamespaces(node);
         } else if (matches(REST.getName(), nodeName)) {
             handleRest(node);
+        } else if (matches(VECTOR.getName(), nodeName)) {
+            handleVector(node);
         } else {
             return true;
         }
@@ -3742,6 +3748,53 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
         config.setAttributeName(getTextContent(node));
+    }
+
+    protected void handleVector(Node node) {
+        String name = getAttribute(node, "name");
+        VectorCollectionConfig mapConfig = ConfigUtils.getByNameOrNew(
+                config.getVectorCollectionConfigs(),
+                name,
+                VectorCollectionConfig.class
+        );
+        handleVectorNode(node, mapConfig);
+    }
+
+    protected void handleVectorNode(Node node, VectorCollectionConfig collectionConfig) {
+        var indexesNode = firstChildElement(node);
+        if (indexesNode == null) {
+            return;
+        }
+        for (Node n : childElements(indexesNode)) {
+            String nodeName = cleanNodeName(n);
+            if (matches("index", nodeName)) {
+                handleVectorIndex(n, collectionConfig);
+            }
+        }
+        config.addVectorCollectionConfig(collectionConfig);
+    }
+
+    protected void handleVectorIndex(Node node, VectorCollectionConfig collectionConfig) {
+        VectorIndexConfig indexConfig = new VectorIndexConfig();
+        var name = getAttribute(node, "name");
+        if (name != null) {
+            indexConfig.setName(name);
+        }
+        handleVectorIndexNode(node, indexConfig);
+        collectionConfig.addVectorIndexConfig(indexConfig);
+    }
+
+    protected void handleVectorIndexNode(Node node, VectorIndexConfig indexConfig) {
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (matches("name", nodeName)) {
+                indexConfig.setName(getTextContent(n));
+            } else if (matches("dimension", nodeName)) {
+                indexConfig.setDimension(getIntegerValue("dimension", getTextContent(n)));
+            } else if (matches("metric", nodeName)) {
+                indexConfig.setMetric(Metric.valueOf(getTextContent(n)));
+            }
+        }
     }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {

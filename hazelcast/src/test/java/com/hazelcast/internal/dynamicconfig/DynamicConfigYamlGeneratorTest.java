@@ -37,6 +37,9 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.spi.MemberAddressProvider;
@@ -55,12 +58,16 @@ import java.net.Socket;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.config.ConfigXmlGeneratorTest.assertFailureDetectorConfigEquals;
 import static com.hazelcast.config.ConfigXmlGeneratorTest.multicastConfig;
 import static com.hazelcast.config.ConfigXmlGeneratorTest.tcpIpConfig;
+import static java.util.function.Function.identity;
+import static java.util.stream.IntStream.range;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -599,6 +606,32 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         assertClassFilterAsMap((Map<String, Object>) jsfAsMap.get("blacklist"));
     }
 
+    @Test
+    public void testVectorConfig() {
+        Config config = new Config();
+        var vectorCollection = range(0, 2).mapToObj(
+                        i -> new VectorCollectionConfig("name-" + i)
+                                .addVectorIndexConfig(
+                                        new VectorIndexConfig()
+                                                .setDimension(2)
+                                                .setMetric(Metric.EUCLIDEAN)
+                                                .setName("index-1-" + i)
+                                )
+                                .addVectorIndexConfig(
+                                        new VectorIndexConfig()
+                                                .setDimension(5)
+                                                .setMetric(Metric.DOT)
+                                )
+                )
+                .collect(Collectors.toList());
+        config.setVectorCollectionConfigs(vectorCollection);
+
+        var generatedConfig = getNewConfigViaGenerator(config).getVectorCollectionConfigs();
+        assertThat(generatedConfig)
+                .usingRecursiveComparison()
+                .isEqualTo(vectorCollection.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, identity())));
+    }
+
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
         return getNewConfigViaGenerator(config, false);
@@ -609,4 +642,6 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         String yaml = dynamicConfigYamlGenerator.generate(config, maskSensitiveFields);
         return new InMemoryYamlConfig(yaml);
     }
+
+
 }

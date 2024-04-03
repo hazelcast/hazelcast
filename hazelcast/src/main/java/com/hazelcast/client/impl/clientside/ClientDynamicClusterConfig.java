@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddVectorCollectionConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
@@ -96,6 +97,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ServicesConfig;
@@ -1193,6 +1195,31 @@ public class ClientDynamicClusterConfig extends Config {
     @Nonnull
     @Override
     public Config setRestConfig(@Nonnull RestConfig restConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public VectorCollectionConfig getVectorCollectionConfigOrNull(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, VectorCollectionConfig> getVectorCollectionConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    @Nonnull
+    public Config addVectorCollectionConfig(@Nonnull VectorCollectionConfig vectorCollectionConfig) {
+        ClientMessage request = DynamicConfigAddVectorCollectionConfigCodec.encodeRequest(
+                vectorCollectionConfig.getName(),
+                vectorCollectionConfig.getVectorIndexConfigs());
+        invoke(request);
+        return this;
+    }
+
+    @Override
+    public Config setVectorCollectionConfigs(List<VectorCollectionConfig> vectorConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

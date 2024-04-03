@@ -83,6 +83,7 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.rin
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.scheduledExecutorXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.setXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.vectorCollectionXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -207,6 +208,7 @@ public class ConfigXmlGenerator {
         tpcConfiguration(gen, config);
         namespacesConfiguration(gen, config);
         restServerConfiguration(gen, config);
+        vectorCollectionXmlGenerator(gen, config);
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();

@@ -159,6 +159,9 @@
         },
         "rest": {
           "$ref": "#/definitions/RestConfig"
+        },
+        "vector-collection": {
+          "$ref": "#/definitions/VectorCollection"
         }
       }
     },
@@ -5375,6 +5378,66 @@
         "trust-certificate-key": {
           "type": "string",
           "description": "The path to the trust certificate key file."
+        }
+      }
+    },
+    "VectorIndexOld": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "integer"
+          },
+          "metric": {
+            "enum": [
+              "EUCLIDEAN",
+              "COSINE",
+              "DOT"
+            ]
+          }
+        }
+      }
+    },
+    "VectorIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "dimension": {
+          "type": "integer"
+        },
+        "metric": {
+          "enum": [
+            "EUCLIDEAN",
+            "COSINE",
+            "DOT"
+          ]
+        }
+      },
+      "required": [
+        "dimension",
+        "metric"
+      ]
+    },
+    "VectorCollection": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "indexes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/VectorIndex"
+            }
+          }
         }
       }
     }

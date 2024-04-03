@@ -64,8 +64,8 @@ import java.io.Writer;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.HashSet;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -4950,6 +4950,35 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testRestConfig() throws IOException {
         final Config config = buildRestConfigFromXmlString();
         validateRestConfig(config);
+    }
+
+    @Override
+    public void testVectorCollectionConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <vector-collection name=\"vector-1\">\n"
+                + "      <indexes>\n"
+                + "        <index name=\"index-1-1\">\n"
+                + "            <dimension>2</dimension>\n"
+                + "            <metric>DOT</metric>\n"
+                + "        </index>\n"
+                + "        <index name=\"index-1-2\">\n"
+                + "            <dimension>3</dimension>\n"
+                + "            <metric>EUCLIDEAN</metric>\n"
+                + "        </index>\n"
+                + "      </indexes>\n"
+                + "    </vector-collection>\n"
+                + "    <vector-collection name=\"vector-2\">\n"
+                + "      <indexes>\n"
+                + "        <index>\n"
+                + "            <dimension>4</dimension>\n"
+                + "            <metric>COSINE</metric>\n"
+                + "        </index>\n"
+                + "      </indexes>\n"
+                + "    </vector-collection>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        validateVectorCollectionConfig(config);
     }
 
     static Config buildRestConfigFromXmlString() {

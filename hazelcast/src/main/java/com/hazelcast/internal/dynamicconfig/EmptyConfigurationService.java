@@ -36,6 +36,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
@@ -232,6 +233,16 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, UserCodeNamespaceConfig> getNamespaceConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public VectorCollectionConfig findVectorCollectionConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public Map<String, VectorCollectionConfig> getVectorCollectionConfigs() {
         return emptyMap();
     }
 
