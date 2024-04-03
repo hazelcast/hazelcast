@@ -154,7 +154,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.13</bytebuddy.version>
         <commons-codec.version>1.16.1</commons-codec.version>
-        <commons-io.version>2.15.1</commons-io.version>
+        <commons-io.version>2.16.0</commons-io.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-text.version>1.11.0</commons-text.version>
         <confluent.version>7.6.0</confluent.version>
