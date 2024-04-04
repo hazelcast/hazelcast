@@ -63,6 +63,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
@@ -87,12 +88,13 @@ public class MasterContext implements DynamicMetricsProvider {
         }
     };
 
+    protected final ILogger logger;
+
     private final ReentrantLock lock = new ReentrantLock();
 
     private final NodeEngineImpl nodeEngine;
     private final JobEventService jobEventService;
     private final JobCoordinationService coordinationService;
-    private final ILogger logger;
     private final long jobId;
     private final String jobName;
     private final JobRepository jobRepository;
@@ -319,6 +321,43 @@ public class MasterContext implements DynamicMetricsProvider {
 
     void setExecutionPlanMap(Map<MemberInfo, ExecutionPlan> executionPlans) {
         executionPlanMap = executionPlans;
+    }
+
+    /**
+     * Checks if the job is running on all members and maybe restart it.
+     * <p>
+     * Returns {@code false}, if this method should be scheduled to
+     * be called later. That is, when the job is running, but we've
+     * failed to request the restart.
+     * <p>
+     * Returns {@code true}, if the job is not running, has
+     * auto-scaling disabled, is already running on all members or if
+     * we've managed to request a restart.
+     */
+    boolean maybeScaleUp(int dataMembersWithPartitionsCount) {
+        coordinationService().assertOnCoordinatorThread();
+        if (!jobConfig().isAutoScaling()) {
+            return true;
+        }
+
+        // We only compare the number of our participating members and current members.
+        // If there is any member in our participants that is not among current data members,
+        // this job will be restarted anyway. If it's the other way, then the sizes won't match.
+        if (executionPlanMap() == null || executionPlanMap().size() == dataMembersWithPartitionsCount) {
+            logger.fine("Not scaling up %s: not running or already running on all members", jobIdString());
+            return true;
+        }
+
+        if (jobStatus() == RUNNING
+                && jobContext().requestTermination(TerminationMode.RESTART_GRACEFUL, false, false).f1() == null) {
+            logger.info("Requested restart of " + jobIdString() + " to make use of added member(s). "
+                    + "Job was running on " + executionPlanMap().size() + " members, cluster now has "
+                    + dataMembersWithPartitionsCount + " data members with assigned partitions");
+            return true;
+        }
+
+        // if status was not RUNNING or requestTermination didn't succeed, we'll try again later.
+        return false;
     }
 
     void updateQuorumSize(int newQuorumSize) {

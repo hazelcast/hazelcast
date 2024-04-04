@@ -66,8 +66,6 @@ public class ManualRestartTest extends JetTestSupport {
     private static final int NODE_COUNT = 2;
     private static final int LOCAL_PARALLELISM = 1;
 
-
-
     private DAG dag;
     private HazelcastInstance[] instances;
 

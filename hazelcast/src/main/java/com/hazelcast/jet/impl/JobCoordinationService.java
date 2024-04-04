@@ -1229,7 +1229,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             // any partitions assigned. Jet doesn't use such members.
             int dataMembersWithPartitionsCount = Math.min(dataMembersCount, partitionCount);
             for (MasterContext mc : masterContexts.values()) {
-                allSucceeded &= mc.jobContext().maybeScaleUp(dataMembersWithPartitionsCount);
+                allSucceeded &= mc.maybeScaleUp(dataMembersWithPartitionsCount);
             }
             if (!allSucceeded) {
                 scheduleScaleUp(RETRY_DELAY_IN_MILLIS);

@@ -309,7 +309,7 @@ public final class TestProcessors {
 
     public static class MockPS implements ProcessorSupplier {
 
-        static AtomicInteger initCount = new AtomicInteger();
+        public static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
         static volatile int nodeCount;
 

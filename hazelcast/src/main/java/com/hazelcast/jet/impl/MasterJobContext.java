@@ -1003,44 +1003,6 @@ public class MasterJobContext {
     }
 
     /**
-     * Checks if the job is running on all members and maybe restart it.
-     * <p>
-     * Returns {@code false}, if this method should be scheduled to
-     * be called later. That is, when the job is running, but we've
-     * failed to request the restart.
-     * <p>
-     * Returns {@code true}, if the job is not running, has
-     * auto-scaling disabled, is already running on all members or if
-     * we've managed to request a restart.
-     */
-    boolean maybeScaleUp(int dataMembersWithPartitionsCount) {
-        mc.coordinationService().assertOnCoordinatorThread();
-        if (!mc.jobConfig().isAutoScaling()) {
-            return true;
-        }
-
-        // We only compare the number of our participating members and current members.
-        // If there is any member in our participants that is not among current data members,
-        // this job will be restarted anyway. If it's the other way, then the sizes won't match.
-        if (mc.executionPlanMap() == null || mc.executionPlanMap().size() == dataMembersWithPartitionsCount) {
-            logger.fine("Not scaling up %s: not running or already running on all members",
-                    mc.jobIdString());
-            return true;
-        }
-
-        JobStatus localStatus = mc.jobStatus();
-        if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL, false, false).f1() == null) {
-            logger.info("Requested restart of " + mc.jobIdString() + " to make use of added member(s). "
-                    + "Job was running on " + mc.executionPlanMap().size() + " members, cluster now has "
-                    + dataMembersWithPartitionsCount + " data members with assigned partitions");
-            return true;
-        }
-
-        // if status was not RUNNING or requestTermination didn't succeed, we'll try again later.
-        return false;
-    }
-
-    /**
      * Returns aggregated job and execution metrics.
      *
      * @implNote

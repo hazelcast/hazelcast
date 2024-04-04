@@ -416,6 +416,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
         return receiverMap;
     }
 
+    public Set<Address> participants() {
+        return participants;
+    }
+
     @Nullable
     public String jobName() {
         return jobName;
