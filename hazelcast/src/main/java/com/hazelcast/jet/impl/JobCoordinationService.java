@@ -301,7 +301,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 }
 
                 // If there is no master context and job result at the same time, it means this is the first submission
-                jobSubmitted.inc();
+                onJobSubmitted(jobConfig);
                 jobRepository.putNewJobRecord(jobRecord);
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
@@ -369,6 +369,10 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             throw new UnsupportedOperationException(
                     "The Isolated Jobs feature is only available in Hazelcast Enterprise Edition.");
         }
+    }
+
+    protected void onJobSubmitted(JobConfig config) {
+        jobSubmitted.inc();
     }
 
     public long getJobSubmittedCount() {

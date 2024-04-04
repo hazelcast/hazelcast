@@ -233,4 +233,9 @@ public enum PhoneHomeMetrics {
     public String getRequestParameterName() {
         return query;
     }
+
+    @Override
+    public String toString() {
+        return query;
+    }
 }

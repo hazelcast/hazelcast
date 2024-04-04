@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util.phonehome;
 
+import javax.annotation.Nonnull;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -25,7 +26,6 @@ import java.util.Map;
  * Util class for parameters of OS and EE PhoneHome pings.
  */
 public class PhoneHomeParameterCreator {
-
     private final StringBuilder builder;
     private final Map<String, String> parameters = new HashMap<>();
     private boolean hasParameterBefore;
@@ -40,14 +40,14 @@ public class PhoneHomeParameterCreator {
 
     /**
      * Adds a parameter with the provided {@code key} and the associated
-     * {@code value}.
-     *
-     * @param key the parameter key
-     * @param value the parameter value
+     * {@code value}. The key and value will be converted to string.
      */
-    public void addParam(String key, String value) {
-        if (parameters.containsKey(key)) {
-            throw new IllegalArgumentException("Parameter " + key + " is already added");
+    public void addParam(@Nonnull Object key, @Nonnull Object value) {
+        String keyStr = key.toString();
+        String valueStr = value.toString();
+
+        if (parameters.containsKey(keyStr)) {
+            throw new IllegalArgumentException("Parameter " + keyStr + " is already added");
         }
 
         if (hasParameterBefore) {
@@ -55,8 +55,8 @@ public class PhoneHomeParameterCreator {
         } else {
             hasParameterBefore = true;
         }
-        builder.append(key).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
-        parameters.put(key, value);
+        builder.append(keyStr).append("=").append(URLEncoder.encode(valueStr, StandardCharsets.UTF_8));
+        parameters.put(keyStr, valueStr);
     }
 
     String build() {

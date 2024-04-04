@@ -458,7 +458,7 @@ public class MetricsTest extends JetTestSupport {
         assertSourceSinkTags(metrics, "sink", false, false, true);
     }
 
-    private JobMetrics assertJobHasExecutionMetricsEventually(Job job) {
+    public static JobMetrics assertJobHasExecutionMetricsEventually(Job job) {
         JobMetrics[] metrics = {null};
         assertTrueEventually(() ->
                 assertTrue((metrics[0] = job.getMetrics()).containsTag(MetricTags.EXECUTION)));

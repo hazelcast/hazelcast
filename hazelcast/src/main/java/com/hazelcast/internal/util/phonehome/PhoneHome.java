@@ -80,7 +80,7 @@ public class PhoneHome {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(PhoneHome.class);
         this.basePhoneHomeUrl = basePhoneHomeUrl;
-        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 8);
+        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 14);
         Collections.addAll(metricsCollectorList,
                 new RestApiMetricsCollector(),
                 new BuildInfoCollector(new HashMap<>(envVars)), new ClusterInfoCollector(), new ClientInfoCollector(),
@@ -171,8 +171,7 @@ public class PhoneHome {
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         for (MetricsCollector metricsCollector : metricsCollectorList) {
             try {
-                metricsCollector.forEachMetric(hazelcastNode,
-                        (type, value) -> parameterCreator.addParam(type.getRequestParameterName(), value));
+                metricsCollector.forEachMetric(hazelcastNode, parameterCreator::addParam);
             } catch (Exception e) {
                 logger.warning("Some metrics were not recorded ", e);
             }
