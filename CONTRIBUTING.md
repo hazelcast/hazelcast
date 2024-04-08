@@ -58,8 +58,11 @@ All PRs follow the same process:
 5. Please keep your PRs as small as possible, _i.e._ if you plan to perform a huge change, do not submit a single and
    large PR for it.
    For an enhancement or larger feature, you can create a GitHub issue first to discuss.
-6. Before you push, run the command `mvn clean validate` in your terminal and fix the CheckStyle errors if any.
-   Push your PR once it is free of CheckStyle errors.
+6. Before you push, run:
+   ```bash
+   ./mvnw clean validate
+   ```
+   Pushing your PR once it is free of CheckStyle errors.
 7. If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description
    or commit message.
 8. Your PRs will first be merged into our internal repo.
