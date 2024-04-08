@@ -311,7 +311,6 @@
                         ${vmHeapSettings}
                         ${javaModuleArgs}
                         -Dhazelcast.phone.home.enabled=false
-                        -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=true
                         -Dlog4j.skipJansi=true
                         ${extraVmArgs}
@@ -738,7 +737,6 @@
                                         ${javaModuleArgs}
                                         -ea
                                         -Dhazelcast.phone.home.enabled=false
-                                        -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
                                         -Dlog4j.configurationFile=log4j2.xml
@@ -783,7 +781,6 @@
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
                                         -Dhazelcast.phone.home.enabled=false
-                                        -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
@@ -821,7 +818,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.configurationFile=log4j2.xml
                                 -Dlog4j.skipJansi=true
@@ -1018,7 +1014,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
@@ -1056,7 +1051,6 @@
                     ${vmHeapSettings}
                     ${javaModuleArgs}
                     -Dhazelcast.phone.home.enabled=false
-                    -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
                     -Dhazelcast.operation.call.timeout.millis=120000
                     -Dhazelcast.graceful.shutdown.max.wait=240
@@ -1125,7 +1119,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
@@ -1250,7 +1243,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
@@ -1283,7 +1275,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
@@ -1327,7 +1318,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
@@ -1356,7 +1346,6 @@
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
