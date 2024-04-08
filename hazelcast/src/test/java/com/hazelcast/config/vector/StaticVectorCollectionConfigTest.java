@@ -53,17 +53,13 @@ public class StaticVectorCollectionConfigTest extends HazelcastTestSupport {
     public void setSeveralVectorCollectionConfig() {
         var vectorCollectionConfigs = range(0, 3)
                 .mapToObj(i -> buildVectorCollectionConfig("collection-" + i, "index-" + i, i, Metric.EUCLIDEAN))
-                .toList();
+                .collect(Collectors.toMap(VectorCollectionConfig::getName, identity()));
         Config config = new Config().setVectorCollectionConfigs(vectorCollectionConfigs);
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
         var actual = instance.getConfig().getVectorCollectionConfigs();
-        assertThat(actual)
-                .usingRecursiveComparison()
-                .isEqualTo(
-                        vectorCollectionConfigs.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, identity()))
-                );
+        assertThat(actual.entrySet()).containsExactlyInAnyOrderElementsOf(vectorCollectionConfigs.entrySet());
     }
 
     @Test

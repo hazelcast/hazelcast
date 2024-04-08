@@ -131,6 +131,9 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
+import com.hazelcast.config.vector.Metric;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -1678,5 +1681,26 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertFalse(tpcConfig.isEnabled());
         assertEquals(12, tpcConfig.getEventloopCount());
+    }
+
+    @Test
+    public void testVectorCollectionConfig() {
+        var expectedVectorCollection1 = new VectorCollectionConfig("vector-collection-1")
+                .addVectorIndexConfig(
+                        new VectorIndexConfig().setName("index-1").setDimension(2).setMetric(Metric.DOT)
+                )
+                .addVectorIndexConfig(
+                        new VectorIndexConfig().setDimension(20).setMetric(Metric.EUCLIDEAN)
+                );
+        var expectedVectorCollection2 = new VectorCollectionConfig("vector-collection-2")
+                .addVectorIndexConfig(
+                        new VectorIndexConfig().setName("index-1").setDimension(200).setMetric(Metric.COSINE)
+                );
+        var expectedVectorCollectionConfigs = Map.of(
+                "vector-collection-1", expectedVectorCollection1,
+                "vector-collection-2", expectedVectorCollection2
+        );
+        var actualVectorCollectionConfigs = config.getVectorCollectionConfigs();
+        assertThat(actualVectorCollectionConfigs.entrySet()).containsExactlyInAnyOrderElementsOf(expectedVectorCollectionConfigs.entrySet());
     }
 }

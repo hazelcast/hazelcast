@@ -3095,10 +3095,10 @@ public class Config {
      * @return this config instance
      * @since 5.5
      */
-    public Config setVectorCollectionConfigs(List<VectorCollectionConfig> vectorConfigs) {
+    public Config setVectorCollectionConfigs(Map<String, VectorCollectionConfig> vectorConfigs) {
         this.vectorCollectionConfigs.clear();
         this.vectorCollectionConfigs.putAll(
-                vectorConfigs.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, Function.identity()))
+                vectorConfigs.values().stream().collect(Collectors.toMap(VectorCollectionConfig::getName, Function.identity()))
         );
         return this;
     }

@@ -1601,13 +1601,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                                 .setMetric(Metric.DOT)
                                 )
                 )
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(VectorCollectionConfig::getName, identity()));
         config.setVectorCollectionConfigs(vectorCollection);
 
         var generatedConfig = getNewConfigViaXMLGenerator(config).getVectorCollectionConfigs();
-        assertThat(generatedConfig)
-                .usingRecursiveComparison()
-                .isEqualTo(vectorCollection.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, identity())));
+        assertThat(generatedConfig).isEqualTo(vectorCollection);
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

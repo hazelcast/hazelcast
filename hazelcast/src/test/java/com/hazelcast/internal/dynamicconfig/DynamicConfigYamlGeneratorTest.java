@@ -623,13 +623,10 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
                                                 .setMetric(Metric.DOT)
                                 )
                 )
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(VectorCollectionConfig::getName, identity()));
         config.setVectorCollectionConfigs(vectorCollection);
-
         var generatedConfig = getNewConfigViaGenerator(config).getVectorCollectionConfigs();
-        assertThat(generatedConfig)
-                .usingRecursiveComparison()
-                .isEqualTo(vectorCollection.stream().collect(Collectors.toMap(VectorCollectionConfig::getName, identity())));
+        assertThat(generatedConfig.entrySet()).containsExactlyInAnyOrderElementsOf(vectorCollection.entrySet());
     }
 
     @Override

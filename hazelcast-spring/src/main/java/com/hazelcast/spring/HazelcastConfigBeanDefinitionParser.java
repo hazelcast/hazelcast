@@ -72,8 +72,6 @@ import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.UserCodeNamespaceConfig;
-import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
@@ -112,6 +110,8 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.UserCodeNamespaceConfig;
+import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -120,8 +120,6 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPMapConfig;
-import com.hazelcast.config.tpc.TpcConfig;
-import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -139,6 +137,10 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
+import com.hazelcast.config.vector.VectorCollectionConfig;
+import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
@@ -184,6 +186,7 @@ import static com.hazelcast.internal.config.ConfigUtils.resolveResourceId;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
@@ -268,6 +271,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
         private ManagedMap<String, AbstractBeanDefinition> deviceConfigManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> dataConnectionConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> vectorCollectionConfigManagedMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -296,6 +300,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.endpointConfigsMap = new ManagedMap<>();
             this.deviceConfigManagedMap = createManagedMap("deviceConfigs");
             this.dataConnectionConfigMap = createManagedMap("dataConnectionConfigs");
+            this.vectorCollectionConfigManagedMap = createManagedMap("vectorCollectionConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -407,6 +412,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDataConnection(node);
                     } else if ("tpc".equals(nodeName)) {
                         handleTpc(node);
+                    } else if ("vector-collection".equals(nodeName)) {
+                        handleVectorCollection(node);
                     } else if ("user-code-namespaces".equals(nodeName)) {
                         handleNamespaces(node);
                     }
@@ -2416,6 +2423,31 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("jetConfig", jetConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleVectorCollection(Node node) {
+            BeanDefinitionBuilder vectorCollectionConfigBuilder = createBeanBuilder(VectorCollectionConfig.class);
+            Node attName = node.getAttributes().getNamedItem("name");
+            String name = getTextContent(attName);
+            fillAttributeValues(node, vectorCollectionConfigBuilder);
+            ManagedList vectorIndexConfigs = new ManagedList<>();
+            Node indexesNode = firstChildElement(node);
+            if ("indexes".equals(cleanNodeName(indexesNode))) {
+                for (Node childNode : childElements(indexesNode)) {
+                    String nodeName = cleanNodeName(childNode);
+                    if ("index".equals(nodeName)) {
+                        vectorIndexConfigs.add(parseVectorIndex(childNode));
+                    }
+                }
+            }
+            vectorCollectionConfigBuilder.addPropertyValue("vectorIndexConfigs", vectorIndexConfigs);
+            vectorCollectionConfigManagedMap.put(name, vectorCollectionConfigBuilder.getBeanDefinition());
+        }
+
+        private AbstractBeanDefinition parseVectorIndex(Node node) {
+            BeanDefinitionBuilder vectorIndexConfBuilder = createBeanBuilder(VectorIndexConfig.class);
+            fillAttributeValues(node, vectorIndexConfBuilder);
+            return vectorIndexConfBuilder.getBeanDefinition();
         }
 
         @SuppressWarnings("checkstyle:BooleanExpressionComplexity")

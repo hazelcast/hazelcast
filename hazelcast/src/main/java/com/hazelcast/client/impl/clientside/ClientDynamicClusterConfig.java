@@ -1219,7 +1219,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config setVectorCollectionConfigs(List<VectorCollectionConfig> vectorConfigs) {
+    public Config setVectorCollectionConfigs(Map<String, VectorCollectionConfig> vectorConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

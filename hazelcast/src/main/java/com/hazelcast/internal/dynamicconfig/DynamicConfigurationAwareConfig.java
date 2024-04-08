@@ -335,7 +335,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Config setVectorCollectionConfigs(List<VectorCollectionConfig> vectorConfigs) {
+    public Config setVectorCollectionConfigs(Map<String, VectorCollectionConfig> vectorConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

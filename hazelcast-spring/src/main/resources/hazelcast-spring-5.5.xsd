@@ -1426,6 +1426,7 @@
                         <xs:element name="data-connection" type="data-connection" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="tpc" type="tpc" minOccurs="0"/>
                         <xs:element name="user-code-namespaces" type="namespaces-type" minOccurs="0"/>
+                        <xs:element name="vector-collection" type="vector-collection" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -6585,4 +6586,40 @@
             </xs:documentation>
         </xs:annotation>
     </xs:element>
+
+    <xs:complexType name="vector-index">
+        <xs:attribute name="dimension" type="xs:int" use="required"/>
+        <xs:attribute name="metric" type="xs:string" use="required"/>
+        <xs:attribute name="name">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the index.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="vector-collection">
+        <xs:all>
+            <xs:element name="indexes">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="index" type="vector-index" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the vector collection.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

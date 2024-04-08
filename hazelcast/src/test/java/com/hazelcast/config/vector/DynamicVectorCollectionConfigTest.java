@@ -116,7 +116,7 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
     public void memberTest_setVectorCollection_then_fail() {
         String vectorCollection = "vector-collection-1";
         var vectorCollectionConfig = buildVectorCollectionConfig(vectorCollection, "index-1", 1, Metric.COSINE);
-        instance1.getConfig().setVectorCollectionConfigs(Collections.singletonList(vectorCollectionConfig));
+        instance1.getConfig().setVectorCollectionConfigs(Map.of(vectorCollectionConfig.getName(), vectorCollectionConfig));
     }
 
 
@@ -133,7 +133,7 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void clientTest_setVectorCollection_then_failed() {
-        client.getConfig().setVectorCollectionConfigs(Collections.emptyList());
+        client.getConfig().setVectorCollectionConfigs(Collections.emptyMap());
     }
 
     @Test(expected = UnsupportedOperationException.class)
