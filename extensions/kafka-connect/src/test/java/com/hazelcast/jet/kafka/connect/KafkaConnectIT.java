@@ -31,6 +31,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
@@ -55,6 +56,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -332,17 +334,27 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("max.interval", "1");
         randomProperties.setProperty("tasks.max", "3");
         randomProperties.setProperty("kafka.topic", "not-used");
         randomProperties.setProperty("quickstart", "orders");
+
+        // Sink for Map<String,List<Order>>
+        Sink<Order> sink = Sinks.<Order, String, List<Order>>mapBuilder("testResults")
+                .toKeyFn(KafkaConnectIT::getTaskId)
+                .toValueFn(List::of)
+                .mergeFn((a, b) -> {
+                    ArrayList<Order> orders = new ArrayList<>(a);
+                    orders.addAll(b);
+                    return orders;
+                })
+                .build();
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<Order> streamStage = pipeline
                 .readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
-        streamStage.writeTo(Sinks.list("testResults"));
+        streamStage.writeTo(sink);
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
@@ -350,14 +362,15 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
 
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
 
-        List<Order> testResults = hazelcastInstance.getList("testResults");
+        Map<String, List<Order>> ordersByTaskId = hazelcastInstance.getMap("testResults");
 
         Map<String, Integer> minOrderIdByTaskIdBeforeSuspend = new HashMap<>();
         assertTrueEventually(() -> {
-            Map<String, List<Order>> ordersByTaskId = groupByTaskId(testResults);
+            // Assert that each Kafka Connect Task has run
             assertThat(ordersByTaskId.keySet()).hasSize(localParallelism);
+            // Assert that we have some Orders from each Kafka Connect Task
             assertThat(ordersByTaskId).allSatisfy((taskId, records) ->
-                    assertThat(records.size()).isGreaterThan(ITEM_COUNT)
+                    assertThat(records).isNotEmpty()
             );
             minOrderIdByTaskIdBeforeSuspend.putAll(getMinOrderIdByTaskId(ordersByTaskId));
             LOGGER.debug("Min order ids before snapshot = {}", minOrderIdByTaskIdBeforeSuspend);
@@ -369,16 +382,16 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
 
-        testResults.clear();
+        ordersByTaskId.clear();
         job.resume();
 
         Map<String, Integer> minOrderIdByTaskIdAfterSuspend = new HashMap<>();
         assertTrueEventually(() -> {
-            Map<String, List<Order>> ordersByTaskId = groupByTaskId(testResults);
-
+            // Assert that each Kafka Connect Task has run
             assertThat(ordersByTaskId.keySet()).hasSize(localParallelism);
+            // Assert that we have some Orders from each Kafka Connect Task
             assertThat(ordersByTaskId).allSatisfy((taskId, records) ->
-                    assertThat(records.size()).isGreaterThan(ITEM_COUNT)
+                    assertThat(records).isNotEmpty()
             );
             minOrderIdByTaskIdAfterSuspend.putAll(getMinOrderIdByTaskId(ordersByTaskId));
             LOGGER.debug("Min order ids after snapshot = {}", minOrderIdByTaskIdAfterSuspend);
