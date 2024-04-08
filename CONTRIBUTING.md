@@ -40,7 +40,7 @@ Thanks a lot for creating your <abbr title="Pull Request">PR</abbr>!
 
 A PR can target many different subjects:
 
-* [Documentation](https://github.com/hazelcast/hazelcast-reference-manual):
+* [Documentation](https://github.com/hazelcast/hz-docs):
   either fix typos or improve the documentation as a whole
 * Fix a bug
 * Add a feature
