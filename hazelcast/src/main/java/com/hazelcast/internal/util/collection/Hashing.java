@@ -26,7 +26,7 @@ import static com.hazelcast.internal.util.HashUtil.fastLongMix;
 public final class Hashing {
     private Hashing() { }
 
-    static int intHash(final int value, final int mask) {
+    public static int intHash(final int value, final int mask) {
         return fastIntMix(value) & mask;
     }
 

@@ -142,7 +142,7 @@ public class ClientCompatibilityTest_2_3 {
             assertTrue(isEqual(aListOfMemberInfos, memberInfos));
         }
         @Override
-        public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, List<Integer>>> partitions) {
+        public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfUUIDToListOfIntegers, partitions));
         }
@@ -269,7 +269,7 @@ public class ClientCompatibilityTest_2_3 {
 
     private static class ClientAddDistributedObjectListenerCodecHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
         @Override
-        public void handleDistributedObjectEvent(String name, String serviceName, String eventType, java.util.UUID source) {
+        public void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aString, serviceName));
             assertTrue(isEqual(aString, eventType));
@@ -1502,7 +1502,7 @@ public class ClientCompatibilityTest_2_3 {
             assertTrue(isEqual(aLong, sequence));
         }
         @Override
-        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
+        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
             assertTrue(isEqual(aListOfUUIDs, partitionUuids));
@@ -4843,7 +4843,7 @@ public class ClientCompatibilityTest_2_3 {
 
     private static class CacheAddNearCacheInvalidationListenerCodecHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
         @Override
-        public void handleCacheInvalidationEvent(String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
+        public void handleCacheInvalidationEvent(java.lang.String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aData, key));
             assertTrue(isEqual(aUUID, sourceUuid));
@@ -4851,7 +4851,7 @@ public class ClientCompatibilityTest_2_3 {
             assertTrue(isEqual(aLong, sequence));
         }
         @Override
-        public void handleCacheBatchInvalidationEvent(String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
+        public void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
@@ -5146,7 +5146,7 @@ public class ClientCompatibilityTest_2_3 {
             assertTrue(isEqual(aQueryCacheEventData, data));
         }
         @Override
-        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, String source, int partitionId) {
+        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId) {
             assertTrue(isEqual(aListOfQueryCacheEventData, events));
             assertTrue(isEqual(aString, source));
             assertTrue(isEqual(anInt, partitionId));

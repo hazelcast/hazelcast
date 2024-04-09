@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
+import com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
@@ -54,16 +55,21 @@ import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.vector.VectorValues;
+import com.hazelcast.vector.impl.DataSearchResult;
+import com.hazelcast.vector.impl.DataVectorDocument;
+import com.hazelcast.vector.impl.SearchOptionsImpl;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public final class CustomTypeFactory {
 
     private CustomTypeFactory() {
@@ -338,5 +344,40 @@ public final class CustomTypeFactory {
             vectorConfig.setName(name);
         }
         return vectorConfig;
+    }
+
+    private static VectorValues toVectorValues(List<VectorPairHolder> vectors) {
+        if (vectors == null) {
+            return null;
+        }
+        if (vectors.size() == 1 && VectorPairHolder.SINGLE_VECTOR_NAME.equals(vectors.get(0).getName())) {
+            VectorPairHolder pair = vectors.get(0);
+            if (pair.getType() == VectorPairHolder.DENSE_FLOAT_VECTOR) {
+                return VectorValues.of(pair.getVector());
+            } else {
+                throw new IllegalArgumentException("Unsupported vector type: " + pair.getType());
+            }
+        } else {
+            var map = vectors.stream().collect(Collectors.toMap(VectorPairHolder::getName, pair -> {
+                if (pair.getType() == VectorPairHolder.DENSE_FLOAT_VECTOR) {
+                    return pair.getVector();
+                } else {
+                    throw new IllegalArgumentException("Unsupported vector type: " + pair.getType());
+                }
+            }));
+            return VectorValues.of(map);
+        }
+    }
+
+    public static DataVectorDocument createVectorDocument(Data value, List<VectorPairHolder> vectors) {
+        return new DataVectorDocument(value, toVectorValues(vectors));
+    }
+
+    public static SearchOptionsImpl createVectorSearchOptions(boolean includeValue, boolean includeVectors, int limit, List<VectorPairHolder> vectors) {
+        return new SearchOptionsImpl(includeValue, includeVectors, limit, toVectorValues(vectors));
+    }
+
+    public static DataSearchResult createVectorSearchResult(Data key, Data document, float score, List<VectorPairHolder> vectors) {
+        return new DataSearchResult(key, document, score, toVectorValues(vectors));
     }
 }

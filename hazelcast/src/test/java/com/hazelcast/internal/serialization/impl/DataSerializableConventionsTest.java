@@ -41,6 +41,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.vector.impl.DataVectorDocument;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -396,7 +397,9 @@ public class DataSerializableConventionsTest {
     }
 
     protected Set<? extends Package> getEnterprisePackages() {
-        return Set.of(CPMemberInfo.class.getPackage(), LogEntry.class.getPackage());
+        return Set.of(CPMemberInfo.class.getPackage(),
+                    LogEntry.class.getPackage(),
+                    DataVectorDocument.class.getPackage());
     }
 
     /**

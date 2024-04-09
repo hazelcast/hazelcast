@@ -19,6 +19,8 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.function.BiConsumerEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -54,6 +56,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public final class SerializationUtil {
 
     static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new EmptyPartitioningStrategy();
@@ -233,6 +236,20 @@ public final class SerializationUtil {
         assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
     }
 
+    public static <V> void writeMapStringKey(@Nonnull Map<String, V> map, ObjectDataOutput out,
+                                             BiConsumerEx<ObjectDataOutput, V> valueWriter) throws IOException {
+        int size = map.size();
+        out.writeInt(size);
+
+        int k = 0;
+        for (Map.Entry<String, V> entry : map.entrySet()) {
+            out.writeString(entry.getKey());
+            valueWriter.accept(out, entry.getValue());
+            k++;
+        }
+        assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
+    }
+
     /**
      * Reads a map written by {@link #writeNullableMap(Map, ObjectDataOutput)}. The map itself
      * may be {@code null}. No guarantee is provided about the type of Map returned or its suitability
@@ -272,6 +289,19 @@ public final class SerializationUtil {
         for (int i = 0; i < size; i++) {
             String key = in.readString();
             V value = in.readObject();
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Nonnull
+    public static <V> Map<String, V> readMapStringKey(ObjectDataInput in,
+                                                      FunctionEx<ObjectDataInput, V> valueReader) throws IOException {
+        int size = in.readInt();
+        Map<String, V> map = createHashMap(size);
+        for (int i = 0; i < size; i++) {
+            String key = in.readString();
+            V value = valueReader.apply(in);
             map.put(key, value);
         }
         return map;

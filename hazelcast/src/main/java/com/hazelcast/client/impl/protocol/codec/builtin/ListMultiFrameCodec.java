@@ -17,12 +17,15 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder;
+import com.hazelcast.vector.VectorValues;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
@@ -95,5 +98,29 @@ public final class ListMultiFrameCodec {
     public static <T> List<T> decodeNullable(ClientMessage.ForwardFrameIterator iterator,
                                              Function<ClientMessage.ForwardFrameIterator, T> decodeFunction) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeFunction);
+    }
+
+    // specialized implementations for VectorValues
+    public static void encode(ClientMessage clientMessage, VectorValues vectors,
+                              BiConsumer<ClientMessage, VectorPairHolder> encodeFunction) {
+        if (vectors instanceof VectorValues.SingleVectorValues svv) {
+            encode(clientMessage,
+                    List.of(new VectorPairHolder(VectorPairHolder.SINGLE_VECTOR_NAME, VectorPairHolder.DENSE_FLOAT_VECTOR, svv.vector())),
+                    encodeFunction);
+        } else if (vectors instanceof VectorValues.MultiIndexVectorValues mvv) {
+            var holders = mvv.indexNameToVector().entrySet().stream()
+                    .map(entry -> new VectorPairHolder(entry.getKey(), VectorPairHolder.DENSE_FLOAT_VECTOR, entry.getValue()))
+                    .collect(Collectors.toList());
+            encode(clientMessage, holders, encodeFunction);
+        }
+    }
+
+    public static <T> void encodeNullable(ClientMessage clientMessage, VectorValues collection,
+                                          BiConsumer<ClientMessage, VectorPairHolder> encodeFunction) {
+        if (collection == null) {
+            clientMessage.add(NULL_FRAME.copy());
+        } else {
+            encode(clientMessage, collection, encodeFunction);
+        }
     }
 }
