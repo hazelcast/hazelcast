@@ -32,14 +32,14 @@ public class SymmetricEncryptionConfig
     public static final String DEFAULT_SYMMETRIC_ALGORITHM = "PBEWithMD5AndDES";
 
     /**
-     * Default symmetric encryption password
+     * Default symmetric encryption password used in Hazelcast before version 5.5.
      */
     public static final String DEFAULT_SYMMETRIC_PASSWORD = "thepassword";
 
     private static final int DEFAULT_ITERATION_COUNT = 19;
 
     private int iterationCount = DEFAULT_ITERATION_COUNT;
-    private String password = DEFAULT_SYMMETRIC_PASSWORD;
+    private String password;
     private byte[] key;
 
     public SymmetricEncryptionConfig() {

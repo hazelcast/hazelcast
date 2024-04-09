@@ -1934,7 +1934,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="password" type="xs:string" minOccurs="0" default="thepassword">
+            <xs:element name="password" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Pass phrase to use when generating the secret key.
