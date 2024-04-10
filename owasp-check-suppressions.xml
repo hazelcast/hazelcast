@@ -58,6 +58,13 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_21@.*$</packageUrl>
+        <cpe>cpe:/a:apache:hadoop</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.github\.shyiko/mysql\-binlog\-connector\-java@.*$</packageUrl>
