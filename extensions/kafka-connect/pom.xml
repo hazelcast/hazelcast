@@ -60,11 +60,10 @@
                     </filters>
                 </configuration>
             </plugin>
-            <!--version 1.7.1 is buggy and does not use the cache properly-->
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
-                <version>1.8.1</version>
+                <version>${maven.download.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>download-datagen-zip-file</id>
