@@ -69,12 +69,12 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNull
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
-@SuppressWarnings("MethodCount")
+@SuppressWarnings({"MethodCount", "unchecked", "rawtypes"})
 public abstract class AbstractSerializationService implements InternalSerializationService {
 
     protected final ManagedContext managedContext;
     protected final InputOutputFactory inputOutputFactory;
-    protected final PartitioningStrategy globalPartitioningStrategy;
+    protected final PartitioningStrategy<?> globalPartitioningStrategy;
     protected final Supplier<RuntimeException> notActiveExceptionSupplier;
     protected final BufferPoolThreadLocal bufferPoolThreadLocal;
 
@@ -87,9 +87,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected CompactStreamSerializer compactStreamSerializer;
     protected CompactWithSchemaStreamSerializerAdapter compactWithSchemaSerializerAdapter;
 
-    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap;
+    private final IdentityHashMap<Class<?>, SerializerAdapter> constantTypesMap;
     private final SerializerAdapter[] constantTypeIds;
-    private final ConcurrentMap<Class, SerializerAdapter> typeMap =
+    private final ConcurrentMap<Class<?>, SerializerAdapter> typeMap =
             new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.STRONG);
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<>();
@@ -163,8 +163,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (obj == null) {
             return null;
         }
-        if (obj instanceof Data) {
-            Data data = (Data) obj;
+        if (obj instanceof Data data) {
             if (data.getType() == SerializationConstants.TYPE_COMPACT_WITH_SCHEMA) {
                 return (B) data;
             }
@@ -192,6 +191,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
@@ -214,11 +214,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy, getByteOrder(), false);
     }
 
-    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy) {
+    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy<?> strategy) {
         return toBytes(obj, leftPadding, writeHash, strategy, BIG_ENDIAN, false);
     }
 
-    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy,
+    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy<?> strategy,
                            ByteOrder serializerTypeIdByteOrder, boolean includeSchema) {
         checkNotNull(obj);
         checkNotNull(serializerTypeIdByteOrder);
@@ -247,11 +247,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final <T> T toObject(final Object object) {
-        if (!(object instanceof Data)) {
+        if (!(object instanceof Data data)) {
             return (T) object;
         }
 
-        Data data = (Data) object;
         if (isNullData(data)) {
             return null;
         }
@@ -264,7 +263,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             }
             throw notActiveExceptionSupplier.get();
         }
-        Object obj = null;
+        Object obj;
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
         try {
@@ -284,11 +283,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final <T> T toObject(final Object object, Class aClass) {
-        if (!(object instanceof Data)) {
+        if (!(object instanceof Data data)) {
             return (T) object;
         }
 
-        Data data = (Data) object;
         if (isNullData(data)) {
             return null;
         }
@@ -484,7 +482,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
     }
 
-    protected final int calculatePartitionHash(Object obj, PartitioningStrategy strategy) {
+    protected final int calculatePartitionHash(Object obj, PartitioningStrategy<?> strategy) {
         int partitionHash = 0;
         PartitioningStrategy partitioningStrategy = strategy == null ? globalPartitioningStrategy : strategy;
         if (partitioningStrategy != null) {
@@ -497,8 +495,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return partitionHash;
     }
 
-    protected final boolean safeRegister(final Class type, final Serializer serializer) {
-        return safeRegister(type, createSerializerAdapter(serializer));
+    protected final void safeRegister(final Class type, final Serializer serializer) {
+        safeRegister(type, createSerializerAdapter(serializer));
     }
 
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
@@ -614,7 +612,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return serializer;
     }
 
-    private SerializerAdapter getCompactSerializer(boolean includeSchema) {
+    public SerializerAdapter getCompactSerializer(boolean includeSchema) {
         return includeSchema ? compactWithSchemaSerializerAdapter : compactSerializerAdapter;
     }
 
@@ -645,8 +643,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return serializer;
         }
         // look for super classes
-        Class typeSuperclass = type.getSuperclass();
-        final Set<Class> interfaces = new LinkedHashSet<>(5);
+        var typeSuperclass = type.getSuperclass();
+        final Set<Class<?>> interfaces = new LinkedHashSet<>(5);
         getInterfaces(type, interfaces);
         while (typeSuperclass != null) {
             serializer = registerFromSuperType(type, typeSuperclass);
@@ -726,6 +724,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
     }
 
+    @SuppressWarnings("rawtypes")
     public abstract static class Builder<T extends Builder<T>> {
         private InputOutputFactory inputOutputFactory;
         private byte version;

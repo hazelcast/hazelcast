@@ -132,6 +132,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
+    public List<Schema> allSchemas() {
+        return List.copyOf(classToSchemaMap.values());
+    }
+
     private void putToSchemaService(boolean includeSchemaOnBinary, Schema schema) {
         if (!includeSchemaOnBinary) {
             schemaService.put(schema);

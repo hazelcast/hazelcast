@@ -49,7 +49,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
@@ -70,50 +69,50 @@ public final class CompactTestUtil {
         int i = 0;
         for (NamedDTO named : inner.nn) {
             GenericRecord namedRecord = GenericRecordBuilder.compact("named")
-                    .setString("name", named.name)
-                    .setInt32("myint", named.myint).build();
+                                                            .setString("name", named.name)
+                                                            .setInt32("myint", named.myint).build();
             namedRecords[i++] = namedRecord;
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.compact("inner")
-                .setArrayOfInt8("b", inner.bytes)
-                .setArrayOfInt16("s", inner.shorts)
-                .setArrayOfInt32("i", inner.ints)
-                .setArrayOfInt64("l", inner.longs)
-                .setArrayOfFloat32("f", inner.floats)
-                .setArrayOfFloat64("d", inner.doubles)
-                .setArrayOfString("strings", inner.strings)
-                .setArrayOfGenericRecord("nn", namedRecords)
-                .setArrayOfDecimal("bigDecimals", inner.bigDecimals)
-                .setArrayOfTime("localTimes", inner.localTimes)
-                .setArrayOfDate("localDates", inner.localDates)
-                .setArrayOfTimestamp("localDateTimes", inner.localDateTimes)
-                .setArrayOfTimestampWithTimezone("offsetDateTimes", inner.offsetDateTimes)
-                .build();
+                                                        .setArrayOfInt8("b", inner.bytes)
+                                                        .setArrayOfInt16("s", inner.shorts)
+                                                        .setArrayOfInt32("i", inner.ints)
+                                                        .setArrayOfInt64("l", inner.longs)
+                                                        .setArrayOfFloat32("f", inner.floats)
+                                                        .setArrayOfFloat64("d", inner.doubles)
+                                                        .setArrayOfString("strings", inner.strings)
+                                                        .setArrayOfGenericRecord("nn", namedRecords)
+                                                        .setArrayOfDecimal("bigDecimals", inner.bigDecimals)
+                                                        .setArrayOfTime("localTimes", inner.localTimes)
+                                                        .setArrayOfDate("localDates", inner.localDates)
+                                                        .setArrayOfTimestamp("localDateTimes", inner.localDateTimes)
+                                                        .setArrayOfTimestampWithTimezone("offsetDateTimes", inner.offsetDateTimes)
+                                                        .build();
 
         return GenericRecordBuilder.compact("main")
-                .setInt8("b", mainDTO.b)
-                .setBoolean("bool", mainDTO.bool)
-                .setInt16("s", mainDTO.s)
-                .setInt32("i", mainDTO.i)
-                .setInt64("l", mainDTO.l)
-                .setFloat32("f", mainDTO.f)
-                .setFloat64("d", mainDTO.d)
-                .setString("str", mainDTO.str)
-                .setDecimal("bigDecimal", mainDTO.bigDecimal)
-                .setGenericRecord("p", innerRecord)
-                .setTime("localTime", mainDTO.localTime)
-                .setDate("localDate", mainDTO.localDate)
-                .setTimestamp("localDateTime", mainDTO.localDateTime)
-                .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
-                .setNullableInt8("nullable_b", mainDTO.b)
-                .setNullableBoolean("nullable_bool", mainDTO.bool)
-                .setNullableInt16("nullable_s", mainDTO.s)
-                .setNullableInt32("nullable_i", mainDTO.i)
-                .setNullableInt64("nullable_l", mainDTO.l)
-                .setNullableFloat32("nullable_f", mainDTO.f)
-                .setNullableFloat64("nullable_d", mainDTO.d)
-                .build();
+                                   .setInt8("b", mainDTO.b)
+                                   .setBoolean("bool", mainDTO.bool)
+                                   .setInt16("s", mainDTO.s)
+                                   .setInt32("i", mainDTO.i)
+                                   .setInt64("l", mainDTO.l)
+                                   .setFloat32("f", mainDTO.f)
+                                   .setFloat64("d", mainDTO.d)
+                                   .setString("str", mainDTO.str)
+                                   .setDecimal("bigDecimal", mainDTO.bigDecimal)
+                                   .setGenericRecord("p", innerRecord)
+                                   .setTime("localTime", mainDTO.localTime)
+                                   .setDate("localDate", mainDTO.localDate)
+                                   .setTimestamp("localDateTime", mainDTO.localDateTime)
+                                   .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
+                                   .setNullableInt8("nullable_b", mainDTO.b)
+                                   .setNullableBoolean("nullable_bool", mainDTO.bool)
+                                   .setNullableInt16("nullable_s", mainDTO.s)
+                                   .setNullableInt32("nullable_i", mainDTO.i)
+                                   .setNullableInt64("nullable_l", mainDTO.l)
+                                   .setNullableFloat32("nullable_f", mainDTO.f)
+                                   .setNullableFloat64("nullable_d", mainDTO.d)
+                                   .build();
     }
 
     @Nonnull
@@ -165,7 +164,7 @@ public final class CompactTestUtil {
                 OffsetDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999, ZoneOffset.UTC), true,
                 (byte) 113, (short) -500, 56789, -50992225L, 900.5678f, -897543.3678909d,
                 new boolean[]{true, false}, new byte[]{0, 1, 2}, new short[]{3, 4, 5},
-                 new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+                new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
                 new String[]{"test", null}, new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
                 new LocalTime[]{LocalTime.of(22, 13, 15, 123123), null, LocalTime.of(1, 2, 3, 999_999_999)},
@@ -279,30 +278,11 @@ public final class CompactTestUtil {
     }
 
     public static SchemaService createInMemorySchemaService() {
-        return new SchemaService() {
-            private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
+        return new InMemorySchemaService();
+    }
 
-            @Override
-            public Schema get(long schemaId) {
-                return schemas.get(schemaId);
-            }
-
-            @Override
-            public void put(Schema schema) {
-                long schemaId = schema.getSchemaId();
-                Schema existingSchema = schemas.putIfAbsent(schemaId, schema);
-                if (existingSchema != null && !schema.equals(existingSchema)) {
-                    throw new IllegalStateException("Schema with schemaId " + schemaId + " already exists. "
-                            + "existing schema " + existingSchema
-                            + "new schema " + schema);
-                }
-            }
-
-            @Override
-            public void putLocal(Schema schema) {
-                put(schema);
-            }
-        };
+    public static SchemaService createInMemorySchemaService(Collection<Schema> schemas) {
+        return new InMemorySchemaService(schemas);
     }
 
     public static void verifyReflectiveSerializerIsUsed(SerializationConfig serializationConfig) {
@@ -354,17 +334,18 @@ public final class CompactTestUtil {
         ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer(compactStreamSerializer);
 
         return Arrays.stream(classes)
-                .map(clazz -> {
-                    SchemaWriter writer = new SchemaWriter(clazz.getName());
+                     .map(clazz -> {
+                         SchemaWriter writer = new SchemaWriter(clazz.getName());
 
-                    try {
-                        serializer.write(writer, clazz.getDeclaredConstructor()
-                                .newInstance());
-                    } catch (Throwable t) {
-                        throw new RuntimeException(t);
-                    }
+                         try {
+                             serializer.write(writer, clazz.getDeclaredConstructor()
+                                                           .newInstance());
+                         } catch (Throwable t) {
+                             throw new RuntimeException(t);
+                         }
 
-                    return writer.build();
-                })::iterator;
+                         return writer.build();
+                     })::iterator;
     }
+
 }
