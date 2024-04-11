@@ -157,7 +157,7 @@
         <commons-io.version>2.16.0</commons-io.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-text.version>1.11.0</commons-text.version>
-        <confluent.version>7.6.0</confluent.version>
+        <confluent.version>7.6.1</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <http.core.version>4.4.16</http.core.version>
