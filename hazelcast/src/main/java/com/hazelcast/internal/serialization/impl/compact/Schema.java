@@ -208,6 +208,37 @@ public class Schema implements IdentifiedDataSerializable {
         init();
     }
 
+    public static List<Schema> readSchemas(DataInput in) throws IOException {
+        int schemaCount = in.readInt();
+        List<Schema> schemas = new ArrayList<>(schemaCount);
+        for (int i = 0; i < schemaCount; i++) {
+            String typeName = in.readUTF();
+            int fieldCount = in.readInt();
+            List<FieldDescriptor> fields = new ArrayList<>(fieldCount);
+            for (int j = 0; j < fieldCount; j++) {
+                String name = in.readUTF();
+                FieldKind kind = FieldKind.get(in.readInt());
+                FieldDescriptor descriptor = new FieldDescriptor(name, kind);
+                fields.add(descriptor);
+            }
+            var schema = new Schema(typeName, fields);
+            schemas.add(schema);
+        }
+        return schemas;
+    }
+
+    public static void writeSchemas(DataOutput out, Collection<Schema> schemas) throws IOException {
+        out.writeInt(schemas.size());
+        for (Schema schema : schemas) {
+            out.writeUTF(schema.getTypeName());
+            out.writeInt(schema.getFieldCount());
+            for (FieldDescriptor descriptor : schema.getFields()) {
+                out.writeUTF(descriptor.getFieldName());
+                out.writeInt(descriptor.getKind().getId());
+            }
+        }
+    }
+
     @Override
     public int getFactoryId() {
         return SchemaDataSerializerHook.F_ID;
@@ -240,34 +271,4 @@ public class Schema implements IdentifiedDataSerializable {
         return (int) schemaId;
     }
 
-    public static List<Schema> readSchemas(DataInput in) throws IOException {
-        int schemaCount = in.readInt();
-        ArrayList<Schema> schemas = new ArrayList<>(schemaCount);
-        for (int i = 0; i < schemaCount; i++) {
-            String typeName = in.readUTF();
-            int fieldCount = in.readInt();
-            ArrayList<FieldDescriptor> fields = new ArrayList<>(fieldCount);
-            for (int j = 0; j < fieldCount; j++) {
-                String name = in.readUTF();
-                FieldKind kind = FieldKind.get(in.readInt());
-                FieldDescriptor descriptor = new FieldDescriptor(name, kind);
-                fields.add(descriptor);
-            }
-            Schema schema = new Schema(typeName, fields);
-            schemas.add(schema);
-        }
-        return schemas;
-    }
-
-    public static void writeSchemas(DataOutput out, Collection<Schema> schemas) throws IOException {
-        out.writeInt(schemas.size());
-        for (Schema schema : schemas) {
-            out.writeUTF(schema.getTypeName());
-            out.writeInt(schema.getFieldCount());
-            for (FieldDescriptor descriptor : schema.getFields()) {
-                out.writeUTF(descriptor.getFieldName());
-                out.writeInt(descriptor.getKind().getId());
-            }
-        }
-    }
 }

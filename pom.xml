@@ -1389,7 +1389,7 @@
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
+                <vmHeapSettings>-Xms4G -Xmx8G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -1401,7 +1401,7 @@
                             <properties>
                                 <property>
                                     <name>listener</name>
-                                    <value>com.hazelcast.test.compatibility.SamplingRunListener</value>
+                                    <value>com.hazelcast.test.compatibility.SamplingTestExecutionListener</value>
                                 </property>
                             </properties>
                             <trimStackTrace>false</trimStackTrace>

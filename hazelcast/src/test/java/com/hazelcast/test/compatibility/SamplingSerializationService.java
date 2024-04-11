@@ -22,9 +22,12 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.SerializerAdapter;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.config.JobConfig;
@@ -60,7 +63,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     static final ConcurrentMap<String, List<byte[]>> SERIALIZED_SAMPLES_PER_CLASS_NAME =
             new ConcurrentHashMap<>(1000);
     // cache classes for which samples have already been captured
-    static final Set<String> SAMPLED_CLASSES = newSetFromMap(new ConcurrentHashMap<String, Boolean>(1000));
+    static final Set<String> SAMPLED_CLASSES = newSetFromMap(new ConcurrentHashMap<>(1000));
+    static final ConcurrentMap<String, Schema> SAMPLED_CLASSES_SCHEMAS = new ConcurrentHashMap<>(1000);
 
     private static final int MAX_SERIALIZED_SAMPLES_PER_CLASS = 5;
     // utility strings to locate test classes commonly used as user objects
@@ -78,10 +82,14 @@ public class SamplingSerializationService implements InternalSerializationServic
             .map(Class::getName)
             .collect(Collectors.toSet());
 
-    protected final InternalSerializationService delegate;
+    protected final AbstractSerializationService delegate;
+    protected final CompactStreamSerializer compactStreamSerializer;
 
-    public SamplingSerializationService(InternalSerializationService delegate) {
+    public SamplingSerializationService(AbstractSerializationService delegate) {
         this.delegate = delegate;
+
+        SerializerAdapter adapter = delegate.getCompactSerializer(true);
+        compactStreamSerializer = (CompactStreamSerializer) adapter.getImpl();
     }
 
     @Override
@@ -250,7 +258,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     // record the given object, then return it
-    protected static <T> T sampleObject(T obj, byte[] serializedObject) {
+    protected <T> T sampleObject(T obj, byte[] serializedObject) {
         if (obj == null) {
             return null;
         }
@@ -270,7 +278,7 @@ public class SamplingSerializationService implements InternalSerializationServic
         }
     }
 
-    private static boolean shouldAddSerializedSample(Object obj) {
+    private boolean shouldAddSerializedSample(Object obj) {
         Class klass = obj.getClass();
         if (klass.isPrimitive()) {
             return false;
@@ -280,6 +288,12 @@ public class SamplingSerializationService implements InternalSerializationServic
 
         if (obj instanceof CompactGenericRecord) {
             return false;
+        }
+
+        if (delegate.isCompactSerializable(obj)) {
+            SAMPLED_CLASSES_SCHEMAS.computeIfAbsent(className, cn ->
+               compactStreamSerializer.extractSchema(obj)
+            );
         }
 
         if (SAMPLED_CLASSES.contains(className)) {
