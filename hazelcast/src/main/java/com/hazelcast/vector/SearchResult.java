@@ -18,6 +18,7 @@ package com.hazelcast.vector;
 
 import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -33,6 +34,7 @@ public interface SearchResult<K, V> {
     /**
      * @return id of the document
      */
+    @Nonnull
     K getKey();
 
     /**

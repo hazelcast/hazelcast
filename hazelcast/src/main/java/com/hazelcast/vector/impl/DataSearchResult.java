@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.vector.VectorValues;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
@@ -68,6 +69,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
         return this;
     }
 
+    @Nonnull
     @Override
     public Data getKey() {
         return key;
@@ -147,6 +149,6 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(key);
     }
 }

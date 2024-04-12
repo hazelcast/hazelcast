@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
@@ -216,6 +217,10 @@ public abstract class ClientProxy implements DistributedObject {
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage) {
+        return new ClientInvocation(getClient(), clientMessage, getName()).invoke();
     }
 
     @Override
