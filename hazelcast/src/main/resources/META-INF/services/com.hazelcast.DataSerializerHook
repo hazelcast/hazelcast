@@ -46,16 +46,6 @@ com.hazelcast.internal.journal.EventJournalDataSerializerHook
 com.hazelcast.flakeidgen.impl.FlakeIdGeneratorDataSerializerHook
 com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook
 com.hazelcast.internal.crdt.CRDTDataSerializerHook
-com.hazelcast.cp.event.impl.CpEventDataSerializerHook
-com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook
-com.hazelcast.cp.internal.RaftServiceDataSerializerHook
-com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook
-com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook
-com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook
-com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook
-com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook
-com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook
-com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook
 com.hazelcast.internal.metrics.managementcenter.MetricsDataSerializerHook
 com.hazelcast.sql.impl.SqlDataSerializerHook
 com.hazelcast.json.internal.JsonDataSerializerHook
