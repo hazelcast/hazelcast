@@ -1031,8 +1031,8 @@
             </hz:pn-counter>
 
             <hz:cp-subsystem>
-                <hz:cp-member-count>0</hz:cp-member-count>
-                <hz:group-size>0</hz:group-size>
+                <hz:cp-member-count>${cp.member.count:0}</hz:cp-member-count>
+                <hz:group-size>${cp.group.size:0}</hz:group-size>
                 <hz:session-time-to-live-seconds>15</hz:session-time-to-live-seconds>
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
                 <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>

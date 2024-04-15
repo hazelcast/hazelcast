@@ -568,8 +568,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else {
                     String value = getTextContent(child).trim();
                     if ("cp-member-count".equals(nodeName)) {
-                        cpSubsystemConfigBuilder.addPropertyValue("CPMemberCount",
-                                getIntegerValue("cp-member-count", value));
+                        cpSubsystemConfigBuilder.addPropertyValue("CPMemberCount", value);
                     } else if ("missing-cp-member-auto-removal-seconds".equals(nodeName)) {
                         cpSubsystemConfigBuilder.addPropertyValue("missingCPMemberAutoRemovalSeconds",
                                 getIntegerValue("missing-cp-member-auto-removal-seconds", value));
