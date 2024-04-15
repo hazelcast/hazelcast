@@ -15,9 +15,10 @@
  */
 package com.hazelcast.internal.config.override;
 
-import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 import com.hazelcast.internal.util.StringUtil;
 
@@ -45,13 +46,17 @@ class SystemPropertiesConfigParser {
 
     Map<String, String> parse(Properties properties) {
         return properties.entrySet()
-          .stream()
-          .map(e -> new AbstractMap.SimpleEntry<>((String) e.getKey(), (String) e.getValue()))
-          .filter(e -> e.getKey().startsWith(prefix))
-          .collect(toMap(this::processKey, Map.Entry::getValue));
+                .stream()
+                .mapMulti((Entry<Object, Object> e, Consumer<Entry<String, String>> consumer) -> {
+                    if (e.getKey() instanceof String keyString && e.getValue() instanceof String valueString
+                            && keyString.startsWith(prefix)) {
+                        consumer.accept(Map.entry(keyString, valueString));
+                    }
+                })
+                .collect(toMap(this::processKey, Entry::getValue));
     }
 
-    private String processKey(AbstractMap.SimpleEntry<String, String> e) {
+    private String processKey(Entry<String, ?> e) {
         return StringUtil.lowerCaseInternal(e.getKey()
           .replace(" ", "")
           .replaceFirst(prefix, rootNode + "."));
