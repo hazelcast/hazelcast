@@ -3,6 +3,7 @@ target/
 .idea/
 !.idea/icon.png
 !.idea/icon.svg
+.vscode/
 .settings/
 .attach_pid*
 .classpath
