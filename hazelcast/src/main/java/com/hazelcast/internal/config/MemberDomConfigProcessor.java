@@ -3793,7 +3793,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 indexConfig.setDimension(getIntegerValue("dimension", getTextContent(n)));
             } else if (matches("metric", nodeName)) {
                 indexConfig.setMetric(Metric.valueOf(getTextContent(n)));
+            } else if (matches("max-degree", nodeName)) {
+                indexConfig.setMaxDegree(getIntegerValue("max-degree", getTextContent(n)));
+            } else if (matches("ef-construction", nodeName)) {
+                indexConfig.setEfConstruction(getIntegerValue("ef-construction", getTextContent(n)));
+            } else if (matches("use-deduplication", nodeName)) {
+                indexConfig.setUseDeduplication(getBooleanValue(getTextContent(n)));
             }
+
         }
     }
 

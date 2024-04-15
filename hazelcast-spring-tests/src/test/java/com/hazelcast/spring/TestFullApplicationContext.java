@@ -1690,17 +1690,30 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                         new VectorIndexConfig().setName("index-1").setDimension(2).setMetric(Metric.DOT)
                 )
                 .addVectorIndexConfig(
-                        new VectorIndexConfig().setDimension(20).setMetric(Metric.EUCLIDEAN)
+                        new VectorIndexConfig()
+                                .setDimension(20)
+                                .setMetric(Metric.EUCLIDEAN)
+                                .setMaxDegree(10)
+                                .setEfConstruction(11)
+                                .setUseDeduplication(true)
                 );
         var expectedVectorCollection2 = new VectorCollectionConfig("vector-collection-2")
                 .addVectorIndexConfig(
-                        new VectorIndexConfig().setName("index-1").setDimension(200).setMetric(Metric.COSINE)
+                        new VectorIndexConfig()
+                                .setName("index-1")
+                                .setDimension(200)
+                                .setMetric(Metric.COSINE)
+                                .setMaxDegree(12)
+                                .setEfConstruction(13)
+                                .setUseDeduplication(false)
                 );
         var expectedVectorCollectionConfigs = Map.of(
                 "vector-collection-1", expectedVectorCollection1,
                 "vector-collection-2", expectedVectorCollection2
         );
         var actualVectorCollectionConfigs = config.getVectorCollectionConfigs();
-        assertThat(actualVectorCollectionConfigs.entrySet()).containsExactlyInAnyOrderElementsOf(expectedVectorCollectionConfigs.entrySet());
+        assertThat(
+                actualVectorCollectionConfigs.entrySet()
+        ).containsExactlyInAnyOrderElementsOf(expectedVectorCollectionConfigs.entrySet());
     }
 }

@@ -5380,28 +5380,6 @@
         }
       }
     },
-    "VectorIndexOld": {
-      "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "dimension": {
-            "type": "integer"
-          },
-          "metric": {
-            "enum": [
-              "EUCLIDEAN",
-              "COSINE",
-              "DOT"
-            ]
-          }
-        }
-      }
-    },
     "VectorIndex": {
       "type": "object",
       "additionalProperties": false,
@@ -5418,6 +5396,18 @@
             "COSINE",
             "DOT"
           ]
+        },
+        "max-degree": {
+          "type": "integer",
+          "default": 16
+        },
+        "ef-construction": {
+          "type": "integer",
+          "default": 100
+        },
+        "use-deduplication": {
+          "type": "boolean",
+          "default": true
         }
       },
       "required": [

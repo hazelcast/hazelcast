@@ -900,7 +900,10 @@ public final class DynamicConfigXmlGenerator {
             for (VectorIndexConfig index: collectionConfig.getVectorIndexConfigs()) {
                 gen.open("index", "name", index.getName())
                         .node("dimension", index.getDimension())
-                        .node("metric", index.getMetric());
+                        .node("metric", index.getMetric())
+                        .node("max-degree", index.getMaxDegree())
+                        .node("ef-construction", index.getEfConstruction())
+                        .node("use-deduplication", index.isUseDeduplication());
                 gen.close();
             }
             gen.close();

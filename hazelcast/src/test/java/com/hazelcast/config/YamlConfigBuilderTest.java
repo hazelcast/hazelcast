@@ -5014,13 +5014,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        - name: index-1-1\n"
                 + "          dimension: 2\n"
                 + "          metric: DOT\n"
+                + "          max-degree: 10\n"
+                + "          ef-construction: 10\n"
+                + "          use-deduplication: true\n"
                 + "        - name: index-1-2\n"
                 + "          dimension: 3\n"
                 + "          metric: EUCLIDEAN\n"
                 + "    vector-2:\n"
                 + "      indexes:\n"
                 + "        - dimension: 4\n"
-                + "          metric: COSINE\n";
+                + "          metric: COSINE\n"
+                + "          use-deduplication: false\n";
 
         Config config = buildConfig(yaml);
         validateVectorCollectionConfig(config);

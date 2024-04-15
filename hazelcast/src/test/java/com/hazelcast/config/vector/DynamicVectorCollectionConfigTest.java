@@ -61,7 +61,15 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
     @Test
     public void memberTest_addAndGetOneVectorCollection_then_success() {
         String vectorCollection = "vector-collection-1";
-        var vectorCollectionConfig = buildVectorCollectionConfig(vectorCollection, "index-1", 1, Metric.COSINE);
+        var vectorCollectionConfig = buildVectorCollectionConfig(
+                vectorCollection,
+                "index-1",
+                1,
+                Metric.COSINE,
+                11,
+                12,
+                true
+        );
         instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig);
         var actual = instance2.getConfig().getVectorCollectionConfigOrNull(vectorCollection);
         assertThat(actual).isEqualTo(vectorCollectionConfig);
@@ -80,7 +88,9 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
     @Test
     public void memberTest_addAndGetSeveralVectorCollection_then_success() {
         var vectorCollectionConfig1 = buildVectorCollectionConfig("vector-1", "index-1", 1, Metric.COSINE);
-        vectorCollectionConfig1.addVectorIndexConfig(new VectorIndexConfig().setMetric(Metric.DOT).setName("index-2").setDimension(1));
+        vectorCollectionConfig1.addVectorIndexConfig(
+                new VectorIndexConfig().setMetric(Metric.DOT).setName("index-2").setDimension(1).setMaxDegree(11).setEfConstruction(12).setUseDeduplication(true)
+        );
         var vectorCollectionConfig2 = buildVectorCollectionConfig("vector-2", "index-1", 1, Metric.COSINE);
 
         instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig1);
@@ -126,7 +136,10 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
                 "vector_collection-1",
                 "index-1-1",
                 3,
-                Metric.COSINE
+                Metric.COSINE,
+                11,
+                12,
+                true
         );
         client.getConfig().addVectorCollectionConfig(vectorCollectionConfig1);
     }

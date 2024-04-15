@@ -338,8 +338,20 @@ public final class CustomTypeFactory {
                 isUserCancelledExists ? userCancelled : false);
     }
 
-    public static VectorIndexConfig createVectorIndexConfig(String name, int metric, int dimension) {
-        var vectorConfig = new VectorIndexConfig().setMetric(Metric.getById(metric)).setDimension(dimension);
+    public static VectorIndexConfig createVectorIndexConfig(
+            String name,
+            int metric,
+            int dimension,
+            int maxDegree,
+            int efConstruction,
+            boolean useDeduplication
+    ) {
+        var vectorConfig = new VectorIndexConfig()
+                .setMetric(Metric.getById(metric))
+                .setDimension(dimension)
+                .setMaxDegree(maxDegree)
+                .setEfConstruction(efConstruction)
+                .setUseDeduplication(useDeduplication);
         if (name != null) {
             vectorConfig.setName(name);
         }

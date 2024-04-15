@@ -949,7 +949,10 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 vectorCollection,
                 "index-1",
                 2,
-                Metric.COSINE
+                Metric.COSINE,
+                10,
+                11,
+                true
         );
 
         Config config = new Config()

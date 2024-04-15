@@ -25,11 +25,14 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("68fdb687656a1ea263358c750a00aa99")
+@Generated("92eab520d1e7bb0386352b0438534310")
 public final class VectorIndexConfigCodec {
     private static final int METRIC_FIELD_OFFSET = 0;
     private static final int DIMENSION_FIELD_OFFSET = METRIC_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = DIMENSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int MAX_DEGREE_FIELD_OFFSET = DIMENSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EF_CONSTRUCTION_FIELD_OFFSET = MAX_DEGREE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int USE_DEDUPLICATION_FIELD_OFFSET = EF_CONSTRUCTION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = USE_DEDUPLICATION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private VectorIndexConfigCodec() {
     }
@@ -40,6 +43,9 @@ public final class VectorIndexConfigCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, METRIC_FIELD_OFFSET, vectorIndexConfig.getMetric());
         encodeInt(initialFrame.content, DIMENSION_FIELD_OFFSET, vectorIndexConfig.getDimension());
+        encodeInt(initialFrame.content, MAX_DEGREE_FIELD_OFFSET, vectorIndexConfig.getMaxDegree());
+        encodeInt(initialFrame.content, EF_CONSTRUCTION_FIELD_OFFSET, vectorIndexConfig.getEfConstruction());
+        encodeBoolean(initialFrame.content, USE_DEDUPLICATION_FIELD_OFFSET, vectorIndexConfig.isUseDeduplication());
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, vectorIndexConfig.getName(), StringCodec::encode);
@@ -54,11 +60,14 @@ public final class VectorIndexConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         int metric = decodeInt(initialFrame.content, METRIC_FIELD_OFFSET);
         int dimension = decodeInt(initialFrame.content, DIMENSION_FIELD_OFFSET);
+        int maxDegree = decodeInt(initialFrame.content, MAX_DEGREE_FIELD_OFFSET);
+        int efConstruction = decodeInt(initialFrame.content, EF_CONSTRUCTION_FIELD_OFFSET);
+        boolean useDeduplication = decodeBoolean(initialFrame.content, USE_DEDUPLICATION_FIELD_OFFSET);
 
         java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createVectorIndexConfig(name, metric, dimension);
+        return CustomTypeFactory.createVectorIndexConfig(name, metric, dimension, maxDegree, efConstruction, useDeduplication);
     }
 }

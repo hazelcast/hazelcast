@@ -1146,4 +1146,7 @@ hazelcast:
         - name: index-1
           dimension: 2
           metric: DOT
+          max-degree: 10
+          ef-construction: 20
+          use-deduplication: false
 

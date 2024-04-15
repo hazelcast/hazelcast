@@ -792,6 +792,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
                                         .setName("index-1-1")
                                         .setDimension(2)
                                         .setMetric(Metric.DOT)
+                                        .setMaxDegree(10)
+                                        .setEfConstruction(10)
+                                        .setUseDeduplication(true)
                         )
                         .addVectorIndexConfig(
                                 new VectorIndexConfig()
@@ -807,6 +810,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
                                 new VectorIndexConfig()
                                         .setDimension(4)
                                         .setMetric(Metric.COSINE)
+                                        .setUseDeduplication(false)
                         )
         );
         assertThat(vectorCollectionConfigs).usingRecursiveComparison().isEqualTo(expectedCollectionConfigs);

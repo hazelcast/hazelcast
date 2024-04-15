@@ -25,15 +25,33 @@ public final class VectorTestHelper {
             int indexDim,
             Metric indexMetric
     ) {
+        return buildVectorCollectionConfig(collectionName, indexName, indexDim, indexMetric, null, null, false);
+    }
+
+    public static VectorCollectionConfig buildVectorCollectionConfig(
+            String collectionName,
+            String indexName,
+            int indexDim,
+            Metric indexMetric,
+            Integer maxDegree,
+            Integer efConstruction,
+            boolean useDeduplication
+    ) {
         Config config = new Config();
         VectorCollectionConfig vectorCollectionConfig = new VectorCollectionConfig(collectionName);
-        VectorIndexConfig indexConfig = new VectorIndexConfig().setName(indexName).setDimension(indexDim).setMetric(indexMetric);
+        VectorIndexConfig indexConfig = new VectorIndexConfig()
+                .setName(indexName)
+                .setDimension(indexDim)
+                .setMetric(indexMetric)
+                .setUseDeduplication(useDeduplication);
+        if (maxDegree != null) {
+            indexConfig.setMaxDegree(maxDegree);
+        }
+        if (efConstruction != null) {
+            indexConfig.setEfConstruction(efConstruction);
+        }
         vectorCollectionConfig.addVectorIndexConfig(indexConfig);
         config.addVectorCollectionConfig(vectorCollectionConfig);
         return vectorCollectionConfig;
-    }
-
-    public static VectorIndexConfig buildVectorIndex(String name, int dim, Metric metric) {
-        return new VectorIndexConfig().setName(name).setDimension(dim).setMetric(metric);
     }
 }

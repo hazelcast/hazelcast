@@ -1594,6 +1594,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                                 .setDimension(2)
                                                 .setMetric(Metric.EUCLIDEAN)
                                                 .setName("index-1-" + i)
+                                                .setMaxDegree(10)
+                                                .setEfConstruction(10)
+                                                .setUseDeduplication(true)
                                 )
                                 .addVectorIndexConfig(
                                         new VectorIndexConfig()

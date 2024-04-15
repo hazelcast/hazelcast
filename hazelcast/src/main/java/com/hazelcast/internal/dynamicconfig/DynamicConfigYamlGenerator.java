@@ -1220,6 +1220,9 @@ public class DynamicConfigYamlGenerator {
             map.put("metric", entry.getMetric().name());
             map.put("dimension", entry.getDimension());
             addNonNullToMap(map, "name", entry.getName());
+            addNonNullToMap(map, "max-degree", entry.getMaxDegree());
+            addNonNullToMap(map, "ef-construction", entry.getEfConstruction());
+            addNonNullToMap(map, "use-deduplication", entry.isUseDeduplication());
             return map;
         }).collect(Collectors.toList());
     }

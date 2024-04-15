@@ -1045,7 +1045,7 @@ public class ReferenceObjects {
     public static List<ResourceDefinitionHolder> aListOfResourceDefinitionHolders =
             Collections.singletonList(new ResourceDefinitionHolder(aString, anInt, aByteArray, aString));
 
-    public static VectorIndexConfig aVectorIndexConfig = new VectorIndexConfig(aString, Metric.EUCLIDEAN, 1000);
+    public static VectorIndexConfig aVectorIndexConfig = new VectorIndexConfig(aString, Metric.EUCLIDEAN, 1000, 200, 300, false);
     public static List<VectorIndexConfig> aList_VectorIndexConfig = List.of(aVectorIndexConfig);
 
     public static final VectorValues aVectorValues = VectorValues.of(aString, aFloatArray);

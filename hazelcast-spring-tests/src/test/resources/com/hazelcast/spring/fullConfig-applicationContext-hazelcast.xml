@@ -1187,12 +1187,12 @@
             <hz:vector-collection name="vector-collection-1">
                 <hz:indexes>
                     <hz:index name="index-1" dimension="2" metric="DOT"/>
-                    <hz:index dimension="20" metric="EUCLIDEAN"/>
+                    <hz:index dimension="20" metric="EUCLIDEAN" max-degree="10" ef-construction="11" use-deduplication="true"/>
                 </hz:indexes>
             </hz:vector-collection>
             <hz:vector-collection name="vector-collection-2">
                 <hz:indexes>
-                    <hz:index name="index-1" dimension="200" metric="COSINE"/>
+                    <hz:index name="index-1" dimension="200" metric="COSINE" max-degree="12" ef-construction="13" use-deduplication="false"/>
                 </hz:indexes>
             </hz:vector-collection>
         </hz:config>
