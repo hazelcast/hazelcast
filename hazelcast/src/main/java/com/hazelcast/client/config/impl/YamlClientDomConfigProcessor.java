@@ -298,7 +298,7 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         NodeList childNodes = node.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node childNode = childNodes.item(i);
-            properties.put(childNode.getNodeName(), childNode.getNodeValue());
+            properties.setProperty(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 

@@ -750,7 +750,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         Map<String, String> envVariables = new HashMap<>();
         envVariables.put("HZ_CLUSTERNAME", "test");
         Properties systemProperties = new Properties();
-        systemProperties.put("hz.cluster-name", "test2");
+        systemProperties.setProperty("hz.cluster-name", "test2");
         Config config = new Config();
         assertThatExceptionOfType(InvalidConfigurationException.class)
                 .isThrownBy(() ->

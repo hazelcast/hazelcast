@@ -963,9 +963,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testProperties() {
         Properties properties = config.getProperties();
         assertNotNull(properties);
-        assertEquals("5", properties.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
-        assertEquals("5", properties.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
-        assertEquals("277", properties.get(PARTITION_COUNT.getName()));
+        assertEquals("5", properties.getProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties.getProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
+        assertEquals("277", properties.getProperty(PARTITION_COUNT.getName()));
 
         Config config2 = instance.getConfig();
         Properties properties2 = config2.getProperties();

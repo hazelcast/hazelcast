@@ -61,13 +61,13 @@ public final class CalciteConfiguration {
     public CalciteConnectionConfig toConnectionConfig() {
         Properties connectionProperties = new Properties();
 
-        connectionProperties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.toString(caseSensitive));
-        connectionProperties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), unquotedCasing.toString());
-        connectionProperties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), quotedCasing.toString());
-        connectionProperties.put(CalciteConnectionProperty.QUOTING.camelName(), quoting.toString());
+        connectionProperties.setProperty(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.toString(caseSensitive));
+        connectionProperties.setProperty(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), unquotedCasing.toString());
+        connectionProperties.setProperty(CalciteConnectionProperty.QUOTED_CASING.camelName(), quotedCasing.toString());
+        connectionProperties.setProperty(CalciteConnectionProperty.QUOTING.camelName(), quoting.toString());
 
         // Disable materializations to avoid NPE described in https://github.com/hazelcast/hazelcast/issues/17554
-        connectionProperties.put(CalciteConnectionProperty.MATERIALIZATIONS_ENABLED.camelName(), Boolean.toString(false));
+        connectionProperties.setProperty(CalciteConnectionProperty.MATERIALIZATIONS_ENABLED.camelName(), Boolean.toString(false));
 
         return new CalciteConnectionConfigImpl(connectionProperties);
     }

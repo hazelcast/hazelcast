@@ -37,7 +37,7 @@ public final class DataConnectionTestUtil {
 
     public static void configureJdbcDataConnection(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
-        properties.put("jdbcUrl", jdbcUrl);
+        properties.setProperty("jdbcUrl", jdbcUrl);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
                 .setType("jdbc")
@@ -47,9 +47,9 @@ public final class DataConnectionTestUtil {
 
     public static void configureJdbcDataConnection(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
-        properties.put("jdbcUrl", jdbcUrl);
-        properties.put("user", username);
-        properties.put("password", password);
+        properties.setProperty("jdbcUrl", jdbcUrl);
+        properties.setProperty("user", username);
+        properties.setProperty("password", password);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
                 .setType("jdbc")
@@ -59,7 +59,7 @@ public final class DataConnectionTestUtil {
 
     public static void configureMongoDataConnection(String name, String connectionString, Config config) {
         Properties properties = new Properties();
-        properties.put("connectionString", connectionString);
+        properties.setProperty("connectionString", connectionString);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
                 .setType("mongo")

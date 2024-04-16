@@ -212,7 +212,7 @@ public class KafkaDataConnection extends DataConnectionBase {
         Properties props = Util.mergeProps(configProperties, properties);
 
         if (transactionalId != null) {
-            props.put("transactional.id", transactionalId);
+            props.setProperty("transactional.id", transactionalId);
         }
         return new KafkaProducer<>(props);
     }

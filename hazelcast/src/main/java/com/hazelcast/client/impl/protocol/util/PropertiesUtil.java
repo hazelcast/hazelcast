@@ -17,6 +17,8 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
+import javax.annotation.Nonnull;
+
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -39,5 +41,9 @@ public final class PropertiesUtil {
                         e -> e.getValue().toString()
                 )
         );
+    }
+
+    public static Properties clone(@Nonnull Properties properties) {
+        return (Properties) properties.clone();
     }
 }

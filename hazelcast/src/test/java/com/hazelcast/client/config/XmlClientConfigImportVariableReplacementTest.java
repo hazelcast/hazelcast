@@ -96,7 +96,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
             + HAZELCAST_CLIENT_END_TAG;
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", configLocation);
+        properties.setProperty("config.location", configLocation);
         ClientConfig groupConfig = buildConfig(xml, properties);
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
@@ -123,7 +123,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
             + HAZELCAST_CLIENT_END_TAG;
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", clusterNameLocation);
+        properties.setProperty("config.location", clusterNameLocation);
         ClientConfig groupConfig = buildConfig(xml, properties);
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
@@ -156,8 +156,8 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
             + HAZELCAST_CLIENT_END_TAG;
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", clusterNameLocation);
-        properties.put("p1", "a property");
+        properties.setProperty("config.location", clusterNameLocation);
+        properties.setProperty("p1", "a property");
         ClientConfig config = buildConfig(xml, properties);
         assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }

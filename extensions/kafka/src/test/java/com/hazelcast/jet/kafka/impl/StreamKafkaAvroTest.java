@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
@@ -133,14 +134,13 @@ public class StreamKafkaAvroTest extends SimpleTestInClusterSupport {
     }
 
     private Properties createProperties() {
-        Properties properties = new Properties();
+        Properties properties = PropertiesUtil.fromMap(AVRO_SCHEMA_PROPERTIES);
         properties.setProperty(BOOTSTRAP_SERVERS_CONFIG, kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty(KEY_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
         properties.setProperty(VALUE_DESERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroDeserializer.class.getCanonicalName());
         properties.setProperty(KEY_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
         properties.setProperty(VALUE_SERIALIZER_CLASS_CONFIG, HazelcastKafkaAvroSerializer.class.getCanonicalName());
         properties.setProperty(AUTO_OFFSET_RESET_CONFIG, "earliest");
-        properties.putAll(AVRO_SCHEMA_PROPERTIES);
 
         return properties;
     }

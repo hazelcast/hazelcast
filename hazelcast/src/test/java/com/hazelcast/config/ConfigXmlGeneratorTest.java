@@ -1526,7 +1526,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataConnectionServiceImplTest.class.getSimpleName());
+        properties.setProperty("jdbcUrl", "jdbc:h2:mem:" + DataConnectionServiceImplTest.class.getSimpleName());
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName("test-data-connection")
                 .setType("jdbc")

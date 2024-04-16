@@ -16,6 +16,7 @@
 
 package com.hazelcast.dataconnection.impl;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.core.HazelcastException;
@@ -154,8 +155,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
 
     // package-private for testing purposes
     DataConnectionConfig toConfig(String name, String type, boolean shared, Map<String, String> options) {
-        Properties properties = new Properties();
-        properties.putAll(options);
+        Properties properties = PropertiesUtil.fromMap(options);
         return new DataConnectionConfig(name)
                 .setType(type)
                 .setShared(shared)

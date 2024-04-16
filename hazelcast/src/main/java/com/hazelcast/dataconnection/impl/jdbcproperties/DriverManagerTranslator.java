@@ -16,6 +16,8 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
+
 import java.util.Properties;
 
 public final class DriverManagerTranslator {
@@ -24,8 +26,7 @@ public final class DriverManagerTranslator {
     }
 
     public static Properties translate(Properties source) {
-        Properties driverManagerProperties = new Properties();
-        driverManagerProperties.putAll(source);
+        Properties driverManagerProperties = PropertiesUtil.clone(source);
         driverManagerProperties.remove("jdbcUrl");
         return driverManagerProperties;
     }

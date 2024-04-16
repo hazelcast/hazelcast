@@ -20,6 +20,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientConfigLocator;
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -133,8 +134,7 @@ public class ClientConfig {
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
     public ClientConfig(ClientConfig config) {
-        properties = new Properties();
-        properties.putAll(config.properties);
+        properties = PropertiesUtil.clone(config.properties);
         clusterName = config.clusterName;
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
@@ -274,7 +274,7 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setProperty(String name, String value) {
-        properties.put(name, value);
+        properties.setProperty(name, value);
         return this;
     }
 

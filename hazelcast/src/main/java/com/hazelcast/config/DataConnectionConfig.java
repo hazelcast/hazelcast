@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -51,19 +52,21 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
     private String name;
     private String type;
     private boolean shared = true;
-    private Properties properties = new Properties();
+    private Properties properties;
 
     public DataConnectionConfig() {
+        properties = new Properties();
     }
 
     public DataConnectionConfig(DataConnectionConfig config) {
         name = config.name;
         type = config.type;
         shared = config.shared;
-        properties.putAll(config.getProperties());
+        properties = PropertiesUtil.clone(config.getProperties());
     }
 
     public DataConnectionConfig(String name) {
+        this();
         this.name = checkNotNull(name, "Name must not be null");
     }
 

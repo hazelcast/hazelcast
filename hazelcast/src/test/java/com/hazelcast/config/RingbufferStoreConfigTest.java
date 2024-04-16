@@ -77,7 +77,7 @@ public class RingbufferStoreConfigTest {
     @Test
     public void setProperties() {
         Properties properties = new Properties();
-        properties.put("key", "value");
+        properties.setProperty("key", "value");
 
         config.setProperties(properties);
 

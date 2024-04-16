@@ -112,7 +112,7 @@ final class PropertiesResolver {
             String value = entry.getValue();
 
             if (!NON_KAFKA_OPTIONS.contains(key)) {
-                properties.put(key, value);
+                properties.setProperty(key, value);
             }
         }
         return properties;

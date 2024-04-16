@@ -42,9 +42,9 @@ public final class MySQLTestUtils {
 
     public static Connection getMySqlConnection(String url, String user, String password) throws SQLException {
         Properties properties = new Properties();
-        properties.put("user", user);
-        properties.put("password", password);
-        properties.put("useSSL", "false");
+        properties.setProperty("user", user);
+        properties.setProperty("password", password);
+        properties.setProperty("useSSL", "false");
 
         return DriverManager.getConnection(url, properties);
     }

@@ -67,12 +67,12 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
 
     protected static void createSchemaRegistry() throws Exception {
         Properties properties = new Properties();
-        properties.put("listeners", "http://0.0.0.0:0");
-        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG,
+        properties.setProperty("listeners", "http://0.0.0.0:0");
+        properties.setProperty(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG,
                 kafkaTestSupport.getBrokerConnectionString());
         // We increase the timeout (default is 500 ms) because when Kafka is under load,
         // the schema registry may give "RestClientException: Register operation timed out".
-        properties.put(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
+        properties.setProperty(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         kafkaTestSupport.createSchemaRegistry(config);
     }

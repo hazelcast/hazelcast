@@ -259,7 +259,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_resumeTransaction() throws Exception {
-        properties.put("transactional.id", "txn.resumeTransactionTest");
+        properties.setProperty("transactional.id", "txn.resumeTransactionTest");
 
         // produce items
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);

@@ -37,10 +37,10 @@ public class DriverManagerTranslatorTest {
         String myProperty = "5000";
 
 
-        hzProperties.put(JDBC_URL, jdbcUrl);
-        hzProperties.put(USER, user);
-        hzProperties.put(PASSWORD, password);
-        hzProperties.put("myProperty", myProperty);
+        hzProperties.setProperty(JDBC_URL, jdbcUrl);
+        hzProperties.setProperty(USER, user);
+        hzProperties.setProperty(PASSWORD, password);
+        hzProperties.setProperty("myProperty", myProperty);
 
 
         Properties driverManagerProperties = translate(hzProperties);

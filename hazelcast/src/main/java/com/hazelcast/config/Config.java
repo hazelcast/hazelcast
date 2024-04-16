@@ -599,7 +599,7 @@ public class Config {
             throw new IllegalArgumentException("argument 'name' can't be null or empty");
         }
         isNotNull(value, "value");
-        properties.put(name, value);
+        properties.setProperty(name, value);
         return this;
     }
 
@@ -3208,9 +3208,9 @@ public class Config {
      * <pre>{@code
      *      Config config = new Config();
      *      Properties properties = new Properties();
-     *      properties.put("jdbcUrl", jdbcUrl);
-     *      properties.put("username", username);
-     *      properties.put("password", password);
+     *      properties.setProperty("jdbcUrl", jdbcUrl);
+     *      properties.setProperty("username", username);
+     *      properties.setProperty("password", password);
      *      DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
      *              .setName("my-jdbc-data-connection")
      *              .setType("Jdbc")

@@ -43,7 +43,7 @@ public class SystemPropertiesConfigProviderTest {
 
     @Test
     public void shouldParseClusternameConfigFromSystemProperties() {
-        systemProperties.put("hz.cluster-name", "testcluster");
+        systemProperties.setProperty("hz.cluster-name", "testcluster");
         assertThat(provider.properties()).containsEntry("hazelcast.cluster-name", "testcluster");
     }
 

@@ -45,13 +45,13 @@ public class HikariTranslatorTest {
         String minimumIdle = "8500";
         String maximumPoolSize = "10";
 
-        hzProperties.put(DataConnectionProperties.JDBC_URL, jdbcUrl);
-        hzProperties.put(DataConnectionProperties.CONNECTION_TIMEOUT, connectionTimeout);
-        hzProperties.put(DataConnectionProperties.IDLE_TIMEOUT, idleTimeout);
-        hzProperties.put(DataConnectionProperties.KEEP_ALIVE_TIME, keepAliveTime);
-        hzProperties.put(DataConnectionProperties.MAX_LIFETIME, maxLifetime);
-        hzProperties.put(DataConnectionProperties.MINIMUM_IDLE, minimumIdle);
-        hzProperties.put(DataConnectionProperties.MAXIMUM_POOL_SIZE, maximumPoolSize);
+        hzProperties.setProperty(DataConnectionProperties.JDBC_URL, jdbcUrl);
+        hzProperties.setProperty(DataConnectionProperties.CONNECTION_TIMEOUT, connectionTimeout);
+        hzProperties.setProperty(DataConnectionProperties.IDLE_TIMEOUT, idleTimeout);
+        hzProperties.setProperty(DataConnectionProperties.KEEP_ALIVE_TIME, keepAliveTime);
+        hzProperties.setProperty(DataConnectionProperties.MAX_LIFETIME, maxLifetime);
+        hzProperties.setProperty(DataConnectionProperties.MINIMUM_IDLE, minimumIdle);
+        hzProperties.setProperty(DataConnectionProperties.MAXIMUM_POOL_SIZE, maximumPoolSize);
 
         Properties hikariProperties = hikariTranslator.translate(hzProperties);
         HikariConfig hikariConfig = new HikariConfig(hikariProperties);

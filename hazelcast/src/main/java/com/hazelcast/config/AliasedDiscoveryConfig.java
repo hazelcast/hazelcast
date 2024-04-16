@@ -56,8 +56,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
         this.tag = tag;
         this.enabled = enabled;
         this.usePublicIp = usePublicIp;
-        this.properties = new HashMap<>();
-        this.properties.putAll(properties);
+        this.properties = new HashMap<>(properties);
     }
 
     /**

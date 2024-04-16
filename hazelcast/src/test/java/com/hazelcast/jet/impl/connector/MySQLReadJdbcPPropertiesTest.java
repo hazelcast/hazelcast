@@ -38,14 +38,14 @@ public class MySQLReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
     public void testFetchSize() {
         int fetchSize = 2;
         Properties properties = new Properties();
-        properties.put(JdbcPropertyKeys.FETCH_SIZE, String.valueOf(fetchSize));
+        properties.setProperty(JdbcPropertyKeys.FETCH_SIZE, String.valueOf(fetchSize));
         runTestFetchSize(properties, fetchSize);
     }
 
     @Test
     public void testInvalidFetchSize() {
         Properties properties = new Properties();
-        properties.put(JdbcPropertyKeys.FETCH_SIZE, "aa");
+        properties.setProperty(JdbcPropertyKeys.FETCH_SIZE, "aa");
         assertThatThrownBy(() -> runTest(properties))
                 .hasRootCauseInstanceOf(NumberFormatException.class);
     }

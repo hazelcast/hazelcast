@@ -46,9 +46,9 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
     public void shouldExtractConfigFromSysProperties() {
         Config config = new Config();
         Properties systemProperties = new Properties();
-        systemProperties.put("hz.cluster-name", "test");
-        systemProperties.put("hz.network.join.autodetection.enabled", "false");
-        systemProperties.put("hz.executor-service.custom.pool-size", "42");
+        systemProperties.setProperty("hz.cluster-name", "test");
+        systemProperties.setProperty("hz.network.join.autodetection.enabled", "false");
+        systemProperties.setProperty("hz.executor-service.custom.pool-size", "42");
         new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
 
         assertEquals("test", config.getClusterName());
@@ -60,9 +60,9 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
     public void shouldHandleRestApiConfigFromSysProperties() {
         Config config = new Config();
         Properties systemProperties = new Properties();
-        systemProperties.put("hz.network.rest-api.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true");
 
         new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
 
@@ -75,9 +75,9 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
     public void shouldHandleRestApiConfigFromSysProperties_whenPersistenceEnabled() {
         Config config = new Config();
         Properties systemProperties = new Properties();
-        systemProperties.put("hz.network.rest-api.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.persistence.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.persistence.enabled", "true");
 
         new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
 
@@ -90,10 +90,10 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
     public void shouldHandleRestApiConfigFromSysProperties_when_bothPersistenceAndHotRestartAreEnabled() {
         Config config = new Config();
         Properties systemProperties = new Properties();
-        systemProperties.put("hz.network.rest-api.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.persistence.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.persistence.enabled", "true");
 
         new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
 
@@ -106,9 +106,9 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
     public void shouldHandleRestApiConfigFromSysPropertiesInvalidEntry() {
         Config config = new Config();
         Properties systemProperties = new Properties();
-        systemProperties.put("hz.network.rest-api.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.fooo.enabled", "true");
-        systemProperties.put("hz.network.rest-api.endpoint-groups.HOT_RESTART.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.fooo.enabled", "true");
+        systemProperties.setProperty("hz.network.rest-api.endpoint-groups.HOT_RESTART.enabled", "true");
 
         new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
     }

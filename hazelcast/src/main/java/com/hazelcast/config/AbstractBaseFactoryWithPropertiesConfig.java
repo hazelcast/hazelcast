@@ -57,7 +57,7 @@ public abstract class AbstractBaseFactoryWithPropertiesConfig<T extends Abstract
      * @throws NullPointerException if name or value is {@code null}
      */
     public T setProperty(String name, String value) {
-        properties.put(name, value);
+        properties.setProperty(name, value);
         return self();
     }
 

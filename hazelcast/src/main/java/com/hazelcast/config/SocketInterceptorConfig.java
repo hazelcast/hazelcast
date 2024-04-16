@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.nio.SocketInterceptor;
 
 import javax.annotation.Nonnull;
@@ -32,17 +33,17 @@ public class SocketInterceptorConfig {
     private boolean enabled;
     private String className;
     private Object implementation;
-    private Properties properties = new Properties();
+    private Properties properties;
 
     public SocketInterceptorConfig() {
+        properties = new Properties();
     }
 
     public SocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
         enabled = socketInterceptorConfig.enabled;
         className = socketInterceptorConfig.className;
         implementation = socketInterceptorConfig.implementation;
-        properties = new Properties();
-        properties.putAll(socketInterceptorConfig.properties);
+        properties = PropertiesUtil.clone(socketInterceptorConfig.properties);
     }
 
     /**
@@ -115,7 +116,7 @@ public class SocketInterceptorConfig {
      * @throws NullPointerException if name or value is {@code null}
      */
     public SocketInterceptorConfig setProperty(String name, String value) {
-        properties.put(name, value);
+        properties.setProperty(name, value);
         return this;
     }
 

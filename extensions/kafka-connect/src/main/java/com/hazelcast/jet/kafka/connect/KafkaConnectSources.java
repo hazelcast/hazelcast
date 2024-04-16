@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.kafka.connect.impl.SourceConnectorWrapper;
 import com.hazelcast.jet.kafka.connect.impl.processorsupplier.TaskMaxProcessorMetaSupplier;
@@ -185,8 +186,7 @@ public final class KafkaConnectSources {
 
     private static Properties getDefaultProperties(Properties properties) {
         // Make new copy
-        Properties defaultProperties = new Properties();
-        defaultProperties.putAll(properties);
+        Properties defaultProperties = PropertiesUtil.clone(properties);
 
         // Populate tasks.max property if necessary
         defaultProperties.putIfAbsent("tasks.max", "1");

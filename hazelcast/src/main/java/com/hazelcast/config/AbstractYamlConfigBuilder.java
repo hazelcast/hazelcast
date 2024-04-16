@@ -247,7 +247,7 @@ public abstract class AbstractYamlConfigBuilder extends AbstractConfigBuilder {
             String childName = childNodePair.nodeName();
             YamlNode child = childNodePair.childNode();
             Object nodeValue = asScalar(child).nodeValue();
-            properties.put(childName, nodeValue != null ? nodeValue.toString() : "");
+            properties.setProperty(childName, nodeValue != null ? nodeValue.toString() : "");
         }
     }
 }

@@ -37,8 +37,8 @@ public class PostgreReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
     public void testFetchSize() {
         int fetchSize = 2;
         Properties properties = new Properties();
-        properties.put(JdbcPropertyKeys.FETCH_SIZE, String.valueOf(fetchSize));
-        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
+        properties.setProperty(JdbcPropertyKeys.FETCH_SIZE, String.valueOf(fetchSize));
+        properties.setProperty(JdbcPropertyKeys.AUTO_COMMIT, "false");
         runTestFetchSize(properties, fetchSize);
     }
 
@@ -46,7 +46,7 @@ public class PostgreReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
     public void testInvalidFetchSize() {
         Properties properties = new Properties();
         // FETCH_SIZE should be a number in string format
-        properties.put(JdbcPropertyKeys.FETCH_SIZE, "aa");
+        properties.setProperty(JdbcPropertyKeys.FETCH_SIZE, "aa");
         assertThatThrownBy(() -> runTest(properties))
                 .hasRootCauseInstanceOf(NumberFormatException.class);
     }
@@ -55,7 +55,7 @@ public class PostgreReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
     public void testInvalidAutoCommit() {
         Properties properties = new Properties();
         // AUTO_COMMIT should be a boolean in string format
-        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "1");
+        properties.setProperty(JdbcPropertyKeys.AUTO_COMMIT, "1");
         assertThatThrownBy(() -> runTest(properties))
                 .hasRootCauseInstanceOf(IllegalArgumentException.class);
     }

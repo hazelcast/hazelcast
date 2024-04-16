@@ -28,10 +28,10 @@ public class DebeziumConfig {
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(connectorClass, "connectorClass");
 
-        properties.put("name", name);
-        properties.put(CdcSourceP.CONNECTOR_CLASS_PROPERTY, connectorClass);
-        properties.put("database.history", CdcSourceP.DatabaseHistoryImpl.class.getName());
-        properties.put("tombstones.on.delete", "false");
+        properties.setProperty("name", name);
+        properties.setProperty(CdcSourceP.CONNECTOR_CLASS_PROPERTY, connectorClass);
+        properties.setProperty("database.history", CdcSourceP.DatabaseHistoryImpl.class.getName());
+        properties.setProperty("tombstones.on.delete", "false");
     }
 
     public void setProperty(String key, Object value) {

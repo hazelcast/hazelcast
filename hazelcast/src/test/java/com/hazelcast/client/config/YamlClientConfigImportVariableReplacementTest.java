@@ -102,7 +102,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "  cluster-name: ${java.version} $ID{dev}\n";
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", configLocation);
+        properties.setProperty("config.location", configLocation);
         ClientConfig groupConfig = buildConfig(clusterName, properties);
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
@@ -131,7 +131,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "    - " + "${config.location}\n";
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", clusterNameLocation);
+        properties.setProperty("config.location", clusterNameLocation);
         ClientConfig groupConfig = buildConfig(yaml, properties);
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
@@ -167,8 +167,8 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "    - " + "${config.location}\n";
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", clusterNameLocation);
-        properties.put("p1", "a property");
+        properties.setProperty("config.location", clusterNameLocation);
+        properties.setProperty("p1", "a property");
         ClientConfig config = buildConfig(yaml, properties);
         assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
@@ -399,7 +399,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     @Test
     public void testReplaceVariablesWithClasspathConfig() {
         Properties properties = new Properties();
-        properties.put("variable", "foobar");
+        properties.setProperty("variable", "foobar");
         ClientConfig config = new ClientClasspathYamlConfig("test-hazelcast-client-variable.yaml", properties);
 
         assertEquals("foobar", config.getProperty("prop"));

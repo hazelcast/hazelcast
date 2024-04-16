@@ -1460,9 +1460,9 @@ public final class Sources {
      * <pre>{@code
      *      Config config = smallInstanceConfig();
      *      Properties properties = new Properties();
-     *      properties.put("jdbcUrl", jdbcUrl);
-     *      properties.put("username", username);
-     *      properties.put("password", password);
+     *      properties.setProperty("jdbcUrl", jdbcUrl);
+     *      properties.setProperty("username", username);
+     *      properties.setProperty("password", password);
      *      DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
      *              .setName("my-jdbc-data-connection")
      *              .setType("Jdbc")
@@ -1541,8 +1541,8 @@ public final class Sources {
      * the backend will have closed the cursor before anything can be fetched from it.
      * <pre>{@code
      *        Properties properties = new Properties();
-     *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
-     *        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
+     *        properties.setProperty(JdbcPropertyKeys.FETCH_SIZE, "5");
+     *        properties.setProperty(JdbcPropertyKeys.AUTO_COMMIT, "false");
      *        p.readFrom(Sources.jdbc(
      *            "jdbc:postgresql://localhost:5432/mydatabase",
      *            "select ID, NAME from PERSON",
@@ -1555,7 +1555,7 @@ public final class Sources {
      * rather than fetching all the rows in the result set at once
      * <pre>{@code
      *        Properties properties = new Properties();
-     *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
+     *        properties.setProperty(JdbcPropertyKeys.FETCH_SIZE, "5");
      *        p.readFrom(Sources.jdbc(
      *            "jdbc:mysql://localhost:3306/mydatabase?useCursorFetch=true,"
      *            "select ID, NAME from PERSON",

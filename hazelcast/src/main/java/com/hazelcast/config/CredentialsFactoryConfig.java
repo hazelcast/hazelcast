@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import java.util.Objects;
 import java.util.Properties;
 
+import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.security.IdentityConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.security.ICredentialsFactory;
@@ -44,8 +45,7 @@ public class CredentialsFactoryConfig implements IdentityConfig {
     private CredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
         className = credentialsFactoryConfig.className;
         implementation = credentialsFactoryConfig.implementation;
-        properties = new Properties();
-        properties.putAll(credentialsFactoryConfig.properties);
+        properties = PropertiesUtil.clone(credentialsFactoryConfig.properties);
     }
 
     public String getClassName() {

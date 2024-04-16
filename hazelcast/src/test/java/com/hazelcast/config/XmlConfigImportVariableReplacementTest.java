@@ -119,7 +119,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + HAZELCAST_END_TAG;
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", configLocation);
+        properties.setProperty("config.location", configLocation);
         Config groupConfig = buildConfig(xml, properties);
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
@@ -146,7 +146,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
             + HAZELCAST_END_TAG;
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", clusterNameLocation);
+        properties.setProperty("config.location", clusterNameLocation);
         Config groupConfig = buildConfig(xml, properties);
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
@@ -179,8 +179,8 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
             + HAZELCAST_END_TAG;
 
         Properties properties = new Properties(System.getProperties());
-        properties.put("config.location", clusterNameLocation);
-        properties.put("p1", "a property");
+        properties.setProperty("config.location", clusterNameLocation);
+        properties.setProperty("p1", "a property");
         Config config = buildConfig(xml, properties);
         assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
@@ -592,7 +592,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String pathToFile = helper.givenConfigFileInWorkDir("config-properties.xml", configXml).getAbsolutePath();
 
         Properties properties = new Properties();
-        properties.put("variable", "foobar");
+        properties.setProperty("variable", "foobar");
         Config config = new FileSystemXmlConfig(new File(pathToFile), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
@@ -608,7 +608,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + HAZELCAST_END_TAG;
 
         Properties properties = new Properties();
-        properties.put("variable", "foobar");
+        properties.setProperty("variable", "foobar");
         Config config = new InMemoryXmlConfig(configXml, properties);
 
         assertEquals("foobar", config.getProperty("prop"));
@@ -618,7 +618,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void testReplaceVariablesWithClasspathConfig() {
         Properties properties = new Properties();
-        properties.put("variable", "foobar");
+        properties.setProperty("variable", "foobar");
         Config config = new ClasspathXmlConfig("test-hazelcast-variable.xml", properties);
 
         assertEquals("foobar", config.getProperty("prop"));
@@ -635,7 +635,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         Path path = helper.givenConfigFileInWorkDir("config-properties.xml", configXml).toPath().toAbsolutePath();
 
         Properties properties = new Properties();
-        properties.put("variable", "foobar");
+        properties.setProperty("variable", "foobar");
         Config config = new UrlXmlConfig(path.toUri().toString(), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
