@@ -377,7 +377,6 @@ public final class TestProcessors {
             initCalled = true;
             initCount.incrementAndGet();
 
-
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));

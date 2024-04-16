@@ -42,6 +42,10 @@ public class FixedCapacityIntArrayList {
         return result;
     }
 
+    public int size() {
+        return size;
+    }
+
     public IntStream stream() {
         return Arrays.stream(elements, 0, size);
     }

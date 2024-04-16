@@ -59,6 +59,7 @@ import java.util.function.ToIntFunction;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -91,6 +92,7 @@ public final class ExecutionPlanBuilder {
     ) {
         final Map<MemberInfo, int[]> partitionsByMember;
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        final boolean isJobIsolated = jobConfig.getArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR) != null;
 
         if (requiredPartitions != null) {
             PartitionPruningAnalysisResult analysisResult = analyzeDagForPartitionPruning(nodeEngine, dag);
@@ -100,6 +102,12 @@ public final class ExecutionPlanBuilder {
                     requiredPartitions,
                     analysisResult.constantPartitionIds,
                     analysisResult.requiredAddresses);
+        } else if (isJobIsolated) {
+            // For isolated jobs, we can't predict an amount and types (data/lite) of the selected members, as well as
+            // workload type. That's the reason to use a balanced partition assignment between data and lite members,
+            // and generally, a fair load distribution is good enough for any kind of workload.
+            // More info in corresponded TDD and method's Javadoc.
+            partitionsByMember = getFairPartitionAssignment(nodeEngine, memberInfos);
         } else {
             partitionsByMember = getPartitionAssignment(
                     nodeEngine, memberInfos,
@@ -370,7 +378,7 @@ public final class ExecutionPlanBuilder {
             // and using IntStream.range() would be slower than pure for loop.
             // Such boxing generates many allocations for simple queries because
             // even with default partition count (271) not all ids are cached by JVM.
-            // The loop body is the same as in the other branch but it is hard to refactor.
+            // The loop body is the same as in the other branch, but it is hard to refactor.
             for (int partitionId : dataPartitions) {
                 Address address = partitionService.getPartitionOwnerOrWait(partitionId);
                 MemberInfo member = membersByAddress.get(address);
@@ -452,4 +460,59 @@ public final class ExecutionPlanBuilder {
         return partitionAssignment;
     }
 
+
+    /**
+     * Assign the equal number of partitions between data and lite members. The algorithm always prefer to assign
+     * partition to the actual partition owner (data member), if possible. If member is not selected for the job,
+     * or the limit was exceeded, the partition is assigned to the next available member in a round-robin manner.
+     * <p>
+     * There might be an acceptable difference between the number of assigned partitions assigned to data members and
+     * lite members in case, when data members prevails in member selection.
+     * <p>
+     * Each mapped partitions id array must be sorted.
+     */
+    public static Map<MemberInfo, int[]> getFairPartitionAssignment(NodeEngine nodeEngine, List<MemberInfo> memberList) {
+        List<MemberInfo> liteMembers = memberList.stream().filter(MemberInfo::isLiteMember).toList();
+        // If no lite members are present, we can use the default partition assignment.
+        if (liteMembers.isEmpty()) {
+            return getPartitionAssignment(nodeEngine, memberList, false, null, null, null);
+        }
+
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+
+        Map<Address, MemberInfo> membersByAddress = new HashMap<>();
+        Map<MemberInfo, FixedCapacityIntArrayList> partitionsForMember = new HashMap<>();
+        Set<MemberInfo> membersAbleToAcceptPartitions = new HashSet<>(memberList);
+        for (MemberInfo memberInfo : memberList) {
+            membersByAddress.put(memberInfo.getAddress(), memberInfo);
+        }
+
+        final int fairPartitionSliceSize = (partitionCount + memberList.size() - 1) / memberList.size();
+
+        int memberIndex = 0;
+        for (int partitionId = 0; partitionId < partitionCount; ++partitionId) {
+            Address address = partitionService.getPartitionOwnerOrWait(partitionId);
+            MemberInfo member = membersByAddress.get(address);
+            while (!membersAbleToAcceptPartitions.contains(member) || member == null) {
+                member = memberList.get(memberIndex++ % memberList.size());
+            }
+
+            var partitions = partitionsForMember.computeIfAbsent(member, ignored ->
+                    new FixedCapacityIntArrayList(partitionCount));
+            partitions.add(partitionId);
+
+            if (partitions.size() >= fairPartitionSliceSize) {
+                membersAbleToAcceptPartitions.remove(member);
+            }
+        }
+
+        Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();
+        for (Entry<MemberInfo, FixedCapacityIntArrayList> memberWithPartitions : partitionsForMember.entrySet()) {
+            int[] p = memberWithPartitions.getValue().asArray();
+            partitionAssignment.put(memberWithPartitions.getKey(), p);
+        }
+
+        return partitionAssignment;
+    }
 }

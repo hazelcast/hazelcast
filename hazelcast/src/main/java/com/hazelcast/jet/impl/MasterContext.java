@@ -75,8 +75,8 @@ import static java.util.stream.Collectors.toConcurrentMap;
 /**
  * Data pertaining to single job on master member. There's one instance per job,
  * shared between multiple executions. It has 2 subcomponents:<ul>
- *      <li>{@link MasterJobContext}
- *      <li>{@link MasterSnapshotContext}
+ * <li>{@link MasterJobContext}
+ * <li>{@link MasterSnapshotContext}
  * </ul>
  */
 public class MasterContext implements DynamicMetricsProvider {
@@ -202,8 +202,7 @@ public class MasterContext implements DynamicMetricsProvider {
             deltaConfig.applyTo(jobConfig());
             jobRepository.updateJobRecord(jobRecord);
             if (jobConfig().isSplitBrainProtectionEnabled() != wasSplitBrainProtectionEnabled) {
-                updateQuorumSize(jobConfig().isSplitBrainProtectionEnabled()
-                        ? coordinationService.getQuorumSize() : 0);
+                updateQuorumSize(jobConfig().isSplitBrainProtectionEnabled() ? coordinationService.getQuorumSize() : 0);
             }
             return jobConfig();
         } finally {
@@ -241,7 +240,7 @@ public class MasterContext implements DynamicMetricsProvider {
             return;
         }
         descriptor.withTag(MetricTags.JOB, idToString(jobId))
-                  .withTag(MetricTags.JOB_NAME, jobName);
+                .withTag(MetricTags.JOB_NAME, jobName);
 
         context.collect(descriptor, JOB_STATUS, ProbeLevel.INFO, ProbeUnit.ENUM, jobStatus.getId());
 
@@ -365,8 +364,8 @@ public class MasterContext implements DynamicMetricsProvider {
         // This method can be called in parallel if multiple members are added. We don't synchronize here,
         // but the worst that can happen is that we write the JobRecord out unnecessarily.
         int quorumSize = newQuorumSize > 0
-            ? jobExecutionRecord.setLargerQuorumSize(newQuorumSize)
-            : jobExecutionRecord.resetQuorumSize();
+                ? jobExecutionRecord.setLargerQuorumSize(newQuorumSize)
+                : jobExecutionRecord.resetQuorumSize();
         writeJobExecutionRecord(false);
         logger.info("Quorum size of job " + jobIdString() + " is updated from " + quorumSize
                 + " to " + (newQuorumSize > 0 ? Math.max(quorumSize, newQuorumSize) : 0));
@@ -397,7 +396,7 @@ public class MasterContext implements DynamicMetricsProvider {
         // However, there is only one instance of MasterContext for a given job in the cluster
         // so there is no risk of lost updates.
         while (!coordinationService.jobRepository().writeJobExecutionRecord(
-                    jobRecord.getJobId(), jobExecutionRecord, canCreate)) {
+                jobRecord.getJobId(), jobExecutionRecord, canCreate)) {
             logger.info("Repeating JobExecutionRecord update to be safe");
         }
     }

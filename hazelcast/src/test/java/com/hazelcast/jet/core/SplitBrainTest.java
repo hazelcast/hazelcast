@@ -83,7 +83,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<HazelcastInstance[]> beforeSplit = instances -> {
             MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[0].getJet().newJob(dag, new JobConfig().setSplitBrainProtection(true));
+            jobRef[0] = startJob(instances[0], dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
@@ -143,7 +143,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<HazelcastInstance[]> beforeSplit = instances -> {
             MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[0].getJet().newJob(dag, new JobConfig().setSplitBrainProtection(true));
+            jobRef[0] = startJob(instances[0], dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
@@ -203,7 +203,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<HazelcastInstance[]> beforeSplit = instances -> {
             MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[0].getJet().newJob(dag);
+            jobRef[0] = startJob(instances[0], dag, new JobConfig());
             assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
@@ -243,7 +243,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
             MockPS processorSupplier = new MockPS(NoOutputSourceP::new, secondSubClusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = secondSubCluster[0].getJet().newJob(dag, new JobConfig().setSplitBrainProtection(true));
+            jobRef[0] = startJob(secondSubCluster[0], dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
@@ -269,7 +269,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
         DAG dag = new DAG().vertex(new Vertex("test", processorSupplier).localParallelism(PARALLELISM));
-        Job job = instances[0].getJet().newJob(dag, new JobConfig().setSplitBrainProtection(true));
+        Job job = startJob(instances[0], dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
         createHazelcastInstance(createConfig());
@@ -297,7 +297,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
         DAG dag = new DAG().vertex(new Vertex("test", processorSupplier).localParallelism(PARALLELISM));
-        Job job = instances[0].getJet().newJob(dag, new JobConfig().setSplitBrainProtection(true));
+        Job job = startJob(instances[0], dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
         for (int i = 1; i < clusterSize; i++) {
@@ -334,7 +334,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<HazelcastInstance[]> beforeSplit = instances -> {
             MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[2].getJet().newJob(dag);
+            jobRef[0] = startJob(instances[2], dag, new JobConfig());
             assertOpenEventually(NoOutputSourceP.executionStarted);
         };
 
@@ -369,7 +369,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<HazelcastInstance[]> beforeSplit = instances -> {
             MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[0].getJet().newJob(dag, new JobConfig().setSplitBrainProtection(false));
+            jobRef[0] = startJob(instances[0], dag, new JobConfig().setSplitBrainProtection(false));
             assertTrueEventually(() -> assertEquals("initCount", clusterSize, MockPS.initCount.get()), 10);
             assertOpenEventually("executionStarted", NoOutputSourceP.executionStarted);
         };
@@ -396,7 +396,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     @Test
     public void when_splitBrainProtectionDisabledLater_then_jobRestarts() {
         HazelcastInstance[] hz = startInitialCluster(createConfig(), 2);
-        Job job = hz[0].getJet().newJob(streamingDag(), new JobConfig().setSplitBrainProtection(true));
+        Job job = startJob(hz[0], streamingDag(), new JobConfig().setSplitBrainProtection(true));
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
@@ -412,7 +412,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     @Test
     public void when_splitBrainProtectionEnabledLater_then_jobDoesNotRestartOnMinority() {
         HazelcastInstance[] hz = startInitialCluster(createConfig(), 2);
-        Job job = hz[0].getJet().newJob(streamingDag(), new JobConfig().setSplitBrainProtection(false));
+        Job job = startJob(hz[0], streamingDag(), new JobConfig().setSplitBrainProtection(false));
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
@@ -423,6 +423,10 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         // The cluster size becomes one less than the initial quorum size (2).
         hz[1].getLifecycleService().terminate();
         assertJobStatusEventually(job, NOT_RUNNING);
-        assertTrueAllTheTime(() -> assertEquals(NOT_RUNNING, job.getStatus()), 5);
+        assertTrueAllTheTime(() -> assertEquals(NOT_RUNNING, job.getStatus()), 10);
+    }
+
+    protected Job startJob(HazelcastInstance hz, DAG dag, JobConfig config) {
+        return hz.getJet().newJob(dag, config);
     }
 }
