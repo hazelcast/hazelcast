@@ -42,17 +42,13 @@ public class KinesisDataSerializerHook implements DataSerializerHook {
     }
 
     private static class Factory implements DataSerializableFactory {
-        @SuppressWarnings("checkstyle:returncount")
         @Override
         public IdentifiedDataSerializable create(int typeId) {
-            switch (typeId) {
-                case KINESIS_SOURCE_P_SHARD_STATE:
-                    return new KinesisSourceP.ShardState();
-                case INITIAL_SHARD_ITERATORS:
-                    return new InitialShardIterators();
-                default:
-                    throw new IllegalArgumentException("Unknown type id " + typeId);
-            }
+            return switch (typeId) {
+                case KINESIS_SOURCE_P_SHARD_STATE -> new KinesisSourceP.ShardState();
+                case INITIAL_SHARD_ITERATORS -> new InitialShardIterators();
+                default -> throw new IllegalArgumentException("Unknown type id " + typeId);
+            };
         }
     }
 

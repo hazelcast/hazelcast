@@ -19,7 +19,6 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.DisposeBackupTaskOperation;
@@ -106,74 +105,40 @@ public class ScheduledExecutorDataSerializerHook
     @Override
     @SuppressWarnings({"MethodLength", "AnonInnerLength", "CyclomaticComplexity", "MethodLength", "ReturnCount"})
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case TASK_HANDLER:
-                        return new ScheduledTaskHandlerImpl();
-                    case TASK_DESCRIPTOR:
-                        return new ScheduledTaskDescriptor();
-                    case RUNNABLE_DEFINITION:
-                        return new TaskDefinition();
-                    case RUNNABLE_ADAPTER:
-                        return new ScheduledRunnableAdapter();
-                    case NAMED_TASK_DECORATOR:
-                        return new NamedTaskDecorator();
-                    case GET_DELAY_OP:
-                        return new GetDelayOperation();
-                    case CANCEL_OP:
-                        return new CancelTaskOperation();
-                    case CANCEL_BACKUP_OP:
-                        return new CancelTaskBackupOperation();
-                    case SCHEDULE_OP:
-                        return new ScheduleTaskOperation();
-                    case DISPOSE_TASK_OP:
-                        return new DisposeTaskOperation();
-                    case DISPOSE_BACKUP_TASK_OP:
-                        return new DisposeBackupTaskOperation();
-                    case IS_DONE_OP:
-                        return new IsDoneOperation();
-                    case IS_CANCELED_OP:
-                        return new IsCanceledOperation();
-                    case TASK_STATS:
-                        return new ScheduledTaskStatisticsImpl();
-                    case GET_STATS_OP:
-                        return new GetStatisticsOperation();
-                    case SCHEDULE_BACKUP_OP:
-                        return new ScheduleTaskBackupOperation();
-                    case SYNC_STATE_OP:
-                        return new SyncStateOperation();
-                    case SYNC_BACKUP_STATE_OP:
-                        return new SyncBackupStateOperation();
-                    case REPLICATION:
-                        return new ReplicationOperation();
-                    case GET_ALL_SCHEDULED_ON_MEMBER:
-                        return new GetAllScheduledOnMemberOperation();
-                    case GET_RESULT:
-                        return new GetResultOperation();
-                    case PUBLISH_RESULT:
-                        return new ResultReadyNotifyOperation();
-                    case SHUTDOWN:
-                        return new ShutdownOperation();
-                    case TASK_RESOLUTION:
-                        return new ScheduledTaskResult();
-                    case GET_ALL_SCHEDULED_ON_PARTITION:
-                        return new GetAllScheduledOnPartitionOperation();
-                    case GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY:
-                        return new GetAllScheduledOnPartitionOperationFactory();
-                    case MERGE:
-                        return new MergeOperation();
-                    case MERGE_BACKUP:
-                        return new MergeBackupOperation();
-                    case HASH_MAP_ADAPTER:
-                        return new HashMapAdapter<>();
-                    case AUTO_DISPOSABLE_TASK_DECORATOR:
-                        return new AutoDisposableTaskDecorator();
-                    default:
-                        throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
-                }
-            }
+        return typeId -> switch (typeId) {
+            case TASK_HANDLER -> new ScheduledTaskHandlerImpl();
+            case TASK_DESCRIPTOR -> new ScheduledTaskDescriptor();
+            case RUNNABLE_DEFINITION -> new TaskDefinition<>();
+            case RUNNABLE_ADAPTER -> new ScheduledRunnableAdapter<>();
+            case NAMED_TASK_DECORATOR -> new NamedTaskDecorator<>();
+            case GET_DELAY_OP -> new GetDelayOperation();
+            case CANCEL_OP -> new CancelTaskOperation();
+            case CANCEL_BACKUP_OP -> new CancelTaskBackupOperation();
+            case SCHEDULE_OP -> new ScheduleTaskOperation();
+            case DISPOSE_TASK_OP -> new DisposeTaskOperation();
+            case DISPOSE_BACKUP_TASK_OP -> new DisposeBackupTaskOperation();
+            case IS_DONE_OP -> new IsDoneOperation();
+            case IS_CANCELED_OP -> new IsCanceledOperation();
+            case TASK_STATS -> new ScheduledTaskStatisticsImpl();
+            case GET_STATS_OP -> new GetStatisticsOperation();
+            case SCHEDULE_BACKUP_OP -> new ScheduleTaskBackupOperation();
+            case SYNC_STATE_OP -> new SyncStateOperation();
+            case SYNC_BACKUP_STATE_OP -> new SyncBackupStateOperation();
+            case REPLICATION -> new ReplicationOperation();
+            case GET_ALL_SCHEDULED_ON_MEMBER -> new GetAllScheduledOnMemberOperation();
+            case GET_RESULT -> new GetResultOperation();
+            case PUBLISH_RESULT -> new ResultReadyNotifyOperation();
+            case SHUTDOWN -> new ShutdownOperation();
+            case TASK_RESOLUTION -> new ScheduledTaskResult();
+            case GET_ALL_SCHEDULED_ON_PARTITION -> new GetAllScheduledOnPartitionOperation();
+            case GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY ->
+                    new GetAllScheduledOnPartitionOperationFactory();
+            case MERGE -> new MergeOperation();
+            case MERGE_BACKUP -> new MergeBackupOperation();
+            case HASH_MAP_ADAPTER -> new HashMapAdapter<>();
+            case AUTO_DISPOSABLE_TASK_DECORATOR -> new AutoDisposableTaskDecorator();
+            default ->
+                    throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
         };
     }
 }

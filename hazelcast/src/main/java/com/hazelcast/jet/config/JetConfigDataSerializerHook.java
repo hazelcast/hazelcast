@@ -67,18 +67,13 @@ public final class JetConfigDataSerializerHook implements DataSerializerHook {
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
-            switch (typeId) {
-                case JOB_CONFIG:
-                    return new JobConfig();
-                case EDGE_CONFIG:
-                    return new EdgeConfig();
-                case RESOURCE_CONFIG:
-                    return new ResourceConfig();
-                case DELTA_JOB_CONFIG:
-                    return new DeltaJobConfig();
-                default:
-                    throw new IllegalArgumentException("Unknown type id " + typeId);
-            }
+            return switch (typeId) {
+                case JOB_CONFIG -> new JobConfig();
+                case EDGE_CONFIG -> new EdgeConfig();
+                case RESOURCE_CONFIG -> new ResourceConfig();
+                case DELTA_JOB_CONFIG -> new DeltaJobConfig();
+                default -> throw new IllegalArgumentException("Unknown type id " + typeId);
+            };
         }
     }
 }

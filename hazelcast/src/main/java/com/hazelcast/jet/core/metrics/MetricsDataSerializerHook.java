@@ -58,14 +58,11 @@ public class MetricsDataSerializerHook implements DataSerializerHook {
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
-            switch (typeId) {
-                case JOB_METRICS:
-                    return new JobMetrics();
-                case MEASUREMENT:
-                    return new Measurement();
-                default:
-                    throw new IllegalArgumentException("Unknown type id " + typeId);
-            }
+            return switch (typeId) {
+                case JOB_METRICS -> new JobMetrics();
+                case MEASUREMENT -> new Measurement();
+                default -> throw new IllegalArgumentException("Unknown type id " + typeId);
+            };
         }
     }
 }

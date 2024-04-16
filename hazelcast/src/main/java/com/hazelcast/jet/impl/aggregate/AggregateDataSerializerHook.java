@@ -62,21 +62,13 @@ public class AggregateDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case AGGREGATE_OP_AGGREGATOR:
-                    return new AggregateOpAggregator<>();
-                case AGGREGATE_OPERATION_IMPL:
-                    return new AggregateOperationImpl<>();
-                case AGGREGATE_OPERATION_1_IMPL:
-                    return new AggregateOperation1Impl<>();
-                case AGGREGATE_OPERATION_2_IMPL:
-                    return new AggregateOperation2Impl<>();
-                case AGGREGATE_OPERATION_3_IMPL:
-                    return new AggregateOperation3Impl<>();
-                default:
-                    throw new IllegalArgumentException("Unknown type id " + typeId);
-            }
+        return typeId -> switch (typeId) {
+            case AGGREGATE_OP_AGGREGATOR -> new AggregateOpAggregator<>();
+            case AGGREGATE_OPERATION_IMPL -> new AggregateOperationImpl<>();
+            case AGGREGATE_OPERATION_1_IMPL -> new AggregateOperation1Impl<>();
+            case AGGREGATE_OPERATION_2_IMPL -> new AggregateOperation2Impl<>();
+            case AGGREGATE_OPERATION_3_IMPL -> new AggregateOperation3Impl<>();
+            default -> throw new IllegalArgumentException("Unknown type id " + typeId);
         };
     }
 }

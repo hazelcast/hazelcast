@@ -43,12 +43,10 @@ public class JetObserverDataSerializerHook implements DataSerializerHook {
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
-            switch (typeId) {
-                case WRAPPED_THROWABLE:
-                    return new WrappedThrowable();
-                default:
-                    throw new IllegalArgumentException("Unknown type id " + typeId);
+            if (typeId == WRAPPED_THROWABLE) {
+                return new WrappedThrowable();
             }
+            throw new IllegalArgumentException("Unknown type id " + typeId);
         }
     }
 }

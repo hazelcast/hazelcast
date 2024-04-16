@@ -44,21 +44,13 @@ public class SchemaDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case SCHEMA:
-                    return new Schema();
-                case SEND_SCHEMA_REPLICATIONS_OPERATION:
-                    return new SendSchemaReplicationsOperation();
-                case PREPARE_SCHEMA_REPLICATION_OPERATION:
-                    return new PrepareSchemaReplicationOperation();
-                case ACK_SCHEMA_REPLICATION_OPERATION:
-                    return new AckSchemaReplicationOperation();
-                case SCHEMA_REPLICATION:
-                    return new SchemaReplication();
-                default:
-                    return null;
-            }
+        return typeId -> switch (typeId) {
+            case SCHEMA -> new Schema();
+            case SEND_SCHEMA_REPLICATIONS_OPERATION -> new SendSchemaReplicationsOperation();
+            case PREPARE_SCHEMA_REPLICATION_OPERATION -> new PrepareSchemaReplicationOperation();
+            case ACK_SCHEMA_REPLICATION_OPERATION -> new AckSchemaReplicationOperation();
+            case SCHEMA_REPLICATION -> new SchemaReplication();
+            default -> null;
         };
     }
 

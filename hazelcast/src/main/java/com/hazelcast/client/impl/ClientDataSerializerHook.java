@@ -39,15 +39,10 @@ public class ClientDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case GET_CONNECTED_CLIENTS:
-                    return new GetConnectedClientsOperation();
-                case OP_FACTORY_WRAPPER:
-                    return new OperationFactoryWrapper();
-                default:
-                    return null;
-            }
+        return typeId -> switch (typeId) {
+            case GET_CONNECTED_CLIENTS -> new GetConnectedClientsOperation();
+            case OP_FACTORY_WRAPPER -> new OperationFactoryWrapper();
+            default -> null;
         };
     }
 

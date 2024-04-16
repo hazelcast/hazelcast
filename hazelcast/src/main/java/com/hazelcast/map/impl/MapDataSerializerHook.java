@@ -338,6 +338,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     @Override
     @SuppressWarnings("MethodLength")
     public DataSerializableFactory createFactory() {
+        //noinspection unchecked
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
         constructors[PUT] = PutOperation::new;

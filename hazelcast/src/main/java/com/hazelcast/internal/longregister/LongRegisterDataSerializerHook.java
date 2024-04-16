@@ -48,27 +48,16 @@ public final class LongRegisterDataSerializerHook implements DataSerializerHook 
 
     @Override
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case ADD_BACKUP:
-                    return new AddBackupOperation();
-                case ADD_AND_GET:
-                    return new AddAndGetOperation();
-                case GET:
-                    return new GetOperation();
-                case GET_AND_SET:
-                    return new GetAndSetOperation();
-                case GET_AND_ADD:
-                    return new GetAndAddOperation();
-                case SET_OPERATION:
-                    return new SetOperation();
-                case SET_BACKUP:
-                    return new SetBackupOperation();
-                case REPLICATION:
-                    return new LongRegisterReplicationOperation();
-                default:
-                    throw new IllegalArgumentException();
-            }
+        return typeId -> switch (typeId) {
+            case ADD_BACKUP -> new AddBackupOperation();
+            case ADD_AND_GET -> new AddAndGetOperation();
+            case GET -> new GetOperation();
+            case GET_AND_SET -> new GetAndSetOperation();
+            case GET_AND_ADD -> new GetAndAddOperation();
+            case SET_OPERATION -> new SetOperation();
+            case SET_BACKUP -> new SetBackupOperation();
+            case REPLICATION -> new LongRegisterReplicationOperation();
+            default -> throw new IllegalArgumentException();
         };
     }
 }

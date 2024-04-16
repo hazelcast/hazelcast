@@ -51,31 +51,18 @@ public final class LockDataSerializerHook implements DataSerializerHook {
     }
 
     @Override
-    @SuppressWarnings("ReturnCount")
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case IS_LOCKED:
-                    return new IsLockedOperation();
-                case LOCK:
-                    return new LockOperation();
-                case LOCK_BACKUP:
-                    return new LockBackupOperation();
-                case LOCK_REPLICATION:
-                    return new LockReplicationOperation();
-                case UNLOCK_BACKUP:
-                    return new UnlockBackupOperation();
-                case UNLOCK:
-                    return new UnlockOperation();
-                case LOCK_STORE:
-                    return new LockStoreImpl();
-                case LOCK_RESOURCE:
-                    return new LockResourceImpl();
-                case UNLOCK_IF_LEASE_EXPIRED:
-                    return new UnlockIfLeaseExpiredOperation();
-                default:
-                    return null;
-            }
+        return typeId -> switch (typeId) {
+            case IS_LOCKED -> new IsLockedOperation();
+            case LOCK -> new LockOperation();
+            case LOCK_BACKUP -> new LockBackupOperation();
+            case LOCK_REPLICATION -> new LockReplicationOperation();
+            case UNLOCK_BACKUP -> new UnlockBackupOperation();
+            case UNLOCK -> new UnlockOperation();
+            case LOCK_STORE -> new LockStoreImpl();
+            case LOCK_RESOURCE -> new LockResourceImpl();
+            case UNLOCK_IF_LEASE_EXPIRED -> new UnlockIfLeaseExpiredOperation();
+            default -> null;
         };
     }
 }

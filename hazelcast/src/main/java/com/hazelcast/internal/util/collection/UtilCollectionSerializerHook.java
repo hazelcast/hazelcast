@@ -36,15 +36,10 @@ public class UtilCollectionSerializerHook implements DataSerializerHook {
     }
 
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case PARTITION_ID_SET:
-                    return new PartitionIdSet();
-                case IMMUTABLE_PARTITION_ID_SET:
-                    return new ImmutablePartitionIdSet();
-                default:
-                    throw new IllegalArgumentException("Undefined type: " + typeId);
-            }
+        return typeId -> switch (typeId) {
+            case PARTITION_ID_SET -> new PartitionIdSet();
+            case IMMUTABLE_PARTITION_ID_SET -> new ImmutablePartitionIdSet();
+            default -> throw new IllegalArgumentException("Undefined type: " + typeId);
         };
     }
 }

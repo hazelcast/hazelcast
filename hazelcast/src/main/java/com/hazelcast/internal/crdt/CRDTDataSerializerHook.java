@@ -24,7 +24,6 @@ import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PN_COUNTER_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PN_COUNTER_DS_FACTORY_ID;
@@ -53,24 +52,13 @@ public final class CRDTDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case PN_COUNTER_REPLICATION:
-                        return new PNCounterReplicationOperation();
-                    case PN_COUNTER:
-                        return new PNCounterImpl();
-                    case PN_COUNTER_ADD_OPERATION:
-                        return new AddOperation();
-                    case PN_COUNTER_GET_OPERATION:
-                        return new GetOperation();
-                    case CRDT_TIMESTAMPED_LONG:
-                        return new CRDTTimestampedLong();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case PN_COUNTER_REPLICATION -> new PNCounterReplicationOperation();
+            case PN_COUNTER -> new PNCounterImpl();
+            case PN_COUNTER_ADD_OPERATION -> new AddOperation();
+            case PN_COUNTER_GET_OPERATION -> new GetOperation();
+            case CRDT_TIMESTAMPED_LONG -> new CRDTTimestampedLong();
+            default -> null;
         };
     }
 }

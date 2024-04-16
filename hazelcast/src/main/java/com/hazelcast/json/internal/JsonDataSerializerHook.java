@@ -48,6 +48,7 @@ public final class JsonDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
+        //noinspection unchecked
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
         constructors[JSON_SCHEMA_NAME_VALUE] = JsonSchemaNameValue::new;

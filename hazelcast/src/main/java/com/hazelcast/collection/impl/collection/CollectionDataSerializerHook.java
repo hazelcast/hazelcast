@@ -135,6 +135,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
+        //noinspection unchecked
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[COLLECTION_MERGE_BACKUP + 1];
 
         constructors[COLLECTION_ADD] = CollectionAddOperation::new;

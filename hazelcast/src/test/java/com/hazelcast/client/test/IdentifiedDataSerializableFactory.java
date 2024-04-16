@@ -515,38 +515,23 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     @Override
     public IdentifiedDataSerializable create(int typeId) {
-        switch (typeId) {
-            case 1:
-                return new SampleFailingTask();
-            case 2:
-                return new SampleCallableTask();
-            case 3:
-                return new KeyMultiplier();
-            case 4:
-                return new EmployeeEntryComparator();
-            case 5:
-                return new EmployeeEntryKeyComparator();
-            case 6:
-                return new MapGetInterceptor();
-            case 7:
-                return new KeyMultiplierWithNullableResult();
-            case 8:
-                return new WaitMultiplierProcessor();
-            case 9:
-                return new UTFValueValidatorProcessor();
-            case 10:
-                return new BaseDataSerializable();
-            case 11:
-                return new Derived1DataSerializable();
-            case 12:
-                return new Derived2DataSerializable();
-            case 13:
-                return new CallableSignalsRunAndSleep();
-            case StartsWithStringFilter.CLASS_ID:
-                return new StartsWithStringFilter();
-            default:
-                return null;
-        }
+        return switch (typeId) {
+            case 1 -> new SampleFailingTask();
+            case 2 -> new SampleCallableTask();
+            case 3 -> new KeyMultiplier();
+            case 4 -> new EmployeeEntryComparator();
+            case 5 -> new EmployeeEntryKeyComparator();
+            case 6 -> new MapGetInterceptor();
+            case 7 -> new KeyMultiplierWithNullableResult();
+            case 8 -> new WaitMultiplierProcessor();
+            case 9 -> new UTFValueValidatorProcessor();
+            case 10 -> new BaseDataSerializable();
+            case 11 -> new Derived1DataSerializable();
+            case 12 -> new Derived2DataSerializable();
+            case 13 -> new CallableSignalsRunAndSleep();
+            case StartsWithStringFilter.CLASS_ID -> new StartsWithStringFilter();
+            default -> null;
+        };
     }
 
     @Override

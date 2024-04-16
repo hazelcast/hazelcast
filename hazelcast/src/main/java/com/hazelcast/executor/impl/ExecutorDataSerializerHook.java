@@ -23,7 +23,6 @@ import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.EXECUTOR_DS_FACTORY_ID;
@@ -45,24 +44,13 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case CALLABLE_TASK:
-                        return new CallableTaskOperation();
-                    case MEMBER_CALLABLE_TASK:
-                        return new MemberCallableTaskOperation();
-                    case RUNNABLE_ADAPTER:
-                        return new RunnableAdapter();
-                    case CANCELLATION:
-                        return new CancellationOperation();
-                    case SHUTDOWN:
-                        return new ShutdownOperation();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case CALLABLE_TASK -> new CallableTaskOperation();
+            case MEMBER_CALLABLE_TASK -> new MemberCallableTaskOperation();
+            case RUNNABLE_ADAPTER -> new RunnableAdapter<>();
+            case CANCELLATION -> new CancellationOperation();
+            case SHUTDOWN -> new ShutdownOperation();
+            default -> null;
         };
     }
 }

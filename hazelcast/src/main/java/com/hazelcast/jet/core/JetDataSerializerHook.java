@@ -83,54 +83,31 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
-            switch (typeId) {
-                case DAG:
-                    return new DAG();
-                case VERTEX:
-                    return new Vertex();
-                case EDGE:
-                    return new Edge();
-                case APPLY_FN_ENTRY_PROCESSOR:
-                    return new ApplyFnEntryProcessor<>();
-                case APPLY_VALUE_ENTRY_PROCESSOR:
-                    return new ApplyValuesEntryProcessor<>();
-                case TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN:
-                    return new ItemsDistributedFillBufferFn<>();
-                case JET_SQL_ROW:
-                    return new JetSqlRow();
-                case LOCAL_MAP_READER_FUNCTION:
-                    return new HazelcastReaders.LocalMapReaderFunction();
-                case PROCESSORS_AGGREGATE_P_SUPPLIER:
-                    return new ProcessorSuppliers.AggregatePSupplier<>();
-                case LOCAL_CACHE_READER_FUNCTION:
-                    return new HazelcastReaders.LocalCacheReaderFunction();
-                case REMOTE_CACHE_READER_FUNCTION:
-                    return new HazelcastReaders.RemoteCacheReaderFunction();
-                case LOCAL_MAP_QUERY_READER_FUNCTION:
-                    return new HazelcastReaders.LocalMapQueryReaderFunction<>();
-                case REMOTE_MAP_READER_FUNCTION:
-                    return new HazelcastReaders.RemoteMapReaderFunction();
-                case REMOTE_MAP_QUERY_READER_FUNCTION:
-                    return new HazelcastReaders.RemoteMapQueryReaderFunction<>();
-                case READ_MAP_OR_CACHE_P_LOCAL_PROCESSOR_SUPPLIER:
-                    return new ReadMapOrCacheP.LocalProcessorSupplier<>();
-                case PROCESSOR_MAP_P_SUPPLIER:
-                    return new ProcessorSuppliers.ProcessorMapPSupplier<>();
-                case AGGREGATE_COMBINING_ACCUMULATE:
-                    return new AggregateOperation1Impl.AggregateCombiningAccumulate<>();
-                case EDGE_KEY_PARTITIONER:
-                    return new Edge.KeyPartitioner<>();
-                case EDGE_SINGLE_PARTITIONER:
-                    return new Edge.Single();
-                case EXPECT_NOTHING_PROCESSOR_SUPPLIER:
-                    return new ProcessorMetaSupplier.ExpectNothingProcessorSupplier();
-                case SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER:
-                    return new ProcessorMetaSupplier.SpecificMemberPms();
-                case RANDOM_MEMBER_PROCESSOR_META_SUPPLIER:
-                    return new ProcessorMetaSupplier.RandomMemberPms();
-                default:
-                    throw new IllegalArgumentException("Unknown type id " + typeId);
-            }
+            return switch (typeId) {
+                case DAG -> new DAG();
+                case VERTEX -> new Vertex();
+                case EDGE -> new Edge();
+                case APPLY_FN_ENTRY_PROCESSOR -> new ApplyFnEntryProcessor<>();
+                case APPLY_VALUE_ENTRY_PROCESSOR -> new ApplyValuesEntryProcessor<>();
+                case TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN -> new ItemsDistributedFillBufferFn<>();
+                case JET_SQL_ROW -> new JetSqlRow();
+                case LOCAL_MAP_READER_FUNCTION -> new HazelcastReaders.LocalMapReaderFunction();
+                case PROCESSORS_AGGREGATE_P_SUPPLIER -> new ProcessorSuppliers.AggregatePSupplier<>();
+                case LOCAL_CACHE_READER_FUNCTION -> new HazelcastReaders.LocalCacheReaderFunction();
+                case REMOTE_CACHE_READER_FUNCTION -> new HazelcastReaders.RemoteCacheReaderFunction();
+                case LOCAL_MAP_QUERY_READER_FUNCTION -> new HazelcastReaders.LocalMapQueryReaderFunction<>();
+                case REMOTE_MAP_READER_FUNCTION -> new HazelcastReaders.RemoteMapReaderFunction();
+                case REMOTE_MAP_QUERY_READER_FUNCTION -> new HazelcastReaders.RemoteMapQueryReaderFunction<>();
+                case READ_MAP_OR_CACHE_P_LOCAL_PROCESSOR_SUPPLIER -> new ReadMapOrCacheP.LocalProcessorSupplier<>();
+                case PROCESSOR_MAP_P_SUPPLIER -> new ProcessorSuppliers.ProcessorMapPSupplier<>();
+                case AGGREGATE_COMBINING_ACCUMULATE -> new AggregateOperation1Impl.AggregateCombiningAccumulate<>();
+                case EDGE_KEY_PARTITIONER -> new Edge.KeyPartitioner<>();
+                case EDGE_SINGLE_PARTITIONER -> new Edge.Single();
+                case EXPECT_NOTHING_PROCESSOR_SUPPLIER -> new ProcessorMetaSupplier.ExpectNothingProcessorSupplier();
+                case SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER -> new ProcessorMetaSupplier.SpecificMemberPms();
+                case RANDOM_MEMBER_PROCESSOR_META_SUPPLIER -> new ProcessorMetaSupplier.RandomMemberPms();
+                default -> throw new IllegalArgumentException("Unknown type id " + typeId);
+            };
         }
     }
 }

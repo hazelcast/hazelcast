@@ -173,9 +173,10 @@ public final class CacheDataSerializerHook
     }
 
     // squid:S1612 https://github.com/hazelcast/hazelcast/issues/25834
-    @SuppressWarnings({"squid:S1612", "MethodLength"})
+    @SuppressWarnings({"squid:S1612", "MethodLength", "Convert2MethodRef"})
     @Override
     public DataSerializableFactory createFactory() {
+        //noinspection unchecked
         Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
         constructors[GET] = () -> new CacheGetOperation();
         constructors[CONTAINS_KEY] = () -> new CacheContainsKeyOperation();

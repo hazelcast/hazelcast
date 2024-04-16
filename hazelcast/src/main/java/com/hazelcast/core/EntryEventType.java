@@ -87,32 +87,20 @@ public enum EntryEventType {
      * @return the matching EntryEventType for the supplied {@code typeId}
      * or {@code null} if there is no match
      */
-    @SuppressWarnings("checkstyle:returncount")
     public static EntryEventType getByType(final int typeId) {
-        switch (typeId) {
-            case TypeId.ADDED:
-                return ADDED;
-            case TypeId.REMOVED:
-                return REMOVED;
-            case TypeId.UPDATED:
-                return UPDATED;
-            case TypeId.EVICTED:
-                return EVICTED;
-            case TypeId.EVICT_ALL:
-                return EVICT_ALL;
-            case TypeId.CLEAR_ALL:
-                return CLEAR_ALL;
-            case TypeId.MERGED:
-                return MERGED;
-            case TypeId.EXPIRED:
-                return EXPIRED;
-            case TypeId.INVALIDATION:
-                return INVALIDATION;
-            case TypeId.LOADED:
-                return LOADED;
-            default:
-                return null;
-        }
+        return switch (typeId) {
+            case TypeId.ADDED -> ADDED;
+            case TypeId.REMOVED -> REMOVED;
+            case TypeId.UPDATED -> UPDATED;
+            case TypeId.EVICTED -> EVICTED;
+            case TypeId.EVICT_ALL -> EVICT_ALL;
+            case TypeId.CLEAR_ALL -> CLEAR_ALL;
+            case TypeId.MERGED -> MERGED;
+            case TypeId.EXPIRED -> EXPIRED;
+            case TypeId.INVALIDATION -> INVALIDATION;
+            case TypeId.LOADED -> LOADED;
+            default -> null;
+        };
     }
 
     /**

@@ -61,35 +61,20 @@ public class RingbufferDataSerializerHook implements DataSerializerHook {
     @Override
     @SuppressWarnings({"AnonInnerLength", "CyclomaticComplexity", "ReturnCount"})
     public DataSerializableFactory createFactory() {
-        return typeId -> {
-            switch (typeId) {
-                case ADD_BACKUP_OPERATION:
-                    return new AddBackupOperation();
-                case ADD_OPERATION:
-                    return new AddOperation();
-                case READ_ONE_OPERATION:
-                    return new ReadOneOperation();
-                case REPLICATION_OPERATION:
-                    return new ReplicationOperation();
-                case GENERIC_OPERATION:
-                    return new GenericOperation();
-                case READ_MANY_OPERATION:
-                    return new ReadManyOperation();
-                case ADD_ALL_OPERATION:
-                    return new AddAllOperation();
-                case ADD_ALL_BACKUP_OPERATION:
-                    return new AddAllBackupOperation();
-                case READ_RESULT_SET:
-                    return new ReadResultSetImpl();
-                case RINGBUFFER_CONTAINER:
-                    return new RingbufferContainer();
-                case MERGE_OPERATION:
-                    return new MergeOperation();
-                case MERGE_BACKUP_OPERATION:
-                    return new MergeBackupOperation();
-                default:
-                    return null;
-            }
+        return typeId -> switch (typeId) {
+            case ADD_BACKUP_OPERATION -> new AddBackupOperation();
+            case ADD_OPERATION -> new AddOperation();
+            case READ_ONE_OPERATION -> new ReadOneOperation();
+            case REPLICATION_OPERATION -> new ReplicationOperation();
+            case GENERIC_OPERATION -> new GenericOperation();
+            case READ_MANY_OPERATION -> new ReadManyOperation<>();
+            case ADD_ALL_OPERATION -> new AddAllOperation();
+            case ADD_ALL_BACKUP_OPERATION -> new AddAllBackupOperation();
+            case READ_RESULT_SET -> new ReadResultSetImpl<>();
+            case RINGBUFFER_CONTAINER -> new RingbufferContainer<>();
+            case MERGE_OPERATION -> new MergeOperation();
+            case MERGE_BACKUP_OPERATION -> new MergeBackupOperation();
+            default -> null;
         };
     }
 }

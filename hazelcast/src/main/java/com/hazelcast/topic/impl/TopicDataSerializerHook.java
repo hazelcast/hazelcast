@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TOPIC_DS_FACTORY;
@@ -41,22 +40,12 @@ public final class TopicDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case PUBLISH:
-                        return new PublishOperation();
-                    case TOPIC_EVENT:
-                        return new TopicEvent();
-                    case RELIABLE_TOPIC_MESSAGE:
-                        return new ReliableTopicMessage();
-                    case PUBLISH_ALL:
-                        return new PublishAllOperation();
-                    default:
-                        return null;
-                }
-            }
+        return typeId -> switch (typeId) {
+            case PUBLISH -> new PublishOperation();
+            case TOPIC_EVENT -> new TopicEvent();
+            case RELIABLE_TOPIC_MESSAGE -> new ReliableTopicMessage();
+            case PUBLISH_ALL -> new PublishAllOperation();
+            default -> null;
         };
     }
 }
