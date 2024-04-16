@@ -303,7 +303,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.self="override">
                     <trimStackTrace>false</trimStackTrace>
                     <argLine>
@@ -700,7 +699,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
@@ -829,7 +827,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
@@ -999,7 +996,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
@@ -1154,7 +1150,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
@@ -1224,7 +1219,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
