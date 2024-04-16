@@ -136,6 +136,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
+import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS;
 import static com.hazelcast.instance.impl.Node.getLegacyUCDClassLoader;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
@@ -172,6 +173,7 @@ public class DefaultNodeExtension implements NodeExtension {
         this.logger = node.getLogger(NodeExtension.class);
         this.logoLogger = node.getLogger("com.hazelcast.system.logo");
         this.systemLogger = node.getLogger("com.hazelcast.system");
+        checkCPSubsystemAllowed();
         checkSecurityAllowed();
         checkPersistenceAllowed();
         checkLosslessRestartAllowed();
@@ -186,18 +188,20 @@ public class DefaultNodeExtension implements NodeExtension {
         integrityChecker = new IntegrityChecker(node.getConfig().getIntegrityCheckerConfig(), this.systemLogger);
     }
 
+    private void checkCPSubsystemAllowed() {
+        CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
+        if (cpSubsystemConfig != null && cpSubsystemConfig.getCPMemberCount() != 0) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException(CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS);
+            }
+        }
+    }
+
     private void checkPersistenceAllowed() {
         PersistenceConfig persistenceConfig = node.getConfig().getPersistenceConfig();
         if (persistenceConfig != null && persistenceConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
-            }
-        }
-
-        CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
-        if (cpSubsystemConfig != null && cpSubsystemConfig.isPersistenceEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("CP persistence requires Hazelcast Enterprise Edition");
             }
         }
     }

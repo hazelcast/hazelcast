@@ -1558,8 +1558,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testCPSubsystemConfig() {
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
-        assertEquals(4, cpSubsystemConfig.getCPMemberCount());
-        assertEquals(3, cpSubsystemConfig.getGroupSize());
+        assertEquals(0, cpSubsystemConfig.getCPMemberCount());
+        assertEquals(0, cpSubsystemConfig.getGroupSize());
         assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
