@@ -112,20 +112,19 @@ public abstract class GeneralHashJoinBuilder<T0> {
         List<Entry<Tag<?>, StageAndClause<?, T0, ?, ?>>> orderedClauses =
                 clauses.entrySet().stream()
                        .sorted(Entry.comparingByKey())
-                       .collect(toList());
+                       .toList();
         List<GeneralStage> upstream = concat(
                 Stream.of(stage0),
                 orderedClauses.stream().map(e -> e.getValue().stage())
         ).collect(toList());
-        Stream<? extends JoinClause<?, T0, ?, ?>> joinClauses = orderedClauses
+        Stream<JoinClause<?, T0, ?, ?>> joinClauses = orderedClauses
                 .stream()
                 .map(e -> e.getValue().clause());
         // JoinClause's second param, T0, is the same for all clauses but only
         // before FunctionAdapter treatment. After that it may be T0 or JetEvent<T0>
         // so we are forced to generalize to just ?.
-        // The (JoinClause) and (List<JoinClause>) casts are a workaround for JDK 8 compiler bugs.
-        List<JoinClause> adaptedClauses = (List<JoinClause>) joinClauses
-                .map(joinClause -> fnAdapter.adaptJoinClause((JoinClause) joinClause))
+        List<JoinClause> adaptedClauses = joinClauses
+                .map((JoinClause joinClause) -> fnAdapter.adaptJoinClause(joinClause))
                 .collect(toList());
         BiFunctionEx<?, ? super ItemsByTag, ?> adaptedOutputFn = fnAdapter.adaptHashJoinOutputFn(mapToOutputFn);
         // Here we break type safety and assume T0 as the type parameter even though

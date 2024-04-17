@@ -21,8 +21,6 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,13 +48,6 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
                     .withUsername("mysqluser")
                     .withPassword("mysqlpw")
     );
-
-    @BeforeClass
-    public static void ignoreOnJdk15OrHigher() {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
-                        "https://github.com/hazelcast/hazelcast/issues/18800",
-                System.getProperty("java.version").matches("^1[56].*"));
-    }
 
     protected MySqlCdcSources.Builder sourceBuilder(String name) {
         return MySqlCdcSources.mysql(name)

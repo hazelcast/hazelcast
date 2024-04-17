@@ -37,8 +37,6 @@ import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.ToxicDirection;
 import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -99,13 +97,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
                 {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
         });
-    }
-
-    @Before
-    public void ignoreOnJdk15OrHigher() {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
-                        "https://github.com/hazelcast/hazelcast/issues/18800",
-                System.getProperty("java.version").matches("^1[567].*"));
     }
 
     @After

@@ -34,7 +34,6 @@ import io.debezium.connector.mongodb.MongoDbConnector;
 import io.debezium.connector.mysql.MySqlConnector;
 import io.debezium.connector.postgresql.PostgresConnector;
 import org.bson.Document;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -73,10 +72,6 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void mysql() throws Exception {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
-                        "https://github.com/hazelcast/hazelcast/issues/18800",
-                System.getProperty("java.version").matches("^1[56].*"));
-
         try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
@@ -154,10 +149,6 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void mysql_simpleJson() {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
-                        "https://github.com/hazelcast/hazelcast/issues/18800",
-                System.getProperty("java.version").matches("^1[56].*"));
-
         try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
