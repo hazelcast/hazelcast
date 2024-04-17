@@ -4,6 +4,7 @@ target/
 !.idea/icon.png
 !.idea/icon.svg
 .vscode/
+!.vscode/extensions.json
 .settings/
 .attach_pid*
 .classpath
