@@ -747,8 +747,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof Employee) {
-                return id == ((Employee) obj).getId();
+            if (obj instanceof Employee employee) {
+                return id == employee.getId();
             }
             return false;
         }

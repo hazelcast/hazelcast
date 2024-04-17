@@ -1307,7 +1307,7 @@ public class IndeterminateSnapshotTest {
 
         @Override
         protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-            if (key instanceof BroadcastKey && ((BroadcastKey<?>) key).key().equals(globalIndex)) {
+            if (key instanceof BroadcastKey broadcastKey && broadcastKey.key().equals(globalIndex)) {
                 restoredCounters.put(globalIndex, (Integer) value);
                 // Note that counter will not be incremented before first snapshot after restore.
                 // snapshotCounter can be less than snapshot id if some snapshots are lost.

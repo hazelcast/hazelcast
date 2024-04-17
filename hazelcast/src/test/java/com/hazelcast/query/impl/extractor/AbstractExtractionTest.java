@@ -165,8 +165,8 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
 
     private <T> T translate(T input) {
         if (mv == Multivalue.PORTABLE) {
-            if (input instanceof PortableAware) {
-                return ((PortableAware) input).getPortable();
+            if (input instanceof PortableAware aware) {
+                return aware.getPortable();
             }
         }
         return input;

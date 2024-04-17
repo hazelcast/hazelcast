@@ -46,11 +46,11 @@ public class DummyOperation extends Operation {
             Thread.sleep(delayMillis);
         }
 
-        if (value instanceof Runnable) {
-            ((Runnable) value).run();
+        if (value instanceof Runnable runnable) {
+            runnable.run();
             result = value;
-        } else if (value instanceof Callable) {
-            result = ((Callable) value).call();
+        } else if (value instanceof Callable callable) {
+            result = callable.call();
         } else {
             result = value;
         }

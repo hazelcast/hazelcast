@@ -75,13 +75,13 @@ public class MockInboundStream implements InboundEdgeStream {
                 done = true;
                 break;
             }
-            if (item instanceof SpecialBroadcastItem) {
+            if (item instanceof SpecialBroadcastItem broadcastItem) {
                 if (i == 0) {
                     // if we meet special item first, just forward it and stop draining iteration.
                     dest.accept(item);
                 } else {
                     // here, if we meet special item after normal items, stop draining iteration without skipping.
-                    pendingItem = (SpecialBroadcastItem) item;
+                    pendingItem = broadcastItem;
                 }
                 break;
             } else {

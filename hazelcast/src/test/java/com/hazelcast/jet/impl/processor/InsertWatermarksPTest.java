@@ -283,8 +283,8 @@ public class InsertWatermarksPTest {
         }
 
         for (Object inputItem : input) {
-            if (inputItem instanceof Tick) {
-                clock.set(((Tick) inputItem).timestamp);
+            if (inputItem instanceof Tick tick) {
+                clock.set(tick.timestamp);
                 resultToCheck.add(tick(clock.now));
                 doAndDrain(p::tryProcess);
             } else {
@@ -307,8 +307,8 @@ public class InsertWatermarksPTest {
     }
 
     private String myToString(Object o) {
-        return o instanceof Watermark
-                ? "Watermark{timestamp=" + ((Watermark) o).timestamp() + '}'
+        return o instanceof Watermark w
+                ? "Watermark{timestamp=" + w.timestamp() + '}'
                 : o.toString();
     }
 

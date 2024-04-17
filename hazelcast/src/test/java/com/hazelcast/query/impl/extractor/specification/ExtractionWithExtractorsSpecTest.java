@@ -195,8 +195,8 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         @Override
         public void extract(Object target, Object arguments, final ValueCollector collector) {
             Integer parsedId = Integer.parseInt((String) arguments);
-            if (target instanceof Person) {
-                Integer size = ((Person) target).limbs_list.get(parsedId).tattoos_list.size();
+            if (target instanceof Person person) {
+                Integer size = person.limbs_list.get(parsedId).tattoos_list.size();
                 collector.addObject(size);
             } else {
                 ValueReader reader = (ValueReader) target;

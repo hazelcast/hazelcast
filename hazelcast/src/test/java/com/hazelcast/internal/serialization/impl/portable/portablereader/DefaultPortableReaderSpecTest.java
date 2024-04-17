@@ -137,15 +137,14 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
             // assert the condition
             Object result = reader(inputObject).read(pathToRead);
-            if (result instanceof MultiResult) {
-                MultiResult<?> multiResult = (MultiResult<?>) result;
+            if (result instanceof MultiResult multiResult) {
                 if (multiResult.getResults().size() == 1
                         && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
                     // explode null in case of a single multi-result target result
                     result = null;
                 } else {
                     // in case of multi result while invoking generic "read" method deal with the multi results
-                    result = ((MultiResult<?>) result).getResults().toArray();
+                    result = multiResult.getResults().toArray();
                 }
 
                 if (Arrays.isArray(resultToMatch)) {
@@ -158,8 +157,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             }
         };
 
-        if (expectedResult instanceof Class) {
-            assertThatThrownBy(test).isInstanceOf((Class<?>) expectedResult);
+        if (expectedResult instanceof Class class1) {
+            assertThatThrownBy(test).isInstanceOf(class1);
         } else {
             test.call();
         }
@@ -194,8 +193,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         List<Object[]> scenarios = new ArrayList<>();
         Object adjustedResult;
         for (PrimitiveFields primitiveFields : getPrimitives()) {
-            if (result instanceof PrimitivePortable) {
-                adjustedResult = ((PrimitivePortable) result).getPrimitive(primitiveFields);
+            if (result instanceof PrimitivePortable portable) {
+                adjustedResult = portable.getPrimitive(primitiveFields);
             } else {
                 adjustedResult = result;
             }

@@ -47,8 +47,8 @@ public class HazelcastStarterUtils {
     private static final ILogger LOGGER = Logger.getLogger(HazelcastStarterUtils.class);
 
     public static RuntimeException rethrowGuardianException(Throwable t) {
-        if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
+        if (t instanceof RuntimeException exception) {
+            throw exception;
         }
         throw new GuardianException(t);
     }

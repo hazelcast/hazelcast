@@ -1524,8 +1524,8 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         Object values = function.apply(test);
         Type genericSuperClass = values.getClass().getGenericSuperclass();
-        if (genericSuperClass instanceof ParameterizedType) {
-            Type actualType = ((ParameterizedType) genericSuperClass).getActualTypeArguments()[0];
+        if (genericSuperClass instanceof ParameterizedType type) {
+            Type actualType = type.getActualTypeArguments()[0];
             // Raw class is expected. ParameterizedType-s cause troubles to Jackson serializer.
             assertInstanceOf(Class.class, actualType);
         }

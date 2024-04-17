@@ -58,8 +58,7 @@ public class ProxyInvocationHandler implements InvocationHandler, Serializable {
             return delegateResult;
         }
 
-        if (returnType instanceof ParameterizedType) {
-            ParameterizedType parameterizedReturnType = (ParameterizedType) returnType;
+        if (returnType instanceof ParameterizedType parameterizedReturnType) {
             ParameterizedType parameterizedDelegateReturnType = (ParameterizedType) delegateReturnType;
             if (Collection.class.isAssignableFrom((Class) parameterizedDelegateReturnType.getRawType())) {
                 return toCollection(targetClassLoader, delegateResult, parameterizedReturnType, parameterizedDelegateReturnType);

@@ -321,8 +321,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         future.whenCompleteAsync(callback1);
         future.whenCompleteAsync(callback2);
 
-        if (result instanceof Throwable) {
-            future.completeExceptionally((Throwable) result);
+        if (result instanceof Throwable throwable) {
+            future.completeExceptionally(throwable);
         } else {
             future.complete(result);
         }

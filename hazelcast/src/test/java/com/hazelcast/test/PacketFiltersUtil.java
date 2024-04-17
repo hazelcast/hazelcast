@@ -52,8 +52,8 @@ public final class PacketFiltersUtil {
 
     public static void resetPacketFiltersFrom(HazelcastInstance instance) {
         ServerConnectionManager cm = getConnectionManager(instance);
-        if (cm instanceof FirewallingServerConnectionManager) {
-            ((FirewallingServerConnectionManager) cm).removePacketFilter();
+        if (cm instanceof FirewallingServerConnectionManager manager) {
+            manager.removePacketFilter();
         } else {
             ILogger logger = instance.getLoggingService().getLogger(PacketFiltersUtil.class);
             logger.warning("Trying to reset packet filters when using real network");

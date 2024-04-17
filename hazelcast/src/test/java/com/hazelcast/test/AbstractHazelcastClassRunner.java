@@ -185,11 +185,11 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         ExpectedException expectedException = null;
         if (!testRules.isEmpty()) {
             for (TestRule rule : testRules) {
-                if (rule instanceof BounceMemberRule) {
-                    nextStatement = ((BounceMemberRule) rule).stopBouncing(statement);
+                if (rule instanceof BounceMemberRule memberRule) {
+                    nextStatement = memberRule.stopBouncing(statement);
                 }
-                if (rule instanceof ExpectedException) {
-                    expectedException = (ExpectedException) rule;
+                if (rule instanceof ExpectedException exception) {
+                    expectedException = exception;
                 }
             }
         }
@@ -214,8 +214,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         Statement nextStatement = statement;
         if (!testRules.isEmpty()) {
             for (TestRule rule : testRules) {
-                if (rule instanceof BounceMemberRule) {
-                    nextStatement = ((BounceMemberRule) rule).startBouncing(statement);
+                if (rule instanceof BounceMemberRule memberRule) {
+                    nextStatement = memberRule.startBouncing(statement);
                 }
             }
         }

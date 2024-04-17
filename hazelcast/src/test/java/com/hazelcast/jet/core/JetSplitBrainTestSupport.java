@@ -245,9 +245,9 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     private static boolean isInstanceActive(HazelcastInstance instance) {
-        if (instance instanceof HazelcastInstanceProxy) {
+        if (instance instanceof HazelcastInstanceProxy proxy) {
             try {
-                ((HazelcastInstanceProxy) instance).getOriginal();
+                proxy.getOriginal();
                 return true;
             } catch (HazelcastInstanceNotActiveException exception) {
                 return false;

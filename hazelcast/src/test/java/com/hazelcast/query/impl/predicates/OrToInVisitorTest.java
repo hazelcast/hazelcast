@@ -116,8 +116,8 @@ public class OrToInVisitorTest {
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         Predicate[] predicates = result.predicates;
         for (Predicate predicate : predicates) {
-            if (predicate instanceof InPredicate) {
-                Comparable[] values = ((InPredicate) predicate).values;
+            if (predicate instanceof InPredicate inPredicate) {
+                Comparable[] values = inPredicate.values;
                 assertThat(values).hasSize(5);
                 assertThat(values).containsExactlyInAnyOrder(1, 2, 3, 4, 5);
             } else {

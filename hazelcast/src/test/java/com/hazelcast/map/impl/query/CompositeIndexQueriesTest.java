@@ -336,8 +336,8 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         @Override
         public Predicate accept(Visitor visitor, IndexRegistry indexes) {
             Predicate delegate = this.delegate;
-            if (delegate instanceof VisitablePredicate) {
-                this.delegate = ((VisitablePredicate) delegate).accept(visitor, indexes);
+            if (delegate instanceof VisitablePredicate predicate) {
+                this.delegate = predicate.accept(visitor, indexes);
             }
             return this;
         }

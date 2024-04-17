@@ -171,8 +171,8 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     }
 
     private void checkExcluded(String className) throws ClassNotFoundException {
-        if (parent instanceof FilteringClassLoader) {
-            ((FilteringClassLoader) parent).checkExcluded(className);
+        if (parent instanceof FilteringClassLoader loader) {
+            loader.checkExcluded(className);
         }
     }
 

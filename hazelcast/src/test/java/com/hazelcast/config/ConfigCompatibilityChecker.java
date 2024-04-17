@@ -1404,8 +1404,7 @@ public class ConfigCompatibilityChecker {
                     && (c1.getSocketKeepCount() == c2.getSocketKeepCount())
                     && nullSafeEqual(c1.getTpcSocketConfig(), c2.getTpcSocketConfig());
 
-            if (c1 instanceof ServerSocketEndpointConfig) {
-                ServerSocketEndpointConfig s1 = (ServerSocketEndpointConfig) c1;
+            if (c1 instanceof ServerSocketEndpointConfig s1) {
                 ServerSocketEndpointConfig s2 = (ServerSocketEndpointConfig) c2;
                 return compatible && nullSafeEqual(s1.getPort(), s2.getPort())
                         && nullSafeEqual(s1.getPortCount(), s2.getPortCount())

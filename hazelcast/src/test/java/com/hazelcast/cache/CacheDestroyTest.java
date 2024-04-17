@@ -152,8 +152,7 @@ public class CacheDestroyTest extends CacheTestSupport {
         registerInvalidationListener(new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
-                if (eventObject instanceof Invalidation) {
-                    Invalidation event = (Invalidation) eventObject;
+                if (eventObject instanceof Invalidation event) {
                     if (null == event.getKey() && config.getNameWithPrefix().equals(event.getName())) {
                         counter.incrementAndGet();
                     }

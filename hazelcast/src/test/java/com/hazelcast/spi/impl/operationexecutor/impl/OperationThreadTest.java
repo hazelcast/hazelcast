@@ -131,12 +131,12 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
         initExecutor();
 
-        if (task instanceof Operation) {
-            executor.execute((Operation) task);
-        } else if (task instanceof PartitionSpecificRunnable) {
-            executor.execute((PartitionSpecificRunnable) task);
-        } else if (task instanceof Packet) {
-            executor.accept((Packet) task);
+        if (task instanceof Operation operation) {
+            executor.execute(operation);
+        } else if (task instanceof PartitionSpecificRunnable runnable) {
+            executor.execute(runnable);
+        } else if (task instanceof Packet packet) {
+            executor.accept(packet);
         } else {
             fail("invalid task!");
         }

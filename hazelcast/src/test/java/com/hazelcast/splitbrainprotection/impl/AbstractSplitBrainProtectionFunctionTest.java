@@ -76,8 +76,8 @@ public class AbstractSplitBrainProtectionFunctionTest
         for (int i = 0; i < count; i++) {
             long timestamp = now + (i * intervalMillis);
             for (Member member : members) {
-                if (splitBrainProtectionFunction instanceof HeartbeatAware) {
-                    ((HeartbeatAware) splitBrainProtectionFunction).onHeartbeat(member, timestamp);
+                if (splitBrainProtectionFunction instanceof HeartbeatAware aware) {
+                    aware.onHeartbeat(member, timestamp);
                 } else {
                     fail("Tested SplitBrainProtectionFunction should be heartbeat aware");
                 }
@@ -99,8 +99,8 @@ public class AbstractSplitBrainProtectionFunctionTest
 
     protected void pingSuccessfully() {
         for (Member member : members) {
-            if (splitBrainProtectionFunction instanceof PingAware) {
-                ((PingAware) splitBrainProtectionFunction).onPingRestored(member);
+            if (splitBrainProtectionFunction instanceof PingAware aware) {
+                aware.onPingRestored(member);
             } else {
                 fail("Tested SplitBrainProtectionFunction should be ping aware");
             }
@@ -109,9 +109,9 @@ public class AbstractSplitBrainProtectionFunctionTest
 
     protected void pingFailure() {
         for (Member member : members) {
-            if (splitBrainProtectionFunction instanceof PingAware) {
+            if (splitBrainProtectionFunction instanceof PingAware aware) {
                 for (int i = 0; i < 3; i++) {
-                    ((PingAware) splitBrainProtectionFunction).onPingLost(member);
+                    aware.onPingLost(member);
                 }
             } else {
                 fail("Tested SplitBrainProtectionFunction should be ping aware");

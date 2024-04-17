@@ -131,15 +131,14 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
             GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
 
             Object result = reader.read(pathToRead);
-            if (result instanceof MultiResult) {
-                MultiResult<?> multiResult = (MultiResult<?>) result;
+            if (result instanceof MultiResult multiResult) {
                 if (multiResult.getResults().size() == 1
                         && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
                     // explode null in case of a single multi-result target result
                     result = null;
                 } else {
                     // in case of multi result while invoking generic "read" method deal with the multi results
-                    result = ((MultiResult<?>) result).getResults().toArray();
+                    result = multiResult.getResults().toArray();
                 }
             }
             if (Arrays.isArray(resultToMatch)) {
@@ -149,8 +148,8 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
             }
         };
 
-        if (expectedResult instanceof Class) {
-            assertThatThrownBy(test).isInstanceOf((Class<?>) expectedResult);
+        if (expectedResult instanceof Class<?> clazz) {
+            assertThatThrownBy(test).isInstanceOf(clazz);
         } else {
             test.call();
         }
@@ -184,8 +183,8 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         List<Object[]> scenarios = new ArrayList<>();
         Object adjustedResult;
         for (PrimitiveFields primitiveFields : getPrimitives()) {
-            if (result instanceof PrimitiveObject) {
-                adjustedResult = ((PrimitiveObject) result).getPrimitive(primitiveFields);
+            if (result instanceof PrimitiveObject object) {
+                adjustedResult = object.getPrimitive(primitiveFields);
             } else {
                 adjustedResult = result;
             }

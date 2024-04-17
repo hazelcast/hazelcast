@@ -356,8 +356,8 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param context the given {@link NearCacheTestContext} to retrieve the {@link DataStructureAdapter} from
      */
     public static void waitUntilLoaded(NearCacheTestContext<?, ?, ?, ?> context) {
-        if (context.dataAdapter instanceof IMapDataStructureAdapter) {
-            ((IMapDataStructureAdapter) context.dataAdapter).waitUntilLoaded();
+        if (context.dataAdapter instanceof IMapDataStructureAdapter adapter) {
+            adapter.waitUntilLoaded();
         }
     }
 

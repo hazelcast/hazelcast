@@ -45,8 +45,8 @@ public class ProgressMonitor {
     }
 
     public void registerTask(Runnable task) {
-        if (task instanceof BounceMemberRule.TestTaskRunnable) {
-            tasks.add((BounceMemberRule.TestTaskRunnable) task);
+        if (task instanceof BounceMemberRule.TestTaskRunnable runnable) {
+            tasks.add(runnable);
         } else if (maximumStaleNanos != STALENESS_DETECTOR_DISABLED) {
             throw new UnsupportedOperationException("Progress checking is enabled only for automatically repeated tasks");
         }

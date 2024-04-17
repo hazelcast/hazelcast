@@ -156,8 +156,8 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
 
         for (ServiceNamespace namespace : initialReplicaVersions.getNamespaces()) {
             if (replicaVersions.getVersions(namespace) == null) {
-                if (namespace instanceof DistributedObjectNamespace) {
-                    String objectName = ((DistributedObjectNamespace) namespace).getObjectName();
+                if (namespace instanceof DistributedObjectNamespace objectNamespace) {
+                    String objectName = objectNamespace.getObjectName();
                     assertThat(objectName).isIn(lostMapNames);
                     continue;
                 } else {
