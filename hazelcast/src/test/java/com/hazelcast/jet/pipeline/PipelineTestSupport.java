@@ -86,9 +86,9 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return execute(p, config);
     }
 
-    protected Job executeAndPeel() throws Throwable {
+    protected void executeAndPeel() throws Throwable {
         try {
-            return execute();
+            execute();
         } catch (CompletionException e) {
             throw peel(e);
         }

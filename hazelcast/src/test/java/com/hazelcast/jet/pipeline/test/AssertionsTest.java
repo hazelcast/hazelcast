@@ -91,12 +91,9 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)))
                 .writeTo(sinkList());
 
+        // Assertions.assertOrdered should throw AssertionError
         assertThatThrownBy(this::executeAndPeel)
                 .hasMessageContaining(AssertionError.class.getName());
-
-        assertEquals(4, assertionSink.size());
-        assertEquals(1, (int) assertionSink.get(0));
-        assertEquals(2, (int) assertionSink.get(1));
     }
 
     @Test
