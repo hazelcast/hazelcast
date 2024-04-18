@@ -90,8 +90,8 @@ public final class AddressHelper {
             for (int i = 0; i < portTryCount; i++) {
                 addressList.add(new Address(scopedAddress, inetAddress, possiblePort + i));
             }
-        } else if (inetAddress instanceof Inet6Address) {
-            Collection<Inet6Address> possibleInetAddresses = getPossibleInetAddressesFor((Inet6Address) inetAddress);
+        } else if (inetAddress instanceof Inet6Address address) {
+            Collection<Inet6Address> possibleInetAddresses = getPossibleInetAddressesFor(address);
             for (Inet6Address inet6Address : possibleInetAddresses) {
                 for (int i = 0; i < portTryCount; i++) {
                     addressList.add(new Address(scopedAddress, inet6Address, possiblePort + i));

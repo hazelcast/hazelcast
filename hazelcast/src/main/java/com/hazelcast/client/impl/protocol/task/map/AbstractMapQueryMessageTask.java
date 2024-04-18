@@ -103,8 +103,8 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         try {
             NamespaceUtil.setupNamespace(nodeEngine, getUserCodeNamespace());
             Predicate predicate = getPredicate();
-            if (predicate instanceof PartitionPredicate) {
-                QueryResult queryResult = invokeOnPartitions((PartitionPredicate) predicate);
+            if (predicate instanceof PartitionPredicate partitionPredicate) {
+                QueryResult queryResult = invokeOnPartitions(partitionPredicate);
                 extractAndAppendResult(result, queryResult);
                 return reduce(result);
             }
@@ -185,8 +185,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     private Query buildQuery(Predicate predicate) {
         Predicate target;
         PartitionIdSet idSet;
-        if (predicate instanceof PartitionPredicate) {
-            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        if (predicate instanceof PartitionPredicate partitionPredicate) {
             target = partitionPredicate.getTarget();
             idSet = nodeEngine.getPartitionService().getPartitionIdSet(partitionPredicate.getPartitionKeys());
         } else {

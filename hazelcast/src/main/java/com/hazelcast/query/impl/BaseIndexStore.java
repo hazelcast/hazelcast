@@ -105,8 +105,7 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     Comparable sanitizeValue(Object input) {
-        if (input instanceof CompositeValue) {
-            CompositeValue compositeValue = (CompositeValue) input;
+        if (input instanceof CompositeValue compositeValue) {
             Comparable[] components = compositeValue.getComponents();
             for (int i = 0; i < components.length; ++i) {
                 components[i] = sanitizeScalar(components[i]);

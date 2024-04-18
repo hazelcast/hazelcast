@@ -50,8 +50,8 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
     protected abstract boolean canSendInvalidation(Invalidation invalidation);
 
     protected final void sendInvalidation(Invalidation invalidation) {
-        if (invalidation instanceof BatchNearCacheInvalidation) {
-            ExtractedParams params = extractParams(((BatchNearCacheInvalidation) invalidation));
+        if (invalidation instanceof BatchNearCacheInvalidation cacheInvalidation) {
+            ExtractedParams params = extractParams(cacheInvalidation);
             ClientMessage message = encodeBatchInvalidation(invalidation.getName(), params.keys,
                     params.sourceUuids, params.partitionUuids, params.sequences);
 

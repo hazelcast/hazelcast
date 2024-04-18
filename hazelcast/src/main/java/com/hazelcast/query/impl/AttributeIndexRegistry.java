@@ -143,13 +143,11 @@ public class AttributeIndexRegistry {
                 return true;
             }
 
-            if (current instanceof FirstComponentDecorator) {
+            if (current instanceof FirstComponentDecorator currentDecorator) {
                 // the current index is composite
 
                 String[] candidateComponents = candidate.getComponents();
                 if (candidateComponents.length > 1) {
-                    // if the current index has more components, replace it
-                    FirstComponentDecorator currentDecorator = (FirstComponentDecorator) current;
                     return currentDecorator.width > candidateComponents.length;
                 }
 

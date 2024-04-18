@@ -544,8 +544,8 @@ public abstract class AbstractCacheService implements ICacheService,
         if (object == null) {
             return null;
         }
-        if (object instanceof Data) {
-            return (Data) object;
+        if (object instanceof Data data) {
+            return data;
         } else {
             return nodeEngine.getSerializationService().toData(object);
         }
@@ -617,13 +617,13 @@ public abstract class AbstractCacheService implements ICacheService,
 
     private UUID updateRegisteredListeners(CacheEventListener listener, EventRegistration eventRegistration) {
         UUID id = eventRegistration.getId();
-        if (listener instanceof Closeable) {
-            closeableListeners.put(id, (Closeable) listener);
-        } else if (listener instanceof CacheEntryListenerProvider) {
-            CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener)
+        if (listener instanceof Closeable closeable) {
+            closeableListeners.put(id, closeable);
+        } else if (listener instanceof CacheEntryListenerProvider provider) {
+            CacheEntryListener cacheEntryListener = provider
                     .getCacheEntryListener();
-            if (cacheEntryListener instanceof Closeable) {
-                closeableListeners.put(id, (Closeable) cacheEntryListener);
+            if (cacheEntryListener instanceof Closeable closeable) {
+                closeableListeners.put(id, closeable);
             }
         }
         return id;

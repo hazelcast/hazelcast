@@ -164,8 +164,8 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         List<Runnable> tasks = new LinkedList<>();
         taskQ.drainTo(tasks);
         for (Runnable task : tasks) {
-            if (task instanceof RunnableFuture) {
-                ((RunnableFuture) task).cancel(false);
+            if (task instanceof RunnableFuture future) {
+                future.cancel(false);
             }
         }
         return tasks;

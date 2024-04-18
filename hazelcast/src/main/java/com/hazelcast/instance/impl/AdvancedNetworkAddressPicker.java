@@ -46,8 +46,7 @@ class AdvancedNetworkAddressPicker
         this.advancedNetworkConfig = config.getAdvancedNetworkConfig();
 
         for (EndpointConfig endpointConfig : advancedNetworkConfig.getEndpointConfigs().values()) {
-            if (endpointConfig instanceof ServerSocketEndpointConfig) {
-                ServerSocketEndpointConfig serverSocketEndpointConfig = (ServerSocketEndpointConfig) endpointConfig;
+            if (endpointConfig instanceof ServerSocketEndpointConfig serverSocketEndpointConfig) {
                 EndpointQualifier endpointQualifier = serverSocketEndpointConfig.getQualifier();
                 TcpIpConfig tcpIpConfig = advancedNetworkConfig.getJoin().getTcpIpConfig();
                 InterfacesConfig interfacesConfig = serverSocketEndpointConfig.getInterfaces();

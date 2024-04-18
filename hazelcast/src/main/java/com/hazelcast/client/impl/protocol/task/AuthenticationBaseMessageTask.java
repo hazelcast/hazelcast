@@ -120,9 +120,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         } else if (clientEngine.getSecurityContext() != null) {
             // security is enabled, let's do full JAAS authentication
             return authenticate(clientEngine.getSecurityContext());
-        } else if (credentials instanceof UsernamePasswordCredentials) {
+        } else if (credentials instanceof UsernamePasswordCredentials userNamePasswordCredentials) {
             // security is disabled let's verify that the username and password are null and the cluster names match
-            return verifyEmptyCredentialsAndClusterName((PasswordCredentials) credentials);
+            return verifyEmptyCredentialsAndClusterName(userNamePasswordCredentials);
         } else {
             logger.warning("Hazelcast security is disabled.\n"
                     + "Null username and password values are expected.\n"

@@ -92,14 +92,14 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
                 sendResponse(value);
             } catch (Exception e) {
                 Throwable ex = peel(e);
-                if (value instanceof Throwable && ex instanceof HazelcastSerializationException) {
+                if (value instanceof Throwable throwable && ex instanceof HazelcastSerializationException) {
                     // Sometimes exceptions are not serializable, for example on
                     // https://github.com/hazelcast/hazelcast-jet/issues/1995.
                     // When sending exception as a response and the serialization fails,
                     // the response will not be sent and the operation will hang.
                     // To prevent this from happening, replace the exception with
                     // another exception that can be serialized.
-                    sendResponse(new JetException(ExceptionUtil.toString((Throwable) value)));
+                    sendResponse(new JetException(ExceptionUtil.toString(throwable)));
                 } else {
                     throw e;
                 }

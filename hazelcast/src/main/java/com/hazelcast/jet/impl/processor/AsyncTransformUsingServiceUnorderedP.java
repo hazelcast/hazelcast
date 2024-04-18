@@ -331,8 +331,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     @Override
     @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        if (key instanceof BroadcastKey) {
-            assert ((BroadcastKey) key).key().equals(Keys.LAST_RECEIVED_WMS) : "Unexpected key: " + key;
+        if (key instanceof BroadcastKey broadcastKey) {
+            assert broadcastKey.key().equals(Keys.LAST_RECEIVED_WMS) : "Unexpected key: " + key;
             // we restart at the oldest WM any instance was at the time of snapshot
             for (Entry<Byte, Long> en : ((Map<Byte, Long>) value).entrySet()) {
                 int wmIndex = getWmIndex(en.getKey());

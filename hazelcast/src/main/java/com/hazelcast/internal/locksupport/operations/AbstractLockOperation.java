@@ -124,8 +124,8 @@ public abstract class AbstractLockOperation extends Operation
     protected final void interceptLockOperation() {
         // if service is a LockInterceptorService, notify it a key is about to be locked
         Object targetService = getNodeEngine().getService(namespace.getServiceName());
-        if (targetService instanceof LockInterceptorService) {
-            ((LockInterceptorService) targetService).onBeforeLock(namespace.getObjectName(), key);
+        if (targetService instanceof LockInterceptorService service) {
+            service.onBeforeLock(namespace.getObjectName(), key);
         }
     }
 

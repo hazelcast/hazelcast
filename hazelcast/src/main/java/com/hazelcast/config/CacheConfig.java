@@ -106,8 +106,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
     @SuppressWarnings("ExecutableStatementCount")
     public CacheConfig(CompleteConfiguration<K, V> configuration) {
         super(configuration);
-        if (configuration instanceof CacheConfig) {
-            final CacheConfig config = (CacheConfig) configuration;
+        if (configuration instanceof CacheConfig config) {
             this.name = config.name;
             this.managerPrefix = config.managerPrefix;
             this.uriString = config.uriString;

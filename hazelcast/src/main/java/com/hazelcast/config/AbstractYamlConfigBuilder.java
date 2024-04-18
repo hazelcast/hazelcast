@@ -174,8 +174,8 @@ public abstract class AbstractYamlConfigBuilder extends AbstractConfigBuilder {
 
     private void mergeSequenceNodes(YamlSequence sourceAsSequence, YamlSequence targetAsSequence) {
         for (YamlNode sourceChild : sourceAsSequence.children()) {
-            if (targetAsSequence instanceof MutableYamlSequence) {
-                ((MutableYamlSequence) targetAsSequence).addChild(sourceChild);
+            if (targetAsSequence instanceof MutableYamlSequence sequence) {
+                sequence.addChild(sourceChild);
             }
         }
     }
@@ -186,8 +186,8 @@ public abstract class AbstractYamlConfigBuilder extends AbstractConfigBuilder {
             if (targetChild != null) {
                 merge(sourceChild, targetChild);
             } else {
-                if (targetAsMapping instanceof MutableYamlMapping) {
-                    ((MutableYamlMapping) targetAsMapping).addChild(sourceChild.nodeName(), sourceChild);
+                if (targetAsMapping instanceof MutableYamlMapping mapping) {
+                    mapping.addChild(sourceChild.nodeName(), sourceChild);
                 }
             }
         }

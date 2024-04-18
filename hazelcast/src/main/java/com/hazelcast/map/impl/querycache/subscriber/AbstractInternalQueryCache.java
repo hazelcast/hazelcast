@@ -146,8 +146,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     PartitioningStrategy getPartitioningStrategy() {
-        if (delegate instanceof MapProxyImpl) {
-            return ((MapProxyImpl) delegate).getPartitionStrategy();
+        if (delegate instanceof MapProxyImpl impl) {
+            return impl.getPartitionStrategy();
         }
         return null;
     }

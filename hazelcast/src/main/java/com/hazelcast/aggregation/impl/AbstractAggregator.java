@@ -86,11 +86,11 @@ public abstract class AbstractAggregator<I, E, R> implements Aggregator<I, R> {
     @SuppressWarnings("unchecked")
     private <T> T extract(I input) {
         if (attributePath == null) {
-            if (input instanceof Map.Entry) {
-                return (T) ((Map.Entry) input).getValue();
+            if (input instanceof Map.Entry entry) {
+                return (T) entry.getValue();
             }
-        } else if (input instanceof Extractable) {
-            return (T) ((Extractable) input).getAttributeValue(attributePath);
+        } else if (input instanceof Extractable extractable) {
+            return (T) extractable.getAttributeValue(attributePath);
         }
         throw new IllegalArgumentException("Can't extract " + attributePath + " from the given input");
     }

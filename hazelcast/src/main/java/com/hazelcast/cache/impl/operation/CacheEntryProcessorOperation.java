@@ -88,8 +88,7 @@ public class CacheEntryProcessorOperation
     @Override
     public void run() throws Exception {
         response = recordStore.invoke(key, entryProcessor, arguments, completionId);
-        if (entryProcessor instanceof BackupAwareEntryProcessor) {
-            BackupAwareEntryProcessor processor = (BackupAwareEntryProcessor) entryProcessor;
+        if (entryProcessor instanceof BackupAwareEntryProcessor processor) {
             backupEntryProcessor = processor.createBackupEntryProcessor();
         }
         if (backupEntryProcessor == null) {

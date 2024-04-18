@@ -158,8 +158,8 @@ public final class Bitmap<E> {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private AscendingLongIterator predicateIterator(Predicate predicate, TypeConverter converter) {
-        if (predicate instanceof AndPredicate) {
-            Predicate[] predicates = ((AndPredicate) predicate).getPredicates();
+        if (predicate instanceof AndPredicate andPredicate) {
+            Predicate[] predicates = andPredicate.getPredicates();
             assert predicates.length > 0;
             if (predicates.length == 1) {
                 return predicateIterator(predicates[0], converter);
@@ -168,8 +168,8 @@ public final class Bitmap<E> {
             }
         }
 
-        if (predicate instanceof OrPredicate) {
-            Predicate[] predicates = ((OrPredicate) predicate).getPredicates();
+        if (predicate instanceof OrPredicate orPredicate) {
+            Predicate[] predicates = orPredicate.getPredicates();
             assert predicates.length > 0;
             if (predicates.length == 1) {
                 return predicateIterator(predicates[0], converter);
@@ -178,23 +178,23 @@ public final class Bitmap<E> {
             }
         }
 
-        if (predicate instanceof NotPredicate) {
-            Predicate subPredicate = ((NotPredicate) predicate).getPredicate();
+        if (predicate instanceof NotPredicate notPredicate) {
+            Predicate subPredicate = notPredicate.getPredicate();
             return BitmapAlgorithms.not(predicateIterator(subPredicate, converter), entries);
         }
 
-        if (predicate instanceof NotEqualPredicate) {
-            Comparable value = ((NotEqualPredicate) predicate).getValue();
+        if (predicate instanceof NotEqualPredicate notEqualPredicate) {
+            Comparable value = notEqualPredicate.getValue();
             return BitmapAlgorithms.not(valueIterator(value, converter), entries);
         }
 
-        if (predicate instanceof EqualPredicate) {
-            Comparable value = ((EqualPredicate) predicate).getFrom();
+        if (predicate instanceof EqualPredicate equalPredicate) {
+            Comparable value = equalPredicate.getFrom();
             return valueIterator(value, converter);
         }
 
-        if (predicate instanceof InPredicate) {
-            Comparable[] values = ((InPredicate) predicate).getValues();
+        if (predicate instanceof InPredicate inPredicate) {
+            Comparable[] values = inPredicate.getValues();
             return BitmapAlgorithms.or(valueIterators(values, converter));
         }
 

@@ -284,10 +284,10 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         }
         IMap<Object, Object> map = getHazelcastInstance().getMap(mapName);
         Object validationRecord = map.get(SnapshotValidationRecord.KEY);
-        if (validationRecord instanceof SnapshotValidationRecord) {
+        if (validationRecord instanceof SnapshotValidationRecord snapshotValidationRecord) {
             // update the cache - for robustness. For example after the map was copied
             getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).set(name, validationRecord);
-            return new JobStateSnapshot(getHazelcastInstance(), name, (SnapshotValidationRecord) validationRecord);
+            return new JobStateSnapshot(getHazelcastInstance(), name, snapshotValidationRecord);
         } else {
             return null;
         }

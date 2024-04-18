@@ -155,8 +155,8 @@ public abstract class BaseInvocation {
     }
 
     private void completeWithPendingResponse() {
-        if (pendingResponse instanceof AbstractInvocationFuture.ExceptionalResult) {
-            completeExceptionally(((AbstractInvocationFuture.ExceptionalResult) pendingResponse).getCause());
+        if (pendingResponse instanceof AbstractInvocationFuture.ExceptionalResult result) {
+            completeExceptionally(result.getCause());
         } else {
             complete(pendingResponse);
         }

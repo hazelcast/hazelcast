@@ -43,8 +43,8 @@ public final class AttributePartitioningStrategy implements PartitioningStrategy
     public Object getPartitionKey(final Object key) {
         final Object[] result;
 
-        if (key instanceof InternalGenericRecord) {
-            result = extractFromGenericRecord((InternalGenericRecord) key);
+        if (key instanceof InternalGenericRecord internalGenericRecord) {
+            result = extractFromGenericRecord(internalGenericRecord);
         } else if (key instanceof HazelcastJsonValue) {
             result = extractFromJson(key);
         } else  {

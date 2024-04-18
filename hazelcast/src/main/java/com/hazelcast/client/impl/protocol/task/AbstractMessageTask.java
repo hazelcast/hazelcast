@@ -280,16 +280,15 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected void sendResponse(Object response) {
         try {
             int numberOfBackups = 0;
-            if (response instanceof ClientBackupAwareResponse) {
-                ClientBackupAwareResponse backupAwareResponse = (ClientBackupAwareResponse) response;
+            if (response instanceof ClientBackupAwareResponse backupAwareResponse) {
                 response = backupAwareResponse.getResponse();
                 numberOfBackups = backupAwareResponse.getNumberOfBackups();
-            } else if (response instanceof NormalResponse) {
-                response = ((NormalResponse) response).getValue();
+            } else if (response instanceof NormalResponse normalResponse) {
+                response = normalResponse.getValue();
             }
             ClientMessage clientMessage;
-            if (response instanceof Throwable) {
-                clientMessage = encodeException((Throwable) response);
+            if (response instanceof Throwable throwable) {
+                clientMessage = encodeException(throwable);
             } else {
                 clientMessage = encodeResponse(response);
             }

@@ -62,8 +62,8 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
     @Override
     public boolean apply(Map.Entry<K, V> mapEntry) {
         Object attributeValue = readAttributeValue(mapEntry);
-        if (attributeValue instanceof MultiResult) {
-            return applyForMultiResult((MultiResult) attributeValue);
+        if (attributeValue instanceof MultiResult result) {
+            return applyForMultiResult(result);
         } else if (attributeValue instanceof Collection || attributeValue instanceof Object[]) {
             throw new IllegalArgumentException(String.format("Cannot use %s predicate with an array or a collection attribute",
                     getClass().getSimpleName()));
@@ -85,17 +85,17 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
     }
 
     private boolean convertAndApplyForSingleAttributeValue(Object attributeValue) {
-        if (attributeValue instanceof JsonValue) {
+        if (attributeValue instanceof JsonValue value) {
             if (attributeValue == NonTerminalJsonValue.INSTANCE) {
                 return false;
             }
-            attributeValue = AbstractJsonGetter.convertFromJsonValue((JsonValue) attributeValue);
+            attributeValue = AbstractJsonGetter.convertFromJsonValue(value);
         }
         if (attributeValue instanceof Comparable || attributeValue == null) {
             return applyForSingleAttributeValue((Comparable) attributeValue);
         }
-        if (attributeValue instanceof PortableGenericRecord) {
-            ClassDefinition classDefinition = ((PortableGenericRecord) attributeValue).getClassDefinition();
+        if (attributeValue instanceof PortableGenericRecord portableGenericRecord) {
+            ClassDefinition classDefinition = portableGenericRecord.getClassDefinition();
             throw new QueryException(attributeName + " field can not be compared, because "
                     + "the user class could not be constructed. ClassDefinition " + classDefinition);
         }

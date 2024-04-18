@@ -56,8 +56,7 @@ public class AutoCloseableTraversers {
 
             @Override
             public void close() throws Exception {
-                if (iterator instanceof AutoCloseable) {
-                    AutoCloseable autoCloseable = (AutoCloseable) iterator;
+                if (iterator instanceof AutoCloseable autoCloseable) {
                     autoCloseable.close();
                 }
             }

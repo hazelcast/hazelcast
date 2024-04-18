@@ -45,9 +45,9 @@ abstract class AbstractGauge implements Metric {
     final void onCollectionCompleted(long collectionId) {
         if (lastCollectionId != collectionId) {
             MetricValueCatcher catcher = getCatcherOrNull();
-            if (catcher != null && catcher instanceof AbstractMetricValueCatcher) {
-                ((AbstractMetricValueCatcher) catcher).clearCachedValue();
-                ((AbstractMetricValueCatcher) catcher).clearCachedMetricSourceRef();
+            if (catcher != null && catcher instanceof AbstractMetricValueCatcher valueCatcher) {
+                valueCatcher.clearCachedValue();
+                valueCatcher.clearCachedMetricSourceRef();
             }
         }
     }

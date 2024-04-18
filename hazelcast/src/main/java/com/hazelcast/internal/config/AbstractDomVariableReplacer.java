@@ -80,18 +80,15 @@ abstract class AbstractDomVariableReplacer implements DomVariableReplacer {
         if (node == null) {
             return true;
         }
-        if (node instanceof YamlElementAdapter) {
-            YamlElementAdapter yamlElementAdapter = (YamlElementAdapter) node;
-            if (yamlElementAdapter.getYamlNode() instanceof YamlScalarImpl) {
-                YamlScalarImpl yamlNode = (YamlScalarImpl) yamlElementAdapter.getYamlNode();
+        if (node instanceof YamlElementAdapter yamlElementAdapter) {
+            if (yamlElementAdapter.getYamlNode() instanceof YamlScalarImpl yamlNode) {
                 if (!(yamlNode.nodeValue() instanceof String)) {
                     return true;
                 }
             }
         }
-        if (node instanceof ScalarTextNodeAdapter) {
-            ScalarTextNodeAdapter yamlElementAdapter = (ScalarTextNodeAdapter) node;
-            Object rawNodeValue = yamlElementAdapter.getNodeRawValue();
+        if (node instanceof ScalarTextNodeAdapter scalarTextNodeAdapter) {
+            Object rawNodeValue = scalarTextNodeAdapter.getNodeRawValue();
             return !(rawNodeValue instanceof String);
         }
         return false;

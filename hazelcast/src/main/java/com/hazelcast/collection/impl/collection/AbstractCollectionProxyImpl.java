@@ -227,8 +227,8 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         checkNotNull(listener, "Null listener is not allowed!");
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         }
         final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
         return registration.getId();
