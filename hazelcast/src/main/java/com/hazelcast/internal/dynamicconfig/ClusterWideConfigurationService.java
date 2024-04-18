@@ -156,6 +156,7 @@ public class ClusterWideConfigurationService implements
             dataConnectionConfigs,
             wanReplicationConfigs,
             namespaceConfigs,
+            vectorCollectionConfigs,
     };
 
     private volatile Version version;

@@ -19,7 +19,7 @@ package com.hazelcast.config.vector;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,7 +36,7 @@ import static com.hazelcast.config.vector.VectorTestHelper.buildVectorCollection
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
 
@@ -48,8 +48,8 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        instance1 = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
-        instance2 = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+        instance1 = hazelcastFactory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
+        instance2 = hazelcastFactory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
         client = hazelcastFactory.newHazelcastClient();
     }
 
@@ -103,6 +103,27 @@ public class DynamicVectorCollectionConfigTest extends HazelcastTestSupport {
                         vectorCollectionConfig1.getName(), vectorCollectionConfig1,
                         vectorCollectionConfig2.getName(), vectorCollectionConfig2
                 ));
+    }
+
+    @Test
+    public void memberTest_getConfigOnNewMember_then_success() {
+        String vectorCollection = "vector-collection-1";
+        var vectorCollectionConfig = buildVectorCollectionConfig(
+                vectorCollection,
+                "index-1",
+                1,
+                Metric.COSINE,
+                11,
+                12,
+                true
+        );
+        instance1.getConfig().addVectorCollectionConfig(vectorCollectionConfig);
+
+        var instance3 = hazelcastFactory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
+        waitAllForSafeState(instance1, instance2, instance3);
+
+        var actual = instance3.getConfig().getVectorCollectionConfigOrNull(vectorCollection);
+        assertThat(actual).isEqualTo(vectorCollectionConfig);
     }
 
     @Test(expected = InvalidConfigurationException.class)
