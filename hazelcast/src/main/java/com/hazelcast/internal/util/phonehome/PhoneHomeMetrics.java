@@ -219,6 +219,7 @@ public enum PhoneHomeMetrics {
     RESTS_POST_CLUSTER_VERSION_COUNT("restsptcvect"),
     RESTS_GET_MEMBER_READY_COUNT("restsgtmrdct"),
     RESTS_GET_MEMBER_HEALTH_COUNT("restsgtmhtlct"),
+    RESTS_POST_CONFIG_RELOAD_COUNT("restscfgrld"),
     UCN_ENABLED("ucnenabled"),
     UCN_NAMESPACE_COUNT("ucncount"),
     V_CPU_COUNT("vcpuct");
