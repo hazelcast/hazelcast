@@ -63,7 +63,7 @@ public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
     @Test
     public void testPutWithoutExpirationTime() {
         map.put("key", "val");
-        assertTrueEventually(() -> testEntryStore.assertRecordStored("key", "val"), 10);
+        assertTrueEventually(() -> testEntryStore.assertRecordStored("key", "val"));
     }
 
     @Override
