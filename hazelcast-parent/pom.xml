@@ -940,4 +940,72 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>quick</id>
+            <activation>
+                <property>
+                    <name>quick</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- https://maven.apache.org/plugins/maven-checkstyle-plugin/checkstyle-mojo.html#skip -->
+                <checkstyle.skip>true</checkstyle.skip>
+                <!-- https://www.mojohaus.org/xml-maven-plugin/validate-mojo.html#skip -->
+                <xml.skip>true</xml.skip>
+                <!-- https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#skipTests -->
+                <skipTests>true</skipTests>
+                <!-- https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html#skip -->
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <!-- https://maven.apache.org/plugins/maven-source-plugin/jar-mojo.html#skipSource -->
+                <maven.source.skip>true</maven.source.skip>
+                <!-- https://maven.apache.org/enforcer/maven-enforcer-plugin/enforce-mojo.html#skip -->
+                <enforcer.skip>true</enforcer.skip>
+                <!-- https://github.com/hazelcast/attribution-maven-plugin?tab=readme-ov-file#configuration-properties -->
+                <attribution.skip>true</attribution.skip>
+                <!-- https://www.mojohaus.org/license-maven-plugin/add-third-party-mojo.html#skipAddThirdParty -->
+                <license.skipAddThirdParty>true</license.skipAddThirdParty>
+                <!-- https://www.mojohaus.org/license-maven-plugin/aggregate-add-third-party-mojo.html -->
+                <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
+            </properties>
+        </profile>
+
+        <!-- unfortunately it isn't possible to chain profiles, so we need to duplicate the javadoc plugin -->
+        <profile>
+            <id>release-snapshot</id>
+            <properties>
+                <javadoc>true</javadoc>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>release-devel</id>
+            <properties>
+                <javadoc>true</javadoc>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <repository>
+                    <id>devel-repository</id>
+                    <url>https://hazelcast.jfrog.io/artifactory/devel</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
 </project>
