@@ -36,6 +36,7 @@ import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -112,8 +113,9 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         checkPositive(secondSubClusterSize, "invalid second sub cluster size: " + secondSubClusterSize);
 
         config = createConfig();
+        Config liteMemberConfig = createConfig().setLiteMember(true);
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        HazelcastInstance[] instances = startInitialCluster(config, clusterSize);
+        HazelcastInstance[] instances = startInitialCluster(config, liteMemberConfig, clusterSize);
 
         if (beforeSplit != null) {
             beforeSplit.accept(instances);
@@ -140,7 +142,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         }
     }
 
-    protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+    protected HazelcastInstance[] startInitialCluster(Config config, @Nullable Config liteConfig, int clusterSize) {
         HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
             instances[i] = createHazelcastInstance(config);
