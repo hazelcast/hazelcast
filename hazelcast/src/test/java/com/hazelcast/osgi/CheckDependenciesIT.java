@@ -18,7 +18,6 @@ package com.hazelcast.osgi;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -102,12 +101,8 @@ public class CheckDependenciesIT {
 
     private Manifest getHazelcastManifest() throws IOException {
         URL hazelcastAllManifestUrl = findHazelcastManifestURL();
-        InputStream inputStream = null;
-        try {
-            inputStream = hazelcastAllManifestUrl.openStream();
+        try (InputStream inputStream = hazelcastAllManifestUrl.openStream()) {
             return new Manifest(inputStream);
-        } finally {
-            IOUtil.closeResource(inputStream);
         }
     }
 

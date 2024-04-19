@@ -34,7 +34,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertNotNull;
 
@@ -80,11 +79,9 @@ public class DiagnosticsStdoutTest extends HazelcastTestSupport {
 
     private static String stdoutToString(ByteArrayOutputStream out) {
         byte[] content = out.toByteArray();
-        BufferedReader br = null;
-        InputStream is;
-        try {
-            is = new ByteArrayInputStream(content);
-            br = new BufferedReader(new InputStreamReader(is));
+
+        try (InputStream is = new ByteArrayInputStream(content);
+             BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
 
@@ -96,8 +93,6 @@ public class DiagnosticsStdoutTest extends HazelcastTestSupport {
             return sb.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            closeResource(br);
         }
     }
 }

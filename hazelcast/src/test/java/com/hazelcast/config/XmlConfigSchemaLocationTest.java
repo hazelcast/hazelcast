@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -90,12 +89,8 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
                 continue;
             }
 
-            InputStream stream = null;
-            try {
-                stream = classLoader.getResourceAsStream(resource);
+            try (InputStream stream = classLoader.getResourceAsStream(resource)) {
                 validateSchemaLocationUrl(stream, resource);
-            } finally {
-                IOUtil.closeResource(stream);
             }
         }
     }
