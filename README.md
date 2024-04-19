@@ -279,10 +279,7 @@ in-depth details about how to install Hazelcast and an overview of the features.
 
 ## Get Help
 
-You can use the following channels for getting help with Hazelcast:
-
-* [Slack](https://slack.hazelcast.com/)
-* [Stack Overflow](https://stackoverflow.com/tags/hazelcast)
+You can use [Slack](https://slack.hazelcast.com/) for getting help with Hazelcast
 
 ## How to Contribute
 
