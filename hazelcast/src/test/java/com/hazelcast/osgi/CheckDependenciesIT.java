@@ -21,8 +21,8 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.junit.Test;
@@ -38,15 +38,13 @@ import java.util.jar.Manifest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class CheckDependenciesIT extends HazelcastTestSupport {
-
-
+public class CheckDependenciesIT {
     private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
-    private static final String[] WHITELIST_PREFIXES = new String[]{
+    protected static final String[] WHITELIST_PREFIXES = new String[]{
 
             // everything from the Java package is OK - it's part of the Java SE platform
             "java.",
@@ -102,7 +100,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
         return "Hazelcast(Core)";
     }
 
-    protected Manifest getHazelcastManifest() throws IOException {
+    private Manifest getHazelcastManifest() throws IOException {
         URL hazelcastAllManifestUrl = findHazelcastManifestURL();
         InputStream inputStream = null;
         try {
@@ -114,24 +112,13 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     private void checkImport(String name, String resolution) {
-        if ("optional".equals(resolution)) {
-            return;
+        if (!isWhitelisted(name)) {
+            assertEquals("Import " + name + " is not declared as optional", "optional", resolution);
         }
-        if (isWhitelisted(name)) {
-            return;
-        }
-
-        fail("Import " + name + " is not declared as optional");
     }
 
     private boolean isWhitelisted(String name) {
-        String[] whitelistPrefixes = getWhitelistPrefixes();
-        for (String whitelistPrefix : whitelistPrefixes) {
-            if (name.startsWith(whitelistPrefix)) {
-                return true;
-            }
-        }
-        return false;
+        return StringUtils.startsWithAny(name, getWhitelistPrefixes());
     }
 
     private URL findHazelcastManifestURL() throws IOException {
@@ -142,16 +129,11 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             URL url = resources.nextElement();
             String urlString = url.toString();
             if (isMatching(urlString)) {
-                if (matchedUrl == null) {
-                    matchedUrl = url;
-                } else {
-                    throw new AssertionError("Found multiple matching URLs: " + url + " and " + matchedUrl);
-                }
+                assertNull("Found multiple matching URLs: " + url + " and " + matchedUrl, matchedUrl);
+                matchedUrl = url;
             }
         }
-        if (matchedUrl == null) {
-            throw new AssertionError("Cannot find Hazelcast manifest");
-        }
+        assertNotNull("Cannot find Hazelcast manifest", matchedUrl);
         return matchedUrl;
     }
 
