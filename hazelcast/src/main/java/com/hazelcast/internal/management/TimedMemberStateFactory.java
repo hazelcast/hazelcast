@@ -18,7 +18,6 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
@@ -73,11 +72,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
@@ -183,24 +180,10 @@ public class TimedMemberStateFactory {
         createNodeState(memberState);
         createHotRestartState(memberState);
         createClusterHotRestartStatus(memberState);
-
-        memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
     }
 
     protected void setCPMemberUuid(MemberStateImpl memberState) {
         memberState.setCpMemberUuid(null);
-    }
-
-    private Map<UUID, String> getClientAttributes(Map<UUID, ClientStatistics> allClientStatistics) {
-        Map<UUID, String> statsMap = createHashMap(allClientStatistics.size());
-        for (Map.Entry<UUID, ClientStatistics> entry : allClientStatistics.entrySet()) {
-            UUID uuid = entry.getKey();
-            ClientStatistics statistics = entry.getValue();
-            if (statistics != null) {
-                statsMap.put(uuid, statistics.clientAttributes());
-            }
-        }
-        return statsMap;
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {

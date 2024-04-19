@@ -60,6 +60,8 @@ public class MockServerConnection implements ServerConnection {
 
     private final ConcurrentMap attributeMap = new ConcurrentHashMap();
 
+    private final long startTime = System.currentTimeMillis();
+
     public MockServerConnection(
             Address localAddress,
             Address remoteAddress,
@@ -175,6 +177,11 @@ public class MockServerConnection implements ServerConnection {
 
     public long lastWriteTimeMillis() {
         return System.currentTimeMillis();
+    }
+
+    @Override
+    public long getStartTime() {
+        return startTime;
     }
 
     public void close(String msg, Throwable cause) {

@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class TpcChannelClientConnectionAdapter implements ClientConnection {
 
+    private final long startTime = System.currentTimeMillis();
     private final Channel channel;
 
     public TpcChannelClientConnectionAdapter(Channel channel) {
@@ -117,6 +118,11 @@ public class TpcChannelClientConnectionAdapter implements ClientConnection {
     @Override
     public long lastWriteTimeMillis() {
         throw new UnsupportedOperationException("Not supported for TPC channels");
+    }
+
+    @Override
+    public long getStartTime() {
+        return startTime;
     }
 
     @Nullable

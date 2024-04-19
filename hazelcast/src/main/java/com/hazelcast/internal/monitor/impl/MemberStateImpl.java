@@ -73,7 +73,6 @@ public class MemberStateImpl implements MemberState {
     private Set<String> flakeIdGeneratorsWithStats = emptySet();
     private Set<String> userCodeNamespacesWithStats = emptySet();
     private Collection<ClientEndPointDTO> clients = emptySet();
-    private Map<UUID, String> clientStats = emptyMap();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private NodeState nodeState = new NodeStateImpl();
@@ -277,14 +276,6 @@ public class MemberStateImpl implements MemberState {
         this.clusterHotRestartStatus = clusterHotRestartStatus;
     }
 
-    public Map<UUID, String> getClientStats() {
-        return clientStats;
-    }
-
-    public void setClientStats(Map<UUID, String> clientStats) {
-        this.clientStats = clientStats;
-    }
-
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
@@ -339,11 +330,6 @@ public class MemberStateImpl implements MemberState {
         root.add("hotRestartState", hotRestartState.toJson());
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
 
-        JsonObject clientStatsObject = new JsonObject();
-        for (Map.Entry<UUID, String> entry : clientStats.entrySet()) {
-            clientStatsObject.add(entry.getKey().toString(), entry.getValue());
-        }
-        root.add("clientStats", clientStatsObject);
         return root;
     }
 
@@ -509,10 +495,6 @@ public class MemberStateImpl implements MemberState {
             clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
             clusterHotRestartStatus.fromJson(jsonClusterHotRestartStatus);
         }
-        clientStats = new HashMap<>();
-        for (JsonObject.Member next : getObject(json, "clientStats")) {
-            clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
-        }
     }
 
     @Override
@@ -522,6 +504,7 @@ public class MemberStateImpl implements MemberState {
                 + ", uuid=" + uuid
                 + ", cpMemberUuid=" + cpMemberUuid
                 + ", name=" + name
+                + ", clients=" + clients
                 + ", mapsWithStats=" + mapsWithStats
                 + ", multiMapsWithStats=" + multiMapsWithStats
                 + ", replicatedMapsWithStats=" + replicatedMapsWithStats
@@ -541,7 +524,6 @@ public class MemberStateImpl implements MemberState {
                 + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
                 + ", clusterHotRestartStatus=" + clusterHotRestartStatus
-                + ", clientStats=" + clientStats
                 + '}';
     }
 }

@@ -71,6 +71,13 @@ public interface Connection {
     long lastWriteTimeMillis();
 
     /**
+     * Returns the clock time in milliseconds of the initialization of this connection.
+     *
+     * @return the clock time of the initialization of this connection.
+     */
+    long getStartTime();
+
+    /**
      * Returns the address of the endpoint this Connection is connected to, or
      * <code>null</code> if it is unconnected.
      *

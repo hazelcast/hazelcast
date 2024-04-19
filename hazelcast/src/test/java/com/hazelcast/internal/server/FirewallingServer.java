@@ -374,6 +374,11 @@ public class FirewallingServer
         }
 
         @Override
+        public long getStartTime() {
+            return delegate.getStartTime();
+        }
+
+        @Override
         public InetSocketAddress getRemoteSocketAddress() {
             return delegate.getRemoteSocketAddress();
         }

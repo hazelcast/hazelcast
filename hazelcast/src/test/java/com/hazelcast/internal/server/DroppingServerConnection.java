@@ -94,6 +94,11 @@ class DroppingServerConnection implements ServerConnection {
     }
 
     @Override
+    public long getStartTime() {
+        return timestamp;
+    }
+
+    @Override
     public void close(String msg, Throwable cause) {
         if (!isAlive.compareAndSet(true, false)) {
             return;

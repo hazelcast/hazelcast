@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
@@ -46,7 +48,10 @@ public class ClientEndPointDTO implements JsonSerializable {
     public String address;
     public String clientType;
     public String clientVersion;
+    public boolean enterprise;
+    public boolean statsEnabled;
     public String name;
+    public long clusterConnectionTimestamp;
     public Set<String> labels;
 
     /**
@@ -66,7 +71,10 @@ public class ClientEndPointDTO implements JsonSerializable {
         this.uuid = clientEndpoint.getUuid();
         this.clientType = clientEndpoint.getClientType();
         this.clientVersion = clientEndpoint.getClientVersion();
+        this.enterprise = clientEndpoint.isEnterprise();
+        this.statsEnabled = clientEndpoint.getClientStatistics() != null;
         this.name = clientEndpoint.getName();
+        this.clusterConnectionTimestamp = clientEndpoint.getConnectionStartTime();
         this.labels = clientEndpoint.getLabels();
 
         InetSocketAddress socketAddress = clientEndpoint.getSocketAddress();
@@ -84,11 +92,14 @@ public class ClientEndPointDTO implements JsonSerializable {
         root.add("address", address);
         root.add("clientType", clientType);
         root.add("clientVersion", clientVersion);
+        root.add("enterprise", enterprise);
+        root.add("statsEnabled", statsEnabled);
         root.add("name", name);
         JsonArray labelsObject = Json.array();
         for (String label : labels) {
             labelsObject.add(label);
         }
+        root.add("clusterConnectionTimestamp", clusterConnectionTimestamp);
         root.add("labels", labelsObject);
         root.add("ipAddress", ipAddress);
         root.add("canonicalHostName", canonicalHostName);
@@ -101,7 +112,10 @@ public class ClientEndPointDTO implements JsonSerializable {
         address = getString(json, "address");
         clientType = getString(json, "clientType");
         clientVersion = getString(json, "clientVersion");
+        enterprise = getBoolean(json, "enterprise");
+        statsEnabled = getBoolean(json, "statsEnabled");
         name = getString(json, "name");
+        clusterConnectionTimestamp = getLong(json, "clusterConnectionTimestamp");
         JsonArray labelsArray = getArray(json, "labels");
         labels = new HashSet<>();
         for (JsonValue labelValue : labelsArray) {

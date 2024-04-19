@@ -71,6 +71,8 @@ public class TcpServerConnection implements ServerConnection {
     // indicate whether connection handshake is in progress/done (true) or not yet initiated (when false)
     private final AtomicBoolean handshake = new AtomicBoolean();
 
+    private final long startTime = System.currentTimeMillis();
+
     private final ILogger logger;
 
     // Flag that indicates if the connection is accepted on this member (server-side)
@@ -160,6 +162,10 @@ public class TcpServerConnection implements ServerConnection {
             logger.info("Initialized new cluster connection between "
                     + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
         }
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 
     public TcpServerConnectionManager getConnectionManager() {

@@ -65,12 +65,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final ConcurrentMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
     private final long creationTime;
-
     private LoginContext loginContext;
     private UUID clientUuid;
     private Credentials credentials;
     private volatile boolean authenticated;
     private String clientVersion;
+    private Boolean enterprise;
     private final AtomicReference<ClientStatistics> statsRef = new AtomicReference<>();
     private String clientName;
     private Set<String> labels;
@@ -84,12 +84,18 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.connection = connection;
         this.socketAddress = connection.getRemoteSocketAddress();
         this.clientVersion = "Unknown";
+        this.enterprise = false;
         this.creationTime = System.currentTimeMillis();
     }
 
     @Override
     public ServerConnection getConnection() {
         return connection;
+    }
+
+    @Override
+    public long getConnectionStartTime() {
+        return connection.getStartTime();
     }
 
     @Override
@@ -140,7 +146,24 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
+    public boolean isEnterprise() {
+        return enterprise;
+    }
+
+    @Override
+    public void setEnterprise(Boolean enterprise) {
+        this.enterprise = enterprise;
+    }
+
+    @Override
     public void setClientStatistics(ClientStatistics stats) {
+        boolean setBefore = getClientStatistics() != null;
+        if (!setBefore) {
+            String clientAttributes = stats.clientAttributes();
+            if (clientAttributes.contains("enterprise=true")) {
+                setEnterprise(true);
+            }
+        }
         statsRef.set(stats);
     }
 
