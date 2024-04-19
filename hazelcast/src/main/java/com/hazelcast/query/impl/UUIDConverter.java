@@ -28,8 +28,8 @@ final class UUIDConverter extends TypeConverters.BaseTypeConverter {
         if (value instanceof UUID) {
             return value;
         }
-        if (value instanceof String) {
-            return UUID.fromString((String) value);
+        if (value instanceof String string) {
+            return UUID.fromString(string);
         }
         throw new IllegalArgumentException("Cannot convert [" + value + "] to java.util.UUID");
     }

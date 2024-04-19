@@ -141,9 +141,9 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
             for (Entry<Data, Object> en : keysToUpdate.entrySet()) {
                 IOUtil.writeData(out, en.getKey());
                 Object value = en.getValue();
-                if (value instanceof Data) {
+                if (value instanceof Data data) {
                     out.writeInt(1);
-                    IOUtil.writeData(out, (Data) value);
+                    IOUtil.writeData(out, data);
                 } else if (value instanceof List) {
                     @SuppressWarnings("unchecked")
                     List<Data> list = (List<Data>) value;

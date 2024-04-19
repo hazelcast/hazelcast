@@ -33,22 +33,20 @@ public final class YamlToJsonConverter {
         if (yamlNode == null) {
             return JSONObject.NULL;
         }
-        if (yamlNode instanceof YamlMapping) {
-            YamlMapping yamlMapping = (YamlMapping) yamlNode;
+        if (yamlNode instanceof YamlMapping yamlMapping) {
             JSONObject resultObject = new JSONObject();
             for (YamlNameNodePair pair : yamlMapping.childrenPairs()) {
                 resultObject.put(pair.nodeName(), convert(pair.childNode()));
             }
             return resultObject;
-        } else if (yamlNode instanceof YamlSequence) {
-            YamlSequence yamlSequence = (YamlSequence) yamlNode;
+        } else if (yamlNode instanceof YamlSequence yamlSequence) {
             JSONArray resultArray = new JSONArray();
             for (YamlNode child : yamlSequence.children()) {
                 resultArray.put(convert(child));
             }
             return resultArray;
-        } else if (yamlNode instanceof YamlScalar) {
-            return ((YamlScalar) yamlNode).nodeValue();
+        } else if (yamlNode instanceof YamlScalar scalar) {
+            return scalar.nodeValue();
         }
         throw new IllegalArgumentException("Unknown type " + yamlNode.getClass().getName());
     }

@@ -59,8 +59,8 @@ public class TxnCommitOperation extends QueueBackupAwareOperation implements Not
     public void run() throws Exception {
         backupList = CollectionTxnUtil.run(operationList);
         for (Operation operation : operationList) {
-            if (operation instanceof Notifier) {
-                boolean shouldNotify = ((Notifier) operation).shouldNotify();
+            if (operation instanceof Notifier notifier) {
+                boolean shouldNotify = notifier.shouldNotify();
                 if (shouldNotify) {
                     this.shouldNotify += operation instanceof TxnPollOperation ? +1 : -1;
                 }

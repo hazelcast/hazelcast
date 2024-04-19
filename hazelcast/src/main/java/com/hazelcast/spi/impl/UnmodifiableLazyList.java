@@ -192,8 +192,7 @@ public class UnmodifiableLazyList extends AbstractList implements IdentifiedData
                     ignore(e);
                 }
                 return item;
-            } else if (o instanceof Map.Entry) {
-                Map.Entry entry = (Map.Entry) o;
+            } else if (o instanceof Map.Entry entry) {
                 Object key = serializationService.toObject(entry.getKey());
                 Object value = serializationService.toObject(entry.getValue());
                 AbstractMap.SimpleImmutableEntry item = new AbstractMap.SimpleImmutableEntry(key, value);

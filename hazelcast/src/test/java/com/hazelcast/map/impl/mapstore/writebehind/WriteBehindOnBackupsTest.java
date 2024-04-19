@@ -181,8 +181,8 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
                 continue;
             }
             final MapDataStore mapDataStore = recordStore.getMapDataStore();
-            if (mapDataStore instanceof WriteBehindStore) {
-                size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+            if (mapDataStore instanceof WriteBehindStore store) {
+                size += store.getWriteBehindQueue().size();
             }
         }
         return size;

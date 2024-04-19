@@ -41,8 +41,8 @@ public final class VisitorUtils {
         boolean copyCreated = false;
         for (int i = 0; i < predicates.length; i++) {
             Predicate predicate = predicates[i];
-            if (predicate instanceof VisitablePredicate) {
-                Predicate transformed = ((VisitablePredicate) predicate).accept(visitor, indexes);
+            if (predicate instanceof VisitablePredicate visitablePredicate) {
+                Predicate transformed = visitablePredicate.accept(visitor, indexes);
                 if (transformed != predicate) {
                     if (!copyCreated) {
                         copyCreated = true;

@@ -184,8 +184,8 @@ public class WanReplicationServiceImpl implements WanReplicationService,
         String publisherId = null;
         if (!isNullOrEmptyAfterTrim(publisherConfig.getPublisherId())) {
             publisherId = publisherConfig.getPublisherId();
-        } else if (publisherConfig instanceof WanBatchPublisherConfig) {
-            publisherId = ((WanBatchPublisherConfig) publisherConfig).getClusterName();
+        } else if (publisherConfig instanceof WanBatchPublisherConfig config) {
+            publisherId = config.getClusterName();
         }
         if (publisherId == null) {
             throw new InvalidConfigurationException("Publisher ID or group name is not specified for " + publisherConfig);
@@ -418,8 +418,8 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     private void notifyMigrationAwarePublishers(Consumer<WanMigrationAwarePublisher> publisherConsumer) {
         for (DelegatingWanScheme wanReplication : wanReplications.values()) {
             for (WanPublisher publisher : wanReplication.getPublishers()) {
-                if (publisher instanceof WanMigrationAwarePublisher) {
-                    publisherConsumer.accept((WanMigrationAwarePublisher) publisher);
+                if (publisher instanceof WanMigrationAwarePublisher awarePublisher) {
+                    publisherConsumer.accept(awarePublisher);
                 }
             }
         }

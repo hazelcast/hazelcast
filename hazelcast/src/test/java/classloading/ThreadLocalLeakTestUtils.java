@@ -206,8 +206,8 @@ public final class ThreadLocalLeakTestUtils {
         }
 
         Class<?> clazz;
-        if (o instanceof Class) {
-            clazz = (Class<?>) o;
+        if (o instanceof Class cls) {
+            clazz = cls;
         } else {
             clazz = o.getClass();
         }
@@ -220,8 +220,8 @@ public final class ThreadLocalLeakTestUtils {
             clazzClassloader = clazzClassloader.getParent();
         }
 
-        if (o instanceof Collection<?>) {
-            Iterator<?> iter = ((Collection<?>) o).iterator();
+        if (o instanceof Collection<?> collection) {
+            Iterator<?> iter = collection.iterator();
             try {
                 while (iter.hasNext()) {
                     Object entry = iter.next();

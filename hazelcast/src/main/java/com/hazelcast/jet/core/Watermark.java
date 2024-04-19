@@ -76,9 +76,9 @@ public final class Watermark implements SpecialBroadcastItem {
 
     @Override
     public boolean equals(Object o) {
-        return this == o || o instanceof Watermark
-                && this.timestamp == ((Watermark) o).timestamp
-                && this.key == ((Watermark) o).key;
+        return this == o || o instanceof Watermark waterMark
+                && this.timestamp == waterMark.timestamp
+                && this.key == waterMark.key;
     }
 
     @Override

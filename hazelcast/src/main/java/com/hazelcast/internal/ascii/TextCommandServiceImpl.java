@@ -283,11 +283,10 @@ public class TextCommandServiceImpl implements TextCommandService {
         Object value = hazelcast.getMap(mapName).get(key);
         byte[] result = null;
         if (value != null) {
-            if (value instanceof RestValue) {
-                RestValue restValue = (RestValue) value;
+            if (value instanceof RestValue restValue) {
                 result = restValue.getValue();
-            } else if (value instanceof byte[]) {
-                result = (byte[]) value;
+            } else if (value instanceof byte[] bytes) {
+                result = bytes;
             } else {
                 result = toByteArray(value);
             }

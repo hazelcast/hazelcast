@@ -51,10 +51,10 @@ class WanMapSupportingService implements WanSupportingService {
 
     @Override
     public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
-        if (event instanceof WanMapAddOrUpdateEvent) {
-            handleAddOrUpdate((WanMapAddOrUpdateEvent) event);
-        } else if (event instanceof WanMapRemoveEvent) {
-            handleRemove((WanMapRemoveEvent) event);
+        if (event instanceof WanMapAddOrUpdateEvent updateEvent) {
+            handleAddOrUpdate(updateEvent);
+        } else if (event instanceof WanMapRemoveEvent removeEvent) {
+            handleRemove(removeEvent);
         }
     }
 

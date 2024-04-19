@@ -62,8 +62,8 @@ class TestServiceReference implements ServiceReference {
 
     @Override
     public int compareTo(Object reference) {
-        if (reference instanceof TestServiceReference) {
-            return id.compareTo(((TestServiceReference) reference).id);
+        if (reference instanceof TestServiceReference serviceReference) {
+            return id.compareTo(serviceReference.id);
         }
         return -1;
     }

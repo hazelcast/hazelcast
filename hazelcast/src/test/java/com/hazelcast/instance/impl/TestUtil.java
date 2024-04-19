@@ -93,10 +93,9 @@ public final class TestUtil {
      *                                  e.g. when called with a Hazelcast client instance
      */
     public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
-        if (hz instanceof HazelcastInstanceImpl) {
-            return (HazelcastInstanceImpl) hz;
-        } else if (hz instanceof HazelcastInstanceProxy) {
-            HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) hz;
+        if (hz instanceof HazelcastInstanceImpl impl) {
+            return impl;
+        } else if (hz instanceof HazelcastInstanceProxy proxy) {
             if (proxy.original != null) {
                 return proxy.original;
             }

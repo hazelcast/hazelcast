@@ -94,8 +94,8 @@ public class WriteBehindStoreTest {
 
         @Override
         public void addLast(Object o, boolean addWithoutCapacityCheck) {
-            if (o instanceof DelayedEntry) {
-                sequence = ((DelayedEntry<?, ?>) o).getSequence();
+            if (o instanceof DelayedEntry entry) {
+                sequence = entry.getSequence();
             }
         }
 

@@ -127,8 +127,8 @@ public class TransactionLog {
 
     private Future invoke(NodeEngine nodeEngine, TransactionLogRecord record, Operation op) {
         OperationService operationService = nodeEngine.getOperationService();
-        if (record instanceof TargetAwareTransactionLogRecord) {
-            Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
+        if (record instanceof TargetAwareTransactionLogRecord logRecord) {
+            Address target = logRecord.getTarget();
             return operationService.invokeOnTarget(op.getServiceName(), op, target);
         }
         return operationService.invokeOnPartition(op.getServiceName(), op, op.getPartitionId());
@@ -151,8 +151,8 @@ public class TransactionLog {
 
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
-        if (record instanceof TargetAwareTransactionLogRecord) {
-            Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
+        if (record instanceof TargetAwareTransactionLogRecord logRecord) {
+            Address target = logRecord.getTarget();
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
             operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())

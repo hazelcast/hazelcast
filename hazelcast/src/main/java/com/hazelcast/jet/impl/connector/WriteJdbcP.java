@@ -147,8 +147,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
                     @Override
                     public void close(Throwable error) throws Exception {
-                        if (dataSource instanceof AutoCloseable) {
-                            ((AutoCloseable) dataSource).close();
+                        if (dataSource instanceof AutoCloseable autoCloseable) {
+                            autoCloseable.close();
                         }
                     }
 
@@ -259,11 +259,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 // we never ignore errors in ex-once mode
                 assert idleCount == 0 : "idleCount=" + idleCount;
                 setXaResource(xaConnection.getXAResource());
-            } else if (dataSource instanceof DataSource) {
-                connection = ((DataSource) dataSource).getConnection();
-            } else if (dataSource instanceof XADataSource) {
+            } else if (dataSource instanceof DataSource source) {
+                connection = source.getConnection();
+            } else if (dataSource instanceof XADataSource source) {
                 logger.warning("Using " + XADataSource.class.getName() + " when no XA transactions are needed");
-                XAConnection xaConnection = ((XADataSource) dataSource).getXAConnection();
+                XAConnection xaConnection = source.getXAConnection();
                 connection = xaConnection.getConnection();
             } else {
                 throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "

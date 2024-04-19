@@ -244,7 +244,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         private static List<Object> replaceWatermarks(List<Object> list) {
             List<Object> result = new ArrayList<>();
             for (Object o : list) {
-                result.add(o instanceof Watermark ? new SerializableWm(((Watermark) o).timestamp()) : o);
+                result.add(o instanceof Watermark waterMark ? new SerializableWm(waterMark.timestamp()) : o);
             }
             return result;
         }

@@ -25,8 +25,7 @@ public final class TransactionAccessor {
     }
 
     public static Transaction getTransaction(TransactionContext ctx) {
-        if (ctx instanceof XATransactionContextImpl) {
-            XATransactionContextImpl ctxImp = (XATransactionContextImpl) ctx;
+        if (ctx instanceof XATransactionContextImpl ctxImp) {
             return ctxImp.getTransaction();
         }
         throw new IllegalArgumentException();

@@ -63,8 +63,8 @@ public final class TestTaskExecutorUtil {
         operationService.execute(new PartitionSpecificRunnableWithResultQueue<T>(partitionId, task, resultQueue));
         try {
             Object result = resultQueue.poll(TIMEOUT_SECONDS, SECONDS);
-            if (result instanceof Throwable) {
-                sneakyThrow((Throwable) result);
+            if (result instanceof Throwable throwable) {
+                sneakyThrow(throwable);
             }
             //noinspection unchecked
             return (T) unwrapNullIfNeeded(result);

@@ -78,8 +78,8 @@ public class WanEventContainerReplicationOperation extends Operation implements 
 
         // then ingest replication data
         forAllReplicationContainers((publisher, eventContainer) -> {
-            if (publisher instanceof WanMigrationAwarePublisher) {
-                ((WanMigrationAwarePublisher) publisher)
+            if (publisher instanceof WanMigrationAwarePublisher awarePublisher) {
+                awarePublisher
                         .processEventContainerReplicationData(partitionId, eventContainer);
             }
         });

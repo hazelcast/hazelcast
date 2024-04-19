@@ -67,8 +67,7 @@ public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation imp
     public Operation getBackupOperation() {
         List<Operation> backupOpList = new ArrayList<>();
         for (Operation operation : opList) {
-            if (operation instanceof BackupAwareOperation) {
-                BackupAwareOperation backupAwareOperation = (BackupAwareOperation) operation;
+            if (operation instanceof BackupAwareOperation backupAwareOperation) {
                 if (backupAwareOperation.shouldBackup()) {
                     backupOpList.add(backupAwareOperation.getBackupOperation());
                 }

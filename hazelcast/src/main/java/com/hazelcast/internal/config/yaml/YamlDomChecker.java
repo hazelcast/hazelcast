@@ -44,8 +44,8 @@ public final class YamlDomChecker {
      *
      */
     public static void check(YamlNode node, Set<String> nullableNodes) {
-        if (node instanceof YamlMapping) {
-            for (YamlNameNodePair nodePair : ((YamlMapping) node).childrenPairs()) {
+        if (node instanceof YamlMapping mapping) {
+            for (YamlNameNodePair nodePair : mapping.childrenPairs()) {
                 YamlNode child = nodePair.childNode();
                 if (child == null) {
                     if (nullableNodes.contains(nodePair.nodeName())) {
@@ -56,8 +56,8 @@ public final class YamlDomChecker {
                 }
                 check(child, nullableNodes);
             }
-        } else if (node instanceof YamlSequence) {
-            for (YamlNode child : ((YamlSequence) node).children()) {
+        } else if (node instanceof YamlSequence sequence) {
+            for (YamlNode child : sequence.children()) {
                 if (child == null) {
                     throw new InvalidConfigurationException("There is a null configuration entry under sequence " + node.path()
                             + ". Please check if the provided YAML configuration is well-indented and no blocks started without "

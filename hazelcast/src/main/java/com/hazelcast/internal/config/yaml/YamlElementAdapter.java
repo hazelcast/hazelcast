@@ -59,8 +59,8 @@ public class YamlElementAdapter implements Element {
 
     @Override
     public String getNodeValue() throws DOMException {
-        if (yamlNode instanceof YamlScalar) {
-            Object nodeValue = ((YamlScalar) yamlNode).nodeValue();
+        if (yamlNode instanceof YamlScalar scalar) {
+            Object nodeValue = scalar.nodeValue();
             return nodeValue != null ? nodeValue.toString() : null;
         }
         return null;
@@ -68,8 +68,8 @@ public class YamlElementAdapter implements Element {
 
     @Override
     public void setNodeValue(String nodeValue) throws DOMException {
-        if (yamlNode instanceof MutableYamlScalar) {
-            ((MutableYamlScalar) yamlNode).setValue(nodeValue);
+        if (yamlNode instanceof MutableYamlScalar scalar) {
+            scalar.setValue(nodeValue);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -91,10 +91,10 @@ public class YamlElementAdapter implements Element {
             return emptyNodeList();
         }
 
-        if (yamlNode instanceof YamlMapping) {
-            return new NodeListMappingAdapter((YamlMapping) yamlNode);
-        } else if (yamlNode instanceof YamlSequence) {
-            return new NodeListSequenceAdapter((YamlSequence) yamlNode);
+        if (yamlNode instanceof YamlMapping mapping) {
+            return new NodeListMappingAdapter(mapping);
+        } else if (yamlNode instanceof YamlSequence sequence) {
+            return new NodeListSequenceAdapter(sequence);
         }
 
         return new NodeListScalarAdapter((YamlScalar) yamlNode);
@@ -122,8 +122,8 @@ public class YamlElementAdapter implements Element {
 
     @Override
     public NamedNodeMap getAttributes() {
-        if (yamlNode instanceof YamlMapping) {
-            return new NamedNodeMapAdapter((YamlMapping) yamlNode);
+        if (yamlNode instanceof YamlMapping mapping) {
+            return new NamedNodeMapAdapter(mapping);
         }
         return emptyNamedNodeMap();
     }
@@ -155,7 +155,7 @@ public class YamlElementAdapter implements Element {
 
     @Override
     public boolean hasChildNodes() {
-        return yamlNode instanceof YamlCollection && ((YamlCollection) yamlNode).childCount() > 0
+        return yamlNode instanceof YamlCollection yamlCollection && yamlCollection.childCount() > 0
                 || yamlNode instanceof YamlScalar;
     }
 
@@ -266,8 +266,8 @@ public class YamlElementAdapter implements Element {
 
     @Override
     public String getAttribute(String name) {
-        if (yamlNode instanceof YamlMapping) {
-            YamlScalar yamlScalar = ((YamlMapping) yamlNode).childAsScalar(name);
+        if (yamlNode instanceof YamlMapping mapping) {
+            YamlScalar yamlScalar = mapping.childAsScalar(name);
             if (yamlScalar != null) {
                 return yamlScalar.nodeValue().toString();
             }

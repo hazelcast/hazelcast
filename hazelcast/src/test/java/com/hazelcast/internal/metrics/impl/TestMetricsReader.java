@@ -38,11 +38,9 @@ public class TestMetricsReader {
         ProbeFunction function = probeInstance.function;
         Object source = probeInstance.source;
 
-        if (function instanceof LongProbeFunction) {
-            LongProbeFunction longFunction = (LongProbeFunction) function;
+        if (function instanceof LongProbeFunction longFunction) {
             return longFunction.get(source);
-        } else if (function instanceof DoubleProbeFunction) {
-            DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;
+        } else if (function instanceof DoubleProbeFunction doubleFunction) {
             return doubleFunction.get(source);
         } else {
             throw new IllegalStateException("Unexpected probe function type " + function.getClass().getName());

@@ -439,8 +439,8 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     private Comparable canonicalize(Comparable value) {
-        if (value instanceof CompositeValue) {
-            Comparable[] components = ((CompositeValue) value).getComponents();
+        if (value instanceof CompositeValue compositeValue) {
+            Comparable[] components = compositeValue.getComponents();
             for (int i = 0; i < components.length; ++i) {
                 components[i] = canonicalizeScalarForStorage(components[i]);
             }
