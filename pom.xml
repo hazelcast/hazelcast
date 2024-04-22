@@ -62,8 +62,6 @@
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>
 
-        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
-
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
@@ -654,6 +652,7 @@
                                             implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                         <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                                     </statelessTestsetReporter>
+                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                 </configuration>
                             </execution>
                             <execution>
@@ -785,80 +784,6 @@
         </profile>
 
         <profile>
-            <id>LOCAL</id>
-            <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration combine.self="override">
-                            <useFile>false</useFile>
-                            <trimStackTrace>false</trimStackTrace>
-                            <argLine>
-                                ${vmHeapSettings}
-                                ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                ${extraVmArgs}
-                            </argLine>
-                            <includes>
-                                <include>**/**.java</include>
-                            </includes>
-                            <excludes>
-                                <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/**IT.java</exclude>
-                            </excludes>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
-                            <!-- Fixes missing parameters in test name for tests run via mvn -->
-                            <statelessTestsetReporter
-                                    implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
-                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
-                            </statelessTestsetReporter>
-                        </configuration>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration combine.self="override">
-                            <useFile>false</useFile>
-                            <trimStackTrace>false</trimStackTrace>
-                            <argLine>
-                                ${vmHeapSettings}
-                                ${javaModuleArgs}
-                                -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                ${extraVmArgs}
-                            </argLine>
-                            <useManifestOnlyJar>false</useManifestOnlyJar>
-                            <useSystemClassLoader>true</useSystemClassLoader>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
             <id>test-coverage-Local</id>
             <properties>
                 <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
@@ -911,6 +836,7 @@
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                 <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                             </statelessTestsetReporter>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -990,6 +916,7 @@
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                 <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                             </statelessTestsetReporter>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                     </plugin>
 
@@ -1169,6 +1096,7 @@
                                 com.hazelcast.test.annotation.NightlyTest,
                                 com.hazelcast.test.annotation.SlowTest
                             </groups>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                         <executions>
                             <execution>
@@ -1214,6 +1142,7 @@
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                 <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                             </statelessTestsetReporter>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                     </plugin>
                     <plugin>
