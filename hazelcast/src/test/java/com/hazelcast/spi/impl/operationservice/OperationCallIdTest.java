@@ -20,10 +20,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import junit.framework.AssertionFailedError;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.locks.LockSupport;
@@ -32,14 +30,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationCallIdTest {
 
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private final Operation op = new MockOperation();
 
@@ -71,11 +68,8 @@ public class OperationCallIdTest {
         op.setCallId(1);
         assertTrue(op.isActive());
 
-        // Then
-        exceptionRule.expect(IllegalStateException.class);
-
         // When
-        op.setCallId(1);
+        assertThrows(IllegalStateException.class, () -> op.setCallId(1));
     }
 
     @Test

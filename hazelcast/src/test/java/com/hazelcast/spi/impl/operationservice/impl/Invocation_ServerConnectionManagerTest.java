@@ -35,10 +35,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -50,14 +48,13 @@ import java.util.function.Predicate;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_ServerConnectionManagerTest
         extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     private static final String EXPECTED_MSG = "NOOP";
 
@@ -76,9 +73,10 @@ public class Invocation_ServerConnectionManagerTest
                 = getNodeEngineImpl(hz1).getOperationService()
                            .createInvocationBuilder(MapService.SERVICE_NAME, op, partition.getPartitionId());
         builder.setConnectionManager(new NoopEndpointManager());
-        expected.expect(UnsupportedOperationException.class);
-        expected.expectMessage(EXPECTED_MSG);
-        builder.invoke().join();
+
+        assertThatThrownBy(builder::invoke)
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage(EXPECTED_MSG);
     }
 
     class NoopEndpointManager implements ServerConnectionManager {
