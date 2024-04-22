@@ -8,12 +8,6 @@ config = {
 "LOCAL_SOT" : "file:///usr/src/app",
 }
 
-ee_config = {
-   "PR_TRANSFORMATIONS" : [],
-   "PUSH_INCLUDE" : ["**"],
-   "PUSH_EXCLUDE" : ["hazelcast/**", ".github/workflows/mono-*"],
-}
-
 os_config = {
     "PR_TRANSFORMATIONS" : [
             core.move("", "hazelcast", paths = glob(["**"])),
