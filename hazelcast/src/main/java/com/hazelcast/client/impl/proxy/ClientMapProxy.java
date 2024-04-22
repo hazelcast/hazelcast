@@ -74,6 +74,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
@@ -86,7 +87,6 @@ import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
-import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
@@ -170,9 +170,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.containsPagingPredicate;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -185,6 +182,9 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.containsPagingPredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -1644,13 +1644,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map,
                                 @Nullable InternalCompletableFuture<Void> future,
                                 boolean triggerMapLoader) {
+        checkNotNull(map, "Null argument map is not allowed");
         if (map.isEmpty()) {
             if (future != null) {
                 future.complete(null);
             }
             return;
         }
-        checkNotNull(map, "Null argument map is not allowed");
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         Map<Integer, List<Map.Entry<Data, Data>>> entryMap = new HashMap<>(partitionCount);
