@@ -23,7 +23,12 @@ import com.hazelcast.vector.SearchOptions;
 import com.hazelcast.vector.VectorValues;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMapStringKey;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMapStringKey;
 
 public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializable {
 
@@ -31,15 +36,18 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
     private boolean includeVectors;
     private int limit;
     private VectorValues vectors;
+    private Map<String, String> hints = Map.of();
 
     public SearchOptionsImpl() {
     }
 
-    public SearchOptionsImpl(boolean includePayload, boolean includeVectors, int limit, VectorValues vectors) {
+    public SearchOptionsImpl(boolean includePayload, boolean includeVectors, int limit, VectorValues vectors,
+                             Map<String, String> hints) {
         this.includePayload = includePayload;
         this.includeVectors = includeVectors;
         this.limit = limit;
         this.vectors = vectors;
+        this.hints = hints != null ? hints : Map.of();
     }
 
     @Override
@@ -63,11 +71,17 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
     }
 
     @Override
+    public Map<String, String> getHints() {
+        return Collections.unmodifiableMap(hints);
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includePayload);
         out.writeBoolean(includeVectors);
         out.writeInt(limit);
         out.writeObject(vectors);
+        writeMapStringKey(hints, out, ObjectDataOutput::writeString);
     }
 
     @Override
@@ -76,6 +90,7 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
         includeVectors = in.readBoolean();
         limit = in.readInt();
         vectors = in.readObject();
+        hints = readMapStringKey(in, ObjectDataInput::readString);
     }
 
     @Override

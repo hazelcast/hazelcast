@@ -98,10 +98,10 @@ import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.vector.SearchOptions;
+import com.hazelcast.vector.SearchOptionsBuilder;
 import com.hazelcast.vector.VectorValues;
 import com.hazelcast.vector.impl.DataSearchResult;
 import com.hazelcast.vector.impl.DataVectorDocument;
-import com.hazelcast.vector.impl.SearchOptionsImpl;
 import com.hazelcast.version.MemberVersion;
 
 import javax.transaction.xa.Xid;
@@ -1052,6 +1052,12 @@ public class ReferenceObjects {
     public static DataVectorDocument aVectorDocument = new DataVectorDocument(aData, aVectorValues);
     public static List<Map.Entry<Data, DataVectorDocument>> aEntryList_Data_VectorDocument =
             List.of(Map.entry(aData, aVectorDocument));
-    public static SearchOptions aVectorSearchOptions = new SearchOptionsImpl(false, false, 100, aVectorValues);
+    public static SearchOptions aVectorSearchOptions = new SearchOptionsBuilder()
+            .setIncludePayload(false)
+            .setIncludeVectors(false)
+            .limit(100)
+            .vectors(aVectorValues)
+            .hint(aString, aString)
+            .build();
     public static List<DataSearchResult> aList_VectorSearchResult = List.of(new DataSearchResult(aData, aData, aFloat, aVectorValues));
 }

@@ -55,13 +55,14 @@ import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.vector.SearchOptions;
 import com.hazelcast.vector.VectorValues;
 import com.hazelcast.vector.impl.DataSearchResult;
 import com.hazelcast.vector.impl.DataVectorDocument;
-import com.hazelcast.vector.impl.SearchOptionsImpl;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -385,8 +386,15 @@ public final class CustomTypeFactory {
         return new DataVectorDocument(value, toVectorValues(vectors));
     }
 
-    public static SearchOptionsImpl createVectorSearchOptions(boolean includeValue, boolean includeVectors, int limit, List<VectorPairHolder> vectors) {
-        return new SearchOptionsImpl(includeValue, includeVectors, limit, toVectorValues(vectors));
+    public static SearchOptions createVectorSearchOptions(boolean includeValue, boolean includeVectors, int limit,
+                                                              List<VectorPairHolder> vectors, Map<String, String> hints) {
+        return SearchOptions.builder()
+                .setIncludePayload(includeValue)
+                .setIncludeVectors(includeVectors)
+                .limit(limit)
+                .vectors(toVectorValues(vectors))
+                .hints(hints)
+                .build();
     }
 
     public static DataSearchResult createVectorSearchResult(Data key, Data document, float score, List<VectorPairHolder> vectors) {

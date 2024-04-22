@@ -51,11 +51,23 @@ public interface SearchOptions {
      */
     int getLimit();
 
+    /**
+     * @return hints for search execution
+     */
+    Map<String, String> getHints();
+
+    /**
+     * @return builder of {@link SearchOptions}
+     */
+    static SearchOptionsBuilder builder() {
+        return new SearchOptionsBuilder();
+    }
+
     static SearchOptions of(float[] vector, int limit, boolean includeValue, boolean includeVectors) {
-        return new SearchOptionsImpl(includeValue, includeVectors, limit, VectorValues.of(vector));
+        return new SearchOptionsImpl(includeValue, includeVectors, limit, VectorValues.of(vector), Map.of());
     }
 
     static SearchOptions of(Map<String, float[]> vectors, int limit, boolean includeValue, boolean includeVectors) {
-        return new SearchOptionsImpl(includeValue, includeVectors, limit, VectorValues.of(vectors));
+        return new SearchOptionsImpl(includeValue, includeVectors, limit, VectorValues.of(vectors), Map.of());
     }
 }
