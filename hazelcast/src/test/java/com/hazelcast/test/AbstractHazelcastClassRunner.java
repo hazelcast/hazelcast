@@ -35,6 +35,7 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
+import org.opentest4j.TestAbortedException;
 
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
@@ -388,7 +389,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         }
 
         private boolean isJUnitAssumeException(Throwable e) {
-            return e instanceof AssumptionViolatedException;
+            return e instanceof AssumptionViolatedException || e instanceof TestAbortedException;
         }
 
         private boolean expectsException() throws IllegalAccessException {
