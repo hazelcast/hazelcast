@@ -334,8 +334,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
         assertNotNull(job);
+        String message = "jobId=" + idToString(job.getId());
         assertTrueEventually(() ->
-                assertEquals("jobId=" + idToString(job.getId()), expected, job.getStatus()), timeoutSeconds);
+                assertEquals(message, expected, job.getStatus()), timeoutSeconds);
     }
 
     public static JetServiceBackend getJetServiceBackend(HazelcastInstance instance) {
