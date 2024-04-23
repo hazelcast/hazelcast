@@ -172,6 +172,16 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public final void shutdownGracefullyNodeFactory() {
+        LOGGER.info("Shutting down node factory");
+        TestHazelcastInstanceFactory testHazelcastInstanceFactory = factory;
+        if (testHazelcastInstanceFactory != null) {
+            factory = null;
+            testHazelcastInstanceFactory.shutdownAll();
+        }
+    }
+
+
     // ###################################
     // ########## configuration ##########
     // ###################################
