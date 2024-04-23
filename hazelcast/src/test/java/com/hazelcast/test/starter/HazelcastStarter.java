@@ -180,7 +180,7 @@ public class HazelcastStarter {
         }
     }
 
-    private static HazelcastAPIDelegatingClassloader getHazelcastAPIDelegatingClassloader(HazelcastInstance hz) {
+    static HazelcastAPIDelegatingClassloader getHazelcastAPIDelegatingClassloader(HazelcastInstance hz) {
         ConcurrentMap<String, Object> userContext = hz.getConfig().getUserContext();
         HazelcastAPIDelegatingClassloader classloader
                 = (HazelcastAPIDelegatingClassloader) userContext.get("versionClassLoader");
@@ -190,7 +190,7 @@ public class HazelcastStarter {
         return classloader;
     }
 
-    private static Object getHazelcastInstanceImpl(HazelcastInstance hazelcastInstance, ClassLoader classloader)
+    static Object getHazelcastInstanceImpl(HazelcastInstance hazelcastInstance, ClassLoader classloader)
             throws Exception {
         if (isProxyClass(hazelcastInstance.getClass())) {
             InvocationHandler invocationHandler = Proxy.getInvocationHandler(hazelcastInstance);

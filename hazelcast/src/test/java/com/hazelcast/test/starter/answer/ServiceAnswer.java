@@ -65,10 +65,8 @@ class ServiceAnswer extends AbstractAnswer {
             // QueueService
             Method delegateMethod = getDelegateMethod(methodName, String.class);
             return invoke(delegateMethod, arguments);
-        } else if (arguments.length == 1 && (methodName.equals("getLongContainer")
-                || methodName.equals("getReferenceContainer")
-                || methodName.equals("getCardinalityEstimatorContainer"))) {
-            // AtomicLongService, AtomicReferenceService, CardinalityEstimatorService
+        } else if (arguments.length == 1 && (methodName.equals("getCardinalityEstimatorContainer"))) {
+            // CardinalityEstimatorService
             Method delegateMethod = getDelegateMethod(methodName, String.class);
             return invoke(delegateMethod, arguments);
         } else if (arguments.length == 1 && methodName.equals("getPartitionContainer")) {
@@ -113,25 +111,6 @@ class ServiceAnswer extends AbstractAnswer {
         } else if (arguments.length == 0 && methodName.startsWith("isRunning")) {
             // LifecycleService
             return invoke(invocation);
-        } else if (arguments.length == 0 && methodName.startsWith("isDiscoveryCompleted")) {
-            // RaftService
-            return invoke(invocation);
-//        } else if (arguments.length == 0 && methodName.startsWith("getInvocationManager")) {
-//            // RaftService
-//            Object raftInvocationManager = invokeForMock(invocation);
-//            Object delegateSerializationService = getSerializationService();
-//            return createMockForTargetClass(raftInvocationManager,
-//                    new RaftInvocationManagerAnswer(raftInvocationManager, delegateSerializationService));
-        } else if (arguments.length == 1 && methodName.equals("getSession")) {
-            // ProxySessionManagerService
-            return invoke(invocation, arguments);
-        } else if (arguments.length == 2 && methodName.equals("getSessionAcquireCount")) {
-            // ProxySessionManagerService
-            return invoke(invocation, arguments);
-        } else if (arguments.length == 1 && methodName.equals("getRegistryOrNull")) {
-            // AbstractBlockingService
-            Object result = invoke(false, invocation, arguments[0]);
-            return createMockForTargetClass(result, new DelegatingAnswer(result));
         } else if (arguments.length == 0 && methodName.startsWith("get")) {
             return invoke(invocation);
         }
@@ -158,7 +137,7 @@ class ServiceAnswer extends AbstractAnswer {
      * Assuming delegate has a field {@code nodeEngine}, returns the serialization
      * service from {@link NodeEngine#getSerializationService()}.
     */
-    private Object getSerializationService() {
+    Object getSerializationService() {
         try {
             Object nodeEngine = getFieldValueReflectively(delegate, "nodeEngine");
             Method getter = nodeEngine.getClass().getDeclaredMethod("getSerializationService");
