@@ -28,11 +28,14 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -54,10 +57,12 @@ public final class Util {
     }
 
     /**
-     * Returns a {@code Map.Entry} with the given key and value.
+     * Returns a {@link Serializable} {@code Map.Entry} with nullable key and
+     * value. If nullability and serializability are not required, consider
+     * using {@link Map#entry(K, V)}.
      */
-    public static <K, V> Entry<K, V> entry(K k, V v) {
-        return new SimpleImmutableEntry<>(k, v);
+    public static <K, V> Entry<K, V> entry(@Nullable K key, @Nullable V value) {
+        return new SimpleImmutableEntry<>(key, value);
     }
 
     /**

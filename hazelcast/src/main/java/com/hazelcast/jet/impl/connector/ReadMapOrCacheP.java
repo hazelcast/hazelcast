@@ -31,7 +31,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.cluster.Versions;
@@ -84,12 +83,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
 import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
+import static com.hazelcast.jet.impl.util.Util.createRemoteClient;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static java.util.stream.Collectors.toList;
 
@@ -399,13 +397,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
      * Create a processor that uses a remote cluster as source
      */
     static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
-
         private static final long serialVersionUID = 2L;
 
         private final String dataConnectionName;
         private final String clientXml;
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
-        private transient HazelcastClientProxy client;
+        private transient HazelcastInstance client;
+        private transient int remotePartitionCount;
         private transient int totalParallelism;
         private transient int baseIndex;
 
@@ -420,7 +418,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override
         public void init(@Nonnull Context context) {
-            client = (HazelcastClientProxy) createRemoteClient(context);
+            client = createRemoteClient(context, dataConnectionName, clientXml);
+            HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
+            remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }
@@ -435,31 +435,12 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         @Nonnull
         public List<Processor> get(int count) {
-            int remotePartitionCount = client.client.getClientPartitionService().getPartitionCount();
-
             return IntStream.range(0, count)
                     .mapToObj(i -> {
                         int[] partitionIds = Util.roundRobinPart(remotePartitionCount, totalParallelism, baseIndex + i);
                         return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds);
                     })
                     .collect(Collectors.toList());
-        }
-
-        private HazelcastInstance createRemoteClient(ProcessorSupplier.Context context) {
-            // The order is important.
-            // If dataConnectionConfig is specified prefer it to clientXml
-            if (dataConnectionName != null) {
-                HazelcastDataConnection hazelcastDataConnection = context
-                        .dataConnectionService()
-                        .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
-                try {
-                    return hazelcastDataConnection.getClient();
-                } finally {
-                    hazelcastDataConnection.release();
-                }
-            } else {
-                return newHazelcastClient(asClientConfig(clientXml));
-            }
         }
     }
 

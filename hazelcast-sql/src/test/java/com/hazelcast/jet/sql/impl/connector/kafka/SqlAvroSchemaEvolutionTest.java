@@ -30,6 +30,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
@@ -37,9 +38,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroTest.ID_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroTest.NAME_SCHEMA;
-import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOf;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -59,9 +58,9 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
     @Parameters(name = "{0}, updateMapping=[{1}]")
     public static Iterable<Object[]> parameters() {
-        return parameters(
-                asList("TopicNameStrategy", "TopicRecordNameStrategy", "RecordNameStrategy"),
-                asList(false, true));
+        return cartesianProduct(
+                List.of("TopicNameStrategy", "TopicRecordNameStrategy", "RecordNameStrategy"),
+                List.of(false, true));
     }
 
     @Parameter(0)
@@ -255,7 +254,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         };
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                Arrays.stream(records).map(record -> new Row(copyOf(record, fields))).collect(toList())
+                Arrays.stream(records).map(record -> new Row(copyOf(record, fields))).toList()
         );
     }
 

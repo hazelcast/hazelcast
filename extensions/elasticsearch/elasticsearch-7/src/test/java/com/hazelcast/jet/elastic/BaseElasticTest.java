@@ -55,12 +55,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.ImmutableMap.of;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static java.util.Map.entry;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
-import static org.assertj.core.util.Lists.newArrayList;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
@@ -138,18 +136,20 @@ public abstract class BaseElasticTest {
         indexBatchOfDocuments(index);
     }
 
+    protected Settings.Builder configureShardedIndices(Settings.Builder settings) {
+        return settings.put("index.unassigned.node_left.delayed_timeout", "1s");
+    }
+
     /**
      * Creates an index with given name with 3 shards
      */
     protected void createShardedIndex(String index, int shards, int replicas) throws IOException {
-        CreateIndexRequest indexRequest = new CreateIndexRequest(index);
-        indexRequest.settings(Settings.builder()
-                                      .put("index.unassigned.node_left.delayed_timeout", "1s")
-                                      .put("index.number_of_shards", shards)
-                                      .put("index.number_of_replicas", replicas)
-        );
+        CreateIndexRequest request = new CreateIndexRequest(index);
+        request.settings(configureShardedIndices(Settings.builder()
+                  .put("index.number_of_shards", shards)
+                  .put("index.number_of_replicas", replicas)));
 
-        elasticClient.indices().create(indexRequest, RequestOptions.DEFAULT);
+        elasticClient.indices().create(request, RequestOptions.DEFAULT);
     }
 
     /**
@@ -187,7 +187,7 @@ public abstract class BaseElasticTest {
     protected List<String> indexBatchOfDocuments(String index, int batchSize) {
         List<Map<String, Object>> docs = new ArrayList<>();
         for (int i = 0; i < batchSize; i++) {
-            docs.add(of("title", "document " + i));
+            docs.add(Map.of("title", "document " + i));
         }
         return indexDocuments(index, docs);
     }
@@ -196,7 +196,7 @@ public abstract class BaseElasticTest {
      * Indexes a given document to an index with given name
      */
     protected String indexDocument(String index, Map<String, Object> document) {
-        return indexDocuments(index, newArrayList(document)).get(0);
+        return indexDocuments(index, List.of(document)).get(0);
     }
 
     /**

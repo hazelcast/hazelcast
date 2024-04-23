@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -129,12 +130,13 @@ public final class CollectionUtil {
 
     /**
      * Adapts an int array to an Integer {@link List}.
+     * <p>
+     * The returned list is not serializable. If serializability is required,
+     * use {@code Arrays.stream(array).boxed().toList()}.
      *
-     * @param array the array
-     * @return the list
      * @throws NullPointerException if array is null.
      */
-    public static List<Integer> asIntegerList(int[] array) {
+    public static List<Integer> asIntegerList(@Nonnull int[] array) {
         checkNotNull(array, "null array");
         return new AbstractList<>() {
             @Override

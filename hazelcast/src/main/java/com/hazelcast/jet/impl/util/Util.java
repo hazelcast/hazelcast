@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
@@ -90,6 +92,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
@@ -98,6 +101,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -846,6 +850,30 @@ public final class Util {
         var data = new byte[HeapData.HEAP_DATA_OVERHEAD];
         Bits.writeIntB(data, 0, hash);
         return data;
+    }
+
+    /**
+     * Creates a remote client using {@code dataConnectionName} or
+     * {@code clientXml} in order, depending on availability.
+     */
+    public static HazelcastInstance createRemoteClient(
+            ProcessorMetaSupplier.Context context,
+            @Nullable String dataConnectionName,
+            @Nullable String clientXml
+    ) {
+        if (dataConnectionName != null) {
+            HazelcastDataConnection dataConnection = context
+                    .dataConnectionService()
+                    .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+            try {
+                return dataConnection.getClient();
+            } finally {
+                dataConnection.release();
+            }
+        } else {
+            assert clientXml != null;
+            return newHazelcastClient(asClientConfig(clientXml));
+        }
     }
 
     public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {

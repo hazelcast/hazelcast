@@ -17,7 +17,6 @@
 package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -159,15 +158,14 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
     }
 
     public static class MetaSupplier<K, V, R> extends ReadHdfsMetaSupplierBase<R> {
-
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         /**
          * The instance is either {@link SerializableConfiguration} or {@link
          * SerializableJobConf}, which are serializable.
          */
         @SuppressFBWarnings("SE_BAD_FIELD")
-        private Configuration configuration;
+        private final Configuration configuration;
         private final ConsumerEx<Configuration> configureFn;
         private final BiFunctionEx<K, V, R> projectionFn;
         private final Permission permission;
@@ -197,10 +195,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
                 List<InputSplit> splits = getSplits(configuration);
                 IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.size()];
                 Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits.get(i)));
-                Address[] addresses = context.hazelcastInstance().getCluster().getMembers()
-                        .stream()
-                        .map(Member::getAddress)
-                        .toArray(Address[]::new);
+                Address[] addresses = context.partitionAssignment().keySet().toArray(Address[]::new);
                 assigned = assignSplitsToMembers(indexedInputSplits, addresses);
                 printAssignments(assigned);
             }
@@ -235,7 +230,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         /**
          * The instance is either {@link SerializableConfiguration} or {@link

@@ -18,7 +18,6 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -38,7 +37,7 @@ import static org.mockito.Mockito.when;
  */
 public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {
@@ -68,8 +67,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
          .writeTo(Sinks.logger());
 
         assertThatThrownBy(() -> super.hz.getJet().newJob(p).join())
-                .hasCauseInstanceOf(JetException.class)
-                .hasMessageContaining("Shard locations are not equal to Hazelcast members locations");
+                .hasMessageContaining("Selected members do not contain shard 'my-index-0'");
     }
 
     @Test

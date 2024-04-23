@@ -185,7 +185,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     }
 
     @Test
-    public void testCustomSinkExecutorService() throws Exception {
+    public void testCustomSinkExecutorService() {
         HELPER.createStream(1);
 
         threadCounter.set(0);
@@ -197,7 +197,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .withExecutorServiceSupplier(sinkExecutorSupplier)
                 .build();
 
-        sendMessages(MESSAGES, sink);
+        sendMessages(messages(0, MESSAGES), sink);
         assertTrueEventually(() -> assertEquals(MEMBER_COUNT, threadCounter.get()));
 
         try {

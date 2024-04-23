@@ -19,10 +19,8 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -46,7 +44,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.security.impl.function.SecuredFunctions;
@@ -60,34 +57,29 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgFunction;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgPredicate;
-import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.createRemoteClient;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.IntStream.range;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * @see SourceProcessors#streamMapP
@@ -145,7 +137,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         this.initialPos = initialPos;
         this.isRemoteReader = isRemoteReader;
 
-        partitionIds = assignedPartitions.stream().mapToInt(Integer::intValue).toArray();
+        partitionIds = toIntArray(assignedPartitions);
         emitOffsets = new long[partitionIds.length];
         readOffsets = new long[partitionIds.length];
 
@@ -253,7 +245,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         @SuppressWarnings("unchecked")
         int partitionId = ((BroadcastKey<Integer>) key).key();
-        int partitionIndex = arrayIndexOf(partitionId, partitionIds);
+        int partitionIndex = Arrays.binarySearch(partitionIds, partitionId);
         long offset = ((long[]) value)[0];
         long wm = ((long[]) value)[1];
         if (partitionIndex >= 0) {
@@ -347,8 +339,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     private static class ClusterMetaSupplier<E, T> implements ProcessorMetaSupplier {
-
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private final String clientXml;
         private final String dataConnectionName;
@@ -362,8 +353,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         private transient int remotePartitionCount;
 
-        //Key : Address of the local or remote member
-        //Value : List of partitions ids on this member
+        // Key: Address of the local or remote member
+        // Value: List of partitions IDs assigned to the member
         private transient Map<Address, List<Integer>> addrToPartitions;
 
         ClusterMetaSupplier(
@@ -392,35 +383,24 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public int preferredLocalParallelism() {
-            return isRemote(dataConnectionName, clientXml) ? 1 : 2;
+            return isRemote() ? 1 : 2;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            checkUseFullCluster(context);
-
-            if (isRemote(dataConnectionName, clientXml)) {
-                initRemote(context);
+            if (isRemote()) {
+                HazelcastInstance client = createRemoteClient(context, dataConnectionName, clientXml);
+                try {
+                    HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
+                    remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
+                } finally {
+                    client.shutdown();
+                }
             } else {
                 PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
-                initLocal(context.hazelcastInstance().getPartitionService().getPartitions());
+                addrToPartitions = context.partitionAssignment().entrySet().stream()
+                        .collect(toMap(Entry::getKey, e -> Arrays.stream(e.getValue()).boxed().toList()));
             }
-        }
-
-        private void initRemote(Context context) {
-            HazelcastInstance client = createRemoteClient(context, dataConnectionName, clientXml);
-            try {
-                HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-                remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
-            } finally {
-                client.shutdown();
-            }
-        }
-
-        private void initLocal(Set<Partition> partitions) {
-            addrToPartitions = partitions.stream()
-                                         .collect(groupingBy(p -> p.getOwner().getAddress(),
-                                                 mapping(Partition::getPartitionId, toList())));
         }
 
         @Override
@@ -429,7 +409,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             // If addrToPartitions is null it means that we are connecting to remote cluster
             if (addrToPartitions == null) {
                 // assign each remote partition id to a local member address
-                addrToPartitions = range(0, remotePartitionCount)
+                addrToPartitions = IntStream.range(0, remotePartitionCount)
                         .boxed()
                         .collect(groupingBy(partition -> addresses.get(partition % addresses.size())));
             }
@@ -442,7 +422,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public Permission getRequiredPermission() {
-            if (isRemote(dataConnectionName, clientXml)) {
+            if (isRemote()) {
                 return null;
             }
             return permissionFn.get();
@@ -450,7 +430,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public boolean initIsCooperative() {
-            return !isRemote(dataConnectionName, clientXml);
+            return !isRemote();
         }
 
         @Override
@@ -458,23 +438,13 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             return true;
         }
 
-        private void checkUseFullCluster(Context context) {
-            Set<Address> dataMembers = context.hazelcastInstance()
-                    .getCluster()
-                    .getMembers()
-                    .stream()
-                    .filter(m -> !m.isLiteMember())
-                    .map(Member::getAddress)
-                    .collect(Collectors.toSet());
-            if (!context.partitionAssignment().keySet().containsAll(dataMembers)) {
-                throw new JetException("IMap Journal can only be used if all data members participate in job execution");
-            }
+        private boolean isRemote() {
+            return dataConnectionName != null || clientXml != null;
         }
     }
 
     private static class ClusterProcessorSupplier<E, T> implements ProcessorSupplier {
-
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         @Nonnull
         private final List<Integer> ownedPartitions;
@@ -525,7 +495,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
             // The order is important.
             // If dataConnectionConfig is specified prefer it to clientXml
-            if (isRemote(dataConnectionName, clientXml)) {
+            if (isRemote()) {
                 client = createRemoteClient(context, dataConnectionName, clientXml);
                 instance = client;
             }
@@ -551,7 +521,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             return distributeObjects(count, ownedPartitions)
                     .values().stream()
                     .map(this::processorForPartitions)
-                    .collect(toList());
+                    .toList();
         }
 
         private Processor processorForPartitions(List<Integer> partitions) {
@@ -560,28 +530,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                     : new StreamEventJournalP<>(eventJournalReader, partitions, predicate, projection,
                     initialPos, client != null, eventTimePolicy);
         }
-    }
 
-    private static HazelcastInstance createRemoteClient(
-            ProcessorMetaSupplier.Context context, String dataConnectionName, String clientXml) {
-        // The order is important.
-        // If dataConnectionConfig is specified prefer it to clientXml
-        if (dataConnectionName != null) {
-            HazelcastDataConnection hazelcastDataConnection = context
-                    .dataConnectionService()
-                    .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
-            try {
-                return hazelcastDataConnection.getClient();
-            } finally {
-                hazelcastDataConnection.release();
-            }
-        } else {
-            return newHazelcastClient(asClientConfig(clientXml));
+        private boolean isRemote() {
+            return dataConnectionName != null || clientXml != null;
         }
-    }
-
-    private static boolean isRemote(String dataConnectionName, String clientXml) {
-        return dataConnectionName != null || clientXml != null;
     }
 
     public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(

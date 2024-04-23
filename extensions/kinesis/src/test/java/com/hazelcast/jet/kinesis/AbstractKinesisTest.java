@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.kinesis.impl.source.HashRange;
-import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -42,16 +41,17 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.internal.util.MapUtil.entry;
+import static com.hazelcast.jet.Util.entry;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -73,9 +73,9 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
     private final AmazonKinesisAsync kinesis;
     private final KinesisTestHelper helper;
 
-    private HazelcastInstance[] cluster;
+    protected HazelcastInstance[] cluster;
 
-    AbstractKinesisTest(AwsConfig awsConfig, AmazonKinesisAsync kinesis, KinesisTestHelper helper) {
+    public AbstractKinesisTest(AwsConfig awsConfig, AmazonKinesisAsync kinesis, KinesisTestHelper helper) {
         this.awsConfig = awsConfig;
         this.kinesis = kinesis;
         this.helper = helper;
@@ -107,13 +107,13 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
         return cluster[0];
     }
 
-    protected Pipeline getPipeline(StreamSource<Map.Entry<String, byte[]>> source) {
+    protected Pipeline getPipeline(StreamSource<Entry<String, byte[]>> source) {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
                 .withNativeTimestamps(0)
-                .rebalance(Map.Entry::getKey)
-                .map(e -> entry(e.getKey(), Collections.singletonList(new String(e.getValue()))))
-                .writeTo(Sinks.mapWithMerging(results, Map.Entry::getKey, Map.Entry::getValue, (l1, l2) -> {
+                .rebalance(Entry::getKey)
+                .map(e -> entry(e.getKey(), List.of(new String(e.getValue()))))
+                .writeTo(Sinks.mapWithMerging(results, Entry::getKey, Entry::getValue, (l1, l2) -> {
                     ArrayList<String> list = new ArrayList<>();
                     list.addAll(l1);
                     list.addAll(l2);
@@ -131,47 +131,45 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
     }
 
     protected Map<String, List<String>> sendMessages(int count) {
-        return sendMessages(count, kinesisSink().build());
+        List<Entry<String, String>> messages = messages(0, count);
+        sendMessages(messages, kinesisSink().build());
+        return toMap(messages);
     }
 
-    protected Map<String, List<String>> sendMessages(int count, Sink<Map.Entry<String, byte[]>> sink) {
-        List<Map.Entry<String, String>> msgEntryList = messages(0, count);
+    protected void sendMessages(Collection<Entry<String, String>> messages) {
+        sendMessages(messages, kinesisSink().build());
+    }
 
-        BatchSource<Map.Entry<String, byte[]>> source = TestSources.items(msgEntryList.stream()
-                .map(e1 -> entry(e1.getKey(), e1.getValue().getBytes()))
-                .collect(toList()));
-
+    protected void sendMessages(Collection<Entry<String, String>> messages, Sink<Entry<String, byte[]>> sink) {
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(source)
+        pipeline.readFrom(TestSources.items(messages.stream()
+                        .map(e1 -> entry(e1.getKey(), e1.getValue().getBytes()))
+                        .toList()))
                 .writeTo(sink);
 
         hz().getJet().newJob(pipeline);
-
-        return toMap(msgEntryList);
     }
 
     @Nonnull
-    protected List<Map.Entry<String, String>> messages(int fromInclusive, int toExclusive) {
+    protected List<Entry<String, String>> messages(int fromInclusive, int toExclusive) {
         return IntStream.range(fromInclusive, toExclusive)
                 .boxed()
                 .map(i -> entry(Integer.toString(i % KEYS), i))
                 .map(e -> entry(e.getKey(), String.format("%s: msg %09d", e.getKey(), e.getValue())))
-                .collect(toList());
+                .toList();
     }
 
     protected void assertMessages(Map<String, List<String>> expected, boolean checkOrder, boolean deduplicate) {
         assertTrueEventually(() -> {
-            assertEquals("Key sets differ!",
-                    expected.keySet().stream().map(Integer::parseInt).collect(Collectors.toCollection(TreeSet::new)),
-                    results.keySet().stream().map(Integer::parseInt).collect(Collectors.toCollection(TreeSet::new)));
+            assertEquals("Key sets differ!", expected.keySet(), results.keySet());
 
-            for (Map.Entry<String, List<String>> entry : expected.entrySet()) {
+            for (Entry<String, List<String>> entry : expected.entrySet()) {
                 String key = entry.getKey();
                 List<String> expectedMessages = entry.getValue();
 
                 List<String> actualMessages = results.get(key);
                 if (deduplicate) {
-                    actualMessages = actualMessages.stream().distinct().collect(toList());
+                    actualMessages = actualMessages.stream().distinct().toList();
                 }
                 if (!checkOrder) {
                     actualMessages = new ArrayList<>(actualMessages);
@@ -183,14 +181,14 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
         });
     }
 
-    protected KinesisSources.Builder<Map.Entry<String, byte[]>> kinesisSource() {
+    protected KinesisSources.Builder<Entry<String, byte[]>> kinesisSource() {
         return KinesisSources.kinesis(STREAM)
                 .withEndpoint(awsConfig.getEndpoint())
                 .withRegion(awsConfig.getRegion())
                 .withCredentials(awsConfig.getAccessKey(), awsConfig.getSecretKey());
     }
 
-    protected KinesisSinks.Builder<Map.Entry<String, byte[]>> kinesisSink() {
+    protected KinesisSinks.Builder<Entry<String, byte[]>> kinesisSink() {
         return KinesisSinks.kinesis(STREAM)
                 .withEndpoint(awsConfig.getEndpoint())
                 .withRegion(awsConfig.getRegion())
@@ -264,23 +262,12 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
         return sb.toString();
     }
 
-    private static Map<String, List<String>> toMap(List<Map.Entry<String, String>> entryList) {
-        return entryList.stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> Collections.singletonList(e.getValue()),
-                        (l1, l2) -> {
-                            ArrayList<String> retList = new ArrayList<>();
-                            retList.addAll(l1);
-                            retList.addAll(l2);
-                            return retList;
-                        }
-                ));
+    private static Map<String, List<String>> toMap(List<Entry<String, String>> entries) {
+        return entries.stream().collect(groupingBy(Entry::getKey, mapping(Entry::getValue, toList())));
     }
 
     public static boolean shardActive(@Nonnull Shard shard) {
-        String endingSequenceNumber = shard.getSequenceNumberRange().getEndingSequenceNumber();
-        return endingSequenceNumber == null;
+        return shard.getSequenceNumberRange().getEndingSequenceNumber() == null;
         //need to rely on this hack, because shard filters don't seem to work, on the mock at least ...
     }
 }

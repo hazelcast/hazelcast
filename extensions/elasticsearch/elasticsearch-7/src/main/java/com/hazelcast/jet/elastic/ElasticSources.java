@@ -78,8 +78,7 @@ public final class ElasticSources {
 
     /**
      * Creates a source which queries local instance of Elasticsearch for all
-     * documents. Uses {@link SearchHit#getSourceAsString()} as mapping
-     * function
+     * documents. Uses provided {@code mapToItemFn} to map results.
      * <p>
      * For example:
      * <pre>{@code

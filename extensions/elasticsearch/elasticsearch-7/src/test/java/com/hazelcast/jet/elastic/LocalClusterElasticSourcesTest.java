@@ -32,12 +32,11 @@ public class LocalClusterElasticSourcesTest extends CommonElasticSourcesTest {
     private static HazelcastInstance[] instances;
 
     // Cluster startup takes >1s, reusing the cluster between tests
-    private static Supplier<HazelcastInstance> hzSupplier = Util.memoize(() -> {
+    private static final Supplier<HazelcastInstance> hzSupplier = Util.memoize(() -> {
         TestHazelcastFactory factory = new TestHazelcastFactory();
         instances = factory.newInstances(config(), 3);
         return instances[0];
     });
-
 
     @AfterClass
     public static void afterClass() {

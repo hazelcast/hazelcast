@@ -121,8 +121,8 @@ public final class ExecutionPlanBuilder {
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
-        final int clusterSize = partitionsByAddress.size();
-        final boolean isJobDistributed = clusterSize > 1;
+        final int memberCount = partitionsByAddress.size();
+        final boolean isJobDistributed = memberCount > 1;
 
         final VerticesIdAndOrder verticesIdAndOrder = VerticesIdAndOrder.assignVertexIds(dag);
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
@@ -132,7 +132,7 @@ public final class ExecutionPlanBuilder {
         int memberIndex = 0;
         for (MemberInfo member : partitionsByMember.keySet()) {
             plans.put(member, new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++,
-                    clusterSize, isLightJob, subject, verticesIdAndOrder.count()));
+                    memberCount, isLightJob, subject, verticesIdAndOrder.count()));
         }
 
         final List<Address> addresses = toList(partitionsByMember.keySet(), MemberInfo::getAddress);
@@ -148,7 +148,7 @@ public final class ExecutionPlanBuilder {
             // pipeline, we are already doing this determination while
             // converting it to DAG and there is no vertex left with LP=-1.
             final int localParallelism = vertex.determineLocalParallelism(defaultParallelism);
-            final int totalParallelism = localParallelism * clusterSize;
+            final int totalParallelism = localParallelism * memberCount;
             final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> verticesIdAndOrder.idByName(e.getSourceName()), isJobDistributed);
             final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()), defaultEdgeConfig,
@@ -162,8 +162,8 @@ public final class ExecutionPlanBuilder {
                 ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
                 try {
                     doWithClassLoader(processorClassLoader, () ->
-                            metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
-                                    jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
+                            metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId, jobConfig,
+                                    logger, vertex.getName(), localParallelism, totalParallelism, memberCount,
                                     isLightJob, partitionsByAddress, subject, processorClassLoader)));
                 } catch (Exception e) {
                     throw sneakyThrow(peel(e));

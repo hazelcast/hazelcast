@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,23 +30,20 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.function.Function;
+
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.getOwnerAddress;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A meta-supplier that will only use the given {@code ProcessorSupplier} on a node with given partition key.
  */
 public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
-    int partitionId;
-
     private ProcessorSupplier supplier;
     private SupplierEx<Expression<?>> partitionKeyExprSupplier;
-    private Map<Address, int[]> partitionAssignment;
     private Integer partitionArgIndex;
+    private Address ownerAddress;
 
     public LazyDefiningSpecificMemberPms() {
         super();
@@ -73,41 +69,22 @@ public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, Ide
         }
 
         ExpressionEvalContext eec = ExpressionEvalContext.from(context);
-        Expression<?> partitionKeyExpr = null;
-        if (partitionKeyExprSupplier != null) {
-            partitionKeyExpr = partitionKeyExprSupplier.get();
-        }
-
-        this.partitionId = Util.getNodeEngine(context.hazelcastInstance()).getPartitionService().getPartitionId(
-                partitionArgIndex != null
-                        ? eec.getArgument(partitionArgIndex)
-                        : Objects.requireNonNull(partitionKeyExpr).eval(null, eec));
-        partitionAssignment = context.partitionAssignment();
+        Object partitionKey = partitionArgIndex != null
+                ? eec.getArgument(partitionArgIndex)
+                : requireNonNull(partitionKeyExprSupplier.get()).eval(null, eec);
+        ownerAddress = getOwnerAddress(context, partitionKey);
     }
 
     @Nonnull
     @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-        Address address = null;
-        for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
-            if (Arrays.binarySearch(entry.getValue(), partitionId) >= 0) {
-                address = entry.getKey();
-                break;
-            }
-        }
-        final Address finalAddress = address;
         // ExpectNothingProcessorSupplier may be eliminated by partition pruning, if used by SQL.
-        return addr -> addr.equals(finalAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        return addr -> addr.equals(ownerAddress) ? supplier : new ExpectNothingProcessorSupplier();
     }
 
     @Override
     public int preferredLocalParallelism() {
         return 1;
-    }
-
-    @Override
-    public boolean isReusable() {
-        return false;
     }
 
     @Override

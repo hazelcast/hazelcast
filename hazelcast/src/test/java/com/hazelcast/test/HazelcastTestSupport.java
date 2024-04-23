@@ -371,7 +371,7 @@ public abstract class HazelcastTestSupport {
     /**
      * Returns the cartesian product of the specified lists.
      */
-    public static List<Object[]> parameters(List<?>... lists) {
+    public static List<Object[]> cartesianProduct(List<?>... lists) {
         return Lists.cartesianProduct(lists).stream().map(List::toArray).collect(toList());
     }
 

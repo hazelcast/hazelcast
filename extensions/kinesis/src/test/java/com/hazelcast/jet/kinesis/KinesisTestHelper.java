@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-class KinesisTestHelper {
+public class KinesisTestHelper {
 
     static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
             .maxAttempts(30)
@@ -67,7 +67,7 @@ class KinesisTestHelper {
 
     private final ILogger logger = Logger.getLogger(KinesisIntegrationTest.class);
 
-    KinesisTestHelper(AmazonKinesisAsync kinesis, String stream) {
+    public KinesisTestHelper(AmazonKinesisAsync kinesis, String stream) {
         this.kinesis = kinesis;
         this.stream = stream;
     }

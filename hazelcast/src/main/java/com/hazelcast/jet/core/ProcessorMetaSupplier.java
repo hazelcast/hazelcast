@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionService;
@@ -36,6 +37,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.spi.annotation.Beta;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -47,6 +49,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.AccessControlException;
 import java.security.Permission;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -57,9 +60,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
-import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static java.util.Collections.singletonList;
 
 /**
  * Factory of {@link ProcessorSupplier} instances. The starting point of the
@@ -495,19 +496,13 @@ public interface ProcessorMetaSupplier extends Serializable {
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
-                String key = getPartitionKey(partitionKey);
-                int partitionId = context.hazelcastInstance().getPartitionService().getPartition(key).getPartitionId();
-                ownerAddress = context.partitionAssignment().entrySet().stream()
-                        .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
-                        .findAny()
-                        .map(Entry::getKey)
-                        .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
+                ownerAddress = getOwnerAddress(context, getPartitionKey(partitionKey));
             }
 
             @Nonnull
             @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                return addr -> addr.equals(ownerAddress) ? supplier : count -> singletonList(new ExpectNothingP());
+                return addr -> addr.equals(ownerAddress) ? supplier : count -> List.of(new ExpectNothingP());
             }
 
             @Override
@@ -530,6 +525,19 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return true;
             }
         };
+    }
+
+    /**
+     * Since {@linkplain Partition#getOwner() the partition owner} may not participate in job execution,
+     * always {@link Context#partitionAssignment()} should be used to find the "actual" owner.
+     */
+    static Address getOwnerAddress(Context context, Object partitionKey) {
+        int partitionId = context.hazelcastInstance().getPartitionService().getPartition(partitionKey).getPartitionId();
+        return context.partitionAssignment().entrySet().stream()
+                .filter(e -> Arrays.binarySearch(e.getValue(), partitionId) >= 0)
+                .findAny()
+                .map(Entry::getKey)
+                .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
     }
 
     /**
@@ -604,13 +612,19 @@ public interface ProcessorMetaSupplier extends Serializable {
                         "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                 + "supports only total parallelism of 1. Local parallelism must be 1.");
             }
+            if (memberAddress != null) {
+                if (context.hazelcastInstance().getCluster().getMembers().stream()
+                        .map(Member::getAddress).noneMatch(memberAddress::equals)) {
+                    throw new JetException("Cluster does not contain the required member: " + memberAddress);
+                }
+                if (!context.partitionAssignment().containsKey(memberAddress)) {
+                    throw new JetException("Selected members do not contain the required member: " + memberAddress);
+                }
+            }
         }
 
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            if (memberAddress != null && !addresses.contains(memberAddress)) {
-                throw new JetException("Cluster does not contain the required member: " + memberAddress);
-            }
             Address memberAddressToUse = memberAddress != null
                     ? memberAddress
                     : addresses.get(RandomPicker.getInt(addresses.size()));

@@ -359,7 +359,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return Accessors.getNodeEngineImpl(instance).getDataConnectionService();
     }
 
-    public Map<Address, int[]> getPartitionAssignment(HazelcastInstance instance) {
+    public static Map<Address, int[]> getPartitionAssignment(HazelcastInstance instance) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         MembersView membersView = Util.getMembersView(nodeEngine);
         Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();

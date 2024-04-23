@@ -41,23 +41,21 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.hadoop.impl.ReadHadoopPTest.EMapperType.CUSTOM_WITH_NULLS;
 import static java.lang.Integer.parseInt;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -66,35 +64,36 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class ReadHadoopPTest extends HadoopTestSupport {
 
-    private static final String[] ENTRIES = {
-            "key-0 value-0\n",
-            "key-1 value-1\n",
-            "key-2 value-2\n",
-            "key-3 value-3\n"};
+    private static final String[] VALUES = {
+            "value-0\n",
+            "value-1\n",
+            "value-2\n",
+            "value-3\n"
+    };
 
-    @Parameterized.Parameter
+    @Parameter(0)
     public Class inputFormatClass;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public EMapperType projectionType;
 
-    @Parameterized.Parameter(2)
-    public Boolean sharedFileSystem;
+    @Parameter(2)
+    public boolean sharedFileSystem;
 
     private Configuration jobConf;
     private Path directory;
-    private Set<org.apache.hadoop.fs.Path> paths = new HashSet<>();
+    private final Set<org.apache.hadoop.fs.Path> paths = new HashSet<>();
 
-    @Parameterized.Parameters(name = "inputFormat={0}, mapper={1}")
+    @Parameters(name = "inputFormat={0}, mapper={1}, sharedFileSystem={2}")
     public static Collection<Object[]> parameters() {
-        return combinations(
-                Arrays.asList(
+        return cartesianProduct(
+                List.of(
                         org.apache.hadoop.mapred.TextInputFormat.class,
                         org.apache.hadoop.mapreduce.lib.input.TextInputFormat.class,
                         org.apache.hadoop.mapred.SequenceFileInputFormat.class,
                         org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat.class),
-                Arrays.asList(EMapperType.values()),
-                Arrays.asList(true, false));
+                List.of(EMapperType.values()),
+                List.of(true, false));
     }
 
     @BeforeClass
@@ -146,7 +145,7 @@ public class ReadHadoopPTest extends HadoopTestSupport {
                 .setLocalParallelism(1);
 
         instance().getJet().newJob(p).join();
-        int expected = paths.size() * ENTRIES.length * (sharedFileSystem ? 1 : 2);
+        int expected = paths.size() * VALUES.length * (sharedFileSystem ? 1 : 2);
         assertEquals(projectionType == CUSTOM_WITH_NULLS ? expected / 2 : expected, sinkList.size());
         assertTrue(sinkList.get(0).toString().contains("value"));
     }
@@ -175,27 +174,9 @@ public class ReadHadoopPTest extends HadoopTestSupport {
         }
     }
 
-    /**
-     * Returns all possible combinations that contain one item from each of the
-     * given {@code lists}.
-     */
-    private static Collection<Object[]> combinations(List<?>... lists) {
-        Stream<Object[]> stream = Stream.<Object[]>of(new Object[0]);
-        for (int i = 0; i < lists.length; i++) {
-            int finalI = i;
-            stream = stream.flatMap(tuple -> lists[finalI].stream()
-                    .map(item -> {
-                        Object[] res = Arrays.copyOf(tuple, tuple.length + 1);
-                        res[tuple.length] = item;
-                        return res;
-                    }));
-        }
-        return stream.collect(toList());
-    }
-
     private static void createInputTextFiles(LocalFileSystem local, org.apache.hadoop.fs.Path path) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(local.create(path)))) {
-            for (String value : ENTRIES) {
+            for (String value : VALUES) {
                 writer.write(value);
                 writer.flush();
             }
@@ -209,18 +190,18 @@ public class ReadHadoopPTest extends HadoopTestSupport {
         Option keyClassOption = Writer.keyClass(key.getClass());
         Option valueClassOption = Writer.valueClass(value.getClass());
         try (Writer writer = SequenceFile.createWriter(conf, fileOption, keyClassOption, valueClassOption)) {
-            for (int i = 0; i < ENTRIES.length; i++) {
+            for (int i = 0; i < VALUES.length; i++) {
                 key.set(i);
-                value.set(ENTRIES[i]);
+                value.set(VALUES[i]);
                 writer.append(key, value);
             }
         }
     }
 
-    enum EMapperType {
+    public enum EMapperType {
         DEFAULT(Util::entry),
         CUSTOM((k, v) -> v.toString()),
-        CUSTOM_WITH_NULLS((k, v) -> parseInt(v.toString().substring(4, 5)) % 2 == 0 ? v.toString() : null);
+        CUSTOM_WITH_NULLS((k, v) -> parseInt(v.toString().substring(6, 7)) % 2 == 0 ? v.toString() : null);
 
         private final BiFunctionEx<?, Text, ?> mapper;
 
