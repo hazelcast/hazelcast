@@ -193,8 +193,8 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     protected boolean isValidForFetching(V value, long now) {
-        if (value instanceof Expirable) {
-            return !((Expirable) value).isExpiredAt(now);
+        if (value instanceof Expirable expirable) {
+            return !expirable.isExpiredAt(now);
         }
         return true;
     }

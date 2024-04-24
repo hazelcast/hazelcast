@@ -87,8 +87,8 @@ public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
     public static void collectCustomSteps(MapOperation operation,
                                           Consumer<Step> consumer) {
         Storage storage = operation.getRecordStore().getStorage();
-        if (storage instanceof CustomStepAwareStorage) {
-            ((CustomStepAwareStorage) storage).collectCustomSteps(consumer);
+        if (storage instanceof CustomStepAwareStorage awareStorage) {
+            awareStorage.collectCustomSteps(consumer);
         }
     }
 

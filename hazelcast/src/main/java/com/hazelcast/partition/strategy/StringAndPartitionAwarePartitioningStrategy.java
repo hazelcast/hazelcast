@@ -35,10 +35,10 @@ public final class StringAndPartitionAwarePartitioningStrategy implements Partit
 
     @Override
     public Object getPartitionKey(Object key) {
-        if (key instanceof String) {
-            return StringPartitioningStrategy.getPartitionKey((String) key);
-        } else if (key instanceof PartitionAware) {
-            return ((PartitionAware) key).getPartitionKey();
+        if (key instanceof String string) {
+            return StringPartitioningStrategy.getPartitionKey(string);
+        } else if (key instanceof PartitionAware aware) {
+            return aware.getPartitionKey();
         }
         return null;
     }

@@ -225,8 +225,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         if (this == xaResource) {
             return true;
         }
-        if (xaResource instanceof XAResourceImpl) {
-            XAResourceImpl otherXaResource = (XAResourceImpl) xaResource;
+        if (xaResource instanceof XAResourceImpl otherXaResource) {
             return clusterName.equals(otherXaResource.clusterName);
         }
         return xaResource.isSameRM(this);

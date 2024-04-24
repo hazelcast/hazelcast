@@ -138,8 +138,8 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
 
     private int totalFramesPending(TcpServerConnection connection) {
         Channel channel = connection.getChannel();
-        if (channel instanceof NioChannel) {
-            return ((NioChannel) channel).outboundPipeline().totalFramesPending();
+        if (channel instanceof NioChannel nioChannel) {
+            return nioChannel.outboundPipeline().totalFramesPending();
         } else {
             throw new RuntimeException();
         }
@@ -147,8 +147,8 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
 
     private long framesRead(TcpServerConnection connection, boolean priority) {
         Channel channel = connection.getChannel();
-        if (channel instanceof NioChannel) {
-            NioInboundPipeline reader = ((NioChannel) channel).inboundPipeline();
+        if (channel instanceof NioChannel nioChannel) {
+            NioInboundPipeline reader = nioChannel.inboundPipeline();
             return priority ? reader.priorityFramesRead() : reader.normalFramesRead();
         } else {
             throw new RuntimeException();

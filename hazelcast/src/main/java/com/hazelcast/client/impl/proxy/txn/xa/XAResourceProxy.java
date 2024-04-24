@@ -187,11 +187,11 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
             return true;
         }
         String otherClusterName = null;
-        if (xaResource instanceof XAResourceProxy) {
-            otherClusterName = ((XAResourceProxy) xaResource).getClusterName();
+        if (xaResource instanceof XAResourceProxy proxy) {
+            otherClusterName = proxy.getClusterName();
         }
-        if (xaResource instanceof XAResourceImpl) {
-            otherClusterName = ((XAResourceImpl) xaResource).getClusterName();
+        if (xaResource instanceof XAResourceImpl impl) {
+            otherClusterName = impl.getClusterName();
         }
         return getClusterName().equals(otherClusterName);
     }

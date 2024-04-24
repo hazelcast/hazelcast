@@ -48,15 +48,14 @@ public class SubscriberListener implements ListenerAdapter<IMapEvent> {
 
     @Override
     public void onEvent(IMapEvent iMapEvent) {
-        if (iMapEvent instanceof SingleIMapEvent) {
-            QueryCacheEventData eventData = ((SingleIMapEvent) iMapEvent).getEventData();
+        if (iMapEvent instanceof SingleIMapEvent event) {
+            QueryCacheEventData eventData = event.getEventData();
             eventData.setSerializationService(serializationService);
             accumulator.accumulate(eventData);
             return;
         }
 
-        if (iMapEvent instanceof BatchIMapEvent) {
-            BatchIMapEvent batchIMapEvent = (BatchIMapEvent) iMapEvent;
+        if (iMapEvent instanceof BatchIMapEvent batchIMapEvent) {
             BatchEventData batchEventData = batchIMapEvent.getBatchEventData();
             Collection<QueryCacheEventData> events = batchEventData.getEvents();
             for (QueryCacheEventData eventData : events) {

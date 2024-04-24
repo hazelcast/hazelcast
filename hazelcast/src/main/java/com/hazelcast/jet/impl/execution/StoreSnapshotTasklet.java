@@ -149,8 +149,7 @@ public class StoreSnapshotTasklet implements Tasklet {
     }
 
     private boolean addToInbox(Object o) {
-        if (o instanceof SnapshotBarrier) {
-            SnapshotBarrier barrier = (SnapshotBarrier) o;
+        if (o instanceof SnapshotBarrier barrier) {
             assert pendingSnapshotId == barrier.snapshotId() : "Unexpected barrier, expected was " +
                     pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
             hasReachedBarrier = true;

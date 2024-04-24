@@ -52,8 +52,8 @@ public class ScalarTextNodeAdapter implements Node {
 
     @Override
     public void setNodeValue(String nodeValue) throws DOMException {
-        if (scalar instanceof MutableYamlScalar) {
-            ((MutableYamlScalar) scalar).setValue(nodeValue);
+        if (scalar instanceof MutableYamlScalar yamlScalar) {
+            yamlScalar.setValue(nodeValue);
         } else {
             throw new UnsupportedOperationException();
         }

@@ -72,9 +72,9 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        if (value instanceof Data) {
+        if (value instanceof Data data) {
             return OBJECT_HEADER_SIZE
-                    + REFERENCE_COST_IN_BYTES + ((Data) value).getHeapCost();
+                    + REFERENCE_COST_IN_BYTES + data.getHeapCost();
         } else {
             // For OBJECT in-memory-format we
             // don't calculate cost for now.

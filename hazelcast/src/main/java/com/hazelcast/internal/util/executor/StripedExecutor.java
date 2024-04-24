@@ -153,8 +153,8 @@ public final class StripedExecutor implements Executor {
 
     private Worker getWorker(Runnable task) {
         int key;
-        if (task instanceof StripedRunnable) {
-            key = ((StripedRunnable) task).getKey();
+        if (task instanceof StripedRunnable runnable) {
+            key = runnable.getKey();
         } else {
             key = rand.nextInt();
         }
@@ -211,9 +211,8 @@ public final class StripedExecutor implements Executor {
         }
 
         private long timeoutNanos(Runnable task) {
-            if (task instanceof TimeoutRunnable) {
-                TimeoutRunnable r = ((TimeoutRunnable) task);
-                return r.getTimeUnit().toNanos(r.getTimeout());
+            if (task instanceof TimeoutRunnable runnable) {
+                return runnable.getTimeUnit().toNanos(runnable.getTimeout());
             } else {
                 return 0;
             }

@@ -72,8 +72,7 @@ public final class StepResponseUtil {
         }
 
         try {
-            if (operation instanceof Notifier) {
-                final Notifier notifier = (Notifier) operation;
+            if (operation instanceof Notifier notifier) {
                 if (notifier.shouldNotify()) {
                     getNodeEngine(state).getOperationParker().unpark(notifier);
                 }
@@ -89,8 +88,8 @@ public final class StepResponseUtil {
     }
 
     private static void logOperationError(Operation op, Throwable e) {
-        if (e instanceof OutOfMemoryError) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+        if (e instanceof OutOfMemoryError error) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(error);
         }
         op.logError(e);
     }

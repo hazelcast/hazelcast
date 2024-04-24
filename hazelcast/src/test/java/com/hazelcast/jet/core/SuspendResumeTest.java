@@ -285,7 +285,7 @@ public class SuspendResumeTest extends JetTestSupport {
     }
 
     private boolean isSuspend(Throwable e) {
-        return e instanceof JobTerminateRequestedException
-                && ((JobTerminateRequestedException) e).mode().actionAfterTerminate() == SUSPEND;
+        return e instanceof JobTerminateRequestedException exception
+                && exception.mode().actionAfterTerminate() == SUSPEND;
     }
 }

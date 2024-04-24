@@ -125,7 +125,7 @@ final class SerializerHookLoader {
             if (current.equals(serializer)) {
                 Logger.getLogger(getClass()).warning("Serializer[" + serializationType.toString()
                         + "] is already registered! Skipping " + serializer);
-            } else if (current instanceof SerializerHook && ((SerializerHook) current).isOverwritable()) {
+            } else if (current instanceof SerializerHook hook && hook.isOverwritable()) {
                 serializers.put(serializationType, serializer);
             } else {
                 throw new IllegalArgumentException("Serializer[" + serializationType.toString()

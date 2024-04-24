@@ -117,9 +117,9 @@ public class XATransactionContextImpl implements TransactionContext {
         }
 
         final Object service = nodeEngine.getService(serviceName);
-        if (service instanceof TransactionalService) {
+        if (service instanceof TransactionalService transactionalService) {
             nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, transaction.getOwnerUuid());
-            obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
+            obj = transactionalService.createTransactionalObject(name, transaction);
             txnObjectMap.put(key, obj);
         } else {
             throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");

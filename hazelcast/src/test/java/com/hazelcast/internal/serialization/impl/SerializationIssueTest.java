@@ -99,10 +99,10 @@ public class SerializationIssueTest extends HazelcastTestSupport {
                         if (v instanceof Serializable) {
                             out.writeBoolean(true);
                             javaSerializer.write(out, v);
-                        } else if (v instanceof DummyValue) {
+                        } else if (v instanceof DummyValue value) {
                             out.writeBoolean(false);
-                            out.writeString(((DummyValue) v).s);
-                            out.writeInt(((DummyValue) v).k);
+                            out.writeString(value.s);
+                            out.writeInt(value.k);
                         }
                     }
 

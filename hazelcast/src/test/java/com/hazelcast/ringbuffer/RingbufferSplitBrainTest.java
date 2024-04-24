@@ -413,12 +413,12 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
                 Iterator<Object> collectionIterator = collection.iterator();
                 while (collectionIterator.hasNext()) {
                     Object value = collectionIterator.next();
-                    if (value instanceof byte[]) {
+                    if (value instanceof byte[] bytes) {
                         // binary in-memory format and store format
-                        value = serializationService.toObject(new HeapData((byte[]) value));
+                        value = serializationService.toObject(new HeapData(bytes));
                     }
-                    if (value instanceof String) {
-                        if (((String) value).startsWith(prefix)) {
+                    if (value instanceof String string) {
+                        if (string.startsWith(prefix)) {
                             collectionIterator.remove();
                         }
                     }
@@ -435,10 +435,10 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
         boolean contains(Object expectedValue) {
             for (Collection<Object> collection : store.values()) {
-                if (expectedValue instanceof byte[]) {
+                if (expectedValue instanceof byte[] bytes) {
                     // binary in-memory format and store format
                     for (Object storedItem : collection) {
-                        if (Arrays.equals((byte[]) storedItem, (byte[]) expectedValue)) {
+                        if (Arrays.equals((byte[]) storedItem, bytes)) {
                             return true;
                         }
                     }

@@ -52,8 +52,8 @@ public final class SingleAttributeProjection<I, O> implements Projection<I, O>, 
     @Override
     @SuppressWarnings("unchecked")
     public O transform(I input) {
-        if (input instanceof Extractable) {
-            return (O) ((Extractable) input).getAttributeValue(attributePath);
+        if (input instanceof Extractable extractable) {
+            return (O) extractable.getAttributeValue(attributePath);
         }
         throw new IllegalArgumentException("The given map entry is not extractable");
     }

@@ -51,8 +51,8 @@ public class ReplicatedMapPutAllMessageTask
     protected Object reduce(Map<Integer, Object> map) {
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             Object result = serializationService.toObject(entry.getValue());
-            if (result instanceof Throwable) {
-                throw ExceptionUtil.rethrow((Throwable) result);
+            if (result instanceof Throwable throwable) {
+                throw ExceptionUtil.rethrow(throwable);
             }
         }
         return null;

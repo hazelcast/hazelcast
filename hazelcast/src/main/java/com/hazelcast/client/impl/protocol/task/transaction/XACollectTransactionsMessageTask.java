@@ -65,11 +65,11 @@ public class XACollectTransactionsMessageTask
     protected Object reduce(Map<Member, Object> map) throws Throwable {
         List<Data> list = new ArrayList<>();
         for (Object o : map.values()) {
-            if (o instanceof Throwable) {
+            if (o instanceof Throwable throwable) {
                 if (o instanceof MemberLeftException) {
                     continue;
                 }
-                throw (Throwable) o;
+                throw throwable;
             }
             SerializableList xidSet = (SerializableList) o;
             list.addAll(xidSet.getCollection());

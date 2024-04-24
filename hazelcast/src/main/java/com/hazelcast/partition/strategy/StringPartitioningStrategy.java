@@ -27,8 +27,8 @@ public class StringPartitioningStrategy implements PartitioningStrategy {
 
     @Override
     public Object getPartitionKey(Object key) {
-        if (key instanceof String) {
-            return getPartitionKey((String) key);
+        if (key instanceof String string) {
+            return getPartitionKey(string);
         }
         return null;
     }

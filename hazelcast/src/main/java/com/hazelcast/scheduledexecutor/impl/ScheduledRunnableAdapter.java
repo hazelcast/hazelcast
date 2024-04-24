@@ -52,8 +52,8 @@ public class ScheduledRunnableAdapter<V> extends AbstractTaskDecorator<V>
 
     @Override
     public Object getPartitionKey() {
-        if (delegate instanceof PartitionAware) {
-            return ((PartitionAware) delegate).getPartitionKey();
+        if (delegate instanceof PartitionAware aware) {
+            return aware.getPartitionKey();
         }
         return null;
     }
@@ -66,23 +66,23 @@ public class ScheduledRunnableAdapter<V> extends AbstractTaskDecorator<V>
 
     @Override
     public String getName() {
-        if (delegate instanceof NamedTask) {
-            return ((NamedTask) delegate).getName();
+        if (delegate instanceof NamedTask task) {
+            return task.getName();
         }
         return null;
     }
 
     @Override
     public void save(Map snapshot) {
-        if (delegate instanceof StatefulTask) {
-            ((StatefulTask) delegate).save(snapshot);
+        if (delegate instanceof StatefulTask task) {
+            task.save(snapshot);
         }
     }
 
     @Override
     public void load(Map snapshot) {
-        if (delegate instanceof StatefulTask) {
-            ((StatefulTask) delegate).load(snapshot);
+        if (delegate instanceof StatefulTask task) {
+            task.load(snapshot);
         }
     }
 

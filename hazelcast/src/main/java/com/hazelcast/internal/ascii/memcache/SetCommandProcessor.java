@@ -132,16 +132,15 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
         Object oldValue = textCommandService.get(mapName, key);
         MemcacheEntry entry = null;
         if (oldValue != null) {
-            if (oldValue instanceof MemcacheEntry) {
-                final MemcacheEntry oldEntry = (MemcacheEntry) oldValue;
+            if (oldValue instanceof MemcacheEntry oldEntry) {
                 entry = new MemcacheEntry(setCommand.getKey(),
                         concatenate(setCommand.getValue(), oldEntry.getValue()), oldEntry.getFlag());
-            } else if (oldValue instanceof byte[]) {
+            } else if (oldValue instanceof byte[] bytes) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        concatenate(setCommand.getValue(), ((byte[]) oldValue)), 0);
-            } else if (oldValue instanceof String) {
+                        concatenate(setCommand.getValue(),bytes), 0);
+            } else if (oldValue instanceof String string) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        concatenate(setCommand.getValue(), stringToBytes((String) oldValue)), 0);
+                        concatenate(setCommand.getValue(), stringToBytes(string)), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(setCommand.getKey(),
@@ -171,16 +170,15 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
         Object oldValue = textCommandService.get(mapName, key);
         MemcacheEntry entry = null;
         if (oldValue != null) {
-            if (oldValue instanceof MemcacheEntry) {
-                final MemcacheEntry oldEntry = (MemcacheEntry) oldValue;
+            if (oldValue instanceof MemcacheEntry oldEntry) {
                 entry = new MemcacheEntry(setCommand.getKey(),
                         concatenate(oldEntry.getValue(), setCommand.getValue()), 0);
-            } else if (oldValue instanceof byte[]) {
+            } else if (oldValue instanceof byte[] bytes) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        concatenate(((byte[]) oldValue), setCommand.getValue()), 0);
-            } else if (oldValue instanceof String) {
+                        concatenate(bytes, setCommand.getValue()), 0);
+            } else if (oldValue instanceof String string) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        concatenate(stringToBytes((String) oldValue), setCommand.getValue()), 0);
+                        concatenate(stringToBytes(string), setCommand.getValue()), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(setCommand.getKey(),
