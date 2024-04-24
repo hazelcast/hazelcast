@@ -51,7 +51,7 @@ public class LazySetTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testContainsAll_throwsException() {
-        set.containsAll(Collections.EMPTY_LIST);
+        set.containsAll(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -61,7 +61,7 @@ public class LazySetTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testAddAll_throwsException() {
-        set.addAll(Collections.EMPTY_LIST);
+        set.addAll(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -71,12 +71,12 @@ public class LazySetTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveAll_throwsException() {
-        set.removeAll(Collections.EMPTY_LIST);
+        set.removeAll(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRetainAll_throwsException() {
-        set.retainAll(Collections.EMPTY_LIST);
+        set.retainAll(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -46,7 +46,7 @@ public class ResultSet extends AbstractSet<Map.Entry> {
     @Override
     public Iterator iterator() {
         if (entries == null) {
-            return Collections.EMPTY_LIST.iterator();
+            return Collections.emptyIterator();
         }
         return new ResultIterator();
     }
@@ -109,6 +109,7 @@ public class ResultSet extends AbstractSet<Map.Entry> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean retainAll(Collection<?> coll) {
         throw new UnsupportedOperationException();
     }

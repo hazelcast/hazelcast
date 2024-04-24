@@ -149,7 +149,6 @@ public final class SortingUtil {
         return list;
     }
 
-    @SuppressWarnings("unchecked")
     public static ResultSet getSortedQueryResultSet(List<Map.Entry> list,
                                                     PagingPredicateImpl pagingPredicate, IterationType iterationType) {
         List<? extends Map.Entry> subList = getSortedSubListAndUpdateAnchor(list, pagingPredicate, iterationType);
@@ -187,7 +186,7 @@ public final class SortingUtil {
         int begin = pageIndex.getKey();
         int end = pageIndex.getValue();
         if (begin == -1) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         List result = new ArrayList(end - begin);
         for (int i = begin; i < end; ++i) {
@@ -215,7 +214,7 @@ public final class SortingUtil {
         int begin = pageIndex.getKey();
         int end = pageIndex.getValue();
         if (begin == -1) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         return list.subList(begin, end);

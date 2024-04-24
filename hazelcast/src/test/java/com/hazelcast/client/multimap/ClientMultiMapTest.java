@@ -396,7 +396,7 @@ public class ClientMultiMapTest {
     @Test
     public void testValues_whenEmptyCollection() {
         final MultiMap mm = client.getMultiMap(randomString());
-        assertEquals(Collections.EMPTY_LIST, mm.values());
+        assertEquals(Collections.emptyList(), mm.values());
     }
 
     @Test

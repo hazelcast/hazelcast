@@ -57,7 +57,7 @@ class CompletableFutureTask implements Runnable {
     private List<CompletableFutureEntry> removableEntries() {
         CompletableFutureEntry[] entries = copyEntries();
 
-        List<CompletableFutureEntry> removableEntries = Collections.EMPTY_LIST;
+        List<CompletableFutureEntry> removableEntries = Collections.emptyList();
         for (CompletableFutureEntry entry : entries) {
             if (entry.processState()) {
                 if (removableEntries.isEmpty()) {

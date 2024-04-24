@@ -524,7 +524,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 

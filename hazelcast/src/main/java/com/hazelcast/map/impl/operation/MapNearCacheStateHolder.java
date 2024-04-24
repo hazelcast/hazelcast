@@ -32,11 +32,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_NEAR_CACHE_STATE_HOLDER;
-import static java.util.Collections.EMPTY_LIST;
 
 /**
  * Holder for Near Cache metadata.
@@ -44,7 +44,7 @@ import static java.util.Collections.EMPTY_LIST;
 public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
 
     protected volatile UUID partitionUuid;
-    protected volatile List<Object> mapNameSequencePairs = EMPTY_LIST;
+    protected volatile List<Object> mapNameSequencePairs = Collections.emptyList();
 
     private MapReplicationOperation mapReplicationOperation;
 
@@ -124,7 +124,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
         int size = in.readInt();
-        mapNameSequencePairs = new ArrayList(size);
+        mapNameSequencePairs = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             mapNameSequencePairs.add(in.readObject());
         }

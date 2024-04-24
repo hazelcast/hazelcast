@@ -194,7 +194,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 }
             }
         }
-        return totalFailures == null ? Collections.EMPTY_LIST : totalFailures;
+        return totalFailures == null ? Collections.emptyList() : totalFailures;
     }
 
     private Map prepareBatchMap(DelayedEntry[] delayedEntries) {

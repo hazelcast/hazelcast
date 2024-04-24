@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,7 +42,6 @@ import static com.hazelcast.internal.util.CollectionUtil.nullToEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static java.util.Arrays.asList;
-import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -66,13 +66,13 @@ public class CollectionUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testIsEmpty() {
-        assertTrue(isEmpty(EMPTY_LIST));
+        assertTrue(isEmpty(Collections.emptyList()));
         assertFalse(isEmpty(singletonList(23)));
     }
 
     @Test
     public void testIsNotEmpty() {
-        assertFalse(isNotEmpty(EMPTY_LIST));
+        assertFalse(isNotEmpty(Collections.emptyList()));
         assertTrue(isNotEmpty(singletonList(23)));
     }
 

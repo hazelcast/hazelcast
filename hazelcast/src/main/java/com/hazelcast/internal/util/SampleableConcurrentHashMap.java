@@ -47,7 +47,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
     public SampleableConcurrentHashMap(int initialCapacity, ReferenceType keyType, ReferenceType valueType) {
         // Concurrency level 1 is important for fetch-method to function properly.
-        // Moreover partitions are single threaded and higher concurrency has not much gain
+        // Moreover, partitions are single threaded and higher concurrency has not much gain
         this(initialCapacity, LOAD_FACTOR, 1, keyType, valueType, null);
     }
 
@@ -184,7 +184,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             int tableIndex = iterationPointer.getIndex();
             int index = hash & (tableSize - 1);
             if (index > tableIndex) {
-                // entry would have been located after in the table on the given size
+                // entry would have been located after in the table on the given size,
                 // so we have observed it
                 return false;
             }
@@ -228,7 +228,6 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             if (!(o instanceof SamplingEntry)) {
                 return false;
             }
-            @SuppressWarnings("unchecked")
             SamplingEntry e = (SamplingEntry) o;
             return Objects.equals(key, e.key) && Objects.equals(value, e.value);
         }
@@ -259,7 +258,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             throw new IllegalArgumentException("Sample count cannot be a negative value.");
         }
         if (sampleCount == 0 || size() == 0) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         return new LazySamplingEntryIterableIterator<>(sampleCount);
     }
