@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -92,6 +93,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private final Map<String, Vertex> nameToVertex = new HashMap<>();
     // Transient field:
     private final Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<>());
+    private JetMemberSelector memberSelector;
 
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
@@ -572,6 +574,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         return String.join("-", labels);
     }
 
+    public JetMemberSelector memberSelector() {
+        return memberSelector;
+    }
+
+    public void setMemberSelector(JetMemberSelector memberSelector) {
+        this.memberSelector = memberSelector;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(nameToVertex.size());
@@ -586,6 +596,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (Edge edge : edges) {
             out.writeObject(edge);
         }
+        out.writeObject(memberSelector);
     }
 
     @Override
@@ -607,6 +618,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         }
 
         verticesByIdentity.addAll(nameToVertex.values());
+        memberSelector = in.readObject();
     }
 
     @Override

@@ -58,7 +58,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD_RESOURCES;
@@ -426,7 +425,6 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     public class JobBuilderImpl implements JobBuilder {
         private final @Nonnull Object jobDefinition;
         private @Nullable JobConfig config;
-        private @Nullable JetMemberSelector memberSelector;
         private boolean isLightJob;
 
         JobBuilderImpl(@Nonnull DAG dag) {
@@ -445,7 +443,11 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
         @Override
         public JobBuilderImpl withMemberSelector(@Nonnull JetMemberSelector memberSelector) {
-            this.memberSelector = memberSelector;
+            if (jobDefinition instanceof DAG) {
+                ((DAG) jobDefinition).setMemberSelector(memberSelector);
+            } else {
+                ((PipelineImpl) jobDefinition).setMemberSelector(memberSelector);
+            }
             return this;
         }
 
@@ -457,11 +459,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
         @Nonnull
         private JobConfig getConfig() {
-            JobConfig jobConfig = config != null ? config : new JobConfig();
-            if (memberSelector != null) {
-                jobConfig.setArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR, memberSelector);
-            }
-            return jobConfig;
+            return config != null ? config : new JobConfig();
         }
 
         @Override

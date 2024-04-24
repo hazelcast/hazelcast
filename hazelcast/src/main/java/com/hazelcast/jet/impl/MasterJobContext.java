@@ -264,8 +264,6 @@ public class MasterJobContext {
         mc.coordinationService()
           .submitToCoordinatorThread(() -> {
               try {
-                  MembersView membersView = mc.membersView();
-
                   executionStartTime = System.currentTimeMillis();
                   JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                   jobExecRec.markExecuted();
@@ -273,6 +271,8 @@ public class MasterJobContext {
                   if (dag == null) {
                       return;
                   }
+                  MembersView membersView = mc.membersView(dag.memberSelector());
+
                   // must call this before rewriteDagWithSnapshotRestore()
                   String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
                   // we ensured that JobExecutionRecord is safe in resolveDag

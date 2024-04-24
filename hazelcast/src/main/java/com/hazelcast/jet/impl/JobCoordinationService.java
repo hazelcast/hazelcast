@@ -37,6 +37,7 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -110,7 +111,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -232,8 +232,6 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             JobConfig jobConfig,
             Subject subject
     ) {
-        checkIsolatedJobPermission(jobConfig);
-
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
@@ -260,6 +258,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl pipelineImpl) {
                     dag = pipelineImpl.toDag(pipelineToDagContext);
+                    dag.setMemberSelector(pipelineImpl.memberSelector());
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {
                     dag = (DAG) jobDefinition;
@@ -267,10 +266,11 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 }
 
                 checkPermissions(subject, dag);
+                checkIsolatedJobPermission(dag);
 
                 Set<String> ownedObservables = ownedObservables(dag);
-                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId, serializedDag,
-                        dagToJson(dag), jobConfig, ownedObservables, subject);
+                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId,
+                        serializedDag, dagToJson(dag), jobConfig, ownedObservables, subject, dag.memberSelector());
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
@@ -301,7 +301,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 }
 
                 // If there is no master context and job result at the same time, it means this is the first submission
-                onJobSubmitted(jobConfig);
+                onJobSubmitted(dag);
                 jobRepository.putNewJobRecord(jobRecord);
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
@@ -325,7 +325,6 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             JobConfig jobConfig,
             Subject subject
     ) {
-        checkIsolatedJobPermission(jobConfig);
 
         if (deserializedJobDefinition == null) {
             deserializedJobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
@@ -337,6 +336,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         } else {
             dag = ((PipelineImpl) deserializedJobDefinition).toDag(pipelineToDagContext);
         }
+
+        checkIsolatedJobPermission(dag);
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
         // was submitted twice. This can happen e.g. if the client retries.
@@ -364,14 +365,14 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 }, coordinationExecutor());
     }
 
-    protected void checkIsolatedJobPermission(JobConfig config) {
-        if (config.getArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR) != null) {
+    protected void checkIsolatedJobPermission(DAG dag) {
+        if (dag.memberSelector() != null) {
             throw new UnsupportedOperationException(
                     "The Isolated Jobs feature is only available in Hazelcast Enterprise Edition.");
         }
     }
 
-    protected void onJobSubmitted(JobConfig config) {
+    protected void onJobSubmitted(DAG dag) {
         jobSubmitted.inc();
     }
 
@@ -1096,7 +1097,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         });
     }
 
-    MembersView membersView(JobConfig jobConfig) {
+    MembersView membersView(JetMemberSelector memberSelector) {
         return Util.getMembersView(nodeEngine);
     }
 

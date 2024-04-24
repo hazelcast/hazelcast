@@ -19,18 +19,21 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.Version;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.Set;
 
+import static com.hazelcast.internal.cluster.Versions.V5_5;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
@@ -38,23 +41,23 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
  * Metadata information about the job. There's one instance for each jobId,
  * used across multiple executions.
  */
-public class JobRecord implements IdentifiedDataSerializable {
+public class JobRecord implements IdentifiedDataSerializable, Versioned {
 
     private Version clusterVersion;
     private long jobId;
     private long creationTime;
     private Data dag;
-    // JSON representation of DAG, used by Management Center
+    /** JSON representation of DAG, used by Management Center */
     private String dagJson;
     private JobConfig config;
     private Set<String> ownedObservables;
     private Subject subject;
+    private JetMemberSelector memberSelector;
 
-    public JobRecord() {
-    }
+    public JobRecord() { }
 
     public JobRecord(Version clusterVersion, long jobId, Data dag, String dagJson, JobConfig config,
-                     Set<String> ownedObservables, Subject subject) {
+                     Set<String> ownedObservables, Subject subject, JetMemberSelector memberSelector) {
         this.clusterVersion = clusterVersion;
         this.jobId = jobId;
         this.creationTime = Clock.currentTimeMillis();
@@ -63,6 +66,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         this.config = config;
         this.ownedObservables = ownedObservables;
         this.subject = subject;
+        this.memberSelector = memberSelector;
     }
 
     public Version getClusterVersion() {
@@ -102,6 +106,10 @@ public class JobRecord implements IdentifiedDataSerializable {
         return subject;
     }
 
+    public JetMemberSelector getMemberSelector() {
+        return memberSelector;
+    }
+
     @Override
     public int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
@@ -122,6 +130,10 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeObject(config);
         out.writeObject(ownedObservables);
         ImdgUtil.writeSubject(out, subject);
+        // RU_COMPAT_5_4
+        if (out.getVersion().isGreaterOrEqual(V5_5)) {
+            out.writeObject(memberSelector);
+        }
     }
 
     @Override
@@ -134,6 +146,10 @@ public class JobRecord implements IdentifiedDataSerializable {
         config = in.readObject();
         ownedObservables = in.readObject();
         subject = ImdgUtil.readSubject(in);
+        // RU_COMPAT_5_4
+        if (in.getVersion().isGreaterOrEqual(V5_5)) {
+            memberSelector = in.readObject();
+        }
     }
 
     @Override

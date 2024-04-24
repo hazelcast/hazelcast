@@ -59,7 +59,6 @@ import java.util.function.ToIntFunction;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -92,7 +91,7 @@ public final class ExecutionPlanBuilder {
     ) {
         final Map<MemberInfo, int[]> partitionsByMember;
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
-        final boolean isJobIsolated = jobConfig.getArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR) != null;
+        final boolean isJobIsolated = dag.memberSelector() != null;
 
         if (requiredPartitions != null) {
             PartitionPruningAnalysisResult analysisResult = analyzeDagForPartitionPruning(nodeEngine, dag);

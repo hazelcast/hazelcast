@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -64,7 +65,6 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_ISOLATED_JOB_MEMBER_SELECTOR;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -97,7 +97,7 @@ public class JobBuilderTest {
         },
         MemberSelector {
             public JobBuilder apply(JobBuilder b) { return b.withMemberSelector(JetMemberSelector.ALL_LITE_MEMBERS); }
-            public boolean test(MockJobProxy job) { return job.getConfig().getArgument(KEY_ISOLATED_JOB_MEMBER_SELECTOR) != null; }
+            public boolean test(MockJobProxy job) { return job.getMemberSelector() != null; }
         },
         LightJob {
             public JobBuilder apply(JobBuilder b) { return b.asLightJob(); }
@@ -221,6 +221,12 @@ public class JobBuilderTest {
         @Nullable @Override
         public String getName() {
             return config.getName();
+        }
+
+        public JetMemberSelector getMemberSelector() {
+            return jobDefinition instanceof DAG
+                    ? ((DAG) jobDefinition).memberSelector()
+                    : ((PipelineImpl) jobDefinition).memberSelector();
         }
 
         @Nonnull public CompletableFuture<Void> getFuture() { throw uoe(); }

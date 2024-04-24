@@ -27,6 +27,7 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
@@ -294,8 +295,8 @@ public class MasterContext implements DynamicMetricsProvider {
         return executionPlanMap;
     }
 
-    MembersView membersView() {
-        return coordinationService.membersView(jobConfig());
+    MembersView membersView(JetMemberSelector memberSelector) {
+        return coordinationService.membersView(memberSelector);
     }
 
     boolean hasTimeout() {

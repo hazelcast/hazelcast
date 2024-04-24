@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
@@ -58,6 +59,7 @@ public class PipelineImpl implements Pipeline {
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
     private final Map<String, File> attachedFiles = new HashMap<>();
     private boolean preserveOrder;
+    private JetMemberSelector memberSelector;
 
     @Nonnull
     @Override
@@ -87,6 +89,14 @@ public class PipelineImpl implements Pipeline {
     public PipelineImpl setPreserveOrder(boolean value) {
         preserveOrder = value;
         return this;
+    }
+
+    public JetMemberSelector memberSelector() {
+        return memberSelector;
+    }
+
+    public void setMemberSelector(JetMemberSelector memberSelector) {
+        this.memberSelector = memberSelector;
     }
 
     @Nonnull @Override

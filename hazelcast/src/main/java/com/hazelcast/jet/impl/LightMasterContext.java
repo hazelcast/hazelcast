@@ -130,7 +130,7 @@ public final class LightMasterContext {
         String jobIdString = idToString(jobId);
 
         // find a subset of members with version equal to the coordinator version.
-        MembersView membersView = coordinationService.membersView(jobConfig);
+        MembersView membersView = coordinationService.membersView(dag.memberSelector());
         Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         List<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion)
