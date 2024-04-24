@@ -39,9 +39,12 @@ public interface ManagedService {
     void init(NodeEngine nodeEngine, Properties properties);
 
     /**
-     * Resets this service back to its initial state.
+     * Resets this service back to its initial state. This should represent the same
+     * state that the service would be in after a normal startup, including config
+     * defined properties being loaded.
      * <p>
-     * TODO: what is the purpose of reset
+     * Some of the uses for the #reset() method include usage in "force start" scenarios
+     * with Hot Restart, and during split-brain merging.
      */
     void reset();
 
