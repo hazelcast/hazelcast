@@ -1254,13 +1254,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         String clusterName = currentContext.getClusterName();
         currentCredentials = credentials;
 
-        if (credentials instanceof PasswordCredentials) {
-            return encodePasswordCredentialsRequest(clusterName, (PasswordCredentials) credentials,
+        if (credentials instanceof PasswordCredentials passwordCredentials) {
+            return encodePasswordCredentialsRequest(clusterName, passwordCredentials,
                     ss.getVersion(), clientVersion);
         } else {
             byte[] secretBytes;
-            if (credentials instanceof TokenCredentials) {
-                secretBytes = ((TokenCredentials) credentials).getToken();
+            if (credentials instanceof TokenCredentials tokenCredentials) {
+                secretBytes = tokenCredentials.getToken();
             } else {
                 secretBytes = ss.toDataWithSchema(credentials).toByteArray();
             }

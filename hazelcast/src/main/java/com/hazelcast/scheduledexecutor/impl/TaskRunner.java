@@ -116,9 +116,9 @@ class TaskRunner<V> implements Callable<V>, Runnable {
         }
 
         Map snapshot = descriptor.getState();
-        if (original instanceof StatefulTask && !snapshot.isEmpty()) {
+        if (original instanceof StatefulTask task && !snapshot.isEmpty()) {
             NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getUserCodeNamespace(), () -> {
-                ((StatefulTask) original).load(snapshot);
+                task.load(snapshot);
             });
         }
 
@@ -141,9 +141,9 @@ class TaskRunner<V> implements Callable<V>, Runnable {
             statistics.onAfterRun();
 
             Map state = new HashMap();
-            if (original instanceof StatefulTask) {
+            if (original instanceof StatefulTask task) {
                 NamespaceUtil.runWithNamespace(container.getNodeEngine(), container.getUserCodeNamespace(), () -> {
-                    ((StatefulTask) original).save(state);
+                    task.save(state);
                 });
             }
             container.publishTaskState(taskName, state, statistics.snapshot(), resolution);

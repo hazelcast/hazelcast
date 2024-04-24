@@ -136,14 +136,14 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
 
         SplitBrainProtectionFunction splitBrainProtectionFunction =
                 splitBrainProtectionConfig.getFunctionImplementation();
-        if (splitBrainProtectionFunction instanceof ProbabilisticSplitBrainProtectionFunction) {
+        if (splitBrainProtectionFunction instanceof ProbabilisticSplitBrainProtectionFunction function) {
             validateSplitBrainProtectionParameters(splitBrainProtectionConfig.getName(),
-                    ((ProbabilisticSplitBrainProtectionFunction) splitBrainProtectionFunction).
+                    function.
                             getAcceptableHeartbeatPauseMillis(),
                     "acceptable heartbeat pause");
-        } else if (splitBrainProtectionFunction instanceof RecentlyActiveSplitBrainProtectionFunction) {
+        } else if (splitBrainProtectionFunction instanceof RecentlyActiveSplitBrainProtectionFunction function) {
             validateSplitBrainProtectionParameters(splitBrainProtectionConfig.getName(),
-                    ((RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionFunction).
+                    function.
                             getHeartbeatToleranceMillis(),
                     "heartbeat tolerance");
         }
@@ -191,8 +191,8 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
         }
         if (listener != null) {
             // Provide context to the listener
-            if (listener instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+            if (listener instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
             }
             addSplitBrainProtectionListener(instanceName, listener);
         }
@@ -301,14 +301,14 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
 
     private SplitBrainProtectionAwareService getSplitBrainProtectionAwareService(Operation op) {
         Object service;
-        if (op instanceof ServiceNamespaceAware) {
-            ServiceNamespace serviceNamespace = ((ServiceNamespaceAware) op).getServiceNamespace();
+        if (op instanceof ServiceNamespaceAware aware) {
+            ServiceNamespace serviceNamespace = aware.getServiceNamespace();
             service = nodeEngine.getService(serviceNamespace.getServiceName());
         } else {
             service = op.getService();
         }
-        if (service instanceof SplitBrainProtectionAwareService) {
-            return (SplitBrainProtectionAwareService) service;
+        if (service instanceof SplitBrainProtectionAwareService awareService) {
+            return awareService;
         }
         return null;
     }

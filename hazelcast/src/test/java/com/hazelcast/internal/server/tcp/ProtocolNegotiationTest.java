@@ -155,8 +155,8 @@ public class ProtocolNegotiationTest {
                         new Thread(() -> {
                             LOGGER.info("Socket accepted " + socket);
                             try {
-                                if (socket instanceof SSLSocket) {
-                                    ((SSLSocket) socket).startHandshake();
+                                if (socket instanceof SSLSocket sslSocket) {
+                                    sslSocket.startHandshake();
                                 }
                                 socket.setSoTimeout(100);
                                 int count = readWithTimeout(socket.getInputStream(), 2000);

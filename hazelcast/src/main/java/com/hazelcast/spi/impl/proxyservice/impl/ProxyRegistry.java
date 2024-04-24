@@ -262,9 +262,9 @@ public final class ProxyRegistry {
             proxy = service.createDistributedObject(name, source, local);
             tenantControl.registerObject(proxy.getDestroyContextForTenant());
 
-            if (initialize && proxy instanceof InitializingObject) {
+            if (initialize && proxy instanceof InitializingObject object) {
                 try {
-                    ((InitializingObject) proxy).initialize();
+                    object.initialize();
                 } catch (Exception e) {
                     // log and throw exception to be handled in outer catch block
                     proxyService.logger.warning("Error while initializing proxy: " + proxy, e);
@@ -369,8 +369,8 @@ public final class ProxyRegistry {
 
     private void invalidate(DistributedObject distributedObject) {
         if (distributedObject != null
-                && distributedObject instanceof AbstractDistributedObject) {
-            ((AbstractDistributedObject) distributedObject).invalidate();
+                && distributedObject instanceof AbstractDistributedObject object) {
+            object.invalidate();
         }
     }
 

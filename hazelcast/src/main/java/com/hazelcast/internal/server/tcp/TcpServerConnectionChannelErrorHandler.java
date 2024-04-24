@@ -34,8 +34,8 @@ public class TcpServerConnectionChannelErrorHandler implements ChannelErrorHandl
 
     @Override
     public void onError(Channel channel, Throwable error) {
-        if (error instanceof OutOfMemoryError) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) error);
+        if (error instanceof OutOfMemoryError memoryError) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(memoryError);
         }
 
         if (channel == null) {

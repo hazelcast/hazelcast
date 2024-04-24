@@ -85,8 +85,7 @@ public class ReplicatedMapEventPublishingService
 
     @Override
     public void dispatchEvent(Object event, Object listener) {
-        if ((event instanceof EntryEventData)) {
-            EntryEventData entryEventData = (EntryEventData) event;
+        if ((event instanceof EntryEventData entryEventData)) {
             Member member = getMember(entryEventData);
             EntryEvent entryEvent = createDataAwareEntryEvent(entryEventData, member);
             EntryListener entryListener = (EntryListener) listener;
@@ -110,7 +109,7 @@ public class ReplicatedMapEventPublishingService
                 }
             });
 
-            String mapName = ((EntryEventData) event).getMapName();
+            String mapName = entryEventData.getMapName();
             Boolean statisticsEnabled = statisticsMap.computeIfAbsent(mapName, x -> {
                 ReplicatedMapConfig mapConfig = config.findReplicatedMapConfig(mapName);
                 return mapConfig.isStatisticsEnabled();
@@ -119,13 +118,12 @@ public class ReplicatedMapEventPublishingService
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryEventData.getDataKey());
                 ReplicatedRecordStore recordStore = replicatedMapService.getPartitionContainer(partitionId)
                                                                         .getRecordStore(mapName);
-                if (recordStore instanceof AbstractReplicatedRecordStore) {
-                    LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getStats();
+                if (recordStore instanceof AbstractReplicatedRecordStore store) {
+                    LocalReplicatedMapStatsImpl stats = store.getStats();
                     stats.incrementReceivedEvents();
                 }
             }
-        } else if (event instanceof MapEventData) {
-            MapEventData mapEventData = (MapEventData) event;
+        } else if (event instanceof MapEventData mapEventData) {
             Member member = getMember(mapEventData);
             MapEvent mapEvent = new MapEvent(mapEventData.getMapName(), member,
                     mapEventData.getEventType(), mapEventData.getNumberOfEntries());
@@ -148,8 +146,8 @@ public class ReplicatedMapEventPublishingService
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
-        if (entryListener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) entryListener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        if (entryListener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter,
                 entryListener);

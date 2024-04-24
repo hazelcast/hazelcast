@@ -135,8 +135,7 @@ public final class TestContextSupport {
         @Override
         protected Context initContext(Context context) {
             context = super.initContext(context);
-            if (context instanceof TestProcessorContext) {
-                TestProcessorContext c = (TestProcessorContext) context;
+            if (context instanceof TestProcessorContext c) {
                 NodeEngineImpl nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
                 context = new ProcCtx(nodeEngine, c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),

@@ -441,8 +441,8 @@ public final class ProxyManager {
                 Thread.currentThread().interrupt();
             }
 
-            if (proxy instanceof Throwable) {
-                throw rethrow((Throwable) proxy);
+            if (proxy instanceof Throwable throwable) {
+                throw rethrow(throwable);
             }
             return (ClientProxy) proxy;
         }

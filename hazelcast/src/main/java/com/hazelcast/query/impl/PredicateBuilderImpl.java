@@ -48,8 +48,8 @@ public class PredicateBuilderImpl
     @Override
     public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate predicate = lsPredicates.get(0);
-        if (predicate instanceof VisitablePredicate) {
-            Predicate newPredicate = ((VisitablePredicate) predicate).accept(visitor, indexes);
+        if (predicate instanceof VisitablePredicate visitablePredicate) {
+            Predicate newPredicate = visitablePredicate.accept(visitor, indexes);
             if (newPredicate != predicate) {
                 PredicateBuilderImpl newPredicateBuilder = new PredicateBuilderImpl();
                 newPredicateBuilder.attribute = attribute;
@@ -111,8 +111,8 @@ public class PredicateBuilderImpl
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
-        if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).filter(queryContext);
+        if (p instanceof IndexAwarePredicate predicate) {
+            return predicate.filter(queryContext);
         }
         return null;
     }
@@ -120,8 +120,8 @@ public class PredicateBuilderImpl
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
-        if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).isIndexed(queryContext);
+        if (p instanceof IndexAwarePredicate predicate) {
+            return predicate.isIndexed(queryContext);
         }
         return false;
     }

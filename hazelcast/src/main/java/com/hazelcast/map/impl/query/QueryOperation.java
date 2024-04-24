@@ -247,8 +247,8 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 operation.setPartitionId(partitionId);
                 operation.setNodeEngine(getNodeEngine());
                 operation.setOperationResponseHandler((op, response) -> {
-                    if (response instanceof Throwable) {
-                        future.completeExceptionally((Throwable) response);
+                    if (response instanceof Throwable throwable) {
+                        future.completeExceptionally(throwable);
                     } else {
                         future.addResult(op.getPartitionId(), (Result) response);
                     }

@@ -211,8 +211,7 @@ public final class Records {
         // For HazelcastJsonValue objects, if we pass the instanceof Data check, that
         // means the metadata is created from the Data representation of the object.
         // If we allow using the deserialized values, the metadata might not be safe to use.
-        if (value instanceof Data) {
-            Data data = (Data) value;
+        if (value instanceof Data data) {
             return !(data.isPortable() || data.isJson() || data.isCompact());
         }
         return false;
@@ -232,18 +231,18 @@ public final class Records {
         }
 
         static Object unwrapOrNull(Object o) {
-            if (o instanceof ThreadWrapper) {
-                return ((ThreadWrapper) o).wrappedValue;
+            if (o instanceof ThreadWrapper wrapper) {
+                return wrapper.wrappedValue;
             }
             return null;
         }
 
         static Object wrapIfNeeded(Object object) {
-            if (object instanceof Thread) {
+            if (object instanceof Thread thread) {
                 //exceptional case: deserialized value is an instance of Thread
                 //we need to wrap it as we use currentThread to mark the cacheValue is 'deserilization in-progress'
                 //this is the only case where we allocate a new object.
-                return new ThreadWrapper((Thread) object);
+                return new ThreadWrapper(thread);
             }
             return object;
         }

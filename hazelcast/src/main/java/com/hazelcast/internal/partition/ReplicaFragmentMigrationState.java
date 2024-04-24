@@ -120,8 +120,8 @@ public class ReplicaFragmentMigrationState
     @Override
     public void setTarget(Address address) {
         for (Operation op : migrationOperations) {
-            if (op instanceof TargetAware) {
-                ((TargetAware) op).setTarget(address);
+            if (op instanceof TargetAware aware) {
+                aware.setTarget(address);
             }
         }
     }

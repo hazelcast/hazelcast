@@ -41,8 +41,8 @@ public enum PropertyTypeConverter implements TypeConverter {
     SHORT {
         @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) {
-                return Short.parseShort((String) value);
+            if (value instanceof String string) {
+                return Short.parseShort(string);
             }
             throw new IllegalArgumentException("Cannot convert to short");
         }
@@ -54,8 +54,8 @@ public enum PropertyTypeConverter implements TypeConverter {
     INTEGER {
         @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) {
-                return Integer.parseInt((String) value);
+            if (value instanceof String string) {
+                return Integer.parseInt(string);
             }
             throw new IllegalArgumentException("Cannot convert to integer");
         }
@@ -67,8 +67,8 @@ public enum PropertyTypeConverter implements TypeConverter {
     LONG {
         @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) {
-                return Long.parseLong((String) value);
+            if (value instanceof String string) {
+                return Long.parseLong(string);
             }
             throw new IllegalArgumentException("Cannot convert to long");
         }
@@ -80,8 +80,8 @@ public enum PropertyTypeConverter implements TypeConverter {
     FLOAT {
         @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) {
-                return Float.parseFloat((String) value);
+            if (value instanceof String string) {
+                return Float.parseFloat(string);
             }
             throw new IllegalArgumentException("Cannot convert to float");
         }
@@ -93,8 +93,8 @@ public enum PropertyTypeConverter implements TypeConverter {
     DOUBLE {
         @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) {
-                return Double.parseDouble((String) value);
+            if (value instanceof String string) {
+                return Double.parseDouble(string);
             }
             throw new IllegalArgumentException("Cannot convert to double");
         }
@@ -108,8 +108,8 @@ public enum PropertyTypeConverter implements TypeConverter {
         public Comparable convert(Comparable value) {
             if (value instanceof Boolean) {
                 return value;
-            } else if (value instanceof String) {
-                return Boolean.parseBoolean((String) value);
+            } else if (value instanceof String string) {
+                return Boolean.parseBoolean(string);
             }
             throw new IllegalArgumentException("Cannot convert to boolean");
         }

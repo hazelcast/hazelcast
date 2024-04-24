@@ -108,13 +108,13 @@ public class QueryEntry extends QueryableEntry {
 
     @Override
     public Data getValueDataIfPresent() {
-        if (value instanceof Data) {
-            return (Data) value;
+        if (value instanceof Data data) {
+            return data;
         }
 
         Object possiblyData = record.getValue();
 
-        return possiblyData instanceof Data ? (Data) possiblyData : null;
+        return possiblyData instanceof Data d ? d : null;
     }
 
     @Override

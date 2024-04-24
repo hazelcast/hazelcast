@@ -95,38 +95,38 @@ public final class SerializationUtil {
     }
 
     static RuntimeException handleException(Throwable e) {
-        if (e instanceof OutOfMemoryError) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
-            throw (Error) e;
+        if (e instanceof OutOfMemoryError error) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(error);
+            throw error;
         }
-        if (e instanceof Error) {
-            throw (Error) e;
+        if (e instanceof Error error) {
+            throw error;
         }
-        if (e instanceof HazelcastSerializationException) {
-            return (HazelcastSerializationException) e;
+        if (e instanceof HazelcastSerializationException exception) {
+            return exception;
         }
-        if (e instanceof HazelcastInstanceNotActiveException) {
-            return (RuntimeException) e;
+        if (e instanceof HazelcastInstanceNotActiveException exception) {
+            return exception;
         }
-        if (e instanceof HazelcastClientNotActiveException) {
-            return (RuntimeException) e;
+        if (e instanceof HazelcastClientNotActiveException exception) {
+            return exception;
         }
         return new HazelcastSerializationException(e);
     }
 
     static RuntimeException handleSerializeException(Object rootObject, Throwable e) {
-        if (e instanceof OutOfMemoryError) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
-            throw (Error) e;
+        if (e instanceof OutOfMemoryError error) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(error);
+            throw error;
         }
-        if (e instanceof Error) {
-            throw (Error) e;
+        if (e instanceof Error error) {
+            throw error;
         }
-        if (e instanceof HazelcastInstanceNotActiveException) {
-            return (RuntimeException) e;
+        if (e instanceof HazelcastInstanceNotActiveException exception) {
+            return exception;
         }
-        if (e instanceof HazelcastClientNotActiveException) {
-            return (RuntimeException) e;
+        if (e instanceof HazelcastClientNotActiveException exception) {
+            return exception;
         }
         String clazz = rootObject == null ? "null" : rootObject.getClass().getName();
         return new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
@@ -134,10 +134,10 @@ public final class SerializationUtil {
 
     public static SerializerAdapter createSerializerAdapter(Serializer serializer) {
         final SerializerAdapter s;
-        if (serializer instanceof StreamSerializer) {
-            s = new StreamSerializerAdapter((StreamSerializer<?>) serializer);
-        } else if (serializer instanceof ByteArraySerializer) {
-            s = new ByteArraySerializerAdapter((ByteArraySerializer<?>) serializer);
+        if (serializer instanceof StreamSerializer streamSerializer) {
+            s = new StreamSerializerAdapter(streamSerializer);
+        } else if (serializer instanceof ByteArraySerializer arraySerializer) {
+            s = new ByteArraySerializerAdapter(arraySerializer);
         } else {
             throw new IllegalArgumentException("Serializer " + serializer.getClass().getName()
                     + " must be an instance of either StreamSerializer or ByteArraySerializer");

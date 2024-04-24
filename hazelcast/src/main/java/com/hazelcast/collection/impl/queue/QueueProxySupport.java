@@ -83,8 +83,8 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
                 }
             }
             if (listener != null) {
-                if (listener instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                if (listener instanceof HazelcastInstanceAware aware) {
+                    aware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
                 addItemListener(listener, itemListenerConfig.isIncludeValue());
             }
@@ -216,8 +216,8 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     UUID addItemListener(@Nonnull ItemListener<E> listener,
                            boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         }
         return getService().addItemListener(name, listener, includeValue);
     }

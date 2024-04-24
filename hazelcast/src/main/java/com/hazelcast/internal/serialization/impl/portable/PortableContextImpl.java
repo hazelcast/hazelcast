@@ -269,8 +269,7 @@ public final class PortableContextImpl implements PortableContext {
             if (cd == null) {
                 return null;
             }
-            if (cd instanceof ClassDefinitionImpl) {
-                final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
+            if (cd instanceof ClassDefinitionImpl cdImpl) {
                 cdImpl.setVersionIfNotSet(getVersion());
             }
             final long versionedClassId = combineToLong(cd.getClassId(), cd.getVersion());

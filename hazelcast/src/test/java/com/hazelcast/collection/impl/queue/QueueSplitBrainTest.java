@@ -395,8 +395,8 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
                 Iterator<Object> collectionIterator = collection.iterator();
                 while (collectionIterator.hasNext()) {
                     Object value = collectionIterator.next();
-                    if (value instanceof String) {
-                        if (((String) value).startsWith(prefix)) {
+                    if (value instanceof String string) {
+                        if (string.startsWith(prefix)) {
                             collectionIterator.remove();
                         }
                     }

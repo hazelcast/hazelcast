@@ -91,8 +91,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         Object attributeValue = getAttributeValue(attributeName);
         if (attributeValue == null) {
             return NULL_CONVERTER;
-        } else if (attributeValue instanceof MultiResult) {
-            MultiResult multiResult = (MultiResult) attributeValue;
+        } else if (attributeValue instanceof MultiResult multiResult) {
             for (Object result : multiResult.getResults()) {
                 if (result != null) {
                     AttributeType attributeType = extractAttributeType(result);

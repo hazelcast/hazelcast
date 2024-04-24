@@ -259,8 +259,8 @@ public class ProcessorTasklet implements Tasklet {
     public void init() {
         ManagedContext managedContext = serializationService.getManagedContext();
         if (managedContext != null) {
-            Processor toInit = processor instanceof ProcessorWrapper
-                    ? ((ProcessorWrapper) processor).getWrapped() : processor;
+            Processor toInit = processor instanceof ProcessorWrapper pw
+                    ? pw.getWrapped() : processor;
             Object initialized = null;
             try {
                 initialized = managedContext.initialize(toInit);

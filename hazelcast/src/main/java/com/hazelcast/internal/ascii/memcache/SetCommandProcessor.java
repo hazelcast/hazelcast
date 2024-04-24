@@ -137,7 +137,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
                         concatenate(setCommand.getValue(), oldEntry.getValue()), oldEntry.getFlag());
             } else if (oldValue instanceof byte[] bytes) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        concatenate(setCommand.getValue(),bytes), 0);
+                        concatenate(setCommand.getValue(), bytes), 0);
             } else if (oldValue instanceof String string) {
                 entry = new MemcacheEntry(setCommand.getKey(),
                         concatenate(setCommand.getValue(), stringToBytes(string)), 0);

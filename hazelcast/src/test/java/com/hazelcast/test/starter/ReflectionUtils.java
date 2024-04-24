@@ -184,8 +184,7 @@ public final class ReflectionUtils {
     public static Object getDelegateFromProxyClass(Object arg) {
         if (isProxyClass(arg.getClass())) {
             InvocationHandler invocationHandler = getInvocationHandler(arg);
-            if (invocationHandler instanceof ProxyInvocationHandler) {
-                ProxyInvocationHandler proxyInvocationHandler = (ProxyInvocationHandler) invocationHandler;
+            if (invocationHandler instanceof ProxyInvocationHandler proxyInvocationHandler) {
                 return proxyInvocationHandler.getDelegate();
             }
         }
