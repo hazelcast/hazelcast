@@ -16,7 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.namespace.NamespaceUtil;
 import com.hazelcast.internal.namespace.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.nio.ObjectDataInput;
@@ -136,9 +135,12 @@ public class TaskDefinition<V>
         out.writeLong(period);
         out.writeString(unit.name());
         // RU_COMPAT_5_3
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            out.writeBoolean(autoDisposable);
-        }
+        // Write this field regardless of the version
+        // Up to 5.3 (included) this field was never written because of missing Versioned
+        // It was never read because of missing Versioned
+        // In 5.4 we added Versioned, also 5.4 and above will read the field
+        // In 5.3 and below when it receives a Versioned TaskDefinition it also expects the field
+        out.writeBoolean(autoDisposable);
     }
 
     @Override
@@ -152,8 +154,15 @@ public class TaskDefinition<V>
         initialDelay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readString());
-        // RU_COMPAT_5_3
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+
+        // During RU from older version to 5.5
+        // - the cluster version is set to older version,
+        // - the 5.5 member writes the field & version
+        // - if older member is 5.4 it writes the field & version
+        // - if older member is up to 5.3 the field is not written and version is missing (due to missing Versioned)
+        // - so if the version is present we need to read the field - it either comes from 5.4 older member,
+        // or 5.5 member
+        if (!in.getVersion().isUnknown()) {
             autoDisposable = in.readBoolean();
         }
     }

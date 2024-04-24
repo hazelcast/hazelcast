@@ -23,6 +23,7 @@ import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.opentest4j.TestAbortedException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +62,7 @@ public class MetricsRule implements TestRule {
             public void evaluate() throws Throwable {
                 try {
                     base.evaluate();
-                } catch (AssumptionViolatedException e) {
+                } catch (AssumptionViolatedException | TestAbortedException e) {
                     // represents expected exceptions, no need to take an action.
                 } catch (Throwable t) {
                     StringBuilder sb = new StringBuilder();
