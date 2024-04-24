@@ -87,8 +87,8 @@ public class ClientLoggingService implements LoggingService {
 
     @Override
     public void shutdown() {
-        if (shouldShutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory) {
-            ((InternalLoggerFactory) loggerFactory).shutdown();
+        if (shouldShutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory factory) {
+            factory.shutdown();
         }
     }
 

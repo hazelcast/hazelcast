@@ -107,16 +107,16 @@ class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventDat
         }
 
         private void clearIndexes(Sequenced sequenced) {
-            if (sequenced instanceof BatchEventData) {
-                Collection<QueryCacheEventData> events = ((BatchEventData) sequenced).getEvents();
+            if (sequenced instanceof BatchEventData data) {
+                Collection<QueryCacheEventData> events = data.getEvents();
                 for (QueryCacheEventData event : events) {
                     removeFromIndex(event);
                 }
                 return;
             }
 
-            if (sequenced instanceof QueryCacheEventData) {
-                removeFromIndex((QueryCacheEventData) sequenced);
+            if (sequenced instanceof QueryCacheEventData data) {
+                removeFromIndex(data);
                 return;
             }
 

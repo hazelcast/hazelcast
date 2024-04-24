@@ -173,8 +173,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         // currentThreadIsPartitionThread) otherwise explicitly
         // request execution on partition or async executor thread.
         if (currentThreadIsPartitionThread
-                ^ (service instanceof OffloadedReplicationPreparation
-                && ((OffloadedReplicationPreparation) service).shouldOffload())) {
+                ^ (service instanceof OffloadedReplicationPreparation preparation
+                && preparation.shouldOffload())) {
             return prepareAndAppendNewChunkSupplier(event, ns, service, chunkSuppliers);
         }
 
@@ -282,8 +282,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         // execute on current thread if (shouldOffload() ^ currentThreadIsPartitionThread)
         // otherwise explicitly request execution on partition or async executor thread.
         if (currentThreadIsPartitionThread
-                ^ (service instanceof OffloadedReplicationPreparation
-                && ((OffloadedReplicationPreparation) service).shouldOffload())) {
+                ^ (service instanceof OffloadedReplicationPreparation preparation
+                && preparation.shouldOffload())) {
             return prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
         }
 

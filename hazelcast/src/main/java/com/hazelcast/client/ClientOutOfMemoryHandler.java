@@ -31,8 +31,8 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
     @Override
     public void onOutOfMemory(OutOfMemoryError oome, HazelcastInstance[] hazelcastInstances) {
         for (HazelcastInstance instance : hazelcastInstances) {
-            if (instance instanceof HazelcastClientInstanceImpl) {
-                ClientHelper.cleanResources((HazelcastClientInstanceImpl) instance);
+            if (instance instanceof HazelcastClientInstanceImpl impl) {
+                ClientHelper.cleanResources(impl);
             }
         }
         try {

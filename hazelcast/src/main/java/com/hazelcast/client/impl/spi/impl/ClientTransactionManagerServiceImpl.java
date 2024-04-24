@@ -80,14 +80,14 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             return value;
         } catch (Throwable e) {
             context.rollbackTransaction();
-            if (e instanceof TransactionException) {
-                throw (TransactionException) e;
+            if (e instanceof TransactionException exception) {
+                throw exception;
             }
             if (e.getCause() instanceof TransactionException) {
                 throw (TransactionException) e.getCause();
             }
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
+            if (e instanceof RuntimeException exception) {
+                throw exception;
             }
             throw new TransactionException(e);
         }

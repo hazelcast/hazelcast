@@ -237,8 +237,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
     }
 
     private int getTaskPartitionId(Object task) {
-        if (task instanceof PartitionAware) {
-            Object partitionKey = ((PartitionAware) task).getPartitionKey();
+        if (task instanceof PartitionAware aware) {
+            Object partitionKey = aware.getPartitionKey();
             if (partitionKey != null) {
                 return getPartitionId(partitionKey);
             }

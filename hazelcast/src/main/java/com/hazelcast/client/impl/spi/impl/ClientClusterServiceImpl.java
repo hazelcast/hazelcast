@@ -138,14 +138,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
         synchronized (clusterViewLock) {
             UUID id = addMembershipListenerWithoutInit(listener);
-            if (listener instanceof InitialMembershipListener) {
+            if (listener instanceof InitialMembershipListener membershipListener) {
                 Cluster cluster = getCluster();
                 Collection<Member> members = memberListSnapshot.get().members.values();
                 //if members are empty,it means initial event did not arrive yet
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
                 if (!members.isEmpty()) {
                     InitialMembershipEvent event = new InitialMembershipEvent(cluster, toUnmodifiableHasSet(members));
-                    ((InitialMembershipListener) listener).init(event);
+                    membershipListener.init(event);
                 }
             }
             return id;
@@ -210,8 +210,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
         InitialMembershipEvent event = new InitialMembershipEvent(getCluster(), members);
         for (MembershipListener listener : listeners.values()) {
-            if (listener instanceof InitialMembershipListener) {
-                ((InitialMembershipListener) listener).init(event);
+            if (listener instanceof InitialMembershipListener membershipListener) {
+                membershipListener.init(event);
             }
         }
     }

@@ -54,8 +54,8 @@ public class ClusterPermissionCollection extends PermissionCollection {
         if (isReadOnly()) {
             throw new SecurityException("ClusterPermissionCollection is read-only!");
         }
-        if (permissions instanceof ClusterPermissionCollection) {
-            for (Permission p : ((ClusterPermissionCollection) permissions).perms) {
+        if (permissions instanceof ClusterPermissionCollection collection) {
+            for (Permission p : collection.perms) {
                 add(p);
             }
         }

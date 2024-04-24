@@ -32,8 +32,8 @@ public class CompactGetter extends Getter {
 
     private Object getValueInternal(Object target, String fieldPath, boolean useLazyDeserialization) throws Exception {
         InternalGenericRecord record;
-        if (target instanceof CompactGenericRecord) {
-            record = (InternalGenericRecord) target;
+        if (target instanceof CompactGenericRecord genericRecord) {
+            record = genericRecord;
         } else {
             record = serializationService.readAsInternalGenericRecord((Data) target);
         }

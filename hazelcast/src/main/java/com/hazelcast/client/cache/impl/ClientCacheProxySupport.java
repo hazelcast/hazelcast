@@ -798,8 +798,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                                       CacheEventListenerAdaptor<K, V> adaptor) {
         listenerCompleter.putListenerIfAbsent(cacheEntryListenerConfiguration, regId);
         CacheEntryListener<K, V> entryListener = adaptor.getCacheEntryListener();
-        if (entryListener instanceof Closeable) {
-            closeableListeners.putIfAbsent(regId, (Closeable) entryListener);
+        if (entryListener instanceof Closeable closeable) {
+            closeableListeners.putIfAbsent(regId, closeable);
         }
     }
 

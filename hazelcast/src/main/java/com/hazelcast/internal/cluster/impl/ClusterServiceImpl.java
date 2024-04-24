@@ -759,10 +759,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
-        if (listener instanceof InitialMembershipListener) {
+        if (listener instanceof InitialMembershipListener membershipListener) {
             clusterServiceLock.lock();
             try {
-                ((InitialMembershipListener) listener).init(new InitialMembershipEvent(this, getMembers()));
+                membershipListener.init(new InitialMembershipEvent(this, getMembers()));
                 registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             } finally {
                 clusterServiceLock.unlock();

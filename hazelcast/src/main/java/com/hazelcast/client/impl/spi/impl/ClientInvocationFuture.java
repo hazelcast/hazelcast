@@ -70,8 +70,8 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     protected Object resolve(Object value) {
-        if (value instanceof Throwable) {
-            return new ExceptionalResult((Throwable) value);
+        if (value instanceof Throwable throwable) {
+            return new ExceptionalResult(throwable);
         }
         return super.resolve(value);
     }

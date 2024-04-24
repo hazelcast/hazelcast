@@ -1272,8 +1272,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         int c = 1;
         for (int i = 0; i < count; i++) {
             Object obj = getQueue().poll();
-            if (obj instanceof byte[]) {
-                println(c++ + " " + ((byte[]) obj).length);
+            if (obj instanceof byte[] bytes) {
+                println(c++ + " " + bytes.length);
             } else {
                 println(c++ + " " + obj);
             }

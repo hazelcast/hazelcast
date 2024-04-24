@@ -94,8 +94,8 @@ class ClusterMergeTask implements Runnable {
     private void disposeTasks(Collection<Runnable>... tasks) {
         for (Collection<Runnable> task : tasks) {
             for (Runnable runnable : task) {
-                if (runnable instanceof Disposable) {
-                    ((Disposable) runnable).dispose();
+                if (runnable instanceof Disposable disposable) {
+                    disposable.dispose();
                 }
             }
         }

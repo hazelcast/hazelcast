@@ -375,10 +375,10 @@ abstract class CacheProxySupport<K, V>
             OperationFactory operationFactory = operationProvider.createClearOperationFactory();
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             for (Object result : results.values()) {
-                if (result != null && result instanceof CacheClearResponse) {
-                    Object response = ((CacheClearResponse) result).getResponse();
-                    if (response instanceof Throwable) {
-                        throw (Throwable) response;
+                if (result != null && result instanceof CacheClearResponse clearResponse) {
+                    Object response = clearResponse.getResponse();
+                    if (response instanceof Throwable throwable) {
+                        throw throwable;
                     }
                 }
             }
@@ -404,13 +404,13 @@ abstract class CacheProxySupport<K, V>
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             int completionCount = 0;
             for (Object result : results.values()) {
-                if (result != null && result instanceof CacheClearResponse) {
-                    Object response = ((CacheClearResponse) result).getResponse();
+                if (result != null && result instanceof CacheClearResponse clearResponse) {
+                    Object response = clearResponse.getResponse();
                     if (response instanceof Boolean) {
                         completionCount++;
                     }
-                    if (response instanceof Throwable) {
-                        throw (Throwable) response;
+                    if (response instanceof Throwable throwable) {
+                        throw throwable;
                     }
                 }
             }
@@ -627,8 +627,8 @@ abstract class CacheProxySupport<K, V>
         Integer completionId = null;
         if (completionOperation) {
             completionId = listenerCompleter.registerCompletionLatch(1);
-            if (op instanceof MutableOperation) {
-                ((MutableOperation) op).setCompletionId(completionId);
+            if (op instanceof MutableOperation operation) {
+                operation.setCompletionId(completionId);
             }
         }
         try {

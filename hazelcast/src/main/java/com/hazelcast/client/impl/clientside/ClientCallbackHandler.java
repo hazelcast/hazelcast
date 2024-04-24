@@ -43,8 +43,7 @@ public class ClientCallbackHandler implements CallbackHandler {
     }
 
     protected void handleCallback(Callback cb) throws UnsupportedCallbackException {
-        if (cb instanceof RealmConfigCallback) {
-            RealmConfigCallback realmCb = (RealmConfigCallback) cb;
+        if (cb instanceof RealmConfigCallback realmCb) {
             RealmConfig realmCfg = null;
             if (clientConfig != null && clientConfig.getSecurityConfig() != null) {
                 realmCfg = clientConfig.getSecurityConfig().getRealmConfig(realmCb.getRealmName());

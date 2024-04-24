@@ -110,7 +110,7 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
             originalFilterEventTypeMatches = filter.eval(type);
             // hold a reference to the original event filter; this may be used later, in case there is a query event filter
             // and it alters the event type to be published
-            filterAsEventListenerFilter =listenerFilter;
+            filterAsEventListenerFilter = listenerFilter;
             filter = listenerFilter.getEventFilter();
             if (filter instanceof UuidFilter) {
                 return FILTER_DOES_NOT_MATCH;

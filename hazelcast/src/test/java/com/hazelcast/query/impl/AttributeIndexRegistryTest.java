@@ -216,7 +216,7 @@ public class AttributeIndexRegistryTest {
     }
 
     private static InternalIndex undecorated(InternalIndex index) {
-        return index instanceof FirstComponentDecorator ? ((FirstComponentDecorator) index).delegate : index;
+        return index instanceof FirstComponentDecorator decorator ? decorator.delegate : index;
     }
 
 }

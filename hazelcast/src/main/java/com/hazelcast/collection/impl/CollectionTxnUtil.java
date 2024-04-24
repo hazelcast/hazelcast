@@ -64,8 +64,7 @@ public final class CollectionTxnUtil {
         List<Operation> backupList = new LinkedList<>();
         for (Operation operation : operationList) {
             operation.run();
-            if (operation instanceof BackupAwareOperation) {
-                BackupAwareOperation backupAwareOperation = (BackupAwareOperation) operation;
+            if (operation instanceof BackupAwareOperation backupAwareOperation) {
                 if (backupAwareOperation.shouldBackup()) {
                     backupList.add(backupAwareOperation.getBackupOperation());
                 }

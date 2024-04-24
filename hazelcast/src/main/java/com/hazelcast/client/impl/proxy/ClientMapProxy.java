@@ -1323,8 +1323,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
         ClientMessage response;
-        if (predicate instanceof PartitionPredicate) {
-            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        if (predicate instanceof PartitionPredicate partitionPredicate) {
             response = invoke(request, partitionPredicate.getPartitionKey());
         } else {
             response = invoke(request);

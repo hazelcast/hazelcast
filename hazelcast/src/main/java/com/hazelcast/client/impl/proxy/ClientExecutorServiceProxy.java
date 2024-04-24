@@ -420,8 +420,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private Object getTaskPartitionKey(Object task) {
-        if (task instanceof PartitionAware) {
-            return ((PartitionAware) task).getPartitionKey();
+        if (task instanceof PartitionAware aware) {
+            return aware.getPartitionKey();
         }
         return null;
     }

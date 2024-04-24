@@ -51,10 +51,10 @@ public final class CacheProxyUtil {
      */
     public static void validateResults(Map<Integer, Object> results) {
         for (Object result : results.values()) {
-            if (result != null && result instanceof CacheClearResponse) {
-                Object response = ((CacheClearResponse) result).getResponse();
-                if (response instanceof Throwable) {
-                    ExceptionUtil.sneakyThrow((Throwable) response);
+            if (result != null && result instanceof CacheClearResponse clearResponse) {
+                Object response = clearResponse.getResponse();
+                if (response instanceof Throwable throwable) {
+                    ExceptionUtil.sneakyThrow(throwable);
                 }
             }
         }

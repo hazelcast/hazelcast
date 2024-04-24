@@ -32,7 +32,7 @@ public class AddDynamicConfigOperationSupplier extends DynamicConfigOperationSup
     @Override
     public Operation get() {
         return new AddDynamicConfigOperation(config, clusterService.getMemberListVersion(),
-                config instanceof UserCodeNamespaceAwareConfig
-                        ? ((UserCodeNamespaceAwareConfig) config).getUserCodeNamespace() : null);
+                config instanceof UserCodeNamespaceAwareConfig awareConfig
+                        ? awareConfig.getUserCodeNamespace() : null);
     }
 }

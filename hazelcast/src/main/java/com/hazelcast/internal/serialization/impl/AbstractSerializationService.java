@@ -341,8 +341,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
     public final <T> T readObject(final ObjectDataInput in, boolean useBigEndianForReadingTypeId) {
         try {
             final int typeId;
-            if (useBigEndianForReadingTypeId && in instanceof BufferObjectDataInput) {
-                typeId = ((BufferObjectDataInput) in).readInt(BIG_ENDIAN);
+            if (useBigEndianForReadingTypeId && in instanceof BufferObjectDataInput input) {
+                typeId = input.readInt(BIG_ENDIAN);
             } else {
                 typeId = in.readInt();
             }

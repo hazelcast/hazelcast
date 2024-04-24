@@ -88,23 +88,23 @@ public class CacheEventListenerAdaptor<K, V>
         this.serializationService = serializationService;
 
         this.cacheEntryListener = createCacheEntryListener(cacheEntryListenerConfiguration);
-        if (cacheEntryListener instanceof CacheEntryCreatedListener) {
-            this.cacheEntryCreatedListener = (CacheEntryCreatedListener) cacheEntryListener;
+        if (cacheEntryListener instanceof CacheEntryCreatedListener listener) {
+            this.cacheEntryCreatedListener = listener;
         } else {
             this.cacheEntryCreatedListener = null;
         }
-        if (cacheEntryListener instanceof CacheEntryRemovedListener) {
-            this.cacheEntryRemovedListener = (CacheEntryRemovedListener) cacheEntryListener;
+        if (cacheEntryListener instanceof CacheEntryRemovedListener listener) {
+            this.cacheEntryRemovedListener = listener;
         } else {
             this.cacheEntryRemovedListener = null;
         }
-        if (cacheEntryListener instanceof CacheEntryUpdatedListener) {
-            this.cacheEntryUpdatedListener = (CacheEntryUpdatedListener) cacheEntryListener;
+        if (cacheEntryListener instanceof CacheEntryUpdatedListener listener) {
+            this.cacheEntryUpdatedListener = listener;
         } else {
             this.cacheEntryUpdatedListener = null;
         }
-        if (cacheEntryListener instanceof CacheEntryExpiredListener) {
-            this.cacheEntryExpiredListener = (CacheEntryExpiredListener) cacheEntryListener;
+        if (cacheEntryListener instanceof CacheEntryExpiredListener listener) {
+            this.cacheEntryExpiredListener = listener;
         } else {
             this.cacheEntryExpiredListener = null;
         }
@@ -144,8 +144,7 @@ public class CacheEventListenerAdaptor<K, V>
 
     @Override
     public void handleEvent(Object eventObject) {
-        if (eventObject instanceof CacheEventSet) {
-            CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
+        if (eventObject instanceof CacheEventSet cacheEventSet) {
             try {
                 if (cacheEventSet.getEventType() != CacheEventType.COMPLETED) {
                     handleEvent(cacheEventSet.getEventType().getType(), cacheEventSet.getEvents());

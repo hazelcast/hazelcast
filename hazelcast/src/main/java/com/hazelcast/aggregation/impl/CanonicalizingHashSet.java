@@ -204,8 +204,8 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
     }
 
     private static Object canonicalize(Object value) {
-        if (value instanceof Comparable) {
-            return Comparables.canonicalizeForHashLookup((Comparable) value);
+        if (value instanceof Comparable comparable) {
+            return Comparables.canonicalizeForHashLookup(comparable);
         }
 
         return value;

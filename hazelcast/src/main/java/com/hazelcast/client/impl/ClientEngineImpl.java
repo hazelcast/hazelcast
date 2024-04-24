@@ -229,16 +229,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
 
-        if (tpcEnabled && messageTask instanceof AbstractMessageTask) {
-            AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
+        if (tpcEnabled && messageTask instanceof AbstractMessageTask abstractMessageTask) {
             abstractMessageTask.setAsyncSocket(clientMessage.getAsyncSocket());
             abstractMessageTask.setResponseBufAllocator(responseBufAllocator);
         }
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (isUrgent(messageTask)) {
             operationService.execute((UrgentMessageTask) messageTask);
-        } else if (messageTask instanceof AbstractPartitionMessageTask) {
-            operationService.execute((AbstractPartitionMessageTask) messageTask);
+        } else if (messageTask instanceof AbstractPartitionMessageTask task) {
+            operationService.execute(task);
         } else if (isQuery(messageTask)) {
             queryExecutor.execute(messageTask);
         } else if (messageTask instanceof TransactionalMessageTask) {
