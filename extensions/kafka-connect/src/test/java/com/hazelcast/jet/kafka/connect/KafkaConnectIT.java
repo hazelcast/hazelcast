@@ -22,7 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -51,7 +50,6 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URISyntaxException;
@@ -63,13 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
@@ -79,8 +71,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.kafka.connect.data.Values.convertToString;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -246,22 +236,20 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hz = createHazelcastInstance(config);
-        Job job = hz.getJet().newJob(pipeline, jobConfig);
-        MetricsRegistry metricsRegistry = getNode(hz).nodeEngine.getMetricsRegistry();
 
-        var collector = new KafkaMetricsCollector();
-        ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
-        try {
-            es.scheduleWithFixedDelay(() -> metricsRegistry.collect(collector), 10, 10, MILLISECONDS);
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-            assertTrueEventually(() -> assertThat(collector.getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
-        } finally {
-            shutdownAndAwaitTermination(es);
+        HazelcastInstance[] instances = {hz};
+        // Create the collector before the job to make sure it is scheduled
+        try (var collectors = new MultiNodeMetricsCollector<>(instances, new KafkaMetricsCollector())) {
+            try {
+                Job job = hz.getJet().newJob(pipeline, jobConfig);
+                job.join();
+                fail("Job should have completed with an AssertionCompletedException, but completed normally");
+            } catch (CompletionException e) {
+                String errorMsg = e.getCause().getMessage();
+                assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                           + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+                assertTrueEventually(() -> assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
+            }
         }
     }
 
@@ -293,34 +281,25 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, instanceCount);
 
-        HazelcastInstance hazelcastInstance = hazelcastInstances[0];
-        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        var collectors = new MultiNodeMetricsCollector<>(hazelcastInstances, new KafkaMetricsCollector());
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        // Create the collector before the job to make sure it is scheduled
+        try (var collectors = new MultiNodeMetricsCollector<>(hazelcastInstances, new KafkaMetricsCollector())) {
+            try {
+                HazelcastInstance hazelcastInstance = hazelcastInstances[0];
+                Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+                job.join();
+                fail("Job should have completed with an AssertionCompletedException, but completed normally");
+            } catch (CompletionException e) {
+                String errorMsg = e.getCause().getMessage();
+                assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                           + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
 
-            assertTrueEventually(() -> {
-                assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT);
-            });
-        } finally {
-            collectors.close();
+                assertTrueEventually(() -> assertThat(collectors.collector().getSourceRecordPollTotal()).isGreaterThan(ITEM_COUNT));
+            }
         }
     }
 
     private static String getTaskId(Order order) {
         return order.headers.get("task.id");
-    }
-
-    @Nonnull
-    private static Map<String, List<Order>> groupByTaskId(List<Order> list) {
-        return list.stream()
-                .collect(Collectors.groupingBy(KafkaConnectIT::getTaskId,
-                        Collectors.mapping(Function.identity(), toList())));
     }
 
     @Test
@@ -402,17 +381,6 @@ public class KafkaConnectIT extends SimpleTestInClusterSupport {
         for (Map.Entry<String, Integer> minOrderId : minOrderIdByTaskIdAfterSuspend.entrySet()) {
             String taskId = minOrderId.getKey();
             assertThat(minOrderId.getValue()).isGreaterThan(minOrderIdByTaskIdBeforeSuspend.get(taskId));
-        }
-    }
-
-    private void shutdownAndAwaitTermination(ExecutorService executorService) {
-        try {
-            executorService.shutdown();
-            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                // Cancel currently executing tasks
-                executorService.shutdownNow();
-            }
-        } catch (InterruptedException ignored) {
         }
     }
 

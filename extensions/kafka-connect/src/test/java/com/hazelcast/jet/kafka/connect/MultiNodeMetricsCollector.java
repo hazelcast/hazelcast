@@ -20,31 +20,40 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.core.JetTestSupport.getNode;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-class MultiNodeMetricsCollector<T extends MetricsCollector> {
+class MultiNodeMetricsCollector<T extends MetricsCollector> implements AutoCloseable {
 
     private final ScheduledExecutorService scheduler;
     private final T collector;
 
     MultiNodeMetricsCollector(HazelcastInstance[] instances, T collector) {
         this.scheduler = Executors.newScheduledThreadPool(instances.length);
+        this.collector = collector;
 
         for (var inst : instances) {
             var registry = getNode(inst).nodeEngine.getMetricsRegistry();
-            scheduler.scheduleAtFixedRate(() -> registry.collect(collector), 20, 3, MILLISECONDS);
+            // Schedule immediately
+            scheduler.scheduleAtFixedRate(() -> registry.collect(collector), 0, 3, MILLISECONDS);
         }
-
-        this.collector = collector;
     }
 
     T collector() {
         return collector;
     }
 
+    @Override
     public void close() {
-        scheduler.shutdownNow();
+        try {
+            scheduler.shutdown();
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                // Cancel currently executing tasks
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException ignored) {
+        }
     }
 }
