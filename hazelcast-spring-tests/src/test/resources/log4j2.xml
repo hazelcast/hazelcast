@@ -26,7 +26,7 @@
             <AppenderRef ref="Console"/>
         </Root>
         <!-- example how to set log levels
-        <Logger name="com.hazelcast.spring" level="debug"/>
+        <Logger name="com.hazelcast.spring" level="DEBUG"/>
         -->
     </Loggers>
 </Configuration>

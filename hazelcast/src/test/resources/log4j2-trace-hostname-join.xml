@@ -26,10 +26,10 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.cluster" level="debug"/>
-        <Logger name="com.hazelcast.instance" level="trace"/>
-        <Logger name="com.hazelcast.internal.cluster" level="trace"/>
-        <Logger name="com.hazelcast.internal.server.tcp" level="trace"/>
-        <Logger name="com.hazelcast.internal.networking" level="trace"/>
+        <Logger name="com.hazelcast.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.instance" level="TRACE"/>
+        <Logger name="com.hazelcast.internal.cluster" level="TRACE"/>
+        <Logger name="com.hazelcast.internal.server.tcp" level="TRACE"/>
+        <Logger name="com.hazelcast.internal.networking" level="TRACE"/>
     </Loggers>
 </Configuration>

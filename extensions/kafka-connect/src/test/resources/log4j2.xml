@@ -25,9 +25,9 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.jet" level="info"/>
-        <Logger name="com.hazelcast.jet.kafka.connect" level="info"/>
-        <Logger name="com.hazelcast.jet.kafka.connect.impl" level="info"/>
+        <Logger name="com.hazelcast.jet" level="INFO"/>
+        <Logger name="com.hazelcast.jet.kafka.connect" level="INFO"/>
+        <Logger name="com.hazelcast.jet.kafka.connect.impl" level="INFO"/>
 
     </Loggers>
 </Configuration>

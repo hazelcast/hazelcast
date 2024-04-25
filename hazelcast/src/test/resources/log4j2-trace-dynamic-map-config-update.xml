@@ -26,8 +26,8 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.map.impl" level="trace"/>
-        <Logger name="com.hazelcast.spi.impl.operationservice" level="trace"/>
-        <Logger name="com.hazelcast.map.impl.recordstore.expiry" level="trace"/>
+        <Logger name="com.hazelcast.map.impl" level="TRACE"/>
+        <Logger name="com.hazelcast.spi.impl.operationservice" level="TRACE"/>
+        <Logger name="com.hazelcast.map.impl.recordstore.expiry" level="TRACE"/>
     </Loggers>
 </Configuration>

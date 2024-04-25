@@ -25,6 +25,6 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.internal.partition.impl" level="trace"/>
+        <Logger name="com.hazelcast.internal.partition.impl" level="TRACE"/>
     </Loggers>
 </Configuration>

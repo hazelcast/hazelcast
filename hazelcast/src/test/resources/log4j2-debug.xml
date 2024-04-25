@@ -25,13 +25,13 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.instance" level="debug"/>
-        <Logger name="com.hazelcast.cluster" level="debug"/>
-        <Logger name="com.hazelcast.internal.ascii" level="debug"/>
-        <Logger name="com.hazelcast.internal.cluster" level="debug"/>
-        <Logger name="com.hazelcast.internal.partition" level="debug"/>
-        <Logger name="com.hazelcast.internal.hotrestart.cluster" level="debug"/>
-        <Logger name="com.hazelcast.test.mocknetwork" level="debug"/>
-        <Logger name="com.hazelcast.system" level="debug"/>
+        <Logger name="com.hazelcast.instance" level="DEBUG"/>
+        <Logger name="com.hazelcast.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.ascii" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.partition" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.hotrestart.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.test.mocknetwork" level="DEBUG"/>
+        <Logger name="com.hazelcast.system" level="DEBUG"/>
     </Loggers>
 </Configuration>

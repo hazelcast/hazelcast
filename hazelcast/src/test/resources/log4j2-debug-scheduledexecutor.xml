@@ -25,11 +25,11 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.scheduledexecutor" level="trace"/>
-        <Logger name="com.hazelcast.instance" level="debug"/>
-        <Logger name="com.hazelcast.cluster" level="debug"/>
-        <Logger name="com.hazelcast.internal.cluster" level="debug"/>
-        <Logger name="com.hazelcast.internal.partition" level="debug"/>
-        <Logger name="com.hazelcast.test.mocknetwork" level="debug"/>
+        <Logger name="com.hazelcast.scheduledexecutor" level="TRACE"/>
+        <Logger name="com.hazelcast.instance" level="DEBUG"/>
+        <Logger name="com.hazelcast.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.partition" level="DEBUG"/>
+        <Logger name="com.hazelcast.test.mocknetwork" level="DEBUG"/>
     </Loggers>
 </Configuration>

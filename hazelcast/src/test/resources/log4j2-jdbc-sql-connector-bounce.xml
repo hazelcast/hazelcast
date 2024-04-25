@@ -26,7 +26,7 @@
         <Root level="DEBUG">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.jet.sql.impl" level="info"/>
-        <Logger name="com.hazelcast.jet.impl" level="info"/>
+        <Logger name="com.hazelcast.jet.sql.impl" level="INFO"/>
+        <Logger name="com.hazelcast.jet.impl" level="INFO"/>
     </Loggers>
 </Configuration>

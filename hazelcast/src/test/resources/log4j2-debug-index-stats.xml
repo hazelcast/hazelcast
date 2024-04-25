@@ -26,9 +26,9 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.map.impl.MapMigrationAwareService" level="trace"/>
-        <Logger name="com.hazelcast.cluster" level="debug"/>
-        <Logger name="com.hazelcast.internal.cluster" level="debug"/>
-        <Logger name="com.hazelcast.internal.partition" level="debug"/>
+        <Logger name="com.hazelcast.map.impl.MapMigrationAwareService" level="TRACE"/>
+        <Logger name="com.hazelcast.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.internal.partition" level="DEBUG"/>
     </Loggers>
 </Configuration>

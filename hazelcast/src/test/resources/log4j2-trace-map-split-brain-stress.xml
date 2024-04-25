@@ -27,10 +27,10 @@
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="com.hazelcast.internal.partition.impl.PartitionReplicaManager"
-                level="trace"/>
+                level="TRACE"/>
         <Logger name="com.hazelcast.internal.cluster.impl.ClusterMergeTask"
-                level="trace"/>
+                level="TRACE"/>
         <Logger name="com.hazelcast.map.impl.MapSplitBrainHandlerService"
-                level="trace"/>
+                level="TRACE"/>
     </Loggers>
 </Configuration>

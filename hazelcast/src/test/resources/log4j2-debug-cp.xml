@@ -25,7 +25,7 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.internal.cluster" level="debug"/>
-        <Logger name="com.hazelcast.cp" level="debug"/>
+        <Logger name="com.hazelcast.internal.cluster" level="DEBUG"/>
+        <Logger name="com.hazelcast.cp" level="DEBUG"/>
     </Loggers>
 </Configuration>

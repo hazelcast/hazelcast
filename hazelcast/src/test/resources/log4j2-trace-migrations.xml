@@ -26,9 +26,9 @@
             <AppenderRef ref="Console"/>
         </Root>
         <!-- Configured to troubleshoot MigrationCorrectnessTest -->
-        <!--        <Logger name="com.hazelcast.internal.partition.impl" level="trace"/>-->
-        <Logger name="com.hazelcast.internal.cluster.ClusterService" level="trace"/>
-        <Logger name="com.hazelcast.internal.cluster.impl.MembershipManager" level="trace"/>
-        <Logger name="com.hazelcast.internal.cluster.impl.ClusterJoinManager" level="trace"/>
+        <!--        <Logger name="com.hazelcast.internal.partition.impl" level="TRACE"/>-->
+        <Logger name="com.hazelcast.internal.cluster.ClusterService" level="TRACE"/>
+        <Logger name="com.hazelcast.internal.cluster.impl.MembershipManager" level="TRACE"/>
+        <Logger name="com.hazelcast.internal.cluster.impl.ClusterJoinManager" level="TRACE"/>
     </Loggers>
 </Configuration>

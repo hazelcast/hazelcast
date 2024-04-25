@@ -25,12 +25,12 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.internal.ascii" level="debug"/>
-        <Logger name="com.hazelcast.client.impl.protocol.task" level="debug"/>
-        <Logger name="com.hazelcast.client.impl.operations" level="debug"/>
-        <Logger name="com.hazelcast.client.impl.spi.ClientListenerService" level="debug"/>
-        <Logger name="com.hazelcast.jet" level="debug"/>
-        <Logger name="com.hazelcast.sql.impl.client" level="debug"/>
+        <Logger name="com.hazelcast.internal.ascii" level="DEBUG"/>
+        <Logger name="com.hazelcast.client.impl.protocol.task" level="DEBUG"/>
+        <Logger name="com.hazelcast.client.impl.operations" level="DEBUG"/>
+        <Logger name="com.hazelcast.client.impl.spi.ClientListenerService" level="DEBUG"/>
+        <Logger name="com.hazelcast.jet" level="DEBUG"/>
+        <Logger name="com.hazelcast.sql.impl.client" level="DEBUG"/>
         <Logger name="com.hazelcast.sql.impl.client.SqlExecuteMessageTask" level="DEBUG"/>
         <Logger name="com.hazelcast.sql.impl.client.SqlFetchMessageTask" level="DEBUG"/>
 

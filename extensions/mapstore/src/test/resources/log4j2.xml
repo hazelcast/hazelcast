@@ -25,6 +25,6 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.mapstore" level="debug"/>
+        <Logger name="com.hazelcast.mapstore" level="DEBUG"/>
     </Loggers>
 </Configuration>

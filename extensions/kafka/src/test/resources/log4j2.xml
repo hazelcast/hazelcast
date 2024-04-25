@@ -10,6 +10,6 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.jet" level="debug"/>
+        <Logger name="com.hazelcast.jet" level="DEBUG"/>
     </Loggers>
 </Configuration>

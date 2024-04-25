@@ -26,9 +26,9 @@
             <AppenderRef ref="Console"/>
         </Root>
         <!-- example how to set log levels
-        <Logger name="com.hazelcast.instance" level="debug"/>
+        <Logger name="com.hazelcast.instance" level="DEBUG"/>
         -->
-        <Logger name="com.hazelcast.client.impl.protocol.task" level="debug"/>
-        <Logger name="com.hazelcast.client.impl.operations" level="debug"/>
+        <Logger name="com.hazelcast.client.impl.protocol.task" level="DEBUG"/>
+        <Logger name="com.hazelcast.client.impl.operations" level="DEBUG"/>
     </Loggers>
 </Configuration>

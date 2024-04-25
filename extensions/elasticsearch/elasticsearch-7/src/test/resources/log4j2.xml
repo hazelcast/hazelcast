@@ -10,8 +10,8 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.jet" level="debug"/>
-        <Logger name="org.testcontainers" level="debug"/>
-        <Logger name="org.testcontainers.shaded" level="info"/>
+        <Logger name="com.hazelcast.jet" level="DEBUG"/>
+        <Logger name="org.testcontainers" level="DEBUG"/>
+        <Logger name="org.testcontainers.shaded" level="INFO"/>
     </Loggers>
 </Configuration>
