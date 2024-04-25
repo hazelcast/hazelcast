@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Jet is a component of Hazelcast to execute streaming or batch
@@ -326,6 +327,14 @@ public interface JetService {
 
         /**
          * Selects the members on which the job will run.
+         * <p>
+         * If there is no member matching the selector during submission, the
+         * submission will be successful, but the job will fail with a {@link
+         * RejectedExecutionException}. If the cluster topology changes during
+         * the job execution and there is no longer a matching member, the job
+         * execution will be delayed until at least one member satisfies the
+         * selector. The duration between checks is the same as in cluster
+         * safety and quorum checks, which is 2 seconds and not configurable.
          *
          * @see JetMemberSelector#ALL_LITE_MEMBERS
          */

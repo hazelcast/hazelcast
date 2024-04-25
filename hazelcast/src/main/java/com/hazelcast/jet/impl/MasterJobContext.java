@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -368,7 +369,9 @@ public class MasterJobContext {
                 mc.jobExecutionRecord().clearSuspended();
                 mc.writeJobExecutionRecord(false);
             }
-            if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
+            if (scheduleRestartIfClusterIsNotSafe()
+                    || scheduleRestartIfQuorumAbsent()
+                    || scheduleRestartIfNoMemberSelected()) {
                 return null;
             }
             Version jobClusterVersion = mc.jobRecord().getClusterVersion();
@@ -544,6 +547,16 @@ public class MasterJobContext {
         }
     }
 
+    private boolean scheduleRestartIfClusterIsNotSafe() {
+        if (mc.coordinationService().shouldStartJobs()) {
+            return false;
+        }
+
+        logger.fine("Rescheduling restart of '" + mc.jobName() + "': cluster is not safe");
+        scheduleRestart("Cluster is not safe");
+        return true;
+    }
+
     private boolean scheduleRestartIfQuorumAbsent() {
         int quorumSize = mc.jobExecutionRecord().getQuorumSize();
         if (mc.coordinationService().isQuorumPresent(quorumSize)) {
@@ -555,13 +568,15 @@ public class MasterJobContext {
         return true;
     }
 
-    private boolean scheduleRestartIfClusterIsNotSafe() {
-        if (mc.coordinationService().shouldStartJobs()) {
+    private boolean scheduleRestartIfNoMemberSelected() {
+        JetMemberSelector memberSelector = mc.jobRecord().getMemberSelector();
+        if (memberSelector == null ||
+                !mc.nodeEngine().getClusterService().getMembers(memberSelector::testEx).isEmpty()) {
             return false;
         }
 
-        logger.fine("Rescheduling restart of '" + mc.jobName() + "': cluster is not safe");
-        scheduleRestart("Cluster is not safe");
+        logger.fine("Rescheduling restart of '" + mc.jobName() + "': no member is selected");
+        scheduleRestart("No member is selected");
         return true;
     }
 

@@ -256,17 +256,16 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 Object jobDefinition = deserializeJobDefinition(jobId, jobConfig, serializedJobDefinition);
                 DAG dag;
                 Data serializedDag;
-                if (jobDefinition instanceof PipelineImpl pipelineImpl) {
-                    dag = pipelineImpl.toDag(pipelineToDagContext);
-                    dag.setMemberSelector(pipelineImpl.memberSelector());
+                if (jobDefinition instanceof PipelineImpl pipeline) {
+                    dag = pipeline.toDag(pipelineToDagContext);
+                    dag.setMemberSelector(pipeline.memberSelector());
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {
                     dag = (DAG) jobDefinition;
                     serializedDag = serializedJobDefinition;
                 }
 
-                checkPermissions(subject, dag);
-                checkIsolatedJobPermission(dag);
+                validateJob(dag, subject);
 
                 Set<String> ownedObservables = ownedObservables(dag);
                 JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId,
@@ -320,24 +319,25 @@ public class JobCoordinationService implements DynamicMetricsProvider {
 
     public CompletableFuture<Void> submitLightJob(
             long jobId,
-            Object deserializedJobDefinition,
+            Object jobDefinition,
             Data serializedJobDefinition,
             JobConfig jobConfig,
             Subject subject
     ) {
 
-        if (deserializedJobDefinition == null) {
-            deserializedJobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
+        if (jobDefinition == null) {
+            jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         }
 
         DAG dag;
-        if (deserializedJobDefinition instanceof DAG dagInstance) {
-            dag = dagInstance;
+        if (jobDefinition instanceof PipelineImpl pipeline) {
+            dag = pipeline.toDag(pipelineToDagContext);
+            dag.setMemberSelector(pipeline.memberSelector());
         } else {
-            dag = ((PipelineImpl) deserializedJobDefinition).toDag(pipelineToDagContext);
+            dag = (DAG) jobDefinition;
         }
 
-        checkIsolatedJobPermission(dag);
+        validateJob(dag, subject);
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
         // was submitted twice. This can happen e.g. if the client retries.
@@ -345,8 +345,6 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         if (oldContext != null) {
             throw new JetException("duplicate jobId " + idToString(jobId));
         }
-
-        checkPermissions(subject, dag);
 
         // Initialize and start the job. We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the job initialization and cancellation.
@@ -365,11 +363,24 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 }, coordinationExecutor());
     }
 
-    protected void checkIsolatedJobPermission(DAG dag) {
-        if (dag.memberSelector() != null) {
-            throw new UnsupportedOperationException(
-                    "The Isolated Jobs feature is only available in Hazelcast Enterprise Edition.");
+    private void validateJob(DAG dag, Subject subject) {
+        SecurityContext securityContext = nodeEngine.getNode().securityContext;
+        if (securityContext != null && subject != null) {
+            for (Vertex vertex : dag) {
+                Permission requiredPermission = vertex.getMetaSupplier().getRequiredPermission();
+                if (requiredPermission != null) {
+                    securityContext.checkPermission(subject, requiredPermission);
+                }
+            }
         }
+        if (dag.memberSelector() != null) {
+            validateIsolatedJob(dag.memberSelector());
+        }
+    }
+
+    protected void validateIsolatedJob(JetMemberSelector memberSelector) {
+        throw new UnsupportedOperationException(
+                "The Isolated Jobs feature is only available in Hazelcast Enterprise Edition.");
     }
 
     protected void onJobSubmitted(DAG dag) {
@@ -386,19 +397,6 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             throw new JobNotFoundException(jobId);
         }
         return ((LightMasterContext) mc).getJobConfig();
-    }
-
-    private void checkPermissions(Subject subject, DAG dag) {
-        SecurityContext securityContext = nodeEngine.getNode().securityContext;
-        if (securityContext == null || subject == null) {
-            return;
-        }
-        for (Vertex vertex : dag) {
-            Permission requiredPermission = vertex.getMetaSupplier().getRequiredPermission();
-            if (requiredPermission != null) {
-                securityContext.checkPermission(subject, requiredPermission);
-            }
-        }
     }
 
     private static Set<String> ownedObservables(DAG dag) {
