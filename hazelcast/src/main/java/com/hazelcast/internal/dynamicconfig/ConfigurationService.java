@@ -42,6 +42,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Dynamic configurations.
@@ -74,6 +75,12 @@ public interface ConfigurationService {
      * @param memberList a new member list to set
      */
     void updateTcpIpConfigMemberList(List<String> memberList);
+
+    /**
+     * Update the member list of TCP-IP join config
+     * @param memberList a new member list to set
+     */
+    CompletableFuture<Void> updateTcpIpConfigMemberListAsync(List<String> memberList);
 
     /**
      * Persists any dynamically changeable sub configuration to this member's

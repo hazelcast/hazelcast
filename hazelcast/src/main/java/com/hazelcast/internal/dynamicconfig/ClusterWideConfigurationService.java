@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -660,11 +661,15 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public void updateTcpIpConfigMemberList(List<String> memberList) {
-        invokeOnStableClusterSerial(
+    public CompletableFuture<Void> updateTcpIpConfigMemberListAsync(List<String> memberList) {
+        return invokeOnStableClusterSerial(
                 nodeEngine,
-                () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
-        ).join();
+                () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+    }
+
+    @Override
+    public void updateTcpIpConfigMemberList(List<String> memberList) {
+        updateTcpIpConfigMemberListAsync(memberList).join();
     }
 
     public static class Merger implements Runnable {

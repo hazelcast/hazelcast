@@ -42,6 +42,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.emptyMap;
 
@@ -275,6 +276,11 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
+        throw new IllegalStateException("Cannot update the member list of TCP-IP join config while Hazelcast is starting.");
+    }
+
+    @Override
+    public CompletableFuture<Void> updateTcpIpConfigMemberListAsync(List<String> memberList) {
         throw new IllegalStateException("Cannot update the member list of TCP-IP join config while Hazelcast is starting.");
     }
 }
