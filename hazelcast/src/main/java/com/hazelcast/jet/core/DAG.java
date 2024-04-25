@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.IterableUtil;
@@ -26,6 +27,7 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
@@ -84,7 +86,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @since Jet 3.0
  */
-public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
+public class DAG implements IdentifiedDataSerializable, Iterable<Vertex>, Versioned {
     //Note: This lock prevents only some changes to the DAG. It cannot prevent changing user-supplied
     // objects like processor suppliers or various lambdas.
     private transient boolean locked;
@@ -596,7 +598,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (Edge edge : edges) {
             out.writeObject(edge);
         }
-        out.writeObject(memberSelector);
+
+        // RU_COMPAT_5_4
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_5)) {
+            out.writeObject(memberSelector);
+        }
     }
 
     @Override
@@ -618,7 +624,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         }
 
         verticesByIdentity.addAll(nameToVertex.values());
-        memberSelector = in.readObject();
+
+        // RU_COMPAT_5_4
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_5)) {
+            memberSelector = in.readObject();
+        }
     }
 
     @Override
