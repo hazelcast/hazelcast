@@ -80,8 +80,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     private class UnlockResponseHandler implements OperationResponseHandler {
         @Override
         public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
+            if (obj instanceof Throwable t) {
                 if (t instanceof RetryableException) {
                     logger.finest("While unlocking... " + t.getMessage());
                 } else {

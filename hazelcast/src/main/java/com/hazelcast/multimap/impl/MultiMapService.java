@@ -265,8 +265,8 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                             boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         return eventService.registerListener(SERVICE_NAME, name, filter, listener).getId();
     }
@@ -277,8 +277,8 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                                                     boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         return eventService.registerListenerAsync(SERVICE_NAME, name, filter, listener)
                 .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
@@ -290,8 +290,8 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                                  boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         return eventService.registerLocalListener(SERVICE_NAME, name, filter, listener).getId();
     }

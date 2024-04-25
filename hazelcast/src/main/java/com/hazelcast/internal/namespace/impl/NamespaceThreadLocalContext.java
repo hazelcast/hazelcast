@@ -107,8 +107,8 @@ public final class NamespaceThreadLocalContext {
      * @param namespace the {@code Namespace} ID to expect when removing.
      */
     public static void onCompleteNsAware(String namespace) {
-        onCompleteNsAware(tlContext -> tlContext.classLoader instanceof MapResourceClassLoader
-                        && Objects.equals(((MapResourceClassLoader) tlContext.classLoader).getUserCodeNamespace(), namespace),
+        onCompleteNsAware(tlContext -> tlContext.classLoader instanceof MapResourceClassLoader loader
+                        && Objects.equals(loader.getUserCodeNamespace(), namespace),
                 tlContext -> "Attempted to complete NSTLContext for namespace " + namespace
                         + " but there is an existing context: " + tlContext);
     }

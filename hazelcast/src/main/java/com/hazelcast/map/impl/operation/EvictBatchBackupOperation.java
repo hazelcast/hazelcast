@@ -121,8 +121,8 @@ public class EvictBatchBackupOperation
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        if (throwable instanceof WrongTargetException) {
-            if (((WrongTargetException) throwable).getTarget() == null) {
+        if (throwable instanceof WrongTargetException exception) {
+            if (exception.getTarget() == null) {
                 // If there isn't any address of backup replica, no need to retry this operation.
                 return ExceptionAction.THROW_EXCEPTION;
             }

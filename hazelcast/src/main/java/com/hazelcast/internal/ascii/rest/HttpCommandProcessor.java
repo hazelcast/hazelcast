@@ -149,15 +149,14 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     protected void prepareResponse(HttpStatusCode statusCode,
                                    @Nonnull HttpCommand command,
                                    @Nonnull Object value) {
-        if (value instanceof byte[]) {
-            command.setResponse(statusCode, CONTENT_TYPE_BINARY, (byte[]) value);
-        } else if (value instanceof RestValue) {
-            RestValue restValue = (RestValue) value;
+        if (value instanceof byte[] bytes) {
+            command.setResponse(statusCode, CONTENT_TYPE_BINARY, bytes);
+        } else if (value instanceof RestValue restValue) {
             command.setResponse(statusCode, restValue.getContentType(), restValue.getValue());
         } else if (value instanceof HazelcastJsonValue || value instanceof JsonValue) {
             command.setResponse(statusCode, CONTENT_TYPE_JSON, stringToBytes(value.toString()));
-        } else if (value instanceof String) {
-            command.setResponse(statusCode, CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
+        } else if (value instanceof String string) {
+            command.setResponse(statusCode, CONTENT_TYPE_PLAIN_TEXT, stringToBytes(string));
         } else {
             command.setResponse(statusCode, CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
         }

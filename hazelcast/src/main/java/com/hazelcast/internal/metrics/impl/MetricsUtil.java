@@ -68,13 +68,11 @@ final class MetricsUtil {
      * @return the excluded targets
      */
     static Collection<MetricTarget> extractExcludedTargets(ProbeFunction function, ProbeLevel minimumLevel) {
-        if (function instanceof FieldProbe) {
-            FieldProbe fieldProbe = (FieldProbe) function;
+        if (function instanceof FieldProbe fieldProbe) {
             return extractExcludedTargets(fieldProbe.probe, fieldProbe.sourceMetadata, minimumLevel);
         }
 
-        if (function instanceof MethodProbe) {
-            MethodProbe methodProbe = (MethodProbe) function;
+        if (function instanceof MethodProbe methodProbe) {
             return extractExcludedTargets(methodProbe.probe, methodProbe.sourceMetadata, minimumLevel);
         }
 

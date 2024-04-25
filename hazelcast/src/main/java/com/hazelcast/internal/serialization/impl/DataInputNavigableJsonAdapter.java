@@ -182,8 +182,8 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
         }
 
         private byte[] obtainBytes(BufferObjectDataInput input) {
-            if (input instanceof ByteArrayObjectDataInput) {
-                return ((ByteArrayObjectDataInput) input).data;
+            if (input instanceof ByteArrayObjectDataInput dataInput) {
+                return dataInput.data;
             } else {
                 throw new IllegalArgumentException("All BufferObjectDataInput are instances of ByteArrayObjectDataInput");
             }

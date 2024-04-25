@@ -59,8 +59,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     public PartitionIdSet getPartitions() {
-        if (predicate instanceof PartitionPredicate) {
-            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        if (predicate instanceof PartitionPredicate partitionPredicate) {
             return clientEngine.getPartitionService().getPartitionIdSet(partitionPredicate.getPartitionKeys());
         }
 
@@ -73,8 +72,8 @@ public class MapExecuteWithPredicateMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         Predicate targetPredicate = predicate;
-        if (predicate instanceof PartitionPredicate) {
-            targetPredicate = ((PartitionPredicate) predicate).getTarget();
+        if (predicate instanceof PartitionPredicate partitionPredicate) {
+            targetPredicate = partitionPredicate.getTarget();
         }
 
         return createOperationFactory(targetPredicate);

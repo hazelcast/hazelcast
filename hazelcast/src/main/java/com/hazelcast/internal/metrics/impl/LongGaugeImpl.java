@@ -80,7 +80,7 @@ class LongGaugeImpl extends AbstractGauge implements LongGauge {
         // we take a defensive copy, since this.gaugeSource might be changed
         // between the instanceof and the casting
         LongGaugeSource gaugeSourceCopy = this.gaugeSource;
-        return gaugeSourceCopy instanceof LongMetricValueCatcher ? (LongMetricValueCatcher) gaugeSourceCopy : null;
+        return gaugeSourceCopy instanceof LongMetricValueCatcher lmvc ? lmvc : null;
     }
 
     @Override
@@ -96,8 +96,7 @@ class LongGaugeImpl extends AbstractGauge implements LongGauge {
     private static long getMetricValue(String gaugeName, Object source, ProbeFunction function,
                                        MetricsRegistryImpl metricsRegistry) {
         try {
-            if (function instanceof LongProbeFunction) {
-                LongProbeFunction longFunction = (LongProbeFunction) function;
+            if (function instanceof LongProbeFunction longFunction) {
                 return longFunction.get(source);
             } else {
                 DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;

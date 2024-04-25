@@ -1039,8 +1039,7 @@ public class DynamicConfigYamlGenerator {
         socketInterceptorConfigYamlGenerator(child, endpointConfig.getSocketInterceptorConfig());
         symmetricEncInterceptorConfigYamlGenerator(child, endpointConfig.getSymmetricEncryptionConfig());
 
-        if (endpointConfig instanceof RestServerEndpointConfig) {
-            RestServerEndpointConfig restServerEndpointConfig = (RestServerEndpointConfig) endpointConfig;
+        if (endpointConfig instanceof RestServerEndpointConfig restServerEndpointConfig) {
             Map<String, Object> endpointGroupsAsMap = new LinkedHashMap<>();
             Set<RestEndpointGroup> enabledGroups = restServerEndpointConfig.getEnabledGroups();
             for (RestEndpointGroup endpointGroup : RestEndpointGroup.getAllEndpointGroups()) {
@@ -1063,8 +1062,7 @@ public class DynamicConfigYamlGenerator {
             addNonNullToMap(child, "socket-options", socketOptions);
         }
 
-        if (endpointConfig instanceof ServerSocketEndpointConfig) {
-            ServerSocketEndpointConfig serverSocketEndpointConfig = (ServerSocketEndpointConfig) endpointConfig;
+        if (endpointConfig instanceof ServerSocketEndpointConfig serverSocketEndpointConfig) {
 
             Map<String, Object> portCfg = new LinkedHashMap<>();
             addNonNullToMap(portCfg, "port", serverSocketEndpointConfig.getPort());

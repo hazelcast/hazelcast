@@ -252,7 +252,7 @@ class MasterSnapshotContext {
             for (Map.Entry<MemberInfo, Object> entry : responses) {
                 // the response is either SnapshotOperationResult or an exception, see #invokeOnParticipants() method
                 Object response = entry.getValue();
-                if (response instanceof Throwable) {
+                if (response instanceof Throwable throwable) {
                     // If the member doesn't know the execution, it might have completed normally or exceptionally.
                     // If normally, we ignore it, if exceptionally, we'll also fail the snapshot. To know, we have
                     // to look at the result of the StartExecutionOperation, which might not have arrived yet. We'll collect
@@ -261,7 +261,7 @@ class MasterSnapshotContext {
                         missingResponses.add(mc.startOperationResponses().get(entry.getKey().getAddress()));
                         continue;
                     }
-                    response = new SnapshotPhase1Result(0, 0, 0, (Throwable) response);
+                    response = new SnapshotPhase1Result(0, 0, 0, throwable);
                 }
                 mergedResult.merge((SnapshotPhase1Result) response);
             }

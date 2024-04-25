@@ -91,8 +91,8 @@ public final class IndexHeapMemoryCostUtil {
             return cost;
         }
 
-        if (value instanceof String) {
-            return BASE_STRING_COST + ((String) value).length() * 2L;
+        if (value instanceof String string) {
+            return BASE_STRING_COST + string.length() * 2L;
         }
 
         if (value instanceof Timestamp) {

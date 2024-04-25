@@ -47,8 +47,7 @@ class InternalQueryCacheListenerAdapter implements ListenerAdapter<IMapEvent> {
             return;
         }
 
-        if (event instanceof EventLostEvent) {
-            EventLostEvent eventLostEvent = (EventLostEvent) event;
+        if (event instanceof EventLostEvent eventLostEvent) {
             callListener(eventLostEvent, EventLostEvent.EVENT_TYPE);
             return;
         }

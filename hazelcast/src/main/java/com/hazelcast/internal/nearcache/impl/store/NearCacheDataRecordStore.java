@@ -46,12 +46,12 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
 
     @Override
     protected long getKeyStorageMemoryCost(K key) {
-        if (key instanceof Data) {
+        if (key instanceof Data data) {
             return
                     // reference to this key data inside map ("store" field)
                     REFERENCE_COST_IN_BYTES
                             // heap cost of this key data
-                            + ((Data) key).getHeapCost();
+                            + data.getHeapCost();
         } else {
             // memory cost for non-data typed instance is not supported
             return 0L;

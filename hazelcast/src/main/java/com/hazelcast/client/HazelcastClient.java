@@ -341,8 +341,7 @@ public final class HazelcastClient {
      * @param instance the hazelcast client instance
      */
     public static void shutdown(HazelcastInstance instance) {
-        if (instance instanceof HazelcastClientProxy) {
-            final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
+        if (instance instanceof HazelcastClientProxy proxy) {
             HazelcastClientInstanceImpl client = proxy.client;
             if (client == null) {
                 return;

@@ -255,8 +255,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     }
                 }
 
-                if (serializer instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) serializer).setHazelcastInstance(hazelcastInstance);
+                if (serializer instanceof HazelcastInstanceAware aware) {
+                    aware.setHazelcastInstance(hazelcastInstance);
                 }
 
                 ((AbstractSerializationService) ss)
@@ -324,13 +324,13 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
             Class serializationType = entry.getKey();
             Object value = entry.getValue();
             Serializer serializer;
-            if (value instanceof SerializerHook) {
-                serializer = ((SerializerHook) value).createSerializer(ss);
+            if (value instanceof SerializerHook hook) {
+                serializer = hook.createSerializer(ss);
             } else {
                 serializer = (Serializer) value;
             }
-            if (value instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);
+            if (value instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(hazelcastInstance);
             }
             if (ClassLoaderUtil.isInternalType(value.getClass())) {
                 ((AbstractSerializationService) ss).safeRegister(serializationType, serializer);
@@ -372,8 +372,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         buildDataSerializableFactories(dataSerializableFactories, config, cl);
 
         for (DataSerializableFactory f : dataSerializableFactories.values()) {
-            if (f instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
+            if (f instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(hazelcastInstance);
             }
         }
     }
@@ -423,8 +423,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         PortableFactoriesHelper.buildPortableFactories(portableFactories, config, cl);
 
         for (PortableFactory f : portableFactories.values()) {
-            if (f instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
+            if (f instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(hazelcastInstance);
             }
         }
     }

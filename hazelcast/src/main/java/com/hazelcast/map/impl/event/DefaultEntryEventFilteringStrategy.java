@@ -71,11 +71,11 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
 
         // the order of the following ifs is important!
         // QueryEventFilter is instance of EntryEventFilter
-        if (filter instanceof EventListenerFilter) {
+        if (filter instanceof EventListenerFilter listenerFilter) {
             if (!filter.eval(eventType.getType())) {
                 return FILTER_DOES_NOT_MATCH;
             } else {
-                filter = ((EventListenerFilter) filter).getEventFilter();
+                filter = listenerFilter.getEventFilter();
             }
         }
         if (filter instanceof TrueEventFilter) {

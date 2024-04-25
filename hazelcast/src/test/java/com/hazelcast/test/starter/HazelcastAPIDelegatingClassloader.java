@@ -177,7 +177,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     }
 
     private boolean checkResourceExcluded(String resourceName) {
-        return (parent instanceof FilteringClassLoader) && ((FilteringClassLoader) parent).checkResourceExcluded(resourceName);
+        return (parent instanceof FilteringClassLoader classLoader) && classLoader.checkResourceExcluded(resourceName);
     }
 
     @Override

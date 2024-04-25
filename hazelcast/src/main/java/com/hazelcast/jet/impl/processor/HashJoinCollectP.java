@@ -35,8 +35,8 @@ import java.util.function.Function;
 public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
 
     private static final BinaryOperator<Object> MERGE_FN = (o, n) -> {
-        if (o instanceof HashJoinArrayList) {
-            ((HashJoinArrayList) o).add(n);
+        if (o instanceof HashJoinArrayList list) {
+            list.add(n);
             return o;
         } else {
             HashJoinArrayList res = new HashJoinArrayList();

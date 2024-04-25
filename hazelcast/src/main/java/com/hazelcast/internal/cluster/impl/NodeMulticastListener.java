@@ -91,8 +91,7 @@ public class NodeMulticastListener implements MulticastListener {
     private void handleNotActiveOrNotJoined(JoinMessage joinMessage) {
         if (isJoinRequest(joinMessage)) {
             Joiner joiner = node.getJoiner();
-            if (joiner instanceof MulticastJoiner) {
-                MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
+            if (joiner instanceof MulticastJoiner multicastJoiner) {
                 multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
             } else {
                 logDroppedMessage(joinMessage);

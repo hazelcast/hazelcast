@@ -132,8 +132,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
         boolean serialize = true;
         if (isLightJob()) {
-            if (jobDefinition instanceof DAG) {
-                DAG dag = (DAG) jobDefinition;
+            if (jobDefinition instanceof DAG dag) {
                 dag.lock();
                 serialize = dag.vertices().stream().anyMatch(v -> !v.getMetaSupplier().isReusable());
             }

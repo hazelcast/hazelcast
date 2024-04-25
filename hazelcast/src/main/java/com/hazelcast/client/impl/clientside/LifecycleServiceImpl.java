@@ -82,8 +82,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
                     }
                 }
 
-                if (implementation instanceof LifecycleListener) {
-                    addLifecycleListener((LifecycleListener) implementation);
+                if (implementation instanceof LifecycleListener listener) {
+                    addLifecycleListener(listener);
                 }
             }
         }

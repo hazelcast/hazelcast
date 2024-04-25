@@ -286,17 +286,17 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     static boolean isIncludeValue(EventFilter filter) {
         // the order of the following ifs is important!
         // QueryEventFilter is instance of EntryEventFilter
-        if (filter instanceof EventListenerFilter) {
-            filter = ((EventListenerFilter) filter).getEventFilter();
+        if (filter instanceof EventListenerFilter listenerFilter) {
+            filter = listenerFilter.getEventFilter();
         }
         if (filter instanceof TrueEventFilter) {
             return true;
         }
-        if (filter instanceof QueryEventFilter) {
-            return ((QueryEventFilter) filter).isIncludeValue();
+        if (filter instanceof QueryEventFilter eventFilter) {
+            return eventFilter.isIncludeValue();
         }
-        if (filter instanceof EntryEventFilter) {
-            return ((EntryEventFilter) filter).isIncludeValue();
+        if (filter instanceof EntryEventFilter eventFilter) {
+            return eventFilter.isIncludeValue();
         }
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }

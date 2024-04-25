@@ -102,9 +102,9 @@ public class LoggingServiceImpl implements LoggingService {
      *                            for dynamic log level changing.
      */
     public void setLevel(@Nonnull Level level) {
-        if (loggerFactory instanceof InternalLoggerFactory) {
+        if (loggerFactory instanceof InternalLoggerFactory factory) {
             levelSet = level;
-            ((InternalLoggerFactory) loggerFactory).setLevel(level);
+            factory.setLevel(level);
 
             AuditlogService auditlogService = node.getNodeExtension().getAuditlogService();
             auditlogService.eventBuilder(AuditlogTypeIds.MEMBER_LOGGING_LEVEL_SET).message("Log level set.").addParameter("level",
@@ -142,9 +142,9 @@ public class LoggingServiceImpl implements LoggingService {
      * by the previous calls to {@link #setLevel(Level)}, if there were any.
      */
     public void resetLevel() {
-        if (loggerFactory instanceof InternalLoggerFactory) {
+        if (loggerFactory instanceof InternalLoggerFactory factory) {
             if (levelSet != null) {
-                ((InternalLoggerFactory) loggerFactory).resetLevel();
+                factory.resetLevel();
                 levelSet = null;
 
                 AuditlogService auditlogService = node.getNodeExtension().getAuditlogService();
@@ -184,8 +184,8 @@ public class LoggingServiceImpl implements LoggingService {
 
     @Override
     public void shutdown() {
-        if (shutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory) {
-            ((InternalLoggerFactory) loggerFactory).shutdown();
+        if (shutdownLoggingOnHazelcastShutdown && loggerFactory instanceof InternalLoggerFactory factory) {
+            factory.shutdown();
         }
     }
 

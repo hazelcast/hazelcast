@@ -64,23 +64,23 @@ public class MapEventPublishingService implements EventPublishingService<Object,
         handleNamespaceAwareness(eventData, false);
 
         try {
-            if (eventData instanceof QueryCacheEventData) {
-                dispatchQueryCacheEventData((QueryCacheEventData) eventData, listener);
-            } else if (eventData instanceof BatchEventData) {
-                dispatchBatchEventData((BatchEventData) eventData, listener);
-            } else if (eventData instanceof LocalEntryEventData) {
-                dispatchLocalEventData(((LocalEntryEventData) eventData), listener);
-            } else if (eventData instanceof LocalCacheWideEventData) {
-                dispatchLocalEventData(((LocalCacheWideEventData) eventData), listener);
-            } else if (eventData instanceof EntryEventData) {
-                dispatchEntryEventData((EntryEventData) eventData, listener);
-            } else if (eventData instanceof MapEventData) {
-                dispatchMapEventData((MapEventData) eventData, listener);
-            } else if (eventData instanceof MapPartitionEventData) {
-                dispatchMapPartitionLostEventData((MapPartitionEventData) eventData, listener);
-            } else if (eventData instanceof Invalidation) {
+            if (eventData instanceof QueryCacheEventData data) {
+                dispatchQueryCacheEventData(data, listener);
+            } else if (eventData instanceof BatchEventData data) {
+                dispatchBatchEventData(data, listener);
+            } else if (eventData instanceof LocalEntryEventData data) {
+                dispatchLocalEventData(data, listener);
+            } else if (eventData instanceof LocalCacheWideEventData data) {
+                dispatchLocalEventData(data, listener);
+            } else if (eventData instanceof EntryEventData data) {
+                dispatchEntryEventData(data, listener);
+            } else if (eventData instanceof MapEventData data) {
+                dispatchMapEventData(data, listener);
+            } else if (eventData instanceof MapPartitionEventData data) {
+                dispatchMapPartitionLostEventData(data, listener);
+            } else if (eventData instanceof Invalidation invalidation) {
                 listener.onEvent(eventData);
-                incrementEventStats(((Invalidation) eventData));
+                incrementEventStats(invalidation);
             } else {
                 throw new IllegalArgumentException("Unknown event data [" + eventData + ']');
             }
@@ -91,10 +91,10 @@ public class MapEventPublishingService implements EventPublishingService<Object,
 
     private void handleNamespaceAwareness(Object eventData, boolean cleanup) {
         String mapName;
-        if (eventData instanceof EventData) {
-            mapName = ((EventData) eventData).getMapName();
-        } else if (eventData instanceof IMapEvent) {
-            mapName = ((IMapEvent) eventData).getName();
+        if (eventData instanceof EventData data) {
+            mapName = data.getMapName();
+        } else if (eventData instanceof IMapEvent event) {
+            mapName = event.getName();
         } else {
             throw new IllegalArgumentException("Unknown event data type: " + eventData.getClass());
         }

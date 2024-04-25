@@ -61,7 +61,7 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
         // we take a defensive copy, since this.gaugeSource might be changed
         // between the instanceof and the casting
         DoubleGaugeSource gaugeSourceCopy = this.gaugeSource;
-        return gaugeSourceCopy instanceof DoubleMetricValueCatcher ? (DoubleMetricValueCatcher) gaugeSourceCopy : null;
+        return gaugeSourceCopy instanceof DoubleMetricValueCatcher dmvc ? dmvc : null;
     }
 
     @Override
@@ -77,8 +77,7 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
     private static double getMetricValue(String gaugeName, Object source, ProbeFunction function,
                                          MetricsRegistryImpl metricsRegistry) {
         try {
-            if (function instanceof LongProbeFunction) {
-                LongProbeFunction longFunction = (LongProbeFunction) function;
+            if (function instanceof LongProbeFunction longFunction) {
                 return longFunction.get(source);
             } else {
                 DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;

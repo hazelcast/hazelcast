@@ -287,8 +287,8 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
     }
 
     private <T> int getTaskPartitionId(Callable<T> task) {
-        if (task instanceof PartitionAware) {
-            Object partitionKey = ((PartitionAware) task).getPartitionKey();
+        if (task instanceof PartitionAware aware) {
+            Object partitionKey = aware.getPartitionKey();
             if (partitionKey != null) {
                 return getPartitionId(partitionKey);
             }

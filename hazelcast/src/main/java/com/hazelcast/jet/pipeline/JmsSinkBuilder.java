@@ -162,8 +162,7 @@ public final class JmsSinkBuilder<T> {
         checkNotNull(destinationName);
         if (connectionFn == null) {
             connectionFn = factory -> {
-                if (factory instanceof XAConnectionFactory) {
-                    XAConnectionFactory xaFactory = (XAConnectionFactory) factory;
+                if (factory instanceof XAConnectionFactory xaFactory) {
                     return usernameLocal != null || passwordLocal != null
                             ? xaFactory.createXAConnection(usernameLocal, passwordLocal)
                             : xaFactory.createXAConnection();
@@ -176,7 +175,7 @@ public final class JmsSinkBuilder<T> {
         }
         if (messageFn == null) {
             messageFn = (session, item) ->
-                    item instanceof Message ? (Message) item : session.createTextMessage(item.toString());
+                    item instanceof Message m ? m : session.createTextMessage(item.toString());
         }
 
         FunctionEx<ConnectionFactory, Connection> connectionFnLocal = connectionFn;

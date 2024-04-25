@@ -324,16 +324,16 @@ public class IndexRegistry {
      * @param operationSource the operation source.
      */
     public void putEntry(QueryableEntry entryToStore, Object oldValue, Index.OperationSource operationSource) {
-        if (entryToStore instanceof CachedQueryEntry && oldValue == null) {
-            putEntry((CachedQueryEntry) entryToStore, null, entryToStore, operationSource);
+        if (entryToStore instanceof CachedQueryEntry entry && oldValue == null) {
+            putEntry(entry, null, entryToStore, operationSource);
             return;
         }
 
         CachedQueryEntry[] cachedEntries = CACHED_ENTRIES.get();
 
         CachedQueryEntry newEntry;
-        if (entryToStore instanceof CachedQueryEntry) {
-            newEntry = (CachedQueryEntry) entryToStore;
+        if (entryToStore instanceof CachedQueryEntry entry) {
+            newEntry = entry;
         } else {
             newEntry = cachedEntries[0];
             newEntry.init(ss, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);

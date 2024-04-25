@@ -158,8 +158,8 @@ final class InvokeOnPartitions {
         Map<Integer, Object> result = createHashMap(partitionResults.length());
         for (int partitionId = 0; partitionId < partitionResults.length(); partitionId++) {
             Object partitionResult = partitionResults.get(partitionId);
-            if (partitionResult instanceof Throwable) {
-                future.completeExceptionally((Throwable) partitionResult);
+            if (partitionResult instanceof Throwable throwable) {
+                future.completeExceptionally(throwable);
                 return;
             }
 

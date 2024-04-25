@@ -84,10 +84,10 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<JetG
                             || response instanceof TargetDisconnectedException) {
                         return GetJobIdsResult.EMPTY;
                     }
-                    if (response instanceof Exception) {
+                    if (response instanceof Exception exception) {
                         // ignore exceptions from non-master, but not from master
                         if (en.getKey().getAddress().equals(masterAddress)) {
-                            throw new RuntimeException((Throwable) response);
+                            throw new RuntimeException(exception);
                         }
                         return GetJobIdsResult.EMPTY;
                     }

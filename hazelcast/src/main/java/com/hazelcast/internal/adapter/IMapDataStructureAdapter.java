@@ -275,8 +275,8 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     public void waitUntilLoaded() {
-        if (map instanceof MapProxyImpl) {
-            ((MapProxyImpl) map).waitUntilLoaded();
+        if (map instanceof MapProxyImpl impl) {
+            impl.waitUntilLoaded();
         }
     }
 }

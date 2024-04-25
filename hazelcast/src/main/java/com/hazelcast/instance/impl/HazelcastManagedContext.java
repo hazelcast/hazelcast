@@ -35,14 +35,14 @@ public final class HazelcastManagedContext implements ManagedContext {
 
     @Override
     public Object initialize(Object obj) {
-        if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
+        if (obj instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(instance);
         }
-        if (obj instanceof NodeAware) {
-            ((NodeAware) obj).setNode(instance.node);
+        if (obj instanceof NodeAware aware) {
+            aware.setNode(instance.node);
         }
-        if (obj instanceof SerializationServiceAware) {
-            ((SerializationServiceAware) obj).setSerializationService(instance.node.getSerializationService());
+        if (obj instanceof SerializationServiceAware aware) {
+            aware.setSerializationService(instance.node.getSerializationService());
         }
 
         if (hasExternalContext) {

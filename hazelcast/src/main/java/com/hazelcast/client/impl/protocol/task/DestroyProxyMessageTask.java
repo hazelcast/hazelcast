@@ -58,8 +58,8 @@ public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<Clie
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
         for (Object result : map.values()) {
-            if (result instanceof Throwable) {
-                handleException((Throwable) result);
+            if (result instanceof Throwable throwable) {
+                handleException(throwable);
             }
         }
         return null;

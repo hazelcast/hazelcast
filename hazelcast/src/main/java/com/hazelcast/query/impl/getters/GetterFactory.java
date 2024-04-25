@@ -65,8 +65,7 @@ public final class GetterFactory {
             if (currentObject == null) {
                 return NULL_GETTER;
             }
-            if (currentObject instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) currentObject;
+            if (currentObject instanceof MultiResult multiResult) {
                 elementType = deduceElementType(multiResult, reader);
             } else {
                 Collection collection = unwrapIfOptional(reader.read(currentObject));
@@ -88,8 +87,8 @@ public final class GetterFactory {
     }
 
     private static Class deduceOptionalType(Object object, Reader reader) throws Exception {
-        if (object instanceof MultiResult) {
-            for (Object result : ((MultiResult) object).getResults()) {
+        if (object instanceof MultiResult multiResult) {
+            for (Object result : multiResult.getResults()) {
                 if (result == null) {
                     continue;
                 }

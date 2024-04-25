@@ -228,8 +228,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             notifyCallTimeout();
         } else if (response instanceof ErrorResponse || response instanceof Throwable) {
             notifyError(response);
-        } else if (response instanceof NormalResponse) {
-            NormalResponse normalResponse = (NormalResponse) response;
+        } else if (response instanceof NormalResponse normalResponse) {
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupAcks());
         } else {
             // there are no backups or the number of expected backups has returned; so signal the future that the result is ready
@@ -292,8 +291,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             }
         }
 
-        if (op instanceof TargetAware) {
-            ((TargetAware) op).setTarget(targetAddress);
+        if (op instanceof TargetAware aware) {
+            aware.setTarget(targetAddress);
         }
     }
 
@@ -325,8 +324,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     void notifyError(Object error) {
         assert error != null;
 
-        Throwable cause = error instanceof Throwable
-                ? (Throwable) error
+        Throwable cause = error instanceof Throwable t
+                ? t
                 : ((ErrorResponse) error).getCause();
 
         switch (onException(cause)) {

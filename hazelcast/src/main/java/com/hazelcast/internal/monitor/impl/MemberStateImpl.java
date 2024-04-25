@@ -354,8 +354,8 @@ public class MemberStateImpl implements MemberState {
     }
 
     private static void addJsonIfSerializable(JsonObject root, String key, Object value) {
-        if (value instanceof JsonSerializable) {
-            root.add(key, ((JsonSerializable) value).toJson());
+        if (value instanceof JsonSerializable serializable) {
+            root.add(key, serializable.toJson());
         }
     }
 
@@ -363,15 +363,15 @@ public class MemberStateImpl implements MemberState {
                                                           String key,
                                                           JsonObject serializedJson,
                                                           T instance) {
-        if (instance instanceof JsonSerializable) {
-            ((JsonSerializable) instance).fromJson(serializedJson);
+        if (instance instanceof JsonSerializable serializable) {
+            serializable.fromJson(serializedJson);
             deserializedValueMap.put(key, instance);
         }
     }
 
     private static <T> T readJsonIfDeserializable(JsonObject serializedJson, T instance) {
-        if (instance instanceof JsonSerializable) {
-            ((JsonSerializable) instance).fromJson(serializedJson);
+        if (instance instanceof JsonSerializable serializable) {
+            serializable.fromJson(serializedJson);
         }
         return instance;
     }

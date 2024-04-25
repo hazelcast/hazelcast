@@ -595,11 +595,10 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public boolean registerListener(Object listener) {
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(node.hazelcastInstance);
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(node.hazelcastInstance);
         }
-        if (listener instanceof ClusterVersionListener) {
-            ClusterVersionListener clusterVersionListener = (ClusterVersionListener) listener;
+        if (listener instanceof ClusterVersionListener clusterVersionListener) {
             clusterVersionListeners.add(clusterVersionListener);
             // on registration, invoke once the listening method so version is properly initialized on the listener
             clusterVersionListener.onClusterVersionChange(getClusterOrNodeVersion());

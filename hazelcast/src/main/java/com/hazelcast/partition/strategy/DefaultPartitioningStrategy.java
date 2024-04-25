@@ -29,8 +29,8 @@ public class DefaultPartitioningStrategy implements PartitioningStrategy {
 
     @Override
     public Object getPartitionKey(Object key) {
-        if (key instanceof PartitionAware) {
-            return ((PartitionAware) key).getPartitionKey();
+        if (key instanceof PartitionAware aware) {
+            return aware.getPartitionKey();
         }
         return null;
     }

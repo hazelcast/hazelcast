@@ -403,29 +403,29 @@ public class Node {
                     logger.severe(e);
                 }
             }
-            if (listener instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) listener).setHazelcastInstance(hazelcastInstance);
+            if (listener instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(hazelcastInstance);
             }
             boolean known = false;
-            if (listener instanceof DistributedObjectListener) {
+            if (listener instanceof DistributedObjectListener objectListener) {
                 final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
-                proxyService.addProxyListener((DistributedObjectListener) listener);
+                proxyService.addProxyListener(objectListener);
                 known = true;
             }
-            if (listener instanceof MembershipListener) {
-                clusterService.addMembershipListener((MembershipListener) listener);
+            if (listener instanceof MembershipListener membershipListener) {
+                clusterService.addMembershipListener(membershipListener);
                 known = true;
             }
-            if (listener instanceof MigrationListener) {
-                partitionService.addMigrationListener((MigrationListener) listener);
+            if (listener instanceof MigrationListener migrationListener) {
+                partitionService.addMigrationListener(migrationListener);
                 known = true;
             }
-            if (listener instanceof PartitionLostListener) {
-                partitionService.addPartitionLostListener((PartitionLostListener) listener);
+            if (listener instanceof PartitionLostListener lostListener) {
+                partitionService.addPartitionLostListener(lostListener);
                 known = true;
             }
-            if (listener instanceof LifecycleListener) {
-                hazelcastInstance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
+            if (listener instanceof LifecycleListener lifecycleListener) {
+                hazelcastInstance.lifecycleService.addLifecycleListener(lifecycleListener);
                 known = true;
             }
             if (listener instanceof ClientListener) {
@@ -433,16 +433,16 @@ public class Node {
                 nodeEngine.getEventService().registerLocalListener(serviceName, serviceName, listener);
                 known = true;
             }
-            if (listener instanceof MigrationInterceptor) {
-                partitionService.setMigrationInterceptor((MigrationInterceptor) listener);
+            if (listener instanceof MigrationInterceptor interceptor) {
+                partitionService.setMigrationInterceptor(interceptor);
                 known = true;
             }
-            if (listener instanceof CPMembershipListener) {
-                hazelcastInstance.getCPSubsystem().addMembershipListener((CPMembershipListener) listener);
+            if (listener instanceof CPMembershipListener membershipListener) {
+                hazelcastInstance.getCPSubsystem().addMembershipListener(membershipListener);
                 known = true;
             }
-            if (listener instanceof CPGroupAvailabilityListener) {
-                hazelcastInstance.getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener);
+            if (listener instanceof CPGroupAvailabilityListener availabilityListener) {
+                hazelcastInstance.getCPSubsystem().addGroupAvailabilityListener(availabilityListener);
                 known = true;
             }
             if (nodeExtension.registerListener(listener)) {
@@ -984,8 +984,8 @@ public class Node {
     }
 
     private boolean isEmptyDiscoveryStrategies() {
-        return discoveryService instanceof DefaultDiscoveryService
-                && !((DefaultDiscoveryService) discoveryService).getDiscoveryStrategies().iterator().hasNext();
+        return discoveryService instanceof DefaultDiscoveryService dds
+                && !dds.getDiscoveryStrategies().iterator().hasNext();
     }
 
     private static boolean isAnyAliasedConfigEnabled(JoinConfig join) {

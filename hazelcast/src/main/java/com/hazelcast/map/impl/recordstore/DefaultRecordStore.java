@@ -1468,8 +1468,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private void addLoadingFuture(Future<?> e) {
-        if (e instanceof CompletableFuture) {
-            ((CompletableFuture<?>) e).whenCompleteAsync((result, throwable) -> {
+        if (e instanceof CompletableFuture<?> future) {
+            future.whenCompleteAsync((result, throwable) -> {
                 if (throwable != null) {
                     logger.warning("Loading completed exceptionally", throwable);
                 }

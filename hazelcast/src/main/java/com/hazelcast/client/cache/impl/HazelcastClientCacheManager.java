@@ -63,8 +63,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
          * internals. It's also used for passing the full cache name directly
          * by this cache manager itself.
          */
-        if (hazelcastInstance instanceof HazelcastClientProxy) {
-            client = ((HazelcastClientProxy) hazelcastInstance).client;
+        if (hazelcastInstance instanceof HazelcastClientProxy proxy) {
+            client = proxy.client;
         } else {
             client = ((HazelcastClientInstanceImpl) hazelcastInstance);
         }

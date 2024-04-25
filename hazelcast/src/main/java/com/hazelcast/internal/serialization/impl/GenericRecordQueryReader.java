@@ -82,8 +82,7 @@ public final class GenericRecordQueryReader implements ValueReader {
     private void read(String path, Consumer consumer) {
         try {
             Object result = read(path);
-            if (result instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) result;
+            if (result instanceof MultiResult multiResult) {
                 for (Object singleResult : multiResult.getResults()) {
                     consumer.accept(singleResult);
                 }
@@ -211,8 +210,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                 Object leaves = readLeaf(record, fieldName);
                 if (leaves == null) {
                     multiResult.setNullOrEmptyTarget(true);
-                } else if (leaves instanceof Object[]) {
-                    Object[] array = (Object[]) leaves;
+                } else if (leaves instanceof Object[] array) {
                     if (array.length == 0) {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;

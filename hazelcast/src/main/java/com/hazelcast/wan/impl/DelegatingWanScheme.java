@@ -118,8 +118,8 @@ public final class DelegatingWanScheme {
      */
     public void republishReplicationEvent(InternalWanEvent wanEvent) {
         for (WanPublisher publisher : publishers.values()) {
-            if (publisher instanceof InternalWanPublisher) {
-                ((InternalWanPublisher) publisher).republishReplicationEvent(wanEvent);
+            if (publisher instanceof InternalWanPublisher wanPublisher) {
+                wanPublisher.republishReplicationEvent(wanEvent);
             }
         }
     }
@@ -133,9 +133,9 @@ public final class DelegatingWanScheme {
         final Map<String, LocalWanPublisherStats> statsMap = createHashMap(publishers.size());
         for (Entry<String, WanPublisher> publisherEntry : publishers.entrySet()) {
             WanPublisher publisher = publisherEntry.getValue();
-            if (publisher instanceof InternalWanPublisher) {
+            if (publisher instanceof InternalWanPublisher wanPublisher) {
                 String publisherId = publisherEntry.getKey();
-                LocalWanPublisherStats stats = ((InternalWanPublisher) publisher).getStats();
+                LocalWanPublisherStats stats = wanPublisher.getStats();
                 if (stats != null) {
                     statsMap.put(publisherId, stats);
                 }
@@ -165,8 +165,8 @@ public final class DelegatingWanScheme {
         Map<String, Object> eventContainers = createHashMap(publishers.size());
         for (Entry<String, WanPublisher> publisherEntry : publishers.entrySet()) {
             WanPublisher publisher = publisherEntry.getValue();
-            if (publisher instanceof WanMigrationAwarePublisher) {
-                Object eventContainer = ((WanMigrationAwarePublisher) publisher)
+            if (publisher instanceof WanMigrationAwarePublisher awarePublisher) {
+                Object eventContainer = awarePublisher
                         .prepareEventContainerReplicationData(event, namespaces);
                 if (eventContainer != null) {
                     String publisherId = publisherEntry.getKey();
@@ -188,8 +188,8 @@ public final class DelegatingWanScheme {
     public void collectAllServiceNamespaces(PartitionReplicationEvent event,
                                             Set<ServiceNamespace> namespaces) {
         for (WanPublisher publisher : publishers.values()) {
-            if (publisher instanceof WanMigrationAwarePublisher) {
-                ((WanMigrationAwarePublisher) publisher)
+            if (publisher instanceof WanMigrationAwarePublisher awarePublisher) {
+                awarePublisher
                         .collectAllServiceNamespaces(event, namespaces);
             }
         }
@@ -203,8 +203,8 @@ public final class DelegatingWanScheme {
      */
     public void destroyMapData(String mapName) {
         for (WanPublisher publisher : publishers.values()) {
-            if (publisher instanceof InternalWanPublisher) {
-                ((InternalWanPublisher) publisher).destroyMapData(mapName);
+            if (publisher instanceof InternalWanPublisher wanPublisher) {
+                wanPublisher.destroyMapData(mapName);
             }
         }
     }

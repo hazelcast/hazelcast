@@ -58,8 +58,8 @@ public class DeployClassesMessageTask extends AbstractMultiTargetMessageTask<Lis
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
         for (Object result : map.values()) {
-            if (result instanceof Throwable && !(result instanceof MemberLeftException)) {
-                throw (Throwable) result;
+            if (result instanceof Throwable throwable && !(result instanceof MemberLeftException)) {
+                throw throwable;
             }
         }
         return null;

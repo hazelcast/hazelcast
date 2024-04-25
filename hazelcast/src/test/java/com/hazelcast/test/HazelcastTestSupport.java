@@ -1403,7 +1403,7 @@ public abstract class HazelcastTestSupport {
                 task.run();
                 return;
             } catch (Exception e) {
-                lastException = e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
+                lastException = e instanceof RuntimeException re ? re : new RuntimeException(e);
             }
             try {
                 //noinspection BusyWait

@@ -166,8 +166,8 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
 
         Operation op = invocation.op;
         Class c = op.getClass();
-        if (op instanceof PartitionIteratingOperation) {
-            c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
+        if (op instanceof PartitionIteratingOperation operation) {
+            c = operation.getOperationFactory().getClass();
         }
         LatencyDistribution distribution = latencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
         distribution.done(invocation.firstInvocationTimeNanos);

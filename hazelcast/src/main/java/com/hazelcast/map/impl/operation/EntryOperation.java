@@ -296,8 +296,8 @@ public class EntryOperation extends LockAwareOperation
     }
 
     private boolean isOffloadingRequested(EntryProcessor entryProcessor) {
-        if (entryProcessor instanceof Offloadable) {
-            String executorName = ((Offloadable) entryProcessor).getExecutorName();
+        if (entryProcessor instanceof Offloadable offloadable) {
+            String executorName = offloadable.getExecutorName();
             return !executorName.equals(NO_OFFLOADING);
         }
         return false;
@@ -572,8 +572,7 @@ public class EntryOperation extends LockAwareOperation
                 }
 
                 private Object toResponse(Object response) {
-                    if (response instanceof Throwable) {
-                        Throwable t = (Throwable) response;
+                    if (response instanceof Throwable t) {
                         // EntryOffloadableLockMismatchException is a marker send from the EntryOffloadableSetUnlockOperation
                         // meaning that the whole invocation of the EntryOffloadableOperation should be retried
                         if (t instanceof EntryOffloadableLockMismatchException) {

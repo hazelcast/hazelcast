@@ -131,8 +131,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
             this.hazelcastCacheManager = new HazelcastInstanceCacheManager(this);
             ClassLoader classLoader = node.getConfigClassLoader();
-            if (classLoader instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) classLoader).setHazelcastInstance(this);
+            if (classLoader instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(this);
             }
         } catch (Throwable e) {
             //noinspection CatchMayIgnoreException
@@ -152,8 +152,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     private void initManagedContext(ManagedContext configuredManagedContext) {
         if (configuredManagedContext != null) {
-            if (configuredManagedContext instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) configuredManagedContext).setHazelcastInstance(this);
+            if (configuredManagedContext instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(this);
             }
         }
     }

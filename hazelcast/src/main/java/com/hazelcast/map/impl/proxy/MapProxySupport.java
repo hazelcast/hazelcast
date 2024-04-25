@@ -303,8 +303,8 @@ abstract class MapProxySupport<K, V>
     private <T extends EventListener> T initializeListener(ListenerConfig listenerConfig) {
         T listener = getListenerImplOrNull(listenerConfig);
 
-        if (listener instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        if (listener instanceof HazelcastInstanceAware aware) {
+            aware.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         }
 
         return listener;
@@ -715,8 +715,7 @@ abstract class MapProxySupport<K, V>
 
     protected void removeAllInternal(Predicate predicate) {
         try {
-            if (predicate instanceof PartitionPredicate) {
-                PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            if (predicate instanceof PartitionPredicate partitionPredicate) {
                 OperationFactory operation = operationProvider
                         .createPartitionWideEntryWithPredicateOperationFactory(name, ENTRY_REMOVING_PROCESSOR,
                                 partitionPredicate.getTarget());
@@ -1313,8 +1312,7 @@ abstract class MapProxySupport<K, V>
     public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> result) {
         try {
             Map<Integer, Object> results;
-            if (predicate instanceof PartitionPredicate) {
-                PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            if (predicate instanceof PartitionPredicate partitionPredicate) {
                 handleHazelcastInstanceAwareParams(partitionPredicate.getTarget());
 
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
@@ -1428,8 +1426,7 @@ abstract class MapProxySupport<K, V>
         QueryEngine queryEngine = getMapQueryEngine();
         final Predicate userPredicate;
 
-        if (predicate instanceof PartitionPredicate) {
-            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        if (predicate instanceof PartitionPredicate partitionPredicate) {
             PartitionIdSet partitionIds = partitionService.getPartitionIdSet(
                 partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
             );
@@ -1461,8 +1458,8 @@ abstract class MapProxySupport<K, V>
 
     protected void handleHazelcastInstanceAwareParams(Object... objects) {
         for (Object object : objects) {
-            if (object instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+            if (object instanceof HazelcastInstanceAware aware) {
+                aware.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
             }
         }
     }

@@ -35,8 +35,8 @@ public final class ListenerAdapters {
             return ((ListenerAdapter<T>) listener);
         }
 
-        if (listener instanceof MapListener) {
-            return createMapListenerAdaptor((MapListener) listener);
+        if (listener instanceof MapListener mapListener) {
+            return createMapListenerAdaptor(mapListener);
         }
 
         throw new IllegalArgumentException("Not a valid type to create a listener: " + listener.getClass().getSimpleName());

@@ -663,8 +663,8 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
 
         @Override
         public void onResponse(Member member, Object response) {
-            if (response instanceof Throwable) {
-                throwable = (Throwable) response;
+            if (response instanceof Throwable t) {
+                throwable = t;
             }
         }
 

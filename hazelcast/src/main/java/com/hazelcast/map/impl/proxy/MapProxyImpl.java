@@ -982,8 +982,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         Object response = future.get();
         Object result = toObject(response);
-        if (result instanceof Throwable) {
-            throw (Throwable) result;
+        if (result instanceof Throwable throwable) {
+            throw throwable;
         }
         return result;
     }

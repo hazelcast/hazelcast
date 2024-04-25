@@ -115,8 +115,8 @@ class MigrationThread extends Thread implements Runnable {
 
     void abortMigrationTask() {
         MigrationRunnable task = activeTask;
-        if (task instanceof MigrationPlanTask) {
-            ((MigrationPlanTask) task).abort();
+        if (task instanceof MigrationPlanTask planTask) {
+            planTask.abort();
         }
     }
 

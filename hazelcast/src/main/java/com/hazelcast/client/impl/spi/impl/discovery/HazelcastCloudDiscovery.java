@@ -104,8 +104,8 @@ public class HazelcastCloudDiscovery {
         }
         HttpsURLConnection con = (HttpsURLConnection) connection;
         for (Certificate cert : con.getServerCertificates()) {
-            if (cert instanceof X509Certificate) {
-                ((X509Certificate) cert).checkValidity();
+            if (cert instanceof X509Certificate x509Certificate) {
+                x509Certificate.checkValidity();
             } else {
                 throw new CertificateException("Invalid certificate from hazelcast.cloud endpoint");
             }

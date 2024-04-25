@@ -155,8 +155,8 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     protected boolean handleInternalException(Throwable t) {
         if (t instanceof OperationTimeoutException) {
             return handleOperationTimeoutException();
-        } else if (t instanceof IllegalArgumentException) {
-            return handleIllegalArgumentException((IllegalArgumentException) t);
+        } else if (t instanceof IllegalArgumentException exception) {
+            return handleIllegalArgumentException(exception);
         } else if (t instanceof HazelcastInstanceNotActiveException) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "

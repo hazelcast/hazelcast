@@ -50,8 +50,8 @@ public class ExecutorServiceSubmitToPartitionMessageTask
             Subject subject = endpoint.getSubject();
             Object taskObject = serializationService.toObject(parameters.callable);
             Callable callable;
-            if (taskObject instanceof Runnable) {
-                callable = securityContext.createSecureCallable(subject, (Runnable) taskObject);
+            if (taskObject instanceof Runnable runnable) {
+                callable = securityContext.createSecureCallable(subject, runnable);
             } else {
                 callable = securityContext.createSecureCallable(subject, (Callable<? extends Object>) taskObject);
             }

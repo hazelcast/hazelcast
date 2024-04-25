@@ -74,8 +74,8 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
          * internals. It's also used for passing the full cache name directly
          * by this cache manager itself.
          */
-        if (hazelcastInstance instanceof HazelcastInstanceProxy) {
-            instance = ((HazelcastInstanceProxy) hazelcastInstance).getOriginal();
+        if (hazelcastInstance instanceof HazelcastInstanceProxy proxy) {
+            instance = proxy.getOriginal();
         } else {
             instance = (HazelcastInstanceImpl) hazelcastInstance;
         }

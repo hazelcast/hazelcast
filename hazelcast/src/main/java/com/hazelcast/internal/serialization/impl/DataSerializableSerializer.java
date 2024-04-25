@@ -178,11 +178,11 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     }
 
     private IOException rethrowReadException(int id, int factoryId, String className, Exception e) throws IOException {
-        if (e instanceof IOException) {
-            throw (IOException) e;
+        if (e instanceof IOException exception) {
+            throw exception;
         }
-        if (e instanceof HazelcastSerializationException) {
-            throw (HazelcastSerializationException) e;
+        if (e instanceof HazelcastSerializationException exception) {
+            throw exception;
         }
         throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
                 + factoryId
@@ -249,12 +249,12 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
             out.writeInt(ds.getFactoryId());
-            out.writeInt(ds instanceof VersionedIdentifiedDataSerializable
-                    ? ((VersionedIdentifiedDataSerializable) ds).getClassId(version)
+            out.writeInt(ds instanceof VersionedIdentifiedDataSerializable vids
+                    ? vids.getClassId(version)
                     : ds.getClassId());
         } else {
-            if (obj instanceof TypedDataSerializable) {
-                out.writeString(((TypedDataSerializable) obj).getClassType().getName());
+            if (obj instanceof TypedDataSerializable serializable) {
+                out.writeString(serializable.getClassType().getName());
             } else {
                 out.writeString(obj.getClass().getName());
             }

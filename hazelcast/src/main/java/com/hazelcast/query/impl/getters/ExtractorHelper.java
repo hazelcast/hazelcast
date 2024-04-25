@@ -70,8 +70,8 @@ public final class ExtractorHelper {
             try {
                 Class<?> clazz = classLoader.loadClass(config.getExtractorClassName());
                 Object extractor = clazz.getDeclaredConstructor().newInstance();
-                if (extractor instanceof ValueExtractor) {
-                    return (ValueExtractor) extractor;
+                if (extractor instanceof ValueExtractor valueExtractor) {
+                    return valueExtractor;
                 } else {
                     throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
                 }
@@ -86,8 +86,8 @@ public final class ExtractorHelper {
             try {
                 Class<?> clazz = Class.forName(config.getExtractorClassName());
                 Object extractor = clazz.getDeclaredConstructor().newInstance();
-                if (extractor instanceof ValueExtractor) {
-                    return (ValueExtractor) extractor;
+                if (extractor instanceof ValueExtractor valueExtractor) {
+                    return valueExtractor;
                 } else {
                     throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
                 }
@@ -133,8 +133,7 @@ public final class ExtractorHelper {
         // it may consume significant amount of time, so we are doing the
         // reduction manually for each primitive type.
 
-        if (primitiveArray instanceof long[]) {
-            long[] array = (long[]) primitiveArray;
+        if (primitiveArray instanceof long[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -142,8 +141,7 @@ public final class ExtractorHelper {
                     add.accept(value);
                 }
             }
-        } else if (primitiveArray instanceof int[]) {
-            int[] array = (int[]) primitiveArray;
+        } else if (primitiveArray instanceof int[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -151,8 +149,7 @@ public final class ExtractorHelper {
                     add.accept(value);
                 }
             }
-        } else if (primitiveArray instanceof short[]) {
-            short[] array = (short[]) primitiveArray;
+        } else if (primitiveArray instanceof short[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -160,8 +157,7 @@ public final class ExtractorHelper {
                     add.accept(value);
                 }
             }
-        } else if (primitiveArray instanceof byte[]) {
-            byte[] array = (byte[]) primitiveArray;
+        } else if (primitiveArray instanceof byte[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -169,8 +165,7 @@ public final class ExtractorHelper {
                     add.accept(value);
                 }
             }
-        } else if (primitiveArray instanceof char[]) {
-            char[] array = (char[]) primitiveArray;
+        } else if (primitiveArray instanceof char[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -178,8 +173,7 @@ public final class ExtractorHelper {
                     add.accept(value);
                 }
             }
-        } else if (primitiveArray instanceof boolean[]) {
-            boolean[] array = (boolean[]) primitiveArray;
+        } else if (primitiveArray instanceof boolean[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -187,8 +181,7 @@ public final class ExtractorHelper {
                     add.accept(value);
                 }
             }
-        } else if (primitiveArray instanceof double[]) {
-            double[] array = (double[]) primitiveArray;
+        } else if (primitiveArray instanceof double[] array) {
             if (array.length == 0) {
                 return false;
             } else {
@@ -197,8 +190,7 @@ public final class ExtractorHelper {
                 }
             }
 
-        } else if (primitiveArray instanceof float[]) {
-            float[] array = (float[]) primitiveArray;
+        } else if (primitiveArray instanceof float[] array) {
             if (array.length == 0) {
                 return false;
             } else {

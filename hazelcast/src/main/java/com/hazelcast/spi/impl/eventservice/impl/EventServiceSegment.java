@@ -92,8 +92,8 @@ public class EventServiceSegment<S> {
         Object listener = registration.getListener();
         if (!(listener instanceof NotifiableEventListener)) {
             EventFilter filter = registration.getFilter();
-            if (filter instanceof ListenerWrapperEventFilter) {
-                listener = ((ListenerWrapperEventFilter) filter).getListener();
+            if (filter instanceof ListenerWrapperEventFilter eventFilter) {
+                listener = eventFilter.getListener();
             }
         }
         pingNotifiableEventListenerInternal(listener, topic, registration, register);

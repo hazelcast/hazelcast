@@ -650,8 +650,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         public void onInvalidate(Invalidation invalidation) {
             assert invalidation != null;
 
-            if (invalidation instanceof BatchNearCacheInvalidation) {
-                List<Invalidation> batch = ((BatchNearCacheInvalidation) invalidation).getInvalidations();
+            if (invalidation instanceof BatchNearCacheInvalidation cacheInvalidation) {
+                List<Invalidation> batch = cacheInvalidation.getInvalidations();
                 for (Invalidation single : batch) {
                     handleInternal(single);
                 }

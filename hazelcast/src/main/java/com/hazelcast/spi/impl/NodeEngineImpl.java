@@ -162,8 +162,8 @@ public class NodeEngineImpl implements NodeEngine {
             UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
             this.configurationService = node.getNodeExtension().createService(ClusterWideConfigurationService.class, this);
             ClassLoader configClassLoader = node.getConfigClassLoader();
-            if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
-                ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
+            if (configClassLoader instanceof UserCodeDeploymentClassLoader loader) {
+                loader.setUserCodeDeploymentService(userCodeDeploymentService);
             }
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);

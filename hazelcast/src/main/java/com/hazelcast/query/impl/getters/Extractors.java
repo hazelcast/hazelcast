@@ -112,8 +112,8 @@ public final class Extractors {
                 return targetData;
             }
         }
-        if (target instanceof Data) {
-            targetData = (Data) target;
+        if (target instanceof Data data) {
+            targetData = data;
             if (targetData.isPortable() || targetData.isJson() || targetData.isCompact()) {
                 return targetData;
             } else {
@@ -142,8 +142,8 @@ public final class Extractors {
         if (valueExtractor != null) {
             Object arguments = argumentsParser.parse(extractArgumentsFromAttributeName(attributeName));
             return new ExtractorGetter(ss, valueExtractor, arguments);
-        } else if (targetObject instanceof Data) {
-            return instantiateGetterForData((Data) targetObject);
+        } else if (targetObject instanceof Data data) {
+            return instantiateGetterForData(data);
         } else if (targetObject instanceof HazelcastJsonValue) {
             return JsonGetter.INSTANCE;
         } else if (targetObject instanceof PortableGenericRecord) {

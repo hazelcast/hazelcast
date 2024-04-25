@@ -165,8 +165,8 @@ public final class EventPublisherHelper {
     }
 
     private static boolean isIncludeValue(EventFilter filter) {
-        if (filter instanceof EntryEventFilter) {
-            return ((EntryEventFilter) filter).isIncludeValue();
+        if (filter instanceof EntryEventFilter eventFilter) {
+            return eventFilter.isIncludeValue();
         }
         return true;
     }

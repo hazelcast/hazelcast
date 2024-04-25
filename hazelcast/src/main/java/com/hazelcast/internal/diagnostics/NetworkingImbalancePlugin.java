@@ -60,8 +60,8 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     public NetworkingImbalancePlugin(HazelcastProperties properties, Networking networking, ILogger logger) {
         super(logger);
 
-        if (networking instanceof NioNetworking) {
-            this.networking = (NioNetworking) networking;
+        if (networking instanceof NioNetworking nioNetworking) {
+            this.networking = nioNetworking;
         } else {
             this.networking = null;
         }

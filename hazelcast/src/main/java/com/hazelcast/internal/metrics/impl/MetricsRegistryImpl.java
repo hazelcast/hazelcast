@@ -348,8 +348,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public void provideMetrics(Object... providers) {
         for (Object provider : providers) {
-            if (provider instanceof StaticMetricsProvider) {
-                ((StaticMetricsProvider) provider).provideStaticMetrics(this);
+            if (provider instanceof StaticMetricsProvider metricsProvider) {
+                metricsProvider.provideStaticMetrics(this);
             }
         }
     }

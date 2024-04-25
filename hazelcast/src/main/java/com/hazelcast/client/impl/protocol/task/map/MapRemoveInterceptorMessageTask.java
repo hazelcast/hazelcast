@@ -50,8 +50,8 @@ public class MapRemoveInterceptorMessageTask
     protected Object reduce(Map<Member, Object> map) throws Throwable {
         boolean interceptorRemoved = false;
         for (Object result : map.values()) {
-            if (result instanceof Throwable) {
-                throw (Throwable) result;
+            if (result instanceof Throwable throwable) {
+                throw throwable;
             }
 
             if ((Boolean) result) {

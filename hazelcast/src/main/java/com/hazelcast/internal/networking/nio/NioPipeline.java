@@ -304,8 +304,8 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         // we can't call wakeup directly unfortunately because wakeup isn't defined on this
         // abstract class and can't be defined due to incompatible return types of the wakeup
         // on the inbound and outbound pipeline.
-        if (this instanceof NioOutboundPipeline) {
-            ((NioOutboundPipeline) this).wakeup();
+        if (this instanceof NioOutboundPipeline pipeline) {
+            pipeline.wakeup();
         } else {
             ((NioInboundPipeline) this).wakeup();
         }

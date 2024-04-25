@@ -71,16 +71,15 @@ public class MapAddListenerMessageTask
     }
 
     private ClientMessage getEventData(IMapEvent iMapEvent) {
-        if (iMapEvent instanceof SingleIMapEvent) {
-            QueryCacheEventData eventData = ((SingleIMapEvent) iMapEvent).getEventData();
+        if (iMapEvent instanceof SingleIMapEvent event) {
+            QueryCacheEventData eventData = event.getEventData();
             ClientMessage clientMessage = ContinuousQueryAddListenerCodec.encodeQueryCacheSingleEvent(eventData);
             int partitionId = eventData.getPartitionId();
             clientMessage.setPartitionId(partitionId);
             return clientMessage;
         }
 
-        if (iMapEvent instanceof BatchIMapEvent) {
-            BatchIMapEvent batchIMapEvent = (BatchIMapEvent) iMapEvent;
+        if (iMapEvent instanceof BatchIMapEvent batchIMapEvent) {
             BatchEventData batchEventData = batchIMapEvent.getBatchEventData();
             int partitionId = batchEventData.getPartitionId();
             ClientMessage clientMessage =

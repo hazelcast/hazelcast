@@ -49,8 +49,8 @@ public final class DistributedObjectUtil {
          * For cache case, the fully qualified name is full cache name contains Hazelcast prefix (`/hz`),
          * cache name prefix regarding to URI and/or classloader if specified and pure cache name.
          */
-        if (distributedObject instanceof PrefixedDistributedObject) {
-            return ((PrefixedDistributedObject) distributedObject).getPrefixedName();
+        if (distributedObject instanceof PrefixedDistributedObject object) {
+            return object.getPrefixedName();
         } else {
             return distributedObject.getName();
         }

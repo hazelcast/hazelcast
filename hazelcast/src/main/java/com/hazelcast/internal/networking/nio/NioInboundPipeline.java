@@ -238,8 +238,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     }
 
     private void fixDependencies(ChannelHandler addedHandler) {
-        if (addedHandler instanceof InboundHandlerWithCounters) {
-            InboundHandlerWithCounters c = (InboundHandlerWithCounters) addedHandler;
+        if (addedHandler instanceof InboundHandlerWithCounters c) {
             c.setNormalPacketsRead(normalFramesRead);
             c.setPriorityPacketsRead(priorityFramesRead);
         }

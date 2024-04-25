@@ -304,22 +304,22 @@ public class HazelcastProxyFactory {
     }
 
     private static Object toArray(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
-        if (arg instanceof byte[]) {
-            return copyOf((byte[]) arg, ((byte[]) arg).length);
-        } else if (arg instanceof int[]) {
-            return copyOf((int[]) arg, ((int[]) arg).length);
-        } else if (arg instanceof long[]) {
-            return copyOf((long[]) arg, ((long[]) arg).length);
-        } else if (arg instanceof boolean[]) {
-            return copyOf((boolean[]) arg, ((boolean[]) arg).length);
-        } else if (arg instanceof short[]) {
-            return copyOf((short[]) arg, ((short[]) arg).length);
-        } else if (arg instanceof float[]) {
-            return copyOf((float[]) arg, ((float[]) arg).length);
-        } else if (arg instanceof double[]) {
-            return copyOf((double[]) arg, ((double[]) arg).length);
-        } else if (arg instanceof char[]) {
-            return copyOf((char[]) arg, ((char[]) arg).length);
+        if (arg instanceof byte[] bytes) {
+            return copyOf(bytes, bytes.length);
+        } else if (arg instanceof int[] ints) {
+            return copyOf(ints, ints.length);
+        } else if (arg instanceof long[] longs) {
+            return copyOf(longs, longs.length);
+        } else if (arg instanceof boolean[] booleans) {
+            return copyOf(booleans, booleans.length);
+        } else if (arg instanceof short[] shorts) {
+            return copyOf(shorts, shorts.length);
+        } else if (arg instanceof float[] floats) {
+            return copyOf(floats, floats.length);
+        } else if (arg instanceof double[] doubles) {
+            return copyOf(doubles, doubles.length);
+        } else if (arg instanceof char[] chars) {
+            return copyOf(chars, chars.length);
         }
         Object[] srcArray = ((Object[]) arg);
         Class<?> targetClass = targetClassLoader.loadClass(srcArray.getClass().getComponentType().getName());

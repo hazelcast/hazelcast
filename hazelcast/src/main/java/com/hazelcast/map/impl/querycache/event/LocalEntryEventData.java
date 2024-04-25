@@ -56,20 +56,20 @@ public class LocalEntryEventData<K, V> implements EventData {
         this.serializationService = serializationService;
         this.partitionId = partitionId;
 
-        if (key instanceof Data) {
-            this.keyData = (Data) key;
+        if (key instanceof Data data) {
+            this.keyData = data;
         } else {
             this.key = (K) key;
         }
 
-        if (value instanceof Data) {
-            this.valueData = (Data) value;
+        if (value instanceof Data data) {
+            this.valueData = data;
         } else {
             this.value = (V) value;
         }
 
-        if (oldValue instanceof Data) {
-            this.oldValueData = (Data) oldValue;
+        if (oldValue instanceof Data data) {
+            this.oldValueData = data;
         } else {
             this.oldValue = (V) oldValue;
         }

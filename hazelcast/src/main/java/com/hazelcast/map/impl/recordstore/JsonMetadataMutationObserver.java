@@ -143,8 +143,8 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         try {
             Object keyMetadata = metadataInitializer.createFromData(key);
             Object valueMetadata;
-            if (value instanceof Data) {
-                valueMetadata = metadataInitializer.createFromData((Data) value);
+            if (value instanceof Data data) {
+                valueMetadata = metadataInitializer.createFromData(data);
             } else {
                 valueMetadata = metadataInitializer.createFromObject(value);
             }

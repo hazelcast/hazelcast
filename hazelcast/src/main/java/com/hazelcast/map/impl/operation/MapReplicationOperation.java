@@ -79,8 +79,8 @@ public class MapReplicationOperation extends Operation
 
             disposePartition();
 
-            if (e instanceof NativeOutOfMemoryError) {
-                oome = (NativeOutOfMemoryError) e;
+            if (e instanceof NativeOutOfMemoryError error) {
+                oome = error;
             }
         }
     }

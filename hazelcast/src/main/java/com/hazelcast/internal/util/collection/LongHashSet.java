@@ -102,7 +102,7 @@ public final class LongHashSet implements Set<Long> {
      * {@inheritDoc}
      */
     public boolean remove(final Object value) {
-        return value instanceof Long && remove(((Long) value).longValue());
+        return value instanceof Long l && remove(l.longValue());
     }
 
     /**
@@ -155,7 +155,7 @@ public final class LongHashSet implements Set<Long> {
      * {@inheritDoc}
      */
     public boolean contains(final Object value) {
-        return value instanceof Long && contains(((Long) value).longValue());
+        return value instanceof Long l && contains(l.longValue());
     }
 
     /**
@@ -396,8 +396,7 @@ public final class LongHashSet implements Set<Long> {
             return true;
         }
 
-        if (other instanceof LongHashSet) {
-            final LongHashSet otherSet = (LongHashSet) other;
+        if (other instanceof LongHashSet otherSet) {
             return otherSet.missingValue == missingValue && otherSet.size() == size() && containsAll(otherSet);
         }
 

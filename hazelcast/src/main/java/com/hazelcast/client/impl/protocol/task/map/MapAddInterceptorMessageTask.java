@@ -61,8 +61,8 @@ public class MapAddInterceptorMessageTask
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
         for (Object result : map.values()) {
-            if (result instanceof Throwable) {
-                throw (Throwable) result;
+            if (result instanceof Throwable throwable) {
+                throw throwable;
             }
         }
         return id;

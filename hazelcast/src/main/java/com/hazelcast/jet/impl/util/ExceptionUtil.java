@@ -131,8 +131,8 @@ public final class ExceptionUtil {
     private static RuntimeException peeledAndUnchecked(@Nonnull Throwable t) {
         t = peel(t);
 
-        if (t instanceof RuntimeException) {
-            return (RuntimeException) t;
+        if (t instanceof RuntimeException exception) {
+            return exception;
         }
 
         return new JetException(t);

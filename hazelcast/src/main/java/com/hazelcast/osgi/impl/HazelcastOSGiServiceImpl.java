@@ -102,8 +102,8 @@ class HazelcastOSGiServiceImpl
 
     private HazelcastOSGiInstance registerInstance(HazelcastInstance instance) {
         HazelcastOSGiInstance hazelcastOSGiInstance;
-        if (instance instanceof HazelcastOSGiInstance) {
-            hazelcastOSGiInstance = (HazelcastOSGiInstance) instance;
+        if (instance instanceof HazelcastOSGiInstance osgiInstance) {
+            hazelcastOSGiInstance = osgiInstance;
         } else {
             hazelcastOSGiInstance = new HazelcastOSGiInstanceImpl(instance, this);
         }

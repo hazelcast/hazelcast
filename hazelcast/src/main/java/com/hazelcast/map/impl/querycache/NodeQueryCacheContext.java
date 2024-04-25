@@ -148,8 +148,8 @@ public class NodeQueryCacheContext implements QueryCacheContext {
     public int getPartitionId(Object object) {
         assert object != null;
 
-        if (object instanceof Data) {
-            nodeEngine.getPartitionService().getPartitionId((Data) object);
+        if (object instanceof Data data) {
+            nodeEngine.getPartitionService().getPartitionId(data);
         }
         return nodeEngine.getPartitionService().getPartitionId(object);
     }

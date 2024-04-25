@@ -224,8 +224,8 @@ public class JobBuilderTest {
         }
 
         public JetMemberSelector getMemberSelector() {
-            return jobDefinition instanceof DAG
-                    ? ((DAG) jobDefinition).memberSelector()
+            return jobDefinition instanceof DAG dag
+                    ? dag.memberSelector()
                     : ((PipelineImpl) jobDefinition).memberSelector();
         }
 

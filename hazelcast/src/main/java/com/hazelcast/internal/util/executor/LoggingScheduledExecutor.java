@@ -20,7 +20,6 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledFuture;
@@ -77,9 +76,9 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
         super.afterExecute(runnable, throwable);
 
         Level level = FINE;
-        if (throwable == null && runnable instanceof ScheduledFuture && ((ScheduledFuture) runnable).isDone()) {
+        if (throwable == null && runnable instanceof ScheduledFuture future && future.isDone()) {
             try {
-                ((Future) runnable).get();
+                future.get();
             } catch (CancellationException ce) {
                 throwable = ce;
             } catch (ExecutionException ee) {

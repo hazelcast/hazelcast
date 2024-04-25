@@ -77,8 +77,8 @@ public abstract class LoggerFactorySupport implements LoggerFactory, InternalLog
     }
 
     private InternalLogger obtainInternalLogger(ILogger logger) {
-        if (logger instanceof InternalLogger) {
-            return (InternalLogger) logger;
+        if (logger instanceof InternalLogger internalLogger) {
+            return internalLogger;
         } else {
             throw new HazelcastException("Logger doesn't support dynamic log level changes: " + logger.getClass());
         }

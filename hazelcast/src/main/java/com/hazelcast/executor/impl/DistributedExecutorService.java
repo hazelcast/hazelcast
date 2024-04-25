@@ -122,10 +122,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             executorStats.startPending(name);
         }
         Processor processor;
-        if (task instanceof Runnable) {
-            processor = new Processor(name, uuid, (Runnable) task, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
-        } else if (task instanceof Callable) {
-            processor = new Processor(name, uuid, (Callable<?>) task, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
+        if (task instanceof Runnable runnable) {
+            processor = new Processor(name, uuid, runnable, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
+        } else if (task instanceof Callable callable) {
+            processor = new Processor(name, uuid, callable, op, cfg.isStatisticsEnabled(), cfg.getUserCodeNamespace());
         } else {
             throw new IllegalArgumentException(task.getClass().getName());
         }

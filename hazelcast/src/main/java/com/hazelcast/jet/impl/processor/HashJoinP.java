@@ -157,8 +157,8 @@ public class HashJoinP<E0> extends AbstractProcessor {
             // look up matching values for each joined table
             for (int i = 0; i < lookedUpValues.length; i++) {
                 lookedUpValues[i] = lookUpJoined(i, item);
-                sizes[i] = lookedUpValues[i] instanceof HashJoinArrayList
-                        ? ((HashJoinArrayList) lookedUpValues[i]).size() : 1;
+                sizes[i] = lookedUpValues[i] instanceof HashJoinArrayList arrayList
+                        ? arrayList.size() : 1;
             }
             Arrays.fill(indices, 0);
             currentItem = item;

@@ -85,8 +85,8 @@ public final class ItemsByTag {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof ItemsByTag
-                && Objects.equals(this.map, ((ItemsByTag) o).map);
+        return o instanceof ItemsByTag tag
+                && Objects.equals(this.map, tag.map);
     }
 
     @Override
