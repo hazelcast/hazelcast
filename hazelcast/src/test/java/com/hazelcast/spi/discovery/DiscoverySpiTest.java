@@ -36,6 +36,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.membergroup.DefaultMemberGroup;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.SPIAwareMemberGroupFactory;
@@ -70,6 +71,7 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -222,16 +224,21 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSchema() throws Exception {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-5.5.xsd");
-        assertNotNull(schemaResource);
+        String resource = "hazelcast-config-" + Versions.CURRENT_CLUSTER_VERSION + ".xsd";
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader()
+                .getResource(resource);
+        assertNotNull(MessageFormat.format("Failed to find resource {0}", resource), schemaResource);
 
-        InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
-        Source source = new StreamSource(xmlResource);
+        try (InputStream xmlResource = DiscoverySpiTest.class.getClassLoader()
+                .getResourceAsStream(xmlFileName)) {
+            assertNotNull(MessageFormat.format("Failed to find resource {0}", xmlFileName), xmlResource);
+            Source source = new StreamSource(xmlResource);
 
-        Schema schema = factory.newSchema(schemaResource);
-        Validator validator = schema.newValidator();
-        validator.validate(source);
+            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            Schema schema = factory.newSchema(schemaResource);
+            Validator validator = schema.newValidator();
+            validator.validate(source);
+        }
     }
 
     @Test
