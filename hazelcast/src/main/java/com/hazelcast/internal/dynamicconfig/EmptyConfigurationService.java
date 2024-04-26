@@ -275,6 +275,11 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
+    public CompletableFuture<Void> updateLicenseAsync(String licenseKey) {
+        throw new IllegalStateException("Cannot update license while Hazelcast is starting.");
+    }
+
+    @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
         throw new IllegalStateException("Cannot update the member list of TCP-IP join config while Hazelcast is starting.");
     }

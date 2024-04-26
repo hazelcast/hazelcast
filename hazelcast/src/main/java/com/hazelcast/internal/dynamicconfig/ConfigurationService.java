@@ -71,6 +71,13 @@ public interface ConfigurationService {
     void updateLicense(String licenseKey);
 
     /**
+     * Update the license for the cluster.
+     *
+     * @param licenseKey new license key to set
+     */
+    CompletableFuture<Void> updateLicenseAsync(String licenseKey);
+
+    /**
      * Update the member list of TCP-IP join config
      * @param memberList a new member list to set
      */

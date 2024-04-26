@@ -232,6 +232,11 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
+    public CompletableFuture<Void> updateLicenseAsync(String licenseKey) {
+        throw new UnsupportedOperationException("Updating the license requires Hazelcast Enterprise");
+    }
+
+    @Override
     public ConfigUpdateResult update(@Nullable Config newConfig) {
         throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
