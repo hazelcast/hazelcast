@@ -129,7 +129,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         File file = File.createTempFile("foo", ".xml");
         file.deleteOnExit();
-        PrintWriter writer = new PrintWriter(file, "UTF-8");
+        PrintWriter writer = new PrintWriter(file, StandardCharsets.UTF_8);
         writer.println(xml);
         writer.close();
 
@@ -142,14 +142,14 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
     @Override
     @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
+    public void loadingThroughSystemProperty_nonExistingClasspathResource() {
         System.setProperty("hazelcast.client.config", "classpath:idontexist.xml");
         new XmlClientConfigBuilder();
     }
 
     @Override
     @Test
-    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
+    public void loadingThroughSystemProperty_existingClasspathResource() {
         System.setProperty("hazelcast.client.config", "classpath:test-hazelcast-client.xml");
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
@@ -894,7 +894,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         try {
             validator.validate(source);
         } catch (SAXException ex) {
-            fail(xmlFileName + " is not valid because: " + ex.toString());
+            fail(xmlFileName + " is not valid because: " + ex);
         }
     }
 }

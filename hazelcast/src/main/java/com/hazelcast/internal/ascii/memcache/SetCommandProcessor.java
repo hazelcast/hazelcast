@@ -16,13 +16,12 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
@@ -61,12 +60,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
      * item is in a delete queue (see the "delete" command below).
      */
     public void handle(SetCommand setCommand) {
-        String key = null;
-        try {
-            key = URLDecoder.decode(setCommand.getKey(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new HazelcastException(e);
-        }
+        String key = URLDecoder.decode(setCommand.getKey(), StandardCharsets.UTF_8);
         String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {

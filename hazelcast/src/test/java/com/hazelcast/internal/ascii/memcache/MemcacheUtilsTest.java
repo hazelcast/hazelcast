@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,10 +47,5 @@ public class MemcacheUtilsTest extends HazelcastTestSupport {
         MapNameAndKeyPair mapNameKeyPair = MemcacheUtils.parseMemcacheKey("map:key");
         assertEquals("hz_memcache_map", mapNameKeyPair.getMapName());
         assertEquals("key", mapNameKeyPair.getKey());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testdecodeKey_whenInvalidEncoding_thenThrowException() {
-        MemcacheUtils.decodeKey("key", "");
     }
 }
