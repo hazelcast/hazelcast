@@ -378,7 +378,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         }
     }
 
-    protected void validateIsolatedJob(JetMemberSelector memberSelector) {
+    protected void validateIsolatedJob(@Nonnull JetMemberSelector memberSelector) {
         throw new UnsupportedOperationException(
                 "The Isolated Jobs feature is only available in Hazelcast Enterprise Edition.");
     }
