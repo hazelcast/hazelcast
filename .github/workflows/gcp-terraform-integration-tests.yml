@@ -88,7 +88,7 @@ jobs:
           echo $GKE_SA_KEY > ~/gcp_key_file.json
 
       - name: Set-up Terraform
-        uses: hashicorp/setup-terraform@v3.0.0
+        uses: hashicorp/setup-terraform@v3.1.0
 
       - name: Terraform Init
         working-directory: .github/terraform/gcp
