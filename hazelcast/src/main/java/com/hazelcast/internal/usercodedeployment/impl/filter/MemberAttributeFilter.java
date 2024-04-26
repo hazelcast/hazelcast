@@ -29,6 +29,6 @@ public class MemberAttributeFilter implements Filter<Member> {
 
     @Override
     public boolean accept(Member member) {
-        return member.getAttributes().keySet().contains(attribute);
+        return member.getAttributes().containsKey(attribute);
     }
 }
