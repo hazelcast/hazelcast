@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -63,13 +62,10 @@ public class BackupEntryProcessorInstanceAwareTest extends HazelcastTestSupport 
         m1.executeOnEntries(new PartitionAwareTestEntryProcessor());
 
         for (final String key : m1.keySet()) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    final Integer k = m1.get(key);
-                    final Integer v = m2.get(key);
-                    assertEquals(k, v);
-                }
+            assertTrueEventually(() -> {
+                final Integer k = m1.get(key);
+                final Integer v = m2.get(key);
+                assertEquals(k, v);
             });
         }
         i1.shutdown();

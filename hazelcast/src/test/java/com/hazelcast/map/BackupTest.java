@@ -22,7 +22,6 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -119,16 +118,16 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBackupMigrationAndRecovery_singleBackup() throws Exception {
+    public void testBackupMigrationAndRecovery_singleBackup() {
         testBackupMigrationAndRecovery(4, 1, 5000);
     }
 
     @Test
-    public void testBackupMigrationAndRecovery_twoBackups() throws Exception {
+    public void testBackupMigrationAndRecovery_twoBackups() {
         testBackupMigrationAndRecovery(6, 2, 5000);
     }
 
-    private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
+    private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
         final String name = mapName;
 
@@ -176,16 +175,13 @@ public class BackupTest extends HazelcastTestSupport {
 
         final int expectedBackupSize = Math.min(nodeCount - 1, backupCount) * expectedSize;
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                long ownedSize = getTotalOwnedEntryCount(maps);
-                assertEquals("Missing owned entries, node-count: " + nodeCount, expectedSize, ownedSize);
+        assertTrueEventually(() -> {
+            long ownedSize = getTotalOwnedEntryCount(maps);
+            assertEquals("Missing owned entries, node-count: " + nodeCount, expectedSize, ownedSize);
 
-                long backupSize = getTotalBackupEntryCount(maps);
-                assertEquals("Missing owned entries, node-count: " + nodeCount + ", backup-count: " + backupCount,
-                        expectedBackupSize, backupSize);
-            }
+            long backupSize = getTotalBackupEntryCount(maps);
+            assertEquals("Missing owned entries, node-count: " + nodeCount + ", backup-count: " + backupCount,
+                    expectedBackupSize, backupSize);
         });
     }
 
@@ -286,28 +282,24 @@ public class BackupTest extends HazelcastTestSupport {
         final int perThreadSize = 1000;
         final int size = threads * perThreadSize;
 
-        new Thread() {
-            public void run() {
-                IMap<Object, Object> m = hz1.getMap(mapName);
-                while (m.size() < size / 2) {
-                    sleepMillis(5);
-                }
-                TestUtil.terminateInstance(hz1);
+        new Thread(() -> {
+            IMap<Object, Object> m = hz1.getMap(mapName);
+            while (m.size() < size / 2) {
+                sleepMillis(5);
             }
-        }.start();
+            TestUtil.terminateInstance(hz1);
+        }).start();
 
         final CountDownLatch latch = new CountDownLatch(threads);
         for (int i = 0; i < threads; i++) {
             final int index = i;
-            new Thread() {
-                public void run() {
-                    for (int k = (index * perThreadSize); k < (index + 1) * perThreadSize; k++) {
-                        map.put(k, k);
-                        sleepMillis(1);
-                    }
-                    latch.countDown();
+            new Thread(() -> {
+                for (int k = (index * perThreadSize); k < (index + 1) * perThreadSize; k++) {
+                    map.put(k, k);
+                    sleepMillis(1);
                 }
-            }.start();
+                latch.countDown();
+            }).start();
         }
 
         assertTrue(latch.await(5, TimeUnit.MINUTES));
@@ -335,28 +327,24 @@ public class BackupTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        new Thread() {
-            public void run() {
-                IMap<Object, Object> m = hz1.getMap(mapName);
-                while (m.size() > size / 2) {
-                    sleepMillis(5);
-                }
-                TestUtil.terminateInstance(hz1);
+        new Thread(() -> {
+            IMap<Object, Object> m = hz1.getMap(mapName);
+            while (m.size() > size / 2) {
+                sleepMillis(5);
             }
-        }.start();
+            TestUtil.terminateInstance(hz1);
+        }).start();
 
         final CountDownLatch latch = new CountDownLatch(threads);
         for (int i = 0; i < threads; i++) {
             final int index = i;
-            new Thread() {
-                public void run() {
-                    for (int k = (index * perThreadSize); k < (index + 1) * perThreadSize; k++) {
-                        map.remove(k);
-                        sleepMillis(1);
-                    }
-                    latch.countDown();
+            new Thread(() -> {
+                for (int k = (index * perThreadSize); k < (index + 1) * perThreadSize; k++) {
+                    map.remove(k);
+                    sleepMillis(1);
                 }
-            }.start();
+                latch.countDown();
+            }).start();
         }
 
         assertTrue(latch.await(5, TimeUnit.MINUTES));

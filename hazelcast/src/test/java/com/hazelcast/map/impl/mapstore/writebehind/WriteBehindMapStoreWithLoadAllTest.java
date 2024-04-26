@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBehind_loadAll() throws Exception {
+    public void testWriteBehind_loadAll() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -65,12 +64,7 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
     }
 
     private void assertFinalValueEquals(final int expected, final int actual) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, actual);
-            }
-        }, 5);
+        assertTrueEventually(() -> assertEquals(expected, actual), 5);
     }
 
     private void assertFinalValueEqualsForEachEntry(IMap map, int numberOfItems) {

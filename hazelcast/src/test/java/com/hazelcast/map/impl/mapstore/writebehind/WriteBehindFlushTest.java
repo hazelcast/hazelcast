@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class WriteBehindFlushTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBehindQueues_flushed_onNodeShutdown() throws Exception {
+    public void testWriteBehindQueues_flushed_onNodeShutdown() {
         int nodeCount = 3;
         String mapName = randomName();
 
@@ -68,18 +67,15 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
 
         factory.shutdownAll();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (int i = 0; i < 1000; i++) {
-                    assertEquals(i, mapStore.store.get(i));
-                }
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 1000; i++) {
+                assertEquals(i, mapStore.store.get(i));
             }
         });
     }
 
     @Test
-    public void testWriteBehindQueues_emptied_onBackupNodes() throws Exception {
+    public void testWriteBehindQueues_emptied_onBackupNodes() {
         int nodeCount = 3;
         String mapName = randomName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -107,7 +103,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFlush_shouldNotCause_concurrentStoreOperation() throws Exception {
+    public void testFlush_shouldNotCause_concurrentStoreOperation() {
         int blockStoreOperationSeconds = 5;
         TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
 
@@ -130,7 +126,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehindQueues_flushed_uponEviction() throws Exception {
+    public void testWriteBehindQueues_flushed_uponEviction() {
         int nodeCount = 3;
         String mapName = randomName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -154,12 +150,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
             map.evict(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1000, mapStore.countStore.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1000, mapStore.countStore.get()));
         assertWriteBehindQueuesEmpty(mapName, asList(node1, node2, node3));
     }
 
