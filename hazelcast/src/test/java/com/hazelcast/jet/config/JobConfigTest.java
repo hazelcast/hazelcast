@@ -271,6 +271,17 @@ public class JobConfigTest extends JetTestSupport {
         }
     }
 
+    /**
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-4712">HZ-4712 - Not being able to add more than one ZIP file with
+     *      JARs to Jet instance's classpath [GH#26320]</a>
+     */
+    @Test
+    public void testMultipleClassesFromZIP() {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(getClass().getResource("/zip-resources/person-jar.zip"));
+        jobConfig.addJarsInZip(getClass().getResource("/zip-resources/person-car-jar.zip"));
+    }
+
     private static class ObjectSerializer implements StreamSerializer<Object> {
 
         @Override
