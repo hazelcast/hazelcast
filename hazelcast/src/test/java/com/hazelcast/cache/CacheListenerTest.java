@@ -258,12 +258,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     @Test
     public void testSyncListener_shouldNotHang_whenHazelcastInstanceShutdown() {
         CachingProvider provider = getCachingProvider();
-        testSyncListener_shouldNotHang_AfterAction(randomMapName(), provider, new Runnable() {
-            @Override
-            public void run() {
-                hazelcastInstance.shutdown();
-            }
-        });
+        testSyncListener_shouldNotHang_AfterAction(randomMapName(), provider, () -> hazelcastInstance.shutdown());
     }
 
     @Test
@@ -271,12 +266,9 @@ public class CacheListenerTest extends HazelcastTestSupport {
         final CachingProvider provider = getCachingProvider();
         final String cacheName = randomMapName();
 
-        testSyncListener_shouldNotHang_AfterAction(cacheName, provider, new Runnable() {
-            @Override
-            public void run() {
-                Cache cache = provider.getCacheManager().getCache(cacheName);
-                cache.close();
-            }
+        testSyncListener_shouldNotHang_AfterAction(cacheName, provider, () -> {
+            Cache cache = provider.getCacheManager().getCache(cacheName);
+            cache.close();
         });
     }
 
@@ -285,12 +277,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
         final CachingProvider provider = getCachingProvider();
         final String cacheName = randomMapName();
 
-        testSyncListener_shouldNotHang_AfterAction(cacheName, provider, new Runnable() {
-            @Override
-            public void run() {
-                provider.getCacheManager().destroyCache(cacheName);
-            }
-        });
+        testSyncListener_shouldNotHang_AfterAction(cacheName, provider, () -> provider.getCacheManager().destroyCache(cacheName));
     }
 
     private void testSyncListener_shouldNotHang_AfterAction(String cacheName, CachingProvider provider, Runnable action) {

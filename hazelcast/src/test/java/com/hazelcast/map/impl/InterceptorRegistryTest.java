@@ -77,15 +77,12 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
         thread.start();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Object task = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    registry.register(interceptor.id, interceptor);
-                } catch (AssertionError e) {
-                    e.printStackTrace();
-                    latch.countDown();
-                }
+        Object task = (Runnable) () -> {
+            try {
+                registry.register(interceptor.id, interceptor);
+            } catch (AssertionError e) {
+                e.printStackTrace();
+                latch.countDown();
             }
         };
         queue.add(task, false);
@@ -122,15 +119,12 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
         registry.register(interceptor.id, interceptor);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Object task = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    registry.deregister(interceptor.id);
-                } catch (AssertionError e) {
-                    e.printStackTrace();
-                    latch.countDown();
-                }
+        Object task = (Runnable) () -> {
+            try {
+                registry.deregister(interceptor.id);
+            } catch (AssertionError e) {
+                e.printStackTrace();
+                latch.countDown();
             }
         };
         queue.add(task, false);
@@ -149,14 +143,11 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
 
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    TestMapInterceptor interceptor = new TestMapInterceptor();
-                    while (!stop.get()) {
-                        registry.register(interceptor.id, interceptor);
-                        registry.deregister(interceptor.id);
-                    }
+            Thread thread = new Thread(() -> {
+                TestMapInterceptor interceptor = new TestMapInterceptor();
+                while (!stop.get()) {
+                    registry.register(interceptor.id, interceptor);
+                    registry.deregister(interceptor.id);
                 }
             });
             thread.start();

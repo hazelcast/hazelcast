@@ -113,12 +113,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread);
 
-        DummyOperationHostileThread thread = new DummyOperationHostileThread(new Runnable() {
-            @Override
-            public void run() {
-                executor.runOrExecute(operation);
-            }
-        });
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(() -> executor.runOrExecute(operation));
         thread.start();
 
         assertTrueEventually(new AssertTask() {
@@ -231,12 +226,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final AtomicReference<Thread> executingThread = new AtomicReference<>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
 
-        DummyOperationHostileThread thread = new DummyOperationHostileThread(new Runnable() {
-            @Override
-            public void run() {
-                executor.runOrExecute(operation);
-            }
-        });
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(() -> executor.runOrExecute(operation));
         thread.start();
 
         assertTrueEventually(new AssertTask() {

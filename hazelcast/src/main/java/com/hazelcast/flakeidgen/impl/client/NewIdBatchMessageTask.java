@@ -62,12 +62,8 @@ public class NewIdBatchMessageTask
         if (result.waitTimeMillis == 0) {
             sendResponse(result.idBatch);
         } else {
-            nodeEngine.getExecutionService().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    sendResponse(result.idBatch);
-                }
-            }, result.waitTimeMillis, TimeUnit.MILLISECONDS);
+            nodeEngine.getExecutionService().schedule(() -> sendResponse(result.idBatch),
+                    result.waitTimeMillis, TimeUnit.MILLISECONDS);
         }
     }
 

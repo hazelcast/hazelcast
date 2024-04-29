@@ -139,16 +139,13 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
         int threadCount = executor.getPartitionThreadCount();
         final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
 
-        executor.executeOnPartitionThreads(new Runnable() {
-            @Override
-            public void run() {
-                // current thread must be a PartitionOperationThread
-                if (Thread.currentThread() instanceof PartitionOperationThread) {
-                    try {
-                        awaitBarrier(barrier);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        executor.executeOnPartitionThreads(() -> {
+            // current thread must be a PartitionOperationThread
+            if (Thread.currentThread() instanceof PartitionOperationThread) {
+                try {
+                    awaitBarrier(barrier);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         });

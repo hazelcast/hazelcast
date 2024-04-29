@@ -162,11 +162,9 @@ public class AsyncTest extends HazelcastTestSupport {
         // populate map
         map.put(key, value1);
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(new Runnable() {
-            public void run() {
-                map.lock(key);
-                latch.countDown();
-            }
+        new Thread(() -> {
+            map.lock(key);
+            latch.countDown();
         }).start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         Future<String> f1 = map.removeAsync(key).toCompletableFuture();
@@ -201,11 +199,9 @@ public class AsyncTest extends HazelcastTestSupport {
         // populate map
         map.put(key, value1);
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(new Runnable() {
-            public void run() {
-                map.lock(key);
-                latch.countDown();
-            }
+        new Thread(() -> {
+            map.lock(key);
+            latch.countDown();
         }).start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         Future<Boolean> f1 = map.deleteAsync(key).toCompletableFuture();

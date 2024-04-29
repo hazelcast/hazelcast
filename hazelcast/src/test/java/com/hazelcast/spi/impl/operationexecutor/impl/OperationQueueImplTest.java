@@ -176,12 +176,9 @@ public class OperationQueueImplTest extends HazelcastTestSupport {
 
         operationQueue.add(task1, false);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(4);
-                operationQueue.add(task2, true);
-            }
+        spawn((Runnable) () -> {
+            sleepSeconds(4);
+            operationQueue.add(task2, true);
         });
 
         assertSame(task2, operationQueue.take(true));

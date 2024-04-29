@@ -132,12 +132,7 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
         final long head = ringbuffer.headSequence();
 
         // add the item
-        final Future f = spawn(new Runnable() {
-            @Override
-            public void run() {
-                topic.publish("new");
-            }
-        });
+        final Future f = spawn((Runnable) () -> topic.publish("new"));
 
         assertTrueAllTheTime(new AssertTask() {
             @Override

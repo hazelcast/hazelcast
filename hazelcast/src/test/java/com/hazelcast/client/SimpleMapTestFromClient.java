@@ -80,22 +80,20 @@ public class SimpleMapTestFromClient {
         System.out.println(" Remove Percentage: " + (100 - (putPercentage + getPercentage)));
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
-            es.submit(new Runnable() {
-                public void run() {
-                    IMap<String, Object> map = client.getMap("default");
-                    while (true) {
-                        int key = (int) (Math.random() * entryCount);
-                        int operation = ((int) (Math.random() * 100));
-                        if (operation < getPercentage) {
-                            map.get(String.valueOf(key));
-                            stats.gets.incrementAndGet();
-                        } else if (operation < getPercentage + putPercentage) {
-                            map.put(String.valueOf(key), new byte[valueSize]);
-                            stats.puts.incrementAndGet();
-                        } else {
-                            map.remove(String.valueOf(key));
-                            stats.removes.incrementAndGet();
-                        }
+            es.submit((Runnable) () -> {
+                IMap<String, Object> map = client.getMap("default");
+                while (true) {
+                    int key = (int) (Math.random() * entryCount);
+                    int operation = ((int) (Math.random() * 100));
+                    if (operation < getPercentage) {
+                        map.get(String.valueOf(key));
+                        stats.gets.incrementAndGet();
+                    } else if (operation < getPercentage + putPercentage) {
+                        map.put(String.valueOf(key), new byte[valueSize]);
+                        stats.puts.incrementAndGet();
+                    } else {
+                        map.remove(String.valueOf(key));
+                        stats.removes.incrementAndGet();
                     }
                 }
             });

@@ -129,12 +129,9 @@ public final class LifecycleServiceImpl implements LifecycleService {
                 + buildInfo.getBuild() + revision + ") is "
                 + lifecycleEvent.getState());
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
-                    lifecycleListener.stateChanged(lifecycleEvent);
-                }
+        executor.execute(() -> {
+            for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
+                lifecycleListener.stateChanged(lifecycleEvent);
             }
         });
     }

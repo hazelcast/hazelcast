@@ -50,12 +50,9 @@ public class InvalidationEventQueueTest {
         List<Future> futureList = new ArrayList<>(WORKER_COUNT);
 
         for (int i = 0; i < WORKER_COUNT; i++) {
-            Future future = spawn(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < ITEM_COUNT_PER_WORKER; i++) {
-                        queue.offer(newInvalidation());
-                    }
+            Future future = spawn((Runnable) () -> {
+                for (int i1 = 0; i1 < ITEM_COUNT_PER_WORKER; i1++) {
+                    queue.offer(newInvalidation());
                 }
             });
             futureList.add(future);
@@ -78,12 +75,9 @@ public class InvalidationEventQueueTest {
         }
 
         for (int i = 0; i < WORKER_COUNT; i++) {
-            Future future = spawn(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < ITEM_COUNT_PER_WORKER; i++) {
-                        queue.poll();
-                    }
+            Future future = spawn((Runnable) () -> {
+                for (int i1 = 0; i1 < ITEM_COUNT_PER_WORKER; i1++) {
+                    queue.poll();
                 }
             });
             futureList.add(future);

@@ -286,18 +286,16 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             final String threadCommand = command.substring(first.length());
             for (int i = 0; i < fork; i++) {
                 final int threadID = i;
-                pool.submit(new Runnable() {
-                    public void run() {
-                        String command = threadCommand;
-                        String[] threadArgs = command.replaceAll("\\$t", "" + threadID).trim().split(" ");
-                        // TODO &t #4 m.putmany x k
-                        if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
-                            if (threadArgs.length < LENGTH_BORDER) {
-                                command += " " + Integer.parseInt(threadArgs[1]) * threadID;
-                            }
+                pool.submit(() -> {
+                    String command1 = threadCommand;
+                    String[] threadArgs = command1.replaceAll("\\$t", "" + threadID).trim().split(" ");
+                    // TODO &t #4 m.putmany x k
+                    if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
+                        if (threadArgs.length < LENGTH_BORDER) {
+                            command1 += " " + Integer.parseInt(threadArgs[1]) * threadID;
                         }
-                        handleCommand(command);
                     }
+                    handleCommand(command1);
                 });
             }
             pool.shutdown();

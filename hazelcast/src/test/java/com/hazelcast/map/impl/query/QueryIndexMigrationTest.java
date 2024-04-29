@@ -196,12 +196,10 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < nodeCount; i++) {
             sleepMillis(random.nextInt((i + 1) * 100) + 10);
-            futures.add(executor.submit(new Runnable() {
-                public void run() {
-                    HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-                    IMap<Object, Value> map = hz.getMap("testMap");
-                    updateMapAndRunQuery(map, runCount);
-                }
+            futures.add(executor.submit(() -> {
+                HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+                IMap<Object, Value> map = hz.getMap("testMap");
+                updateMapAndRunQuery(map, runCount);
             }));
         }
 
@@ -232,14 +230,11 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         final Config config = newConfigWithIndex(name, "name");
 
         for (int i = 0; i < nodeCount; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-                    IMap<Object, Object> map = hz.getMap(name);
-                    fillMap(map, findMe, entryPerNode, modulo);
-                    latch.countDown();
-                }
+            new Thread(() -> {
+                HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+                IMap<Object, Object> map = hz.getMap(name);
+                fillMap(map, findMe, entryPerNode, modulo);
+                latch.countDown();
             }).start();
         }
 

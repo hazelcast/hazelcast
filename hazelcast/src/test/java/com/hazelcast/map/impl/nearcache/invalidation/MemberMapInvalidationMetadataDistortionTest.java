@@ -88,45 +88,35 @@ public class MemberMapInvalidationMetadataDistortionTest extends NearCacheTestSu
         HazelcastInstance nearCachedMember = factory.newHazelcastInstance(nearCachedConfig);
         final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(MAP_NAME);
 
-        Thread populateNearCache = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    for (int i = 0; i < MAP_SIZE; i++) {
-                        nearCachedMap.get(i);
-                    }
+        Thread populateNearCache = new Thread(() -> {
+            while (!stopTest.get()) {
+                for (int i = 0; i < MAP_SIZE; i++) {
+                    nearCachedMap.get(i);
                 }
             }
         });
 
-        Thread distortSequence = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    distortRandomPartitionSequence(MAP_NAME, member);
-                    sleepSeconds(1);
-                }
+        Thread distortSequence = new Thread(() -> {
+            while (!stopTest.get()) {
+                distortRandomPartitionSequence(MAP_NAME, member);
+                sleepSeconds(1);
             }
         });
 
-        Thread distortUuid = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    distortRandomPartitionUuid(member);
-                    sleepSeconds(3);
-                }
+        Thread distortUuid = new Thread(() -> {
+            while (!stopTest.get()) {
+                distortRandomPartitionUuid(member);
+                sleepSeconds(3);
             }
         });
 
-        Thread put = new Thread(new Runnable() {
-            public void run() {
-                // change some data
-                while (!stopTest.get()) {
-                    int key = getInt(MAP_SIZE);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberMap.put(key, value);
-                    sleepAtLeastMillis(10);
-                }
+        Thread put = new Thread(() -> {
+            // change some data
+            while (!stopTest.get()) {
+                int key = getInt(MAP_SIZE);
+                int value = getInt(Integer.MAX_VALUE);
+                memberMap.put(key, value);
+                sleepAtLeastMillis(10);
             }
         });
 

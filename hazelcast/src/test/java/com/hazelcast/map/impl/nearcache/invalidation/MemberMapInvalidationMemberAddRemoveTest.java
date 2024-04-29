@@ -89,53 +89,44 @@ public class MemberMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
         List<Thread> threads = new ArrayList<>();
 
         // continuously adds and removes member
-        Thread shadowMember = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    HazelcastInstance member = factory.newHazelcastInstance(config);
-                    sleepSeconds(5);
-                    member.getLifecycleService().terminate();
-                }
-
+        Thread shadowMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                HazelcastInstance member1 = factory.newHazelcastInstance(config);
+                sleepSeconds(5);
+                member1.getLifecycleService().terminate();
             }
+
         });
         threads.add(shadowMember);
 
         // populates client Near Cache
-        Thread populateClientNearCache = new Thread(new Runnable() {
-            public void run() {
-                int i = 0;
-                while (!stopTest.get()) {
-                    nearCachedMap.get(i++);
-                    if (i == KEY_COUNT) {
-                        i = 0;
-                    }
+        Thread populateClientNearCache = new Thread(() -> {
+            int i = 0;
+            while (!stopTest.get()) {
+                nearCachedMap.get(i++);
+                if (i == KEY_COUNT) {
+                    i = 0;
                 }
             }
         });
         threads.add(populateClientNearCache);
 
         // updates map data from member
-        Thread putFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    int key = getInt(KEY_COUNT);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberMap.put(key, value);
+        Thread putFromMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                int key = getInt(KEY_COUNT);
+                int value = getInt(Integer.MAX_VALUE);
+                memberMap.put(key, value);
 
-                    sleepAtLeastMillis(5);
-                }
+                sleepAtLeastMillis(5);
             }
         });
         threads.add(putFromMember);
 
-        Thread clearFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    memberMap.clear();
-                    sleepSeconds(5);
-                }
+        Thread clearFromMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                memberMap.clear();
+                sleepSeconds(5);
             }
         });
         threads.add(clearFromMember);

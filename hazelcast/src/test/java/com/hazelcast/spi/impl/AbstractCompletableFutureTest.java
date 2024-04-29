@@ -428,27 +428,21 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     private void submitCancelAfterTimeInMillis(final TestFutureImpl future, final int timeInMillis) {
-        submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    sleepMillis(timeInMillis);
-                } finally {
-                    future.cancel(false);
-                }
+        submit(() -> {
+            try {
+                sleepMillis(timeInMillis);
+            } finally {
+                future.cancel(false);
             }
         });
     }
 
     private void submitSetResultAfterTimeInMillis(final TestFutureImpl future, final Object result, final int timeInMillis) {
-        submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    sleepMillis(timeInMillis);
-                } finally {
-                    future.complete(result);
-                }
+        submit(() -> {
+            try {
+                sleepMillis(timeInMillis);
+            } finally {
+                future.complete(result);
             }
         });
     }

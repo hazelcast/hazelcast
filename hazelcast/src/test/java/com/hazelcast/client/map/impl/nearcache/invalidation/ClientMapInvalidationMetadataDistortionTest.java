@@ -87,12 +87,10 @@ public class ClientMapInvalidationMetadataDistortionTest extends NearCacheTestSu
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         final IMap<Integer, Integer> clientMap = client.getMap(MAP_NAME);
 
-        Thread populateNearCache = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    for (int i = 0; i < MAP_SIZE; i++) {
-                        clientMap.get(i);
-                    }
+        Thread populateNearCache = new Thread(() -> {
+            while (!stopTest.get()) {
+                for (int i = 0; i < MAP_SIZE; i++) {
+                    clientMap.get(i);
                 }
             }
         });

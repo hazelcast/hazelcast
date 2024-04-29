@@ -194,13 +194,10 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         });
 
         final AtomicReference<Future> atomicReference = new AtomicReference<>();
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Member secondMember = secondInstance.getCluster().getLocalMember();
-                Future future = executorService.submitToMember(new DummySerializableCallable(), secondMember);
-                atomicReference.set(future);
-            }
+        Thread thread = new Thread(() -> {
+            Member secondMember = secondInstance.getCluster().getLocalMember();
+            Future future = executorService.submitToMember(new DummySerializableCallable(), secondMember);
+            atomicReference.set(future);
         });
         thread.start();
         try {

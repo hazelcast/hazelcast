@@ -74,16 +74,13 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
         final long oldLastCallId = sequence.getLastCallId();
 
         final CountDownLatch nextCalledLatch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                DummyBackupAwareOperation op = new DummyBackupAwareOperation();
-                long callId = nextCallId(sequence, op.isUrgent());
-                setCallId(op, callId);
-                nextCalledLatch.countDown();
-                sleepSeconds(3);
-                sequence.complete();
-            }
+        spawn((Runnable) () -> {
+            DummyBackupAwareOperation op = new DummyBackupAwareOperation();
+            long callId = nextCallId(sequence, op.isUrgent());
+            setCallId(op, callId);
+            nextCalledLatch.countDown();
+            sleepSeconds(3);
+            sequence.complete();
         });
 
         nextCalledLatch.await();

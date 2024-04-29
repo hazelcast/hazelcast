@@ -79,12 +79,9 @@ public class ClientQueryCacheSimpleStressTest extends HazelcastTestSupport {
     public void testStress() throws Exception {
         final IMap<Integer, Integer> map = instance.getMap(mapName);
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < numberOfElementsToPut; i++) {
-                    map.put(i, i);
-                }
+        Runnable runnable = () -> {
+            for (int i = 0; i < numberOfElementsToPut; i++) {
+                map.put(i, i);
             }
         };
 

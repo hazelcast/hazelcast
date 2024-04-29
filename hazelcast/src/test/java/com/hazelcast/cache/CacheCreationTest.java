@@ -127,14 +127,11 @@ public class CacheCreationTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
-                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache");
-                    cache.get(1);
-                    latch.countDown();
-                }
+            executorService.execute(() -> {
+                CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
+                Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache");
+                cache.get(1);
+                latch.countDown();
             });
         }
         assertOpenEventually(latch);
@@ -148,14 +145,11 @@ public class CacheCreationTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
             final String cacheName = "xmlCache" + i;
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
-                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
-                    cache.get(1);
-                    latch.countDown();
-                }
+            executorService.execute(() -> {
+                CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
+                Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
+                cache.get(1);
+                latch.countDown();
             });
         }
         assertOpenEventually(latch);

@@ -47,12 +47,8 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
         if (result.waitTimeMillis == 0) {
             sendResponse(result.idBatch.base());
         } else {
-            getNodeEngine().getExecutionService().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    sendResponse(result.idBatch.base());
-                }
-            }, result.waitTimeMillis, TimeUnit.MILLISECONDS);
+            getNodeEngine().getExecutionService().schedule(() -> sendResponse(result.idBatch.base()),
+                    result.waitTimeMillis, TimeUnit.MILLISECONDS);
         }
     }
 

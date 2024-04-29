@@ -79,22 +79,16 @@ public class MapContainerCreationUponDestroyStressTest extends HazelcastTestSupp
         final IMap<Long, Long> map = getIMap(mapName);
         final AtomicBoolean stop = new AtomicBoolean(false);
 
-        Thread putThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stop.get()) {
-                    map.put(System.currentTimeMillis(), System.currentTimeMillis());
-                }
+        Thread putThread = new Thread(() -> {
+            while (!stop.get()) {
+                map.put(System.currentTimeMillis(), System.currentTimeMillis());
             }
         });
 
-        Thread destroyThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stop.get()) {
-                    map.destroy();
-                    sleepAtLeastMillis(100);
-                }
+        Thread destroyThread = new Thread(() -> {
+            while (!stop.get()) {
+                map.destroy();
+                sleepAtLeastMillis(100);
             }
         });
 

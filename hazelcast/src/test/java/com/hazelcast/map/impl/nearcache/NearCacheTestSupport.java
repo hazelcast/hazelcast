@@ -150,12 +150,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         populateMap(map, MAX_CACHE_SIZE);
 
         final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                populateNearCache(map, MAX_CACHE_SIZE);
-                countDownLatch.countDown();
-            }
+        Runnable task = () -> {
+            populateNearCache(map, MAX_CACHE_SIZE);
+            countDownLatch.countDown();
         };
 
         ExecutorService executorService = newFixedThreadPool(threadCount);

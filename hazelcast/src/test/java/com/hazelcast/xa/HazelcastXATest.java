@@ -168,25 +168,22 @@ public class HazelcastXATest extends HazelcastTestSupport {
     }
 
     private void startTX(final HazelcastInstance instance, final CountDownLatch nodeShutdownLatch) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    HazelcastXAResource xaResource = instance.getXAResource();
-                    Xid xid = new SerializableXID(42, "globalTransactionId".getBytes(), "branchQualifier".getBytes());
-                    xaResource.start(xid, XAResource.TMNOFLAGS);
-                    TransactionContext context = xaResource.getTransactionContext();
-                    final TransactionalMap<Object, Object> map = context.getMap("map");
-                    map.put("key", "value");
-                    xaResource.prepare(xid);
+        new Thread(() -> {
+            try {
+                HazelcastXAResource xaResource = instance.getXAResource();
+                Xid xid = new SerializableXID(42, "globalTransactionId".getBytes(), "branchQualifier".getBytes());
+                xaResource.start(xid, XAResource.TMNOFLAGS);
+                TransactionContext context = xaResource.getTransactionContext();
+                final TransactionalMap<Object, Object> map = context.getMap("map");
+                map.put("key", "value");
+                xaResource.prepare(xid);
 
-                    instance.shutdown();
+                instance.shutdown();
 
-                    nodeShutdownLatch.countDown();
+                nodeShutdownLatch.countDown();
 
-                } catch (XAException e) {
-                    e.printStackTrace();
-                }
+            } catch (XAException e) {
+                e.printStackTrace();
             }
         }).start();
     }

@@ -280,31 +280,29 @@ public class TopicTest extends HazelcastTestSupport {
         ExecutorService ex = Executors.newFixedThreadPool(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
             final int finalI = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    final List<TestMessage> messages = messageLists[finalI];
-                    HazelcastInstance hz = instances[finalI];
-                    ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
-                    topic.addMessageListener(new MessageListener<TestMessage>() {
-                        public void onMessage(Message<TestMessage> message) {
-                            messages.add(message.getMessageObject());
-                            messageLatch.countDown();
-                        }
-                    });
-
-                    startLatch.countDown();
-                    try {
-                        startLatch.await(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        return;
+            ex.execute(() -> {
+                final List<TestMessage> messages = messageLists[finalI];
+                HazelcastInstance hz = instances[finalI];
+                ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
+                topic.addMessageListener(new MessageListener<TestMessage>() {
+                    public void onMessage(Message<TestMessage> message) {
+                        messages.add(message.getMessageObject());
+                        messageLatch.countDown();
                     }
+                });
 
-                    Member localMember = hz.getCluster().getLocalMember();
-                    for (int j = 0; j < count; j++) {
-                        topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
-                        publishLatch.countDown();
-                    }
+                startLatch.countDown();
+                try {
+                    startLatch.await(1, TimeUnit.MINUTES);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
+
+                Member localMember = hz.getCluster().getLocalMember();
+                for (int j = 0; j < count; j++) {
+                    topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
+                    publishLatch.countDown();
                 }
             });
         }
@@ -573,11 +571,9 @@ public class TopicTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(count);
 
         for (int i = 0; i < count; i++) {
-            ex.submit(new Runnable() {
-                public void run() {
-                    topic.publish("my object");
-                    latch.countDown();
-                }
+            ex.submit(() -> {
+                topic.publish("my object");
+                latch.countDown();
             });
         }
 
@@ -724,31 +720,29 @@ public class TopicTest extends HazelcastTestSupport {
         ExecutorService ex = Executors.newFixedThreadPool(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
             final int finalI = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    final Set<String> thNames = threads[finalI];
-                    HazelcastInstance hz = instances[finalI];
-                    ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
-                    topic.addMessageListener(new MessageListener<TestMessage>() {
-                        public void onMessage(Message<TestMessage> message) {
-                            thNames.add(Thread.currentThread().getName());
-                            messageLatch.countDown();
-                        }
-                    });
-
-                    startLatch.countDown();
-                    try {
-                        startLatch.await(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        return;
+            ex.execute(() -> {
+                final Set<String> thNames = threads[finalI];
+                HazelcastInstance hz = instances[finalI];
+                ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
+                topic.addMessageListener(new MessageListener<TestMessage>() {
+                    public void onMessage(Message<TestMessage> message) {
+                        thNames.add(Thread.currentThread().getName());
+                        messageLatch.countDown();
                     }
+                });
 
-                    Member localMember = hz.getCluster().getLocalMember();
-                    for (int j = 0; j < count; j++) {
-                        topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
-                        publishLatch.countDown();
-                    }
+                startLatch.countDown();
+                try {
+                    startLatch.await(1, TimeUnit.MINUTES);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
+
+                Member localMember = hz.getCluster().getLocalMember();
+                for (int j = 0; j < count; j++) {
+                    topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
+                    publishLatch.countDown();
                 }
             });
         }

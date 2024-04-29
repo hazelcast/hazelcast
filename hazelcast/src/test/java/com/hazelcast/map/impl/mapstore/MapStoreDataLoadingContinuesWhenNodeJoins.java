@@ -162,47 +162,40 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         final AtomicInteger mapSizeOnNode2 = new AtomicInteger();
 
         // thread 1: start a single node and trigger loading the data
-        Thread thread1 = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                Config config = createConfigWithDelayingMapStore();
-                HazelcastInstance instance = factory.newHazelcastInstance(config);
-                instances.set(0, instance);
-                // get map and trigger loading the data
-                IMap<String, String> map = instance.getMap(MAP_NAME);
-                node1MapLoadingAboutToStart.countDown();
-                LOGGER.info("Getting the size of the map on node1 -> load is triggered");
-                int sizeOnNode1 = map.size();
-                LOGGER.info("Map loading has been completed by now");
-                LOGGER.info("Map size on node 1: " + sizeOnNode1);
-                node1FinishedLoading.countDown();
-            }
+        Thread thread1 = new Thread(() -> {
+            Config config = createConfigWithDelayingMapStore();
+            HazelcastInstance instance = factory.newHazelcastInstance(config);
+            instances.set(0, instance);
+            // get map and trigger loading the data
+            IMap<String, String> map = instance.getMap(MAP_NAME);
+            node1MapLoadingAboutToStart.countDown();
+            LOGGER.info("Getting the size of the map on node1 -> load is triggered");
+            int sizeOnNode1 = map.size();
+            LOGGER.info("Map loading has been completed by now");
+            LOGGER.info("Map size on node 1: " + sizeOnNode1);
+            node1FinishedLoading.countDown();
         }, "Thread 1");
         thread1.start();
 
         node1MapLoadingAboutToStart.await();
         // thread 2: second member joins the cluster while loading is in progress
-        Thread thread2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Config config = createConfigWithDelayingMapStore();
-                HazelcastInstance instance = factory.newHazelcastInstance(config);
-                instances.set(1, instance);
-                try {
-                    LOGGER.info("Getting the map " + MAP_NAME);
-                    IMap map = instance.getMap(MAP_NAME);
-                    final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
-                    boolean node1FinishedLoadingInTime = node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
-                    // if node1 doesn't finish in time (unlikely because of the 5min timeout), we may execute GetSizeOperation
-                    // again on a not fully loaded map -> map size may not match to the expected value
-                    LOGGER.info("Node1 finished loading in time: " + node1FinishedLoadingInTime);
-                    LOGGER.info("Getting the size of the map on node2");
-                    mapSizeOnNode2.set(map.size());
-                    LOGGER.info("Map size on node 2: " + mapSizeOnNode2.get());
-                } catch (InterruptedException e) {
-                    ignore(e);
-                }
+        Thread thread2 = new Thread(() -> {
+            Config config = createConfigWithDelayingMapStore();
+            HazelcastInstance instance = factory.newHazelcastInstance(config);
+            instances.set(1, instance);
+            try {
+                LOGGER.info("Getting the map " + MAP_NAME);
+                IMap map = instance.getMap(MAP_NAME);
+                final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
+                boolean node1FinishedLoadingInTime = node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
+                // if node1 doesn't finish in time (unlikely because of the 5min timeout), we may execute GetSizeOperation
+                // again on a not fully loaded map -> map size may not match to the expected value
+                LOGGER.info("Node1 finished loading in time: " + node1FinishedLoadingInTime);
+                LOGGER.info("Getting the size of the map on node2");
+                mapSizeOnNode2.set(map.size());
+                LOGGER.info("Map size on node 2: " + mapSizeOnNode2.get());
+            } catch (InterruptedException e) {
+                ignore(e);
             }
         }, "Thread 2");
         thread2.start();
@@ -223,48 +216,40 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
         // thread 1:
         // start a single node and load the data
-        Thread thread1 = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                Config config = createConfigWithDelayingMapStore();
-                HazelcastInstance instance = factory.newHazelcastInstance(config);
-                instances.set(0, instance);
-                node1Started.countDown();
-                // get map
-                // this will trigger loading the data
-                final IMap<String, String> map = instance.getMap(MAP_NAME);
-                map.size();
-                node1FinishedLoading.countDown();
-                assertTrueEventually(new AssertTask() {
-                    @Override
-                    public void run() throws Exception {
-                        assertEquals(PRELOAD_SIZE, map.size());
-                    }
-                }, 5);
-                // -------------------------------------------------- {20s}
-            }
+        Thread thread1 = new Thread(() -> {
+            Config config = createConfigWithDelayingMapStore();
+            HazelcastInstance instance = factory.newHazelcastInstance(config);
+            instances.set(0, instance);
+            node1Started.countDown();
+            // get map
+            // this will trigger loading the data
+            final IMap<String, String> map = instance.getMap(MAP_NAME);
+            map.size();
+            node1FinishedLoading.countDown();
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(PRELOAD_SIZE, map.size());
+                }
+            }, 5);
+            // -------------------------------------------------- {20s}
         }, "Thread 1");
         thread1.start();
         // wait 10s after starting first thread
         node1Started.await();
         // thread 2:
         // simulate a second member which joins the cluster
-        Thread thread2 = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                Config config = createConfigWithDelayingMapStore();
-                HazelcastInstance instance = factory.newHazelcastInstance(config);
-                instances.set(1, instance);
-                try {
-                    // get map
-                    instance.getMap(MAP_NAME);
-                    final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
-                    node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    ignore(e);
-                }
+        Thread thread2 = new Thread(() -> {
+            Config config = createConfigWithDelayingMapStore();
+            HazelcastInstance instance = factory.newHazelcastInstance(config);
+            instances.set(1, instance);
+            try {
+                // get map
+                instance.getMap(MAP_NAME);
+                final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
+                node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                ignore(e);
             }
         }, "Thread 2");
         if (SIMULATE_SECOND_NODE) {

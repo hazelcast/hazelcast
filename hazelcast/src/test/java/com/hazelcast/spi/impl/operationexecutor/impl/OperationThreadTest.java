@@ -141,10 +141,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
             fail("invalid task!");
         }
 
-        final Runnable emptyRunnable = new Runnable() {
-            @Override
-            public void run() {
-            }
+        final Runnable emptyRunnable = () -> {
         };
         executor.executeOnPartitionThreads(emptyRunnable);
 

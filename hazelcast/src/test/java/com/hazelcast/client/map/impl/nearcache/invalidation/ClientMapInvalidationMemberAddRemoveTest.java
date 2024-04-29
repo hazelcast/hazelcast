@@ -86,16 +86,13 @@ public class ClientMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
         ArrayList<Thread> threads = new ArrayList<>();
 
         // continuously adds and removes member
-        Thread shadowMember = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    HazelcastInstance member = factory.newHazelcastInstance(config);
-                    sleepSeconds(5);
-                    member.getLifecycleService().terminate();
-                }
-
+        Thread shadowMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                HazelcastInstance member1 = factory.newHazelcastInstance(config);
+                sleepSeconds(5);
+                member1.getLifecycleService().terminate();
             }
+
         });
         threads.add(shadowMember);
 

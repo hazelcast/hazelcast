@@ -42,33 +42,27 @@ public class MapPutDestroyTest extends HazelcastTestSupport {
         final AtomicBoolean stop = new AtomicBoolean();
 
         Thread t1 = new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            while (!stop.get()) {
-                                IMap<Object, Object> map = instance.getMap(name);
-                                map.put(System.currentTimeMillis(), Boolean.TRUE);
-                            }
-                        } catch (Throwable e) {
-                            error.set(e);
+                () -> {
+                    try {
+                        while (!stop.get()) {
+                            IMap<Object, Object> map = instance.getMap(name);
+                            map.put(System.currentTimeMillis(), Boolean.TRUE);
                         }
+                    } catch (Throwable e) {
+                        error.set(e);
                     }
                 }
         );
 
         Thread t2 = new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            while (!stop.get()) {
-                                IMap<Object, Object> map = instance.getMap(name);
-                                map.destroy();
-                            }
-                        } catch (Throwable e) {
-                            error.set(e);
+                () -> {
+                    try {
+                        while (!stop.get()) {
+                            IMap<Object, Object> map = instance.getMap(name);
+                            map.destroy();
                         }
+                    } catch (Throwable e) {
+                        error.set(e);
                     }
                 }
         );

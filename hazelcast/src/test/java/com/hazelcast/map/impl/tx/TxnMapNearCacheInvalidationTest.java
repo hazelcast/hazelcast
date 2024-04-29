@@ -157,27 +157,24 @@ public class TxnMapNearCacheInvalidationTest extends HazelcastTestSupport {
 
         final AtomicBoolean keyExistInTxnMap = new AtomicBoolean(false);
 
-        Thread txnPutThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Boolean result = instance.executeTransaction(new TransactionalTask<Boolean>() {
-                    @Override
-                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                        TransactionalMap<Integer, Integer> map = context.getMap(mapName);
-                        // 1. first put key into txn map inside txn
-                        map.put(key, 1);
+        Thread txnPutThread = new Thread(() -> {
+            Boolean result = instance.executeTransaction(new TransactionalTask<Boolean>() {
+                @Override
+                public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                    TransactionalMap<Integer, Integer> map = context.getMap(mapName);
+                    // 1. first put key into txn map inside txn
+                    map.put(key, 1);
 
-                        waitTxnPut.countDown();
+                    waitTxnPut.countDown();
 
-                        assertOpenEventually(waitNullCaching);
+                    assertOpenEventually(waitNullCaching);
 
-                        // 3. after caching key as null inside Near Cache, check that key exist for txn
-                        return map.containsKey(key);
-                    }
-                });
+                    // 3. after caching key as null inside Near Cache, check that key exist for txn
+                    return map.containsKey(key);
+                }
+            });
 
-                keyExistInTxnMap.set(result);
-            }
+            keyExistInTxnMap.set(result);
         });
         txnPutThread.start();
 

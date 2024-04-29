@@ -301,12 +301,7 @@ public class ClientServiceTest extends ClientTestSupport {
         ExecutorService ex = Executors.newFixedThreadPool(4);
         try {
             for (final HazelcastInstance client : clients) {
-                ex.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        client.shutdown();
-                    }
-                });
+                ex.execute(() -> client.shutdown());
             }
 
             assertOpenEventually("Not all disconnected events arrived", listenerLatch);

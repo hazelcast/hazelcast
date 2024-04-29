@@ -84,17 +84,14 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
                 }
             }
         });
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                IQueue<Integer> queue = clientInstance.getQueue(queueName);
-                try {
-                    queue.take();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (HazelcastInstanceNotActiveException e) {
-                    ignore(e);
-                }
+        new Thread(() -> {
+            IQueue<Integer> queue = clientInstance.getQueue(queueName);
+            try {
+                queue.take();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (HazelcastInstanceNotActiveException e) {
+                ignore(e);
             }
         }).start();
 

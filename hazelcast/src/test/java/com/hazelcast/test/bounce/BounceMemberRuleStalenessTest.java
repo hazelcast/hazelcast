@@ -52,12 +52,7 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
     public void stalenessIsDetected() {
         long startNanos = Timer.nanos();
         try {
-            bounceMemberRule.testRepeatedly(1, new Runnable() {
-                @Override
-                public void run() {
-                    sleepAtLeastMillis(10000);
-                }
-            }, 120);
+            bounceMemberRule.testRepeatedly(1, () -> sleepAtLeastMillis(10000), 120);
 
             fail("The Bouncing Rule should detect a staleness!");
         } catch (AssertionError ae) {

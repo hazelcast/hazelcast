@@ -80,23 +80,21 @@ public class MapLockTest extends HazelcastTestSupport {
         final int size = 50;
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Runnable runnable = new Runnable() {
-            public void run() {
-                for (int i = 0; i < size; i++) {
-                    map1.lock(i);
-                    sleepMillis(100);
-                }
-                for (int i = 0; i < size; i++) {
-                    assertTrue(map1.isLocked(i));
-                }
-                for (int i = 0; i < size; i++) {
-                    map1.unlock(i);
-                }
-                for (int i = 0; i < size; i++) {
-                    assertFalse(map1.isLocked(i));
-                }
-                latch.countDown();
+        Runnable runnable = () -> {
+            for (int i = 0; i < size; i++) {
+                map1.lock(i);
+                sleepMillis(100);
             }
+            for (int i = 0; i < size; i++) {
+                assertTrue(map1.isLocked(i));
+            }
+            for (int i = 0; i < size; i++) {
+                map1.unlock(i);
+            }
+            for (int i = 0; i < size; i++) {
+                assertFalse(map1.isLocked(i));
+            }
+            latch.countDown();
         };
         new Thread(runnable).start();
         try {
@@ -124,11 +122,9 @@ public class MapLockTest extends HazelcastTestSupport {
         map.lock(1, 1, TimeUnit.SECONDS);
         assertTrue(map.isLocked(1));
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                map.lock(1);
-                latch.countDown();
-            }
+        Thread t = new Thread(() -> {
+            map.lock(1);
+            latch.countDown();
         });
         t.start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -156,12 +152,10 @@ public class MapLockTest extends HazelcastTestSupport {
             map.lock(i, rand.nextInt(5) + 1, TimeUnit.SECONDS);
         }
         final CountDownLatch latch = new CountDownLatch(5);
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 5; i++) {
-                    map.lock(i);
-                    latch.countDown();
-                }
+        Thread t = new Thread(() -> {
+            for (int i = 0; i < 5; i++) {
+                map.lock(i);
+                latch.countDown();
             }
         });
         t.start();
@@ -213,12 +207,10 @@ public class MapLockTest extends HazelcastTestSupport {
             assertTrue(map.isLocked(i));
         }
         final CountDownLatch latch = new CountDownLatch(1000);
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 1000; i++) {
-                    map.lock(i);
-                    latch.countDown();
-                }
+        Thread t = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                map.lock(i);
+                latch.countDown();
             }
         });
         t.start();
