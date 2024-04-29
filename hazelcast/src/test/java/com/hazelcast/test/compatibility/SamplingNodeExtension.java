@@ -307,7 +307,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     public CPPersistenceService getCPPersistenceService() {
-        return null;
+        return nodeExtension.getCPPersistenceService();
     }
 
     @Override
