@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,7 +48,9 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -107,7 +108,7 @@ public class KubernetesConfigTest {
     }
 
     @Test
-    public void kubernetesApiModeDefault() throws Exception {
+    public void kubernetesApiModeDefault() {
         // given
         Map<String, Comparable> properties = createProperties();
 
@@ -117,8 +118,8 @@ public class KubernetesConfigTest {
         // then
         assertEquals(DiscoveryMode.KUBERNETES_API, config.getMode());
         assertEquals("test", config.getNamespace());
-        assertEquals(true, config.isResolveNotReadyAddresses());
-        assertEquals(false, config.isUseNodeNameAsExternalAddress());
+        assertTrue(config.isResolveNotReadyAddresses());
+        assertFalse(config.isUseNodeNameAsExternalAddress());
         assertEquals(TEST_API_TOKEN, config.getTokenProvider().getToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
         assertEquals(ExposeExternallyMode.AUTO, config.getExposeExternallyMode());
@@ -167,7 +168,7 @@ public class KubernetesConfigTest {
         KubernetesConfig config = new KubernetesConfig(properties);
 
         // then
-        assertEquals(true, config.isUseNodeNameAsExternalAddress());
+        assertTrue(config.isUseNodeNameAsExternalAddress());
     }
 
     @Test
@@ -184,7 +185,7 @@ public class KubernetesConfigTest {
     }
 
     @Test
-    public void readTokenCertificateAndNamespaceFromFilesWhenPropertiesNotSet() throws Exception {
+    public void readTokenCertificateAndNamespaceFromFilesWhenPropertiesNotSet() {
         // given
         KubernetesConfig.FileContentsReader dummyFileContentsReader = fileName -> {
             switch (fileName) {
@@ -337,7 +338,7 @@ public class KubernetesConfigTest {
     private String createTestFile(String content)
             throws IOException {
         File file = tempFolder.newFile("test.tmp");
-        return Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8)).toString();
+        return Files.writeString(file.toPath(), content).toString();
     }
 
     @Test

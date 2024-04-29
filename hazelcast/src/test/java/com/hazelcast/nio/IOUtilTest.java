@@ -82,7 +82,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.min;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
@@ -781,9 +780,9 @@ public class IOUtilTest extends HazelcastTestSupport {
     public void testMove_targetExist() throws IOException {
         Path src = tempFolder.newFile("source.txt").toPath();
         Path target = src.resolveSibling("target.txt");
-        Files.write(target, "foo".getBytes(UTF_8), CREATE);
+        Files.writeString(target, "foo", CREATE);
         assertMoveInternal(src, target, false);
-        Files.write(src, "bar".getBytes(UTF_8), CREATE);
+        Files.writeString(src, "bar", CREATE);
         assertMoveInternal(target, src, true);
     }
 
@@ -966,7 +965,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     private void assertMoveInternal(Path src, Path target, boolean withTimeout) throws IOException {
-        Files.write(src, "Hazelcast".getBytes(UTF_8), TRUNCATE_EXISTING);
+        Files.writeString(src, "Hazelcast", TRUNCATE_EXISTING);
         if (withTimeout) {
             IOUtil.moveWithTimeout(src, target, Duration.ofSeconds(2));
         } else {

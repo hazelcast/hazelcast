@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -252,7 +251,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
             String str = readFile();
             String xmlString = str.replace("$CLUSTER_NAME$", clusterName);
             Path tempFile = Files.createTempFile("test_client", ".xml");
-            Files.write(tempFile, xmlString.getBytes(StandardCharsets.UTF_8));
+            Files.writeString(tempFile, xmlString);
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML_PATH, tempFile.toString());
 
             return dataConnectionConfig;

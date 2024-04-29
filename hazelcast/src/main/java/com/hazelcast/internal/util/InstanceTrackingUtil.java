@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,11 +67,11 @@ public final class InstanceTrackingUtil {
             String trackingFileContents = getInstanceTrackingContent(formatPattern, placeholderValues);
             Path file = getInstanceTrackingFilePath(fileName, placeholderValues);
 
-            // Set the instance tracking file path to a system property so it can be audited
+            // Set the instance tracking file path to a system property, so it can be audited
             System.setProperty(HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE, file.toString());
 
             logger.fine("Writing instance tracking information to " + file);
-            Files.write(file, trackingFileContents.getBytes(StandardCharsets.UTF_8));
+            Files.writeString(file, trackingFileContents);
         } catch (Exception e) {
             logger.warning("Failed to write instance tracking information", e);
         }
