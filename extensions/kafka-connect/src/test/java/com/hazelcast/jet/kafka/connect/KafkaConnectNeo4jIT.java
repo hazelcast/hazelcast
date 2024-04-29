@@ -51,7 +51,11 @@ import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -108,7 +112,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
-        LOGGER.info("Creating a job");
+        LOGGER.info("Creating testReadFromNeo4jConnector job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
@@ -149,13 +153,12 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
-        LOGGER.info("Creating a job");
+        LOGGER.info("Creating testDbNotStarted job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
 
         assertJobStatusEventually(job, FAILED);
     }
 
-    @Nonnull
     private static Properties getConnectorProperties() {
         Properties connectorProperties = new Properties();
         connectorProperties.setProperty("name", "neo4j");
@@ -229,12 +232,24 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
     private static void insertNodes(String prefix) {
         String boltUrl = container.getBoltUrl();
+        List<Map<String, Object>> nodes = new ArrayList<>();
+
         try (Driver driver = GraphDatabase.driver(boltUrl, AuthTokens.none()); Session session = driver.session()) {
             for (int i = 0; i < ITEM_COUNT; i++) {
-                session.run("CREATE (:TestSource {name: '" + prefix + "-name-" + i + "', value: '"
-                        + prefix + "-value-" + i + "', timestamp: datetime().epochMillis});");
+                Map<String, Object> node = new HashMap<>();
+                node.put("name", prefix + "-name-" + i);
+                node.put("value", prefix + "-value-" + i);
+                node.put("timestamp", System.currentTimeMillis());
+                nodes.add(node);
             }
+
+            // Use the UNWIND clause to iterate over a parameter named $nodes.
+            String sb = "UNWIND $nodes AS node " +
+                        // Create a node of type TestSource using the properties from the current element in the list.
+                        "CREATE (:TestSource {name: node.name, value: node.value, timestamp: node.timestamp});";
+
+            // Execute the query with the list of nodes
+            session.run(sb, Collections.singletonMap("nodes", nodes));
         }
     }
-
 }
