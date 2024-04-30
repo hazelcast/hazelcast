@@ -58,8 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -76,6 +74,7 @@ import static org.junit.Assert.fail;
 public class KafkaConnectNeo4jIT extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectNeo4jIT.class);
 
     @SuppressWarnings("resource")
@@ -94,15 +93,15 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
     @Test
     public void testReadFromNeo4jConnector() {
-        Properties connectorProperties = getConnectorProperties();
-
-        insertNodes("items-1");
+        String sourceName = generateRandomString(5);
+        Properties connectorProperties = getConnectorProperties(sourceName);
+        insertNodes(sourceName, "items-1");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
-                                                          TestUtil::convertToString))
-                                                  .withoutTimestamps()
-                                                  .setLocalParallelism(2);
+                        TestUtil::convertToString))
+                .withoutTimestamps()
+                .setLocalParallelism(2);
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> assertThat(list).hasSize(2 * ITEM_COUNT)));
@@ -116,7 +115,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
-        insertNodes("items-2");
+        insertNodes(sourceName, "items-2");
 
         try {
             job.join();
@@ -125,27 +124,29 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
 
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+                       + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
         }
     }
 
     @Test
     public void testDbNotStarted() {
-        Properties connectorProperties = getConnectorProperties();
+        String sourceName = generateRandomString(5);
+        Properties connectorProperties = getConnectorProperties(sourceName);
+        // Change the uri so that connector fails to connect
         connectorProperties.setProperty("neo4j.server.uri", "bolt://localhost:52403");
         connectorProperties.setProperty("neo4j.retry.backoff.msecs", "5");
         connectorProperties.setProperty("neo4j.retry.max.attemps", "1");
 
         Pipeline pipeline = Pipeline.create();
         RetryStrategy strategy = RetryStrategies.custom()
-                                                .maxAttempts(2)
-                                                .intervalFunction(IntervalFunction.constant(500))
-                                                .build();
+                .maxAttempts(2)
+                .intervalFunction(IntervalFunction.constant(500))
+                .build();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
-                                                          TestUtil::convertToString,
-                                                          strategy))
-                                                  .withoutTimestamps()
-                                                  .setLocalParallelism(2);
+                        TestUtil::convertToString,
+                        strategy))
+                .withoutTimestamps()
+                .setLocalParallelism(2);
         streamStage.writeTo(Sinks.logger());
 
         JobConfig jobConfig = new JobConfig();
@@ -159,33 +160,15 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         assertJobStatusEventually(job, FAILED);
     }
 
-    private static Properties getConnectorProperties() {
-        Properties connectorProperties = new Properties();
-        connectorProperties.setProperty("name", "neo4j");
-        connectorProperties.setProperty("tasks.max", "1");
-        connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
-        connectorProperties.setProperty("topic", "some-topic");
-        connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
-        connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");
-        connectorProperties.setProperty("neo4j.authentication.basic.password", "password");
-        connectorProperties.setProperty("neo4j.streaming.poll.interval.msecs", "1000");
-        connectorProperties.setProperty("neo4j.streaming.property", "timestamp");
-        connectorProperties.setProperty("neo4j.streaming.from", "ALL");
-        connectorProperties.setProperty("neo4j.enforce.schema", "true");
-        connectorProperties.setProperty("neo4j.source.query",
-                "MATCH (ts:TestSource) WHERE ts.timestamp > $lastCheck " +
-                        "RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
-        return connectorProperties;
-    }
-
     @Test
     public void testDistinct() {
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
         final HazelcastInstance instance = createHazelcastInstance(config);
 
-        final String testName = "testDistinct";
-        Properties connectorProperties = getConnectorProperties();
+        String testName = "testDistinct";
+        String sourceName = generateRandomString(5);
+        Properties connectorProperties = getConnectorProperties(sourceName);
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
@@ -204,18 +187,30 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
         LOGGER.info("Creating a job");
         Job testJob = instance.getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(testJob, RUNNING);
-        final AtomicLong recordsCreatedCounter = new AtomicLong();
-        String boltUrl = container.getBoltUrl();
-        Driver driver = GraphDatabase.driver(boltUrl, AuthTokens.none());
-        Session session = driver.session();
 
+        String boltUrl = container.getBoltUrl();
         final int expectedSize = 9;
-        IntStream.range(0, expectedSize)
-                 .forEach(value -> {
-                     session.run("CREATE (:TestSource {name: '" + testName + "', value: '"
-                             + testName + "-value-" + value + "', timestamp: datetime().epochMillis});");
-                     recordsCreatedCounter.incrementAndGet();
-                 });
+
+        try (Driver driver = GraphDatabase.driver(boltUrl, AuthTokens.none());
+             Session session = driver.session()) {
+
+            List<Map<String, Object>> nodes = new ArrayList<>();
+            for (int index = 0; index < expectedSize; index++) {
+                Map<String, Object> node = new HashMap<>();
+                node.put("name", testName);
+                node.put("value", testName + "-value-" + index);
+                node.put("timestamp", System.currentTimeMillis());
+                nodes.add(node);
+            }
+
+            // Use the UNWIND clause to iterate over a parameter named $nodes.
+            String sb = "UNWIND $nodes AS node " +
+                        // Create a node of type source using the properties from the current element in the list.
+                        "CREATE (:" + sourceName + " {name: node.name, value: node.value, timestamp: node.timestamp});";
+
+            // Execute the query with the list of nodes
+            session.run(sb, Collections.singletonMap("nodes", nodes));
+        }
 
         final IList<Long> testList = instance.getList(testName);
 
@@ -225,12 +220,28 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
                 .asInstanceOf(LONG)
                 .isEqualTo(expectedSize)
         );
-
-        session.close();
-        driver.close();
     }
 
-    private static void insertNodes(String prefix) {
+    private static Properties getConnectorProperties(String sourceName) {
+        Properties connectorProperties = new Properties();
+        connectorProperties.setProperty("name", "neo4j");
+        connectorProperties.setProperty("tasks.max", "1");
+        connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
+        connectorProperties.setProperty("topic", "some-topic");
+        connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
+        connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");
+        connectorProperties.setProperty("neo4j.authentication.basic.password", "password");
+        connectorProperties.setProperty("neo4j.streaming.poll.interval.msecs", "1000");
+        connectorProperties.setProperty("neo4j.streaming.property", "timestamp");
+        connectorProperties.setProperty("neo4j.streaming.from", "ALL");
+        connectorProperties.setProperty("neo4j.enforce.schema", "true");
+        connectorProperties.setProperty("neo4j.source.query",
+                "MATCH (ts:" + sourceName + ") WHERE ts.timestamp > $lastCheck " +
+                "RETURN ts.name AS name, ts.value AS value, ts.timestamp AS timestamp");
+        return connectorProperties;
+    }
+
+    private static void insertNodes(String sourceName, String prefix) {
         String boltUrl = container.getBoltUrl();
         List<Map<String, Object>> nodes = new ArrayList<>();
 
@@ -246,7 +257,7 @@ public class KafkaConnectNeo4jIT extends JetTestSupport {
             // Use the UNWIND clause to iterate over a parameter named $nodes.
             String sb = "UNWIND $nodes AS node " +
                         // Create a node of type TestSource using the properties from the current element in the list.
-                        "CREATE (:TestSource {name: node.name, value: node.value, timestamp: node.timestamp});";
+                        "CREATE (:" + sourceName + " {name: node.name, value: node.value, timestamp: node.timestamp});";
 
             // Execute the query with the list of nodes
             session.run(sb, Collections.singletonMap("nodes", nodes));
