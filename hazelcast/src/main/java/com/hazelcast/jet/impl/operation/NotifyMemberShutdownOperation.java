@@ -48,4 +48,9 @@ public class NotifyMemberShutdownOperation extends AsyncOperation implements Urg
     public final String getServiceName() {
         return JetServiceBackend.SERVICE_NAME;
     }
+
+    @Override
+    protected boolean requiresExplicitServiceName() {
+        return true;
+    }
 }
