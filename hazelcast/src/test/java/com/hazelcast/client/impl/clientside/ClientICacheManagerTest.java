@@ -23,12 +23,11 @@ import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,9 +39,6 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientICacheManagerTest {
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
     @Test
     public void getCache_when_hazelcastExceptionIsThrown_then_isRethrown() {
         // when a HazelcastException occurs whose cause is not a ServiceNotFoundException
@@ -51,8 +47,7 @@ public class ClientICacheManagerTest {
 
         ClientICacheManager clientCacheManager = new ClientICacheManager(hzInstance);
         // then the exception is rethrown
-        thrown.expect(HazelcastException.class);
-        clientCacheManager.getCache("any-cache");
+        assertThrows(HazelcastException.class, () -> clientCacheManager.getCache("any-cache"));
     }
 
     @Test
@@ -66,8 +61,7 @@ public class ClientICacheManagerTest {
 
         ClientICacheManager clientCacheManager = new ClientICacheManager(hzInstance);
         // then an IllegalStateException will be thrown by getCache
-        thrown.expect(IllegalStateException.class);
-        clientCacheManager.getCache("any-cache");
+        assertThrows(IllegalStateException.class, () -> clientCacheManager.getCache("any-cache"));
     }
 
     @Test
@@ -80,8 +74,7 @@ public class ClientICacheManagerTest {
 
         ClientICacheManager clientCacheManager = new ClientICacheManager(hzInstance);
         // then an IllegalStateException will be thrown by getCache
-        thrown.expect(IllegalStateException.class);
-        clientCacheManager.getCache("any-cache");
+        assertThrows(IllegalStateException.class, () -> clientCacheManager.getCache("any-cache"));
     }
 
 }

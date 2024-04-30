@@ -32,10 +32,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
@@ -62,8 +60,6 @@ public class CacheCreationTest extends HazelcastTestSupport {
 
     private static final int THREAD_COUNT = 4;
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void jsrSetup() {
@@ -162,8 +158,8 @@ public class CacheCreationTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = createCachingProvider(config);
         CacheManager defaultCacheManager = cachingProvider.getCacheManager();
 
-        thrown.expect(IllegalArgumentException.class);
-        defaultCacheManager.getCache("test");
+        assertThrows(IllegalArgumentException.class,
+                () -> defaultCacheManager.getCache("test"));
     }
 
     @Test
@@ -171,8 +167,8 @@ public class CacheCreationTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = createCachingProvider(createBasicConfig());
         CacheManager defaultCacheManager = cachingProvider.getCacheManager();
 
-        thrown.expect(IllegalArgumentException.class);
-        defaultCacheManager.createCache("test", createInvalidCacheConfig());
+        assertThrows(IllegalArgumentException.class, () ->
+                defaultCacheManager.createCache("test", createInvalidCacheConfig()));
     }
 
     @Test
@@ -180,8 +176,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
         System.setProperty("hazelcast.config", "classpath:test-hazelcast-invalid-cache.xml");
         CachingProvider cachingProvider = Caching.getCachingProvider();
 
-        thrown.expect(CacheException.class);
-        cachingProvider.getCacheManager();
+        assertThrows(CacheException.class, cachingProvider::getCacheManager);
     }
 
     @Test
