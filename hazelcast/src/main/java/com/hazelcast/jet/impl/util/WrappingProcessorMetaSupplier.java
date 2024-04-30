@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,8 @@ import java.util.function.Function;
  * {@code wrapperSupplier}.
  */
 public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private ProcessorMetaSupplier wrapped;
     private FunctionEx<Processor, Processor> wrapperSupplier;

@@ -38,6 +38,7 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -91,7 +92,8 @@ public final class WriteHadoopOldApiP<T, K, V> extends AbstractProcessor {
 
     public static class MetaSupplier<T, K, V> implements ProcessorMetaSupplier {
 
-        static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @SuppressFBWarnings("SE_BAD_FIELD")
         private final JobConf jobConf;

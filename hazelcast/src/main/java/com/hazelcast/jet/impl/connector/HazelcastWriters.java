@@ -42,6 +42,7 @@ import com.hazelcast.security.permission.RingBufferPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
@@ -286,6 +287,7 @@ public final class HazelcastWriters {
     @SuppressWarnings("AnonInnerLength")
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
         return new ProcessorMetaSupplier() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Nonnull

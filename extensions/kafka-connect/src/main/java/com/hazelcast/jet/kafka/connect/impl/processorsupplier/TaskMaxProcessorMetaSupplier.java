@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +39,10 @@ import java.util.function.Function;
  * Client or member sends this class to job coordinator in serialized form
  */
 public class TaskMaxProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private int tasksMax;
     private ReadKafkaConnectProcessorSupplier supplier;
     private transient boolean partitionedAddresses;

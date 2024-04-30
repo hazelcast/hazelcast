@@ -71,6 +71,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collections;
@@ -271,6 +272,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
     public abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
         protected final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 

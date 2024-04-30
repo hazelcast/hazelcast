@@ -52,6 +52,7 @@ import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
@@ -339,6 +340,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     private static class ClusterMetaSupplier<E, T> implements ProcessorMetaSupplier {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String clientXml;

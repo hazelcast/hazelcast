@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +47,7 @@ import static java.util.stream.Collectors.toMap;
 
 public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_LOCAL_PARALLELISM = 2;
 

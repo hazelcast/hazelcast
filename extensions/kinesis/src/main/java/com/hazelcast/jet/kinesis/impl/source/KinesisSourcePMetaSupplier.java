@@ -27,6 +27,7 @@ import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.retry.RetryStrategy;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import java.util.function.Function;
 import static java.util.stream.Collectors.joining;
 
 public class KinesisSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
+    @Serial
     private static final long serialVersionUID = 2L;
 
     @Nonnull
