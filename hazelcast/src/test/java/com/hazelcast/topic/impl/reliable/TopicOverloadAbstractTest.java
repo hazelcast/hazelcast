@@ -221,14 +221,11 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
         final long head = ringbuffer.headSequence();
 
         // add the item
-        final Future f = spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    topic.publishAll(Collections.singleton("new"));
-                } catch (ExecutionException | InterruptedException expected) {
-                    ignore(expected);
-                }
+        final Future f = spawn((Runnable) () -> {
+            try {
+                topic.publishAll(Collections.singleton("new"));
+            } catch (ExecutionException | InterruptedException expected) {
+                ignore(expected);
             }
         });
 

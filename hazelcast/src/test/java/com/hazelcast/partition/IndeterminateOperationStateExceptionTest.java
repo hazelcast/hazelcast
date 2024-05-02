@@ -133,12 +133,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
             }
         });
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                instance2.getLifecycleService().terminate();
-            }
-        });
+        spawn((Runnable) () -> instance2.getLifecycleService().terminate());
         try {
             future.get(2, TimeUnit.MINUTES);
             fail();
@@ -158,12 +153,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new DummyReadOperation(), partitionId).invoke();
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                instance2.getLifecycleService().terminate();
-            }
-        });
+        spawn((Runnable) () -> instance2.getLifecycleService().terminate());
         boolean response = future.get(2, TimeUnit.MINUTES);
         assertTrue(response);
         assertEquals(getAddress(instance1), instance1.getUserContext().get(DummyReadOperation.LAST_INVOCATION_ADDRESS));
@@ -215,12 +205,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
             }
         });
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                instance2.getLifecycleService().terminate();
-            }
-        });
+        spawn((Runnable) () -> instance2.getLifecycleService().terminate());
 
         future.get(2, TimeUnit.MINUTES);
     }

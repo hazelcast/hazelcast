@@ -56,30 +56,26 @@ public class ContextMutexFactoryTest {
         final CyclicBarrier cyc = new CyclicBarrier(concurrency + 1);
 
         for (int i = 0; i < concurrency; i++) {
-            new Thread(new Runnable() {
+            new Thread(() -> {
+                await(cyc);
 
-                @Override
-                public void run() {
-                    await(cyc);
-
-                    for (String key : keys) {
-                        ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
-                        try {
-                            synchronized (mutex) {
-                                Integer value = timesAcquired.get(key);
-                                if (value == null) {
-                                    timesAcquired.put(key, 1);
-                                } else {
-                                    timesAcquired.put(key, value + 1);
-                                }
+                for (String key : keys) {
+                    ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
+                    try {
+                        synchronized (mutex) {
+                            Integer value = timesAcquired.get(key);
+                            if (value == null) {
+                                timesAcquired.put(key, 1);
+                            } else {
+                                timesAcquired.put(key, value + 1);
                             }
-                        } finally {
-                            mutex.close();
                         }
+                    } finally {
+                        mutex.close();
                     }
-
-                    await(cyc);
                 }
+
+                await(cyc);
             }).start();
         }
         // start threads, wait for them to finish

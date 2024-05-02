@@ -1673,11 +1673,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         runnable = () -> map.put(null, "value");
         assertRunnableThrowsNullPointerException(runnable, "put(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.put("key", null);
-            }
-        };
+        runnable = () -> map.put("key", null);
         assertRunnableThrowsNullPointerException(runnable, "put(\"key\", null)");
 
         runnable = () -> map.remove(null);
@@ -1807,11 +1803,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         runnable = () -> map.isLocked(null);
         assertRunnableThrowsNullPointerException(runnable, "isLocked(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.tryLock(null);
-            }
-        };
+        runnable = () -> map.tryLock(null);
         assertRunnableThrowsNullPointerException(runnable, "tryLock(null)");
 
         runnable = () -> {

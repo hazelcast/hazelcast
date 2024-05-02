@@ -91,13 +91,10 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         hazelcastInstance.shutdown();
 
         final CountDownLatch cacheCreated = new CountDownLatch(1);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                MutableConfiguration configuration = new MutableConfiguration();
-                cacheManager.createCache("xmlCache", configuration);
-                cacheCreated.countDown();
-            }
+        new Thread(() -> {
+            MutableConfiguration configuration = new MutableConfiguration();
+            cacheManager.createCache("xmlCache", configuration);
+            cacheCreated.countDown();
         }).start();
 
         //leave some gap to let create cache to start and retry

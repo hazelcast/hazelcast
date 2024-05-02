@@ -87,18 +87,15 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         final List<Thread> threads = new ArrayList<>();
         final CountDownLatch latch = new CountDownLatch(instances.size());
         for (final HazelcastInstance instance : instances) {
-            threads.add(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (nodeLeaveType == NodeLeaveType.SHUTDOWN) {
-                        instance.getLifecycleService().shutdown();
-                        latch.countDown();
-                    } else if (nodeLeaveType == NodeLeaveType.TERMINATE) {
-                        instance.getLifecycleService().terminate();
-                        latch.countDown();
-                    } else {
-                        System.err.println("Invalid node leave type: " + nodeLeaveType);
-                    }
+            threads.add(new Thread(() -> {
+                if (nodeLeaveType == NodeLeaveType.SHUTDOWN) {
+                    instance.getLifecycleService().shutdown();
+                    latch.countDown();
+                } else if (nodeLeaveType == NodeLeaveType.TERMINATE) {
+                    instance.getLifecycleService().terminate();
+                    latch.countDown();
+                } else {
+                    System.err.println("Invalid node leave type: " + nodeLeaveType);
                 }
             }));
         }

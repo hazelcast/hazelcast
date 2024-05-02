@@ -97,16 +97,13 @@ public class InvocationUtilTest extends HazelcastTestSupport {
                 .setPartitionId(randomPartitionId);
         final LocalRetryableExecution execution = executeLocallyWithRetry(nodeEngineImpl, operation);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    TimeUnit.SECONDS.sleep(10);
-                } catch (InterruptedException e) {
+        spawn((Runnable) () -> {
+            try {
+                TimeUnit.SECONDS.sleep(10);
+            } catch (InterruptedException e) {
 
-                }
-                partition.resetMigrating();
             }
+            partition.resetMigrating();
         });
 
         assertTrue(execution.awaitCompletion(1, TimeUnit.MINUTES));

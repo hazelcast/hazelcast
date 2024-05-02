@@ -1474,12 +1474,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateDataAdapter(context, DEFAULT_RECORD_COUNT);
 
         final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                populateNearCache(context);
-                countDownLatch.countDown();
-            }
+        Runnable task = () -> {
+            populateNearCache(context);
+            countDownLatch.countDown();
         };
 
         ExecutorService executorService = newFixedThreadPool(threadCount);

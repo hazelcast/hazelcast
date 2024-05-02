@@ -138,17 +138,14 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
                 }
             }
         });
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                IMap<Object, Object> clientMap = clientInstance.getMap(name);
-                try {
-                    clientMap.lock(key);
-                } catch (Exception e) {
-                    ignore(e);
-                }
-
+        new Thread(() -> {
+            IMap<Object, Object> clientMap = clientInstance.getMap(name);
+            try {
+                clientMap.lock(key);
+            } catch (Exception e) {
+                ignore(e);
             }
+
         }).start();
 
         SECONDS.sleep(2);

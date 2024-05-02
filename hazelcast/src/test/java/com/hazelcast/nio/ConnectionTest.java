@@ -78,7 +78,7 @@ public class ConnectionTest extends HazelcastTestSupport {
         final AtomicInteger connected = new AtomicInteger();
         final AtomicInteger cc = new AtomicInteger();
 
-        final Set<Socket> sockets = Collections.newSetFromMap(new ConcurrentHashMap<Socket, Boolean>());
+        final Set<Socket> sockets = Collections.newSetFromMap(new ConcurrentHashMap<>());
         final Thread st = new Thread("server-socket") {
             public void run() {
                 while (!isInterrupted()) {
@@ -189,10 +189,10 @@ public class ConnectionTest extends HazelcastTestSupport {
                         public void init(Properties properties) {
                         }
 
-                        public void onAccept(Socket acceptedSocket) throws IOException {
+                        public void onAccept(Socket acceptedSocket) {
                         }
 
-                        public void onConnect(Socket connectedSocket) throws IOException {
+                        public void onConnect(Socket connectedSocket) {
                         }
                     }));
         }
@@ -213,34 +213,32 @@ public class ConnectionTest extends HazelcastTestSupport {
             }
         }.start();
 
-        final Collection<Socket> sockets = Collections.newSetFromMap(new ConcurrentHashMap<Socket, Boolean>());
+        final Collection<Socket> sockets = Collections.newSetFromMap(new ConcurrentHashMap<>());
         final AtomicInteger k0 = new AtomicInteger();
         final AtomicInteger k1 = new AtomicInteger();
         for (int i = 0; i < count; i++) {
-            Runnable task = new Runnable() {
-                public void run() {
-                    try {
-                        if (cc.incrementAndGet() == count / 10) {
-                            ll.countDown();
-                        }
-                        Socket socket = new Socket();
-                        sockets.add(socket);
-                        try {
-                            socket.connect(new InetSocketAddress(port));
-                            k0.incrementAndGet();
-                        } catch (IOException e) {
-                            k1.incrementAndGet();
-                        }
-
-                        OutputStream out = socket.getOutputStream();
-                        out.write(Protocols.CLUSTER.getBytes());
-                        out.flush();
-
-                        socket.getInputStream().read();
-                    } catch (IOException ignored) {
-                    } finally {
-                        latch.countDown();
+            Runnable task = () -> {
+                try {
+                    if (cc.incrementAndGet() == count / 10) {
+                        ll.countDown();
                     }
+                    Socket socket = new Socket();
+                    sockets.add(socket);
+                    try {
+                        socket.connect(new InetSocketAddress(port));
+                        k0.incrementAndGet();
+                    } catch (IOException e) {
+                        k1.incrementAndGet();
+                    }
+
+                    OutputStream out = socket.getOutputStream();
+                    out.write(Protocols.CLUSTER.getBytes());
+                    out.flush();
+
+                    socket.getInputStream().read();
+                } catch (IOException ignored) {
+                } finally {
+                    latch.countDown();
                 }
             };
             Thread t = new Thread(task, "socket-thread-" + i);

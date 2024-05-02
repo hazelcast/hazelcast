@@ -87,33 +87,25 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
         final Cache<Integer, Integer> clientCache = clientCachingProvider.getCacheManager().createCache(
                 DEFAULT_CACHE_NAME, createCacheConfig(BINARY));
 
-        Thread populateNearCache = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    for (int i = 0; i < CACHE_SIZE; i++) {
-                        clientCache.get(i);
-                    }
+        Thread populateNearCache = new Thread(() -> {
+            while (!stopTest.get()) {
+                for (int i = 0; i < CACHE_SIZE; i++) {
+                    clientCache.get(i);
                 }
             }
         });
 
-        Thread distortSequence = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    distortRandomPartitionSequence(DEFAULT_CACHE_NAME, member);
-                    sleepSeconds(1);
-                }
+        Thread distortSequence = new Thread(() -> {
+            while (!stopTest.get()) {
+                distortRandomPartitionSequence(DEFAULT_CACHE_NAME, member);
+                sleepSeconds(1);
             }
         });
 
-        Thread distortUuid = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    distortRandomPartitionUuid(member);
-                    sleepSeconds(5);
-                }
+        Thread distortUuid = new Thread(() -> {
+            while (!stopTest.get()) {
+                distortRandomPartitionUuid(member);
+                sleepSeconds(5);
             }
         });
 

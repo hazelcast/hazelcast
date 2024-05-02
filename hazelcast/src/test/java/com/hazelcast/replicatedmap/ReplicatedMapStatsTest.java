@@ -143,14 +143,11 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         final LocalReplicatedMapStats stats = getReplicatedMapStats();
         final long initialHits = stats.getHits();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < actionCount; i++) {
-                    replicatedMap.get(i);
-                }
-                getReplicatedMapStats(); // causes the local stats object to update
+        new Thread(() -> {
+            for (int i = 0; i < actionCount; i++) {
+                replicatedMap.get(i);
             }
+            getReplicatedMapStats(); // causes the local stats object to update
         }).start();
 
         assertEquals(actionCount, initialHits);
@@ -184,13 +181,10 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         final LocalReplicatedMapStats stats = getReplicatedMapStats();
         final long lastAccessTime = stats.getLastAccessTime();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sleepAtLeastMillis(1);
-                map.get(key);
-                map.getReplicatedMapStats(); // causes the local stats object to update
-            }
+        new Thread(() -> {
+            sleepAtLeastMillis(1);
+            map.get(key);
+            map.getReplicatedMapStats(); // causes the local stats object to update
         }).start();
 
         assertTrue(lastAccessTime >= startTime);
@@ -230,13 +224,10 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         final LocalReplicatedMapStats stats = getReplicatedMapStats();
         final long lastUpdateTime = stats.getLastUpdateTime();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sleepAtLeastMillis(1);
-                map.put(key, "value2");
-                getReplicatedMapStats(); // causes the local stats object to update
-            }
+        new Thread(() -> {
+            sleepAtLeastMillis(1);
+            map.put(key, "value2");
+            getReplicatedMapStats(); // causes the local stats object to update
         }).start();
 
         assertTrue(lastUpdateTime >= startTime);

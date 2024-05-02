@@ -98,12 +98,9 @@ public class MPSCQueueTest extends HazelcastTestSupport {
         final Thread owningThread = Thread.currentThread();
         queue.setConsumerThread(owningThread);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(3);
-                owningThread.interrupt();
-            }
+        spawn((Runnable) () -> {
+            sleepSeconds(3);
+            owningThread.interrupt();
         });
 
         queue.take();
@@ -113,12 +110,9 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     public void take_whenItemAvailableAfterSomeBlocking() throws Exception {
         queue.setConsumerThread(Thread.currentThread());
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(3);
-                queue.offer("1");
-            }
+        spawn((Runnable) () -> {
+            sleepSeconds(3);
+            queue.offer("1");
         });
 
         Object item = queue.take();

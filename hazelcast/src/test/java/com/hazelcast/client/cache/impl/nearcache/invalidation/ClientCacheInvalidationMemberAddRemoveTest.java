@@ -126,14 +126,11 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
         ArrayList<Thread> threads = new ArrayList<>();
 
         // continuously adds and removes member
-        Thread shadowMember = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-                    sleepSeconds(5);
-                    member.getLifecycleService().terminate();
-                }
+        Thread shadowMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+                sleepSeconds(5);
+                member.getLifecycleService().terminate();
             }
         });
 
@@ -141,14 +138,12 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
 
         for (int i = 0; i < NEAR_CACHE_POPULATE_THREAD_COUNT; i++) {
             // populates client Near Cache
-            Thread populateClientNearCache = new Thread(new Runnable() {
-                public void run() {
-                    int i = 0;
-                    while (!stopTest.get()) {
-                        clientCache.get(i++);
-                        if (i == KEY_COUNT) {
-                            i = 0;
-                        }
+            Thread populateClientNearCache = new Thread(() -> {
+                int key = 0;
+                while (!stopTest.get()) {
+                    clientCache.get(key++);
+                    if (key == KEY_COUNT) {
+                        key = 0;
                     }
                 }
             });
@@ -156,25 +151,21 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
         }
 
         // updates data from member
-        Thread putFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    int key = getInt(KEY_COUNT);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberCache.put(key, value);
+        Thread putFromMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                int key = getInt(KEY_COUNT);
+                int value = getInt(Integer.MAX_VALUE);
+                memberCache.put(key, value);
 
-                    sleepAtLeastMillis(2);
-                }
+                sleepAtLeastMillis(2);
             }
         });
         threads.add(putFromMember);
 
-        Thread clearFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    memberCache.clear();
-                    sleepSeconds(3);
-                }
+        Thread clearFromMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                memberCache.clear();
+                sleepSeconds(3);
             }
         });
         threads.add(clearFromMember);

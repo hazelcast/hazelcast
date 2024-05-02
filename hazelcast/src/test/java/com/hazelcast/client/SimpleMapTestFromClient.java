@@ -98,20 +98,18 @@ public class SimpleMapTestFromClient {
                 }
             });
         }
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(statsSeconds * 1000);
-                        System.out.println("cluster size:"
-                                + client.getCluster().getMembers().size());
-                        Stats currentStats = stats.getAndReset();
-                        System.out.println(currentStats);
-                        System.out.println("Operations per Second: " + currentStats.total()
-                                / statsSeconds);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        Executors.newSingleThreadExecutor().submit((Runnable) () -> {
+            while (true) {
+                try {
+                    Thread.sleep(statsSeconds * 1000);
+                    System.out.println("cluster size:"
+                            + client.getCluster().getMembers().size());
+                    Stats currentStats = stats.getAndReset();
+                    System.out.println(currentStats);
+                    System.out.println("Operations per Second: " + currentStats.total()
+                            / statsSeconds);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         });

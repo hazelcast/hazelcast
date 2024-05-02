@@ -61,39 +61,35 @@ public final class SimpleMultiMapTest {
         load(load, es, map);
 
         for (int i = 0; i < threadCount; i++) {
-            es.execute(new Runnable() {
-                public void run() {
-                    while (true) {
-                        int key = (int) (RANDOM.nextFloat() * entryCount);
-                        int operation = ((int) (RANDOM.nextFloat() * 100));
-                        if (operation < getPercentage) {
-                            map.get(String.valueOf(key));
-                            gets.incrementAndGet();
-                        } else if (operation < getPercentage + putPercentage) {
-                            map.put(String.valueOf(key), new byte[valueSize]);
-                            puts.incrementAndGet();
-                        } else {
-                            map.remove(String.valueOf(key));
-                            removes.incrementAndGet();
-                        }
+            es.execute(() -> {
+                while (true) {
+                    int key = (int) (RANDOM.nextFloat() * entryCount);
+                    int operation = ((int) (RANDOM.nextFloat() * 100));
+                    if (operation < getPercentage) {
+                        map.get(String.valueOf(key));
+                        gets.incrementAndGet();
+                    } else if (operation < getPercentage + putPercentage) {
+                        map.put(String.valueOf(key), new byte[valueSize]);
+                        puts.incrementAndGet();
+                    } else {
+                        map.remove(String.valueOf(key));
+                        removes.incrementAndGet();
                     }
                 }
             });
         }
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
-            public void run() {
-                while (true) {
-                    sleepSeconds(STATS_SECONDS);
-                    int putCount = puts.getAndSet(0);
-                    int getCount = gets.getAndSet(0);
-                    int removeCount = removes.getAndSet(0);
+        Executors.newSingleThreadExecutor().execute(() -> {
+            while (true) {
+                sleepSeconds(STATS_SECONDS);
+                int putCount = puts.getAndSet(0);
+                int getCount = gets.getAndSet(0);
+                int removeCount = removes.getAndSet(0);
 
-                    LOGGER.info("cluster size: " + instance.getCluster().getMembers().size());
-                    LOGGER.info("TOTAL: " + (removeCount + putCount + getCount) / STATS_SECONDS);
-                    LOGGER.info("PUTS: " + putCount / STATS_SECONDS);
-                    LOGGER.info("GEtS: " + getCount / STATS_SECONDS);
-                    LOGGER.info("REMOVES: " + removeCount / STATS_SECONDS);
-                }
+                LOGGER.info("cluster size: " + instance.getCluster().getMembers().size());
+                LOGGER.info("TOTAL: " + (removeCount + putCount + getCount) / STATS_SECONDS);
+                LOGGER.info("PUTS: " + putCount / STATS_SECONDS);
+                LOGGER.info("GEtS: " + getCount / STATS_SECONDS);
+                LOGGER.info("REMOVES: " + removeCount / STATS_SECONDS);
             }
         });
     }
@@ -105,11 +101,7 @@ public final class SimpleMultiMapTest {
                 final String key = String.valueOf(i);
                 Partition partition = instance.getPartitionService().getPartition(key);
                 if (thisMember.equals(partition.getOwner())) {
-                    es.execute(new Runnable() {
-                        public void run() {
-                            map.put(key, new byte[valueSize]);
-                        }
-                    });
+                    es.execute(() -> map.put(key, new byte[valueSize]));
                 }
             }
         }

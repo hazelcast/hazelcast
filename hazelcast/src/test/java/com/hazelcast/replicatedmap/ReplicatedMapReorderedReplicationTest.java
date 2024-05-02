@@ -92,12 +92,9 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
         final Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
             final int startIndex = i;
-            threads[i] = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int j = startIndex; j < keyCount; j += threadCount) {
-                        put(nodeEngine, mapName, partitionId, j, j);
-                    }
+            threads[i] = new Thread(() -> {
+                for (int j = startIndex; j < keyCount; j += threadCount) {
+                    put(nodeEngine, mapName, partitionId, j, j);
                 }
             });
         }

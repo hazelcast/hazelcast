@@ -100,16 +100,13 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
 
     private Thread createPutOperationThread(final ReplicatedMap<String, Object> map, final ArrayList<Integer> keys,
                                             final long ttl, final TimeUnit timeunit, final int operations) {
-        return new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                int size = keys.size();
-                for (int i = 0; i < operations; i++) {
-                    int index = i % size;
-                    String key = "foo-" + keys.get(index);
-                    map.put(key, random.nextLong(), 1 + random.nextInt((int) ttl), timeunit);
-                }
+        return new Thread(() -> {
+            Random random = new Random();
+            int size = keys.size();
+            for (int i = 0; i < operations; i++) {
+                int index = i % size;
+                String key = "foo-" + keys.get(index);
+                map.put(key, random.nextLong(), 1 + random.nextInt((int) ttl), timeunit);
             }
         });
     }
