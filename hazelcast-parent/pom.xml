@@ -1016,5 +1016,20 @@
                 </repository>
             </distributionManagement>
         </profile>
+        
+        <!-- For use in CI (Continuous Integration) environments (Jenkins, GitHub actions etc) -->
+        <profile>
+            <id>CI</id>
+            <activation>
+                <property>
+                    <!-- "CI" is an environment variable set in many CI pipelines, e.g. https://docs.gitlab.com/ee/ci/variables/predefined_variables.html -->
+                    <name>env.CI</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+            </properties>
+        </profile>
     </profiles>
 </project>

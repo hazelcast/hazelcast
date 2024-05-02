@@ -652,7 +652,6 @@
                                             implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                         <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                                     </statelessTestsetReporter>
-                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                 </configuration>
                             </execution>
                             <execution>
@@ -836,7 +835,6 @@
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                 <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                             </statelessTestsetReporter>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -916,7 +914,6 @@
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                 <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                             </statelessTestsetReporter>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                     </plugin>
 
@@ -1096,7 +1093,6 @@
                                 com.hazelcast.test.annotation.NightlyTest,
                                 com.hazelcast.test.annotation.SlowTest
                             </groups>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                         <executions>
                             <execution>
@@ -1142,7 +1138,6 @@
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                                 <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
                             </statelessTestsetReporter>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         </configuration>
                     </plugin>
                     <plugin>
