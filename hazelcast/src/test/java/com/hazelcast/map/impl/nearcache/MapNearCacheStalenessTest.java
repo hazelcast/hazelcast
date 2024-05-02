@@ -23,7 +23,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -99,12 +98,9 @@ public class MapNearCacheStalenessTest extends HazelcastTestSupport {
             assertJoinable(thread);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNoStaleDataExistInNearCache(map1);
-                assertNoStaleDataExistInNearCache(map2);
-            }
+        assertTrueEventually(() -> {
+            assertNoStaleDataExistInNearCache(map1);
+            assertNoStaleDataExistInNearCache(map2);
         });
     }
 

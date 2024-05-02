@@ -24,7 +24,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -144,15 +143,12 @@ public class MemberMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
             assertJoinable(thread);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < KEY_COUNT; i++) {
-                    Integer valueSeenFromMember = memberMap.get(i);
-                    Integer valueSeenFromClient = nearCachedMap.get(i);
+        assertTrueEventually(() -> {
+            for (int i = 0; i < KEY_COUNT; i++) {
+                Integer valueSeenFromMember = memberMap.get(i);
+                Integer valueSeenFromClient = nearCachedMap.get(i);
 
-                    assertEquals(valueSeenFromMember, valueSeenFromClient);
-                }
+                assertEquals(valueSeenFromMember, valueSeenFromClient);
             }
         });
     }

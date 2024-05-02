@@ -30,7 +30,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -177,25 +176,22 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
 
     private void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
                                                       final HazelcastInstance server) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final DefaultNearCache nearCache = getNearCache((NearCachedMapProxyImpl) nearCachedMapFromNewServer);
+        assertTrueEventually(() -> {
+            final DefaultNearCache nearCache = getNearCache((NearCachedMapProxyImpl) nearCachedMapFromNewServer);
 
-                NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
-                StaleReadDetector staleReadDetector = getStaleReadDetector(nearCacheRecordStore);
+            NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
+            StaleReadDetector staleReadDetector = getStaleReadDetector(nearCacheRecordStore);
 
-                // we first assert that the stale detector is not the initial one, since the metadata that the records are
-                // initialized with on putting records into the record store is queried from the stale detector
-                assertNotSame(ALWAYS_FRESH, staleReadDetector);
+            // we first assert that the stale detector is not the initial one, since the metadata that the records are
+            // initialized with on putting records into the record store is queried from the stale detector
+            assertNotSame(ALWAYS_FRESH, staleReadDetector);
 
-                // wait until all partition's metadata is filled properly, since creating records from on initial metadata
-                // may lead to stale reads if the metadata gets updated between record creation and stale read check
-                for (Partition partition : server.getPartitionService().getPartitions()) {
-                    MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partition.getPartitionId());
+            // wait until all partition's metadata is filled properly, since creating records from on initial metadata
+            // may lead to stale reads if the metadata gets updated between record creation and stale read check
+            for (Partition partition : server.getPartitionService().getPartitions()) {
+                MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partition.getPartitionId());
 
-                    assertNotNull(metaDataContainer.getUuid());
-                }
+                assertNotNull(metaDataContainer.getUuid());
             }
         });
     }

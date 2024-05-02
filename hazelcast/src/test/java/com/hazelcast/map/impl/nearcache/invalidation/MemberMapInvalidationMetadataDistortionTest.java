@@ -32,7 +32,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -132,15 +131,12 @@ public class MemberMapInvalidationMetadataDistortionTest extends NearCacheTestSu
         stopTest.set(true);
         assertJoinable(distortUuid, distortSequence, populateNearCache, put);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < MAP_SIZE; i++) {
-                    Integer valueSeenFromMember = memberMap.get(i);
-                    Integer valueSeenFromNearCachedSide = nearCachedMap.get(i);
+        assertTrueEventually(() -> {
+            for (int i = 0; i < MAP_SIZE; i++) {
+                Integer valueSeenFromMember = memberMap.get(i);
+                Integer valueSeenFromNearCachedSide = nearCachedMap.get(i);
 
-                    assertEquals(valueSeenFromMember, valueSeenFromNearCachedSide);
-                }
+                assertEquals(valueSeenFromMember, valueSeenFromNearCachedSide);
             }
         });
     }

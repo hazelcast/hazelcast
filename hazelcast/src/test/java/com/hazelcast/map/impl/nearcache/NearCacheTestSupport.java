@@ -37,7 +37,6 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Map;
@@ -211,13 +210,11 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected void waitForNearCacheEvictions(final IMap map, final int evictionCount) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                long evictions = getNearCacheStats(map).getEvictions();
-                assertTrue(
-                        format("Near Cache eviction count didn't reach the desired value (%d vs. %d)", evictions, evictionCount),
-                        evictions >= evictionCount);
-            }
+        assertTrueEventually(() -> {
+            long evictions = getNearCacheStats(map).getEvictions();
+            assertTrue(
+                    format("Near Cache eviction count didn't reach the desired value (%d vs. %d)", evictions, evictionCount),
+                    evictions >= evictionCount);
         });
     }
 

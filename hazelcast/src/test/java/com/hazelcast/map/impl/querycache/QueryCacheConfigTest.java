@@ -22,7 +22,6 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,12 +80,7 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, cache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, cache.size()));
     }
 
     protected HazelcastInstance createInstanceWithQueryCacheConfig(String mapName, QueryCacheConfig queryCacheConfig) {

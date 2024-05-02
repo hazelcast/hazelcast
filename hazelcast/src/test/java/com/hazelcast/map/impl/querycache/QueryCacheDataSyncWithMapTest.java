@@ -24,7 +24,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -88,24 +87,21 @@ public class QueryCacheDataSyncWithMapTest extends HazelcastTestSupport {
             }
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int mapSize = map.size();
-                int queryCacheSize = queryCache.size();
+        assertTrueEventually(() -> {
+            int mapSize = map.size();
+            int queryCacheSize = queryCache.size();
 
-                String msg = "query cache should have same size with underlying imap but"
-                        + " its size found %d while map size is %d";
+            String msg = "query cache should have same size with underlying imap but"
+                    + " its size found %d while map size is %d";
 
-                assertEquals(format(msg, queryCacheSize, mapSize), mapSize, queryCacheSize);
+            assertEquals(format(msg, queryCacheSize, mapSize), mapSize, queryCacheSize);
 
-                Collection<Employee> valuesInMap = map.values();
-                Collection<Employee> valuesInQueryCache = queryCache.values();
+            Collection<Employee> valuesInMap = map.values();
+            Collection<Employee> valuesInQueryCache = queryCache.values();
 
-                String msg2 = "valuesInMap %s but valuesInQueryCache %s";
-                assertTrue(format(msg2, valuesInMap, valuesInQueryCache),
-                        valuesInMap.containsAll(valuesInQueryCache));
-            }
+            String msg2 = "valuesInMap %s but valuesInQueryCache %s";
+            assertTrue(format(msg2, valuesInMap, valuesInQueryCache),
+                    valuesInMap.containsAll(valuesInQueryCache));
         });
     }
 

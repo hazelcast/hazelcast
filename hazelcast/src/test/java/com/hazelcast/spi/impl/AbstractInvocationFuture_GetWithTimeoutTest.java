@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.spi.impl.AbstractInvocationFuture.WaitNode;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -133,12 +132,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         });
 
         // wait till the thread is registered.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotSame(UNRESOLVED, future.getState());
-            }
-        });
+        assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
 
         future.complete(value);
 
@@ -147,7 +141,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     }
 
     @Test
-    public void whenTimeout() throws ExecutionException, InterruptedException {
+    public void whenTimeout() throws InterruptedException {
         Future getFuture = spawn(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
@@ -184,12 +178,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotSame(UNRESOLVED, future.getState());
-            }
-        });
+        assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
 
         sleepSeconds(5);
         thread.get().interrupt();
@@ -216,12 +205,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
             }));
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotSame(UNRESOLVED, future.getState());
-            }
-        });
+        assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
 
         sleepSeconds(5);
         future.complete(value);

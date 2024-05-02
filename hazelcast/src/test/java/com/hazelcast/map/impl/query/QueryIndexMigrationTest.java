@@ -29,7 +29,6 @@ import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -119,15 +118,12 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         nodeFactory.newInstances(getTestConfig(), 3);
 
         final IMap<String, Employee> employees = instance.getMap("employees");
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<Employee> values = employees.values(Predicates.sql("active and name LIKE 'joe15%'"));
-                for (Employee employee : values) {
-                    assertTrue(employee.isActive());
-                }
-                assertEquals(6, values.size());
+        assertTrueAllTheTime(() -> {
+            Collection<Employee> values = employees.values(Predicates.sql("active and name LIKE 'joe15%'"));
+            for (Employee employee : values) {
+                assertTrue(employee.isActive());
             }
+            assertEquals(6, values.size());
         }, 3);
     }
 
@@ -148,15 +144,12 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         nodeFactory.newInstances(config, 3);
 
         final IMap<String, Employee> employees = instance.getMap("employees");
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<Employee> values = employees.values(Predicates.sql("active and name LIKE 'joe15%'"));
-                for (Employee employee : values) {
-                    assertTrue(employee.isActive() && employee.getName().startsWith("joe15"));
-                }
-                assertEquals(6, values.size());
+        assertTrueAllTheTime(() -> {
+            Collection<Employee> values = employees.values(Predicates.sql("active and name LIKE 'joe15%'"));
+            for (Employee employee : values) {
+                assertTrue(employee.isActive() && employee.getName().startsWith("joe15"));
             }
+            assertEquals(6, values.size());
         }, 3);
     }
 

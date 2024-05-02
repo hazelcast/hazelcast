@@ -25,7 +25,6 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -44,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheCoalescingTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     @Test
@@ -74,12 +72,7 @@ public class QueryCacheCoalescingTest extends HazelcastTestSupport {
             map.put(0, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(100, cache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(100, cache.size()));
         assertOpenEventually(updateEventCount);
     }
 

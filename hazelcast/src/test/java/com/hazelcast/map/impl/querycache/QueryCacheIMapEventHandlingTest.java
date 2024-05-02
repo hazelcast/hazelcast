@@ -65,7 +65,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private HazelcastInstance member;
@@ -93,12 +92,9 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
         executeMergeOperation(member, mapName, key, mergingValue);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Integer currentValue = queryCache.get(key);
-                assertEquals(mergingValue, (Object) currentValue);
-            }
+        assertTrueEventually(() -> {
+            Integer currentValue = queryCache.get(key);
+            assertEquals(mergingValue, (Object) currentValue);
         });
     }
 

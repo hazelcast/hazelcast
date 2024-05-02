@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -141,13 +140,10 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
 
         supplier.get().accept(response);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Invocation inv = invocationRegistry.get(callId);
-                System.out.println(inv);
-                assertNull(inv);
-            }
+        assertTrueEventually(() -> {
+            Invocation inv = invocationRegistry.get(callId);
+            System.out.println(inv);
+            assertNull(inv);
         });
 
         assertEquals(1, supplier.responsesNormal());

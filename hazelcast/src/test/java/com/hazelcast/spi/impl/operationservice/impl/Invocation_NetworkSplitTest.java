@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -80,12 +79,9 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         Operation op = new AlwaysBlockingOperation();
         Future<Object> future = getNodeEngineImpl(hz3).getOperationService().invokeOnPartition("", op, partitionId);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final OperationParkerImpl waitNotifyService3 = (OperationParkerImpl) getNodeEngineImpl(hz2).getOperationParker();
-                assertEquals(1, waitNotifyService3.getTotalParkedOperationCount());
-            }
+        assertTrueEventually(() -> {
+            final OperationParkerImpl waitNotifyService3 = (OperationParkerImpl) getNodeEngineImpl(hz2).getOperationParker();
+            assertEquals(1, waitNotifyService3.getTotalParkedOperationCount());
         });
 
         // execute the given split action
@@ -134,12 +130,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         getNodeEngineImpl(hz1).getOperationService().invokeOnPartition("", new AlwaysBlockingOperation(), partitionId);
 
         final OperationParkerImpl waitNotifyService3 = (OperationParkerImpl) getNodeEngineImpl(hz3).getOperationParker();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, waitNotifyService3.getTotalParkedOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, waitNotifyService3.getTotalParkedOperationCount()));
 
         action.run(hz1, hz2, hz3);
 
@@ -147,12 +138,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         // after node3 rejoins
         factory.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, getPartitionService(hz1).getMigrationQueueSize());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, getPartitionService(hz1).getMigrationQueueSize()));
 
         unblock(hz1, hz2, hz3);
 
@@ -181,7 +167,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     private static class AlwaysBlockingOperation extends Operation implements BlockingOperation {
 
         @Override
-        public void run() throws Exception {
+        public void run() {
         }
 
         @Override
@@ -226,13 +212,10 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
             closeConnectionBetween(instance1, instance3);
             closeConnectionBetween(instance2, instance3);
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals(2, getNodeEngineImpl(instance1).getClusterService().getSize());
-                    assertEquals(2, getNodeEngineImpl(instance2).getClusterService().getSize());
-                    assertEquals(1, getNodeEngineImpl(instance3).getClusterService().getSize());
-                }
+            assertTrueEventually(() -> {
+                assertEquals(2, getNodeEngineImpl(instance1).getClusterService().getSize());
+                assertEquals(2, getNodeEngineImpl(instance2).getClusterService().getSize());
+                assertEquals(1, getNodeEngineImpl(instance3).getClusterService().getSize());
             });
         }
     }
@@ -248,13 +231,10 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
             blockCommunicationBetween(instance2, instance3);
             suspectMember(getNode(instance1), getNode(instance3));
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals(2, getNodeEngineImpl(instance1).getClusterService().getSize());
-                    assertEquals(2, getNodeEngineImpl(instance2).getClusterService().getSize());
-                    assertEquals(3, getNodeEngineImpl(instance3).getClusterService().getSize());
-                }
+            assertTrueEventually(() -> {
+                assertEquals(2, getNodeEngineImpl(instance1).getClusterService().getSize());
+                assertEquals(2, getNodeEngineImpl(instance2).getClusterService().getSize());
+                assertEquals(3, getNodeEngineImpl(instance3).getClusterService().getSize());
             });
         }
     }

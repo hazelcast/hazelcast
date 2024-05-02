@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -121,12 +120,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotSame(UNRESOLVED, future.getState());
-            }
-        });
+        assertTrueEventually(() -> assertNotSame(UNRESOLVED, future.getState()));
 
         sleepSeconds(5);
         thread.get().interrupt();

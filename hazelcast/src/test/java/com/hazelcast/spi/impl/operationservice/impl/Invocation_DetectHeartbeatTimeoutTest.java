@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -145,11 +144,6 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
     }
 
     private void assertDetectHeartbeatTimeoutEventually(final Invocation invocation, final Invocation.HeartbeatTimeout yes) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(yes, invocation.detectTimeout(SECONDS.toMillis(1)));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(yes, invocation.detectTimeout(SECONDS.toMillis(1))));
     }
 }

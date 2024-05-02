@@ -45,7 +45,6 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private final String mapName = randomString();
@@ -108,12 +107,7 @@ public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache queryCache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, queryCache.size());
-            }
-        };
+        AssertTask task = () -> assertEquals(expected, queryCache.size());
 
         assertTrueEventually(task, 20);
     }

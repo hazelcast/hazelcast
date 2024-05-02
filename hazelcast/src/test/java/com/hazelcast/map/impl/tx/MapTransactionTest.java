@@ -36,7 +36,6 @@ import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -403,12 +402,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertTrue(b);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNull(map2.get("1"));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map2.get("1")));
     }
 
     // =================== getForUpdate ===============================
