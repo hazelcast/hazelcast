@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
     private static final int OPERATION_COUNT = 10;
-    private static final int DEFAULT_PARTITION_COUNT = Integer.valueOf(PARTITION_COUNT.getDefaultValue());
+    private static final int DEFAULT_PARTITION_COUNT = Integer.parseInt(PARTITION_COUNT.getDefaultValue());
     private HazelcastInstance instance;
     private String replicatedMapName = "replicatedMap";
 

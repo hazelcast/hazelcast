@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class QueryResultSizeLimiterTest {
 
     private static final String ANY_MAP_NAME = "foobar";
-    private static final int PARTITION_COUNT = Integer.valueOf(ClusterProperty.PARTITION_COUNT.getDefaultValue());
+    private static final int PARTITION_COUNT = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
 
     private final Map<Integer, Integer> localPartitions = new HashMap<>();
 

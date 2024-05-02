@@ -164,7 +164,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
             }
 
             return resultRef.get();
-        }, Integer.valueOf(1));
+        }, 1);
 
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertThat(mapLoader.getLoadedValueCount()).isGreaterThanOrEqualTo(MAP_STORE_ENTRY_COUNT);
