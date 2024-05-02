@@ -23,7 +23,6 @@ import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.internal.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.HashMap;
@@ -52,7 +51,7 @@ public class FlakeIdGeneratorServiceImpl implements FlakeIdGeneratorService {
 
         boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (dsMetricsEnabled) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 

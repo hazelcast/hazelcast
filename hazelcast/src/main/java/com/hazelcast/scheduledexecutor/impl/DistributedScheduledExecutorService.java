@@ -41,7 +41,6 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -118,7 +117,7 @@ public class DistributedScheduledExecutorService
         this.partitions = new ScheduledExecutorPartition[partitionCount];
         boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (dsMetricsEnabled) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
         reset();
     }

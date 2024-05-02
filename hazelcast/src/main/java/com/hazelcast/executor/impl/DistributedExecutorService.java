@@ -34,7 +34,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -99,7 +98,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         this.executionService = nodeEngine.getExecutionService();
         this.logger = nodeEngine.getLogger(DistributedExecutorService.class);
 
-        ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override

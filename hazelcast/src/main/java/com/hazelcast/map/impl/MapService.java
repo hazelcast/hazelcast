@@ -56,7 +56,6 @@ import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -142,7 +141,7 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
 
         boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (dsMetricsEnabled) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 

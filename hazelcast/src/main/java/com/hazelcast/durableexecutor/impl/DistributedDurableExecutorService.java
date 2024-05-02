@@ -86,7 +86,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
     public void init(NodeEngine nodeEngine, Properties properties) {
         boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (dsMetricsEnabled) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 

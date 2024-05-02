@@ -29,7 +29,6 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.topic.LocalTopicStats;
 
@@ -96,7 +95,7 @@ public class ReliableTopicService implements ManagedService, RemoteService,
     public void init(NodeEngine nodeEngine, Properties properties) {
         boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (dsMetricsEnabled) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 

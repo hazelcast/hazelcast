@@ -71,7 +71,6 @@ final class ComparatorsEx {
         private static final long serialVersionUID = 1L;
         private final boolean isNullFirst;
 
-        @SuppressWarnings("unchecked")
         NullComparator(boolean isNullFirst) {
             this.isNullFirst = isNullFirst;
         }

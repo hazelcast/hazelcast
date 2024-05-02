@@ -36,7 +36,6 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Collections;
@@ -141,7 +140,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
 
         boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (dsMetricsEnabled) {
-            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
     }
 

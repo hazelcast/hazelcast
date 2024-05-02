@@ -20,7 +20,6 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
@@ -47,7 +46,7 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
 
     @Override
     public void run() throws Exception {
-        final ManagementCenterService mcs = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
+        final ManagementCenterService mcs = getNodeEngine().getManagementCenterService();
         if (mcs == null) {
             sendResponse(new HazelcastException("ManagementCenterService is not initialized yet"));
             return;
