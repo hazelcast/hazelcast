@@ -59,15 +59,12 @@ public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTes
 
         final ArrayList<Future> futures = new ArrayList<>(parallelism);
         for (int i = 0; i < parallelism; i++) {
-            futures.add(spawn(new Runnable() {
-                @Override
-                public void run() {
-                    for (int j = 0; j < loopsPerThread; j++) {
-                        counter1.addAndGet(5);
-                        finalValue.addAndGet(5);
-                        counter2.addAndGet(-2);
-                        finalValue.addAndGet(-2);
-                    }
+            futures.add(spawn((Runnable) () -> {
+                for (int j = 0; j < loopsPerThread; j++) {
+                    counter1.addAndGet(5);
+                    finalValue.addAndGet(5);
+                    counter2.addAndGet(-2);
+                    finalValue.addAndGet(-2);
                 }
             }));
         }

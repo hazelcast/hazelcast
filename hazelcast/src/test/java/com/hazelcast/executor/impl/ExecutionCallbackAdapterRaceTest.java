@@ -59,12 +59,7 @@ public class ExecutionCallbackAdapterRaceTest extends HazelcastTestSupport {
 
         // first we spawn the response for the member1
         // this thread is going wait for 2 seconds in the onResponse to trigger the out of order behavior
-        Future future = spawn(new Runnable() {
-            @Override
-            public void run() {
-                factory.callbackFor(member1).onResponse("1");
-            }
-        });
+        Future future = spawn((Runnable) () -> factory.callbackFor(member1).onResponse("1"));
 
         factory.callbackFor(member2).onResponse("2");
 

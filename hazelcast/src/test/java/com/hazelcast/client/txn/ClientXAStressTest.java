@@ -117,14 +117,11 @@ public class ClientXAStressTest extends HazelcastTestSupport {
                 TransactionalMap<Object, Object> map = context.getMap(name);
                 map.put(i, i);
                 xaResource.end(xid, XAResource.TMSUCCESS);
-                executorServiceForCommit.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            xaResource.commit(xid, true);
-                        } catch (XAException e) {
-                            e.printStackTrace();
-                        }
+                executorServiceForCommit.execute(() -> {
+                    try {
+                        xaResource.commit(xid, true);
+                    } catch (XAException e) {
+                        e.printStackTrace();
                     }
                 });
             } catch (Exception e) {

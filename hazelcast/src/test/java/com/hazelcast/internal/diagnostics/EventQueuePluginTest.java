@@ -138,15 +138,12 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
             }
         });
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                for (int i = 0; i < EVENT_COUNTER; i++) {
-                    int key = random.nextInt(Integer.MAX_VALUE);
-                    map.putAsync(key, 23);
-                    map.removeAsync(key);
-                }
+        spawn((Runnable) () -> {
+            Random random = new Random();
+            for (int i = 0; i < EVENT_COUNTER; i++) {
+                int key = random.nextInt(Integer.MAX_VALUE);
+                map.putAsync(key, 23);
+                map.removeAsync(key);
             }
         });
 
@@ -165,15 +162,12 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         final ICache<Integer, Integer> cache = memberCacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                for (int i = 0; i < EVENT_COUNTER; i++) {
-                    int key = random.nextInt(Integer.MAX_VALUE);
-                    cache.putAsync(key, 23);
-                    cache.removeAsync(key);
-                }
+        spawn((Runnable) () -> {
+            Random random = new Random();
+            for (int i = 0; i < EVENT_COUNTER; i++) {
+                int key = random.nextInt(Integer.MAX_VALUE);
+                cache.putAsync(key, 23);
+                cache.removeAsync(key);
             }
         });
 
@@ -187,15 +181,12 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         final IQueue<Integer> queue = hz.getQueue(QUEUE_NAME);
         queue.addItemListener(new TestItemListener(), true);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                for (int i = 0; i < EVENT_COUNTER; i++) {
-                    int key = random.nextInt(Integer.MAX_VALUE);
-                    queue.add(key);
-                    queue.poll();
-                }
+        spawn((Runnable) () -> {
+            Random random = new Random();
+            for (int i = 0; i < EVENT_COUNTER; i++) {
+                int key = random.nextInt(Integer.MAX_VALUE);
+                queue.add(key);
+                queue.poll();
             }
         });
 
@@ -209,14 +200,11 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         final IList<Integer> list = hz.getList(LIST_NAME);
         list.addItemListener(new TestItemListener(), true);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                for (int i = 0; i < EVENT_COUNTER; i++) {
-                    int key = random.nextInt(EVENT_COUNTER);
-                    list.add(key);
-                }
+        spawn((Runnable) () -> {
+            Random random = new Random();
+            for (int i = 0; i < EVENT_COUNTER; i++) {
+                int key = random.nextInt(EVENT_COUNTER);
+                list.add(key);
             }
         });
 
@@ -228,15 +216,12 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         final ISet<Integer> set = hz.getSet(SET_NAME);
         set.addItemListener(new TestItemListener(), true);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                for (int i = 0; i < EVENT_COUNTER; i++) {
-                    int key = random.nextInt(Integer.MAX_VALUE);
-                    set.add(key);
-                    set.remove(key);
-                }
+        spawn((Runnable) () -> {
+            Random random = new Random();
+            for (int i = 0; i < EVENT_COUNTER; i++) {
+                int key = random.nextInt(Integer.MAX_VALUE);
+                set.add(key);
+                set.remove(key);
             }
         });
 

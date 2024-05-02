@@ -65,17 +65,14 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
         for (int i = 0; i < DRIVER_COUNT; i++) {
             HazelcastInstance driver = bounceMemberRule.getNextTestDriver();
             final IMap<Integer, AggregatorsSpecTest.Person> map = driver.getMap(mapName);
-            runnables[i] = new Runnable() {
-                @Override
-                public void run() {
-                    String postfix = "";
-                    AggregatorsSpecTest.assertMinAggregators(map, postfix, Predicates.alwaysTrue());
-                    AggregatorsSpecTest.assertMaxAggregators(map, postfix, Predicates.alwaysTrue());
-                    AggregatorsSpecTest.assertSumAggregators(map, postfix, Predicates.alwaysTrue());
-                    AggregatorsSpecTest.assertAverageAggregators(map, postfix, Predicates.alwaysTrue());
-                    AggregatorsSpecTest.assertCountAggregators(map, postfix, Predicates.alwaysTrue());
-                    AggregatorsSpecTest.assertDistinctAggregators(map, postfix, Predicates.alwaysTrue());
-                }
+            runnables[i] = () -> {
+                String postfix = "";
+                AggregatorsSpecTest.assertMinAggregators(map, postfix, Predicates.alwaysTrue());
+                AggregatorsSpecTest.assertMaxAggregators(map, postfix, Predicates.alwaysTrue());
+                AggregatorsSpecTest.assertSumAggregators(map, postfix, Predicates.alwaysTrue());
+                AggregatorsSpecTest.assertAverageAggregators(map, postfix, Predicates.alwaysTrue());
+                AggregatorsSpecTest.assertCountAggregators(map, postfix, Predicates.alwaysTrue());
+                AggregatorsSpecTest.assertDistinctAggregators(map, postfix, Predicates.alwaysTrue());
             };
         }
         bounceMemberRule.testRepeatedly(runnables, TEST_DURATION_SECONDS);

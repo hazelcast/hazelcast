@@ -155,23 +155,20 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         List<Future<?>> futures = new ArrayList<>(numThreads);
         for (int i = 0; i < numThreads; i++) {
-            futures.add(executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        assertTrue(listener.awaitDisconnected());
-                    } catch (InterruptedException e) {
-                        fail("Should not be interrupted");
-                    }
-
-                    assertFalse(listener.isConnected());
-
-                    assertFalse(listener.isShutdown());
-
-                    assertTrue(listener.isStarted());
-
-                    assertEquals(CLIENT_DISCONNECTED, listener.getCurrentState());
+            futures.add(executor.submit(() -> {
+                try {
+                    assertTrue(listener.awaitDisconnected());
+                } catch (InterruptedException e) {
+                    fail("Should not be interrupted");
                 }
+
+                assertFalse(listener.isConnected());
+
+                assertFalse(listener.isShutdown());
+
+                assertTrue(listener.isStarted());
+
+                assertEquals(CLIENT_DISCONNECTED, listener.getCurrentState());
             }));
         }
 
@@ -182,23 +179,20 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         futures.clear();
         for (int i = 0; i < numThreads; i++) {
-            futures.add(executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        listener.awaitConnected();
-                    } catch (InterruptedException e) {
-                        fail("Should not be interrupted");
-                    }
-
-                    assertTrue(listener.isConnected());
-
-                    assertFalse(listener.isShutdown());
-
-                    assertTrue(listener.isStarted());
-
-                    assertEquals(CLIENT_CONNECTED, listener.getCurrentState());
+            futures.add(executor.submit(() -> {
+                try {
+                    listener.awaitConnected();
+                } catch (InterruptedException e) {
+                    fail("Should not be interrupted");
                 }
+
+                assertTrue(listener.isConnected());
+
+                assertFalse(listener.isShutdown());
+
+                assertTrue(listener.isStarted());
+
+                assertEquals(CLIENT_CONNECTED, listener.getCurrentState());
             }));
         }
 

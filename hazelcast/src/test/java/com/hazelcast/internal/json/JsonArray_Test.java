@@ -54,12 +54,7 @@ public class JsonArray_Test {
 
   @Test
   public void copyConstructor_failsWithNull() {
-    assertException(NullPointerException.class, "array is null", new Runnable() {
-      @Override
-    public void run() {
-        new JsonArray(null);
-      }
-    });
+    assertException(NullPointerException.class, "array is null", (Runnable) () -> new JsonArray(null));
   }
 
   @Test
@@ -305,12 +300,7 @@ public class JsonArray_Test {
 
   @Test
   public void add_json_failsWithNull() {
-    assertException(NullPointerException.class, "value is null", new Runnable() {
-      @Override
-      public void run() {
-        array.add((JsonValue)null);
-      }
-    });
+    assertException(NullPointerException.class, "value is null", (Runnable) () -> array.add((JsonValue)null));
   }
 
   @Test
@@ -479,12 +469,7 @@ public class JsonArray_Test {
   public void set_json_failsWithNull() {
     array.add(false);
 
-    assertException(NullPointerException.class, "value is null", new Runnable() {
-      @Override
-      public void run() {
-        array.set(0, (JsonValue)null);
-      }
-    });
+    assertException(NullPointerException.class, "value is null", (Runnable) () -> array.set(0, (JsonValue)null));
   }
 
   @Test(expected = IndexOutOfBoundsException.class)

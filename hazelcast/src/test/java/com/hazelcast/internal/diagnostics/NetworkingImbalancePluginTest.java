@@ -62,12 +62,7 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
 
     @Test
     public void testRun() {
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                hz.getMap("foo").put("key", "value");
-            }
-        });
+        spawn((Runnable) () -> hz.getMap("foo").put("key", "value"));
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -83,12 +78,7 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
 
     @Test
     public void noNaNPercentagesForZeroAmounts() {
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                hz.getMap("foo").put("key", "value");
-            }
-        });
+        spawn((Runnable) () -> hz.getMap("foo").put("key", "value"));
 
         assertTrueEventually(new AssertTask() {
             @Override

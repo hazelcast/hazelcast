@@ -117,26 +117,24 @@ public class ClientTxnMultiMapTest {
 
         for (int i = 0; i < threads; i++) {
             final int key = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    multiMap.put(key, "value");
+            ex.execute(() -> {
+                multiMap.put(key, "value");
 
-                    final TransactionContext context = client.newTransactionContext();
-                    try {
-                        context.beginTransaction();
-                        final TransactionalMultiMap txnMultiMap = context.getMultiMap(mapName);
-                        txnMultiMap.put(key, "value");
-                        txnMultiMap.put(key, "value1");
-                        txnMultiMap.put(key, "value2");
-                        assertEquals(3, txnMultiMap.get(key).size());
-                        context.commitTransaction();
+                final TransactionContext context = client.newTransactionContext();
+                try {
+                    context.beginTransaction();
+                    final TransactionalMultiMap txnMultiMap = context.getMultiMap(mapName);
+                    txnMultiMap.put(key, "value");
+                    txnMultiMap.put(key, "value1");
+                    txnMultiMap.put(key, "value2");
+                    assertEquals(3, txnMultiMap.get(key).size());
+                    context.commitTransaction();
 
-                        assertEquals(3, multiMap.get(key).size());
-                    } catch (TransactionException e) {
-                        error.compareAndSet(null, e);
-                    } finally {
-                        latch.countDown();
-                    }
+                    assertEquals(3, multiMap.get(key).size());
+                } catch (TransactionException e) {
+                    error.compareAndSet(null, e);
+                } finally {
+                    latch.countDown();
                 }
             });
         }

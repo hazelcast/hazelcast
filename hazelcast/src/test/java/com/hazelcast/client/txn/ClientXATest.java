@@ -219,15 +219,13 @@ public class ClientXATest {
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
-            executorService.execute(new Runnable() {
-                public void run() {
-                    try {
-                        txn(client);
-                    } catch (Exception e) {
-                        logger.severe("Exception during txn", e);
-                    } finally {
-                        latch.countDown();
-                    }
+            executorService.execute(() -> {
+                try {
+                    txn(client);
+                } catch (Exception e) {
+                    logger.severe("Exception during txn", e);
+                } finally {
+                    latch.countDown();
                 }
             });
         }

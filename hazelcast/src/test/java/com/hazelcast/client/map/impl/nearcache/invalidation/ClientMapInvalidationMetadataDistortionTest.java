@@ -95,35 +95,27 @@ public class ClientMapInvalidationMetadataDistortionTest extends NearCacheTestSu
             }
         });
 
-        Thread distortSequence = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    distortRandomPartitionSequence(MAP_NAME, member);
-                    sleepSeconds(1);
-                }
+        Thread distortSequence = new Thread(() -> {
+            while (!stopTest.get()) {
+                distortRandomPartitionSequence(MAP_NAME, member);
+                sleepSeconds(1);
             }
         });
 
-        Thread distortUuid = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    distortRandomPartitionUuid(member);
-                    sleepSeconds(5);
-                }
+        Thread distortUuid = new Thread(() -> {
+            while (!stopTest.get()) {
+                distortRandomPartitionUuid(member);
+                sleepSeconds(5);
             }
         });
 
-        Thread put = new Thread(new Runnable() {
-            public void run() {
-                // change some data
-                while (!stopTest.get()) {
-                    int key = getInt(MAP_SIZE);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberMap.put(key, value);
-                    sleepAtLeastMillis(100);
-                }
+        Thread put = new Thread(() -> {
+            // change some data
+            while (!stopTest.get()) {
+                int key = getInt(MAP_SIZE);
+                int value = getInt(Integer.MAX_VALUE);
+                memberMap.put(key, value);
+                sleepAtLeastMillis(100);
             }
         });
 

@@ -98,14 +98,12 @@ public class ClientMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
 
         // populates client Near Cache
         for (int i = 0; i < NEAR_CACHE_POPULATE_THREAD_COUNT; i++) {
-            Thread populateClientNearCache = new Thread(new Runnable() {
-                public void run() {
-                    int i = 0;
-                    while (!stopTest.get()) {
-                        clientMap.get(i++);
-                        if (i == KEY_COUNT) {
-                            i = 0;
-                        }
+            Thread populateClientNearCache = new Thread(() -> {
+                int key = 0;
+                while (!stopTest.get()) {
+                    clientMap.get(key++);
+                    if (key == KEY_COUNT) {
+                        key = 0;
                     }
                 }
             });
@@ -114,25 +112,21 @@ public class ClientMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
         }
 
         // updates map data from member
-        Thread putFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    int key = getInt(KEY_COUNT);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberMap.put(key, value);
+        Thread putFromMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                int key = getInt(KEY_COUNT);
+                int value = getInt(Integer.MAX_VALUE);
+                memberMap.put(key, value);
 
-                    sleepAtLeastMillis(2);
-                }
+                sleepAtLeastMillis(2);
             }
         });
         threads.add(putFromMember);
 
-        Thread clearFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    memberMap.clear();
-                    sleepSeconds(5);
-                }
+        Thread clearFromMember = new Thread(() -> {
+            while (!stopTest.get()) {
+                memberMap.clear();
+                sleepSeconds(5);
             }
         });
         threads.add(clearFromMember);

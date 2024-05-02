@@ -246,17 +246,15 @@ public class ClientTxnMapTest {
         map.put(key, initialValue);
 
         final AtomicBoolean tryPutResult = new AtomicBoolean(true);
-        Runnable incrementor = new Runnable() {
-            public void run() {
-                try {
-                    getKeyForUpdateLatch.await(30, TimeUnit.SECONDS);
+        Runnable incrementor = () -> {
+            try {
+                getKeyForUpdateLatch.await(30, TimeUnit.SECONDS);
 
-                    boolean result = map.tryPut(key, value, 0, TimeUnit.SECONDS);
-                    tryPutResult.set(result);
+                boolean result = map.tryPut(key, value, 0, TimeUnit.SECONDS);
+                tryPutResult.set(result);
 
-                    afterTryPutResult.countDown();
-                } catch (InterruptedException e) {
-                }
+                afterTryPutResult.countDown();
+            } catch (InterruptedException e) {
             }
         };
         new Thread(incrementor).start();

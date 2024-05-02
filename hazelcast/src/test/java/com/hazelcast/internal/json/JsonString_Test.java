@@ -51,12 +51,7 @@ public class JsonString_Test {
 
   @Test
   public void constructor_failsWithNull() {
-    assertException(NullPointerException.class, "string is null", new Runnable() {
-      @Override
-    public void run() {
-        new JsonString(null);
-      }
-    });
+    assertException(NullPointerException.class, "string is null", (Runnable) () -> new JsonString(null));
   }
 
   @Test

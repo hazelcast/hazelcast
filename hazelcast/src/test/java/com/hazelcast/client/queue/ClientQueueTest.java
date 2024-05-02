@@ -597,12 +597,9 @@ public class ClientQueueTest extends HazelcastTestSupport {
         }
         assertEquals(MAX_SIZE_FOR_QUEUE, q.size());
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(1);
-                q.poll();
-            }
+        spawn((Runnable) () -> {
+            sleepSeconds(1);
+            q.poll();
         });
 
         boolean result = q.offer("item", 15, TimeUnit.SECONDS);
@@ -619,12 +616,9 @@ public class ClientQueueTest extends HazelcastTestSupport {
         }
         assertEquals(0, q.size());
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(1);
-                q.offer("item1");
-            }
+        spawn((Runnable) () -> {
+            sleepSeconds(1);
+            q.offer("item1");
         });
 
         Object o = q.poll(15, TimeUnit.SECONDS);

@@ -256,18 +256,16 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         final AtomicBoolean stop = new AtomicBoolean(false);
 
         for (int i = 0; i < 1000; i++) {
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    while (!stop.get()) {
-                        IMap<Integer, Integer> map = client.getMap(mapName);
-                        try {
-                            populateMap(map);
-                            for (int j = 0; j < 10; j++) {
-                                map.getQueryCache(j + "-test-QC", Predicates.alwaysTrue(), true);
-                            }
-                        } finally {
-                            map.destroy();
+            Runnable runnable = () -> {
+                while (!stop.get()) {
+                    IMap<Integer, Integer> map = client.getMap(mapName);
+                    try {
+                        populateMap(map);
+                        for (int j = 0; j < 10; j++) {
+                            map.getQueryCache(j + "-test-QC", Predicates.alwaysTrue(), true);
                         }
+                    } finally {
+                        map.destroy();
                     }
                 }
             };

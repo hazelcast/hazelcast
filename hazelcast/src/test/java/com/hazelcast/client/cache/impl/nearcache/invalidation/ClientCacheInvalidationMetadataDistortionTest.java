@@ -109,15 +109,13 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
             }
         });
 
-        Thread put = new Thread(new Runnable() {
-            public void run() {
-                // change some data
-                while (!stopTest.get()) {
-                    int key = getInt(CACHE_SIZE);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberCache.put(key, value);
-                    sleepAtLeastMillis(100);
-                }
+        Thread put = new Thread(() -> {
+            // change some data
+            while (!stopTest.get()) {
+                int key = getInt(CACHE_SIZE);
+                int value = getInt(Integer.MAX_VALUE);
+                memberCache.put(key, value);
+                sleepAtLeastMillis(100);
             }
         });
 

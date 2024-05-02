@@ -58,12 +58,7 @@ public class JsonObject_Test {
 
   @Test
   public void copyConstructor_failsWithNull() {
-    assertException(NullPointerException.class, "object is null", new Runnable() {
-      @Override
-      public void run() {
-        new JsonObject(null);
-      }
-    });
+    assertException(NullPointerException.class, "object is null", (Runnable) () -> new JsonObject(null));
   }
 
   @Test
@@ -251,12 +246,7 @@ public class JsonObject_Test {
 
   @Test
   public void get_failsWithNullName() {
-    assertException(NullPointerException.class, "name is null", new Runnable() {
-      @Override
-    public void run() {
-        object.get(null);
-      }
-    });
+    assertException(NullPointerException.class, "name is null", (Runnable) () -> object.get(null));
   }
 
   @Test
@@ -352,12 +342,7 @@ public class JsonObject_Test {
 
   @Test
   public void add_failsWithNullName() {
-    assertException(NullPointerException.class, "name is null", new Runnable() {
-      @Override
-    public void run() {
-        object.add(null, 23);
-      }
-    });
+    assertException(NullPointerException.class, "name is null", (Runnable) () -> object.add(null, 23));
   }
 
   @Test
@@ -467,12 +452,7 @@ public class JsonObject_Test {
 
   @Test
   public void add_json_failsWithNull() {
-    assertException(NullPointerException.class, "value is null", new Runnable() {
-      @Override
-    public void run() {
-        object.add("a", (JsonValue)null);
-      }
-    });
+    assertException(NullPointerException.class, "value is null", (Runnable) () -> object.add("a", (JsonValue)null));
   }
 
   @Test
@@ -641,12 +621,7 @@ public class JsonObject_Test {
 
   @Test
   public void remove_failsWithNullName() {
-    assertException(NullPointerException.class, "name is null", new Runnable() {
-      @Override
-    public void run() {
-        object.remove(null);
-      }
-    });
+    assertException(NullPointerException.class, "name is null", (Runnable) () -> object.remove(null));
   }
 
   @Test
@@ -702,12 +677,7 @@ public class JsonObject_Test {
 
   @Test
   public void merge_failsWithNull() {
-    assertException(NullPointerException.class, "object is null", new Runnable() {
-      @Override
-    public void run() {
-        object.merge(null);
-      }
-    });
+    assertException(NullPointerException.class, "object is null", (Runnable) () -> object.merge(null));
   }
 
   @Test

@@ -93,12 +93,7 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
         final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
-            ex.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    instances.get(1).shutdown();
-                }
-            }, 1000, TimeUnit.MILLISECONDS);
+            ex.schedule(() -> instances.get(1).shutdown(), 1000, TimeUnit.MILLISECONDS);
 
             Task task = new Task();
             runClient(task, taskCount);

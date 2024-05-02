@@ -68,33 +68,27 @@ public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport 
         final AtomicBoolean isRunning = new AtomicBoolean(true);
         final AtomicReference<Exception> exception = new AtomicReference<>();
         for (int i = 0; i < destroyThreadCount; i++) {
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    while (isRunning.get()) {
-                        for (DistributedObject distributedObject : client.getDistributedObjects()) {
-                            distributedObject.destroy();
-                        }
+            pool.execute(() -> {
+                while (isRunning.get()) {
+                    for (DistributedObject distributedObject : client.getDistributedObjects()) {
+                        distributedObject.destroy();
                     }
                 }
             });
         }
 
         for (int i = 0; i < createPutGetThreadCount; i++) {
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (isRunning.get()) {
-                            IMap<Object, Object> map = client.getMap("test");
-                            map.put(1, 1);
-                            map.get(1);
-                        }
-                    } catch (Exception e) {
-                        isRunning.set(false);
-                        e.printStackTrace(System.out);
-                        exception.set(e);
+            pool.execute(() -> {
+                try {
+                    while (isRunning.get()) {
+                        IMap<Object, Object> map = client.getMap("test");
+                        map.put(1, 1);
+                        map.get(1);
                     }
+                } catch (Exception e) {
+                    isRunning.set(false);
+                    e.printStackTrace(System.out);
+                    exception.set(e);
                 }
             });
         }

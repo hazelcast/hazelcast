@@ -63,12 +63,7 @@ public class ListenerTests extends ClientTestSupport {
 
 
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                node.getLifecycleService().terminate();
-            }
-        }, 500, TimeUnit.MILLISECONDS);
+        executorService.schedule(() -> node.getLifecycleService().terminate(), 500, TimeUnit.MILLISECONDS);
 
         EntryAdapter listener = new EntryAdapter();
 
@@ -95,11 +90,8 @@ public class ListenerTests extends ClientTestSupport {
         IMap<Object, Object> map = client.getMap("test");
 
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                factory.newHazelcastInstance();
-            }
+        executorService.schedule(() -> {
+            factory.newHazelcastInstance();
         }, 500, TimeUnit.MILLISECONDS);
 
         EntryAdapter listener = new EntryAdapter();

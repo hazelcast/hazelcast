@@ -171,13 +171,10 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
 
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    client.getQueue(name).take();
-                } catch (Throwable ignored) {
-                }
+        spawn((Runnable) () -> {
+            try {
+                client.getQueue(name).take();
+            } catch (Throwable ignored) {
             }
         });
 

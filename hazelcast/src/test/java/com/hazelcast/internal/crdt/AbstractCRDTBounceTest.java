@@ -172,27 +172,24 @@ public abstract class AbstractCRDTBounceTest extends HazelcastTestSupport {
     private Future startBouncing(final AtomicReferenceArray<HazelcastInstance> instances,
                                  final AtomicBoolean stop,
                                  final TestHazelcastInstanceFactory factory) {
-        return spawn(new Runnable() {
-            @Override
-            public void run() {
-                int i = 0;
-                while (!stop.get()) {
-                    i = (i + 1) % instances.length();
-                    try {
-                        TimeUnit.SECONDS.sleep(2);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                    instances.get(i).shutdown();
-                    try {
-                        TimeUnit.SECONDS.sleep(2);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                    instances.set(i, factory.newHazelcastInstance(getConfig()));
+        return spawn((Runnable) () -> {
+            int i = 0;
+            while (!stop.get()) {
+                i = (i + 1) % instances.length();
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
+                instances.get(i).shutdown();
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                instances.set(i, factory.newHazelcastInstance(getConfig()));
             }
         });
     }

@@ -175,11 +175,9 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         for (int i = 1; i < nodeCount; i++) {
-            spawn(new Runnable() {
-                public void run() {
-                    factory.newHazelcastInstance(new Config());
-                    nodeLatch.countDown();
-                }
+            spawn((Runnable) () -> {
+                factory.newHazelcastInstance(new Config());
+                nodeLatch.countDown();
             });
         }
 

@@ -147,12 +147,9 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
 
         for (int i = 0; i < nodeCountToTriggerShutdown; i++) {
             final HazelcastInstance instance = instances[i];
-            final Runnable shutdownRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    assertOpenEventually(latch);
-                    instance.getCluster().shutdown();
-                }
+            final Runnable shutdownRunnable = () -> {
+                assertOpenEventually(latch);
+                instance.getCluster().shutdown();
             };
 
             new Thread(shutdownRunnable).start();
