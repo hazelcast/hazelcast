@@ -121,7 +121,7 @@
         <kotlin.version>1.9.23</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.6.1.jre11</mssql.version>
-        <mysql.connector.version>8.3.0</mysql.connector.version>
+        <mysql.connector.version>8.4.0</mysql.connector.version>
         <netty.version>4.1.109.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <oracle.version>23.3.0.23.09</oracle.version>
