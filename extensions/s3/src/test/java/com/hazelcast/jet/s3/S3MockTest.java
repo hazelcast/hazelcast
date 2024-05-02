@@ -78,7 +78,7 @@ public class S3MockTest extends S3TestBase {
     @BeforeClass
     public static void setupS3() {
         assumeDockerEnabled();
-        s3MockContainer = new S3MockContainer("3.6.0");
+        s3MockContainer = new S3MockContainer("3.7.2");
         s3MockContainer.start();
         s3MockContainer.followOutput(outputFrame -> logger.info(outputFrame.getUtf8String().trim()));
         s3Client = s3Client(s3MockContainer.getHttpEndpoint());
