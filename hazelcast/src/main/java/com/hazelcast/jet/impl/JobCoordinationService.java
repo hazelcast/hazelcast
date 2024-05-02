@@ -252,14 +252,13 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                     throw new JetException(Util.JET_RESOURCE_UPLOAD_DISABLED_MESSAGE);
                 }
 
-                int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
                 Object jobDefinition = deserializeJobDefinition(jobId, jobConfig, serializedJobDefinition);
                 DAG dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl pipeline) {
                     dag = pipeline.toDag(pipelineToDagContext);
                     dag.setMemberSelector(pipeline.memberSelector());
-                    serializedDag = nodeEngine().getSerializationService().toData(dag);
+                    serializedDag = nodeEngine.getSerializationService().toData(dag);
                 } else {
                     dag = (DAG) jobDefinition;
                     serializedDag = serializedJobDefinition;
@@ -268,10 +267,12 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 validateJob(dag, subject);
 
                 Set<String> ownedObservables = ownedObservables(dag);
-                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId,
-                        serializedDag, dagToJson(dag), jobConfig, ownedObservables, subject, dag.memberSelector());
+                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(),
+                        jobId, serializedDag, dagToJson(dag), jobConfig, ownedObservables, subject);
+                int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
+                masterContext.setMemberSelector(dag.memberSelector());
 
                 boolean hasDuplicateJobName;
                 synchronized (lock) {
@@ -324,9 +325,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             JobConfig jobConfig,
             Subject subject
     ) {
-
         if (jobDefinition == null) {
-            jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
+            jobDefinition = nodeEngine.getSerializationService().toObject(serializedJobDefinition);
         }
 
         DAG dag;

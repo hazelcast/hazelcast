@@ -514,7 +514,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
 
         Version version = instances[0].getCluster().getLocalMember().getVersion().asVersion();
-        JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet(), null, null);
+        JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet(), null);
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
         InitExecutionOperation op = InitExecutionOperation.forNormalJob(jobId, executionId, memberListVersion, version,

@@ -142,8 +142,6 @@ public class PipelineImpl implements Pipeline {
         });
     }
 
-
-
     @SuppressWarnings("rawtypes")
     public void connect(
             @Nonnull List<ComputeStageImplBase> stages,

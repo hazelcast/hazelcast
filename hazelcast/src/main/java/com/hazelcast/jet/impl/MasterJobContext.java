@@ -83,6 +83,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -120,6 +121,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.isJobSuspendable;
+import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -272,7 +274,7 @@ public class MasterJobContext {
                   if (dag == null) {
                       return;
                   }
-                  MembersView membersView = mc.membersView(dag.memberSelector());
+                  MembersView membersView = mc.membersView();
 
                   // must call this before rewriteDagWithSnapshotRestore()
                   String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
@@ -356,6 +358,7 @@ public class MasterJobContext {
     @Nullable
     private DAG resolveDag() {
         mc.lock();
+        Supplier<DAG> dag = memoize(this::deserializeDag);
         try {
             if (isCancelled()) {
                 logger.fine("Skipping init job '" + mc.jobName() + "': is already cancelled.");
@@ -371,9 +374,10 @@ public class MasterJobContext {
             }
             if (scheduleRestartIfClusterIsNotSafe()
                     || scheduleRestartIfQuorumAbsent()
-                    || scheduleRestartIfNoMemberSelected()) {
+                    || scheduleRestartIfNoMemberSelected(mc.memberSelector(dag))) {
                 return null;
             }
+
             Version jobClusterVersion = mc.jobRecord().getClusterVersion();
             Version currentClusterVersion = mc.nodeEngine().getClusterService().getClusterVersion();
             if (!jobClusterVersion.equals(currentClusterVersion)) {
@@ -405,32 +409,34 @@ public class MasterJobContext {
                 // requested termination mode is RESTART, ignore it because we are just starting
                 terminationRequest = null;
             }
-            ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
-                                        .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
-            DAG dag;
-            JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
-            try {
-                jobClassLoaderService.prepareProcessorClassLoaders(mc.jobId());
-                dag = deserializeWithCustomClassLoader(
-                        mc.nodeEngine().getSerializationService(),
-                        classLoader,
-                        mc.jobRecord().getDag()
-                );
-            } catch (Exception e) {
-                throw new JetException("DAG deserialization failed", e);
-            } finally {
-                jobClassLoaderService.clearProcessorClassLoaders();
-            }
+
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
             verticesCompleted = false;
-            dag.iterator().forEachRemaining(vertices::add);
+            dag.get().iterator().forEachRemaining(vertices::add);
             mc.setExecutionId(mc.jobRepository().newExecutionId());
             mc.snapshotContext().onExecutionStarted();
             executionCompletionFuture = new CompletableFuture<>();
-            return dag;
+            return dag.get();
         } finally {
             mc.unlock();
+        }
+    }
+
+    private DAG deserializeDag() {
+        JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
+        ClassLoader classLoader = jobClassLoaderService.getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
+        try {
+            jobClassLoaderService.prepareProcessorClassLoaders(mc.jobId());
+            return deserializeWithCustomClassLoader(
+                    mc.nodeEngine().getSerializationService(),
+                    classLoader,
+                    mc.jobRecord().getDag()
+            );
+        } catch (Exception e) {
+            throw new JetException("DAG deserialization failed", e);
+        } finally {
+            jobClassLoaderService.clearProcessorClassLoaders();
         }
     }
 
@@ -568,8 +574,7 @@ public class MasterJobContext {
         return true;
     }
 
-    private boolean scheduleRestartIfNoMemberSelected() {
-        JetMemberSelector memberSelector = mc.jobRecord().getMemberSelector();
+    private boolean scheduleRestartIfNoMemberSelected(JetMemberSelector memberSelector) {
         if (memberSelector == null ||
                 !mc.nodeEngine().getClusterService().getMembers(memberSelector::testEx).isEmpty()) {
             return false;

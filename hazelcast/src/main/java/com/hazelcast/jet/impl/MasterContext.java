@@ -30,6 +30,7 @@ import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.jet.JetMemberSelector;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -295,9 +296,15 @@ public class MasterContext implements DynamicMetricsProvider {
         return executionPlanMap;
     }
 
-    MembersView membersView(JetMemberSelector memberSelector) {
-        return coordinationService.membersView(memberSelector);
+    MembersView membersView() {
+        return coordinationService.membersView(memberSelector(null));
     }
+
+    JetMemberSelector memberSelector(@Nullable Supplier<DAG> dag) {
+        return null;
+    }
+
+    void setMemberSelector(JetMemberSelector memberSelector) { }
 
     boolean hasTimeout() {
         return jobConfig().getTimeoutMillis() > 0;

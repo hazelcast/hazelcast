@@ -91,7 +91,7 @@ public final class ExecutionPlanBuilder {
     ) {
         final Map<MemberInfo, int[]> partitionsByMember;
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
-        final boolean isJobIsolated = dag.memberSelector() != null;
+        final boolean isIsolatedJob = dag.memberSelector() != null;
 
         if (requiredPartitions != null) {
             PartitionPruningAnalysisResult analysisResult = analyzeDagForPartitionPruning(nodeEngine, dag);
@@ -101,7 +101,7 @@ public final class ExecutionPlanBuilder {
                     requiredPartitions,
                     analysisResult.constantPartitionIds,
                     analysisResult.requiredAddresses);
-        } else if (isJobIsolated) {
+        } else if (isIsolatedJob) {
             // For isolated jobs, we can't predict an amount and types (data/lite) of the selected members, as well as
             // workload type. That's the reason to use a balanced partition assignment between data and lite members,
             // and generally, a fair load distribution is good enough for any kind of workload.
