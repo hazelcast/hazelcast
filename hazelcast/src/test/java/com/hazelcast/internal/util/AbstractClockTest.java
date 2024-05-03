@@ -56,7 +56,7 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
         Thread thread = Thread.currentThread();
         ClassLoader tccl = thread.getContextClassLoader();
         try {
-            FilteringClassLoader cl = new FilteringClassLoader(Collections.<String>emptyList(), "com.hazelcast");
+            FilteringClassLoader cl = new FilteringClassLoader(Collections.emptyList(), "com.hazelcast");
             thread.setContextClassLoader(cl);
 
             Class<?> configClazz = cl.loadClass("com.hazelcast.config.Config");

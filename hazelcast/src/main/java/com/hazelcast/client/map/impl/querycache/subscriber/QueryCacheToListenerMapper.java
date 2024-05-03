@@ -98,6 +98,6 @@ public class QueryCacheToListenerMapper {
     @SuppressWarnings("unchecked")
     Collection<ListenerInfo> getListenerInfos(String cacheId) {
         Collection<ListenerInfo> infos = registrations.get(cacheId);
-        return isEmpty(infos) ? Collections.<ListenerInfo>emptySet() : infos;
+        return isEmpty(infos) ? Collections.emptySet() : infos;
     }
 }

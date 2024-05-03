@@ -47,7 +47,7 @@ public class NodeStateImpl implements NodeState {
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.impl.NodeState nodeState,
                          Version clusterVersion, MemberVersion memberVersion) {
-        this(clusterState, nodeState, clusterVersion, memberVersion, Collections.<String, List<String>>emptyMap());
+        this(clusterState, nodeState, clusterVersion, memberVersion, Collections.emptyMap());
     }
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.impl.NodeState nodeState,

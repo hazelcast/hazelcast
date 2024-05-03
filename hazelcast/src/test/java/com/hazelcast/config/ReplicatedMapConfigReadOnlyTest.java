@@ -46,7 +46,7 @@ public class ReplicatedMapConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetListenerConfigs() {
-        getReadOnlyConfig().setListenerConfigs(Collections.<ListenerConfig>emptyList());
+        getReadOnlyConfig().setListenerConfigs(Collections.emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)

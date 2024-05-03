@@ -309,9 +309,9 @@ public class TcpServerContext implements ServerContext {
         if (advancedNetworkConfig.isEnabled()) {
             EndpointConfig endpointConfig = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
             final Collection<Integer> outboundPorts = endpointConfig != null
-                    ? endpointConfig.getOutboundPorts() : Collections.<Integer>emptyList();
+                    ? endpointConfig.getOutboundPorts() : Collections.emptyList();
             final Collection<String> outboundPortDefinitions = endpointConfig != null
-                    ? endpointConfig.getOutboundPortDefinitions() : Collections.<String>emptyList();
+                    ? endpointConfig.getOutboundPortDefinitions() : Collections.emptyList();
             return AddressUtil.getOutboundPorts(outboundPorts, outboundPortDefinitions);
         }
 

@@ -140,7 +140,7 @@ public class AbstractSplitBrainProtectionFunctionTest
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, String.valueOf(offsetMillis));
         Thread thread = currentThread();
         tccl = thread.getContextClassLoader();
-        filteringClassloader = new FilteringClassLoader(Collections.<String>emptyList(), "com.hazelcast");
+        filteringClassloader = new FilteringClassLoader(Collections.emptyList(), "com.hazelcast");
         thread.setContextClassLoader(filteringClassloader);
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,6 +57,6 @@ public class OssSecurityUpdateTest extends HazelcastTestSupport {
         SecurityConfig securityConfig = hz.getConfig().getSecurityConfig();
 
         exception.expect(UnsupportedOperationException.class);
-        securityConfig.setClientPermissionConfigs(Collections.<PermissionConfig>emptySet());
+        securityConfig.setClientPermissionConfigs(Collections.emptySet());
     }
 }

@@ -107,7 +107,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .setClassName("foo.bar.MapStoreDoesNotExist");
 
         WanReplicationRef wanRef = new WanReplicationRef("name", "foo.bar.PolicyClass",
-                Collections.<String>emptyList(), true);
+                Collections.emptyList(), true);
 
         EntryListenerConfig classEntryListener = new EntryListenerConfig("foo.bar.ClassName", true, true);
         EntryListenerConfig entryListener = new EntryListenerConfig(new MyEntryListener(), true, true);

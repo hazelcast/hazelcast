@@ -19,7 +19,6 @@ package com.hazelcast.buildutils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,8 +63,8 @@ public class HazelcastManifestTransformerTest {
         transformer = new HazelcastManifestTransformer();
 
         transformer.setMainClass("com.hazelcast.core.server.HazelcastMemberStarter");
-        transformer.setManifestEntries(new HashMap<String, Object>());
-        transformer.setOverrideInstructions(new HashMap<String, String>());
+        transformer.setManifestEntries(new HashMap<>());
+        transformer.setOverrideInstructions(new HashMap<>());
     }
 
     @After
@@ -89,7 +88,7 @@ public class HazelcastManifestTransformerTest {
 
     @Test
     public void testTransformation() throws Exception {
-        transformer.processResource(null, is, Collections.<Relocator>emptyList());
+        transformer.processResource(null, is, Collections.emptyList());
         transformer.modifyOutputStream(os);
 
         verify(os).putNextEntry(any(JarEntry.class));

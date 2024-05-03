@@ -257,12 +257,12 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
 
     @Test(expected = MethodNotAvailableException.class)
     public void testLoadAllWithKeys() {
-        adapter.loadAll(Collections.<Integer>emptySet(), true);
+        adapter.loadAll(Collections.emptySet(), true);
     }
 
     @Test(expected = MethodNotAvailableException.class)
     public void testLoadAllWithListener() {
-        adapter.loadAll(Collections.<Integer>emptySet(), true, null);
+        adapter.loadAll(Collections.emptySet(), true, null);
     }
 
     @Test(expected = MethodNotAvailableException.class)

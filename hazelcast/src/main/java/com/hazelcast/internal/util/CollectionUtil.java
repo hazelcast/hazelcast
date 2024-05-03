@@ -153,6 +153,6 @@ public final class CollectionUtil {
 
     /** Returns an empty Collection if argument is null. **/
     public static <T> Collection<T> nullToEmpty(Collection<T> collection) {
-        return collection == null ? Collections.<T>emptyList() : collection;
+        return collection == null ? Collections.emptyList() : collection;
     }
 }

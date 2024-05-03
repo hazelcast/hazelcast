@@ -48,7 +48,7 @@ public class MockNodeContext implements NodeContext {
     private final List<String> nodeExtensionPriorityList;
 
     public MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
-        this(registry, thisAddress, Collections.<Address>emptySet(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
+        this(registry, thisAddress, Collections.emptySet(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
     protected MockNodeContext(
