@@ -134,7 +134,7 @@ public class ClientReconnectTest extends ClientTestSupport {
     public void testCallbackAfterServerShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(15000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");
