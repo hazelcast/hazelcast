@@ -53,8 +53,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     @Override
     public void write(ObjectDataOutput out, Object o) throws IOException {
-        if (o instanceof Portable) {
-            Portable p = (Portable) o;
+        if (o instanceof Portable p) {
             if (!(out instanceof BufferObjectDataOutput)) {
                 throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
             }
@@ -67,8 +66,8 @@ public final class PortableSerializer implements StreamSerializer<Object> {
             writeInternal((BufferObjectDataOutput) out, p);
             return;
         }
-        if (o instanceof PortableGenericRecord) {
-            writePortableGenericRecord(out, (PortableGenericRecord) o);
+        if (o instanceof PortableGenericRecord portableGenericRecord) {
+            writePortableGenericRecord(out, portableGenericRecord);
             return;
         }
         throw new IllegalArgumentException("PortableSerializer can only write Portable and PortableGenericRecord");

@@ -128,7 +128,7 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         Object lastItem = queue.peekLast();
-        if (lastItem instanceof Watermark && watermark.key() == ((Watermark) lastItem).key()) {
+        if (lastItem instanceof Watermark lastWatermark && watermark.key() == lastWatermark.key()) {
             // conflate the previous wm with the current one
             queue.removeLast();
             queue.add(watermark);
@@ -183,8 +183,8 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
             if (o == null) {
                 return true;
             }
-            if (o instanceof Watermark) {
-                watermarkTraverser.accept((Watermark) o);
+            if (o instanceof Watermark watermark) {
+                watermarkTraverser.accept(watermark);
                 currentTraverser = watermarkTraverser;
                 queuedWmCount--;
             } else {

@@ -1555,7 +1555,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     public long[] findUnknownExecutions(long[] executionIds) {
         return Arrays.stream(executionIds).filter(key -> {
             Object lmc = lightMasterContexts.get(key);
-            return lmc == null || lmc instanceof LightMasterContext && ((LightMasterContext) lmc).isCancelled();
+            return lmc == null || lmc instanceof LightMasterContext lightMasterContext && lightMasterContext.isCancelled();
         }).toArray();
     }
 

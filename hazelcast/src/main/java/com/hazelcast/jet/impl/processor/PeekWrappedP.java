@@ -90,8 +90,8 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
     private void log(String prefix, @Nonnull T object) {
         if (shouldLogFn.test(object)) {
             logger.info(prefix + ": " + toStringFn.apply(object)
-                    + (object instanceof JetEvent
-                            ? " (eventTime=" + toLocalTime(((JetEvent) object).timestamp()) + ")"
+                    + (object instanceof JetEvent jetEvent
+                            ? " (eventTime=" + toLocalTime(jetEvent.timestamp()) + ")"
                             : ""));
         }
     }

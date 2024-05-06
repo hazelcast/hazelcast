@@ -98,27 +98,23 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     }
 
     public void addOperation(Operation op) {
-        if (op instanceof TxnRemoveOperation) {
-            TxnRemoveOperation removeOperation = (TxnRemoveOperation) op;
+        if (op instanceof TxnRemoveOperation removeOperation) {
             Iterator<Operation> iter = opList.iterator();
             while (iter.hasNext()) {
                 Operation opp = iter.next();
-                if (opp instanceof TxnPutOperation) {
-                    TxnPutOperation putOperation = (TxnPutOperation) opp;
+                if (opp instanceof TxnPutOperation putOperation) {
                     if (putOperation.getRecordId() == removeOperation.getRecordId()) {
                         iter.remove();
                         return;
                     }
                 }
             }
-        } else if (op instanceof TxnRemoveAllOperation) {
-            TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation) op;
+        } else if (op instanceof TxnRemoveAllOperation removeAllOperation) {
             Collection<Long> recordIds = removeAllOperation.getRecordIds();
             Iterator<Operation> iterator = opList.iterator();
             while (iterator.hasNext()) {
                 Operation opp = iterator.next();
-                if (opp instanceof TxnPutOperation) {
-                    TxnPutOperation putOperation = (TxnPutOperation) opp;
+                if (opp instanceof TxnPutOperation putOperation) {
                     if (recordIds.remove(putOperation.getRecordId())) {
                         iterator.remove();
                     }
@@ -134,8 +130,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     public int size() {
         int size = 0;
         for (Operation operation : opList) {
-            if (operation instanceof TxnRemoveAllOperation) {
-                TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation) operation;
+            if (operation instanceof TxnRemoveAllOperation removeAllOperation) {
                 size -= removeAllOperation.getRecordIds().size();
             } else if (operation instanceof TxnRemoveOperation) {
                 size--;

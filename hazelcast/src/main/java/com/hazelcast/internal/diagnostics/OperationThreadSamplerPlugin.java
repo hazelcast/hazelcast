@@ -154,8 +154,8 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         private String toKey(Object task) {
             String name;
             if (includeName) {
-                if (task instanceof NamedOperation) {
-                    name = task.getClass().getName() + "#" + ((NamedOperation) task).getName();
+                if (task instanceof NamedOperation operation) {
+                    name = task.getClass().getName() + "#" + operation.getName();
                 } else {
                     name = task.getClass().getName();
                 }

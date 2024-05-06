@@ -90,15 +90,15 @@ public class CacheAddEntryListenerMessageTask
 
         private Data getPartitionKey(Object eventObject) {
             Data partitionKey = null;
-            if (eventObject instanceof CacheEventSet) {
-                Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
+            if (eventObject instanceof CacheEventSet cacheEventSet) {
+                Set<CacheEventData> events = cacheEventSet.getEvents();
                 if (events.size() > 1) {
                     partitionKey = new HeapData();
                 } else if (events.size() == 1) {
                     partitionKey = events.iterator().next().getDataKey();
                 }
-            } else if (eventObject instanceof CacheEventData) {
-                partitionKey = ((CacheEventData) eventObject).getDataKey();
+            } else if (eventObject instanceof CacheEventData cacheEventData) {
+                partitionKey = cacheEventData.getDataKey();
             }
             return partitionKey;
         }
@@ -108,8 +108,7 @@ public class CacheAddEntryListenerMessageTask
             if (!endpoint.isAlive()) {
                 return;
             }
-            if (eventObject instanceof CacheEventSet) {
-                CacheEventSet ces = (CacheEventSet) eventObject;
+            if (eventObject instanceof CacheEventSet ces) {
                 Data partitionKey = getPartitionKey(eventObject);
                 ClientMessage clientMessage =
                         CacheAddEntryListenerCodec.

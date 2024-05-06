@@ -442,7 +442,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     private Iterator makeIterator(Object value) {
-        return value instanceof MultiResult ? new MultiValueIterator((MultiResult) value) : new SingleValueIterator(value);
+        return value instanceof MultiResult multiResult ? new MultiValueIterator(multiResult) : new SingleValueIterator(value);
     }
 
     private static Comparable canonicalizeLongRepresentable(long value) {

@@ -127,8 +127,8 @@ public abstract class Offload extends CallStatus {
         OperationResponseHandler delegate = offloadedOperation.getOperationResponseHandler();
 
         // we need to peel of the OperationResponseHandlerImpl
-        if (delegate instanceof OffloadedOperationResponseHandler) {
-            delegate = ((OffloadedOperationResponseHandler) delegate).delegate;
+        if (delegate instanceof OffloadedOperationResponseHandler handler) {
+            delegate = handler.delegate;
         }
 
         return new OffloadedOperationResponseHandler(delegate);

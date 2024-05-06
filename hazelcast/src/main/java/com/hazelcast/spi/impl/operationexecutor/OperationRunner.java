@@ -194,8 +194,8 @@ public abstract class OperationRunner {
             if (callStatus.ordinal() == OFFLOAD_ORDINAL) {
                 Offload offload = (Offload) callStatus;
                 offload.init(nodeEngine, asyncOperations);
-                if (op instanceof StepAwareOperation && op instanceof BackupOperation) {
-                    ((StepAwareOperation<?>) op).setBackupOpAfterRun(backupOpAfterRun);
+                if (op instanceof StepAwareOperation stepAwareOperation && op instanceof BackupOperation) {
+                    stepAwareOperation.setBackupOpAfterRun(backupOpAfterRun);
                 }
                 offload.start();
             }

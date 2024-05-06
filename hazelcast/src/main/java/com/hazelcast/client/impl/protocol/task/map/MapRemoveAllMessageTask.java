@@ -81,7 +81,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         MapOperationProvider operationProvider = getOperationProvider(parameters.name);
-        Predicate effectivePredicate = predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate)
+        Predicate effectivePredicate = predicate instanceof PartitionPredicate partitionPredicate ? partitionPredicate
                 .getTarget() : predicate;
         return operationProvider.createPartitionWideEntryWithPredicateOperationFactory(parameters.name, ENTRY_REMOVING_PROCESSOR,
                 effectivePredicate);

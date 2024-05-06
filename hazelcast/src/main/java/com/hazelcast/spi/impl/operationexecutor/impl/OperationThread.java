@@ -139,14 +139,14 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         try {
             if (task.getClass() == Packet.class) {
                 process((Packet) task);
-            } else if (task instanceof Operation) {
-                process((Operation) task);
-            } else if (task instanceof PartitionSpecificRunnable) {
-                process((PartitionSpecificRunnable) task);
-            } else if (task instanceof Runnable) {
-                process((Runnable) task);
-            } else if (task instanceof TaskBatch) {
-                process((TaskBatch) task);
+            } else if (task instanceof Operation operation) {
+                process(operation);
+            } else if (task instanceof PartitionSpecificRunnable runnable) {
+                process(runnable);
+            } else if (task instanceof Runnable runnable) {
+                process(runnable);
+            } else if (task instanceof TaskBatch batch) {
+                process(batch);
             } else {
                 throw new IllegalStateException("Unhandled task:" + task);
             }
@@ -205,10 +205,10 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
 
         try {
-            if (task instanceof Operation) {
-                process((Operation) task);
-            } else if (task instanceof Runnable) {
-                process((Runnable) task);
+            if (task instanceof Operation operation) {
+                process(operation);
+            } else if (task instanceof Runnable runnable) {
+                process(runnable);
             } else {
                 throw new IllegalStateException("Unhandled task: " + task + " from " + batch.taskFactory());
             }

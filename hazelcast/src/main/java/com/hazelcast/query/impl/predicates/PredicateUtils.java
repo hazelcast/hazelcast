@@ -42,10 +42,10 @@ public final class PredicateUtils {
      * @see OrResultSet#estimatedSize()
      */
     public static int estimatedSizeOf(Collection<QueryableEntry> result) {
-        if (result instanceof AndResultSet) {
-            return ((AndResultSet) result).estimatedSize();
-        } else if (result instanceof OrResultSet) {
-            return ((OrResultSet) result).estimatedSize();
+        if (result instanceof AndResultSet set) {
+            return set.estimatedSize();
+        } else if (result instanceof OrResultSet set) {
+            return set.estimatedSize();
         }
         return result.size();
     }
@@ -71,8 +71,8 @@ public final class PredicateUtils {
     }
 
     public static PagingPredicateImpl unwrapPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicateImpl) {
-            return (PagingPredicateImpl) predicate;
+        if (predicate instanceof PagingPredicateImpl impl) {
+            return impl;
         }
 
         Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();

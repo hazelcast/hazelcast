@@ -152,8 +152,8 @@ public final class OutOfMemoryErrorDispatcher {
             return;
         }
 
-        if (throwable instanceof OutOfMemoryError) {
-            onOutOfMemory((OutOfMemoryError) throwable);
+        if (throwable instanceof OutOfMemoryError error) {
+            onOutOfMemory(error);
         }
     }
 

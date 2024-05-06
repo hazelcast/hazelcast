@@ -101,12 +101,12 @@ public final class InstanceTrackingUtil {
         if (formatPattern == null) {
             JsonObject jsonObject = new JsonObject();
             propertyValues.forEach((prop, value) -> {
-                if (value instanceof Boolean) {
-                    jsonObject.add(prop, (boolean) value);
-                } else if (value instanceof Integer) {
-                    jsonObject.add(prop, (int) value);
-                } else if (value instanceof Long) {
-                    jsonObject.add(prop, (long) value);
+                if (value instanceof Boolean booleanValue) {
+                    jsonObject.add(prop, booleanValue);
+                } else if (value instanceof Integer integerValue) {
+                    jsonObject.add(prop, integerValue);
+                } else if (value instanceof Long longValue) {
+                    jsonObject.add(prop, longValue);
                 } else {
                     jsonObject.add(prop, value.toString());
                 }

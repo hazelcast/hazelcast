@@ -274,8 +274,8 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     protected void record(Object op, long startNanos) {
         if (opLatencyDistributions != null) {
             Class c = op.getClass();
-            if (op instanceof PartitionIteratingOperation) {
-                c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
+            if (op instanceof PartitionIteratingOperation operation) {
+                c = operation.getOperationFactory().getClass();
             }
 
             LatencyDistribution distribution = opLatencyDistributions.get(c);
@@ -374,8 +374,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     private void afterRun(Operation op) {
         try {
             op.afterRun();
-            if (op instanceof Notifier) {
-                final Notifier notifier = (Notifier) op;
+            if (op instanceof Notifier notifier) {
                 if (notifier.shouldNotify()) {
                     operationService.nodeEngine.getOperationParker().unpark(notifier);
                 }
@@ -421,8 +420,8 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     public void handleOperationError(Operation operation, Throwable e) {
-        if (e instanceof OutOfMemoryError) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+        if (e instanceof OutOfMemoryError error) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(error);
         }
         try {
             operation.onExecutionFailure(e);
@@ -456,8 +455,8 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     private void logOperationError(Operation op, Throwable e) {
-        if (e instanceof OutOfMemoryError) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+        if (e instanceof OutOfMemoryError error) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(error);
         }
         op.logError(e);
     }

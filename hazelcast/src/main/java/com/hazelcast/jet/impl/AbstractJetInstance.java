@@ -443,8 +443,8 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
         @Override
         public JobBuilderImpl withMemberSelector(@Nonnull JetMemberSelector memberSelector) {
-            if (jobDefinition instanceof DAG) {
-                ((DAG) jobDefinition).setMemberSelector(memberSelector);
+            if (jobDefinition instanceof DAG dag) {
+                dag.setMemberSelector(memberSelector);
             } else {
                 ((PipelineImpl) jobDefinition).setMemberSelector(memberSelector);
             }

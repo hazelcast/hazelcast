@@ -119,12 +119,12 @@ public class CacheRecordStore
     @Override
     protected Object recordToValue(CacheRecord record) {
         Object value = record.getValue();
-        if (value instanceof Data) {
+        if (value instanceof Data data) {
             switch (cacheConfig.getInMemoryFormat()) {
                 case BINARY:
                     return value;
                 case OBJECT:
-                    return dataToValue((Data) value);
+                    return dataToValue(data);
                 default:
                     throw new IllegalStateException("Unsupported in-memory format: "
                             + cacheConfig.getInMemoryFormat());
@@ -139,8 +139,8 @@ public class CacheRecordStore
         Object value = recordToValue(record);
         if (value == null) {
             return null;
-        } else if (value instanceof Data) {
-            return (Data) value;
+        } else if (value instanceof Data data) {
+            return data;
         } else {
             return valueToData(value);
         }
@@ -151,10 +151,9 @@ public class CacheRecordStore
         if (obj == null) {
             return null;
         }
-        if (obj instanceof Data) {
-            return (Data) obj;
-        } else if (obj instanceof CacheRecord) {
-            CacheRecord record = (CacheRecord) obj;
+        if (obj instanceof Data data) {
+            return data;
+        } else if (obj instanceof CacheRecord record) {
             Object value = record.getValue();
             return toHeapData(value);
         } else {

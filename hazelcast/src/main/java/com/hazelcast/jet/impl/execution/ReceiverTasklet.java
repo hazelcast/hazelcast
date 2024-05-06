@@ -166,8 +166,8 @@ public class ReceiverTasklet implements Tasklet {
                 assert inbox.peek() == null : "Found something in the queue beyond the DONE_ITEM: " + inbox.remove();
                 break;
             }
-            ProgressState outcome = item instanceof BroadcastItem
-                    ? collector.offerBroadcast((BroadcastItem) item)
+            ProgressState outcome = item instanceof BroadcastItem broadcastItem
+                    ? collector.offerBroadcast(broadcastItem)
                     : collector.offer(item, o.getPartitionId());
             if (!outcome.isDone()) {
                 tracker.madeProgress(outcome.isMadeProgress());

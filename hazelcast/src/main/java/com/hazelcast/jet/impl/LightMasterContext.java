@@ -210,8 +210,8 @@ public final class LightMasterContext {
                     jobCompletionFuture.complete(null);
                     jobEventService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
                 } else {
-                    TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException
-                            ? ((JobTerminateRequestedException) fail).mode() : null;
+                    TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException jtre
+                            ? jtre.mode() : null;
                     // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
                     // to CancellationException or CancellationByUserException
                     if (requestedTerminationMode == CANCEL_FORCEFUL) {
@@ -337,12 +337,12 @@ public final class LightMasterContext {
     private Throwable findError(Collection<Object> responses) {
         Throwable result = null;
         for (Object response : responses) {
-            if (response instanceof Throwable
+            if (response instanceof Throwable throwable
                     && (result == null
                     || result instanceof JobTerminateRequestedException
                     || result instanceof CancellationException)
             ) {
-                result = (Throwable) response;
+                result = throwable;
             }
         }
         if (isOrHasCause(result, HazelcastInstanceNotActiveException.class)) {

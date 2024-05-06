@@ -613,10 +613,10 @@ public class HazelcastCommandLine implements Runnable {
     }
 
     protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
-        if (client instanceof HazelcastClientProxy) {
-            return ((HazelcastClientProxy) client).client;
-        } else if (client instanceof HazelcastClientInstanceImpl) {
-            return ((HazelcastClientInstanceImpl) client);
+        if (client instanceof HazelcastClientProxy proxy) {
+            return proxy.client;
+        } else if (client instanceof HazelcastClientInstanceImpl impl) {
+            return impl;
         } else {
             throw new IllegalArgumentException("This method can be called only with client"
                     + " instances such as HazelcastClientProxy and HazelcastClientInstanceImpl.");

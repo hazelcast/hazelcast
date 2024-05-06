@@ -59,8 +59,7 @@ public final class OrPredicate
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         List<Set<QueryableEntry>> indexedResults = new LinkedList<>();
         for (Predicate predicate : predicates) {
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+            if (predicate instanceof IndexAwarePredicate iap) {
                 if (iap.isIndexed(queryContext)) {
                     // Avoid checking indexed partitions count twice to prevent
                     // scenario when the owner partitions count changes concurrently and null
@@ -84,8 +83,7 @@ public final class OrPredicate
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         for (Predicate predicate : predicates) {
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+            if (predicate instanceof IndexAwarePredicate iap) {
                 if (!iap.isIndexed(queryContext)) {
                     return false;
                 }
@@ -155,8 +153,8 @@ public final class OrPredicate
         for (int i = 0; i < size; i++) {
             Predicate original = predicates[i];
             Predicate negated;
-            if (original instanceof NegatablePredicate) {
-                negated = ((NegatablePredicate) original).negate();
+            if (original instanceof NegatablePredicate predicate) {
+                negated = predicate.negate();
             } else {
                 negated = new NotPredicate(original);
             }

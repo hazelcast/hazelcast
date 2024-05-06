@@ -176,10 +176,10 @@ public class JetInitDataSerializerHookTest {
     }
 
     private static void customAssertEquals(String msg, Object expected, Object actual) {
-        if (expected instanceof AtomicLong) {
-            assertEquals(msg, ((AtomicLong) expected).get(), ((AtomicLong) actual).get());
-        } else if (expected instanceof AtomicInteger) {
-            assertEquals(msg, ((AtomicInteger) expected).get(), ((AtomicInteger) actual).get());
+        if (expected instanceof AtomicLong atomicLong) {
+            assertEquals(msg, atomicLong.get(), ((AtomicLong) actual).get());
+        } else if (expected instanceof AtomicInteger atomicInteger) {
+            assertEquals(msg, atomicInteger.get(), ((AtomicInteger) actual).get());
         } else {
             assertEquals(msg, expected, actual);
         }
