@@ -60,8 +60,7 @@ public class ContextMutexFactoryTest {
                 await(cyc);
 
                 for (String key : keys) {
-                    ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
-                    try {
+                    try (ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key)) {
                         synchronized (mutex) {
                             Integer value = timesAcquired.get(key);
                             if (value == null) {
@@ -70,8 +69,6 @@ public class ContextMutexFactoryTest {
                                 timesAcquired.put(key, value + 1);
                             }
                         }
-                    } finally {
-                        mutex.close();
                     }
                 }
 
