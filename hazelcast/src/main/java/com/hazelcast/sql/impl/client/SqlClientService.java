@@ -242,7 +242,7 @@ public class SqlClientService implements SqlService {
     }
 
     private boolean shouldResubmit(Exception error) {
-        return (error instanceof HazelcastSqlException) && (shouldResubmit(((HazelcastSqlException) error).getCode()));
+        return (error instanceof HazelcastSqlException exception) && (shouldResubmit(exception.getCode()));
     }
 
     private boolean shouldResubmit(SqlError error) {

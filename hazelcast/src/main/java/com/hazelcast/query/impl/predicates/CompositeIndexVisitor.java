@@ -63,8 +63,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
         Map<String, RangePredicate> comparisons = null;
         Output output = null;
         for (Predicate predicate : andPredicate.predicates) {
-            if (predicate instanceof EqualPredicate) {
-                EqualPredicate equalPredicate = (EqualPredicate) predicate;
+            if (predicate instanceof EqualPredicate equalPredicate) {
                 prefixes = obtainHashMap(prefixes, originalSize);
 
                 EqualPredicate replaced = prefixes.put(equalPredicate.attributeName, equalPredicate);
@@ -84,8 +83,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                 continue;
             }
 
-            if (predicate instanceof RangePredicate) {
-                RangePredicate rangePredicate = (RangePredicate) predicate;
+            if (predicate instanceof RangePredicate rangePredicate) {
                 comparisons = obtainHashMap(comparisons, originalSize);
 
                 RangePredicate replaced = comparisons.put(rangePredicate.getAttribute(), rangePredicate);

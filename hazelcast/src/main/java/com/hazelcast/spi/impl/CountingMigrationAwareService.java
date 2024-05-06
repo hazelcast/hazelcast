@@ -142,8 +142,8 @@ public class CountingMigrationAwareService
 
     @Override
     public boolean shouldOffload() {
-        return migrationAwareService instanceof OffloadedReplicationPreparation
-                && ((OffloadedReplicationPreparation) migrationAwareService).shouldOffload();
+        return migrationAwareService instanceof OffloadedReplicationPreparation orp
+                && orp.shouldOffload();
     }
 
     @Override

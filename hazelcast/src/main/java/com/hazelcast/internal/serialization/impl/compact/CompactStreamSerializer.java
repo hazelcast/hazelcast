@@ -110,8 +110,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     void write(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
-        if (o instanceof CompactGenericRecord) {
-            writeGenericRecord(out, (CompactGenericRecord) o, includeSchemaOnBinary);
+        if (o instanceof CompactGenericRecord compactGenericRecord) {
+            writeGenericRecord(out, compactGenericRecord, includeSchemaOnBinary);
         } else {
             writeObject(out, o, includeSchemaOnBinary);
         }

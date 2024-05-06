@@ -56,8 +56,7 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
     @Override
     public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
         runUsingPartitionScanWithoutPaging(mapName, predicate, partitions, result);
-        if (predicate instanceof PagingPredicateImpl) {
-            PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) predicate;
+        if (predicate instanceof PagingPredicateImpl pagingPredicate) {
             Map.Entry<Integer, Map.Entry> nearestAnchorEntry = pagingPredicate.getNearestAnchorEntry();
             result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
         }

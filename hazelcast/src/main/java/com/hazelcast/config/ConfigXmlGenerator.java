@@ -660,8 +660,7 @@ public class ConfigXmlGenerator {
         socketInterceptorConfigXmlGenerator(gen, endpointConfig.getSocketInterceptorConfig());
         symmetricEncInterceptorConfigXmlGenerator(gen, endpointConfig.getSymmetricEncryptionConfig());
 
-        if (endpointConfig instanceof RestServerEndpointConfig) {
-            RestServerEndpointConfig rsec = (RestServerEndpointConfig) endpointConfig;
+        if (endpointConfig instanceof RestServerEndpointConfig rsec) {
             gen.open("endpoint-groups");
             for (RestEndpointGroup group : RestEndpointGroup.values()) {
                 gen.node("endpoint-group", null, "name", group.name(),
@@ -684,8 +683,7 @@ public class ConfigXmlGenerator {
         gen.node("keep-count", endpointConfig.getSocketKeepCount());
         gen.close();
 
-        if (endpointConfig instanceof ServerSocketEndpointConfig) {
-            ServerSocketEndpointConfig serverSocketEndpointConfig = (ServerSocketEndpointConfig) endpointConfig;
+        if (endpointConfig instanceof ServerSocketEndpointConfig serverSocketEndpointConfig) {
             gen.node("port", serverSocketEndpointConfig.getPort(),
                     "port-count", serverSocketEndpointConfig.getPortCount(),
                     "auto-increment", serverSocketEndpointConfig.isPortAutoIncrement())
@@ -807,8 +805,7 @@ public class ConfigXmlGenerator {
 
     protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
                                                      AbstractBaseFactoryWithPropertiesConfig<?> factoryWithProps) {
-        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig) {
-            AbstractFactoryWithPropertiesConfig cfgWithEnabled = (AbstractFactoryWithPropertiesConfig) factoryWithProps;
+        if (factoryWithProps instanceof AbstractFactoryWithPropertiesConfig cfgWithEnabled) {
             gen.open(elementName, "enabled", cfgWithEnabled.isEnabled());
         } else {
             gen.open(elementName);
@@ -934,10 +931,10 @@ public class ConfigXmlGenerator {
     private void secureStoreXmlGenerator(XmlGenerator gen, SecureStoreConfig secureStoreConfig) {
         if (secureStoreConfig != null) {
             gen.open("secure-store");
-            if (secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig) {
-                javaKeyStoreSecureStoreXmlGenerator(gen, (JavaKeyStoreSecureStoreConfig) secureStoreConfig);
-            } else if (secureStoreConfig instanceof VaultSecureStoreConfig) {
-                vaultSecureStoreXmlGenerator(gen, (VaultSecureStoreConfig) secureStoreConfig);
+            if (secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig config) {
+                javaKeyStoreSecureStoreXmlGenerator(gen, config);
+            } else if (secureStoreConfig instanceof VaultSecureStoreConfig config) {
+                vaultSecureStoreXmlGenerator(gen, config);
             }
             gen.close();
         }
@@ -1222,7 +1219,7 @@ public class ConfigXmlGenerator {
         }
         for (Map.Entry factory : factoryMap.entrySet()) {
             Object value = factory.getValue();
-            String className = value instanceof String ? (String) value : value.getClass().getName();
+            String className = value instanceof String s ? s : value.getClass().getName();
             gen.node(elementName, className, "factory-id", factory.getKey().toString());
         }
     }

@@ -318,9 +318,8 @@ public class DeserializingCompletableFuture<V> extends InternalCompletableFuture
     }
 
     private V resolve(Object object) {
-        if (deserialize && object instanceof Data) {
+        if (deserialize && object instanceof Data data) {
             // we need to deserialize.
-            Data data = (Data) object;
             object = serializationService.toObject(data);
 
             //todo do we need to call dispose data here

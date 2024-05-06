@@ -124,7 +124,7 @@ abstract class AbstractAnswer implements Answer {
     Object getLogger(Object... arguments) throws Exception {
         // we always call the getLogger(String) method, to avoid the lookup of the correct target class
         Method delegateMethod = getDelegateMethod("getLogger", String.class);
-        String className = (arguments[0] instanceof String) ? (String) arguments[0] : ((Class) arguments[0]).getName();
+        String className = (arguments[0] instanceof String s) ? s : ((Class) arguments[0]).getName();
         return invoke(delegateMethod, className);
     }
 
@@ -299,8 +299,8 @@ abstract class AbstractAnswer implements Answer {
             // some methods throw an IllegalStateException, which is asserted in tests
             // we could maybe use ExceptionUtil.peel() to improve this
             Throwable cause = getRootCause(e);
-            if (cause instanceof IllegalStateException) {
-                throw (IllegalStateException) cause;
+            if (cause instanceof IllegalStateException exception) {
+                throw exception;
             }
             throw e;
         }

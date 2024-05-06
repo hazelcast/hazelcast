@@ -172,9 +172,9 @@ public class PagingPredicateImpl<K, V>
 
     @Override
     public Predicate accept(Visitor visitor, IndexRegistry indexes) {
-        if (predicate instanceof VisitablePredicate) {
+        if (predicate instanceof VisitablePredicate visitablePredicate) {
             return NamespaceUtil.callWithOwnClassLoader(predicate, () -> {
-                Predicate transformed = ((VisitablePredicate) predicate).accept(visitor, indexes);
+                Predicate transformed = visitablePredicate.accept(visitor, indexes);
                 return transformed == predicate ? this : new PagingPredicateImpl<>(this, transformed);
             });
         }
@@ -231,9 +231,9 @@ public class PagingPredicateImpl<K, V>
      */
     @Override
     public boolean isIndexed(QueryContext queryContext) {
-        if (predicate instanceof IndexAwarePredicate) {
+        if (predicate instanceof IndexAwarePredicate awarePredicate) {
             return NamespaceUtil.callWithNamespace(userCodeNamespace, () ->
-                    ((IndexAwarePredicate) predicate).isIndexed(queryContext));
+                    awarePredicate.isIndexed(queryContext));
         }
         return false;
     }

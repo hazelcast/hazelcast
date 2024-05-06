@@ -60,7 +60,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
         if (properties == null) {
             properties = new HazelcastProperties((Properties) null);
         }
-        clientEndpointManager = dst instanceof ClientEngine ? ((ClientEngine) dst).getEndpointManager() : null;
+        clientEndpointManager = dst instanceof ClientEngine clientEngine ? clientEngine.getEndpointManager() : null;
         maxMessageLength = properties.getInteger(ClusterProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES);
         activeReader = new ClientMessageReader(maxMessageLength);
         this.connection = connection;

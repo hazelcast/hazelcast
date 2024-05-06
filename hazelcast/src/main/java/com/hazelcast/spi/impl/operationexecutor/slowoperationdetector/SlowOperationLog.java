@@ -51,8 +51,8 @@ final class SlowOperationLog {
     private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<>();
 
     SlowOperationLog(String stackTrace, Object task) {
-        if (task instanceof Operation) {
-            this.operation = OperationDescriptors.toOperationDesc((Operation) task);
+        if (task instanceof Operation op) {
+            this.operation = OperationDescriptors.toOperationDesc(op);
         } else {
             this.operation = task.getClass().getName();
         }

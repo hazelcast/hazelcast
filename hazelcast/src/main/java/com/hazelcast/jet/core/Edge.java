@@ -632,8 +632,8 @@ public class Edge implements IdentifiedDataSerializable {
     public boolean equals(Object obj) {
         final Edge that;
         return this == obj
-                || obj instanceof Edge
-                    && this.sourceName.equals((that = (Edge) obj).sourceName)
+                || obj instanceof Edge edge
+                    && this.sourceName.equals((that = edge).sourceName)
                     && this.destName.equals(that.destName)
                     && this.sourceOrdinal == that.sourceOrdinal
                     && this.destOrdinal == that.destOrdinal;
@@ -837,8 +837,8 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public void init(@Nonnull DefaultPartitionStrategy strategy) {
             partitioner.init(strategy);
-            if (keyExtractor instanceof SerializationServiceAware) {
-                ((SerializationServiceAware) keyExtractor).setSerializationService(serializationService);
+            if (keyExtractor instanceof SerializationServiceAware aware) {
+                aware.setSerializationService(serializationService);
             }
         }
 
