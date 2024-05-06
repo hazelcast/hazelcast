@@ -28,7 +28,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.CachePartitionLostListenerConfigReadOnly;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -76,12 +75,9 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
         final EventService eventService = getNode(instance).getNodeEngine().getEventService();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<EventRegistration> registrations = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
-                assertFalse(registrations.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            Collection<EventRegistration> registrations = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
+            assertFalse(registrations.isEmpty());
         });
     }
 

@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -127,13 +126,10 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         // multiple get calls
         for (int i = 0; i < 5; i++) {
             assertEquals("Expected the intercepted value", expectedValueAfterGet, map1.get(key));
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals("Expected the uppercase value", expectedValueAfterPut, interceptor1.getValue);
-                    assertEquals("Expected the intercepted value after get", expectedValueAfterGet, interceptor1.afterGetValue);
-                    assertNoInteractionWith(interceptor2);
-                }
+            assertTrueEventually(() -> {
+                assertEquals("Expected the uppercase value", expectedValueAfterPut, interceptor1.getValue);
+                assertEquals("Expected the intercepted value after get", expectedValueAfterGet, interceptor1.afterGetValue);
+                assertNoInteractionWith(interceptor2);
             });
             interceptor1.reset();
             interceptor2.reset();
@@ -171,14 +167,11 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
     }
 
     private void testInterceptedValuePropagatesToBackupCorrectly() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull("Expected no old value", interceptor1.putOldValue);
-                assertEquals("Expected unmodified new value", value, interceptor1.putNewValue);
-                assertEquals("Expected new uppercase value after put", expectedValueAfterPut, interceptor1.afterPutValue);
-                assertNoInteractionWith(interceptor2);
-            }
+        assertTrueEventually(() -> {
+            assertNull("Expected no old value", interceptor1.putOldValue);
+            assertEquals("Expected unmodified new value", value, interceptor1.putNewValue);
+            assertEquals("Expected new uppercase value after put", expectedValueAfterPut, interceptor1.afterPutValue);
+            assertNoInteractionWith(interceptor2);
         });
         assertEquals("Expected the intercepted value", expectedValueAfterGet, map1.get(key));
 
@@ -198,14 +191,11 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         interceptor2.reset();
 
         map1.replace(key, value);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expected uppercase old value", oldValueAfterPut, interceptor1.putOldValue);
-                assertEquals("Expected unmodified new value", value, interceptor1.putNewValue);
-                assertEquals("Expected new uppercase value after put", expectedValueAfterPut, interceptor1.afterPutValue);
-                assertNoInteractionWith(interceptor2);
-            }
+        assertTrueEventually(() -> {
+            assertEquals("Expected uppercase old value", oldValueAfterPut, interceptor1.putOldValue);
+            assertEquals("Expected unmodified new value", value, interceptor1.putNewValue);
+            assertEquals("Expected new uppercase value after put", expectedValueAfterPut, interceptor1.afterPutValue);
+            assertNoInteractionWith(interceptor2);
         });
         assertEquals("Expected the intercepted value", expectedValueAfterGet, map1.get(key));
 
@@ -225,14 +215,11 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         interceptor2.reset();
 
         map1.replace(key, oldValueAfterPut, value);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expected uppercase old value", oldValueAfterPut, interceptor1.putOldValue);
-                assertEquals("Expected unmodified new value", value, interceptor1.putNewValue);
-                assertEquals("Expected new uppercase value after put", expectedValueAfterPut, interceptor1.afterPutValue);
-                assertNoInteractionWith(interceptor2);
-            }
+        assertTrueEventually(() -> {
+            assertEquals("Expected uppercase old value", oldValueAfterPut, interceptor1.putOldValue);
+            assertEquals("Expected unmodified new value", value, interceptor1.putNewValue);
+            assertEquals("Expected new uppercase value after put", expectedValueAfterPut, interceptor1.afterPutValue);
+            assertNoInteractionWith(interceptor2);
         });
         assertEquals("Expected the intercepted value", expectedValueAfterGet, map1.get(key));
 
@@ -249,12 +236,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
         map1.remove(key);
         assertEquals("Expected the uppercase removed value", expectedValueAfterPut, interceptor1.removedValue);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expected the uppercase value after remove", expectedValueAfterPut, interceptor1.afterRemoveValue);
-            }
-        });
+        assertTrueEventually(() -> assertEquals("Expected the uppercase value after remove", expectedValueAfterPut, interceptor1.afterRemoveValue));
         assertNoInteractionWith(interceptor2);
         assertNull("Expected the value to be removed", map1.get(key));
 

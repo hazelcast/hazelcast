@@ -24,7 +24,6 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -96,12 +95,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.containsKey(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
@@ -117,12 +111,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.putIfAbsent(1, 100);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
@@ -138,12 +127,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.get(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
@@ -161,12 +145,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         map.evict(1);
         map.get(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        }, 5);
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()), 5);
     }
 
     @Test
@@ -185,13 +164,10 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         final List<Integer> keyList = Arrays.asList(1, 2, 3, 4, 5);
         map.getAll(new HashSet<Integer>(keyList));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(keyList.size(), entryEvents.size());
-                for (EntryEvent entryEvent : entryEvents) {
-                    assertEquals(LOADED, entryEvent.getEventType());
-                }
+        assertTrueEventually(() -> {
+            assertEquals(keyList.size(), entryEvents.size());
+            for (EntryEvent entryEvent : entryEvents) {
+                assertEquals(LOADED, entryEvent.getEventType());
             }
         });
     }
@@ -210,12 +186,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.executeOnKey(1, new Reader());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
@@ -231,12 +202,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.executeOnKey(1, new Reader());
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, addEventCount.get());
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals(0, addEventCount.get()), 3);
     }
 
     @Test
@@ -250,12 +216,9 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
             map.executeOnKey(i, new Updater());
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(10, loadEventCount.get());
-                assertEquals(10, updateEventCount.get());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(10, loadEventCount.get());
+            assertEquals(10, updateEventCount.get());
         });
     }
 
@@ -272,18 +235,8 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.loadAll(true);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(5, loadEventCount.get());
-            }
-        });
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, addEventCount.get());
-            }
-        }, 3);
+        assertTrueEventually(() -> assertEquals(5, loadEventCount.get()));
+        assertTrueAllTheTime(() -> assertEquals(0, addEventCount.get()), 3);
     }
 
     @Test
@@ -298,12 +251,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         map.loadAll(true);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, addEventCount.get());
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> assertEquals(0, addEventCount.get()), 5);
     }
 
     static class LoadAndAddListener implements EntryLoadedListener<Integer, Integer>,

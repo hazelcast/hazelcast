@@ -27,7 +27,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -125,12 +124,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     private void assertAllPartitionContainersAreEmptyEventually(final HazelcastInstance instance) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertAllPartitionContainersAreEmpty(instance);
-            }
-        });
+        assertTrueEventually(() -> assertAllPartitionContainersAreEmpty(instance));
     }
 
     protected void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {

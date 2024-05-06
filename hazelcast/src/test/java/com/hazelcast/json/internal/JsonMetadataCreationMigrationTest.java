@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -81,12 +80,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
 
 
     protected void assertMetadataCreatedEventually(final String mapName) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMetadataCreated(mapName, NODE_COUNT);
-            }
-        });
+        assertTrueEventually(() -> assertMetadataCreated(mapName, NODE_COUNT));
     }
 
     protected void assertMetadataCreated(String mapName, int replicaCount) {

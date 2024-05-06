@@ -35,7 +35,6 @@ import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -1299,17 +1298,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value2");
         map.remove("key");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("key", addedKey[0]);
-                assertEquals("value", addedValue[0]);
-                assertEquals("key", updatedKey[0]);
-                assertEquals("value", oldValue[0]);
-                assertEquals("value2", newValue[0]);
-                assertEquals("key", removedKey[0]);
-                assertEquals("value2", removedValue[0]);
-            }
+        assertTrueEventually(() -> {
+            assertEquals("key", addedKey[0]);
+            assertEquals("value", addedValue[0]);
+            assertEquals("key", updatedKey[0]);
+            assertEquals("value", oldValue[0]);
+            assertEquals("value2", newValue[0]);
+            assertEquals("key", removedKey[0]);
+            assertEquals("value2", removedValue[0]);
         });
     }
 

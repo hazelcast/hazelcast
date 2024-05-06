@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -185,12 +184,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.put(1, value);
 
         final String expectedValue = StringUtil.upperCaseInternal(value);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedValue, listener.getAddedValue());
-            }
-        }, 15);
+        assertTrueEventually(() -> assertEquals(expectedValue, listener.getAddedValue()), 15);
     }
 
     @Test
@@ -207,12 +201,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.executeOnKeys(keys, new EntryPutProcessor("foo"));
 
         final String expectedValue = StringUtil.upperCaseInternal(value);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedValue, listener.getAddedValue());
-            }
-        }, 15);
+        assertTrueEventually(() -> assertEquals(expectedValue, listener.getAddedValue()), 15);
     }
 
     @Test
@@ -227,12 +216,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.executeOnKey(1, new EntryPutProcessor("foo"));
 
         final String expectedValue = StringUtil.upperCaseInternal(value);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedValue, listener.getAddedValue());
-            }
-        }, 15);
+        assertTrueEventually(() -> assertEquals(expectedValue, listener.getAddedValue()), 15);
     }
 
     @Test
@@ -254,12 +238,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         keys.add(1);
         map.loadAll(keys, false);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("FOO-1", listener.getLoadedValue());
-            }
-        }, 15);
+        assertTrueEventually(() -> assertEquals("FOO-1", listener.getLoadedValue()), 15);
     }
 
     @Test
