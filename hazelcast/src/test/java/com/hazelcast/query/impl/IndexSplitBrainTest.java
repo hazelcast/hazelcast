@@ -27,7 +27,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,23 +80,15 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
         final IMap<String, ValueObject> map1 = instances[0].getMap(mapName);
         final IMap<String, ValueObject> map2 = instances[1].getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull("Entry should exist in map1 after merge", map1.get(key));
-            }
-        }, 15);
+        assertTrueEventually(() -> assertNotNull("Entry should exist in map1 after merge", map1.get(key)), 15);
         map1.remove(key);
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                Predicate predicate = Predicates.equal("id", value.getId());
-                Collection<ValueObject> values = map1.values(predicate);
-                assertThat(values).isEmpty();
+        assertTrueAllTheTime(() -> {
+            Predicate predicate = Predicates.equal("id", value.getId());
+            Collection<ValueObject> values = map1.values(predicate);
+            assertThat(values).isEmpty();
 
-                values = map2.values(predicate);
-                assertThat(values).isEmpty();
-            }
+            values = map2.values(predicate);
+            assertThat(values).isEmpty();
         }, 5);
     }
 

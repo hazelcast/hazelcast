@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -56,12 +55,7 @@ public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends 
         };
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(PartitionOperationThread.class, executingThead.get());
-            }
-        });
+        assertTrueEventually(() -> assertInstanceOf(PartitionOperationThread.class, executingThead.get()));
     }
 
     @Test
@@ -83,11 +77,6 @@ public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends 
         };
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(GenericOperationThread.class, executingThead.get());
-            }
-        });
+        assertTrueEventually(() -> assertInstanceOf(GenericOperationThread.class, executingThead.get()));
     }
 }

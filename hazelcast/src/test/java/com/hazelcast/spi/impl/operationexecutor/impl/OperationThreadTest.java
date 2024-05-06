@@ -23,7 +23,6 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -61,12 +60,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
         executor.accept(packet);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(oldCount + 1, OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(oldCount + 1, OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount()));
     }
 
     @Test
@@ -145,12 +139,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         };
         executor.executeOnPartitionThreads(emptyRunnable);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, executor.getPriorityQueueSize());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, executor.getPriorityQueueSize()));
     }
 
     private PartitionOperationThread createNewOperationThread(OperationQueue mockOperationQueue) {

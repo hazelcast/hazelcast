@@ -27,7 +27,6 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -150,12 +149,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
 
         topic.publish("item");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(messageListener.objects, "item");
-            }
-        });
+        assertTrueEventually(() -> assertContains(messageListener.objects, "item"));
     }
 
     @Test
@@ -174,12 +168,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
 
         topic.publish("item");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(messageListener.objects, "item");
-            }
-        });
+        assertTrueEventually(() -> assertContains(messageListener.objects, "item"));
     }
 
     static class InstanceAwareReliableMessageListenerMock extends ReliableMessageListenerMock implements HazelcastInstanceAware {

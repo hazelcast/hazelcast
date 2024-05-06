@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -201,12 +200,9 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         factory.shutdownAll();
 
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 1000; i++) {
-                    assertEquals(valueOf(i), mapStore.store.get(i));
-                }
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 1000; i++) {
+                assertEquals(valueOf(i), mapStore.store.get(i));
             }
         });
 
@@ -271,12 +267,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     private void assertStoreCount(final int expected, final AtomicInteger storeCount) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expected, storeCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, storeCount.get()));
     }
 
     private MapStore<Integer, Integer> createSlowMapStore(final AtomicInteger storeCount) {
@@ -290,12 +281,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     private void assertFinalValueEquals(final int expected, final int actual) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expected, actual);
-            }
-        }, 20);
+        assertTrueEventually(() -> assertEquals(expected, actual), 20);
     }
 
     private void populateMap(IMap<Integer, Integer> map, int numberOfItems) {

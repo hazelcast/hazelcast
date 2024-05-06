@@ -36,7 +36,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -328,12 +327,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     }
 
     private void assertMetadataCreatedEventually(final String mapName) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMetadataCreated(mapName);
-            }
-        });
+        assertTrueEventually(() -> assertMetadataCreated(mapName));
     }
 
     private void assertMetadataCreated(String mapName) {

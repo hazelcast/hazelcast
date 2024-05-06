@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -112,12 +111,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
         // callback can be completed immediately, since a response (NULL_RESPONSE) has been already set
         future.whenCompleteAsync(callback);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback, times(1)).accept(isNull(), isNull());
-            }
-        });
+        assertTrueEventually(() -> verify(callback, times(1)).accept(isNull(), isNull()));
     }
 
     @SuppressWarnings("unchecked")

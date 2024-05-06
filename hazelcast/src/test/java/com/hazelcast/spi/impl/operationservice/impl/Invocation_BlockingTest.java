@@ -28,7 +28,6 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -181,12 +180,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
                 .setPartitionId(partitionId);
         final InternalCompletableFuture<Object> future = opService.invokeOnPartition(op);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(future.isDone());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(future.isDone()));
 
         assertEquals(Boolean.FALSE, future.join());
     }

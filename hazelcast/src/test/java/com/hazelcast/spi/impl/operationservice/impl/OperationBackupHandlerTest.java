@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -140,7 +139,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     // ============================ backup =================================
 
     @Test(expected = IllegalArgumentException.class)
-    public void backup_whenNegativeSyncBackupCount() throws Exception {
+    public void backup_whenNegativeSyncBackupCount() {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(-1, 0);
@@ -148,7 +147,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void backup_whenTooLargeSyncBackupCount() throws Exception {
+    public void backup_whenTooLargeSyncBackupCount() {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(MAX_BACKUP_COUNT + 1, 0);
@@ -156,7 +155,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void backup_whenNegativeAsyncBackupCount() throws Exception {
+    public void backup_whenNegativeAsyncBackupCount() {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(0, -1);
@@ -164,7 +163,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void backup_whenTooLargeAsyncBackupCount() throws Exception {
+    public void backup_whenTooLargeAsyncBackupCount() {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(0, MAX_BACKUP_COUNT + 1);
@@ -172,7 +171,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void backup_whenTooLargeSumOfSyncAndAsync() throws Exception {
+    public void backup_whenTooLargeSumOfSyncAndAsync() {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(1, MAX_BACKUP_COUNT);
@@ -213,16 +212,13 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         int result = backupHandler.sendBackups0(backupAwareOp);
 
         assertEquals(expectedResult, result);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Integer completed = backupCompletedMap.get(backupAwareOp.backupKey);
-                if (completed == null) {
-                    completed = 0;
-                }
-                int totalBackups = min(BACKUPS, syncBackups + asyncBackups);
-                assertEquals(Integer.valueOf(totalBackups), completed);
+        assertTrueEventually(() -> {
+            Integer completed = backupCompletedMap.get(backupAwareOp.backupKey);
+            if (completed == null) {
+                completed = 0;
             }
+            int totalBackups = min(BACKUPS, syncBackups + asyncBackups);
+            assertEquals(Integer.valueOf(totalBackups), completed);
         });
     }
 

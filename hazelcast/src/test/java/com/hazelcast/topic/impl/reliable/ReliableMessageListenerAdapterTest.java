@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -71,12 +70,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         topic.addMessageListener(listener);
 
         topic.publish("item");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(singletonList("item"), listener.messages);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(singletonList("item"), listener.messages));
     }
 
     class MessageListenerMock implements MessageListener<String> {

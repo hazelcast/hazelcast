@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -74,12 +73,9 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                boolean contains = genericOperationHandler.operations.contains(genericOperation);
-                assertTrue("operation is not found in the generic operation handler", contains);
-            }
+        assertTrueEventually(() -> {
+            boolean contains = genericOperationHandler.operations.contains(genericOperation);
+            assertTrue("operation is not found in the generic operation handler", contains);
         });
     }
 
@@ -100,12 +96,9 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         executor.execute(task);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
-                assertContains(handler.operations, genericOperation);
-            }
+        assertTrueEventually(() -> {
+            DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
+            assertContains(handler.operations, genericOperation);
         });
     }
 
@@ -208,12 +201,9 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
-                assertContains(handler.operations, partitionOperation);
-            }
+        assertTrueEventually(() -> {
+            DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
+            assertContains(handler.operations, partitionOperation);
         });
     }
 

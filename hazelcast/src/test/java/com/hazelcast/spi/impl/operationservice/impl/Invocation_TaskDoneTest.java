@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,12 +55,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
         operationService.createInvocationBuilder("mockService", op, 0).setDoneCallback(cb).invoke();
 
         // Then
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(cb.done);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(cb.done));
     }
 
     @Test

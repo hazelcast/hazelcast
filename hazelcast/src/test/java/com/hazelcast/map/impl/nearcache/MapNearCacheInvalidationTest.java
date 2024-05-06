@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -86,13 +85,10 @@ public class MapNearCacheInvalidationTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
-                NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
-                assertEquals(0, nearCache1.size() + nearCache2.size());
-            }
+        assertTrueEventually(() -> {
+            NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
+            NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
+            assertEquals(0, nearCache1.size() + nearCache2.size());
         });
     }
 
@@ -175,13 +171,10 @@ public class MapNearCacheInvalidationTest extends HazelcastTestSupport {
 
         map1.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
-                NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
-                assertEquals(0, nearCache1.size() + nearCache2.size());
-            }
+        assertTrueEventually(() -> {
+            NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
+            NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
+            assertEquals(0, nearCache1.size() + nearCache2.size());
         });
     }
 
@@ -217,13 +210,10 @@ public class MapNearCacheInvalidationTest extends HazelcastTestSupport {
 
         map1.evictAll();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
-                NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
-                assertEquals(0, nearCache1.size() + nearCache2.size());
-            }
+        assertTrueEventually(() -> {
+            NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
+            NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
+            assertEquals(0, nearCache1.size() + nearCache2.size());
         });
     }
 

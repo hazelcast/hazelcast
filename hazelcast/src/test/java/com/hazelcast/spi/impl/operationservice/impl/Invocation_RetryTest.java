@@ -29,7 +29,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -126,12 +125,9 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         invocation.notifyError(new RetryableHazelcastException());
         invocation.notifyError(new RetryableHazelcastException());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Iterator<Invocation> invocations = operationService.invocationRegistry.iterator();
-                assertFalse(invocations.hasNext());
-            }
+        assertTrueEventually(() -> {
+            Iterator<Invocation> invocations = operationService.invocationRegistry.iterator();
+            assertFalse(invocations.hasNext());
         });
     }
 

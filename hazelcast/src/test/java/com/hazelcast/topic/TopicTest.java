@@ -26,7 +26,6 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -83,12 +82,9 @@ public class TopicTest extends HazelcastTestSupport {
 
         final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                boolean containsStats = topicService.getStatsMap().containsKey(topic.getName());
-                assertFalse(containsStats);
-            }
+        assertTrueEventually(() -> {
+            boolean containsStats = topicService.getStatsMap().containsKey(topic.getName());
+            assertFalse(containsStats);
         });
     }
 
@@ -130,13 +126,10 @@ public class TopicTest extends HazelcastTestSupport {
             instance.getTopic(randomName).publish(instance.getCluster().getLocalMember());
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(nodeCount, count1.get());
-                assertEquals(nodeCount * nodeCount, count2.get());
-                assertEquals(nodeCount, count3.get());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(nodeCount, count1.get());
+            assertEquals(nodeCount * nodeCount, count2.get());
+            assertEquals(nodeCount, count3.get());
         });
     }
 
@@ -158,12 +151,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         final CompletableFuture<Void> f = topic.publishAsync("TestMessage").toCompletableFuture();
         assertCompletesEventually(f);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, count.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, count.get()));
     }
 
     @Test
@@ -184,12 +172,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
         topic.publishAll(messages);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(messages.size(), count.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(messages.size(), count.get()));
     }
 
 
@@ -211,12 +194,7 @@ public class TopicTest extends HazelcastTestSupport {
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
         final CompletableFuture<Void> f = topic.publishAllAsync(messages).toCompletableFuture();
         assertCompletesEventually(f);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(messages.size(), count.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(messages.size(), count.get()));
     }
 
     @Test
@@ -374,14 +352,11 @@ public class TopicTest extends HazelcastTestSupport {
         }
 
         // all messages in nodes messageLists should be equal
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int i = 0;
-                do {
-                    assertEquals(messageListPerNode[i], messageListPerNode[i++]);
-                } while (i < nodeCount);
-            }
+        assertTrueEventually(() -> {
+            int i = 0;
+            do {
+                assertEquals(messageListPerNode[i], messageListPerNode[i++]);
+            } while (i < nodeCount);
         });
     }
 
@@ -548,12 +523,7 @@ public class TopicTest extends HazelcastTestSupport {
             assertTrue(topic.removeMessageListener(id));
             topic.publish(message + "2");
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals(1, onMessageCount.get());
-                }
-            });
+            assertTrueEventually(() -> assertEquals(1, onMessageCount.get()));
         } finally {
             shutdownNodeFactory();
         }

@@ -24,7 +24,6 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
@@ -82,14 +81,11 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
 
         logger.info("Number of items produced: " + produceThread.send);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(produceThread.send, listener1.received + listener1.lost);
-                assertEquals(produceThread.send, listener2.received + listener2.lost);
-                assertEquals(0, listener1.failed);
-                assertEquals(0, listener2.failed);
-            }
+        assertTrueEventually(() -> {
+            assertEquals(produceThread.send, listener1.received + listener1.lost);
+            assertEquals(produceThread.send, listener2.received + listener2.lost);
+            assertEquals(0, listener1.failed);
+            assertEquals(0, listener2.failed);
         });
     }
 

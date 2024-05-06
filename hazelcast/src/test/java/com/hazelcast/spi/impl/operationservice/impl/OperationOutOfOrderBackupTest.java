@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -122,12 +121,9 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
 
     private void assertBackupReplicaVersions(final Node node, final int partitionId,
                                              final long[] expectedReplicaVersions) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long[] backupReplicaVersions = getDefaultReplicaVersions(node, partitionId);
-                assertArrayEquals(expectedReplicaVersions, backupReplicaVersions);
-            }
+        assertTrueEventually(() -> {
+            long[] backupReplicaVersions = getDefaultReplicaVersions(node, partitionId);
+            assertArrayEquals(expectedReplicaVersions, backupReplicaVersions);
         });
     }
 
@@ -155,7 +151,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             ValueHolderService service = nodeEngine.getService(ValueHolderService.NAME);
             service.value.set(value);
@@ -208,7 +204,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             try {
                 NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
                 ValueHolderService service = nodeEngine.getService(ValueHolderService.NAME);
@@ -240,7 +236,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             latch.countDown();
         }
 

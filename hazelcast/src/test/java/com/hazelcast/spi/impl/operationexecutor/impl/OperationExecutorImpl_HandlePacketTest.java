@@ -20,7 +20,6 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -54,14 +53,11 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
                 .raiseFlags(FLAG_OP_RESPONSE);
         executor.accept(packet);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                DummyResponsePacketConsumer responsePacketConsumer
-                        = (DummyResponsePacketConsumer) OperationExecutorImpl_HandlePacketTest.this.responsePacketConsumer;
-                responsePacketConsumer.packets.contains(packet);
-                responsePacketConsumer.responses.contains(normalResponse);
-            }
+        assertTrueEventually(() -> {
+            DummyResponsePacketConsumer responsePacketConsumer
+                    = (DummyResponsePacketConsumer) OperationExecutorImpl_HandlePacketTest.this.responsePacketConsumer;
+            responsePacketConsumer.packets.contains(packet);
+            responsePacketConsumer.responses.contains(normalResponse);
         });
     }
 
@@ -74,13 +70,10 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
                 .setPacketType(Packet.Type.OPERATION);
         executor.accept(packet);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                OperationRunner[] partitionHandlers = executor.getPartitionOperationRunners();
-                DummyOperationRunner handler = (DummyOperationRunner) partitionHandlers[operation.getPartitionId()];
-                assertContains(handler.packets, packet);
-            }
+        assertTrueEventually(() -> {
+            OperationRunner[] partitionHandlers = executor.getPartitionOperationRunners();
+            DummyOperationRunner handler = (DummyOperationRunner) partitionHandlers[operation.getPartitionId()];
+            assertContains(handler.packets, packet);
         });
     }
 
@@ -93,20 +86,17 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
                 .setPacketType(Packet.Type.OPERATION);
         executor.accept(packet);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                OperationRunner[] genericHandlers = executor.getGenericOperationRunners();
-                boolean found = false;
-                for (OperationRunner h : genericHandlers) {
-                    DummyOperationRunner dummyOperationHandler = (DummyOperationRunner) h;
-                    if (dummyOperationHandler.packets.contains(packet)) {
-                        found = true;
-                        break;
-                    }
+        assertTrueEventually(() -> {
+            OperationRunner[] genericHandlers = executor.getGenericOperationRunners();
+            boolean found = false;
+            for (OperationRunner h : genericHandlers) {
+                DummyOperationRunner dummyOperationHandler = (DummyOperationRunner) h;
+                if (dummyOperationHandler.packets.contains(packet)) {
+                    found = true;
+                    break;
                 }
-                assertTrue("Packet is not found on any of the generic handlers", found);
             }
+            assertTrue("Packet is not found on any of the generic handlers", found);
         });
     }
 }

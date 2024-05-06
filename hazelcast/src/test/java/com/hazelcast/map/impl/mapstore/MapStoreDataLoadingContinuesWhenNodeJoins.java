@@ -26,7 +26,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -226,12 +225,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
             final IMap<String, String> map = instance.getMap(MAP_NAME);
             map.size();
             node1FinishedLoading.countDown();
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(PRELOAD_SIZE, map.size());
-                }
-            }, 5);
+            assertTrueEventually(() -> assertEquals(PRELOAD_SIZE, map.size()), 5);
             // -------------------------------------------------- {20s}
         }, "Thread 1");
         thread1.start();
