@@ -362,7 +362,7 @@ public class ClientMultiMapTest {
         String key = "key";
         MultiMap mm = client.getMultiMap(randomString());
         mm.put(key, 4);
-        assertTrue(!mm.get(key).isEmpty());
+        assertFalse(mm.get(key).isEmpty());
         mm.delete(key);
         assertTrue(mm.get(key).isEmpty());
     }

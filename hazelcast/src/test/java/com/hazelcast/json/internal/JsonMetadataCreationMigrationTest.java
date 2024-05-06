@@ -42,6 +42,7 @@ import static com.hazelcast.test.Accessors.getBackupInstance;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.Accessors.getSerializationService;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -95,13 +96,13 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         assertNotNull(metadata);
         JsonSchemaNode keyNode = (JsonSchemaNode) metadata.getKeyMetadata();
         assertNotNull(keyNode);
-        assertTrue(!keyNode.isTerminal());
+        assertFalse(keyNode.isTerminal());
         JsonSchemaNode childNode = ((JsonSchemaStructNode) keyNode).getChild(0).getValue();
         assertTrue(childNode.isTerminal());
 
         JsonSchemaNode valueNode = (JsonSchemaNode) metadata.getValueMetadata();
         assertNotNull(valueNode);
-        assertTrue(!valueNode.isTerminal());
+        assertFalse(valueNode.isTerminal());
         JsonSchemaNode valueChildNode = ((JsonSchemaStructNode) valueNode).getChild(0).getValue();
         assertTrue(valueChildNode.isTerminal());
     }

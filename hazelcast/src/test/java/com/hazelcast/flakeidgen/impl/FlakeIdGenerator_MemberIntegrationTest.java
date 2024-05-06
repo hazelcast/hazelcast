@@ -37,6 +37,7 @@ import java.util.Map;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,7 +67,6 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
     }
 
     @Test
-
     public void statistics() {
         HazelcastInstance instance = factory.newHazelcastInstance();
 
@@ -75,7 +75,7 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
 
         FlakeIdGeneratorService service = getNodeEngineImpl(instance).getService(FlakeIdGeneratorService.SERVICE_NAME);
         Map<String, LocalFlakeIdGeneratorStats> stats = service.getStats();
-        assertTrue(!stats.isEmpty());
+        assertFalse(stats.isEmpty());
         assertTrue(stats.containsKey("gen"));
         LocalFlakeIdGeneratorStats genStats = stats.get("gen");
         assertEquals(1L, genStats.getBatchCount());
