@@ -101,14 +101,12 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
                 final HazelcastInstance hz = factory.getInstance(address);
                 assertNotNull("No instance known for address: " + address, hz);
 
-                new Thread() {
-                    public void run() {
-                        TestUtil.terminateInstance(hz);
-                        sleepMillis(RandomPicker.getInt(1, 3000));
-                        factory.newHazelcastInstance(address, config);
-                        latch.countDown();
-                    }
-                }.start();
+                new Thread(() -> {
+                    TestUtil.terminateInstance(hz);
+                    sleepMillis(RandomPicker.getInt(1, 3000));
+                    factory.newHazelcastInstance(address, config);
+                    latch.countDown();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
         }

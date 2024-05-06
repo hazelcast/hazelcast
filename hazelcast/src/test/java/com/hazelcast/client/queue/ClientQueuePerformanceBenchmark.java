@@ -51,48 +51,42 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
     private static void test1() {
         final Random rnd = new Random();
         for (int i = 0; i < THREAD_COUNT; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    while (true) {
-                        int random = rnd.nextInt(100);
-                        if (random > 54) {
-                            queue.poll();
-                            TOTAL_POLL.incrementAndGet();
-                        } else if (random > 4) {
-                            queue.offer(VALUE);
-                            TOTAL_OFFER.incrementAndGet();
-                        } else {
-                            queue.peek();
-                            TOTAL_PEEK.incrementAndGet();
-                        }
+            new Thread(() -> {
+                while (true) {
+                    int random = rnd.nextInt(100);
+                    if (random > 54) {
+                        queue.poll();
+                        TOTAL_POLL.incrementAndGet();
+                    } else if (random > 4) {
+                        queue.offer(VALUE);
+                        TOTAL_OFFER.incrementAndGet();
+                    } else {
+                        queue.peek();
+                        TOTAL_PEEK.incrementAndGet();
                     }
                 }
-            }.start();
+            }).start();
         }
 
-        new Thread() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        int size = queue.size();
-                        if (size > 50000) {
-                            System.err.println("cleaning a little");
-                            for (int i = 0; i < 20000; i++) {
-                                queue.poll();
-                                TOTAL_POLL.incrementAndGet();
-                            }
-                            Thread.sleep(2 * 1000);
-                        } else {
-                            Thread.sleep(10 * 1000);
+        new Thread(() -> {
+            while (true) {
+                try {
+                    int size = queue.size();
+                    if (size > 50000) {
+                        System.err.println("cleaning a little");
+                        for (int i = 0; i < 20000; i++) {
+                            queue.poll();
+                            TOTAL_POLL.incrementAndGet();
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        Thread.sleep(2 * 1000);
+                    } else {
+                        Thread.sleep(10 * 1000);
                     }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-        }.start();
+        }).start();
 
         while (true) {
             int sleepTime = 10;
@@ -113,15 +107,13 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
     private static void test2() {
         final CountDownLatch latch1 = new CountDownLatch(100);
         final CountDownLatch latch2 = new CountDownLatch(1000);
-        new Thread() {
-            public void run() {
-                for (int i = 0; i < 1000; i++) {
-                    queue.offer("item" + i);
-                    latch1.countDown();
-                    latch2.countDown();
-                }
+        new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                queue.offer("item" + i);
+                latch1.countDown();
+                latch2.countDown();
             }
-        }.start();
+        }).start();
 
         assertOpenEventually(latch1);
 

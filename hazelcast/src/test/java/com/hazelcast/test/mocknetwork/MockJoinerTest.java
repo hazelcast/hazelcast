@@ -69,13 +69,11 @@ public class MockJoinerTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(nodeCount);
 
         for (int i = 0; i < nodeCount; i++) {
-            new Thread() {
-                public void run() {
-                    HazelcastInstance hz = factory.newHazelcastInstance();
-                    instances.add(hz);
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                HazelcastInstance hz = factory.newHazelcastInstance();
+                instances.add(hz);
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -126,14 +124,12 @@ public class MockJoinerTest extends HazelcastTestSupport {
 
         for (int i = 0; i < restartCount; i++) {
             final int ix = i;
-            new Thread() {
-                public void run() {
-                    Address address = getAddress(instances[ix]);
-                    instances[ix].getLifecycleService().terminate();
-                    instances[ix] = factory.newHazelcastInstance(address, new Config());
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                Address address = getAddress(instances[ix]);
+                instances[ix].getLifecycleService().terminate();
+                instances[ix] = factory.newHazelcastInstance(address, new Config());
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);

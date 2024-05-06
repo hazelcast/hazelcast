@@ -74,11 +74,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
         final MultiMap<String, Integer> multiMap = getMultiMapForLock();
         final String key = randomString();
-        Thread thread = new Thread() {
-            public void run() {
-                multiMap.lock(key);
-            }
-        };
+        Thread thread = new Thread(() -> multiMap.lock(key));
         thread.start();
         thread.join();
 
@@ -112,33 +108,29 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                instances[0].getMultiMap(name).lock("alo");
-                latch.countDown();
-                try {
-                    latch2.await(10, TimeUnit.SECONDS);
-                    instances[0].getMultiMap(name).unlock("alo");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        new Thread(() -> {
+            instances[0].getMultiMap(name).lock("alo");
+            latch.countDown();
+            try {
+                latch2.await(10, TimeUnit.SECONDS);
+                instances[0].getMultiMap(name).unlock("alo");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertFalse(instances[0].getMultiMap(name).tryLock("alo"));
         latch2.countDown();
         assertTrue(instances[0].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
 
-        new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                instances[0].shutdown();
+        new Thread(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+            instances[0].shutdown();
+        }).start();
 
         assertTrue(instances[1].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
     }

@@ -111,17 +111,15 @@ public class ClientTxnQueueTest {
 
         final CountDownLatch justBeforeBlocked = new CountDownLatch(1);
 
-        new Thread() {
-            public void run() {
-                try {
-                    justBeforeBlocked.await();
-                    sleepSeconds(1);
-                    queue1.offer(item);
-                } catch (InterruptedException e) {
-                    fail("failed" + e);
-                }
+        new Thread(() -> {
+            try {
+                justBeforeBlocked.await();
+                sleepSeconds(1);
+                queue1.offer(item);
+            } catch (InterruptedException e) {
+                fail("failed" + e);
             }
-        }.start();
+        }).start();
 
 
         final TransactionContext context = client.newTransactionContext();

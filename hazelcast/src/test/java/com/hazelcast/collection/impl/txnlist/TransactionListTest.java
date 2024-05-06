@@ -90,20 +90,17 @@ public class TransactionListTest extends HazelcastTestSupport {
         firstContext.getList(name).remove(1);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                TransactionContext secondContext = instance.newTransactionContext();
-                secondContext.beginTransaction();
-                secondContext.getList(name).remove(2);
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                secondContext.rollbackTransaction();
+        Thread thread = new Thread(() -> {
+            TransactionContext secondContext = instance.newTransactionContext();
+            secondContext.beginTransaction();
+            secondContext.getList(name).remove(2);
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
+            secondContext.rollbackTransaction();
+        });
         thread.start();
         firstContext.rollbackTransaction();
         latch.countDown();

@@ -125,18 +125,15 @@ public class ClientSplitBrainTest extends ClientTestSupport {
     }
 
     private Thread startClientPutThread(final IMap<Object, Object> mapClient, final AtomicBoolean testFinished) {
-        final Thread clientThread = new Thread() {
-            @Override
-            public void run() {
-                while (!testFinished.get()) {
-                    try {
-                        mapClient.put(1, 1);
-                    } catch (Throwable t) {
-                        ignore(t);
-                    }
+        final Thread clientThread = new Thread(() -> {
+            while (!testFinished.get()) {
+                try {
+                    mapClient.put(1, 1);
+                } catch (Throwable t) {
+                    ignore(t);
                 }
             }
-        };
+        });
 
         clientThread.start();
         return clientThread;

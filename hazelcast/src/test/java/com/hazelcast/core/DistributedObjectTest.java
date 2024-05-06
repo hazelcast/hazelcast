@@ -339,20 +339,18 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(threads);
 
         for (int i = 0; i < threads; i++) {
-            new Thread() {
-                public void run() {
-                    for (int j = 0; j < 1000; j++) {
-                        try {
-                            hz.getDistributedObject(serviceName, objectName);
-                            fail("Proxy creation should fail!");
-                        } catch (HazelcastException expected) {
-                            ignore(expected);
-                        }
-                        LockSupport.parkNanos(1);
+            new Thread(() -> {
+                for (int j = 0; j < 1000; j++) {
+                    try {
+                        hz.getDistributedObject(serviceName, objectName);
+                        fail("Proxy creation should fail!");
+                    } catch (HazelcastException expected) {
+                        ignore(expected);
                     }
-                    latch.countDown();
+                    LockSupport.parkNanos(1);
                 }
-            }.start();
+                latch.countDown();
+            }).start();
         }
         assertOpenEventually(latch, 30);
     }

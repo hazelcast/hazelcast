@@ -284,17 +284,14 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         map.put("key", "value");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    xaResource.end(xid, XAResource.TMFAIL);
-                    latch.countDown();
-                } catch (XAException e) {
-                    e.printStackTrace();
-                }
+        new Thread(() -> {
+            try {
+                xaResource.end(xid, XAResource.TMFAIL);
+                latch.countDown();
+            } catch (XAException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
 
         assertOpenEventually(latch, 10);
     }
@@ -371,21 +368,18 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         map.put(key1, val1);
         xaResource.end(xid, TMSUCCESS);
 
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    xaResource.start(xid, TMJOIN);
-                    TransactionContext transactionContext = xaResource.getTransactionContext();
-                    TransactionalMap<Object, Object> m = transactionContext.getMap(name);
-                    m.put(key2, val2);
-                    xaResource.end(xid, TMSUCCESS);
-                } catch (XAException e) {
-                    e.printStackTrace();
-                }
-
+        Thread thread = new Thread(() -> {
+            try {
+                xaResource.start(xid, TMJOIN);
+                TransactionContext transactionContext = xaResource.getTransactionContext();
+                TransactionalMap<Object, Object> m = transactionContext.getMap(name);
+                m.put(key2, val2);
+                xaResource.end(xid, TMSUCCESS);
+            } catch (XAException e) {
+                e.printStackTrace();
             }
-        };
+
+        });
         thread.start();
         thread.join();
 

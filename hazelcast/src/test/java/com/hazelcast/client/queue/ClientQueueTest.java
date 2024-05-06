@@ -553,14 +553,12 @@ public class ClientQueueTest extends HazelcastTestSupport {
             }
         }, true);
 
-        new Thread() {
-            public void run() {
-                for (int i = 0; i < maxItems; i++) {
-                    queue.offer(i);
-                    queue.remove(i);
-                }
+        new Thread(() -> {
+            for (int i = 0; i < maxItems; i++) {
+                queue.offer(i);
+                queue.remove(i);
             }
-        }.start();
+        }).start();
 
         assertTrue(itemAddedLatch.await(5, TimeUnit.SECONDS));
         assertTrue(itemRemovedLatch.await(5, TimeUnit.SECONDS));

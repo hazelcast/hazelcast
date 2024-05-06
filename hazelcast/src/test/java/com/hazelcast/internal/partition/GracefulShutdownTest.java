@@ -225,12 +225,10 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(instances.length);
         for (final HazelcastInstance instance : instances) {
-            new Thread() {
-                public void run() {
-                    instance.shutdown();
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                instance.shutdown();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -267,12 +265,10 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         int startIndex = includeMaster ? 0 : 1;
         for (int i = startIndex; i < instances.length; i += 2) {
             final int index = i;
-            new Thread() {
-                public void run() {
-                    instances[index].shutdown();
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                instances[index].shutdown();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -300,13 +296,11 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             final int index = i;
-            new Thread() {
-                public void run() {
-                    HazelcastInstance instance = instances.get(index);
-                    instance.shutdown();
-                    latch.countDown();
-                }
-            }.start();
+            new Thread(() -> {
+                HazelcastInstance instance = instances.get(index);
+                instance.shutdown();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -348,12 +342,10 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         final HazelcastInstance shuttingDownInstance = instances[shutdownIndex];
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                shuttingDownInstance.shutdown();
-                latch.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            shuttingDownInstance.shutdown();
+            latch.countDown();
+        }).start();
 
         // spin until node starts to shut down
         Node shuttingDownNode = getNode(shuttingDownInstance);

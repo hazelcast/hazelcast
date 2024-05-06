@@ -315,12 +315,10 @@ public class MapLockTest extends HazelcastTestSupport {
         map.lock(key);
 
         final CountDownLatch cleared = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                map.clear();
-                cleared.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            map.clear();
+            cleared.countDown();
+        }).start();
 
         assertOpenEventually(cleared);
 
@@ -342,11 +340,7 @@ public class MapLockTest extends HazelcastTestSupport {
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
         final IMap<String, String> map = getMap();
         final String key = randomString();
-        Thread thread = new Thread() {
-            public void run() {
-                map.lock(key);
-            }
-        };
+        Thread thread = new Thread(() -> map.lock(key));
         thread.start();
         thread.join();
 

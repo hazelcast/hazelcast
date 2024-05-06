@@ -196,14 +196,12 @@ public class ClientSetTest extends HazelcastTestSupport {
         };
         UUID registrationId = set.addItemListener(listener, true);
 
-        new Thread() {
-            public void run() {
-                for (int i = 0; i < 5; i++) {
-                    set.add("item" + i);
-                }
-                set.add("done");
+        new Thread(() -> {
+            for (int i = 0; i < 5; i++) {
+                set.add("item" + i);
             }
-        }.start();
+            set.add("done");
+        }).start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         set.removeItemListener(registrationId);
     }

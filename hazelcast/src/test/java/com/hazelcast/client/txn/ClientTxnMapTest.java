@@ -96,13 +96,11 @@ public class ClientTxnMapTest {
         final String mapName = randomString();
         final String key = "key";
         final AtomicBoolean running = new AtomicBoolean(true);
-        Thread t = new Thread() {
-            public void run() {
-                while (running.get()) {
-                    client.getMap(mapName).get(key);
-                }
+        Thread t = new Thread(() -> {
+            while (running.get()) {
+                client.getMap(mapName).get(key);
             }
-        };
+        });
         t.start();
 
         CBAuthorisation cb = new CBAuthorisation();
