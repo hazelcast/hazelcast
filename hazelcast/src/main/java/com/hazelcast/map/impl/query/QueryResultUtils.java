@@ -38,12 +38,11 @@ public final class QueryResultUtils {
             IterationType iterationType, boolean unique, boolean binary) {
         Predicate unwrappedPredicate = unwrapPartitionPredicate(predicate);
 
-        if (unwrappedPredicate instanceof PagingPredicate) {
-            // We need an instance of PagingPredicateImpl for later use, so prepare it now
-            PagingPredicate pagingPredicate = (PagingPredicate) unwrappedPredicate;
+        if (unwrappedPredicate instanceof PagingPredicate pagingPredicate) {
+            // We need an instance of PagingPredicateImpl for later
             PagingPredicateImpl pagingPredicateImpl;
-            if (unwrappedPredicate instanceof PagingPredicateImpl) {
-                pagingPredicateImpl = (PagingPredicateImpl) unwrappedPredicate;
+            if (unwrappedPredicate instanceof PagingPredicateImpl impl) {
+                pagingPredicateImpl = impl;
             } else {
                 Predicate simplePredicate = unwrappedPredicate::apply;
                 // We provide Namespace wrapping to parent calls, we don't need to know it within the PagingPredicateImpl

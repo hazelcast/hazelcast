@@ -34,12 +34,11 @@ public final class CoreQueryUtils {
     }
 
     public static HazelcastSqlException toPublicException(@Nonnull Throwable e, @Nonnull UUID localMemberId) {
-        if (e instanceof HazelcastSqlException) {
-            return (HazelcastSqlException) e;
+        if (e instanceof HazelcastSqlException exception) {
+            return exception;
         }
 
-        if (e instanceof QueryException) {
-            QueryException e0 = (QueryException) e;
+        if (e instanceof QueryException e0) {
 
             UUID originatingMemberId = e0.getOriginatingMemberId();
 

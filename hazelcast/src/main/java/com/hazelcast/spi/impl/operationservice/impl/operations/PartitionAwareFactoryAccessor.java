@@ -29,14 +29,14 @@ public final class PartitionAwareFactoryAccessor {
      * @return extracted {@code PartitionAwareOperationFactory} from supplied operation factory or null
      */
     public static PartitionAwareOperationFactory extractPartitionAware(OperationFactory operationFactory) {
-        if (operationFactory instanceof PartitionAwareOperationFactory) {
-            return ((PartitionAwareOperationFactory) operationFactory);
+        if (operationFactory instanceof PartitionAwareOperationFactory factory) {
+            return factory;
         }
 
-        if (operationFactory instanceof OperationFactoryWrapper) {
-            OperationFactory unwrapped = ((OperationFactoryWrapper) operationFactory).getOperationFactory();
-            if (unwrapped instanceof PartitionAwareOperationFactory) {
-                return ((PartitionAwareOperationFactory) unwrapped);
+        if (operationFactory instanceof OperationFactoryWrapper wrapper) {
+            OperationFactory unwrapped = wrapper.getOperationFactory();
+            if (unwrapped instanceof PartitionAwareOperationFactory factory) {
+                return factory;
             }
         }
 

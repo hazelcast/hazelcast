@@ -149,8 +149,8 @@ public class SenderTasklet implements Tasklet {
                          && (item = inbox.poll()) != null;
                  writtenCount++
             ) {
-                ObjectWithPartitionId itemWithPId = item instanceof ObjectWithPartitionId ?
-                        (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, -1);
+                ObjectWithPartitionId itemWithPId = item instanceof ObjectWithPartitionId owpi ?
+                        owpi : new ObjectWithPartitionId(item, -1);
                 final int mark = outputBuffer.position();
                 outputBuffer.writeObject(itemWithPId.getItem());
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);

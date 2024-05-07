@@ -135,8 +135,8 @@ class ReplicatedVectorClocks {
         @SuppressWarnings("checkstyle:innerassignment")
         public boolean equals(Object o) {
             final ReplicatedVectorClockId that;
-            return this == o || o instanceof ReplicatedVectorClockId
-                    && this.serviceName.equals((that = (ReplicatedVectorClockId) o).serviceName)
+            return this == o || o instanceof ReplicatedVectorClockId rvci
+                    && this.serviceName.equals((that = rvci).serviceName)
                     && this.memberUUID.equals(that.memberUUID);
         }
 

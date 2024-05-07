@@ -93,8 +93,8 @@ public class SqlPredicate
 
     @Override
     public boolean isIndexed(QueryContext queryContext) {
-        if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+        if (predicate instanceof IndexAwarePredicate awarePredicate) {
+            return awarePredicate.isIndexed(queryContext);
         }
         return false;
     }
@@ -176,8 +176,7 @@ public class SqlPredicate
             boolean foundOperand = false;
             for (int i = 0; i < tokens.size(); i++) {
                 Object tokenObj = tokens.get(i);
-                if (tokenObj instanceof String && parser.isOperand((String) tokenObj)) {
-                    String token = (String) tokenObj;
+                if (tokenObj instanceof String token && parser.isOperand(token)) {
                     if ("=".equals(token) || "==".equals(token)) {
                         createComparison(mapPhrases, tokens, i, EQUAL_FACTORY);
                     } else if ("!=".equals(token) || "<>".equals(token)) {
@@ -288,7 +287,7 @@ public class SqlPredicate
         final String value = phrases.get(key);
         if (value != null) {
             return value;
-        } else if (key instanceof String && (equalsIgnoreCase("null", (String) key))) {
+        } else if (key instanceof String string && (equalsIgnoreCase("null", string))) {
             return null;
         } else {
             return key;
@@ -314,8 +313,8 @@ public class SqlPredicate
     }
 
     private Predicate eval(Object statement) {
-        if (statement instanceof String) {
-            return equal((String) statement, "true");
+        if (statement instanceof String string) {
+            return equal(string, "true");
         } else {
             return (Predicate) statement;
         }
@@ -388,8 +387,8 @@ public class SqlPredicate
     @Override
     public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate target = predicate;
-        if (predicate instanceof VisitablePredicate) {
-            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+        if (predicate instanceof VisitablePredicate visitablePredicate) {
+            target = visitablePredicate.accept(visitor, indexes);
         }
         return target;
     }

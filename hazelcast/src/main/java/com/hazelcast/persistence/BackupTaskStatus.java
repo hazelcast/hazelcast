@@ -56,8 +56,8 @@ public class BackupTaskStatus {
     @SuppressWarnings("checkstyle:innerassignment")
     public boolean equals(Object obj) {
         final BackupTaskStatus that;
-        return obj instanceof BackupTaskStatus
-                && this.completed == (that = (BackupTaskStatus) obj).completed
+        return obj instanceof BackupTaskStatus bts
+                && this.completed == (that = bts).completed
                 && this.total == that.total
                 && this.state == that.state;
     }

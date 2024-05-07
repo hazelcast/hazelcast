@@ -221,19 +221,19 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         TestClass testClass = new TestClass(this.getClass());
         return Arrays.stream(testClass.getAnnotations()).anyMatch(
                 annotation ->
-                        annotation instanceof RunWith
-                                && HazelcastParallelClassRunner.class.isAssignableFrom(((RunWith) annotation).value())
+                        annotation instanceof RunWith rw
+                                && HazelcastParallelClassRunner.class.isAssignableFrom(rw.value())
                         ||
-                        annotation instanceof Parameterized.UseParametersRunnerFactory
+                        annotation instanceof Parameterized.UseParametersRunnerFactory uprf
                                 && HazelcastParallelParametersRunnerFactory.class.isAssignableFrom(
-                                        ((Parameterized.UseParametersRunnerFactory) annotation).value())
+                                        uprf.value())
         );
     }
 
     private static boolean testIfInstanceIsStillActive(HazelcastInstance instance) {
-        if (instance instanceof HazelcastInstanceImpl) {
+        if (instance instanceof HazelcastInstanceImpl impl) {
             try {
-                return ((HazelcastInstanceImpl) instance).isRunning();
+                return impl.isRunning();
             } catch (HazelcastInstanceNotActiveException ignored) {
                 return false;
             }

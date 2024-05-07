@@ -189,11 +189,11 @@ public class ObservableImpl<T> implements Observable<T> {
         }
 
         private static Executor getExecutor(HazelcastInstance hzInstance) {
-            if (hzInstance instanceof HazelcastInstanceImpl) {
-                return ((HazelcastInstanceImpl) hzInstance).node.getNodeEngine().getExecutionService()
+            if (hzInstance instanceof HazelcastInstanceImpl impl) {
+                return impl.node.getNodeEngine().getExecutionService()
                         .getExecutor(ExecutionService.ASYNC_EXECUTOR);
-            } else if (hzInstance instanceof HazelcastClientInstanceImpl) {
-                return ((HazelcastClientInstanceImpl) hzInstance).getTaskScheduler();
+            } else if (hzInstance instanceof HazelcastClientInstanceImpl impl) {
+                return impl.getTaskScheduler();
             } else {
                 throw new RuntimeException(String.format("Unhandled %s type: %s", HazelcastInstance.class.getSimpleName(),
                         hzInstance.getClass().getName()));
@@ -253,8 +253,8 @@ public class ObservableImpl<T> implements Observable<T> {
 
         private void onNewMessage(Object message) {
             try {
-                if (message instanceof WrappedThrowable) {
-                    observer.onError(((WrappedThrowable) message).get());
+                if (message instanceof WrappedThrowable throwable) {
+                    observer.onError(throwable.get());
                 } else if (message instanceof DoneItem) {
                     observer.onComplete();
                 } else {
@@ -274,10 +274,10 @@ public class ObservableImpl<T> implements Observable<T> {
         protected boolean handleInternalException(Throwable t) {
             if (t instanceof OperationTimeoutException) {
                 return handleOperationTimeoutException();
-            } else if (t instanceof IllegalArgumentException) {
-                return handleIllegalArgumentException((IllegalArgumentException) t);
-            } else if (t instanceof StaleSequenceException) {
-                return handleStaleSequenceException((StaleSequenceException) t);
+            } else if (t instanceof IllegalArgumentException exception) {
+                return handleIllegalArgumentException(exception);
+            } else if (t instanceof StaleSequenceException exception) {
+                return handleStaleSequenceException(exception);
             } else if (t instanceof HazelcastInstanceNotActiveException) {
                 logger.fine("Terminating message listener '%s'. Reason: HazelcastInstance is shutting down", id);
             } else if (t instanceof HazelcastClientNotActiveException) {

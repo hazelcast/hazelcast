@@ -73,8 +73,8 @@ public final class NotPredicate
     @Override
     public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate target = predicate;
-        if (predicate instanceof VisitablePredicate) {
-            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+        if (predicate instanceof VisitablePredicate visitablePredicate) {
+            target = visitablePredicate.accept(visitor, indexes);
         }
         if (target == predicate) {
             // visitor didn't change the inner predicate

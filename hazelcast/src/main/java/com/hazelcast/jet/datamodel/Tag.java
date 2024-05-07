@@ -97,7 +97,7 @@ public final class Tag<T> implements Comparable<Tag<?>>, Serializable {
     @Override
     public boolean equals(Object obj) {
         return this == obj ||
-                obj instanceof Tag && this.index == ((Tag) obj).index;
+                obj instanceof Tag t && this.index == t.index;
     }
 
     @Override
