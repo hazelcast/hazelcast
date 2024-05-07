@@ -57,6 +57,7 @@ import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getF
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -243,7 +244,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("5.4", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
-        assertEquals(true, parameters.failoverSupported);
+        assertTrue(parameters.failoverSupported);
         assertEquals(tpcPorts, parameters.tpcPorts);
         assertArrayEquals(tpcToken, parameters.tpcToken);
         assertEquals(memberListVersion, parameters.memberListVersion);

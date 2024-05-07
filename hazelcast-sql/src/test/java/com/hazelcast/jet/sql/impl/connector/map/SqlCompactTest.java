@@ -73,6 +73,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SqlCompactTest extends SqlTestSupport {
 
@@ -197,7 +198,7 @@ public class SqlCompactTest extends SqlTestSupport {
         IMap<Object, Object> map = client().getMap(name);
         Primitives primitives = (Primitives) map.get(1);
 
-        assertEquals(true, primitives.b);
+        assertTrue(primitives.b);
         assertEquals(2, primitives.bt);
         assertEquals(3, primitives.s);
         assertEquals(4, primitives.i);
@@ -260,7 +261,7 @@ public class SqlCompactTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_readNonNullKindsOfCompactViaSQL() throws IOException {
+    public void test_readNonNullKindsOfCompactViaSQL() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
                 + " __key INT "

@@ -48,6 +48,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -136,7 +137,7 @@ public class StreamSocketPTest extends JetTestSupport {
                 assertEquals(s, bucket.poll());
             }
 
-            assertEquals(null, bucket.poll());
+            assertNull(bucket.poll());
             assertTrueEventually(() -> assertFalse(thread.isAlive()));
         }
     }

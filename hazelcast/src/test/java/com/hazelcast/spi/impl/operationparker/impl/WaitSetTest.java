@@ -41,6 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -204,7 +205,7 @@ public class WaitSetTest {
 
     private static void assertCancelled(WaitSet waitSet, BlockedOperation operation, Exception cause) {
         WaitSetEntry entry = waitSet.find(operation);
-        assertEquals(null, entry.cancelResponse);
+        assertNull(entry.cancelResponse);
     }
 
     private static BlockedOperation newBlockingOperationWithCallerUuid(UUID callerUuid) {

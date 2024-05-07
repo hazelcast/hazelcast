@@ -320,23 +320,23 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public void testClientIcmpPingConfig() {
         ClientIcmpPingConfig icmpPingConfig = fullClientConfig.getNetworkConfig().getClientIcmpPingConfig();
-        assertEquals(false, icmpPingConfig.isEnabled());
+        assertFalse(icmpPingConfig.isEnabled());
         assertEquals(2000, icmpPingConfig.getTimeoutMilliseconds());
         assertEquals(3000, icmpPingConfig.getIntervalMilliseconds());
         assertEquals(100, icmpPingConfig.getTtl());
         assertEquals(5, icmpPingConfig.getMaxAttempts());
-        assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
+        assertFalse(icmpPingConfig.isEchoFailFastOnStartup());
     }
 
     @Test
     public void testClientIcmpPingConfig_defaults() {
         ClientIcmpPingConfig icmpPingConfig = defaultClientConfig.getNetworkConfig().getClientIcmpPingConfig();
-        assertEquals(false, icmpPingConfig.isEnabled());
+        assertFalse(icmpPingConfig.isEnabled());
         assertEquals(1000, icmpPingConfig.getTimeoutMilliseconds());
         assertEquals(1000, icmpPingConfig.getIntervalMilliseconds());
         assertEquals(255, icmpPingConfig.getTtl());
         assertEquals(2, icmpPingConfig.getMaxAttempts());
-        assertEquals(true, icmpPingConfig.isEchoFailFastOnStartup());
+        assertTrue(icmpPingConfig.isEchoFailFastOnStartup());
     }
 
     @Test
@@ -349,15 +349,15 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public void testCloudConfig() {
         ClientCloudConfig cloudConfig = fullClientConfig.getNetworkConfig().getCloudConfig();
-        assertEquals(false, cloudConfig.isEnabled());
+        assertFalse(cloudConfig.isEnabled());
         assertEquals("EXAMPLE_TOKEN", cloudConfig.getDiscoveryToken());
     }
 
     @Test
     public void testCloudConfig_defaults() {
         ClientCloudConfig cloudConfig = defaultClientConfig.getNetworkConfig().getCloudConfig();
-        assertEquals(false, cloudConfig.isEnabled());
-        assertEquals(null, cloudConfig.getDiscoveryToken());
+        assertFalse(cloudConfig.isEnabled());
+        assertNull(cloudConfig.getDiscoveryToken());
     }
 
     @Test

@@ -39,6 +39,7 @@ import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -226,16 +227,16 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
         //Test local execution
         map.put("present_key", "present_value");
         String newValue = map.compute("present_key", (k, v) -> null);
-        assertEquals(null, newValue);
-        assertEquals(null, map.get("present_key"));
+        assertNull(newValue);
+        assertNull(map.get("present_key"));
 
         //Test remote execution
         map.put("present_remote_key", "present_remote_value");
         final IMap<String, String> mapSecondNode = secondNode.getMap("testCompute");
         StaticSerializableBiFunction biFunction = new StaticSerializableBiFunction(null);
         String newRemoteValue = mapSecondNode.compute("present_remote_key", biFunction);
-        assertEquals(null, newRemoteValue);
-        assertEquals(null, mapSecondNode.get("present_remote_key"));
+        assertNull(newRemoteValue);
+        assertNull(mapSecondNode.get("present_remote_key"));
     }
 
     @Test
@@ -261,15 +262,15 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
 
         //Test local execution
         String result = map.compute("absent_key", (k, v) -> null);
-        assertEquals(null, result);
-        assertEquals(null, map.get("absent_key"));
+        assertNull(result);
+        assertNull(map.get("absent_key"));
 
         //Test remote execution
         final IMap<String, String> mapSecondNode = secondNode.getMap("testCompute");
         StaticSerializableBiFunction biFunction = new StaticSerializableBiFunction(null);
         String remoteResult = map.compute("absent_remote_key", biFunction);
-        assertEquals(null, remoteResult);
-        assertEquals(null, mapSecondNode.get("absent_remote_key"));
+        assertNull(remoteResult);
+        assertNull(mapSecondNode.get("absent_remote_key"));
     }
 
     @Test
@@ -298,16 +299,16 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
         //Test local execution
         map.put("present_key", "present_value");
         String newValue = map.merge("present_key", "some_value", (ov, nv) -> null);
-        assertEquals(null, newValue);
-        assertEquals(null, map.get("present_key"));
+        assertNull(newValue);
+        assertNull(map.get("present_key"));
 
         //Test remote execution
         map.put("present_remote_key", "present_remote_value");
         final IMap<String, String> mapSecondNode = secondNode.getMap("testMerge");
         StaticSerializableBiFunction biFunction = new StaticSerializableBiFunction(null);
         String newRemoteValue = mapSecondNode.merge("present_remote_key", "some_value", biFunction);
-        assertEquals(null, newRemoteValue);
-        assertEquals(null, mapSecondNode.get("present_remote_key"));
+        assertNull(newRemoteValue);
+        assertNull(mapSecondNode.get("present_remote_key"));
     }
 
     @Test

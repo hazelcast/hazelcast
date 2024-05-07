@@ -162,7 +162,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings({"UnnecessaryBoxing", "CachedNumberConstructorCall"})
+    @SuppressWarnings({"UnnecessaryBoxing"})
     public void testBoxedPrimitives() {
         IMap<String, Object> map = getInstance().getMap("testPrimitives");
 
@@ -250,8 +250,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
-        assertEquals(null, map.putIfAbsent("key1", "value1"));
-        assertEquals(null, map.putIfAbsent("key2", "value2"));
+        assertNull(map.putIfAbsent("key1", "value1"));
+        assertNull(map.putIfAbsent("key2", "value2"));
         assertEquals("value1", map.putIfAbsent("key1", "valueX"));
         assertEquals("value1", map.get("key1"));
         assertEquals(2, map.size());
@@ -418,7 +418,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         assertEquals("value1", map.remove("key1"));
         assertEquals(2, map.size());
-        assertEquals(null, map.remove("key1"));
+        assertNull(map.remove("key1"));
         assertEquals(2, map.size());
         assertEquals("value3", map.remove("key3"));
         assertEquals(1, map.size());
@@ -453,7 +453,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
 
         for (int i = 0; i < entryCount; i++) {
-            assertEquals(null, map.get("key" + i));
+            assertNull(map.get("key" + i));
         }
     }
 
@@ -472,7 +472,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
 
         for (int i = 0; i < entryCount; i++) {
-            assertEquals(null, map.get("key" + i));
+            assertNull(map.get("key" + i));
         }
     }
 
@@ -517,7 +517,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         assertEquals("value1", map.remove("key1"));
         assertEquals(2, map.size());
-        assertEquals(null, map.remove("key1"));
+        assertNull(map.remove("key1"));
         assertEquals(2, map.size());
         assertEquals("value3", map.remove("key3"));
         assertEquals(1, map.size());
@@ -605,12 +605,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        assertEquals(true, map.containsKey("key1"));
-        assertEquals(false, map.containsKey("key5"));
+        assertTrue(map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(false, map.containsKey("key1"));
-        assertEquals(true, map.containsKey("key2"));
-        assertEquals(false, map.containsKey("key5"));
+        assertFalse(map.containsKey("key1"));
+        assertTrue(map.containsKey("key2"));
+        assertFalse(map.containsKey("key5"));
     }
 
     @Test
@@ -1512,12 +1512,12 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             assertEquals("key", addedKey[0]);
-            assertEquals(null, addedValue[0]);
+            assertNull(addedValue[0]);
             assertEquals("key", updatedKey[0]);
-            assertEquals(null, oldValue[0]);
-            assertEquals(null, newValue[0]);
+            assertNull(oldValue[0]);
+            assertNull(newValue[0]);
             assertEquals("key", removedKey[0]);
-            assertEquals(null, removedValue[0]);
+            assertNull(removedValue[0]);
         });
     }
 

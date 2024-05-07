@@ -465,7 +465,7 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testFullQueryCacheConfig() throws Exception {
+    public void testFullQueryCacheConfig() {
         ClientConfig config = client6.getClientConfig();
 
         QueryCacheConfig queryCacheConfig = getQueryCacheConfig(config);
@@ -526,19 +526,19 @@ public class TestClientApplicationContext {
     public void testClientIcmpConfig() {
         ClientIcmpPingConfig icmpPingConfig = icmpPingTestClient.getClientConfig()
                 .getNetworkConfig().getClientIcmpPingConfig();
-        assertEquals(false, icmpPingConfig.isEnabled());
+        assertFalse(icmpPingConfig.isEnabled());
         assertEquals(2000, icmpPingConfig.getTimeoutMilliseconds());
         assertEquals(3000, icmpPingConfig.getIntervalMilliseconds());
         assertEquals(50, icmpPingConfig.getTtl());
         assertEquals(5, icmpPingConfig.getMaxAttempts());
-        assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
+        assertFalse(icmpPingConfig.isEchoFailFastOnStartup());
     }
 
     @Test
     public void testCloudConfig() {
         ClientCloudConfig cloudConfig = hazelcastCloudClient.getClientConfig()
                 .getNetworkConfig().getCloudConfig();
-        assertEquals(false, cloudConfig.isEnabled());
+        assertFalse(cloudConfig.isEnabled());
         assertEquals("EXAMPLE_TOKEN", cloudConfig.getDiscoveryToken());
     }
 

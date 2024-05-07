@@ -46,6 +46,7 @@ import static com.hazelcast.test.HazelcastTestSupport.ASSERT_TRUE_EVENTUALLY_TIM
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -93,8 +94,7 @@ public class ClientInvocationFutureTest {
     }
 
     @Test
-    public void test_exceptionalCompletion_withGet()
-            throws ExecutionException, InterruptedException {
+    public void test_exceptionalCompletion_withGet() {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
         assertTrue(invocationFuture.isDone());
@@ -160,8 +160,7 @@ public class ClientInvocationFutureTest {
     }
 
     @Test
-    public void test_cancellation()
-            throws ExecutionException, InterruptedException {
+    public void test_cancellation() {
         invocationFuture.cancel(true);
 
         assertTrue(invocationFuture.isDone());
@@ -185,7 +184,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.thenRun(() -> ignore(null));
         invocationFuture.complete(response);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -215,7 +214,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.thenAccept((v) -> ignore(null));
         invocationFuture.complete(response);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -226,7 +225,7 @@ public class ClientInvocationFutureTest {
                 (t, u) -> ignore(null));
         invocationFuture.complete(null);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -267,7 +266,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.acceptEither(newCompletedFuture(null),
                 t -> ignore(null));
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }
@@ -276,7 +275,7 @@ public class ClientInvocationFutureTest {
     public void test_applyEither() throws Exception {
         CompletableFuture nextStage = invocationFuture.applyToEither(newCompletedFuture(null), (t) -> t);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }
@@ -286,7 +285,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture<Void> nextStage = invocationFuture.runAfterBoth(newCompletedFuture(null), () -> ignore(null));
         invocationFuture.complete(null);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -296,7 +295,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture<Void> nextStage = invocationFuture.runAfterEither(newCompletedFuture(null),
                 () -> ignore(null));
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertNull(nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }

@@ -67,7 +67,7 @@ public class ClientInvocationTest extends ClientTestSupport {
 
 
     /**
-     * When a async operation fails because of a node termination,
+     * When an async operation fails because of a node termination,
      * failure stack trace is copied incrementally for each async invocation/future
      * <p/>
      * see https://github.com/hazelcast/hazelcast/issues/4192
@@ -162,15 +162,15 @@ public class ClientInvocationTest extends ClientTestSupport {
         assertOpenEventually("Not all of the requests failed", errorLatch);
     }
 
-    private static class DummyEntryProcessor implements EntryProcessor {
+    private static class DummyEntryProcessor implements EntryProcessor<Object, Object, Object> {
         @Override
-        public Object process(Map.Entry entry) {
+        public Object process(Map.Entry<Object, Object> entry) {
             LockSupport.parkNanos(10000);
             return null;
         }
 
         @Override
-        public EntryProcessor getBackupProcessor() {
+        public EntryProcessor<Object, Object, Object> getBackupProcessor() {
             return null;
         }
     }
