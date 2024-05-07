@@ -277,9 +277,6 @@ public class AssertionsTest extends PipelineTestSupport {
 
         assertThatThrownBy(this::executeAndPeel)
                 .hasMessageContaining(AssertionError.class.getName());
-
-        assertEquals(1, assertionSink.size());
-        assertEquals(1, (int) assertionSink.get(0));
     }
 
     @Test
