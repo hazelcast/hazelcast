@@ -93,7 +93,7 @@ public class RestClusterTest {
     }
 
     @Test
-    public void testDisabledRest() throws Exception {
+    public void testDisabledRest() {
         // REST should be disabled by default
         HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
@@ -235,7 +235,7 @@ public class RestClusterTest {
     }
 
     @Test
-    public void testShutdownNode() throws Exception {
+    public void testShutdownNode() {
         Config config = createConfigWithRestEnabled();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);

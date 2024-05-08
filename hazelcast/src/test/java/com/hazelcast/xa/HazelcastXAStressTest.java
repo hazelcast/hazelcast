@@ -43,7 +43,7 @@ public class HazelcastXAStressTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
 
-    private static Xid createXid() throws InterruptedException {
+    private static Xid createXid() {
         return new XID(randomString(), "test");
     }
 
@@ -54,7 +54,7 @@ public class HazelcastXAStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCommitConcurrently() throws InterruptedException, XAException {
+    public void testCommitConcurrently() {
         int count = 10000;
         String name = randomString();
         ExecutorService executorService = Executors.newFixedThreadPool(5);
