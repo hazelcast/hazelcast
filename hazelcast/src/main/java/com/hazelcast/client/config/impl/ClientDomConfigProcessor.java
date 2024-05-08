@@ -30,8 +30,10 @@ import com.hazelcast.client.config.ClientSqlConfig;
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
+import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
@@ -426,6 +428,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleClusterMembers(child, clientNetworkConfig);
             } else if (matches("smart-routing", nodeName)) {
                 clientNetworkConfig.setSmartRouting(Boolean.parseBoolean(getTextContent(child)));
+            } else if (matches("subset-routing", nodeName)) {
+                handleSubsetRouting(child, clientNetworkConfig);
             } else if (matches("redo-operation", nodeName)) {
                 clientNetworkConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
             } else if (matches("connection-timeout", nodeName)) {
@@ -451,6 +455,20 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleSubsetRouting(Node child, ClientNetworkConfig clientNetworkConfig) {
+        boolean enabled = getBooleanValue(getAttribute(child, "enabled"));
+        if (enabled) {
+            String attribute = getAttribute(child, "routing-strategy");
+            if (attribute == null) {
+                throw new InvalidConfigurationException("Subset routing is enabled, but there is no routing-strategy defined");
+            }
+            RoutingStrategy routingStrategy = RoutingStrategy.valueOf(attribute);
+            SubsetRoutingConfig subsetRoutingConfig = clientNetworkConfig.getSubsetRoutingConfig();
+            subsetRoutingConfig.setEnabled(true);
+            subsetRoutingConfig.setRoutingStrategy(routingStrategy);
+        }
     }
 
     private void handleHazelcastCloud(Node node, ClientNetworkConfig clientNetworkConfig) {

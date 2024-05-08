@@ -61,11 +61,13 @@ public final class AuthenticationResponse {
      * If this is false, partitionListVersion has the default value for its type.
      */
     private boolean isPartitionListVersionExists;
+    private boolean isKeyValuePairsExists;
 
     private int memberListVersion;
     private List<MemberInfo> memberInfos;
     private int partitionListVersion;
     private List<Map.Entry<UUID, List<Integer>>> partitions;
+    private Map<String, String> keyValuePairs;
 
     @SuppressWarnings("checkstyle:parameternumber")
     private AuthenticationResponse(byte status,
@@ -83,7 +85,9 @@ public final class AuthenticationResponse {
                                    List<MemberInfo> memberInfos,
                                    boolean isPartitionListVersionExists,
                                    int partitionListVersion,
-                                   List<Map.Entry<UUID, List<Integer>>> partitions) {
+                                   List<Map.Entry<UUID, List<Integer>>> partitions,
+                                   boolean isKeyValuePairsExists,
+                                   Map<String, String> keyValuePairs) {
         this.status = status;
         this.address = address;
         this.memberUuid = memberUuid;
@@ -100,6 +104,8 @@ public final class AuthenticationResponse {
         this.isPartitionListVersionExists = isPartitionListVersionExists;
         this.partitionListVersion = partitionListVersion;
         this.partitions = partitions;
+        this.isKeyValuePairsExists = isKeyValuePairsExists;
+        this.keyValuePairs = keyValuePairs;
     }
 
     /**
@@ -223,12 +229,20 @@ public final class AuthenticationResponse {
         return partitions;
     }
 
+    public Map<String, String> getKeyValuePairs() {
+        return keyValuePairs;
+    }
+
     public boolean isMemberListVersionExists() {
         return isMemberListVersionExists;
     }
 
     public boolean isPartitionListVersionExists() {
         return isPartitionListVersionExists;
+    }
+
+    public boolean isKeyValuePairsExists() {
+        return isKeyValuePairsExists;
     }
 
     public static AuthenticationResponse from(ClientMessage message) {
@@ -260,7 +274,9 @@ public final class AuthenticationResponse {
                 parameters.memberInfos,
                 parameters.isPartitionListVersionExists,
                 parameters.partitionListVersion,
-                parameters.partitions
+                parameters.partitions,
+                parameters.isKeyValuePairsExists,
+                parameters.keyValuePairs
         );
     }
 
@@ -282,6 +298,8 @@ public final class AuthenticationResponse {
                 parameters.memberInfos,
                 parameters.isPartitionListVersionExists,
                 parameters.partitionListVersion,
-                parameters.partitions);
+                parameters.partitions,
+                parameters.isKeyValuePairsExists,
+                parameters.keyValuePairs);
     }
 }

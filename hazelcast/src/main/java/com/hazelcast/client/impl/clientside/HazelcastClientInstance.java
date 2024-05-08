@@ -16,6 +16,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.core.HazelcastInstance;
@@ -41,4 +42,9 @@ public interface HazelcastClientInstance extends HazelcastInstance {
      * Get listener service
      */
     ClientListenerService getListenerService();
+
+    /**
+     * Get cluster service
+     */
+    ClientClusterService getClientClusterService();
 }

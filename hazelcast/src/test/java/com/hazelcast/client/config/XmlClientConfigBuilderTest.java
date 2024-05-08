@@ -864,6 +864,19 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 .hasMessageContaining("Cannot load");
     }
 
+    @Override
+    public void testNetworkConfig_throwsWhenNoRoutingStrategyProvidedForSubset() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "     <network>\n"
+                + "         <subset-routing enabled=\"true\" />\n"
+                + "     </network>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        assertThatThrownBy(() -> buildConfig(xml))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Subset routing is enabled, but there is no routing-strategy defined");
+    }
+
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);

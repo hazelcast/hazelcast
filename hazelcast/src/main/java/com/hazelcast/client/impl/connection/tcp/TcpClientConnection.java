@@ -295,6 +295,8 @@ public class TcpClientConnection implements ClientConnection {
                 + ", connectionId=" + connectionId
                 + ", channel=" + channel
                 + ", remoteAddress=" + remoteAddress
+                + ", remoteUuid=" + remoteUuid
+                + ", clusterUuid=" + clusterUuid
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
                 + ", closedTime=" + timeToStringFriendly(closedTime.get())

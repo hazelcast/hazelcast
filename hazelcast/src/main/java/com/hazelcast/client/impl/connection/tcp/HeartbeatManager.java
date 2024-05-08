@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
-import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -47,13 +46,13 @@ public final class HeartbeatManager {
                              ILogger logger,
                              long heartbeatIntervalMillis,
                              long heartbeatTimeoutMillis,
-                             Collection<ClientConnection> connectionsView) {
+                             TcpClientConnectionManager connectionManager) {
 
         HeartbeatChecker heartbeatChecker = new HeartbeatChecker(client,
                 logger,
                 heartbeatIntervalMillis,
                 heartbeatTimeoutMillis,
-                connectionsView);
+                connectionManager);
 
         taskScheduler.scheduleWithRepetition(heartbeatChecker, heartbeatIntervalMillis, heartbeatIntervalMillis, MILLISECONDS);
     }
@@ -64,24 +63,24 @@ public final class HeartbeatManager {
         private final ILogger logger;
         private final long heartbeatIntervalMillis;
         private final long heartbeatTimeoutMillis;
-        private final Collection<ClientConnection> connectionsView;
+        private final TcpClientConnectionManager connectionManager;
 
         private HeartbeatChecker(HazelcastClientInstanceImpl client,
                                  ILogger logger,
                                  long heartbeatIntervalMillis,
                                  long heartbeatTimeoutMillis,
-                                 Collection<ClientConnection> connectionsView) {
+                                 TcpClientConnectionManager connectionManager) {
             this.client = client;
             this.heartbeatTimeoutMillis = heartbeatTimeoutMillis;
             this.heartbeatIntervalMillis = heartbeatIntervalMillis;
-            this.connectionsView = connectionsView;
+            this.connectionManager = connectionManager;
             this.logger = logger;
         }
 
         @Override
         public void run() {
             long now = Clock.currentTimeMillis();
-            for (ClientConnection connection : connectionsView) {
+            for (ClientConnection connection : connectionManager.getActiveConnections()) {
                 check(connection, now);
 
                 // Check TPC channels as well, if they exist

@@ -17,27 +17,52 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.util.ConfigRoutingUtil;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Assume;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SMART;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.SUBSET;
+import static com.hazelcast.client.impl.connection.tcp.RoutingMode.UNISOCKET;
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientBackupAckTest extends ClientTestSupport {
+
+    @Rule
+    // needed for SUBSET routing mode
+    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
+
+    @Parameterized.Parameter
+    public RoutingMode routingMode;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(UNISOCKET, RoutingMode.SMART, SUBSET);
+    }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -48,9 +73,11 @@ public class ClientBackupAckTest extends ClientTestSupport {
 
     @Test
     public void testBackupAckToClientIsEnabled_byDefault() {
+        Assume.assumeTrue(routingMode == RoutingMode.SMART);
+
         hazelcastFactory.newHazelcastInstance();
 
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertTrue(isEnabled(client));
@@ -60,18 +87,30 @@ public class ClientBackupAckTest extends ClientTestSupport {
     public void testBackupAckToClientIsEnabled() {
         hazelcastFactory.newHazelcastInstance();
 
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.setBackupAckToClientEnabled(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        assertTrue(isEnabled(client));
+        boolean backupAckToClientEnabled
+                = getHazelcastClientInstanceImpl(client)
+                .getInvocationService().isBackupAckToClientEnabled();
+
+        if (routingMode == UNISOCKET || routingMode == SUBSET) {
+            assertFalse(isEnabled(client));
+            assertFalse(backupAckToClientEnabled);
+        } else if (routingMode == SMART) {
+            assertTrue(isEnabled(client));
+            assertTrue(backupAckToClientEnabled);
+        } else {
+            throw new IllegalStateException("Unexpected value: " + routingMode);
+        }
     }
 
     @Test
     public void testBackupAckToClientIsDisabled() {
         hazelcastFactory.newHazelcastInstance();
 
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.setBackupAckToClientEnabled(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -86,5 +125,11 @@ public class ClientBackupAckTest extends ClientTestSupport {
             }
         }
         return false;
+    }
+
+    private ClientConfig newClientConfig() {
+        ClientConfig clientConfig = ConfigRoutingUtil.newClientConfig(routingMode);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        return clientConfig;
     }
 }

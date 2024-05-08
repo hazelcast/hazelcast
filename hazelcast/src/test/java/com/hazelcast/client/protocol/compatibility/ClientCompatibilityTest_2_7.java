@@ -97,6 +97,7 @@ public class ClientCompatibilityTest_2_7 {
         assertTrue(isEqual(anInt, parameters.partitionListVersion));
         assertTrue(parameters.isPartitionsExists);
         assertTrue(isEqual(aListOfUUIDToListOfIntegers, parameters.partitions));
+        assertFalse(parameters.isKeyValuePairsExists);
     }
 
     @Test
@@ -132,6 +133,7 @@ public class ClientCompatibilityTest_2_7 {
         assertTrue(isEqual(anInt, parameters.partitionListVersion));
         assertTrue(parameters.isPartitionsExists);
         assertTrue(isEqual(aListOfUUIDToListOfIntegers, parameters.partitions));
+        assertFalse(parameters.isKeyValuePairsExists);
     }
 
     @Test
@@ -157,6 +159,10 @@ public class ClientCompatibilityTest_2_7 {
         public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfUUIDToListOfIntegers, partitions));
+        }
+        @Override
+        public void handleMemberGroupsViewEvent(int version, java.util.Collection<java.util.Collection<java.util.UUID>> memberGroups) {
+            fail("This method should not be called since this is an v2.8 event handler but the test is for v2.7");
         }
     }
 

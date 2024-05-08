@@ -41,6 +41,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -204,10 +205,11 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         int partitionsVersion = 2;
         List<Map.Entry<UUID, List<Integer>>> partitions = new ArrayList<>();
         partitions.add(new AbstractMap.SimpleEntry<>(UUID.randomUUID(), Arrays.asList(1, 2, 3)));
+        Map<String, String> keyValuePairs = new HashMap<>();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
                 uuid, (byte) 1, "5.4", 271, clusterId, true, tpcPorts, tpcToken,
-                memberListVersion, members, partitionsVersion, partitions);
+                memberListVersion, members, partitionsVersion, partitions, keyValuePairs);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
         ClientMessageEncoder encoder = new ClientMessageEncoder();

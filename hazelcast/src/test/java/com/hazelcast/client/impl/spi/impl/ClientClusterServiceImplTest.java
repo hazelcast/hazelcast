@@ -15,6 +15,8 @@
  */
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.config.RoutingStrategy;
+import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -24,11 +26,13 @@ import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,18 +53,29 @@ import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
-    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final MemberVersion VERSION
+            = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
+
+    private final LoggingService loggingService = mock(LoggingService.class);
+
+    @Before
+    public void setUp() {
+        when(loggingService.getLogger(any(Class.class))).thenReturn(mock(ILogger.class));
+    }
 
     @Test
     public void testMemberAdded() {
         LinkedList<Member> members = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService,
+                new SubsetRoutingConfig());
         clusterService.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
@@ -86,7 +101,8 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     @Test
     public void testMemberRemoved() {
         LinkedList<Member> members = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService,
+                new SubsetRoutingConfig());
         UUID clusterUuid = UUID.randomUUID();
         MemberInfo memberInfo = member("127.0.0.1");
         clusterService.handleMembersViewEvent(1, asList(memberInfo), clusterUuid);
@@ -108,7 +124,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     @Test
     public void testInitialMembershipListener_AfterInitialListArrives() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID clusterUuid = UUID.randomUUID();
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), clusterUuid);
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -131,7 +147,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     @Test
     public void testInitialMembershipListener_BeforeInitialListArrives() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         clusterService.addMembershipListener(new InitialMembershipListener() {
             @Override
             public void init(InitialMembershipEvent event) {
@@ -155,7 +171,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         AtomicInteger initialEventCount = new AtomicInteger();
         LinkedList<Member> addedMembers = new LinkedList<>();
         LinkedList<Member> removedMembers = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         MemberInfo removedMemberInfo = member("127.0.0.1");
         clusterService.handleMembersViewEvent(1, asList(removedMemberInfo), UUID.randomUUID());
 
@@ -192,7 +208,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         AtomicInteger initialEventCount = new AtomicInteger();
         AtomicInteger addedCount = new AtomicInteger();
         AtomicInteger removedCount = new AtomicInteger();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -227,7 +243,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         AtomicInteger initialEventCount = new AtomicInteger();
         AtomicInteger addedCount = new AtomicInteger();
         AtomicInteger removedCount = new AtomicInteger();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         List<MemberInfo> memberList = asList(member("127.0.0.1"));
         UUID clusterUuid = UUID.randomUUID();
         clusterService.handleMembersViewEvent(1, memberList, clusterUuid);
@@ -268,7 +284,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         AtomicInteger initialEventCount = new AtomicInteger();
         LinkedList<Member> addedMembers = new LinkedList<>();
         LinkedList<Member> removedMembers = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID member1uuid = UUID.randomUUID();
         UUID member2uuid = UUID.randomUUID();
         UUID clusterUuid = UUID.randomUUID();
@@ -317,7 +333,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         AtomicInteger initialEventCount = new AtomicInteger();
         LinkedList<Member> addedMembers = new LinkedList<>();
         LinkedList<Member> removedMembers = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID clusterUuid = UUID.randomUUID();
         MemberInfo member1 = member("127.0.0.1");
         MemberInfo member2 = member("127.0.0.2");
@@ -354,7 +370,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testDontServeEmptyMemberList_DuringClusterRestart() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         //called on cluster restart
@@ -366,7 +382,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testDontServeEmptyMemberList_DuringClusterChange() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         //called on cluster change
@@ -406,7 +422,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testListenersFromConfigWorking() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         LinkedList<Member> addedMembers = new LinkedList<>();
         clusterService.start(singleton(new MembershipListener() {
             @Override
@@ -432,7 +448,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     @Test
     public void testRemoveListener() {
         AtomicInteger addedCount = new AtomicInteger();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID listenerUuid = clusterService.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
@@ -457,13 +473,13 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveNonExistingListener() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         assertFalse(clusterService.removeMembershipListener(UUID.randomUUID()));
     }
 
     @Test
     public void testGetMasterMember() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         MemberInfo masterMember = member("127.0.0.1");
         clusterService.handleMembersViewEvent(1, asList(masterMember, member("127.0.0.2"),
                 member("127.0.0.3")), UUID.randomUUID());
@@ -472,7 +488,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMember() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         MemberInfo masterMember = member("127.0.0.1");
         UUID member2Uuid = UUID.randomUUID();
         MemberInfo member2 = member("127.0.0.2", member2Uuid);
@@ -482,7 +498,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMembers() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         MemberInfo masterMember = member("127.0.0.1");
         MemberInfo liteMember = liteMember("127.0.0.2");
         MemberInfo dataMember = member("127.0.0.3");
@@ -494,8 +510,15 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPartitionGroupsRoutingModeIsDefault_when_subset_routing_is_enabled() {
+        SubsetRoutingConfig subsetRoutingConfig = new SubsetRoutingConfig().setEnabled(true);
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, subsetRoutingConfig);
+        assertEquals(RoutingStrategy.PARTITION_GROUPS, clusterService.getSubsetRoutingConfig().getRoutingStrategy());
+    }
+
+    @Test
     public void testGetEffectiveMemberList() {
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
 
         // Returns an empty list on startup, till the members view event
         assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
@@ -519,4 +542,5 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
             assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
         }
     }
+
 }

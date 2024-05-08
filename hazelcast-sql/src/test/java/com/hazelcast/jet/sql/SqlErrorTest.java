@@ -48,7 +48,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout() {
-        checkTimeout(false);
+        checkTimeout(null);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testDataTypeMismatch() {
-        checkDataTypeMismatch(false);
+        checkDataTypeMismatch(null);
     }
 
     @Test
@@ -140,11 +140,11 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testParsingError() {
-        checkParsingError(false);
+        checkParsingError(null);
     }
 
     @Test
     public void testUserCancel() {
-        checkUserCancel(false);
+        checkUserCancel(null);
     }
 }

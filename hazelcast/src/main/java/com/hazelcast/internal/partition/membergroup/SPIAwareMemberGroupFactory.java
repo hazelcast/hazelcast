@@ -40,7 +40,6 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
  *
  * @since 3.7
  */
-
 public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     private final DiscoveryService discoveryService;

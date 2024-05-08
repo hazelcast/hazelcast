@@ -81,7 +81,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     public static Config getBaseConfig() {
-        return smallInstanceConfig()
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        return config
                 .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
                 .setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0")

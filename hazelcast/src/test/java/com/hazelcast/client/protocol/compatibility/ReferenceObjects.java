@@ -756,6 +756,7 @@ public class ReferenceObjects {
     public static List<Integer> aListOfIntegers = Collections.singletonList(anInt);
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
+    public static Collection<Collection<UUID>> aListOfListOfUUIDs = Collections.singletonList(aListOfUUIDs);
     public static Address anAddress;
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;

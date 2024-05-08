@@ -53,6 +53,8 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
 
     protected Config buildConfig(InMemoryFormat inMemoryFormat) {
         Config config = new Config();
+        config.getJetConfig().setEnabled(false);
+        config.getMetricsConfig().setEnabled(false);
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("default");
         replicatedMapConfig.setInMemoryFormat(inMemoryFormat);
         return config;

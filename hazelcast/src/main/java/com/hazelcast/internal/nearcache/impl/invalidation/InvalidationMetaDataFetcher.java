@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -101,7 +100,6 @@ public abstract class InvalidationMetaDataFetcher {
 
         Map<Member, InternalCompletableFuture> futureByMember = createHashMap(members.size());
         for (Member member : members) {
-            Address address = member.getAddress();
             try {
                 futureByMember.put(member, fetchMetadataOf(member, names));
             } catch (Exception e) {

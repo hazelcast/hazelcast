@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the config of a map on the member it's called on.
  */
 @SuppressWarnings("unused")
-@Generated("1a57f2c08284cf9af2b0af876cd65769")
+@Generated("2493ab6d7447a30f455e73f80c5d5bf8")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -156,7 +156,7 @@ public final class MCGetMapConfigCodec {
         public java.util.List<com.hazelcast.config.IndexConfig> globalIndexes;
 
         /**
-         * WanReplicationRef of the map.
+         * WanReplicationRef of the map. WanReplicationRef is WAN replication target of the map.
          */
         public @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef;
 

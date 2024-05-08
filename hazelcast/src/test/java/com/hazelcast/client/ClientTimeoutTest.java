@@ -18,30 +18,52 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.client.util.ConfigRoutingUtil;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
+
 /**
  * Tests in this class intentionally use real network.
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class})
 public class ClientTimeoutTest {
+
+    @Rule
+    // needed for SUBSET routing mode
+    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
+
+    @Parameterized.Parameter
+    public RoutingMode routingMode;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
+    }
 
     @After
     public void cleanup() {
@@ -51,7 +73,7 @@ public class ClientTimeoutTest {
 
     @Test(timeout = 20000, expected = IllegalStateException.class)
     public void testTimeoutToOutsideNetwork() {
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.setClusterName("dev");
 
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
@@ -77,7 +99,7 @@ public class ClientTimeoutTest {
 
     public void testConnectionTimeout(int timeoutInMillis) {
         //Should work without throwing exception.
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.getNetworkConfig().setConnectionTimeout(timeoutInMillis);
         Hazelcast.newHazelcastInstance();
         HazelcastClient.newHazelcastClient(clientConfig);
@@ -85,7 +107,7 @@ public class ClientTimeoutTest {
 
     @Test(expected = OperationTimeoutException.class)
     public void testInvocationTimeOut() throws Throwable {
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "0");
         Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -104,5 +126,9 @@ public class ClientTimeoutTest {
         public Object call() throws Exception {
             throw new RetryableHazelcastException();
         }
+    }
+
+    private ClientConfig newClientConfig() {
+        return ConfigRoutingUtil.newClientConfig(routingMode);
     }
 }

@@ -840,6 +840,19 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals(defaultConfig, emptyConfig);
     }
 
+    @Override
+    public void testNetworkConfig_throwsWhenNoRoutingStrategyProvidedForSubset() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  network:\n"
+                + "    subset-routing:\n"
+                + "      enabled: true\n";
+
+        assertThatThrownBy(() -> buildConfig(yaml))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Subset routing is enabled, but there is no routing-strategy defined");
+    }
+
     public static ClientConfig buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder(bis);

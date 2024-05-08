@@ -108,7 +108,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public ClusterViewListenerService getClusterListenerService() {
+    public ClusterViewListenerService getClusterViewListenerService() {
         return null;
     }
 

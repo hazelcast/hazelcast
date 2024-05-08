@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.connection.tcp;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
@@ -114,7 +115,8 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
         HazelcastInstance client = factory.newHazelcastClient(config);
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
 
-        boolean isUnisocket = clientImpl.getConnectionManager().isUnisocketClient();
+        ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+        boolean isUnisocket = connectionManager.getRoutingMode() == RoutingMode.UNISOCKET;
         // should be unisocket only when smart routing is false and TPC disabled
         assertEquals(!smartRouting && !tpcEnabled, isUnisocket);
     }

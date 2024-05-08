@@ -19,6 +19,7 @@ package com.hazelcast.client.heartbeat;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
@@ -28,6 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.util.ConfigRoutingUtil;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
@@ -43,7 +45,9 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -52,7 +56,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -60,12 +66,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientHeartbeatTest extends ClientTestSupport {
+
+    @Rule
+    // needed for SUBSET routing mode
+    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
+
+    @Parameterized.Parameter
+    public RoutingMode routingMode;
+
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
+    }
 
     private static final int HEARTBEAT_TIMEOUT_MILLIS = 10000;
 
@@ -81,14 +101,16 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
     @Test
     public void testConnectionClosed_whenHeartbeatStopped() {
-        hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
-        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
+        HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 
-        makeSureConnectedToServers(client, 2);
+        int expectedServerCount = routingMode == RoutingMode.SMART ? 2 : 1;
+        makeSureConnectedToServers(client, expectedServerCount);
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         connectionManager.addConnectionListener(new ConnectionListener() {
@@ -103,21 +125,26 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             }
         });
 
-        blockMessagesFromInstance(instance, client);
+        if (routingMode == RoutingMode.SMART) {
+            blockMessagesFromInstance(server2, client);
+        } else {
+            blockMessagesFromInstance(server1, client);
+        }
         assertOpenEventually(countDownLatch);
     }
 
     @Test
     public void testInvocation_whenHeartbeatStopped() {
-        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
 
-        warmUpPartitions(instance, client);
+        warmUpPartitions(server, client);
 
         IMap<String, String> map = client.getMap("test");
         map.put("foo", "bar");
 
-        blockMessagesFromInstance(instance, client);
+        blockMessagesFromInstance(server, client);
 
         expectedException.expect(TargetDisconnectedException.class);
         map.put("for", "bar2");
@@ -125,28 +152,33 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
     @Test
     public void testAsyncInvocation_whenHeartbeatStopped() throws Throwable {
-        hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
+        HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
-        // make sure client is connected to instance2
+        // make sure client is connected to server2
         IMap<String, String> map = client.getMap(randomString());
-        String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+        String keyOwnedByServer2 = generateKeyOwnedBy(server2);
 
-        // Verify that the client received partition update for instance2
-        waitClientPartitionUpdateForKeyOwner(client, instance2, keyOwnedByInstance2);
+        // Verify that the client received partition update for server2
+        waitClientPartitionUpdateForKeyOwner(client, server2, keyOwnedByServer2);
 
-        // Make sure that client connects to instance2
-        map.put(keyOwnedByInstance2, randomString());
+        // Make sure that client connects to server2
+        map.put(keyOwnedByServer2, randomString());
 
-        // double check that the connection to both servers is alive
-        makeSureConnectedToServers(client, 2);
+        // double check that the connection to servers is alive
+        int expectedServerCount = routingMode == RoutingMode.SMART ? 2 : 1;
+        makeSureConnectedToServers(client, expectedServerCount);
 
-        blockMessagesFromInstance(instance2, client);
+        if (routingMode == RoutingMode.SMART) {
+            blockMessagesFromInstance(server2, client);
+        } else {
+            blockMessagesFromInstance(server1, client);
+        }
 
         expectedException.expect(TargetDisconnectedException.class);
         try {
-            map.putAsync(keyOwnedByInstance2, randomString()).toCompletableFuture().get();
+            map.putAsync(keyOwnedByServer2, randomString()).toCompletableFuture().get();
         } catch (ExecutionException e) {
             //unwrap exception
             throw e.getCause();
@@ -156,7 +188,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     @Test
     public void testInvocation_whenHeartbeatResumed() {
         hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         // make sure client is connected to instance2
@@ -185,11 +217,13 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         });
     }
 
-    private static ClientConfig getClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
+    private ClientConfig newClientConfig() {
+        ClientConfig clientConfig = ConfigRoutingUtil.newClientConfig(routingMode);
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(HEARTBEAT_TIMEOUT_MILLIS));
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
+        clientConfig.getConnectionStrategyConfig()
+                .getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
+
         return clientConfig;
     }
 
@@ -200,7 +234,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(delaySeconds)));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
 
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
 
@@ -244,9 +278,10 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
     @Test
     public void testAddingListenerToNewConnectionFailedBecauseOfHeartbeat() {
-        hazelcastFactory.newHazelcastInstance();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance(config);
 
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
 
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final ClientListenerService clientListenerService = clientInstanceImpl.getListenerService();
@@ -292,15 +327,28 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
         });
 
-        HazelcastInstance hazelcastInstance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertSizeEventually(2, clientInstanceImpl.getConnectionManager().getActiveConnections());
+        assertTrueEventually(()
+                -> {
+            int expectedActive = routingMode == RoutingMode.SMART ? 2 : 1;
+            assertEquals(expectedActive,
+                    clientInstanceImpl.getConnectionManager().getActiveConnections().size());
+        });
 
-        blockMessagesFromInstance(hazelcastInstance2, client);
+        if (routingMode == RoutingMode.SMART) {
+            blockMessagesFromInstance(server2, client);
+        } else {
+            blockMessagesFromInstance(server1, client);
+        }
         assertOpenEventually(heartbeatStopped);
         blockIncoming.countDown();
 
-        unblockMessagesFromInstance(hazelcastInstance2, client);
+        if (routingMode == RoutingMode.SMART) {
+            unblockMessagesFromInstance(server2, client);
+        } else {
+            unblockMessagesFromInstance(server1, client);
+        }
         assertOpenEventually(onListenerRegister);
     }
 
@@ -333,7 +381,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         Config config = new Config();
         HazelcastInstance instanceA = hazelcastFactory.newHazelcastInstance(config);
 
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = newClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
                 .setClusterConnectTimeoutMillis(Integer.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

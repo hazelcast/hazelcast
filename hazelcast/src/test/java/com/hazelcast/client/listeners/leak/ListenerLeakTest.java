@@ -263,7 +263,7 @@ public class ListenerLeakTest extends ClientTestSupport {
 
         assertTrueEventually(() -> {
             for (Node node : nodes) {
-                assertEquals(0, node.getClientEngine().getClusterListenerService().getClusterListeningEndpoints().size());
+                assertEquals(0, node.getClientEngine().getClusterViewListenerService().getClusterListeningEndpoints().size());
             }
         });
     }

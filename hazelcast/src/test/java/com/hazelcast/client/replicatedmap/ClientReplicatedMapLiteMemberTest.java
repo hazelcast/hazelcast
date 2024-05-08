@@ -18,47 +18,60 @@ package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.util.ConfigRoutingUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientReplicatedMapLiteMemberTest {
 
-    private TestHazelcastFactory factory;
+    @Rule
+    // needed for SUBSET routing mode
+    public OverridePropertyRule setProp = OverridePropertyRule.set(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
 
-    private ClientConfig smartClientConfig;
-    private ClientConfig dummyClientConfig;
+    @Parameterized.Parameter
+    public RoutingMode routingMode;
 
-    @Before
-    public void init() {
-        factory = new TestHazelcastFactory();
-        smartClientConfig = new ClientConfig();
-        dummyClientConfig = new ClientConfig();
-        dummyClientConfig.getNetworkConfig().setSmartRouting(false);
+    @Parameterized.Parameters(name = "{index}: routingMode={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
+    }
+
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
+
+    private ClientConfig newClientConfig() {
+        return ConfigRoutingUtil.newClientConfig(routingMode);
     }
 
     @After
@@ -67,66 +80,50 @@ public class ClientReplicatedMapLiteMemberTest {
     }
 
     @Test
-    public void testReplicatedMapIsCreatedBySmartClient() {
-        testReplicatedMapCreated(2, 1, smartClientConfig);
+    public void testReplicatedMapIsCreated() {
+        testReplicatedMapCreated(2, 1, newClientConfig());
     }
 
     @Test
-    public void testReplicatedMapIsCreatedByDummyClient() {
-        testReplicatedMapCreated(2, 1, dummyClientConfig);
+    public void testReplicatedMapNotCreatedOnOnlyLiteMembers() {
+        Assert.assertThrows(ReplicatedMapCantBeCreatedOnLiteMemberException.class, () -> {
+            testReplicatedMapCreated(2, 0, newClientConfig());
+        });
     }
 
-    @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)
-    public void testReplicatedMapNotCreatedOnOnlyLiteMembersBySmartClient() {
-        testReplicatedMapCreated(2, 0, smartClientConfig);
+    @Test
+    public void testReplicatedMapNotCreatedOnSingleLiteMember() {
+        Assert.assertThrows(ReplicatedMapCantBeCreatedOnLiteMemberException.class, () -> {
+            testReplicatedMapCreated(1, 0, newClientConfig());
+        });
     }
 
-    @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)
-    public void testReplicatedMapNotCreatedOnOnlyLiteMembersByDummyClient() {
-        testReplicatedMapCreated(2, 0, dummyClientConfig);
-    }
+    private void testReplicatedMapCreated(int numberOfLiteNodes,
+                                          int numberOfDataNodes,
+                                          ClientConfig clientConfig) {
 
-    @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)
-    public void testReplicatedMapNotCreatedOnSingleLiteMemberBySmartClient() {
-        testReplicatedMapCreated(1, 0, smartClientConfig);
-    }
-
-    @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)
-    public void testReplicatedMapNotCreatedOnSingleLiteMemberByDummyClient() {
-        testReplicatedMapCreated(1, 0, dummyClientConfig);
-    }
-
-    private void testReplicatedMapCreated(int numberOfLiteNodes, int numberOfDataNodes, ClientConfig clientConfig) {
         createNodes(numberOfLiteNodes, numberOfDataNodes);
-
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         assertNotNull(client.getReplicatedMap(randomMapName()));
     }
 
     @Test
-    public void testReplicatedMapPutBySmartClient() {
-        createNodes(3, 1);
+    public void testReplicatedMapPut() {
+        List<HazelcastInstance> instances = createNodes(3, 1);
 
-        HazelcastInstance client = factory.newHazelcastClient();
+        ClientConfig clientConfig = newClientConfig();
+        if (routingMode == RoutingMode.UNISOCKET) {
+            configureDummyClientConnection(instances.get(0), clientConfig);
+        }
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
         assertNull(map.put(1, 2));
     }
 
-    @Test
-    public void testReplicatedMapPutByDummyClient() throws UnknownHostException {
-        List<HazelcastInstance> instances = createNodes(3, 1);
-        configureDummyClientConnection(instances.get(0));
-
-        HazelcastInstance client = factory.newHazelcastClient(dummyClientConfig);
-
-        ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
-        map.put(1, 2);
-    }
-
-    private void configureDummyClientConnection(HazelcastInstance instance) {
+    private void configureDummyClientConnection(HazelcastInstance instance, ClientConfig clientConfig) {
         Address memberAddress = getAddress(instance);
-        dummyClientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
-        ClientNetworkConfig networkConfig = dummyClientConfig.getNetworkConfig();
+        clientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.addAddress(memberAddress.getHost() + ":" + memberAddress.getPort());
     }
 

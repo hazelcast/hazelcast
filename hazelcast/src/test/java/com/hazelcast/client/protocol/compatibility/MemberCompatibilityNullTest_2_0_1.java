@@ -82,7 +82,7 @@ public class MemberCompatibilityNullTest_2_0_1 {
     @Test
     public void test_ClientAuthenticationCodec_encodeResponse() {
         int fileClientMessageIndex = 1;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null, null, anInt, aListOfMemberInfos, anInt, aListOfUUIDToListOfIntegers);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null, null, anInt, aListOfMemberInfos, anInt, aListOfUUIDToListOfIntegers, aMapOfStringToString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -105,7 +105,7 @@ public class MemberCompatibilityNullTest_2_0_1 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeResponse() {
         int fileClientMessageIndex = 3;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null, null, anInt, null, anInt, null);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null, null, anInt, null, anInt, null, aMapOfStringToString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

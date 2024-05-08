@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
@@ -34,7 +35,7 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
-import java.util.Set;
+import java.util.Collection;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -149,17 +150,45 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
             throw new HazelcastClientOfflineException();
         }
-        if (!client.getConnectionManager().isUnisocketClient()) {
-            Set<Member> members = client.getCluster().getMembers();
-            String msg;
-            if (members.isEmpty()) {
-                msg = "No address was return by the LoadBalancer since there are no members in the cluster";
-            } else {
-                msg = "No address was return by the LoadBalancer. "
-                        + "But the cluster contains the following members:" + members;
-            }
-            throw new IllegalStateException(msg);
+        String msg = getExceptionMsgByRoutingMode();
+        throw new IllegalStateException(msg);
+    }
+
+    private String getExceptionMsgByRoutingMode() {
+        return switch (client.getConnectionManager().getRoutingMode()) {
+            case SMART -> toSmartModeExceptionMsg();
+            case UNISOCKET -> "No active connection is found";
+            case SUBSET -> toSubsetModeExceptionMsg();
+        };
+    }
+
+    private String toSmartModeExceptionMsg() {
+        Collection<Member> members = client.getClientClusterService().getEffectiveMemberList();
+        if (members.isEmpty()) {
+            return "No address was returned by the LoadBalancer since there are no members in the cluster";
+        } else {
+            return "No address was returned by the LoadBalancer. "
+                    + "But the cluster contains the following members:" + members;
         }
-        throw new IllegalStateException("No active connection is found");
+    }
+
+    private String toSubsetModeExceptionMsg() {
+        ClientClusterService clientClusterService = client.getClientClusterService();
+        Collection<Member> subsetMembers = clientClusterService.getEffectiveMemberList();
+        Collection<Member> allMembers = clientClusterService.getMemberList();
+
+        if (subsetMembers.isEmpty() && allMembers.isEmpty()) {
+            return "No address was returned by the LoadBalancer since there is no member "
+                    + "in subset and in the cluster as well";
+        }
+
+        if (subsetMembers.isEmpty()) {
+            return "No address was returned by the LoadBalancer since there is no member "
+                    + "in subset but the cluster has these members:" + allMembers;
+        }
+
+        return "No address was returned by the LoadBalancer. "
+                + "But the subset contains the following members:" + subsetMembers
+                + "and the cluster has these members:" + allMembers;
     }
 }

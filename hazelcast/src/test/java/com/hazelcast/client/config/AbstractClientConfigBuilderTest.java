@@ -557,6 +557,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
 
     @Test
+    public abstract void testNetworkConfig_throwsWhenNoRoutingStrategyProvidedForSubset();
+
+    @Test
     public void testTpc() {
         ClientTpcConfig tpcConfig = fullClientConfig.getTpcConfig();
         assertTrue(tpcConfig.isEnabled());
