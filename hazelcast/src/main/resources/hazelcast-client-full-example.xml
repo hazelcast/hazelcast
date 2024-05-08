@@ -149,8 +149,11 @@
                 <ports>38000,38500-38600</ports>
             </outbound-ports>
         * <subset-routing enabled="true" routing-strategy="PARTITION_GROUPS">:
-            If true, this client will only connect to a limited subset of the cluster, as specified with the defined routing-strategy.
-            Its default value is false.
+            If true, this client will only connect to a limited
+            subset of the cluster, as specified with the defined
+            routing-strategy. Default value of routing-strategy
+            is PARTITION_GROUPS when not set. And subset-routing
+            is disabled by default.
             Note : This feature may only be enabled if smart-routing is disabled.
         * <smart-routing>:
             If true, client will route the key based operations to owner of the key at the best effort. Note that it

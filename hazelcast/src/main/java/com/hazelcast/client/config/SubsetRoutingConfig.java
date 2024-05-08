@@ -21,8 +21,13 @@ package com.hazelcast.client.config;
  */
 public class SubsetRoutingConfig {
 
+    /**
+     * Default {@link RoutingStrategy}
+     */
+    public static final RoutingStrategy DEFAULT_ROUTING_STRATEGY = RoutingStrategy.PARTITION_GROUPS;
+
     private boolean enabled;
-    private RoutingStrategy routingStrategy = RoutingStrategy.PARTITION_GROUPS;
+    private RoutingStrategy routingStrategy = DEFAULT_ROUTING_STRATEGY;
 
     public SubsetRoutingConfig() {
     }

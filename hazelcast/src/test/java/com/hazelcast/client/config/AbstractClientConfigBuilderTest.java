@@ -557,7 +557,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
 
     @Test
-    public abstract void testNetworkConfig_throwsWhenNoRoutingStrategyProvidedForSubset();
+    public abstract void testDefaultRoutingStrategyIsPicked_whenNoRoutingStrategyIsSetToSubsetRoutingConfig();
 
     @Test
     public void testTpc() {

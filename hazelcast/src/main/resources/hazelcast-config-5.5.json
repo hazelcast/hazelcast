@@ -4945,7 +4945,7 @@
             "enabled": {
               "type": "boolean",
               "default": false,
-              "description": "If true, this client will only connect to a limited subset of the cluster, as specified with the defined routing-strategy. Its default value is false. Note: This feature may only be enabled if smart-routing is disabled."
+              "description": "If true, this client will only connect to a limited subset of the cluster, as specified with the defined routing-strategy. Default value of routing-strategy is PARTITION_GROUPS when not set. And subset-routing is disabled by default. Note: This feature may only be enabled if smart-routing is disabled."
             },
             "routing-strategy": {
               "type": "string",

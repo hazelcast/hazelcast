@@ -130,7 +130,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig, QueryCacheConfigBuilderHelper
-      queryCacheConfigBuilderHelper, boolean strict) {
+            queryCacheConfigBuilderHelper, boolean strict) {
         super(domLevel3, strict);
         this.clientConfig = clientConfig;
         this.queryCacheConfigBuilderHelper = queryCacheConfigBuilderHelper;
@@ -276,7 +276,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
             }
         } else {
-            throw new InvalidConfigurationException("User code deployement can either be className or jarPath. "
+            throw new InvalidConfigurationException("User code deployment can either be className or jarPath. "
                     + childNodeName + " is invalid");
         }
     }
@@ -461,10 +461,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         boolean enabled = getBooleanValue(getAttribute(child, "enabled"));
         if (enabled) {
             String attribute = getAttribute(child, "routing-strategy");
-            if (attribute == null) {
-                throw new InvalidConfigurationException("Subset routing is enabled, but there is no routing-strategy defined");
-            }
-            RoutingStrategy routingStrategy = RoutingStrategy.valueOf(attribute);
+            RoutingStrategy routingStrategy = attribute == null
+                    ? SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY : RoutingStrategy.valueOf(attribute);
             SubsetRoutingConfig subsetRoutingConfig = clientNetworkConfig.getSubsetRoutingConfig();
             subsetRoutingConfig.setEnabled(true);
             subsetRoutingConfig.setRoutingStrategy(routingStrategy);
