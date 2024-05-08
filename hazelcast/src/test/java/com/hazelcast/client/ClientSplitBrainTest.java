@@ -115,12 +115,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
     private void checkEventsEventually(final AtomicBoolean[] listenerGotEventFlags) {
         for (int i = 0; i < listenerGotEventFlags.length; i++) {
             final int id = i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertTrue("listener ID " + id, listenerGotEventFlags[id].get());
-                }
-            });
+            assertTrueEventually(() -> assertTrue("listener ID " + id, listenerGotEventFlags[id].get()));
         }
     }
 
@@ -149,11 +144,9 @@ public class ClientSplitBrainTest extends ClientTestSupport {
     }
 
     private LifecycleListener createMergeListener(final CountDownLatch mergedLatch) {
-        return new LifecycleListener() {
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                    mergedLatch.countDown();
-                }
+        return event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                mergedLatch.countDown();
             }
         };
     }

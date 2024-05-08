@@ -103,20 +103,18 @@ public class TopicTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             final HazelcastInstance instance = instances[i];
             ITopic<Member> topic = instance.getTopic(randomName);
-            topic.addMessageListener(new MessageListener<Member>() {
-                public void onMessage(Message<Member> message) {
-                    Member publishingMember = message.getPublishingMember();
-                    if (publishingMember.equals(instance.getCluster().getLocalMember())) {
-                        count1.incrementAndGet();
-                    }
+            topic.addMessageListener(message -> {
+                Member publishingMember = message.getPublishingMember();
+                if (publishingMember.equals(instance.getCluster().getLocalMember())) {
+                    count1.incrementAndGet();
+                }
 
-                    Member messageObject = message.getMessageObject();
-                    if (publishingMember.equals(messageObject)) {
-                        count2.incrementAndGet();
-                    }
-                    if (publishingMember.localMember()) {
-                        count3.incrementAndGet();
-                    }
+                Member messageObject = message.getMessageObject();
+                if (publishingMember.equals(messageObject)) {
+                    count2.incrementAndGet();
+                }
+                if (publishingMember.localMember()) {
+                    count3.incrementAndGet();
                 }
             });
         }
@@ -141,13 +139,7 @@ public class TopicTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance();
         ITopic<String> topic = instance.getTopic(randomName);
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-            }
-        });
+        topic.addMessageListener(message -> count.incrementAndGet());
 
         final CompletableFuture<Void> f = topic.publishAsync("TestMessage").toCompletableFuture();
         assertCompletesEventually(f);
@@ -162,13 +154,7 @@ public class TopicTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance();
         ITopic<String> topic = instance.getTopic(randomName);
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-            }
-        });
+        topic.addMessageListener(message -> count.incrementAndGet());
 
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
         topic.publishAll(messages);
@@ -184,13 +170,7 @@ public class TopicTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance();
         ITopic<String> topic = instance.getTopic(randomName);
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-            }
-        });
+        topic.addMessageListener(message -> count.incrementAndGet());
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
         final CompletableFuture<Void> f = topic.publishAllAsync(messages).toCompletableFuture();
         assertCompletesEventually(f);
@@ -262,11 +242,9 @@ public class TopicTest extends HazelcastTestSupport {
                 final List<TestMessage> messages = messageLists[finalI];
                 HazelcastInstance hz = instances[finalI];
                 ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
-                topic.addMessageListener(new MessageListener<TestMessage>() {
-                    public void onMessage(Message<TestMessage> message) {
-                        messages.add(message.getMessageObject());
-                        messageLatch.countDown();
-                    }
+                topic.addMessageListener(message -> {
+                    messages.add(message.getMessageObject());
+                    messageLatch.countDown();
                 });
 
                 startLatch.countDown();
@@ -333,11 +311,9 @@ public class TopicTest extends HazelcastTestSupport {
         for (int i = 0; i < nodes.length; i++) {
             final int nodeIndex = i;
             ITopic<TestMessage> topic = nodes[i].getTopic(randomTopicName);
-            topic.addMessageListener(new MessageListener<TestMessage>() {
-                public void onMessage(Message<TestMessage> message) {
-                    messageListPerNode[nodeIndex].add(message.getMessageObject());
-                    messageLatch.countDown();
-                }
+            topic.addMessageListener(message -> {
+                messageListPerNode[nodeIndex].add(message.getMessageObject());
+                messageLatch.countDown();
             });
         }
 
@@ -438,11 +414,9 @@ public class TopicTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
 
-        topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message<String> msg) {
-                if (msg.getMessageObject().equals(message)) {
-                    latch.countDown();
-                }
+        topic.addMessageListener(msg -> {
+            if (msg.getMessageObject().equals(message)) {
+                latch.countDown();
             }
         });
         topic.publish(message);
@@ -457,11 +431,8 @@ public class TopicTest extends HazelcastTestSupport {
         Config config = new Config();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        config.getTopicConfig(topicName).addMessageListenerConfig(new ListenerConfig().setImplementation(new MessageListener() {
-            public void onMessage(Message message) {
-                latch.countDown();
-            }
-        }));
+        config.getTopicConfig(topicName).addMessageListenerConfig(new ListenerConfig()
+                .setImplementation((MessageListener) message -> latch.countDown()));
 
         HazelcastInstance instance = createHazelcastInstance(config);
         instance.getTopic(topicName).publish(1);
@@ -479,18 +450,14 @@ public class TopicTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
 
-        topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message<String> msg) {
-                if (msg.getMessageObject().equals(message)) {
-                    latch.countDown();
-                }
+        topic.addMessageListener(msg -> {
+            if (msg.getMessageObject().equals(message)) {
+                latch.countDown();
             }
         });
-        topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message<String> msg) {
-                if (msg.getMessageObject().equals(message)) {
-                    latch.countDown();
-                }
+        topic.addMessageListener(msg -> {
+            if (msg.getMessageObject().equals(message)) {
+                latch.countDown();
             }
         });
         topic.publish(message);
@@ -509,11 +476,9 @@ public class TopicTest extends HazelcastTestSupport {
             final AtomicInteger onMessageCount = new AtomicInteger(0);
             final CountDownLatch onMessageInvoked = new CountDownLatch(1);
 
-            MessageListener<String> messageListener = new MessageListener<>() {
-                public void onMessage(Message<String> msg) {
-                    onMessageCount.incrementAndGet();
-                    onMessageInvoked.countDown();
-                }
+            MessageListener<String> messageListener = msg -> {
+                onMessageCount.incrementAndGet();
+                onMessageInvoked.countDown();
             };
 
             final String message = "message_" + messageListener.hashCode() + "_";
@@ -564,19 +529,15 @@ public class TopicTest extends HazelcastTestSupport {
         final AtomicInteger atomicInteger = new AtomicInteger();
         final String message = "Hazelcast Rocks!";
 
-        MessageListener<String> messageListener1 = new MessageListener<>() {
-            public void onMessage(Message<String> msg) {
-                atomicInteger.incrementAndGet();
-                latch.countDown();
-                cp.countDown();
-            }
+        MessageListener<String> messageListener1 = msg -> {
+            atomicInteger.incrementAndGet();
+            latch.countDown();
+            cp.countDown();
         };
-        MessageListener<String> messageListener2 = new MessageListener<>() {
-            public void onMessage(Message<String> msg) {
-                atomicInteger.incrementAndGet();
-                latch.countDown();
-                cp.countDown();
-            }
+        MessageListener<String> messageListener2 = msg -> {
+            atomicInteger.incrementAndGet();
+            latch.countDown();
+            cp.countDown();
         };
 
         UUID messageListenerId = topic.addMessageListener(messageListener1);
@@ -607,20 +568,16 @@ public class TopicTest extends HazelcastTestSupport {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String message = "Test" + randomString();
 
-        topic1.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message msg) {
-                assertEquals(message, msg.getMessageObject());
-                latch1.countDown();
-            }
+        topic1.addMessageListener(msg -> {
+            assertEquals(message, msg.getMessageObject());
+            latch1.countDown();
         });
 
         ITopic<String> topic2 = instance2.getTopic(topicName);
         final CountDownLatch latch2 = new CountDownLatch(2);
-        topic2.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message msg) {
-                assertEquals(message, msg.getMessageObject());
-                latch2.countDown();
-            }
+        topic2.addMessageListener(msg -> {
+            assertEquals(message, msg.getMessageObject());
+            latch2.countDown();
         });
 
         topic1.publish(message);
@@ -639,18 +596,10 @@ public class TopicTest extends HazelcastTestSupport {
         ITopic<String> topic = instance.getTopic(topicName);
 
         final CountDownLatch latch1 = new CountDownLatch(1000);
-        topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message msg) {
-                latch1.countDown();
-            }
-        });
+        topic.addMessageListener(msg -> latch1.countDown());
 
         final CountDownLatch latch2 = new CountDownLatch(1000);
-        topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message msg) {
-                latch2.countDown();
-            }
-        });
+        topic.addMessageListener(msg -> latch2.countDown());
 
         for (int i = 0; i < 1000; i++) {
             topic.publish("sancar");
@@ -694,11 +643,9 @@ public class TopicTest extends HazelcastTestSupport {
                 final Set<String> thNames = threads[finalI];
                 HazelcastInstance hz = instances[finalI];
                 ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
-                topic.addMessageListener(new MessageListener<TestMessage>() {
-                    public void onMessage(Message<TestMessage> message) {
-                        thNames.add(Thread.currentThread().getName());
-                        messageLatch.countDown();
-                    }
+                topic.addMessageListener(message -> {
+                    thNames.add(Thread.currentThread().getName());
+                    messageLatch.countDown();
                 });
 
                 startLatch.countDown();

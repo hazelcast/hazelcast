@@ -56,14 +56,11 @@ public class NodeShutdownEventsTest extends HazelcastTestSupport {
                 .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "222");
 
         final ListenerConfig listenerConfig = new ListenerConfig();
-        listenerConfig.setImplementation(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                // Only expecting SHUTTING_DOWN & SHUTDOWN.
-                if (LifecycleEvent.LifecycleState.SHUTTING_DOWN.equals(event.getState())
-                        || LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
-                    shutdownEventCount.countDown();
-                }
+        listenerConfig.setImplementation((LifecycleListener) event -> {
+            // Only expecting SHUTTING_DOWN & SHUTDOWN.
+            if (LifecycleEvent.LifecycleState.SHUTTING_DOWN.equals(event.getState())
+                    || LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
+                shutdownEventCount.countDown();
             }
         });
         config2.addListenerConfig(listenerConfig);

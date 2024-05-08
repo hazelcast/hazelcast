@@ -19,7 +19,6 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,12 +45,7 @@ public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
     protected UUID addListener() {
         topic = client.getTopic(randomString());
 
-        MessageListener<String> listener = new MessageListener<>() {
-            @Override
-            public void onMessage(Message<String> message) {
-                onEvent(message.getMessageObject());
-            }
-        };
+        MessageListener<String> listener = message -> onEvent(message.getMessageObject());
         return topic.addMessageListener(listener);
     }
 

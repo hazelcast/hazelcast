@@ -23,8 +23,6 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -69,12 +67,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         final TransactionContext context = client.newTransactionContext();
 
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                clientDisconnected.countDown();
-            }
-        });
+        client.getLifecycleService().addLifecycleListener(event -> clientDisconnected.countDown());
 
         Hazelcast.shutdownAll();
 
@@ -94,12 +87,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance();
 
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                clientDisconnected.countDown();
-            }
-        });
+        client.getLifecycleService().addLifecycleListener(event -> clientDisconnected.countDown());
 
         Hazelcast.shutdownAll();
 
@@ -127,12 +115,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         Transaction transaction = tm.getTransaction();
 
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                clientDisconnected.countDown();
-            }
-        });
+        client.getLifecycleService().addLifecycleListener(event -> clientDisconnected.countDown());
 
         Hazelcast.shutdownAll();
 

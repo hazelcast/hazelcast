@@ -29,7 +29,6 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -136,7 +135,7 @@ public class ClientEntryLoadedListenerTest extends ClientTestSupport {
         final Queue<EntryEvent> entryEvents = new ConcurrentLinkedQueue<>();
 
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_getAll");
-        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> entryEvents.add(event), true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) entryEvents::add, true);
 
 
         final List<Integer> keyList = Arrays.asList(1, 2, 3, 4, 5);
@@ -166,21 +165,11 @@ public class ClientEntryLoadedListenerTest extends ClientTestSupport {
     public void add_listener_not_notified_when_read_only_entry_processor_loads_from_map_loader() {
         final AtomicInteger addEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_read_only_ep_not_notified");
-        map.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                addEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> addEventCount.incrementAndGet(), true);
 
         map.executeOnKey(1, new Reader());
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, addEventCount.get());
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals(0, addEventCount.get()), 3);
     }
 
     @Test
@@ -194,12 +183,9 @@ public class ClientEntryLoadedListenerTest extends ClientTestSupport {
             map.executeOnKey(i, new Updater());
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(10, loadEventCount.get());
-                assertEquals(10, updateEventCount.get());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(10, loadEventCount.get());
+            assertEquals(10, updateEventCount.get());
         });
     }
 
@@ -222,25 +208,10 @@ public class ClientEntryLoadedListenerTest extends ClientTestSupport {
 
         map.loadAll(true);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(5, loadEventCount.get());
-            }
-        });
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, addEventCount.get());
-            }
-        }, 3);
+        assertTrueEventually(() -> assertEquals(5, loadEventCount.get()));
+        assertTrueAllTheTime(() -> assertEquals(0, addEventCount.get()), 3);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(5, loadEventCount.get());
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals(5, loadEventCount.get()), 3);
     }
 
     @Test
@@ -255,12 +226,7 @@ public class ClientEntryLoadedListenerTest extends ClientTestSupport {
 
         map.loadAll(true);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, addEventCount.get());
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> assertEquals(0, addEventCount.get()), 5);
     }
 
     static class LoadAndAddListener implements EntryLoadedListener<Integer, Integer>,

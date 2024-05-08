@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -79,24 +78,14 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
     public void whenLocal() {
         final long startMillis = System.currentTimeMillis();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(startMillis + SECONDS.toMillis(5) < invocationMonitor.getLastMemberHeartbeatMillis(localAddress));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(startMillis + SECONDS.toMillis(5) < invocationMonitor.getLastMemberHeartbeatMillis(localAddress)));
     }
 
     @Test
     public void whenRemote() {
         final long startMillis = System.currentTimeMillis();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(startMillis + SECONDS.toMillis(5) < invocationMonitor.getLastMemberHeartbeatMillis(remoteAddress));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(startMillis + SECONDS.toMillis(5) < invocationMonitor.getLastMemberHeartbeatMillis(remoteAddress)));
     }
 
     @Test
@@ -106,11 +95,6 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
 
         remote.shutdown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, invocationMonitor.getLastMemberHeartbeatMillis(remoteAddress));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, invocationMonitor.getLastMemberHeartbeatMillis(remoteAddress)));
     }
 }
