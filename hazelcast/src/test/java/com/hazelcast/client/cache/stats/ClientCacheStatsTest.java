@@ -29,10 +29,8 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -51,9 +49,6 @@ public class ClientCacheStatsTest extends CacheStatsTest {
 
     @Parameter
     public boolean nearCacheEnabled;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private final TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
@@ -101,29 +96,25 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     @Override
     @Test
     public void testOwnedEntryCountWhenThereIsNoBackup() {
-        expectedException.expect(UnsupportedOperationException.class);
-        super.testOwnedEntryCountWhenThereIsNoBackup();
+        assertThrows(UnsupportedOperationException.class, super::testOwnedEntryCountWhenThereIsNoBackup);
     }
 
     @Override
     @Test
     public void testOwnedEntryCountWhenThereAreBackupsOnStaticCluster() {
-        expectedException.expect(UnsupportedOperationException.class);
-        super.testOwnedEntryCountWhenThereAreBackupsOnStaticCluster();
+        assertThrows(UnsupportedOperationException.class, super::testOwnedEntryCountWhenThereAreBackupsOnStaticCluster);
     }
 
     @Override
     @Test
     public void testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster() {
-        expectedException.expect(UnsupportedOperationException.class);
-        super.testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster();
+        assertThrows(UnsupportedOperationException.class, super::testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster);
     }
 
     @Override
     @Test
     public void testExpirations() {
-        expectedException.expect(UnsupportedOperationException.class);
-        super.testExpirations();
+        assertThrows(UnsupportedOperationException.class, super::testExpirations);
     }
 
     @Override
@@ -132,8 +123,7 @@ public class ClientCacheStatsTest extends CacheStatsTest {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
-        expectedException.expect(UnsupportedOperationException.class);
-        stats.getCacheEvictions();
+        assertThrows(UnsupportedOperationException.class, stats::getCacheEvictions);
     }
 
     @Override
@@ -142,8 +132,7 @@ public class ClientCacheStatsTest extends CacheStatsTest {
         if (nearCacheEnabled) {
             testNearCacheStats_whenNearCacheEnabled();
         } else {
-            expectedException.expect(UnsupportedOperationException.class);
-            testNearCacheStats_whenNearCacheDisabled();
+            assertThrows(UnsupportedOperationException.class, this::testNearCacheStats_whenNearCacheDisabled);
         }
     }
 

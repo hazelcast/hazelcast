@@ -31,10 +31,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
@@ -50,9 +48,6 @@ import static org.junit.Assert.assertEquals;
 public class DynamicConfigSmokeTest extends HazelcastTestSupport {
 
     private static final int DEFAULT_INITIAL_CLUSTER_SIZE = 3;
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     protected TestHazelcastInstanceFactory factory;
     private HazelcastInstance[] members;
@@ -114,8 +109,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
         mapConfig2.setBackupCount(1);
 
         driver.getConfig().addMapConfig(mapConfig1);
-        expected.expect(InvalidConfigurationException.class);
-        driver.getConfig().addMapConfig(mapConfig2);
+        assertThrows(InvalidConfigurationException.class, () -> driver.getConfig().addMapConfig(mapConfig2));
     }
 
     @Test
@@ -250,8 +244,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
 
         members(1, config);
         HazelcastInstance hz = driver();
-        expected.expect(InvalidConfigurationException.class);
-        hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 50));
+        assertThrows(InvalidConfigurationException.class, () -> hz.getConfig().addMapConfig(getMapConfigWithTTL(mapName, 50)));
     }
 
     @Test

@@ -54,10 +54,8 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -88,9 +86,6 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -376,8 +371,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
         securityConfig.setCredentials(new MyCredentials());
         // not null username/password credentials are not allowed when Security is disabled
-        expectedException.expect(IllegalStateException.class);
-        hazelcastFactory.newHazelcastClient(clientConfig);
+        assertThrows(IllegalStateException.class, () -> hazelcastFactory.newHazelcastClient(clientConfig));
     }
 
     public static class MyCredentials extends UsernamePasswordCredentials {
