@@ -63,7 +63,7 @@ public class ClientReplicatedMapListenerTest extends AbstractReplicatedMapListen
         HazelcastInstance client = factory.newHazelcastClient();
 
         ReplicatedMap<DeserializationCounter, DeserializationCounter> replicatedMap = client.getReplicatedMap("test");
-        replicatedMap.addEntryListener(new EntryAdapter<DeserializationCounter, DeserializationCounter>() {
+        replicatedMap.addEntryListener(new EntryAdapter<>() {
             @Override
             public void onEntryEvent(EntryEvent<DeserializationCounter, DeserializationCounter> event) {
                 eventReceivedLatch.countDown();

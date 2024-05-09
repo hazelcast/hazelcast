@@ -243,7 +243,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
 
         CountDownLatch clientConnected = new CountDownLatch(1);
         CountDownLatch clientDisconnected = new CountDownLatch(1);
-        getNodeEngineImpl(server).getNode().getServer().addConnectionListener(new ConnectionListener<ServerConnection>() {
+        getNodeEngineImpl(server).getNode().getServer().addConnectionListener(new ConnectionListener<>() {
             @Override
             public void connectionAdded(ServerConnection connection) {
                 if (connection.isClient()) {

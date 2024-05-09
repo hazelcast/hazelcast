@@ -388,7 +388,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         CountDownLatch latch = new CountDownLatch(2);
 
         IMap<Object, Object> m = client.getMap("m");
-        UUID id = m.addEntryListener(new EntryAdapter<Object, Object>() {
+        UUID id = m.addEntryListener(new EntryAdapter<>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 latch.countDown();
             }
@@ -494,7 +494,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         IMap<Object, Object> map1 = client.getMap(randomMapName());
         IMap<Object, Object> map2 = client.getMap(randomMapName());
 
-        map1.addEntryListener(new EntryAdapter<Object, Object>() {
+        map1.addEntryListener(new EntryAdapter<>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 map2.put(1, 1);

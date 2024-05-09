@@ -732,8 +732,9 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         final IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
-            public void entryEvicted(EntryEvent event) {
+        map.addEntryListener(new EntryAdapter<>() {
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
                 latch.countDown();
             }
         }, false);
@@ -896,7 +897,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Object, Object> map = createSimpleMap();
 
         final AtomicInteger count = new AtomicInteger(0);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
+        map.addEntryListener(new EntryAdapter<>() {
             @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
                 count.incrementAndGet();

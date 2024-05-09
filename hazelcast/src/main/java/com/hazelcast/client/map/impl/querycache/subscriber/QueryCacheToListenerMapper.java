@@ -37,12 +37,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class QueryCacheToListenerMapper {
 
     private static final ConstructorFunction<String, Collection<ListenerInfo>> LISTENER_SET_CONSTRUCTOR
-            = new ConstructorFunction<>() {
-        @Override
-        public Collection<ListenerInfo> createNew(String arg) {
-            return Collections.newSetFromMap(new ConcurrentHashMap<ListenerInfo, Boolean>());
-        }
-    };
+            = arg -> Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private final ConcurrentMap<String, Collection<ListenerInfo>> registrations;
 
@@ -95,7 +90,6 @@ public class QueryCacheToListenerMapper {
         return !registrations.isEmpty();
     }
 
-    @SuppressWarnings("unchecked")
     Collection<ListenerInfo> getListenerInfos(String cacheId) {
         Collection<ListenerInfo> infos = registrations.get(cacheId);
         return isEmpty(infos) ? Collections.emptySet() : infos;

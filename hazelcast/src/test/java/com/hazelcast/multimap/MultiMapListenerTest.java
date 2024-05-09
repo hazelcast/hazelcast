@@ -345,7 +345,8 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         final CountDownLatch latchAdded = new CountDownLatch(3);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
-        multiMap.addEntryListener(new EntryAdapter<String, String>() {
+        multiMap.addEntryListener(new EntryAdapter<>() {
+            @Override
             public void entryAdded(EntryEvent<String, String> event) {
                 String key = event.getKey();
                 String value = event.getValue();

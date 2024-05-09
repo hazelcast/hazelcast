@@ -76,7 +76,7 @@ public class DeferredValue<V> {
      *
      * @param resolved is false, force serialization of the returned copy
      * @param serializationService service to use to serialize
-     * @return
+     * @return a shallow copy of DeferredValue
      */
     public DeferredValue<V> shallowCopy(boolean resolved, SerializationService serializationService) {
         DeferredValue<V> copy = new DeferredValue<>();
@@ -150,7 +150,7 @@ public class DeferredValue<V> {
     }
 
     public static <V> Set<DeferredValue<V>> concurrentSetOfValues(Set<V> values) {
-        Set<DeferredValue<V>> result = Collections.newSetFromMap(new ConcurrentHashMap<DeferredValue<V>, Boolean>());
+        Set<DeferredValue<V>> result = Collections.newSetFromMap(new ConcurrentHashMap<>());
         for (V value : values) {
             result.add(DeferredValue.withValue(value));
         }
@@ -189,6 +189,7 @@ public class DeferredValue<V> {
             return new DeferredValueIterator<>(serializationService, delegate.iterator());
         }
 
+        @Override
         public boolean add(V v) {
             return delegate.add(DeferredValue.withValue(v));
         }

@@ -304,7 +304,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
             HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
             IMap<Object, Object> map = client.getMap(randomMapName());
 
-            map.addEntryListener(new EntryAdapter<Object, Object>(), true);
+            map.addEntryListener(new EntryAdapter<>(), true);
             map.put(generateKeyOwnedBy(hz), "value");
             map.put(generateKeyOwnedBy(hz2), "value");
 

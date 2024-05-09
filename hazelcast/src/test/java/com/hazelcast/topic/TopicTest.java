@@ -269,12 +269,8 @@ public class TopicTest extends HazelcastTestSupport {
             TestMessage[] ref = new TestMessage[messageLists[0].size()];
             messageLists[0].toArray(ref);
 
-            Comparator<TestMessage> comparator = new Comparator<>() {
-                public int compare(TestMessage m1, TestMessage m2) {
-                    // sort only publisher blocks. if publishers are the same, leave them as they are
-                    return m1.publisher.getUuid().compareTo(m2.publisher.getUuid());
-                }
-            };
+            // sort only publisher blocks. if publishers are the same, leave them as they are
+            Comparator<TestMessage> comparator = Comparator.comparing(m -> m.publisher.getUuid());
             Arrays.sort(ref, comparator);
 
             for (int i = 1; i < nodeCount; i++) {

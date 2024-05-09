@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.Data;
@@ -122,12 +121,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         int value = 1;
 
         final CountDownLatch latch = new CountDownLatch(1);
-        queryCache.addEntryListener(new EntryAddedListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-        }, true);
+        queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         map.put(key, value, 1, SECONDS);
 
@@ -142,16 +136,10 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerRegistration() {
-        UUID addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-            }
+        UUID addEntryListener = queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
         }, true);
 
-        UUID removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
-            @Override
-            public void entryRemoved(EntryEvent<Integer, Integer> event) {
-            }
+        UUID removeEntryListener = queryCache.addEntryListener((EntryRemovedListener<Integer, Integer>) event -> {
         }, true);
 
         assertFalse(queryCache.removeEntryListener(UUID.randomUUID()));

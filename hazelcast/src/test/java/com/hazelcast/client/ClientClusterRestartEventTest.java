@@ -123,9 +123,9 @@ public class ClientClusterRestartEventTest {
         Member oldMember2 = instance2.getCluster().getLocalMember();
 
         final CountDownLatch memberAdded = new CountDownLatch(2);
-        final Set<Member> addedMembers = Collections.newSetFromMap(new ConcurrentHashMap<Member, Boolean>());
+        final Set<Member> addedMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
         final CountDownLatch memberRemoved = new CountDownLatch(2);
-        final Set<Member> removedMembers = Collections.newSetFromMap(new ConcurrentHashMap<Member, Boolean>());
+        final Set<Member> removedMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
         client.getCluster().addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
