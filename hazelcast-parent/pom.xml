@@ -127,7 +127,7 @@
         <oracle.version>23.3.0.23.09</oracle.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
-        <picocli.version>4.7.5</picocli.version>
+        <picocli.version>4.7.6</picocli.version>
         <postgresql.version>42.7.3</postgresql.version>
         <prometheus.version>0.20.0</prometheus.version>
 
