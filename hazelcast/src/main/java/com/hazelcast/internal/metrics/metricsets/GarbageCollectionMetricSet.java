@@ -91,10 +91,10 @@ public final class GarbageCollectionMetricSet {
                     continue;
                 }
 
-                if (GCStatsSupport.YOUNG_GC.contains(gc.getName())) {
+                if (GCStatsSupport.MINOR_GC.contains(gc.getName())) {
                     minorCount += count;
                     minorTime += gc.getCollectionTime();
-                } else if (GCStatsSupport.OLD_GC.contains(gc.getName())) {
+                } else if (GCStatsSupport.MAJOR_GC.contains(gc.getName())) {
                     majorCount += count;
                     majorTime += gc.getCollectionTime();
                 } else {
