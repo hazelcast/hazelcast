@@ -29,7 +29,6 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -90,12 +89,7 @@ public class ClientQueryCacheRecoveryUponEventLossTest extends HazelcastTestSupp
             map.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(9, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(9, queryCache.size()));
     }
 
     private void setTestSequencer(IMap map, int eventCount) {

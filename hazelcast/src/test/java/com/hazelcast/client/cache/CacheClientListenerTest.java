@@ -25,7 +25,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -109,11 +108,6 @@ public class CacheClientListenerTest extends CacheListenerTest {
         final CountDownLatch expiredLatch = ClientCacheEntryExpiredLatchCountdownListener.getExpiredLatch();
         assertCountEventually("The expired event should only be received one time", 1, expiredLatch, 3);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Expired event is received more than once", 1, expiredLatch.getCount());
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals("Expired event is received more than once", 1, expiredLatch.getCount()), 3);
     }
 }

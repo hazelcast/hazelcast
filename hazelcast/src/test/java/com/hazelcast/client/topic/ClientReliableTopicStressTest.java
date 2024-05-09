@@ -28,7 +28,6 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
@@ -98,15 +97,12 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
         logger.info("Number of items produced: " + produceThread.send);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(produceThread.send, listener1.received);
-                assertEquals(produceThread.send, listener2.received);
+        assertTrueEventually(() -> {
+            assertEquals(produceThread.send, listener1.received);
+            assertEquals(produceThread.send, listener2.received);
 
-                assertEquals(0, listener1.failures);
-                assertEquals(0, listener2.failures);
-            }
+            assertEquals(0, listener1.failures);
+            assertEquals(0, listener2.failures);
         });
 
         logger.info("Done");

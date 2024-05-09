@@ -50,7 +50,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private static TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -130,25 +129,10 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, queryCache.size()));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Count of add events wrong!", 9, countAddEvent.get());
-            }
-        });
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals("Count of add events wrong!", 9, countAddEvent.get()));
+        assertTrueEventually(() -> assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get()));
     }
 
     @Test
@@ -283,23 +267,15 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
     }
 
     private void assertQueryCacheSize(final int expected, final QueryCache cache) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, cache.size());
-            }
-        }, 20);
+        assertTrueEventually(() -> assertEquals(expected, cache.size()), 20);
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final IFunction<?, ?> function, final QueryCache queryCache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                if (function != null) {
-                    function.apply(null);
-                }
-                assertEquals(expected, queryCache.size());
+        AssertTask task = () -> {
+            if (function != null) {
+                function.apply(null);
             }
+            assertEquals(expected, queryCache.size());
         };
 
         assertTrueEventually(task);

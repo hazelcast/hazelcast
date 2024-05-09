@@ -32,7 +32,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -211,12 +210,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
 
         final HazelcastInstance secondInstance = hazelcastFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(2, client.getCluster().getMembers().size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(2, client.getCluster().getMembers().size()));
 
         final AtomicReference<Future> atomicReference = new AtomicReference<>();
         Thread thread = new Thread(() -> {
@@ -226,12 +220,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         });
         thread.start();
         try {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertNotNull(atomicReference.get());
-                }
-            }, 30);
+            assertTrueEventually(() -> assertNotNull(atomicReference.get()), 30);
         } finally {
             thread.interrupt();
             thread.join();

@@ -18,7 +18,6 @@ package com.hazelcast.client.test;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,18 +55,15 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
         final HazelcastInstance client1 = instanceFactory.newHazelcastClient();
         final HazelcastInstance client2 = instanceFactory.newHazelcastClient();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                touchRandomNode(client1);
-                touchRandomNode(client2);
+        assertTrueEventually(() -> {
+            touchRandomNode(client1);
+            touchRandomNode(client2);
 
-                assertClusterSize(3, instance1, instance2, instance3);
+            assertClusterSize(3, instance1, instance2, instance3);
 
-                assertEquals(2, instance1.getClientService().getConnectedClients().size());
-                assertEquals(2, instance2.getClientService().getConnectedClients().size());
-                assertEquals(2, instance3.getClientService().getConnectedClients().size());
-            }
+            assertEquals(2, instance1.getClientService().getConnectedClients().size());
+            assertEquals(2, instance2.getClientService().getConnectedClients().size());
+            assertEquals(2, instance3.getClientService().getConnectedClients().size());
         });
     }
 
@@ -84,17 +80,14 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, instance1, instance2, instance3);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                touchRandomNode(client1);
-                touchRandomNode(client2);
+        assertTrueEventually(() -> {
+            touchRandomNode(client1);
+            touchRandomNode(client2);
 
-                int actual = instance1.getClientService().getConnectedClients().size()
-                        + instance2.getClientService().getConnectedClients().size()
-                        + instance3.getClientService().getConnectedClients().size();
-                assertEquals(2, actual);
-            }
+            int actual = instance1.getClientService().getConnectedClients().size()
+                    + instance2.getClientService().getConnectedClients().size()
+                    + instance3.getClientService().getConnectedClients().size();
+            assertEquals(2, actual);
         });
 
         assertClusterSizeEventually(3, client1, client2);

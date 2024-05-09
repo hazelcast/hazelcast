@@ -24,7 +24,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -220,12 +219,7 @@ public class ClientTxnMapTest {
         // hence following assertion can fail
         assertEquals(value, map.get(key));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get(key));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map.get(key)));
     }
 
     @Test

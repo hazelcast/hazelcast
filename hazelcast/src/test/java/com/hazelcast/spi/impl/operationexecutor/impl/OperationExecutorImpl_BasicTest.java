@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -63,13 +62,10 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
         executor.execute(new LongRunningOperation(GENERIC_PARTITION_ID, completionLatch));
         executor.execute(new LongRunningOperation(0, completionLatch));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int runningOperationCount = executor.getRunningOperationCount();
-                System.out.println("runningOperationCount:" + runningOperationCount);
-                assertEquals(3, runningOperationCount);
-            }
+        assertTrueEventually(() -> {
+            int runningOperationCount = executor.getRunningOperationCount();
+            System.out.println("runningOperationCount:" + runningOperationCount);
+            assertEquals(3, runningOperationCount);
         });
 
         completionLatch.countDown();
@@ -118,12 +114,7 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
         }
 
         final int expectedCount = count;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedCount, executor.getQueueSize());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedCount, executor.getQueueSize()));
     }
 
     @Test(expected = NullPointerException.class)

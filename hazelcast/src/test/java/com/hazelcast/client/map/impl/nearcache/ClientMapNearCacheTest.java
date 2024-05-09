@@ -37,7 +37,6 @@ import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -216,11 +215,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.remove(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -238,11 +233,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.delete(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -260,11 +251,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.putAsync(i, i, 1, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -282,11 +269,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.setAsync(i, i, 1, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -304,11 +287,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.removeAsync(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -326,11 +305,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.deleteAsync(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -348,11 +323,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.tryRemove(i, 5, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -370,11 +341,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.tryPut(i, i, 5, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -392,11 +359,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.putTransient(i, i, 10, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -414,11 +377,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.putIfAbsent(i, i, 1, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -436,11 +395,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.set(i, i, 1, TimeUnit.SECONDS);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -458,11 +413,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             clientMap.evict(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -478,11 +429,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         clientMap.evictAll();
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -506,11 +453,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         clientMap.loadAll(true);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -535,11 +478,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> map = member.getMap(mapName);
         map.loadAll(true);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -570,11 +509,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         clientMap.loadAll(keys, false);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -600,11 +535,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> memberMap = member.getMap(mapName);
         memberMap.putAll(hashMap);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -645,11 +576,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int randomKey = random.nextInt(mapSize);
         clientMap.submitToKey(randomKey, new IncrementEntryProcessor());
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, mapSize - 1);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, mapSize - 1));
     }
 
     @Test
@@ -681,11 +608,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         clientMap.submitToKey(randomKey, new IncrementEntryProcessor()).thenRunAsync(latch::countDown);
 
         assertOpenEventually(latch);
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, mapSize - 1);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, mapSize - 1));
     }
 
     @Test
@@ -704,11 +627,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int randomKey = random.nextInt(mapSize);
         clientMap.executeOnKey(randomKey, new IncrementEntryProcessor());
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, mapSize - 1);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, mapSize - 1));
     }
 
     @Test
@@ -728,11 +647,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         final IMap<Integer, Integer> map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(map, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(map, 0));
     }
 
     @Test
@@ -894,11 +809,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             serverMap.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test(expected = NullPointerException.class)
@@ -956,11 +867,9 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         server.getMap(mapName).clear();
 
         // Near Cache should be empty
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                for (int i = 0; i < size; i++) {
-                    assertNull(map.get(i));
-                }
+        assertTrueEventually(() -> {
+            for (int i = 0; i < size; i++) {
+                assertNull(map.get(i));
             }
         });
     }
@@ -988,12 +897,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         mapClearFromClient(handler);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount()), 10);
     }
 
     @Test
@@ -1017,12 +921,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount()));
     }
 
     @Test
@@ -1039,12 +938,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         mapClearFromMember(handler);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount()), 10);
     }
 
     private void mapClearFromMember(final ClearEventCounterEventHandler handler) {
@@ -1061,12 +955,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap memberMap = member.getMap(clientMap.getName());
         memberMap.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount()));
     }
 
     @Test
@@ -1083,12 +972,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         mapEvictAllFromClient(handler);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount()), 10);
     }
 
     private void mapEvictAllFromClient(final ClearEventCounterEventHandler handler) {
@@ -1105,12 +989,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.evictAll();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount()));
     }
 
     @Test
@@ -1127,12 +1006,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         mapEvictAllFromMember(handler);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount()), 10);
     }
 
     private void mapEvictAllFromMember(final ClearEventCounterEventHandler handler) {
@@ -1150,12 +1024,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap memberMap = member.getMap(clientMap.getName());
         memberMap.evictAll();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount()));
     }
 
     @Test
@@ -1179,17 +1048,14 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         InternalSerializationService serializationService =
                 getSerializationService(hazelcastFactory.getAllHazelcastInstances().iterator().next());
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
-                for (int i = 0; i < 1000; i++) {
-                    Object key = i;
-                    if (nearCacheConfig.isSerializeKeys()) {
-                        key = serializationService.toData(i);
-                    }
-                    assertNull("Near Cache should be empty", nearCache.get(key));
+        assertTrueEventually(() -> {
+            NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
+            for (int i = 0; i < 1000; i++) {
+                Object key = i;
+                if (nearCacheConfig.isSerializeKeys()) {
+                    key = serializationService.toData(i);
                 }
+                assertNull("Near Cache should be empty", nearCache.get(key));
             }
         });
     }
@@ -1213,17 +1079,14 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         memberMap.loadAll(true);
 
         InternalSerializationService serializationService = getSerializationService(member);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
-                for (int i = 0; i < 1000; i++) {
-                    Object key = i;
-                    if (nearCacheConfig.isSerializeKeys()) {
-                        key = serializationService.toData(i);
-                    }
-                    assertNull("Near Cache should be empty", nearCache.get(key));
+        assertTrueEventually(() -> {
+            NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
+            for (int i = 0; i < 1000; i++) {
+                Object key = i;
+                if (nearCacheConfig.isSerializeKeys()) {
+                    key = serializationService.toData(i);
                 }
+                assertNull("Near Cache should be empty", nearCache.get(key));
             }
         });
     }
@@ -1251,12 +1114,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         populateMap(map, mapSize);
         populateNearCache(map, mapSize);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertThatOwnedEntryCountEquals(map, MAX_CACHE_SIZE);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(map, MAX_CACHE_SIZE));
     }
 
     @Test
@@ -1401,12 +1259,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         populateNearCache(map, MAX_CACHE_SIZE);
 
         triggerEviction(map);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
-            }
-        });
+        assertTrueEventually(() -> assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE));
     }
 
     private static class ClearEventCounterEventHandler

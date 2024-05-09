@@ -29,7 +29,6 @@ import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
@@ -155,14 +154,11 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         hazelcastInstance.shutdown();
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                try {
-                    instance.getCacheManager().getCache("xmlCache");
-                } catch (Exception e) {
-                    fail();
-                }
+        assertTrueEventually(() -> {
+            try {
+                instance.getCacheManager().getCache("xmlCache");
+            } catch (Exception e) {
+                fail();
             }
         });
         testFinished.countDown();

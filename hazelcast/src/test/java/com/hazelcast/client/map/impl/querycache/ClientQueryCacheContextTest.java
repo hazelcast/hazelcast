@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedule
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedulerTask;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -101,12 +100,9 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
         final QuerySchedulerRepetitionTask repetitionTask = new QuerySchedulerRepetitionTask();
         scheduler.scheduleWithRepetition(repetitionTask, 1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(task.executed);
-                assertTrue(repetitionTask.counter.get() > 1);
-            }
+        assertTrueEventually(() -> {
+            assertTrue(task.executed);
+            assertTrue(repetitionTask.counter.get() > 1);
         });
 
         scheduler.shutdown();

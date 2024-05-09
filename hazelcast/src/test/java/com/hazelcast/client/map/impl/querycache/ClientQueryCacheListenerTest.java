@@ -30,7 +30,6 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -51,10 +50,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> INTEGER_TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private static TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -88,12 +85,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
             map.put(i, new Employee(i));
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(10, listener.getAddedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(10, listener.getAddedEventCount()));
     }
 
     @Test
@@ -115,12 +107,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
             map.put(i, new Employee(i));
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.getAddedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.getAddedEventCount()));
     }
 
     @Test
@@ -158,15 +145,12 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int cacheSize = cache.size();
-                String message = "Cache size is=" + cacheSize;
-                assertEquals(message, 0, cacheSize);
-                assertEquals(message, 2, addListener.getAddedEventCount());
-                assertEquals(message, 2, removeListener.getRemovedEventCount());
-            }
+        assertTrueEventually(() -> {
+            int cacheSize = cache.size();
+            String message = "Cache size is=" + cacheSize;
+            assertEquals(message, 0, cacheSize);
+            assertEquals(message, 2, addListener.getAddedEventCount());
+            assertEquals(message, 2, removeListener.getRemovedEventCount());
         });
     }
 
@@ -203,12 +187,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < valueCount; i++) {
             map.put(i, new Employee(i));
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(valueCount, listener.getAddedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(valueCount, listener.getAddedEventCount()));
     }
 
     private void testIncludeValue(final boolean includeValue) {
@@ -227,15 +206,12 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(putCount, cache.size());
-                if (includeValue) {
-                    assertTrue("There should not be any null value", listener.hasValue);
-                } else {
-                    assertFalse("There should not be any non-null value", listener.hasValue);
-                }
+        assertTrueEventually(() -> {
+            assertEquals(putCount, cache.size());
+            if (includeValue) {
+                assertTrue("There should not be any null value", listener.hasValue);
+            } else {
+                assertFalse("There should not be any non-null value", listener.hasValue);
             }
         });
     }

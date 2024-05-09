@@ -30,7 +30,6 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -174,20 +173,12 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         blockCommunicationBetween(h1, h3);
 
         // make sure that cluster is split as [ 1 ] , [ 2 , 3 ]
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(2, h2.getCluster().getMembers().size());
-                assertEquals(2, h3.getCluster().getMembers().size());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(2, h2.getCluster().getMembers().size());
+            assertEquals(2, h3.getCluster().getMembers().size());
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, h1.getCluster().getMembers().size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, h1.getCluster().getMembers().size()));
 
         // open communication back for nodes to merge
         unblockCommunicationBetween(h1, h2);
@@ -236,9 +227,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         assertClusterSizeEventually(1, instance2);
 
         // make sure that the client is connected to [1, 3, 4]
-        assertTrueEventually(() -> {
-            assertEquals(3, client.getCluster().getMembers().size());
-        });
+        assertTrueEventually(() -> assertEquals(3, client.getCluster().getMembers().size()));
 
         // Shutdown 3 and 4 to make sure that the member list version in
         // instance1 is greater than the instance2
@@ -252,9 +241,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         });
 
         // make sure the client has received the member list updates for 3 and 4
-        assertTrueEventually(() -> {
-            assertEquals(1, client.getCluster().getMembers().size());
-        });
+        assertTrueEventually(() -> assertEquals(1, client.getCluster().getMembers().size()));
 
         ReconnectListener reconnectListener = new ReconnectListener();
         client.getLifecycleService().addLifecycleListener(reconnectListener);

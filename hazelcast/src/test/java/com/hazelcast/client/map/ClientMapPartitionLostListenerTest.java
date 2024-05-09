@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -138,35 +137,28 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
 
     private static void assertMapPartitionLostEventEventually(final TestEventCollectingMapPartitionLostListener listener,
                                                               final int partitionId) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
+        assertTrueEventually(() -> {
 
-                final List<MapPartitionLostEvent> events = listener.getEvents();
-                assertFalse(events.isEmpty());
-                assertEquals(partitionId, events.get(0).getPartitionId());
+            final List<MapPartitionLostEvent> events = listener.getEvents();
+            assertFalse(events.isEmpty());
+            assertEquals(partitionId, events.get(0).getPartitionId());
 
-            }
         });
     }
 
     private static void assertRegistrationEventually(final HazelcastInstance instance, final String mapName,
                                                      final boolean shouldBeRegistered) {
         final EventService eventService = getNode(instance).getNodeEngine().getEventService();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                boolean registered = false;
-                for (EventRegistration registration : eventService.getRegistrations(SERVICE_NAME, mapName)) {
-                    if (registration.getFilter() instanceof MapPartitionLostEventFilter) {
-                        registered = true;
-                        break;
-                    }
+        assertTrueEventually(() -> {
+            boolean registered = false;
+            for (EventRegistration registration : eventService.getRegistrations(SERVICE_NAME, mapName)) {
+                if (registration.getFilter() instanceof MapPartitionLostEventFilter) {
+                    registered = true;
+                    break;
                 }
-                if (shouldBeRegistered != registered) {
-                    fail("shouldBeRegistered: " + shouldBeRegistered + " registered: " + registered);
-                }
+            }
+            if (shouldBeRegistered != registered) {
+                fail("shouldBeRegistered: " + shouldBeRegistered + " registered: " + registered);
             }
         });
     }

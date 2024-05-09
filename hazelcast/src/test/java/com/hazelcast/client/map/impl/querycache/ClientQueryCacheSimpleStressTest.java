@@ -96,12 +96,7 @@ public class ClientQueryCacheSimpleStressTest extends HazelcastTestSupport {
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache queryCache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, queryCache.size());
-            }
-        };
+        AssertTask task = () -> assertEquals(expected, queryCache.size());
 
         assertTrueEventually(task);
     }

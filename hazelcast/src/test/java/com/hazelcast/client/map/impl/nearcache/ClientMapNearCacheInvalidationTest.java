@@ -29,7 +29,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.nearcache.TestReadOnlyProcessor;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -381,13 +380,10 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
     }
 
     private static void assertNearCacheSizeEventually(final IMap map, final int nearCacheSize) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCache nearCache = ((NearCachedClientMapProxy) map).getNearCache();
+        assertTrueEventually(() -> {
+            NearCache nearCache = ((NearCachedClientMapProxy) map).getNearCache();
 
-                assertEquals(nearCacheSize, nearCache.size());
-            }
+            assertEquals(nearCacheSize, nearCache.size());
         });
     }
 }

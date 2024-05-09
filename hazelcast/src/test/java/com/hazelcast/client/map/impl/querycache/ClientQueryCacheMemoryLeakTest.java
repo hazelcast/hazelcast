@@ -47,7 +47,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -276,19 +275,9 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         final QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
         final QueryCacheFactory queryCacheFactory = subscriberContext.getQueryCacheFactory();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, provider.getQueryCacheCount(mapName));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, provider.getQueryCacheCount(mapName)));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, queryCacheFactory.getQueryCacheCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, queryCacheFactory.getQueryCacheCount()));
 
         assertNoListenerLeftOnEventService(node);
         assertNoRegisteredListenerLeft(node, mapName);

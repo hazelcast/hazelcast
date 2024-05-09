@@ -27,7 +27,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -180,27 +179,20 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
     private void assertCachePartitionLostEventEventually(final EventCollectingCachePartitionLostListener listener,
                                                          final int partitionId) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
+        assertTrueEventually(() -> {
 
-                final List<CachePartitionLostEvent> events = listener.getEvents();
-                assertFalse(events.isEmpty());
-                assertEquals(partitionId, events.get(0).getPartitionId());
+            final List<CachePartitionLostEvent> events = listener.getEvents();
+            assertFalse(events.isEmpty());
+            assertEquals(partitionId, events.get(0).getPartitionId());
 
-            }
         });
     }
 
     private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final String cacheName, final int size) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final EventService eventService = getNode(instance).getNodeEngine().getEventService();
-                final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
-                assertEquals(size, registrations.size());
-            }
+        assertTrueEventually(() -> {
+            final EventService eventService = getNode(instance).getNodeEngine().getEventService();
+            final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
+            assertEquals(size, registrations.size());
         });
     }
 
@@ -208,7 +200,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
             implements CachePartitionLostListener {
 
         private final List<CachePartitionLostEvent> events
-                = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
+                = Collections.synchronizedList(new LinkedList<>());
 
         EventCollectingCachePartitionLostListener() {
         }

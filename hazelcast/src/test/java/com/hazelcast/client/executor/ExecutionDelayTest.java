@@ -23,7 +23,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -83,12 +82,9 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             Task task = new Task();
             runClient(task, taskCount);
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    final int taskExecutions = COUNTER.get();
-                    assertTrue(taskExecutions >= taskCount);
-                }
+            assertTrueEventually(() -> {
+                final int taskExecutions = COUNTER.get();
+                assertTrue(taskExecutions >= taskCount);
             });
         } finally {
             ex.shutdown();
@@ -106,12 +102,9 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             Task task = new Task();
             runClient(task, taskCount);
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    final int taskExecutions = COUNTER.get();
-                    assertTrue(taskExecutions >= taskCount);
-                }
+            assertTrueEventually(() -> {
+                final int taskExecutions = COUNTER.get();
+                assertTrue(taskExecutions >= taskCount);
             });
         } finally {
             ex.shutdown();

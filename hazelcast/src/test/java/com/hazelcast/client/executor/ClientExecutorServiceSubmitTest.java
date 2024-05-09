@@ -37,7 +37,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -539,7 +538,7 @@ public class ClientExecutorServiceSubmitTest {
         final AtomicReference<String> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(callable, new ExecutionCallback<String>() {
+        service.submit(callable, new ExecutionCallback<>() {
             public void onResponse(String response) {
                 result.set(response);
                 responseLatch.countDown();
@@ -597,7 +596,7 @@ public class ClientExecutorServiceSubmitTest {
         final CountDownLatch responseLatch = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
 
-        service.submitToKeyOwner(callable, "key", new ExecutionCallback<String>() {
+        service.submitToKeyOwner(callable, "key", new ExecutionCallback<>() {
             public void onResponse(String response) {
                 result.set(response);
                 responseLatch.countDown();
@@ -621,16 +620,12 @@ public class ClientExecutorServiceSubmitTest {
 
         //this task should execute on a node owning the given key argument,
         //the action is to put the UUid of the executing node into a map with the given name
-        Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
+        Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
 
         service.submit(runnable);
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(member.getUuid()));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(member.getUuid())));
     }
 
     @Test
@@ -643,17 +638,13 @@ public class ClientExecutorServiceSubmitTest {
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         final Member member = server.getCluster().getLocalMember();
 
-        Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
+        Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
 
         Future result = service.submit(runnable, expectedResult);
         final IMap map = client.getMap(mapName);
 
         assertEquals(expectedResult, result.get());
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(member.getUuid()));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(member.getUuid())));
     }
 
     @Test
@@ -663,7 +654,7 @@ public class ClientExecutorServiceSubmitTest {
         String mapName = randomString();
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         Member member = server.getCluster().getLocalMember();
-        Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
+        Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submit(runnable, new ExecutionCallback() {
@@ -713,7 +704,7 @@ public class ClientExecutorServiceSubmitTest {
         final AtomicReference<UUID> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable, new ExecutionCallback<UUID>() {
+        service.submit(runnable, new ExecutionCallback<>() {
             public void onResponse(UUID response) {
                 result.set(response);
                 responseLatch.countDown();

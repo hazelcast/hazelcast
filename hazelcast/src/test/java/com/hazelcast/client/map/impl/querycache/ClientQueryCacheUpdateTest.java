@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -77,13 +76,10 @@ public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
             clientMap.set(id, new IdWrapper(id, value));
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                IdWrapper idWrapper = queryCache.get(1);
-                assertNotNull(idWrapper);
-                assertEquals(9, idWrapper.value);
-            }
+        assertTrueEventually(() -> {
+            IdWrapper idWrapper = queryCache.get(1);
+            assertNotNull(idWrapper);
+            assertEquals(9, idWrapper.value);
         });
     }
 
