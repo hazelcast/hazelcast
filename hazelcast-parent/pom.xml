@@ -106,7 +106,7 @@
         <classgraph.version>4.8.172</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <grpc.version>1.60.0</grpc.version>
-        <guava.version>33.1.0-jre</guava.version>
+        <guava.version>33.2.0-jre</guava.version>
         <hadoop.version>3.3.6</hadoop.version>
         <h2.version>2.2.224</h2.version>
         <gson.version>2.10.1</gson.version>
