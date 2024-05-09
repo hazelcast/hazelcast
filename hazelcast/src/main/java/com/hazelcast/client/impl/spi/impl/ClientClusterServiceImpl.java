@@ -99,7 +99,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         this.logger = loggingService.getLogger(ClientClusterService.class);
         this.subsetRoutingConfig = new SubsetRoutingConfig(subsetRoutingConfig);
         this.subsetMembers = subsetRoutingConfig.isEnabled()
-                ? new SubsetMembersImpl(subsetRoutingConfig, logger) : SubsetMembers.NOOP;
+                ? new SubsetMembersImpl(subsetRoutingConfig, loggingService) : SubsetMembers.NOOP;
     }
 
     @Override

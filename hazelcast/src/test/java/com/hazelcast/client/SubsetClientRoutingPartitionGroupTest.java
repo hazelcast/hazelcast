@@ -19,8 +19,8 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.clientside.SubsetMembers;
-import com.hazelcast.client.impl.clientside.SubsetMembersImpl;
 import com.hazelcast.client.impl.clientside.SubsetMembersView;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -55,7 +56,6 @@ import java.util.stream.Collectors;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -84,7 +84,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true)
-                    .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -149,7 +149,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
         // 2. Connect client
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true)
-                    .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         // 3. Populate data
@@ -161,8 +161,10 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
         // 4. Make sure subset client connects to subset of
         // members, number of connected subset servers can be 1
         // or 2 depending on the authenticator member's group.
-        final int connectedServerCount = ((SubsetMembersImpl) getHazelcastClientInstanceImpl(client)
-                .getClientClusterService().getSubsetMembers()).memberCountInSubset();
+        SubsetMembers subsetMembers = getHazelcastClientInstanceImpl(client)
+                .getClientClusterService().getSubsetMembers();
+
+        final int connectedServerCount = getSubset(subsetMembers).size();
         makeSureConnectedToServers(client, connectedServerCount);
 
         // 5. Create member group B
@@ -175,10 +177,8 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
         }
 
         // 7. Get client's member group view
-        SubsetMembers subsetMembers
-                = getHazelcastClientInstanceImpl(client).getClientClusterService().getSubsetMembers();
-        SubsetMembersView subsetMembersView = subsetMembers.getSubsetMembersView();
-        Collection<UUID> subsetMemberUuidsBeforeTerminationOfGroupA = subsetMembersView.members();
+        Collection<UUID> subsetMemberUuidsBeforeTerminationOfGroupA
+                = getSubset(subsetMembers);
 
         // 8. Terminate all servers in group A
         for (HazelcastInstance instance : groupA) {
@@ -195,18 +195,25 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
             // since there will be 2 members in each member group.
             makeSureConnectedToServers(client, 2);
 
-            SubsetMembersView subsetMembersViewAfterTerminate = subsetMembers.getSubsetMembersView();
-            assertNotNull(subsetMembersViewAfterTerminate);
+            Collection<UUID> subsetMembersViewAfterTerminate = getSubset(subsetMembers);
+
 
             // 11. We should not have previous group A's member uuids in latest MemberGroupsView state
-            assertNotNull(subsetMembersViewAfterTerminate.members());
-            Collection<UUID> allUuidsAfterTermination = subsetMembersViewAfterTerminate.members();
+            assertFalse(subsetMembersViewAfterTerminate.isEmpty());
             for (UUID member : subsetMemberUuidsBeforeTerminationOfGroupA) {
-                assertFalse(allUuidsAfterTermination.contains(member));
+                assertFalse(subsetMembersViewAfterTerminate.contains(member));
             }
         });
     }
 
+    private static Collection<UUID> getSubset(SubsetMembers subsetMembers) {
+        SubsetMembersView subsetMembersView = subsetMembers.getSubsetMembersView();
+        if (subsetMembersView == null) {
+            return Collections.emptySet();
+        }
+
+        return subsetMembersView.members();
+    }
 
     @Test
     public void connected_to_subset_of_servers() {
@@ -218,7 +225,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true)
-                    .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap map = client.getMap("connected_to_subset_of_servers");
@@ -240,7 +247,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true)
-                    .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         // assert client is connected to 1 group's worth of members
@@ -254,7 +261,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
         // kill all members in this group
         Set<UUID> killedUUIDs = toKillInstances.stream().map(instance -> instance.getCluster().getLocalMember().getUuid())
-                                               .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
         for (HazelcastInstance instance : toKillInstances) {
             instance.getLifecycleService().terminate();
         }
@@ -282,7 +289,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
     @Test
     public void testClientListenerDisconnected() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "1");
 
         final HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(config);
@@ -297,7 +304,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true)
-                    .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
 
         Collection<HazelcastInstance> clients = new LinkedList<>();
         for (int i = 0; i < clientCount; i++) {
@@ -341,6 +348,40 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
         }
     }
 
+    @Test
+    public void subset_is_empty_after_all_data_members_are_gone_when_routing_strategy_is_partition_groups() {
+        Config dataMemberConfig = newConfigWithAttribute("A");
+        Config liteMemberConfig = newConfigWithAttribute("A").setLiteMember(true);
+
+        HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance(dataMemberConfig);
+        HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance(dataMemberConfig);
+        HazelcastInstance server3 = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false).getSubsetRoutingConfig().setEnabled(true)
+                .setRoutingStrategy(RoutingStrategy.PARTITION_GROUPS);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        // warmup
+        IMap clientMap = client.getMap("map");
+        for (int i = 0; i < 1_000; i++) {
+            clientMap.set(i, i);
+        }
+
+        // terminate data members
+        server1.getLifecycleService().terminate();
+        server2.getLifecycleService().terminate();
+
+        // we expect subset is empty eventually
+        assertTrueEventually(() -> {
+            ClientClusterService clientClusterService = getHazelcastClientInstanceImpl(client)
+                    .getClientClusterService();
+            Collection<UUID> subset = getSubset(clientClusterService.getSubsetMembers());
+            assertTrue(subset.isEmpty());
+        });
+    }
+
     private List<HazelcastInstance> initNodes(int amount, Config config) {
         List<HazelcastInstance> list = new ArrayList<>(amount);
         for (int k = 0; k < amount; k++) {
@@ -351,7 +392,8 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
     private void assertSubsetMembersSize(HazelcastInstance client, int size) {
         assertTrueEventually(() -> {
-            SubsetMembers members = getHazelcastClientInstanceImpl(client).getClientClusterService().getSubsetMembers();
+            SubsetMembers members = getHazelcastClientInstanceImpl(client)
+                    .getClientClusterService().getSubsetMembers();
             // Client might be disconnected from cluster if all members were killed, so new view is not yet ready
             if (members.getSubsetMembersView() == null) {
                 throw new AssertionError("SubsetMembersView is null!");
@@ -366,7 +408,7 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
         configureNodeAware(config);
         config.setProperty("hazelcast.client.internal.push.period.seconds", "2");
         config.getMemberAttributeConfig()
-              .setAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, attribute);
+                .setAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, attribute);
         return config;
     }
 

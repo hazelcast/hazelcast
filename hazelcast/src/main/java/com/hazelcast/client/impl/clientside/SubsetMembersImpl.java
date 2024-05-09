@@ -20,6 +20,7 @@ import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -59,9 +60,10 @@ public class SubsetMembersImpl implements SubsetMembers {
 
     private volatile UUID clusterId;
 
-    public SubsetMembersImpl(SubsetRoutingConfig subsetRoutingConfig, ILogger logger) {
+    public SubsetMembersImpl(SubsetRoutingConfig subsetRoutingConfig,
+                             LoggingService loggingService) {
         this.subsetRoutingConfig = subsetRoutingConfig;
-        this.logger = logger;
+        this.logger = loggingService.getLogger(SubsetMembersImpl.class);
     }
 
     @Override
@@ -77,18 +79,20 @@ public class SubsetMembersImpl implements SubsetMembers {
         Collection<Collection<UUID>> memberGroups = memberGroupsAndVersionHolder.allMemberGroups();
         int version = memberGroupsAndVersionHolder.version();
 
-        updateInternal(memberGroups, version, clusterUuid, authMemberUuid);
-        logAsFinest("On authentication [clusterUuid=%s, version=%d, memberGroups=%s, authMemberUuid=%s]",
-                clusterUuid, version, memberGroups, authMemberUuid);
+        SubsetMembersView current = updateInternal(memberGroups, version, clusterUuid, authMemberUuid);
+        logAsFinest("On authentication [clusterUuid=%s, version=%d, "
+                        + "memberGroupsSize=%d, memberGroups=%s, authMemberUuid=%s, current=%s]",
+                clusterUuid, version, memberGroups.size(), memberGroups, authMemberUuid, current);
     }
 
     @Override
     public void updateOnClusterViewEvent(UUID clusterUuid,
-                                         Collection<Collection<UUID>> allMemberGroups,
+                                         Collection<Collection<UUID>> memberGroups,
                                          int version) {
-        updateInternal(allMemberGroups, version, clusterUuid, null);
-        logAsFinest("On cluster event [clusterUuid=%s, version=%d, memberGroups=%s]",
-                clusterUuid, version, allMemberGroups);
+        SubsetMembersView current = updateInternal(memberGroups, version, clusterUuid, null);
+        logAsFinest("On cluster event [clusterUuid=%s, version=%d, "
+                        + "memberGroupsSize=%d, memberGroups=%s current=%s]",
+                clusterUuid, version, memberGroups.size(), memberGroups, current);
     }
 
     @Override
@@ -99,16 +103,15 @@ public class SubsetMembersImpl implements SubsetMembers {
             return;
         }
 
-        subsetMembersViewByClusterUuid.computeIfPresent(clusterUuid, (uuid, current) -> {
-            Set<UUID> members = current.members();
-            members.remove(remoteUuid);
-            // when no remaining member in group remove clusterUuid
-            logAsFinest("onConnectionRemoved [clusterUuid=%s, hasMemberInGroup=%s]",
-                    clusterUuid, String.valueOf(members.isEmpty()));
-            return members.isEmpty() ? null : current;
-        });
+        SubsetMembersView subsetMembersView = subsetMembersViewByClusterUuid.computeIfPresent(clusterUuid,
+                (uuid, current) -> {
+                    Set<UUID> members = current.members();
+                    members.remove(remoteUuid);
+                    return members.isEmpty() ? null : current;
+                });
 
-        logAsFinest("Removed connection [clusterUuid=%s, memberUuid=%s]", clusterUuid, remoteUuid);
+        logAsFinest("onConnectionRemoved [clusterUuid=%s, removedConnectionsMemberUuid=%s, current=%s]",
+                clusterUuid, remoteUuid, subsetMembersView);
     }
 
     @Override
@@ -123,6 +126,10 @@ public class SubsetMembersImpl implements SubsetMembers {
     @Override
     @Nullable
     public SubsetMembersView getSubsetMembersView() {
+        UUID clusterId = this.clusterId;
+        if (clusterId == null) {
+            return null;
+        }
         return subsetMembersViewByClusterUuid.get(clusterId);
     }
 
@@ -134,21 +141,24 @@ public class SubsetMembersImpl implements SubsetMembers {
      * @param clusterUuid  uuid of the connected cluster
      * @param memberUuid   uuid of the authenticator member, its value
      *                     is null when memberGroups info is received via cluster listener
+     * @return current subset view
      */
-    private void updateInternal(final Collection<Collection<UUID>> memberGroups,
-                                final int version,
-                                final @Nonnull UUID clusterUuid,
-                                final @Nullable UUID memberUuid) {
+    @Nullable
+    private SubsetMembersView updateInternal(final Collection<Collection<UUID>> memberGroups,
+                                             final int version,
+                                             final @Nonnull UUID clusterUuid,
+                                             final @Nullable UUID memberUuid) {
+        // 1. Log if we haven't received any data member
         if (!hasDataMember(memberGroups)) {
             // this means all members are lite
-            logAsFinest("All members are lite [clusterUuid=%s, memberGroups=%s]",
-                    clusterUuid, memberGroups);
-            return;
+            logAsFinest("All members are lite [clusterUuid=%s, memberGroupsSize=%d, memberGroups=%s]",
+                    clusterUuid, memberGroups.size(), memberGroups);
         }
 
         assert version > 0;
 
-        subsetMembersViewByClusterUuid.compute(clusterUuid,
+        // 2. Try to update current SubsetMembersView
+        return subsetMembersViewByClusterUuid.compute(clusterUuid,
                 (uuid, current) -> pickSubset(memberGroups, version, clusterUuid, memberUuid, current));
     }
 
@@ -224,8 +234,14 @@ public class SubsetMembersImpl implements SubsetMembers {
             }
         }
 
-        assert pickedMemberGroup != null;
-        return new SubsetMembersView(clusterUuid, new HashSet<>(pickedMemberGroup), version);
+        // 4. Return found SubsetMembersView
+        if (pickedMemberGroup != null) {
+            return new SubsetMembersView(clusterUuid, new HashSet<>(pickedMemberGroup), version);
+        }
+
+        // 5. If no SubsetMembersView can be found, return null to
+        // remove all state from subsetMembersViewByClusterUuid
+        return null;
     }
 
     private static boolean hasDataMember(Collection<Collection<UUID>> memberGroups) {
@@ -243,19 +259,6 @@ public class SubsetMembersImpl implements SubsetMembers {
         }
 
         logger.finest(String.format(s, params));
-    }
-
-    // only used for testing purposes
-    public int memberCountInSubset() {
-        UUID clusterUuid = this.clusterId;
-        if (clusterUuid == null) {
-            return 0;
-        }
-        SubsetMembersView subsetMembersView = subsetMembersViewByClusterUuid.get(clusterUuid);
-        if (subsetMembersView == null) {
-            return 0;
-        }
-        return subsetMembersView.members().size();
     }
 
     @Override
