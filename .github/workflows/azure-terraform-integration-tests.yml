@@ -90,7 +90,7 @@ jobs:
           export ARM_TENANT_ID=$(echo $AZURE_CREDENTIALS | jq -r .tenantId)
 
       - name: Set-up Terraform
-        uses: hashicorp/setup-terraform@v3.1.0
+        uses: hashicorp/setup-terraform@v3.1.1
 
       - name: Terraform Init
         working-directory: .github/terraform/azure
