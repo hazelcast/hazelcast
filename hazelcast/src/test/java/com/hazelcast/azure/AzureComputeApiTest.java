@@ -144,227 +144,229 @@ public class AzureComputeApiTest {
      */
     private static String instancesResponseForNetworkInterfaces() {
         return String.format(
-                "{\n"
-                + "  \"value\": [\n"
-                + "    {\n"
-                + "      \"name\": \"test-nic\",\n"
-                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic\",\n"
-                + "      \"location\": \"eastus\",\n"
-                + "      \"properties\": {\n"
-                + "        \"provisioningState\": \"Succeeded\",\n"
-                + "        \"ipConfigurations\": [\n"
-                + "          {\n"
-                + "            \"name\": \"ipconfig1\",\n"
-                + "            \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic/ipConfigurations/ipconfig1\",\n"
-                + "            \"properties\": {\n"
-                + "              \"provisioningState\": \"Succeeded\",\n"
-                + "              \"privateIPAddress\": \"%s\",\n"
-                + "              \"privateIPAllocationMethod\": \"Dynamic\",\n"
-                + "              \"publicIPAddress\": {\n"
-                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip\"\n"
-                + "              },\n"
-                + "              \"subnet\": {\n"
-                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet/subnets/default\"\n"
-                + "              },\n"
-                + "              \"primary\": true,\n"
-                + "              \"privateIPAddressVersion\": \"IPv4\"\n"
-                + "            }\n"
-                + "          }\n"
-                + "        ],\n"
-                + "        \"dnsSettings\": {\n"
-                + "          \"dnsServers\": [],\n"
-                + "          \"appliedDnsServers\": [],\n"
-                + "          \"internalDomainNameSuffix\": \"test.bx.internal.cloudapp.net\"\n"
-                + "        },\n"
-                + "        \"macAddress\": \"00-0D-3A-1B-C7-21\",\n"
-                + "        \"enableAcceleratedNetworking\": true,\n"
-                + "        \"enableIPForwarding\": false,\n"
-                + "        \"networkSecurityGroup\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg\"\n"
-                + "        },\n"
-                + "        \"primary\": true,\n"
-                + "        \"virtualMachine\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm1\"\n"
-                + "        }\n"
-                + "      },\n"
-                + "      \"tags\": {\n"
-                + "        \"%s\": \"%s\",\n"
-                + "        \"tag2\": \"value2\"\n"
-                + "      },\n"
-                + "      \"type\": \"Microsoft.Network/networkInterfaces\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"name\": \"test-nic2\",\n"
-                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic2\",\n"
-                + "      \"location\": \"eastus\",\n"
-                + "      \"properties\": {\n"
-                + "        \"provisioningState\": \"Succeeded\",\n"
-                + "        \"ipConfigurations\": [\n"
-                + "          {\n"
-                + "            \"name\": \"ipconfig1\",\n"
-                + "            \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic2/ipConfigurations/ipconfig1\",\n"
-                + "            \"properties\": {\n"
-                + "              \"provisioningState\": \"Succeeded\",\n"
-                + "              \"privateIPAddress\": \"%s\",\n"
-                + "              \"privateIPAllocationMethod\": \"Dynamic\",\n"
-                + "              \"publicIPAddress\": {\n"
-                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip2\"\n"
-                + "              },\n"
-                + "              \"subnet\": {\n"
-                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default\"\n"
-                + "              },\n"
-                + "              \"primary\": true,\n"
-                + "              \"privateIPAddressVersion\": \"IPv4\"\n"
-                + "            }\n"
-                + "          }\n"
-                + "        ],\n"
-                + "        \"dnsSettings\": {\n"
-                + "          \"dnsServers\": [],\n"
-                + "          \"appliedDnsServers\": [],\n"
-                + "          \"internalDomainNameSuffix\": \"test2.bx.internal.cloudapp.net\"\n"
-                + "        },\n"
-                + "        \"macAddress\": \"00-0D-3A-1B-C7-22\",\n"
-                + "        \"enableAcceleratedNetworking\": true,\n"
-                + "        \"enableIPForwarding\": false,\n"
-                + "        \"networkSecurityGroup\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg\"\n"
-                + "        },\n"
-                + "        \"primary\": true,\n"
-                + "        \"virtualMachine\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm2\"\n"
-                + "        }\n"
-                + "      },\n"
-                + "      \"type\": \"Microsoft.Network/networkInterfaces\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"name\": \"test-nic3\",\n"
-                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic3\",\n"
-                + "      \"location\": \"eastus\",\n"
-                + "      \"properties\": {\n"
-                + "        \"provisioningState\": \"Succeeded\",\n"
-                + "        \"ipConfigurations\": [\n"
-                + "          {\n"
-                + "            \"name\": \"ipconfig1\",\n"
-                + "            \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic3/ipConfigurations/ipconfig1\",\n"
-                + "            \"properties\": {\n"
-                + "              \"provisioningState\": \"Succeeded\",\n"
-                + "              \"privateIPAddress\": \"%s\",\n"
-                + "              \"privateIPAllocationMethod\": \"Dynamic\",\n"
-                + "              \"subnet\": {\n"
-                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default\"\n"
-                + "              },\n"
-                + "              \"primary\": true,\n"
-                + "              \"privateIPAddressVersion\": \"IPv4\"\n"
-                + "            }\n"
-                + "          }\n"
-                + "        ],\n"
-                + "        \"dnsSettings\": {\n"
-                + "          \"dnsServers\": [],\n"
-                + "          \"appliedDnsServers\": [],\n"
-                + "          \"internalDomainNameSuffix\": \"test3.bx.internal.cloudapp.net\"\n"
-                + "        },\n"
-                + "        \"macAddress\": \"00-0D-3A-1B-C7-23\",\n"
-                + "        \"enableAcceleratedNetworking\": true,\n"
-                + "        \"enableIPForwarding\": false,\n"
-                + "        \"networkSecurityGroup\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg\"\n"
-                + "        },\n"
-                + "        \"primary\": true,\n"
-                + "        \"virtualMachine\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm3\"\n"
-                + "        }\n"
-                + "      },\n"
-                + "      \"type\": \"Microsoft.Network/networkInterfaces\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"name\": \"test-nic4\",\n"
-                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic4\",\n"
-                + "      \"location\": \"eastus\",\n"
-                + "      \"properties\": {\n"
-                + "        \"provisioningState\": \"Succeeded\",\n"
-                + "        \"ipConfigurations\": [\n"
-                + "          {\n"
-                + "            \"name\": \"ipconfig1\",\n"
-                + "            \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic4/ipConfigurations/ipconfig1\",\n"
-                + "            \"properties\": {\n"
-                + "              \"provisioningState\": \"Succeeded\",\n"
-                + "              \"privateIPAddress\": \"%s\",\n"
-                + "              \"privateIPAllocationMethod\": \"Dynamic\",\n"
-                + "              \"subnet\": {\n"
-                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default\"\n"
-                + "              },\n"
-                + "              \"primary\": true,\n"
-                + "              \"privateIPAddressVersion\": \"IPv4\"\n"
-                + "            }\n"
-                + "          }\n"
-                + "        ],\n"
-                + "        \"dnsSettings\": {\n"
-                + "          \"dnsServers\": [],\n"
-                + "          \"appliedDnsServers\": [],\n"
-                + "          \"internalDomainNameSuffix\": \"test4.bx.internal.cloudapp.net\"\n"
-                + "        },\n"
-                + "        \"macAddress\": \"00-0D-3A-1B-C7-43\",\n"
-                + "        \"enableAcceleratedNetworking\": true,\n"
-                + "        \"enableIPForwarding\": false,\n"
-                + "        \"networkSecurityGroup\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg\"\n"
-                + "        },\n"
-                + "        \"primary\": true,\n"
-                + "        \"virtualMachine\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm4\"\n"
-                + "        }\n"
-                + "      },\n"
-                + "      \"type\": \"Microsoft.Network/networkInterfaces\"\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}", INSTANCE_1_PRIVATE_IP, TAG.getKey(), TAG.getValue(), INSTANCE_2_PRIVATE_IP, INSTANCE_3_PRIVATE_IP, INSTANCE_4_PRIVATE_IP);
+                """
+                        {
+                          "value": [
+                            {
+                              "name": "test-nic",
+                              "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic",
+                              "location": "eastus",
+                              "properties": {
+                                "provisioningState": "Succeeded",
+                                "ipConfigurations": [
+                                  {
+                                    "name": "ipconfig1",
+                                    "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic/ipConfigurations/ipconfig1",
+                                    "properties": {
+                                      "provisioningState": "Succeeded",
+                                      "privateIPAddress": "%s",
+                                      "privateIPAllocationMethod": "Dynamic",
+                                      "publicIPAddress": {
+                                        "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip"
+                                      },
+                                      "subnet": {
+                                        "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet/subnets/default"
+                                      },
+                                      "primary": true,
+                                      "privateIPAddressVersion": "IPv4"
+                                    }
+                                  }
+                                ],
+                                "dnsSettings": {
+                                  "dnsServers": [],
+                                  "appliedDnsServers": [],
+                                  "internalDomainNameSuffix": "test.bx.internal.cloudapp.net"
+                                },
+                                "macAddress": "00-0D-3A-1B-C7-21",
+                                "enableAcceleratedNetworking": true,
+                                "enableIPForwarding": false,
+                                "networkSecurityGroup": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg"
+                                },
+                                "primary": true,
+                                "virtualMachine": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm1"
+                                }
+                              },
+                              "tags": {
+                                "%s": "%s",
+                                "tag2": "value2"
+                              },
+                              "type": "Microsoft.Network/networkInterfaces"
+                            },
+                            {
+                              "name": "test-nic2",
+                              "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic2",
+                              "location": "eastus",
+                              "properties": {
+                                "provisioningState": "Succeeded",
+                                "ipConfigurations": [
+                                  {
+                                    "name": "ipconfig1",
+                                    "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic2/ipConfigurations/ipconfig1",
+                                    "properties": {
+                                      "provisioningState": "Succeeded",
+                                      "privateIPAddress": "%s",
+                                      "privateIPAllocationMethod": "Dynamic",
+                                      "publicIPAddress": {
+                                        "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip2"
+                                      },
+                                      "subnet": {
+                                        "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default"
+                                      },
+                                      "primary": true,
+                                      "privateIPAddressVersion": "IPv4"
+                                    }
+                                  }
+                                ],
+                                "dnsSettings": {
+                                  "dnsServers": [],
+                                  "appliedDnsServers": [],
+                                  "internalDomainNameSuffix": "test2.bx.internal.cloudapp.net"
+                                },
+                                "macAddress": "00-0D-3A-1B-C7-22",
+                                "enableAcceleratedNetworking": true,
+                                "enableIPForwarding": false,
+                                "networkSecurityGroup": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg"
+                                },
+                                "primary": true,
+                                "virtualMachine": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm2"
+                                }
+                              },
+                              "type": "Microsoft.Network/networkInterfaces"
+                            },
+                            {
+                              "name": "test-nic3",
+                              "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic3",
+                              "location": "eastus",
+                              "properties": {
+                                "provisioningState": "Succeeded",
+                                "ipConfigurations": [
+                                  {
+                                    "name": "ipconfig1",
+                                    "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic3/ipConfigurations/ipconfig1",
+                                    "properties": {
+                                      "provisioningState": "Succeeded",
+                                      "privateIPAddress": "%s",
+                                      "privateIPAllocationMethod": "Dynamic",
+                                      "subnet": {
+                                        "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default"
+                                      },
+                                      "primary": true,
+                                      "privateIPAddressVersion": "IPv4"
+                                    }
+                                  }
+                                ],
+                                "dnsSettings": {
+                                  "dnsServers": [],
+                                  "appliedDnsServers": [],
+                                  "internalDomainNameSuffix": "test3.bx.internal.cloudapp.net"
+                                },
+                                "macAddress": "00-0D-3A-1B-C7-23",
+                                "enableAcceleratedNetworking": true,
+                                "enableIPForwarding": false,
+                                "networkSecurityGroup": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg"
+                                },
+                                "primary": true,
+                                "virtualMachine": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm3"
+                                }
+                              },
+                              "type": "Microsoft.Network/networkInterfaces"
+                            },
+                            {
+                              "name": "test-nic4",
+                              "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic4",
+                              "location": "eastus",
+                              "properties": {
+                                "provisioningState": "Succeeded",
+                                "ipConfigurations": [
+                                  {
+                                    "name": "ipconfig1",
+                                    "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic4/ipConfigurations/ipconfig1",
+                                    "properties": {
+                                      "provisioningState": "Succeeded",
+                                      "privateIPAddress": "%s",
+                                      "privateIPAllocationMethod": "Dynamic",
+                                      "subnet": {
+                                        "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default"
+                                      },
+                                      "primary": true,
+                                      "privateIPAddressVersion": "IPv4"
+                                    }
+                                  }
+                                ],
+                                "dnsSettings": {
+                                  "dnsServers": [],
+                                  "appliedDnsServers": [],
+                                  "internalDomainNameSuffix": "test4.bx.internal.cloudapp.net"
+                                },
+                                "macAddress": "00-0D-3A-1B-C7-43",
+                                "enableAcceleratedNetworking": true,
+                                "enableIPForwarding": false,
+                                "networkSecurityGroup": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg"
+                                },
+                                "primary": true,
+                                "virtualMachine": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm4"
+                                }
+                              },
+                              "type": "Microsoft.Network/networkInterfaces"
+                            }
+                          ]
+                        }""", INSTANCE_1_PRIVATE_IP, TAG.getKey(), TAG.getValue(), INSTANCE_2_PRIVATE_IP, INSTANCE_3_PRIVATE_IP, INSTANCE_4_PRIVATE_IP);
     }
 
     private String instancesResponseForPublicIPAddresses() {
         return String.format(
-                "{\n"
-                + "  \"value\": [\n"
-                + "    {\n"
-                + "      \"name\": \"ip02\",\n"
-                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip\",\n"
-                + "      \"location\": \"westus\",\n"
-                + "      \"properties\": {\n"
-                + "        \"provisioningState\": \"Succeeded\",\n"
-                + "        \"ipAddress\": \"%s\",\n"
-                + "        \"publicIPAddressVersion\": \"IPv4\",\n"
-                + "        \"publicIPAllocationMethod\": \"Dynamic\",\n"
-                + "        \"idleTimeoutInMinutes\": 4,\n"
-                + "        \"dnsSettings\": {\n"
-                + "          \"domainNameLabel\": \"testlbl1\",\n"
-                + "          \"fqdn\": \"testlbl1.westus.cloudapp.azure.com\"\n"
-                + "        },\n"
-                + "        \"ipConfiguration\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/loadBalancers/testLb/frontendIPConfigurations/LoadBalancerFrontEnd\"\n"
-                + "        }\n"
-                + "      },\n"
-                + "      \"type\": \"Microsoft.Network/publicIPAddresses\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"name\": \"ip03\",\n"
-                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip2\",\n"
-                + "      \"location\": \"westus\",\n"
-                + "      \"properties\": {\n"
-                + "        \"provisioningState\": \"Succeeded\",\n"
-                + "        \"ipAddress\": \"%s\",\n"
-                + "        \"publicIPAddressVersion\": \"IPv4\",\n"
-                + "        \"publicIPAllocationMethod\": \"Dynamic\",\n"
-                + "        \"idleTimeoutInMinutes\": 4,\n"
-                + "        \"dnsSettings\": {\n"
-                + "          \"domainNameLabel\": \"testlbl2\",\n"
-                + "          \"fqdn\": \"testlbl2.westus.cloudapp.azure.com\"\n"
-                + "        },\n"
-                + "        \"ipConfiguration\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/loadBalancers/testLb/frontendIPConfigurations/LoadBalancerFrontEnd\"\n"
-                + "        }\n"
-                + "      },\n"
-                + "      \"type\": \"Microsoft.Network/publicIPAddresses\"\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}", INSTANCE_1_PUBLIC_IP, INSTANCE_2_PUBLIC_IP);
+                """
+                        {
+                          "value": [
+                            {
+                              "name": "ip02",
+                              "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip",
+                              "location": "westus",
+                              "properties": {
+                                "provisioningState": "Succeeded",
+                                "ipAddress": "%s",
+                                "publicIPAddressVersion": "IPv4",
+                                "publicIPAllocationMethod": "Dynamic",
+                                "idleTimeoutInMinutes": 4,
+                                "dnsSettings": {
+                                  "domainNameLabel": "testlbl1",
+                                  "fqdn": "testlbl1.westus.cloudapp.azure.com"
+                                },
+                                "ipConfiguration": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/loadBalancers/testLb/frontendIPConfigurations/LoadBalancerFrontEnd"
+                                }
+                              },
+                              "type": "Microsoft.Network/publicIPAddresses"
+                            },
+                            {
+                              "name": "ip03",
+                              "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/publicIPAddresses/test-ip2",
+                              "location": "westus",
+                              "properties": {
+                                "provisioningState": "Succeeded",
+                                "ipAddress": "%s",
+                                "publicIPAddressVersion": "IPv4",
+                                "publicIPAllocationMethod": "Dynamic",
+                                "idleTimeoutInMinutes": 4,
+                                "dnsSettings": {
+                                  "domainNameLabel": "testlbl2",
+                                  "fqdn": "testlbl2.westus.cloudapp.azure.com"
+                                },
+                                "ipConfiguration": {
+                                  "id": "/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/loadBalancers/testLb/frontendIPConfigurations/LoadBalancerFrontEnd"
+                                }
+                              },
+                              "type": "Microsoft.Network/publicIPAddresses"
+                            }
+                          ]
+                        }""", INSTANCE_1_PUBLIC_IP, INSTANCE_2_PUBLIC_IP);
     }
 }

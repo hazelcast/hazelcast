@@ -68,16 +68,18 @@ public final class MongoUtilities {
     static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);
 
-        String hashFunction = "function hash(s) { \n" +
-                "  var hash = 0, i, chr;\n" +
-                "  if (s.length === 0) return hash;\n" +
-                "  for (i = 0; i < s.length; i++) {\n" +
-                "    chr = s.charCodeAt(i);\n" +
-                "    hash = ((hash << 5) - hash) + chr;\n" +
-                "    hash |= 0;\n" +
-                "  }\n" +
-                "  return hash;\n" +
-                "}\n";
+        String hashFunction = """
+                function hash(s) {\s
+                  var hash = 0, i, chr;
+                  if (s.length === 0) return hash;
+                  for (i = 0; i < s.length; i++) {
+                    chr = s.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + chr;
+                    hash |= 0;
+                  }
+                  return hash;
+                }
+                """;
 
         String moduloPart = " %" + totalParallelism + " == " + processorIndex + ";\n";
         String code = "function(id) {\n"

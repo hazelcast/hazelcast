@@ -132,7 +132,7 @@ public class ExecutorServiceCreateDestroyTest extends HazelcastTestSupport {
 
     private static class VoidCallableTask implements Callable<Void>, Serializable {
         @Override
-        public Void call() throws Exception {
+        public Void call() {
             return null;
         }
     }

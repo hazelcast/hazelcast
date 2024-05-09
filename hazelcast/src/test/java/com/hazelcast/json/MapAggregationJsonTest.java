@@ -41,7 +41,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,7 +58,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     TestHazelcastInstanceFactory factory;
     HazelcastInstance instance;
 
-    @Parameter(0)
+    @Parameter
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(1)
@@ -94,14 +93,14 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testLongField() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
     @Test
     public void testDoubleField() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        double maxDoubleValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>doubleMax("doubleValue"));
+        double maxDoubleValue = map.aggregate(Aggregators.doubleMax("doubleValue"));
         assertEquals(OBJECT_COUNT - 0.5, maxDoubleValue, 0.00001);
     }
 
@@ -115,7 +114,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testNestedField() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("nestedObject.nestedLongValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("nestedObject.nestedLongValue"));
         assertEquals((OBJECT_COUNT - 1) * 10, maxLongValue);
     }
 
@@ -123,7 +122,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     public void testValueIsOmitted_whenObjectIsEmpty() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object().toString()));
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
@@ -131,7 +130,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     public void testValueIsOmitted_whenAttributePathDoesNotExist() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object().add("someField", "someValue").toString()));
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
@@ -139,7 +138,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     public void testValueIsOmitted_whenValueIsNotAnObject() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.value(5).toString()));
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
@@ -149,7 +148,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
-        long count = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long count = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, count);
     }
 
@@ -159,7 +158,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
-        long count = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>count("longValue"));
+        long count = map.aggregate(Aggregators.count("longValue"));
         assertEquals(OBJECT_COUNT, count);
     }
 
@@ -169,14 +168,14 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
-        Collection<Object> distinctLongValues = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>, Object>distinct("longValue"));
+        Collection<Object> distinctLongValues = map.aggregate(Aggregators.distinct("longValue"));
         assertEquals(OBJECT_COUNT, distinctLongValues.size());
     }
 
     @Test
     public void testAny() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        Collection<Object> distinctStrings = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>, Object>distinct("stringValueArray[any]"));
+        Collection<Object> distinctStrings = map.aggregate(Aggregators.distinct("stringValueArray[any]"));
         assertEquals(OBJECT_COUNT * 2, distinctStrings.size());
         for (int i = 0; i < OBJECT_COUNT; i++) {
             assertContains(distinctStrings, "nested0 " + STRING_PREFIX + i);
@@ -187,7 +186,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     protected IMap<Integer, HazelcastJsonValue> getPreloadedMap() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < OBJECT_COUNT; i++) {
-            map.put(i, createHazelcastJsonValue(STRING_PREFIX + i, (long) i, (double) i + 0.5, (long) i * 10));
+            map.put(i, createHazelcastJsonValue(STRING_PREFIX + i, i, (double) i + 0.5, (long) i * 10));
         }
         return map;
     }
@@ -266,47 +265,49 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     }
 
     private static String nestedJsonString() {
-        return "{\n"
-                + "  \"list\": [\n"
-                + "    {\n"
-                + "      \"secondLevelItem\": {\n"
-                + "        \"thirdLevelItem\": 1\n"
-                + "      }\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"secondLevelItem\": {\n"
-                + "        \"thirdLevelItem\": 2\n"
-                + "      }\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"secondLevelItem\": {\n"
-                + "        \"thirdLevelItem\": 3\n"
-                + "      }\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}";
+        return """
+                {
+                  "list": [
+                    {
+                      "secondLevelItem": {
+                        "thirdLevelItem": 1
+                      }
+                    },
+                    {
+                      "secondLevelItem": {
+                        "thirdLevelItem": 2
+                      }
+                    },
+                    {
+                      "secondLevelItem": {
+                        "thirdLevelItem": 3
+                      }
+                    }
+                  ]
+                }""";
     }
 
     private static String nestedJsonStringDifferentNesting() {
-        return "{\n"
-                + "  \"list\": [\n"
-                + "    {\n"
-                + "      \"secondLevelItem\": {\n"
-                + "        \"thirdLevelItem\": 1\n"
-                + "      }\n"
-                + "    },\n"
-                + "    {\n"
-                + "        \"thirdLevelItem\": 2\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"secondLevelItem\": {\n"
-                + "        \"twoAndAHalfLevelItem\": {\n"
-                + "          \"thirdLevelItem\": 3\n"
-                + "        }\n"
-                + "      }\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}";
+        return """
+                {
+                  "list": [
+                    {
+                      "secondLevelItem": {
+                        "thirdLevelItem": 1
+                      }
+                    },
+                    {
+                        "thirdLevelItem": 2
+                    },
+                    {
+                      "secondLevelItem": {
+                        "twoAndAHalfLevelItem": {
+                          "thirdLevelItem": 3
+                        }
+                      }
+                    }
+                  ]
+                }""";
     }
 
     private static String nestedJsonStringNestingOfTheSameObject() {

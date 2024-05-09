@@ -69,10 +69,11 @@ public class AwsRequestSignerTest {
         headers.put("Host", "ecs.eu-central-1.amazonaws.com");
 
         //language=JSON
-        String body = "{\n"
-            + "  \"cluster\": \"123456\",\n"
-            + "  \"family\": \"abcdef\"\n"
-            + "}";
+        String body = """
+                {
+                  "cluster": "123456",
+                  "family": "abcdef"
+                }""";
 
         AwsCredentials credentials = AwsCredentials.builder()
             .setAccessKey("AKIDEXAMPLE")

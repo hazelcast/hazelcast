@@ -123,14 +123,15 @@ public class DotTest {
               .writeTo(Sinks.logger());
 
         String actualPipeline = p.toDotString();
-        assertEquals("digraph Pipeline {\n" +
-                "\t\"mapSource(source1)\" -> \"aggregateToCount\";\n" +
-                "\t\"mapSource(source1)\" -> \"aggregateToSet\";\n" +
-                "\t\"mapSource(source1)\" -> \"filter\";\n" +
-                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
-                "\t\"aggregateToSet\" -> \"loggerSink-2\";\n" +
-                "\t\"filter\" -> \"loggerSink-3\";\n" +
-                "}", actualPipeline);
+        assertEquals("""
+                digraph Pipeline {
+                \t"mapSource(source1)" -> "aggregateToCount";
+                \t"mapSource(source1)" -> "aggregateToSet";
+                \t"mapSource(source1)" -> "filter";
+                \t"aggregateToCount" -> "loggerSink";
+                \t"aggregateToSet" -> "loggerSink-2";
+                \t"filter" -> "loggerSink-3";
+                }""", actualPipeline);
 
         String actualDag = p.toDag().toDotString();
         System.out.println(actualDag);
@@ -171,21 +172,23 @@ public class DotTest {
          .setName("aggregateToCount")
          .writeTo(Sinks.logger());
 
-        assertEquals("digraph Pipeline {\n" +
-                "\t\"mapSource(source1\\\")\" -> \"aggregateToCount\";\n" +
-                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
-                "}", p.toDotString());
-        assertEquals("digraph DAG {\n" +
-            "\t\"mapSource(source1\\\")\" [localParallelism=1];\n" +
-            "\t\"aggregateToCount-prepare\" [localParallelism=default];\n" +
-            "\t\"aggregateToCount\" [localParallelism=default];\n" +
-            "\t\"loggerSink\" [localParallelism=1];\n" +
-            "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-prepare\" [label=\"partitioned\", queueSize=1024];\n" +
-            "\tsubgraph cluster_0 {\n" +
-            "\t\t\"aggregateToCount-prepare\" -> \"aggregateToCount\" " +
-                "[label=\"distributed-partitioned\", queueSize=1024];\n" +
-            "\t}\n" +
-            "\t\"aggregateToCount\" -> \"loggerSink\" [queueSize=1024];\n" +
-            "}", p.toDag().toDotString());
+        assertEquals("""
+                digraph Pipeline {
+                \t"mapSource(source1\\")" -> "aggregateToCount";
+                \t"aggregateToCount" -> "loggerSink";
+                }""", p.toDotString());
+        assertEquals("""
+                digraph DAG {
+                \t"mapSource(source1\\")" [localParallelism=1];
+                \t"aggregateToCount-prepare" [localParallelism=default];
+                \t"aggregateToCount" [localParallelism=default];
+                \t"loggerSink" [localParallelism=1];
+                \t"mapSource(source1\\")" -> "aggregateToCount-prepare" [label="partitioned", queueSize=1024];
+                \tsubgraph cluster_0 {
+                \t\t"aggregateToCount-prepare" -> "aggregateToCount" \
+                [label="distributed-partitioned", queueSize=1024];
+                \t}
+                \t"aggregateToCount" -> "loggerSink" [queueSize=1024];
+                }""", p.toDag().toDotString());
     }
 }
