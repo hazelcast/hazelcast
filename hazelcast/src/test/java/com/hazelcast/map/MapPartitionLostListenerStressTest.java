@@ -60,7 +60,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
         });
     }
 
-    @Parameter(0)
+    @Parameter
     public int numberOfNodesToCrash;
 
     @Parameter(1)
@@ -134,7 +134,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
             Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
             if (survivingReplicaIndex != null) {
                 String message = log + ", PartitionId: " + failedPartitionId + " SurvivingReplicaIndex: " + survivingReplicaIndex
-                        + " Event: " + event.toString();
+                                 + " Event: " + event;
                 assertTrue(message, survivingReplicaIndex > listener.getBackupCount());
             }
         }

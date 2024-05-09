@@ -30,10 +30,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -278,15 +275,12 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.addInterceptor(new NegativePutInterceptor());
 
         final int count = 1000;
-        hz2.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext context) throws TransactionException {
-                TransactionalMap<Object, Object> txMap = context.getMap(name);
-                for (int i = 1; i <= count; i++) {
-                    txMap.set(i, i);
-                }
-                return null;
+        hz2.executeTransaction(context -> {
+            TransactionalMap<Object, Object> txMap = context.getMap(name);
+            for (int i = 1; i <= count; i++) {
+                txMap.set(i, i);
             }
+            return null;
         });
         waitAllForSafeState(hz1, hz2);
 

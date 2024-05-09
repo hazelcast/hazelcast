@@ -39,8 +39,6 @@ import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalQueue;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import org.junit.Assert;
@@ -415,13 +413,11 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         @Override
         public void run() {
             for (int i = 0; i < count; i++) {
-                instance.executeTransaction(new TransactionalTask<Boolean>() {
-                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                        final TransactionalMap<String, Integer> txMap = context.getMap("default");
-                        Integer value = txMap.getForUpdate(key);
-                        txMap.put(key, value + 1);
-                        return true;
-                    }
+                instance.executeTransaction(context -> {
+                    final TransactionalMap<String, Integer> txMap = context.getMap("default");
+                    Integer value = txMap.getForUpdate(key);
+                    txMap.put(key, value + 1);
+                    return true;
                 });
                 latch.countDown();
             }

@@ -31,8 +31,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -257,17 +255,15 @@ public class ClientTxnMapTest {
         };
         new Thread(incrementor).start();
 
-        client.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                try {
-                    final TransactionalMap<String, Integer> txMap = context.getMap(mapName);
-                    txMap.getForUpdate(key);
-                    getKeyForUpdateLatch.countDown();
-                    afterTryPutResult.await(30, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                }
-                return true;
+        client.executeTransaction(context -> {
+            try {
+                final TransactionalMap<String, Integer> txMap = context.getMap(mapName);
+                txMap.getForUpdate(key);
+                getKeyForUpdateLatch.countDown();
+                afterTryPutResult.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
             }
+            return true;
         });
 
         assertFalse(tryPutResult.get());

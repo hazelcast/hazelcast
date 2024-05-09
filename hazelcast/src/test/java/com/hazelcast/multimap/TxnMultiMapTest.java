@@ -31,8 +31,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -59,29 +57,27 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         HazelcastInstance h1 = factory.newHazelcastInstance();
         HazelcastInstance h2 = factory.newHazelcastInstance();
 
-        boolean success = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                TransactionalMultiMap<String, String> txMap1 = context.getMultiMap(map1);
-                TransactionalMultiMap<String, String> txMap2 = context.getMultiMap(map2);
+        boolean success = h1.executeTransaction(context -> {
+            TransactionalMultiMap<String, String> txMap1 = context.getMultiMap(map1);
+            TransactionalMultiMap<String, String> txMap2 = context.getMultiMap(map2);
 
-                assertTrue(txMap1.put(key, "value1"));
-                Object value1 = getSingleValue(txMap1, key);
-                assertEquals("value1", value1);
+            assertTrue(txMap1.put(key, "value1"));
+            Object value1 = getSingleValue(txMap1, key);
+            assertEquals("value1", value1);
 
-                assertTrue(txMap2.put(key, "value2"));
-                Object value2 = getSingleValue(txMap2, key);
-                assertEquals("value2", value2);
+            assertTrue(txMap2.put(key, "value2"));
+            Object value2 = getSingleValue(txMap2, key);
+            assertEquals("value2", value2);
 
-                return true;
-            }
+            return true;
         });
         assertTrue(success);
 
-        assertEquals("value1", getSingleValue(h1.<String, String>getMultiMap(map1), key));
-        assertEquals("value1", getSingleValue(h2.<String, String>getMultiMap(map1), key));
+        assertEquals("value1", getSingleValue(h1.getMultiMap(map1), key));
+        assertEquals("value1", getSingleValue(h2.getMultiMap(map1), key));
 
-        assertEquals("value2", getSingleValue(h1.<String, String>getMultiMap(map2), key));
-        assertEquals("value2", getSingleValue(h2.<String, String>getMultiMap(map2), key));
+        assertEquals("value2", getSingleValue(h1.getMultiMap(map2), key));
+        assertEquals("value2", getSingleValue(h2.getMultiMap(map2), key));
     }
 
     @Test
