@@ -19,7 +19,6 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import javax.management.InstanceNotFoundException;
@@ -65,26 +64,20 @@ public final class MBeanDataHolder {
     }
 
     public void assertMBeanExistEventually(final String type, final String name) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ObjectName object = getObjectName(type, name);
-                try {
-                    mbs.getObjectInstance(object);
-                } catch (InstanceNotFoundException e) {
-                    fail(e.getMessage());
-                }
+        assertTrueEventually(() -> {
+            ObjectName object = getObjectName(type, name);
+            try {
+                mbs.getObjectInstance(object);
+            } catch (InstanceNotFoundException e) {
+                fail(e.getMessage());
             }
         });
     }
 
     public void assertMBeanNotExistEventually(final String type, final String name) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ObjectName object = getObjectName(type, name);
-                assertFalse(mbs.isRegistered(object));
-            }
+        assertTrueEventually(() -> {
+            ObjectName object = getObjectName(type, name);
+            assertFalse(mbs.isRegistered(object));
         });
     }
 

@@ -18,7 +18,6 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -151,12 +150,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         }).start();
 
         assertEquals(actionCount, initialHits);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(actionCount * 2, stats.getHits());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(actionCount * 2, stats.getHits()));
     }
 
     @Test
@@ -188,12 +182,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         }).start();
 
         assertTrue(lastAccessTime >= startTime);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(stats.getLastAccessTime() >= lastAccessTime);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(stats.getLastAccessTime() >= lastAccessTime));
     }
 
     @Test
@@ -231,12 +220,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         }).start();
 
         assertTrue(lastUpdateTime >= startTime);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(stats.getLastUpdateTime() >= lastUpdateTime);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(stats.getLastUpdateTime() >= lastUpdateTime));
     }
 
     @Test
@@ -249,12 +233,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         replicatedMap.putAll(map);
         final LocalReplicatedMapStats stats = getReplicatedMapStats();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(OPERATION_COUNT, stats.getPutOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(OPERATION_COUNT, stats.getPutOperationCount()));
     }
 
     @Test

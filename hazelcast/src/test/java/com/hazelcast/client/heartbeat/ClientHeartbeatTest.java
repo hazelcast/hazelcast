@@ -44,7 +44,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -208,13 +207,8 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     private void waitClientPartitionUpdateForKeyOwner(HazelcastInstance client, HazelcastInstance instance2,
                                                       String keyOwnedByInstance2) {
         // Verify that the client received partition update for instance2
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(instance2.getCluster().getLocalMember(),
-                        client.getPartitionService().getPartition(keyOwnedByInstance2).getOwner());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(instance2.getCluster().getLocalMember(),
+                client.getPartitionService().getPartition(keyOwnedByInstance2).getOwner()));
     }
 
     private ClientConfig newClientConfig() {
@@ -268,12 +262,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
         //After client connected, there should not be further change in client state
         //We are specifically testing for scheduled ClientDisconnectionOperation not to take action when run
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, stateChangeCount.get());
-            }
-        }, delaySeconds * 2);
+        assertTrueAllTheTime(() -> assertEquals(1, stateChangeCount.get()), delaySeconds * 2);
     }
 
     @Test

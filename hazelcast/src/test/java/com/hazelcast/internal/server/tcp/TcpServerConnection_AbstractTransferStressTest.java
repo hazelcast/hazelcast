@@ -21,7 +21,6 @@ import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.DummyPayload;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;
 import org.junit.Before;
 import org.junit.Test;
@@ -118,19 +117,16 @@ public abstract class TcpServerConnection_AbstractTransferStressTest extends Tcp
 
         final TcpServerConnection connection = connect(tcpServerB, addressA);
         long start = System.currentTimeMillis();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                logger.info("writer total frames pending   : " + totalFramesPending(connection));
-                logger.info("writer last write time millis : " + connection.getChannel().lastWriteTimeMillis());
+        assertTrueEventually(() -> {
+            logger.info("writer total frames pending   : " + totalFramesPending(connection));
+            logger.info("writer last write time millis : " + connection.getChannel().lastWriteTimeMillis());
 
-                logger.info("reader total frames handled   : " + framesRead(connection, false)
-                        + framesRead(connection, true));
-                logger.info("reader last read time millis  : " + connection.getChannel().lastReadTimeMillis());
+            logger.info("reader total frames handled   : " + framesRead(connection, false)
+                    + framesRead(connection, true));
+            logger.info("reader last read time millis  : " + connection.getChannel().lastReadTimeMillis());
 
-                assertEquals(expectedNormalPackets, framesRead(connection, false));
-                assertEquals(expectedUrgentPackets, framesRead(connection, true));
-            }
+            assertEquals(expectedNormalPackets, framesRead(connection, false));
+            assertEquals(expectedUrgentPackets, framesRead(connection, true));
         }, verifyTimeoutInMillis);
         logger.info("Waiting for pending packets to be sent and received finished in "
                 + (System.currentTimeMillis() - start) + " milliseconds");

@@ -29,7 +29,6 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -219,16 +218,12 @@ public class ClientDurableExecutorServiceSubmitTest {
 
         // this task should execute on a node owning the given key argument,
         // the action is to put the UUid of the executing node into a map with the given name
-        Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
+        Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
 
         service.submit(runnable);
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(member.getUuid()));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(member.getUuid())));
     }
 
     @Test
@@ -240,17 +235,13 @@ public class ClientDurableExecutorServiceSubmitTest {
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         final Member member = server.getCluster().getLocalMember();
 
-        Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
+        Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
 
         Future result = service.submit(runnable, expectedResult);
         final IMap map = client.getMap(mapName);
 
         assertEquals(expectedResult, result.get());
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(member.getUuid()));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(member.getUuid())));
     }
 
     @Test
@@ -260,7 +251,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         String mapName = randomString();
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         Member member = server.getCluster().getLocalMember();
-        Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
+        Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submit(runnable).thenRun(() -> responseLatch.countDown());

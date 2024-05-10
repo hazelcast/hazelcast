@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -449,14 +448,11 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     private static void waitForNearCachePersistence(final NearCacheTestContext context, final int persistenceCount) {
         final long oldPersistenceCount = context.stats.getPersistenceCount();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                long newPersistenceCount = context.stats.getPersistenceCount();
-                assertTrue(format("We saw %d persistences before and were waiting for %d new persistences, but still got %d (%s)",
-                        oldPersistenceCount, persistenceCount, newPersistenceCount, context.stats),
-                        newPersistenceCount > oldPersistenceCount + persistenceCount);
-            }
+        assertTrueEventually(() -> {
+            long newPersistenceCount = context.stats.getPersistenceCount();
+            assertTrue(format("We saw %d persistences before and were waiting for %d new persistences, but still got %d (%s)",
+                    oldPersistenceCount, persistenceCount, newPersistenceCount, context.stats),
+                    newPersistenceCount > oldPersistenceCount + persistenceCount);
         });
     }
 

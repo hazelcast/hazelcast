@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -313,12 +312,7 @@ public class MemcachedTest extends HazelcastTestSupport {
     public void testExpiration() throws Exception {
         final String key = "key";
         client.set(key, 3, "value").get();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNull(client.get(key));
-            }
-        });
+        assertTrueEventually(() -> assertNull(client.get(key)));
     }
 
     @Test

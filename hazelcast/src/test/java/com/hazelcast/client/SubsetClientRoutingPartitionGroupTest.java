@@ -30,7 +30,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -331,18 +330,10 @@ public class SubsetClientRoutingPartitionGroupTest extends ClientTestSupport {
 
             assertOpenEventually("Not all disconnected events arrived", listenerLatch);
 
-            assertTrueEventually("First server still have connected clients", new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(0, hz.getClientService().getConnectedClients().size());
-                }
-            });
-            assertTrueEventually("Second server still have connected clients", new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(0, hz2.getClientService().getConnectedClients().size());
-                }
-            });
+            assertTrueEventually("First server still have connected clients",
+                    () -> assertEquals(0, hz.getClientService().getConnectedClients().size()));
+            assertTrueEventually("Second server still have connected clients",
+                    () -> assertEquals(0, hz2.getClientService().getConnectedClients().size()));
         } finally {
             ex.shutdown();
         }

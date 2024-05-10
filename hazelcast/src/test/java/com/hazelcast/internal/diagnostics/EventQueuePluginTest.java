@@ -49,7 +49,6 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -155,7 +154,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
     @Test
     public void testCache() {
         CompleteConfiguration<Integer, Integer> cacheConfig = new MutableConfiguration<Integer, Integer>()
-                .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<Integer, Integer>(
+                .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<>(
                         FactoryBuilder.factoryOf(new TestCacheListener()), null, true, true));
 
         CachingProvider memberProvider = createServerCachingProvider(hz);
@@ -282,16 +281,13 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
 
     private void assertContainsEventually(final String... messages) {
         try {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    plugin.run(logWriter);
+            assertTrueEventually(() -> {
+                plugin.run(logWriter);
 
-                    //System.out.println(getContent());
+                //System.out.println(getContent());
 
-                    for (String message : messages) {
-                        assertContains(message);
-                    }
+                for (String message : messages) {
+                    assertContains(message);
                 }
             });
         } finally {

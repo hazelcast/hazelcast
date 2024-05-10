@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -209,12 +208,9 @@ public class ClientMultiMapListenersTest {
         mm.put("key2", "value");
         mm.put("key", "value");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, events.size());
-                assertEquals("key", events.get(0).getKey());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(1, events.size());
+            assertEquals("key", events.get(0).getKey());
         });
     }
 

@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -422,12 +421,7 @@ public class ClientMapLockTest {
         final String key = "key";
         map.lock(key, 2, TimeUnit.SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(map.isLocked(key));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(map.isLocked(key)));
     }
 
     @Test
@@ -605,12 +599,7 @@ public class ClientMapLockTest {
         final IMap map = getMapForLock();
         final String key = randomString();
         map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Assert.assertFalse(map.isLocked(key));
-            }
-        }, 30);
+        assertTrueEventually(() -> Assert.assertFalse(map.isLocked(key)), 30);
     }
 
     @Test
@@ -619,13 +608,10 @@ public class ClientMapLockTest {
         final String key = randomString();
 
         map.lock(key);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                String payload = randomString();
-                Object ret = map.executeOnKey(key, new LockEntryProcessor(payload));
-                assertEquals(payload, ret);
-            }
+        assertTrueEventually(() -> {
+            String payload = randomString();
+            Object ret = map.executeOnKey(key, new LockEntryProcessor(payload));
+            assertEquals(payload, ret);
         }, 30);
         map.unlock(key);
     }

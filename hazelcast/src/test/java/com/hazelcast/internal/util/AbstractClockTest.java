@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 
@@ -137,12 +136,7 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
 
     protected static void assertClusterSizeAlways(final int expected, HazelcastInstance hz) {
         final Cluster cluster = hz.getCluster();
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("Cluster should be stable when system clock changes!", expected, cluster.getMembers().size());
-            }
-        }, JUMP_AFTER_SECONDS * 2);
+        assertTrueAllTheTime(() -> assertEquals("Cluster should be stable when system clock changes!", expected, cluster.getMembers().size()), JUMP_AFTER_SECONDS * 2);
     }
 
     private static void assertClusterTime(long expected, long actual) {

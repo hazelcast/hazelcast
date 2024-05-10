@@ -23,7 +23,6 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -137,13 +136,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    assertEquals("bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map1.get(key));
+                assertEquals("bar", map2.get(key));
             }
         });
     }
@@ -166,12 +162,9 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map2.get(key));
             }
         });
     }
@@ -203,13 +196,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         map1.putAll(mapTest);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    assertEquals("bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map1.get(key));
+                assertEquals("bar", map2.get(key));
             }
         });
     }
@@ -240,24 +230,18 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    assertEquals("bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map1.get(key));
+                assertEquals("bar", map2.get(key));
             }
         });
 
         map1.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, map1.size());
-                assertEquals(0, map2.size());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(0, map1.size());
+            assertEquals(0, map2.size());
         });
     }
 
@@ -287,27 +271,21 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar", 10, TimeUnit.MINUTES);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
-                    assertNotNull(record);
-                    assertNotEquals(0, record.getTtlMillis());
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map1.get(key));
+                ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
+                assertNotNull(record);
+                assertNotEquals(0, record.getTtlMillis());
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (String key : keys) {
-                    assertEquals("bar", map2.get(key));
-                    ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
-                    assertNotNull(record);
-                    assertNotEquals(0, record.getTtlMillis());
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map2.get(key));
+                ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
+                assertNotNull(record);
+                assertNotEquals(0, record.getTtlMillis());
             }
         });
     }
@@ -338,13 +316,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    assertEquals("bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map1.get(key));
+                assertEquals("bar", map2.get(key));
             }
         });
 
@@ -352,13 +327,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map2.put(key, "bar2");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar2", map1.get(key));
-                    assertEquals("bar2", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar2", map1.get(key));
+                assertEquals("bar2", map2.get(key));
             }
         });
     }
@@ -389,13 +361,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    assertEquals("bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar", map1.get(key));
+                assertEquals("bar", map2.get(key));
             }
         });
 
@@ -403,27 +372,21 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map2.put(key, "bar2", 10, TimeUnit.MINUTES);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (String key : keys) {
-                    assertEquals("bar2", map1.get(key));
-                    ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
-                    assertNotNull(record);
-                    assertTrue(record.getTtlMillis() > 0);
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar2", map1.get(key));
+                ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
+                assertNotNull(record);
+                assertTrue(record.getTtlMillis() > 0);
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (String key : keys) {
-                    assertEquals("bar2", map2.get(key));
-                    ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
-                    assertNotNull(record);
-                    assertTrue(record.getTtlMillis() > 0);
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("bar2", map2.get(key));
+                ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
+                assertNotNull(record);
+                assertTrue(record.getTtlMillis() > 0);
             }
         });
     }
@@ -454,13 +417,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertEquals("map1 should return value for key " + key, "bar", map1.get(key));
-                    assertEquals("map2 should return value for key " + key, "bar", map2.get(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertEquals("map1 should return value for key " + key, "bar", map1.get(key));
+                assertEquals("map2 should return value for key " + key, "bar", map2.get(key));
             }
         });
 
@@ -468,13 +428,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map2.remove(key);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertFalse("map1 should not contain key " + key, map1.containsKey(key));
-                    assertFalse("map2 should not contain key " + key, map2.containsKey(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertFalse("map1 should not contain key " + key, map1.containsKey(key));
+                assertFalse("map2 should not contain key " + key, map2.containsKey(key));
             }
         });
     }
@@ -515,12 +472,9 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         map.remove(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Set<Integer> keys = new HashSet<>(map.keySet());
-                assertFalse(keys.contains(1));
-            }
+        assertTrueEventually(() -> {
+            Set<Integer> keys = new HashSet<>(map.keySet());
+            assertFalse(keys.contains(1));
         }, 20);
     }
 
@@ -533,14 +487,11 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         map.remove(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Set<Entry<Integer, Integer>> entries = map.entrySet();
-                for (Entry<Integer, Integer> entry : entries) {
-                    if (entry.getKey().equals(1)) {
-                        fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
-                    }
+        assertTrueEventually(() -> {
+            Set<Entry<Integer, Integer>> entries = map.entrySet();
+            for (Entry<Integer, Integer> entry : entries) {
+                if (entry.getKey().equals(1)) {
+                    fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
                 }
             }
         }, 20);
@@ -577,12 +528,9 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map.put(entry.getKey(), entry.getValue());
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(keys.size(), map1.size());
-                assertEquals(keys.size(), map2.size());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(keys.size(), map1.size());
+            assertEquals(keys.size(), map2.size());
         });
     }
 
@@ -612,13 +560,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map1.put(key, "bar");
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertTrue(map1.containsKey(key));
-                    assertTrue(map2.containsKey(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertTrue(map1.containsKey(key));
+                assertTrue(map2.containsKey(key));
             }
         });
     }
@@ -659,13 +604,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map.put(key, key);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (String key : keys) {
-                    assertTrue(map1.containsValue(key));
-                    assertTrue(map2.containsValue(key));
-                }
+        assertTrueEventually(() -> {
+            for (String key : keys) {
+                assertTrue(map1.containsValue(key));
+                assertTrue(map2.containsValue(key));
             }
         });
     }
@@ -714,12 +656,9 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map.put(key, key);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(keys, new HashSet<String>(map1.values()));
-                assertEquals(keys, new HashSet<String>(map2.values()));
-            }
+        assertTrueEventually(() -> {
+            assertEquals(keys, new HashSet<>(map1.values()));
+            assertEquals(keys, new HashSet<>(map2.values()));
         });
     }
 
@@ -752,12 +691,9 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map.put(key, key);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(keys, new HashSet<String>(map1.keySet()));
-                assertEquals(keys, new HashSet<String>(map2.keySet()));
-            }
+        assertTrueEventually(() -> {
+            assertEquals(keys, new HashSet<>(map1.keySet()));
+            assertEquals(keys, new HashSet<>(map2.keySet()));
         });
     }
 
@@ -790,21 +726,18 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             map.put(key, key);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                List<Entry<String, String>> entrySet1 = new ArrayList<>(map1.entrySet());
-                List<Entry<String, String>> entrySet2 = new ArrayList<>(map2.entrySet());
-                assertEquals(keys.size(), entrySet1.size());
-                assertEquals(keys.size(), entrySet2.size());
+        assertTrueEventually(() -> {
+            List<Entry<String, String>> entrySet1 = new ArrayList<>(map1.entrySet());
+            List<Entry<String, String>> entrySet2 = new ArrayList<>(map2.entrySet());
+            assertEquals(keys.size(), entrySet1.size());
+            assertEquals(keys.size(), entrySet2.size());
 
-                for (Entry<String, String> e : entrySet1) {
-                    assertContains(keys, e.getKey());
-                }
+            for (Entry<String, String> e : entrySet1) {
+                assertContains(keys, e.getKey());
+            }
 
-                for (Entry<String, String> e : entrySet2) {
-                    assertContains(keys, e.getKey());
-                }
+            for (Entry<String, String> e : entrySet2) {
+                assertContains(keys, e.getKey());
             }
         });
     }

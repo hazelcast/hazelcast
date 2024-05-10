@@ -22,7 +22,6 @@ import com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -72,12 +71,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
             opService.execute(op);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, latch.getCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, latch.getCount()));
     }
 
     public static class SlowPartitionAwareSystemOperation extends Operation

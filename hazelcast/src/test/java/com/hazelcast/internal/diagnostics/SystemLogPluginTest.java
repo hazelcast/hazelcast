@@ -18,7 +18,6 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -75,34 +74,25 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
     public void testLifecycle() {
         hz.shutdown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
 
-                assertContains("Lifecycle[" + LINE_SEPARATOR + "                          SHUTTING_DOWN]");
-            }
+            assertContains("Lifecycle[" + LINE_SEPARATOR + "                          SHUTTING_DOWN]");
         });
     }
 
     @Test
     public void testMembership() {
         HazelcastInstance instance = hzFactory.newHazelcastInstance(config);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
-                assertContains("MemberAdded[");
-            }
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
+            assertContains("MemberAdded[");
         });
 
         instance.shutdown();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
-                assertContains("MemberRemoved[");
-            }
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
+            assertContains("MemberRemoved[");
         });
     }
 
@@ -115,12 +105,9 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
         waitAllForSafeState(hz, instance);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
-                assertContains("MigrationCompleted");
-            }
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
+            assertContains("MigrationCompleted");
         });
     }
 }

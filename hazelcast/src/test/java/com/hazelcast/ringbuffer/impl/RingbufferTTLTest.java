@@ -21,7 +21,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -76,14 +75,11 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
 
         final long tail = ringbuffer.tailSequence();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(tail, ringbuffer.tailSequence());
-                assertEquals(tail + 1, ringbuffer.headSequence());
-                assertEquals(0, ringbuffer.size());
-                assertEquals(ringbuffer.capacity(), ringbuffer.remainingCapacity());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(tail, ringbuffer.tailSequence());
+            assertEquals(tail + 1, ringbuffer.headSequence());
+            assertEquals(0, ringbuffer.size());
+            assertEquals(ringbuffer.capacity(), ringbuffer.remainingCapacity());
         }, maximumVisibleTTL);
 
         // and we verify that the slots are nulled so we don't have a memory leak on our hands.
@@ -111,16 +107,13 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
         final long tail = ringbuffer.tailSequence();
         final long size = ringbuffer.size();
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(head, ringbuffer.headSequence());
-                assertEquals(tail, ringbuffer.tailSequence());
-                assertEquals(size, ringbuffer.size());
+        assertTrueAllTheTime(() -> {
+            assertEquals(head, ringbuffer.headSequence());
+            assertEquals(tail, ringbuffer.tailSequence());
+            assertEquals(size, ringbuffer.size());
 
-                for (long seq = head; seq <= tail; seq++) {
-                    assertEquals("item" + seq, ringbuffer.readOne(seq));
-                }
+            for (long seq = head; seq <= tail; seq++) {
+                assertEquals("item" + seq, ringbuffer.readOne(seq));
             }
         }, minimumVisibleTTL);
     }
@@ -137,16 +130,13 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
         final long tail = ringbuffer.tailSequence();
         final long size = ringbuffer.size();
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(head, ringbuffer.headSequence());
-                assertEquals(tail, ringbuffer.tailSequence());
-                assertEquals(size, ringbuffer.size());
+        assertTrueAllTheTime(() -> {
+            assertEquals(head, ringbuffer.headSequence());
+            assertEquals(tail, ringbuffer.tailSequence());
+            assertEquals(size, ringbuffer.size());
 
-                for (long seq = head; seq <= tail; seq++) {
-                    assertEquals("item" + seq, ringbuffer.readOne(seq));
-                }
+            for (long seq = head; seq <= tail; seq++) {
+                assertEquals("item" + seq, ringbuffer.readOne(seq));
             }
         }, 5);
     }

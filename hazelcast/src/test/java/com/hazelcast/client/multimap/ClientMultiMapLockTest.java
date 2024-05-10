@@ -19,7 +19,6 @@ package com.hazelcast.client.multimap;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -304,12 +303,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final Object key = "Key";
 
         mm.lock(key, 1, TimeUnit.SECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(mm.isLocked(key));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(mm.isLocked(key)));
     }
 
     @Test
@@ -319,12 +313,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
 
         mm.lock(key);
         mm.lock(key, 1, TimeUnit.SECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(mm.isLocked(key));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(mm.isLocked(key)));
     }
 
     @Test
@@ -371,12 +360,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final MultiMap multiMap = getMultiMapForLock();
         final String key = randomString();
         multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Assert.assertFalse(multiMap.isLocked(key));
-            }
-        }, 30);
+        assertTrueEventually(() -> Assert.assertFalse(multiMap.isLocked(key)), 30);
     }
 
     private MultiMap getMultiMapForLock() {

@@ -22,7 +22,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -77,12 +76,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
 
     @Test
     public void statsCalculated() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                statsCalculated(inMemoryFormat);
-            }
-        });
+        assertTrueEventually(() -> statsCalculated(inMemoryFormat));
     }
 
     @Test

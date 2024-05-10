@@ -35,7 +35,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -96,25 +95,22 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             operationService.invokeOnPartition(null, new TestIncrementOperation(), partitionId).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
-                    InternalPartitionService partitionService = getPartitionService(instances[0]);
-                    InternalPartition partition = partitionService.getPartition(partitionId);
+        assertTrueEventually(() -> {
+            for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
+                InternalPartitionService partitionService = getPartitionService(instances[0]);
+                InternalPartition partition = partitionService.getPartition(partitionId);
 
-                    // given that NODE_COUNT < BACKUP_COUNT, there can be at most
-                    // NODE_COUNT replicas overall.
-                    final int replicasCount = Math.min(BACKUP_COUNT + 1, NODE_COUNT);
-                    for (int i = 0; i < replicasCount; i++) {
-                        // replica assignment should complete, so that when we later
-                        // reference a replica, we do not get NPE.
-                        Address replicaAddress = partition.getReplicaAddress(i);
-                        assertNotNull(replicaAddress);
+                // given that NODE_COUNT < BACKUP_COUNT, there can be at most
+                // NODE_COUNT replicas overall.
+                final int replicasCount = Math.min(BACKUP_COUNT + 1, NODE_COUNT);
+                for (int i = 0; i < replicasCount; i++) {
+                    // replica assignment should complete, so that when we later
+                    // reference a replica, we do not get NPE.
+                    Address replicaAddress = partition.getReplicaAddress(i);
+                    assertNotNull(replicaAddress);
 
-                        TestMigrationAwareService service = getService(replicaAddress);
-                        assertNotNull(service.get(partitionId));
-                    }
+                    TestMigrationAwareService service = getService(replicaAddress);
+                    assertNotNull(service.get(partitionId));
                 }
             }
         });
@@ -354,13 +350,10 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
         partition.setReplica(replicaIndexToClear, null);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                partitionService.checkClusterPartitionRuntimeStates();
-                for (HazelcastInstance instance : instances) {
-                    assertEquals(partitionService.getPartitionStateStamp(), getPartitionService(instance).getPartitionStateStamp());
-                }
+        assertTrueEventually(() -> {
+            partitionService.checkClusterPartitionRuntimeStates();
+            for (HazelcastInstance instance : instances) {
+                assertEquals(partitionService.getPartitionStateStamp(), getPartitionService(instance).getPartitionStateStamp());
             }
         });
 
@@ -368,14 +361,11 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         ClearReplicaRunnable op = new ClearReplicaRunnable(partitionId, getNodeEngineImpl(oldReplicaOwnerInstance));
         getOperationService(oldReplicaOwnerInstance).execute(op);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                PartitionReplicaVersionsView replicaVersionsView
-                        = getPartitionReplicaVersionsView(getNode(factory.getInstance(oldReplicaOwner.address())), partitionId);
-                for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
-                    assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersionsView.getVersions(namespace));
-                }
+        assertTrueEventually(() -> {
+            PartitionReplicaVersionsView replicaVersionsView
+                    = getPartitionReplicaVersionsView(getNode(factory.getInstance(oldReplicaOwner.address())), partitionId);
+            for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
+                assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersionsView.getVersions(namespace));
             }
         });
 
@@ -395,14 +385,11 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     private void migrateWithSuccess(final MigrationInfo migration) {
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
         partitionService.getMigrationManager().scheduleMigration(migration);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
-                    InternalPartitionImpl partition = getPartition(instance, migration.getPartitionId());
-                    assertEquals(partition.getReplicaAddress(migration.getDestinationNewReplicaIndex()),
-                            migration.getDestinationAddress());
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+                InternalPartitionImpl partition = getPartition(instance, migration.getPartitionId());
+                assertEquals(partition.getReplicaAddress(migration.getDestinationNewReplicaIndex()),
+                        migration.getDestinationAddress());
             }
         });
     }
@@ -425,100 +412,84 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private void assertMigrationSourceCommit(final MigrationInfo migration) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                TestMigrationAwareService service = getService(migration.getSourceAddress());
+        assertTrueEventually(() -> {
+            TestMigrationAwareService service = getService(migration.getSourceAddress());
 
-                String msg = getAssertMessage(migration, service);
+            String msg = getAssertMessage(migration, service);
 
-                assertFalse(service.getBeforeEvents().isEmpty());
-                assertFalse(service.getCommitEvents().isEmpty());
+            assertFalse(service.getBeforeEvents().isEmpty());
+            assertFalse(service.getCommitEvents().isEmpty());
 
-                PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
-                PartitionMigrationEvent sourceCommitEvent = service.getCommitEvents().get(0);
+            PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
+            PartitionMigrationEvent sourceCommitEvent = service.getCommitEvents().get(0);
 
-                assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
-                assertSourcePartitionMigrationEvent(msg, sourceCommitEvent, migration);
+            assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
+            assertSourcePartitionMigrationEvent(msg, sourceCommitEvent, migration);
 
-                assertReplicaVersionsAndServiceData(msg, migration.getSourceAddress(), migration.getPartitionId(),
-                        migration.getSourceNewReplicaIndex());
-            }
+            assertReplicaVersionsAndServiceData(msg, migration.getSourceAddress(), migration.getPartitionId(),
+                    migration.getSourceNewReplicaIndex());
         });
     }
 
     private void assertMigrationSourceRollback(final MigrationInfo migration) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                TestMigrationAwareService service = getService(migration.getSourceAddress());
+        assertTrueEventually(() -> {
+            TestMigrationAwareService service = getService(migration.getSourceAddress());
 
-                String msg = getAssertMessage(migration, service);
+            String msg = getAssertMessage(migration, service);
 
-                assertFalse(service.getBeforeEvents().isEmpty());
-                assertFalse(service.getRollbackEvents().isEmpty());
+            assertFalse(service.getBeforeEvents().isEmpty());
+            assertFalse(service.getRollbackEvents().isEmpty());
 
-                PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
-                PartitionMigrationEvent rollbackEvent = service.getRollbackEvents().get(0);
+            PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
+            PartitionMigrationEvent rollbackEvent = service.getRollbackEvents().get(0);
 
-                assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
-                assertSourcePartitionMigrationEvent(msg, rollbackEvent, migration);
+            assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
+            assertSourcePartitionMigrationEvent(msg, rollbackEvent, migration);
 
-                assertReplicaVersionsAndServiceData(msg, migration.getSourceAddress(), migration.getPartitionId(),
-                        migration.getSourceCurrentReplicaIndex());
-            }
+            assertReplicaVersionsAndServiceData(msg, migration.getSourceAddress(), migration.getPartitionId(),
+                    migration.getSourceCurrentReplicaIndex());
         });
     }
 
     private void assertMigrationDestinationCommit(final MigrationInfo migration) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                TestMigrationAwareService service = getService(migration.getDestinationAddress());
+        assertTrueEventually(() -> {
+            TestMigrationAwareService service = getService(migration.getDestinationAddress());
 
-                String msg = getAssertMessage(migration, service);
+            String msg = getAssertMessage(migration, service);
 
-                assertFalse(service.getBeforeEvents().isEmpty());
-                assertFalse(service.getCommitEvents().isEmpty());
+            assertFalse(service.getBeforeEvents().isEmpty());
+            assertFalse(service.getCommitEvents().isEmpty());
 
-                PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
-                PartitionMigrationEvent commitEvent = service.getCommitEvents().get(0);
+            PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
+            PartitionMigrationEvent commitEvent = service.getCommitEvents().get(0);
 
-                assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
-                assertDestinationPartitionMigrationEvent(msg, commitEvent, migration);
+            assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
+            assertDestinationPartitionMigrationEvent(msg, commitEvent, migration);
 
-                assertTrue(msg, service.contains(migration.getPartitionId()));
+            assertTrue(msg, service.contains(migration.getPartitionId()));
 
-                assertReplicaVersionsAndServiceData(msg, migration.getDestinationAddress(), migration.getPartitionId(),
-                        migration.getDestinationNewReplicaIndex());
-            }
+            assertReplicaVersionsAndServiceData(msg, migration.getDestinationAddress(), migration.getPartitionId(),
+                    migration.getDestinationNewReplicaIndex());
         });
     }
 
     private void assertMigrationDestinationRollback(final MigrationInfo migration) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                TestMigrationAwareService service = getService(migration.getDestinationAddress());
+        assertTrueEventually(() -> {
+            TestMigrationAwareService service = getService(migration.getDestinationAddress());
 
-                String msg = getAssertMessage(migration, service);
+            String msg = getAssertMessage(migration, service);
 
-                assertFalse(service.getBeforeEvents().isEmpty());
-                assertFalse(service.getRollbackEvents().isEmpty());
+            assertFalse(service.getBeforeEvents().isEmpty());
+            assertFalse(service.getRollbackEvents().isEmpty());
 
-                PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
-                PartitionMigrationEvent destinationRollbackEvent = service.getRollbackEvents().get(0);
+            PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
+            PartitionMigrationEvent destinationRollbackEvent = service.getRollbackEvents().get(0);
 
-                assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
-                assertDestinationPartitionMigrationEvent(msg, destinationRollbackEvent, migration);
+            assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
+            assertDestinationPartitionMigrationEvent(msg, destinationRollbackEvent, migration);
 
-                assertReplicaVersionsAndServiceData(msg, migration.getDestinationAddress(), migration.getPartitionId(),
-                        migration.getDestinationCurrentReplicaIndex());
-            }
+            assertReplicaVersionsAndServiceData(msg, migration.getDestinationAddress(), migration.getPartitionId(),
+                    migration.getDestinationCurrentReplicaIndex());
         });
     }
 

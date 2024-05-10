@@ -25,7 +25,6 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -514,12 +513,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         instances[0].getLifecycleService().terminate();
 
         // instance-1 starts mastership claim
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getNode(instances[1]).isMaster());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(getNode(instances[1]).isMaster()));
 
         Future future = spawn(new Runnable() {
             @Override
@@ -528,19 +522,16 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             }
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                // other members have not received/accepted mastership claim yet
-                assertNotEquals(getAddress(instances[1]), getNode(instances[2]).getMasterAddress());
-                assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
+        assertTrueAllTheTime(() -> {
+            // other members have not received/accepted mastership claim yet
+            assertNotEquals(getAddress(instances[1]), getNode(instances[2]).getMasterAddress());
+            assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
 
-                // no partition state version change
-                assertEquals(partitionStateStamp, partitionService.getPartitionStateStamp());
+            // no partition state version change
+            assertEquals(partitionStateStamp, partitionService.getPartitionStateStamp());
 
-                // no migrations has been submitted yet
-                assertNull(startedMigration.get());
-            }
+            // no migrations has been submitted yet
+            assertNull(startedMigration.get());
         }, 5);
         assertFalse(future.isDone());
 

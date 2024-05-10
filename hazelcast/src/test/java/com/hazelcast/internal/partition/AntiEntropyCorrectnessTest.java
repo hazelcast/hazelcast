@@ -27,7 +27,6 @@ import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.internal.server.PacketFilter;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -89,14 +88,11 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
         assertSizeAndDataEventually();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
-                    int availablePermits = partitionService.getReplicaManager().availableReplicaSyncPermits();
-                    assertEquals(PARALLEL_REPLICATIONS, availablePermits);
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
+                int availablePermits = partitionService.getReplicaManager().availableReplicaSyncPermits();
+                assertEquals(PARALLEL_REPLICATIONS, availablePermits);
             }
         }, 30);
     }

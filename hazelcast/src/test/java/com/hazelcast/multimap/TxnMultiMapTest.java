@@ -22,7 +22,6 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionalMultiMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -164,12 +163,9 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         ctx4.getMultiMap(mapName).remove(key, value2);
         ctx4.commitTransaction();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(2, listener.getAddedCount());
-                assertEquals(2, listener.getRemovedCount());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(2, listener.getAddedCount());
+            assertEquals(2, listener.getRemovedCount());
         });
     }
 

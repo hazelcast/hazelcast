@@ -46,7 +46,6 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryViewHolder;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -599,12 +598,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         // this should invalidate Near Cache of replicatedMap1
         replicatedMap2.put(1, 2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(2, (int) replicatedMap1.get(1));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(2, (int) replicatedMap1.get(1)));
     }
 
     @Test
@@ -626,12 +620,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         // this should invalidate Near Cache of replicatedMap1
         replicatedMap2.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNull(replicatedMap1.get(1));
-            }
-        });
+        assertTrueEventually(() -> assertNull(replicatedMap1.get(1)));
     }
 
     @Test

@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
@@ -50,7 +49,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
         assertClusterSize(2, h2);
     }
 
-    protected void testJoinEventually(Config config) throws Exception {
+    protected void testJoinEventually(Config config) {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         assertClusterSize(1, h1);
 
@@ -84,7 +83,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
     /**
      * Checks if a HazelcastInstance created with config2, can be added to a HazelcastInstance created with config 1.
      * <p>
-     * This method expects that an IllegalStateException is thrown when the second HazelcastInstance is created and
+     * This method expects that an IllegalStateException is thrown when the second HazelcastInstance is created, and
      * it doesn't join the cluster but gets killed instead.
      *
      * @param config1
@@ -125,12 +124,9 @@ public class AbstractJoinTest extends HazelcastTestSupport {
         assertTrue(hz2.getLifecycleService().isRunning());
         assertClusterSize(1, hz2);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterSize(1, hz1);
-                assertClusterSize(1, hz2);
-            }
+        assertTrueAllTheTime(() -> {
+            assertClusterSize(1, hz1);
+            assertClusterSize(1, hz2);
         }, durationSeconds);
     }
 

@@ -19,7 +19,6 @@ package com.hazelcast.partition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.TestPartitionUtils;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
@@ -103,19 +102,9 @@ public class PartitionLostListenerStressTest extends AbstractPartitionLostListen
         waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
 
         if (shouldExpectPartitionLostEvents) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertLostPartitions(log, listener, survivingPartitions, partitionTables);
-                }
-            });
+            assertTrueEventually(() -> assertLostPartitions(log, listener, survivingPartitions, partitionTables));
         } else {
-            assertTrueAllTheTime(new AssertTask() {
-                @Override
-                public void run() {
-                    assertTrue(listener.getEvents().isEmpty());
-                }
-            }, 1);
+            assertTrueAllTheTime(() -> assertTrue(listener.getEvents().isEmpty()), 1);
         }
     }
 

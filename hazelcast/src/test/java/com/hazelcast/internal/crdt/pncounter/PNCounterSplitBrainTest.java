@@ -19,7 +19,6 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -115,11 +114,6 @@ public class PNCounterSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void assertCounterValueEventually(final long expectedValue, final PNCounter counter) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedValue, counter.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedValue, counter.get()));
     }
 }

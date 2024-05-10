@@ -19,7 +19,6 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -68,37 +67,28 @@ public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
         fillMap(map1, 0, first);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMapSize("map1", first, map1);
-                assertMapSize("map2", first, map2);
-            }
+        assertTrueEventually(() -> {
+            assertMapSize("map1", first, map1);
+            assertMapSize("map2", first, map2);
         });
 
         fillMap(map2, first, second);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMapSize("map1", second, map1);
-                assertMapSize("map2", second, map2);
-                assertMapSize("map3", second, map3);
-            }
+        assertTrueEventually(() -> {
+            assertMapSize("map1", second, map1);
+            assertMapSize("map2", second, map2);
+            assertMapSize("map3", second, map3);
         });
 
         fillMap(map3, second, third);
         HazelcastInstance instance4 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map4 = instance4.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMapSize("map1", third, map1);
-                assertMapSize("map2", third, map2);
-                assertMapSize("map3", third, map3);
-                assertMapSize("map4", third, map4);
-            }
+        assertTrueEventually(() -> {
+            assertMapSize("map1", third, map1);
+            assertMapSize("map2", third, map2);
+            assertMapSize("map3", third, map3);
+            assertMapSize("map4", third, map4);
         });
     }
 

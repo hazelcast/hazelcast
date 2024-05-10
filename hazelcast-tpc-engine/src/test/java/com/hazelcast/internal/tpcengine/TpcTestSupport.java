@@ -178,12 +178,7 @@ public class TpcTestSupport {
     }
 
     public static void assertEqualsEventually(final int expected, final AtomicInteger value) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expected, value.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, value.get()));
     }
 
     public static void assertTrueEventually(AssertTask task) {

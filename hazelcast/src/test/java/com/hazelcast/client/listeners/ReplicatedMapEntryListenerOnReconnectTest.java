@@ -25,7 +25,6 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -74,20 +73,17 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
     }
 
     protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory, int expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                boolean found = false;
-                for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
-                    NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
-                    EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
-                    EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
-                    if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == expected) {
-                        found = true;
-                    }
+        assertTrueEventually(() -> {
+            boolean found = false;
+            for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+                NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+                EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
+                EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
+                if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == expected) {
+                    found = true;
                 }
-                assertTrue(found);
             }
+            assertTrue(found);
         });
     }
 }

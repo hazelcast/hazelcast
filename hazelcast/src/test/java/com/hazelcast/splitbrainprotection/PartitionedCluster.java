@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.concurrent.CountDownLatch;
@@ -154,20 +153,10 @@ public class PartitionedCluster {
     }
 
     private void assertSplitBrainProtectionIsPresentEventually(final HazelcastInstance instance, final String splitBrainProtectionId) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize()));
     }
 
     private void assertSplitBrainProtectionIsAbsentEventually(final HazelcastInstance instance, final String splitBrainProtectionId) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize());
-            }
-        });
+        assertTrueEventually(() -> assertFalse(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize()));
     }
 }
