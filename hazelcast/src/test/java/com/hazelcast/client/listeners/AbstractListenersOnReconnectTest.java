@@ -85,7 +85,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     private final AtomicInteger eventCount = new AtomicInteger();
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private CountDownLatch eventsLatch = new CountDownLatch(1);
-    private final Set<String> events = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private final Set<String> events = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private UUID registrationId;
     private int clusterSize;
     protected HazelcastInstance client;
@@ -319,10 +319,10 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 Member member = instance.getCluster().getLocalMember();
                 assertNotNull(member.toString(), serviceSegment);
                 ConcurrentMap registrationIdMap = serviceSegment.getRegistrationIdMap();
-                assertEquals(member.toString() + " Current registrations:" + registrationIdMap, expected,
+                assertEquals(member + " Current registrations:" + registrationIdMap, expected,
                         registrationIdMap.size());
                 ILogger logger = nodeEngineImpl.getLogger(AbstractListenersOnReconnectTest.class);
-                logger.warning("Current registrations at member " + member.toString() + ": " + registrationIdMap);
+                logger.warning("Current registrations at member " + member + ": " + registrationIdMap);
             }
         });
     }

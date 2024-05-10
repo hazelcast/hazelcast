@@ -618,7 +618,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
 
     private static class KeyCollectingListener<V> extends EntryAdapter<String, V> {
 
-        private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<>());
         private final AtomicInteger eventCount = new AtomicInteger();
 
         public void entryAdded(EntryEvent<String, V> event) {

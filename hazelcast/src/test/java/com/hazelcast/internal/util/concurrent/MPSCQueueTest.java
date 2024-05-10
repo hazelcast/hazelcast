@@ -263,13 +263,13 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void drain() {
-        queue.drainTo(new LinkedList<String>());
+        queue.drainTo(new LinkedList<>());
     }
 
 
     @Test(expected = UnsupportedOperationException.class)
     public void drainMaxItems() {
-        queue.drainTo(new LinkedList<String>(), 10);
+        queue.drainTo(new LinkedList<>(), 10);
     }
 
     // ============= clear ====================================

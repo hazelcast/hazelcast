@@ -46,7 +46,7 @@ public class HazelcastCacheManager implements CacheManager {
      */
     public static final String CACHE_PROP = "hazelcast.spring.cache.prop";
 
-    private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
+    private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<>();
 
     private HazelcastInstance hazelcastInstance;
 
@@ -59,7 +59,7 @@ public class HazelcastCacheManager implements CacheManager {
     /**
      * Holds cache specific value retrieval timeouts. Override defaultReadTimeout for specified caches.
      */
-    private Map<String, Long> readTimeoutMap = new HashMap<String, Long>();
+    private Map<String, Long> readTimeoutMap = new HashMap<>();
 
     public HazelcastCacheManager() {
     }
@@ -86,7 +86,7 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public Collection<String> getCacheNames() {
-        Set<String> cacheNames = new HashSet<String>();
+        Set<String> cacheNames = new HashSet<>();
         Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
             if (distributedObject instanceof IMap) {

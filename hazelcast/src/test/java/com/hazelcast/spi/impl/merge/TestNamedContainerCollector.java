@@ -29,8 +29,8 @@ class TestNamedContainerCollector extends AbstractNamedContainerCollector<Object
 
     TestNamedContainerCollector(NodeEngine nodeEngine, boolean hasContainer, boolean isMergeable) {
         super(nodeEngine, hasContainer
-                ? new ConcurrentHashMap<String, Object>(singletonMap("myContainer", new Object()))
-                : new ConcurrentHashMap<String, Object>());
+                ? new ConcurrentHashMap<>(singletonMap("myContainer", new Object()))
+                : new ConcurrentHashMap<>());
         this.isMergeable = isMergeable;
     }
 
