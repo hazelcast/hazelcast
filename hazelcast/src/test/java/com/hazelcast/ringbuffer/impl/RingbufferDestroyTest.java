@@ -92,7 +92,7 @@ public class RingbufferDestroyTest extends HazelcastTestSupport {
 
     private static class AssertNoRingbufferContainerTask implements AssertTask {
         @Override
-        public void run() throws Exception {
+        public void run() {
             for (HazelcastInstance instance : instances) {
                 final RingbufferService ringbufferService
                         = getNodeEngineImpl(instance).getService(RingbufferService.SERVICE_NAME);

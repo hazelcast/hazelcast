@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
 public class SomeTransactionalTask implements Callable<Void>, Serializable {
 
     @Transactional
-    public Void call() throws Exception {
+    public Void call() {
         return null;
     }
 }

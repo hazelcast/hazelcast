@@ -69,43 +69,34 @@ public class ClientTxnDisconnectionTest {
 
     @Test
     public void testQueueTake() {
-        testQueue(new Callable() {
-            @Override
-            public Object call() throws InterruptedException {
-                TransactionContext context = client.newTransactionContext();
-                context.beginTransaction();
-                TransactionalQueue<Object> queue = context.getQueue(randomString());
-                return queue.take();
-            }
+        testQueue(() -> {
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+            TransactionalQueue<Object> queue = context.getQueue(randomString());
+            return queue.take();
         });
     }
 
     @Test
     public void testQueuePoll() {
-        testQueue(new Callable() {
-            @Override
-            public Object call() throws InterruptedException {
-                TransactionContext context = client.newTransactionContext();
-                context.beginTransaction();
-                TransactionalQueue<Object> queue = context.getQueue(randomString());
-                return queue.poll(20, SECONDS);
-            }
+        testQueue(() -> {
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+            TransactionalQueue<Object> queue = context.getQueue(randomString());
+            return queue.poll(20, SECONDS);
         });
     }
 
     @Test
     public void testQueueOffer() {
-        testQueue(new Callable() {
-            @Override
-            public Object call() throws InterruptedException {
-                String name = BOUNDED_QUEUE_PREFIX + randomString();
-                client.getQueue(name).offer(randomString());
+        testQueue(() -> {
+            String name = BOUNDED_QUEUE_PREFIX + randomString();
+            client.getQueue(name).offer(randomString());
 
-                TransactionContext context = client.newTransactionContext();
-                context.beginTransaction();
-                TransactionalQueue<Object> queue = context.getQueue(name);
-                return queue.offer(randomString(), 20, SECONDS);
-            }
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+            TransactionalQueue<Object> queue = context.getQueue(name);
+            return queue.offer(randomString(), 20, SECONDS);
         });
     }
 

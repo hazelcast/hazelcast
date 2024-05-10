@@ -466,19 +466,11 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             warmUpPartitions(master);
         }
 
-        Future f1 = spawn(new Runnable() {
-            @Override
-            public void run() {
-                master.shutdown();
-            }
-        });
+        Future f1 = spawn((Runnable) () -> master.shutdown());
 
-        Future f2 = spawn(new Runnable() {
-            @Override
-            public void run() {
-                changeClusterStateEventually(slaves[0], ClusterState.PASSIVE);
-                slaves[0].getCluster().shutdown();
-            }
+        Future f2 = spawn((Runnable) () -> {
+            changeClusterStateEventually(slaves[0], ClusterState.PASSIVE);
+            slaves[0].getCluster().shutdown();
         });
 
         f1.get();
@@ -515,12 +507,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         // instance-1 starts mastership claim
         assertTrueEventually(() -> assertTrue(getNode(instances[1]).isMaster()));
 
-        Future future = spawn(new Runnable() {
-            @Override
-            public void run() {
-                instances[1].shutdown();
-            }
-        });
+        Future future = spawn((Runnable) () -> instances[1].shutdown());
 
         assertTrueAllTheTime(() -> {
             // other members have not received/accepted mastership claim yet

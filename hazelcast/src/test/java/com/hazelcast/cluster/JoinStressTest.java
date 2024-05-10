@@ -87,7 +87,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = TEN_MINUTES_IN_MILLIS)
-    public void testJoinCompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
+    public void testJoinCompletesCorrectlyWhenMultipleNodesStartedParallel() {
         int count = 10;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         final HazelcastInstance[] instances = new HazelcastInstance[count];
@@ -314,12 +314,7 @@ public class JoinStressTest extends HazelcastTestSupport {
             instances[i] = Hazelcast.newHazelcastInstance(config);
         }
 
-        Callable<HazelcastInstance> newInstanceTask = new Callable<>() {
-            @Override
-            public HazelcastInstance call() {
-                return Hazelcast.newHazelcastInstance(config);
-            }
-        };
+        Callable<HazelcastInstance> newInstanceTask = () -> Hazelcast.newHazelcastInstance(config);
 
         Future<HazelcastInstance> future1 = spawn(newInstanceTask);
         Future<HazelcastInstance> future2 = spawn(newInstanceTask);

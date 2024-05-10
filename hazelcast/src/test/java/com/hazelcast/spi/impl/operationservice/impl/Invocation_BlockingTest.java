@@ -306,12 +306,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         // now we are going to do a get on the future by a whole bunch of threads
         final List<Future> futures = new LinkedList<>();
         for (int k = 0; k < 10; k++) {
-            futures.add(spawn(new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    return future.join();
-                }
-            }));
+            futures.add(spawn((Callable) () -> future.join()));
         }
 
         // lets do a very long wait so that the heartbeat/retrying mechanism have kicked in.

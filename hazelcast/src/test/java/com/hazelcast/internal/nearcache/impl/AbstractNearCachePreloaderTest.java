@@ -321,25 +321,22 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         final CountDownLatch startLatch = new CountDownLatch(THREAD_COUNT);
         final CountDownLatch finishLatch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    startLatch.countDown();
-                    try {
-                        startLatch.await();
-                    } catch (InterruptedException e) {
-                        currentThread().interrupt();
-                    }
-
-                    String threadName = currentThread().toString();
-                    String dataStructureName = nearCacheConfig.getName() + "-" + threadName;
-                    DataStructureAdapter<String, String> adapter = getDataStructure(context, dataStructureName);
-                    for (int i = 0; i < 100; i++) {
-                        adapter.put("key-" + threadName + "-" + i, "value-" + threadName + "-" + i);
-                    }
-
-                    finishLatch.countDown();
+            pool.execute(() -> {
+                startLatch.countDown();
+                try {
+                    startLatch.await();
+                } catch (InterruptedException e) {
+                    currentThread().interrupt();
                 }
+
+                String threadName = currentThread().toString();
+                String dataStructureName = nearCacheConfig.getName() + "-" + threadName;
+                DataStructureAdapter<String, String> adapter = getDataStructure(context, dataStructureName);
+                for (int i1 = 0; i1 < 100; i1++) {
+                    adapter.put("key-" + threadName + "-" + i1, "value-" + threadName + "-" + i1);
+                }
+
+                finishLatch.countDown();
             });
         }
 
