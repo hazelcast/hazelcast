@@ -55,11 +55,8 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> SQL_PREDICATE_GT = Predicates.sql("id > 100");
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> SQL_PREDICATE_LT = Predicates.sql("id < 100");
 
     @Parameterized.Parameters(name = "query cache natural filtering: {0}")

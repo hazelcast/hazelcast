@@ -138,7 +138,6 @@ public class ClientCacheNearCacheLeakTest extends AbstractNearCacheLeakTest<Data
                 .addNearCacheConfig(nearCacheConfig);
     }
 
-    @SuppressWarnings("unchecked")
     private <K, V> CacheConfig<K, V> getCacheConfig(NearCacheConfig nearCacheConfig) {
         CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>()
                 .setName(DEFAULT_NEAR_CACHE_NAME)

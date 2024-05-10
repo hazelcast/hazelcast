@@ -54,9 +54,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> SQL_PREDICATE = Predicates.sql("this > 20");
 
     private static final Predicate<Integer, Employee> PAGING_PREDICATE = Predicates.pagingPredicate(1);
@@ -279,7 +277,6 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void testQueryCache(boolean includeValue) {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         queryCacheConfig.setIncludeValue(includeValue);

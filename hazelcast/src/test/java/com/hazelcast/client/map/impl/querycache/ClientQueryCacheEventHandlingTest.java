@@ -48,7 +48,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();

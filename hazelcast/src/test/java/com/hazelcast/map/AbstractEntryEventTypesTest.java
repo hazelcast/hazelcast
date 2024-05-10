@@ -53,7 +53,6 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     @Parameter
     public boolean includeValue;
 
-    @SuppressWarnings("unchecked")
     final Predicate<Integer, Person> predicate = Predicates.sql("age > 50");
 
     final AtomicInteger eventCounter = new AtomicInteger();

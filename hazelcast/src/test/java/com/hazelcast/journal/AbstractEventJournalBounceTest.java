@@ -60,7 +60,6 @@ public abstract class AbstractEventJournalBounceTest {
     public JitterRule jitterRule = new JitterRule();
     private LinkedList<Object> expectedEvents;
 
-    @SuppressWarnings("unchecked")
     @Before
     public void setup() {
         final HazelcastInstance instance = bounceMemberRule.getSteadyMember();

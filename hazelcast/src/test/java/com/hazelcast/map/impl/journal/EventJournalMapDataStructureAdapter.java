@@ -91,7 +91,6 @@ public class EventJournalMapDataStructureAdapter<K, V>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public CompletionStage<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         return ((EventJournalReader<?>) map).subscribeToEventJournal(partitionId);
     }

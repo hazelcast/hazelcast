@@ -416,7 +416,6 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testExecuteOnKeys() {
         IMap<String, String> map = hz.getMap(getMapName());
         // loop over several keys to make sure we have keys on both instances

@@ -73,7 +73,6 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
         });
     }
 
-    @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     @Test
