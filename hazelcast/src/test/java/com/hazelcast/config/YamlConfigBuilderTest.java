@@ -1110,15 +1110,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                     lruMap:
                          eviction:
                              eviction-policy: LRU
-                \
                     lfuMap:
                           eviction:
                              eviction-policy: LFU
-                \
                     noneMap:
                          eviction:
                              eviction-policy: NONE
-                \
                     randomMap:
                         eviction:
                              eviction-policy: RANDOM
@@ -1410,12 +1407,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       near-cache:
                         eviction:
                           eviction-policy: LFU
-                \
                     lruNearCache:
                       near-cache:
                         eviction:
                           eviction-policy: LRU
-                \
                     noneNearCache:
                       near-cache:
                         eviction:
@@ -4124,7 +4119,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                       enabled: true
                       endpoint-groups:
                         HEALTH_CHECK:
-                 \
                           enabled: true
                         DATA:
                           enabled: true
