@@ -41,6 +41,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,9 +77,9 @@ public class S3MockTest extends S3TestBase {
 
 
     @BeforeClass
-    public static void setupS3() {
+    public static void setupS3() throws IOException {
         assumeDockerEnabled();
-        s3MockContainer = new S3MockContainer("3.7.2");
+        s3MockContainer = new S3MockContainer(MavenVersionUtils.getMavenVersion("com.adobe.testing", "s3mock-testcontainers"));
         s3MockContainer.start();
         s3MockContainer.followOutput(outputFrame -> logger.info(outputFrame.getUtf8String().trim()));
         s3Client = s3Client(s3MockContainer.getHttpEndpoint());
