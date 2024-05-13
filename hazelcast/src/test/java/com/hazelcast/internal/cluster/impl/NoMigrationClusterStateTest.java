@@ -99,10 +99,8 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, instances[2]);
         assertAllPartitionsAreAssigned(instances[2], 1);
 
-        assertTrueEventually(() -> {
-            assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
-                    getPartitionService(instances[2]).getPartitionStateStamp());
-        });
+        assertTrueEventually(() -> assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
+                getPartitionService(instances[2]).getPartitionStateStamp()));
     }
 
     @Test

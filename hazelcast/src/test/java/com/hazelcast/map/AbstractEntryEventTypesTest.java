@@ -29,7 +29,6 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -126,39 +125,21 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     public void entryAddedEvent_whenNoPredicateConfigured() {
         map.addEntryListener(new CountEntryAddedListener(eventCounter), includeValue);
         map.put(1, new Person("a", 40));
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
     public void entryAddedEvent_whenValueMatchesPredicate() {
         map.addEntryListener(new CountEntryAddedListener(eventCounter), predicate, includeValue);
         map.put(1, new Person("a", 75));
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
     public void entryAddedEvent_whenValueOutsidePredicate() {
         map.addEntryListener(new CountEntryAddedListener(eventCounter), predicate, includeValue);
         map.put(1, new Person("a", 35));
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 0);
+        assertEqualsEventually(eventCounter::get, 0);
     }
 
     @Test
@@ -166,13 +147,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.addEntryListener(new CountEntryRemovedListener(eventCounter), includeValue);
         map.put(1, new Person("a", 40));
         map.remove(1);
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
@@ -180,13 +155,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.addEntryListener(new CountEntryRemovedListener(eventCounter), predicate, includeValue);
         map.put(1, new Person("a", 55));
         map.remove(1);
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
@@ -194,13 +163,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.addEntryListener(new CountEntryRemovedListener(eventCounter), predicate, includeValue);
         map.put(1, new Person("a", 35));
         map.remove(1);
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 0);
+        assertEqualsEventually(eventCounter::get, 0);
     }
 
     @Test
@@ -209,13 +172,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 30));
         map.put(1, new Person("a", 60));
 
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
@@ -225,13 +182,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 30));
         map.put(1, new Person("a", 60));
 
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
@@ -240,13 +191,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 30));
         map.put(1, new Person("a", 20));
 
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 0);
+        assertEqualsEventually(eventCounter::get, 0);
     }
 
     @Test
@@ -255,13 +200,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 59));
         map.put(1, new Person("a", 60));
 
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, 1);
+        assertEqualsEventually(eventCounter::get, 1);
     }
 
     @Test
@@ -271,12 +210,6 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         map.put(1, new Person("a", 59));
         map.put(1, new Person("a", 30));
 
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call()
-                    throws Exception {
-                return eventCounter.get();
-            }
-        }, expectedCountFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate());
+        assertEqualsEventually(eventCounter::get, expectedCountFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate());
     }
 }

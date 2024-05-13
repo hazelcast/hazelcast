@@ -55,7 +55,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -86,14 +85,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
     public void testTransactionAtomicity_withMapAndQueue() throws ExecutionException, InterruptedException {
         final HazelcastInstance instance = createHazelcastInstance();
 
-        Future<Object> future = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                IQueue<Object> queue = instance.getQueue("queue");
-                IMap<Object, Object> map = instance.getMap("map");
-                Object item = queue.take();
-                return map.get(item);
-            }
+        Future<Object> future = spawn(() -> {
+            IQueue<Object> queue = instance.getQueue("queue");
+            IMap<Object, Object> map = instance.getMap("map");
+            Object item = queue.take();
+            return map.get(item);
         });
         TransactionOptions options = new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.ONE_PHASE);
         TransactionContext context = instance.newTransactionContext(options);
@@ -123,12 +119,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         map.put("key", "value");
 
-        Future<Object> future = spawn(new Callable<Object>() {
-            @Override
-            public Object call() {
-                IMap<Object, Object> map = instance.getMap("map");
-                return map.get("key");
-            }
+        Future<Object> future = spawn(() -> {
+            IMap<Object, Object> map1 = instance.getMap("map");
+            return map1.get("key");
         });
 
         assertNull(future.get());

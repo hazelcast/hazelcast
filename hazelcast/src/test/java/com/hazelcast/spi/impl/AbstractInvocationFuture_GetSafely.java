@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -40,12 +39,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
     public void whenNormalResponse() throws ExecutionException, InterruptedException {
         future.complete(value);
 
-        Future joinFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.join();
-            }
-        });
+        Future joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         assertSame(value, joinFuture.get());
@@ -73,12 +67,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
         Exception ex = new Exception();
         future.completeExceptionally(ex);
 
-        Future joinFuture = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.join();
-            }
-        });
+        Future joinFuture = spawn(() -> future.join());
 
         assertCompletesEventually(joinFuture);
         try {

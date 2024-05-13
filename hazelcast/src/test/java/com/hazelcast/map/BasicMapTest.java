@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -770,14 +769,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.lock(key);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Future<Object> f = spawn(new Callable<Object>() {
-            public Object call() throws Exception {
-                assertFalse("Should NOT be able to acquire lock!", map.tryLock(key));
-                latch.countDown();
+        Future<Object> f = spawn(() -> {
+            assertFalse("Should NOT be able to acquire lock!", map.tryLock(key));
+            latch.countDown();
 
-                assertTrue("Should be able to acquire lock!", map.tryLock(key, 60, SECONDS));
-                return null;
-            }
+            assertTrue("Should be able to acquire lock!", map.tryLock(key, 60, SECONDS));
+            return null;
         });
 
         assertOpenEventually(latch);
@@ -971,12 +968,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         final String value = "value";
 
         // lock the key
-        spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                map.lock(key);
-                return null;
-            }
+        spawn(() -> {
+            map.lock(key);
+            return null;
         }).get(30, SECONDS);
 
         assertFalse(map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
@@ -992,20 +986,17 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         final CountDownLatch tryPutFailureLatch = new CountDownLatch(1);
 
-        Future<Object> future = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                try {
-                    assertFalse("tryPut() on a locked key should fail!",
-                            map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
-                } finally {
-                    tryPutFailureLatch.countDown();
-                }
-
-                assertTrue("tryPut() should have been succeeded, key is already unlocked!",
-                        map.tryPut(key, value, 30, SECONDS));
-                return null;
+        Future<Object> future = spawn(() -> {
+            try {
+                assertFalse("tryPut() on a locked key should fail!",
+                        map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
+            } finally {
+                tryPutFailureLatch.countDown();
             }
+
+            assertTrue("tryPut() should have been succeeded, key is already unlocked!",
+                    map.tryPut(key, value, 30, SECONDS));
+            return null;
         });
 
         tryPutFailureLatch.await(30, SECONDS);

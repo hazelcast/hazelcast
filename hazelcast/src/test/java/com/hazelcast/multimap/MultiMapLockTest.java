@@ -25,7 +25,6 @@ import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -87,12 +86,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         final MultiMap<String, Integer> multiMap = getMultiMapForLock();
         final String key = randomString();
         multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Assert.assertFalse(multiMap.isLocked(key));
-            }
-        }, 30);
+        assertTrueEventually(() -> Assert.assertFalse(multiMap.isLocked(key)), 30);
     }
 
     @Test

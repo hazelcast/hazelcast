@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -61,12 +60,7 @@ public class AbstractInvocationFuture_IsDoneTest extends AbstractInvocationFutur
 
     @Test
     public void whenBlockingThread() {
-        spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return future.get();
-            }
-        });
+        spawn(() -> future.get());
 
         assertTrueEventually(() -> assertNotSame(AbstractInvocationFuture.UNRESOLVED, future.getState()));
 

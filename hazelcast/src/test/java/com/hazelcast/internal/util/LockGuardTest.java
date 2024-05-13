@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,19 +49,19 @@ public class LockGuardTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAllowsLock_nullTransactionId() throws Exception {
+    public void testAllowsLock_nullTransactionId() {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
         stateLock.allowsLock(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAllowsUnlock_nullTransactionId() throws Exception {
+    public void testAllowsUnlock_nullTransactionId() {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
         stateLock.allowsUnlock(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testConstructor_nullEndpoint() throws Exception {
+    public void testConstructor_nullEndpoint() {
         new LockGuard(null, TXN, 1000);
     }
 
@@ -79,7 +78,7 @@ public class LockGuardTest {
     }
 
     @Test
-    public void testAllowsLock_success() throws Exception {
+    public void testAllowsLock_success() {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
         assertTrue(stateLock.allowsLock(TXN));
     }
@@ -112,12 +111,7 @@ public class LockGuardTest {
 
         stateLock = new LockGuard(endpoint, TXN, 1);
         final LockGuard finalStateLock = stateLock;
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(finalStateLock.isLeaseExpired());
-            }
-        });
+        HazelcastTestSupport.assertTrueEventually(() -> assertTrue(finalStateLock.isLeaseExpired()));
     }
 
     private Address newAddress() throws UnknownHostException {
