@@ -55,7 +55,7 @@ public final class ElementParser {
             value = "";
         }
 
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
 
         int expecting = (CHAR | DELIMITER | START_QUOTE);

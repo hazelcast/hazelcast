@@ -405,7 +405,7 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
 
         // The underlying result sets have contains performing in O(n), converting
         // to HashSet for performance.
-        assertEquals(new HashSet<Integer>(expectedSet), new HashSet<Integer>(actualSet));
+        assertEquals(new HashSet<>(expectedSet), new HashSet<>(actualSet));
     }
 
     public static class Record implements Serializable {

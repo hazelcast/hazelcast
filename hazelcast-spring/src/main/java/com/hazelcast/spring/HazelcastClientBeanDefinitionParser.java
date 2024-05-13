@@ -122,9 +122,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
-        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
-        private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
-        private final ManagedMap<String, BeanDefinition> reliableTopicConfigMap = new ManagedMap<String, BeanDefinition>();
+        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<>();
+        private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<>();
+        private final ManagedMap<String, BeanDefinition> reliableTopicConfigMap = new ManagedMap<>();
 
         SpringXmlBuilder(ParserContext parserContext) {
             this(parserContext, rootBeanDefinition(HazelcastClient.class)
@@ -276,8 +276,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleUserCodeDeployment(Node node) {
             BeanDefinitionBuilder userCodeDeploymentConfig = createBeanBuilder(ClientUserCodeDeploymentConfig.class);
-            List<String> jarPaths = new ArrayList<String>(INITIAL_CAPACITY);
-            List<String> classNames = new ArrayList<String>(INITIAL_CAPACITY);
+            List<String> jarPaths = new ArrayList<>(INITIAL_CAPACITY);
+            List<String> classNames = new ArrayList<>(INITIAL_CAPACITY);
             fillAttributeValues(node, userCodeDeploymentConfig);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -305,7 +305,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleNetwork(Node node) {
             BeanDefinitionBuilder clientNetworkConfig = createBeanBuilder(ClientNetworkConfig.class);
-            List<String> members = new ArrayList<String>(INITIAL_CAPACITY);
+            List<String> members = new ArrayList<>(INITIAL_CAPACITY);
             fillAttributeValues(node, clientNetworkConfig);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -419,7 +419,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private ManagedMap getQueryCaches(Node childNode) {
             ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches
-                    = new ManagedMap<String, ManagedMap<String, BeanDefinition>>();
+                    = new ManagedMap<>();
             for (Node queryCacheNode : childElements(childNode)) {
                 parseQueryCache(queryCaches, queryCacheNode);
             }
@@ -444,7 +444,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             ManagedMap<String, BeanDefinition> configMap = queryCaches.get(mapName);
             if (configMap == null) {
-                configMap = new ManagedMap<String, BeanDefinition>();
+                configMap = new ManagedMap<>();
                 queryCaches.put(mapName, configMap);
             }
             configMap.put(cacheName, builder.getBeanDefinition());
@@ -495,7 +495,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private ManagedList<BeanDefinition> getIndexes(Node node) {
-            ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> indexes = new ManagedList<>();
             for (Node indexNode : childElements(node)) {
                 handleIndex(indexes, indexNode);
             }
@@ -503,7 +503,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private ManagedList<BeanDefinition> getEntryListeners(Node node) {
-            ManagedList<BeanDefinition> listeners = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
                 BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(EntryListenerConfig.class);
@@ -518,7 +518,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleOutboundPorts(Node node, BeanDefinitionBuilder networkConfigBuilder) {
-            ManagedList<String> outboundPorts = new ManagedList<String>();
+            ManagedList<String> outboundPorts = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("ports".equals(name)) {
@@ -531,7 +531,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
 
         private void handleLabels(Node node) {
-            ManagedList<String> labels = new ManagedList<String>();
+            ManagedList<String> labels = new ManagedList<>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
                 if (!"label".equals(name)) {

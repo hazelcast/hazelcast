@@ -118,7 +118,7 @@ public final class FutureUtil {
         private List<Throwable> throwables;
 
         private CollectAllExceptionHandler(int count) {
-            this.throwables = Collections.synchronizedList(new ArrayList<Throwable>(count));
+            this.throwables = Collections.synchronizedList(new ArrayList<>(count));
         }
 
         @Override

@@ -68,7 +68,7 @@ public class SelectionKeysSetTest {
 
     @Test
     public void add_whenCapacityNotSufficient() {
-        List<SelectionKey> expectedKeys = new LinkedList<SelectionKey>();
+        List<SelectionKey> expectedKeys = new LinkedList<>();
         for (int k = 0; k < SelectionKeys.INITIAL_CAPACITY * 4; k++) {
             SelectionKey key = mock(SelectionKey.class);
             expectedKeys.add(key);

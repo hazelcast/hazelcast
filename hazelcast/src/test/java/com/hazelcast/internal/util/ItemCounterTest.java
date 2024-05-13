@@ -48,7 +48,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         counter.add("key1", 1);
         counter.add("key2", 1);
 
-        assertEquals(new HashSet<String>(asList("key1", "key2")), counter.keySet());
+        assertEquals(new HashSet<>(asList("key1", "key2")), counter.keySet());
     }
 
     @Test

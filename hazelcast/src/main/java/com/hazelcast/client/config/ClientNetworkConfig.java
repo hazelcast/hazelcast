@@ -85,8 +85,8 @@ public class ClientNetworkConfig {
         cloudConfig = new ClientCloudConfig(networkConfig.cloudConfig);
         discoveryConfig = new DiscoveryConfig(networkConfig.discoveryConfig);
         outboundPortDefinitions = networkConfig.outboundPortDefinitions == null
-                ? null : new HashSet<String>(networkConfig.outboundPortDefinitions);
-        outboundPorts = networkConfig.outboundPorts == null ? null : new HashSet<Integer>(networkConfig.outboundPorts);
+                ? null : new HashSet<>(networkConfig.outboundPortDefinitions);
+        outboundPorts = networkConfig.outboundPorts == null ? null : new HashSet<>(networkConfig.outboundPorts);
         clientIcmpPingConfig = new ClientIcmpPingConfig(networkConfig.clientIcmpPingConfig);
     }
 

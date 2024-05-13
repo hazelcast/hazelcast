@@ -162,7 +162,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
 
         final List<Integer> keyList = Arrays.asList(1, 2, 3, 4, 5);
-        map.getAll(new HashSet<Integer>(keyList));
+        map.getAll(new HashSet<>(keyList));
 
         assertTrueEventually(() -> {
             assertEquals(keyList.size(), entryEvents.size());

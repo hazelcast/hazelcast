@@ -53,7 +53,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.drain(maxSize);
-        response = new SerializableList(new ArrayList<Data>(dataMap.values()));
+        response = new SerializableList(new ArrayList<>(dataMap.values()));
     }
 
     @Override

@@ -146,7 +146,7 @@ public class GcpDiscoveryStrategyTest {
     @Test
     public void discoverNodesEmpty() {
         // given
-        given(gcpClient.getAddresses()).willReturn(new ArrayList<GcpAddress>());
+        given(gcpClient.getAddresses()).willReturn(new ArrayList<>());
 
         // when
         Iterable<DiscoveryNode> nodes = gcpDiscoveryStrategy.discoverNodes();

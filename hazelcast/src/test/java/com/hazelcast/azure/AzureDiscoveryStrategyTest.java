@@ -139,7 +139,7 @@ public class AzureDiscoveryStrategyTest {
     @Test
     public void discoverNodesEmpty() {
         // given
-        given(azureClient.getAddresses()).willReturn(new ArrayList<AzureAddress>());
+        given(azureClient.getAddresses()).willReturn(new ArrayList<>());
 
         // when
         Iterable<DiscoveryNode> nodes = azureDiscoveryStrategy.discoverNodes();

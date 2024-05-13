@@ -64,7 +64,7 @@ public class MockJoinerTest extends HazelcastTestSupport {
     @Test
     public void parallelJoin() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final Collection<HazelcastInstance> instances = Collections.synchronizedCollection(new ArrayList<HazelcastInstance>());
+        final Collection<HazelcastInstance> instances = Collections.synchronizedCollection(new ArrayList<>());
 
         final CountDownLatch latch = new CountDownLatch(nodeCount);
 

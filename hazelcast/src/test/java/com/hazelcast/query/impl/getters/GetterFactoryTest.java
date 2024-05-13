@@ -572,7 +572,7 @@ public class GetterFactoryTest {
         }
 
         public static OuterObject emptyInner(String name) {
-            return new OuterObject(name, new InnerObject[0], new ArrayList<InnerObject>());
+            return new OuterObject(name, new InnerObject[0], new ArrayList<>());
         }
 
         public String getName() {
@@ -611,7 +611,7 @@ public class GetterFactoryTest {
         }
 
         public static InnerObject emptyInner(String name) {
-            return new InnerObject(name, new Integer[0], new ArrayList<Integer>());
+            return new InnerObject(name, new Integer[0], new ArrayList<>());
         }
 
         public String getName() {

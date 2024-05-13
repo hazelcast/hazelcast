@@ -63,7 +63,7 @@ class LoadTracker {
 
         this.ownerToPipelines = createHashMap(ioThreads.length);
         for (NioThread selector : ioThreads) {
-            ownerToPipelines.put(selector, new HashSet<MigratablePipeline>());
+            ownerToPipelines.put(selector, new HashSet<>());
         }
         this.imbalance = new LoadImbalance(ownerToPipelines, pipelineLoadCount);
     }

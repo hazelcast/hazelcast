@@ -72,7 +72,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
     public static class EventCollectingCachePartitionLostListener implements CachePartitionLostListener {
 
         private final List<CachePartitionLostEvent> events
-                = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
+                = Collections.synchronizedList(new LinkedList<>());
 
         private final int backupCount;
 

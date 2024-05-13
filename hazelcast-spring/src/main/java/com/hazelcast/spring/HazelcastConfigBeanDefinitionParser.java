@@ -2013,7 +2013,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private BeanDefinition handleSimpleUser(Node node) {
             BeanDefinitionBuilder simpleUserBuilder = createBeanBuilder(SimpleAuthenticationConfig.UserDto.class);
             simpleUserBuilder.addConstructorArgValue(getAttribute(node, "password"));
-            List<String> roles = new ArrayList<String>();
+            List<String> roles = new ArrayList<>();
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("role".equals(nodeName)) {
