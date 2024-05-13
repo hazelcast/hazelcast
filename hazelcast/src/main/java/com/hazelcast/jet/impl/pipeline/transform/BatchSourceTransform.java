@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
@@ -59,11 +60,13 @@ public class BatchSourceTransform<T> extends AbstractTransform implements BatchS
         p.addVertex(this, name(), determinedLocalParallelism(), metaSupplier);
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeObject(metaSupplier);
         out.writeBoolean(isAssignedToStage);
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         metaSupplier = doWithClassLoader(ProcessorClassLoaderTLHolder.get(name()), () -> (ProcessorMetaSupplier) in.readObject());
         isAssignedToStage = in.readBoolean();

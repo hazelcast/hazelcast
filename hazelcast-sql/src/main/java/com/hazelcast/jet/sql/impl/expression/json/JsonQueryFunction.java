@@ -36,6 +36,7 @@ import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -214,6 +215,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
         if (this.constantPathCache == null) {

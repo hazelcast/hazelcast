@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.util.UUID;
@@ -76,12 +77,14 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         return endpoint;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         writeUUID(out, uuid);
         out.writeUTF(address.getHost());
         out.writeInt(address.getPort());
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         uuid = readUUID(in);
         endpoint = new RaftEndpointImpl(uuid);

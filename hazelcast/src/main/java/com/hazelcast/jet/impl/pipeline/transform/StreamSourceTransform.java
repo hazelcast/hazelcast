@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.Edge.between;
@@ -133,6 +134,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
         return partitionIdleTimeout;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeObject(metaSupplierFn);
         out.writeBoolean(isAssignedToStage);
@@ -143,6 +145,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
         out.writeLong(partitionIdleTimeout);
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         metaSupplierFn = doWithClassLoader(
                 ProcessorClassLoaderTLHolder.get(name()),

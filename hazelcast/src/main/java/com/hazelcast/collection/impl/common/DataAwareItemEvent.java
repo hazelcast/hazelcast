@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 
 /**
  * An {@link ItemEvent} that is able to store a {@link Data}.
@@ -55,6 +56,7 @@ public class DataAwareItemEvent<E> extends ItemEvent<E> {
         return dataItem;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         throw new NotSerializableException();
     }

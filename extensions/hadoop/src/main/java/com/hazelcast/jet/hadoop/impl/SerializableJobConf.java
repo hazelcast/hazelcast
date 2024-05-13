@@ -23,6 +23,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -40,10 +41,12 @@ public final class SerializableJobConf extends JobConf implements Serializable {
         super(jobConf);
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         super.write(new DataOutputStream(out));
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException {
         super.readFields(new DataInputStream(in));
     }

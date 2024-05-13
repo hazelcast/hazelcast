@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 
 public class DataAwareEntryEvent<K, V> extends EntryEvent<K, V> {
 
@@ -100,6 +101,7 @@ public class DataAwareEntryEvent<K, V> extends EntryEvent<K, V> {
         return mergingValue;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         throw new NotSerializableException();
     }
