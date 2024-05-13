@@ -33,9 +33,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.jet.impl.connector.HazelcastWriters.handleInstanceNotActive;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.connector.HazelcastWriters.handleInstanceNotActive;
 import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 
 public abstract class AsyncHazelcastWriterP implements Processor {
@@ -56,7 +56,7 @@ public abstract class AsyncHazelcastWriterP implements Processor {
         }
     });
 
-    AsyncHazelcastWriterP(@Nonnull HazelcastInstance instance, int maxParallelAsyncOps) {
+    protected AsyncHazelcastWriterP(@Nonnull HazelcastInstance instance, int maxParallelAsyncOps) {
         this.instance = Objects.requireNonNull(instance, "instance");
         this.maxParallelAsyncOps = maxParallelAsyncOps;
         this.isLocal = ImdgUtil.isMemberInstance(instance);

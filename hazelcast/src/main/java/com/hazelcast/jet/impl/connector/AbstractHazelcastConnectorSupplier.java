@@ -43,7 +43,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
     private transient HazelcastInstance instance;
     private transient SerializationService serializationService;
 
-    AbstractHazelcastConnectorSupplier(
+    protected AbstractHazelcastConnectorSupplier(
             @Nullable String dataConnectionName,
             @Nullable String clientXml
     ) {

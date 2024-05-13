@@ -23,6 +23,7 @@ import com.hazelcast.vector.SearchOptions;
 import com.hazelcast.vector.VectorValues;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +31,9 @@ import java.util.Objects;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMapStringKey;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMapStringKey;
 
-public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializable {
+public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializable, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private boolean includePayload;
     private boolean includeVectors;
