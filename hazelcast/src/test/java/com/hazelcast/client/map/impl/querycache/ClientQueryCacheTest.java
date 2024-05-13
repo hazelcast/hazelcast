@@ -145,12 +145,9 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        IFunction evictAll = new IFunction() {
-            @Override
-            public Object apply(Object ignored) {
-                map.evictAll();
-                return null;
-            }
+        IFunction<Object, Object> evictAll = ignored -> {
+            map.evictAll();
+            return null;
         };
 
         assertQueryCacheSizeEventually(0, evictAll, queryCache);
@@ -166,13 +163,9 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        IFunction clear = new IFunction() {
-
-            @Override
-            public Object apply(Object ignored) {
-                map.clear();
-                return null;
-            }
+        IFunction<Object, Object> clear = ignored -> {
+            map.clear();
+            return null;
         };
 
         assertQueryCacheSizeEventually(0, clear, queryCache);
@@ -184,12 +177,7 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
         final CountDownLatch numberOfAddEvents = new CountDownLatch(entryCount);
         String cacheName = randomString();
         IMap<Integer, Integer> map = getMap();
-        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                numberOfAddEvents.countDown();
-            }
-        }, TRUE_PREDICATE, false);
+        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, (EntryAddedListener<Integer, Integer>) event -> numberOfAddEvents.countDown(), TRUE_PREDICATE, false);
 
         for (int i = 0; i < entryCount; i++) {
             map.put(i, i);

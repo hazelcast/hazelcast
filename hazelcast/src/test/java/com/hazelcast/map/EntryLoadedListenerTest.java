@@ -86,12 +86,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
     public void load_listener_notified_when_containsKey_loads_from_map_loader() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_containsKey");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.containsKey(1);
 
@@ -102,12 +97,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
     public void load_listener_notified_when_putIfAbsent_loads_from_map_loader() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_putIfAbsent");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.putIfAbsent(1, 100);
 
@@ -118,12 +108,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
     public void load_listener_notified_when_get_loads_from_map_loader() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_get");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.get(1);
 
@@ -134,12 +119,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
     public void load_listener_notified_when_get_after_evict() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_load_listener_notified_when_get_after_evict");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.put(1, 1);
         map.evict(1);
@@ -153,12 +133,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         final Queue<EntryEvent> entryEvents = new ConcurrentLinkedQueue<>();
 
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_getAll");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                entryEvents.add(event);
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) entryEvents::add, true);
 
 
         final List<Integer> keyList = Arrays.asList(1, 2, 3, 4, 5);
@@ -177,12 +152,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_read_only_ep");
 
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.executeOnKey(1, new Reader());
 
@@ -193,12 +163,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
     public void add_listener_not_notified_when_read_only_entry_processor_loads_from_map_loader() {
         final AtomicInteger addEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = node.getMap("noInitialLoading_test_read_only_ep_not_notified");
-        map.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                addEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> addEventCount.incrementAndGet(), true);
 
         map.executeOnKey(1, new Reader());
 

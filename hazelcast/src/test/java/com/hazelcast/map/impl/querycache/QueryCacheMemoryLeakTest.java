@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.map.IMap;
@@ -135,11 +134,8 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                     QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
                     queryCache.get(key);
 
-                    queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-                        @Override
-                        public void entryAdded(EntryEvent<Integer, Integer> event) {
+                    queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
 
-                        }
                     }, true);
 
                     queryCache.destroy();
@@ -182,11 +178,8 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
         QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
         queryCache.get(key);
 
-        queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
+        queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
 
-            }
         }, true);
 
         queryCache.destroy();

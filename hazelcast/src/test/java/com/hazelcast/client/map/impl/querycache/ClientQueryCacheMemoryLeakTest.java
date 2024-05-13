@@ -24,7 +24,6 @@ import com.hazelcast.client.map.impl.querycache.subscriber.ClientQueryCacheEvent
 import com.hazelcast.client.map.impl.querycache.subscriber.QueryCacheToListenerMapper;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
@@ -109,11 +108,8 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
                     QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
                     queryCache.get(key);
 
-                    queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-                        @Override
-                        public void entryAdded(EntryEvent<Integer, Integer> event) {
+                    queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
 
-                        }
                     }, true);
 
                     queryCache.destroy();
@@ -185,11 +181,8 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
                 while (!stop.get()) {
                     QueryCache queryCache = map.getQueryCache("a", Predicates.alwaysTrue(), true);
 
-                    queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
-                        @Override
-                        public void entryAdded(EntryEvent<Integer, Integer> event) {
+                    queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
 
-                        }
                     }, true);
 
                     queryCache.destroy();

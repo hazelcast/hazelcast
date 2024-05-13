@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
@@ -237,21 +236,11 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     private static void addListener(IMap map, final CountDownLatch counter) {
-        map.addEntryListener(new EntryAddedListener<Object, Object>() {
-            @Override
-            public void entryAdded(EntryEvent<Object, Object> event) {
-                counter.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryAddedListener<Object, Object>) event -> counter.countDown(), true);
     }
 
     private static void addLoadedListener(IMap map, final CountDownLatch counter) {
-        map.addEntryListener(new EntryLoadedListener<Object, Object>() {
-            @Override
-            public void entryLoaded(EntryEvent<Object, Object> event) {
-                counter.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Object, Object>) event -> counter.countDown(), true);
     }
 
     private static void evictRange(IMap<Integer, Integer> map, int rangeStart, int rangeEnd) {

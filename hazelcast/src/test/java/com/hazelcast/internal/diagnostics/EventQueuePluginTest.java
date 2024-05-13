@@ -35,7 +35,6 @@ import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.longregister.LongRegisterService;
@@ -124,18 +123,8 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
     @Test
     public void testMap() {
         final IMap<Integer, Integer> map = hz.getMap(MAP_NAME);
-        map.addLocalEntryListener(new EntryAddedListener<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                assertOpenEventually(listenerLatch);
-            }
-        });
-        map.addLocalEntryListener(new EntryRemovedListener() {
-            @Override
-            public void entryRemoved(EntryEvent event) {
-                assertOpenEventually(listenerLatch);
-            }
-        });
+        map.addLocalEntryListener((EntryAddedListener<Integer, Integer>) event -> assertOpenEventually(listenerLatch));
+        map.addLocalEntryListener((EntryRemovedListener<Integer, Integer>) event -> assertOpenEventually(listenerLatch));
 
         spawn((Runnable) () -> {
             Random random = new Random();
