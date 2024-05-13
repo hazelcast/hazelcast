@@ -71,7 +71,6 @@
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
 
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>3.4.1</maven.jar.plugin.version>
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
         <maven.antrun.plugin.version>3.1.0</maven.antrun.plugin.version>
@@ -79,7 +78,6 @@
         <maven.assembly.plugin.version>3.7.1</maven.assembly.plugin.version>
         <maven.shade.plugin.version>3.5.3</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.6.1</maven.dependency.plugin.version>
-        <maven.deploy.plugin.version>3.1.2</maven.deploy.plugin.version>
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.3.1</maven.checkstyle.plugin.version>
         <maven.enforcer.plugin.version>3.4.1</maven.enforcer.plugin.version>
@@ -121,7 +119,6 @@
         <kotlin.version>1.9.24</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.6.1.jre11</mssql.version>
-        <mysql.connector.version>8.4.0</mysql.connector.version>
         <netty.version>4.1.109.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <oracle.version>23.3.0.23.09</oracle.version>
@@ -160,7 +157,6 @@
         <http.core.version>4.4.16</http.core.version>
         <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
-        <mockito.version>5.11.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <jna.version>5.14.0</jna.version>
@@ -443,7 +439,7 @@
             <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
-                <version>${mysql.connector.version}</version>
+                <version>8.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
@@ -620,13 +616,13 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
+                <version>5.11.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>${mockito.version}</version>
+                <version>5.11.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -762,7 +758,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven.jar.plugin.version}</version>
+                    <version>3.4.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -802,7 +798,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven.deploy.plugin.version}</version>
+                    <version>3.1.2</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
