@@ -139,8 +139,8 @@ public class IssuesTest extends HazelcastTestSupport {
         Thread.sleep(50L);
         imap.addEntryListener(listener, false);
         imap.put(1, 1);
-        assertEqualsEventually(() -> eventsWithValues.size(), 1);
-        assertEqualsEventually(() -> eventsWithoutValues.size(), 1);
+        assertEqualsEventually(eventsWithValues::size, 1);
+        assertEqualsEventually(eventsWithoutValues::size, 1);
     }
 
     @Test

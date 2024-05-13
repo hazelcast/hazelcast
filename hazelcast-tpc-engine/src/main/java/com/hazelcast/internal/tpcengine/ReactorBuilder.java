@@ -49,7 +49,7 @@ public abstract class ReactorBuilder {
     protected final ReactorType type;
     Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
     Supplier<String> threadNameSupplier;
-    Supplier<String> reactorNameSupplier = new Supplier<String>() {
+    Supplier<String> reactorNameSupplier = new Supplier<>() {
         private final AtomicInteger idGenerator = new AtomicInteger();
 
         @Override

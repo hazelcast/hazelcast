@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.ref.WeakReference;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -47,12 +46,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     public void setup() {
         serializationService = mock(InternalSerializationService.class);
         bufferPoolThreadLocal = new BufferPoolThreadLocal(serializationService, new BufferPoolFactoryImpl()
-                , new Supplier<RuntimeException>() {
-            @Override
-            public RuntimeException get() {
-                return new HazelcastInstanceNotActiveException();
-            }
-        });
+                , HazelcastInstanceNotActiveException::new);
     }
 
     @Test
