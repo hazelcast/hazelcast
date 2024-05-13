@@ -1674,7 +1674,7 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.lock.max.lease.time.seconds", Long.MAX_VALUE, SECONDS);
 
     /**
-     * Hazelcast IMDG Enterprise license key.
+     * Hazelcast Enterprise license key.
      */
     public static final HazelcastProperty ENTERPRISE_LICENSE_KEY = new HazelcastProperty("hazelcast.enterprise.license.key")
             // Print a warning when British spelling of "License" is used
