@@ -116,7 +116,7 @@ public class ReplicatedMapIterationServiceTest extends HazelcastTestSupport {
         }
         IterationResult<ReplicatedMapEntryViewHolder> result = service.iterate(cursorId, pageSize);
         // first iteration does not forget a cursor id
-        assertThat(result.getCursorIdToForget()).isEqualTo(null);
+        assertThat(result.getCursorIdToForget()).isNull();
         assertThat(result.getCursorId()).isNotNull();
         assertThat(result.getCursorId()).isNotEqualTo(cursorId);
         List<Integer> actualKeys = new ArrayList<>();

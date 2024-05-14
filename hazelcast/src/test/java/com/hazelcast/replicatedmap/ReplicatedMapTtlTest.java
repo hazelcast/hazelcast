@@ -83,7 +83,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
             ReplicatedMap<String, Object> map = instance.getReplicatedMap(mapName);
             maps.add(map);
         }
-        for (ReplicatedMap map : maps) {
+        for (ReplicatedMap<String, Object> map : maps) {
             assertSizeEventually(0, map, 60);
         }
     }
@@ -115,7 +115,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
     public void clear_empties_internal_ttl_schedulers() {
         HazelcastInstance node = createHazelcastInstance();
         String mapName = "test";
-        ReplicatedMap map = node.getReplicatedMap(mapName);
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, 100, TimeUnit.DAYS);
@@ -130,7 +130,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
     public void remove_empties_internal_ttl_schedulers() {
         HazelcastInstance node = createHazelcastInstance();
         String mapName = "test";
-        ReplicatedMap map = node.getReplicatedMap(mapName);
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, 100, TimeUnit.DAYS);
@@ -147,7 +147,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
     public void service_reset_empties_internal_ttl_schedulers() {
         HazelcastInstance node = createHazelcastInstance();
         String mapName = "test";
-        ReplicatedMap map = node.getReplicatedMap(mapName);
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, 100, TimeUnit.DAYS);
@@ -159,7 +159,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
         assertAllTtlSchedulersEmpty(map);
     }
 
-    private static void assertAllTtlSchedulersEmpty(ReplicatedMap map) {
+    private static void assertAllTtlSchedulersEmpty(ReplicatedMap<Integer, Integer> map) {
         String mapName = map.getName();
         ReplicatedMapProxy replicatedMapProxy = (ReplicatedMapProxy) map;
         ReplicatedMapService service = (ReplicatedMapService) replicatedMapProxy.getService();

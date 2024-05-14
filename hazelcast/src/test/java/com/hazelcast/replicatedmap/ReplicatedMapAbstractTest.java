@@ -102,7 +102,6 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
         return store.getReplicatedRecord(key);
     }
 
-    @SuppressWarnings("unchecked")
     protected <K, V> ReplicatedRecordStore getStore(ReplicatedMap<K, V> map, K key) throws Exception {
         ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
         ReplicatedMapService service = (ReplicatedMapService) REPLICATED_MAP_SERVICE.get(proxy);

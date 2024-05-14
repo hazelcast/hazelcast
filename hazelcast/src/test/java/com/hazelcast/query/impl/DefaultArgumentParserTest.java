@@ -45,7 +45,7 @@ public class DefaultArgumentParserTest {
         Object arguments = parser.parse(null);
 
         // THEN
-        assertThat(arguments).isEqualTo(null);
+        assertThat(arguments).isNull();
     }
 
 }
