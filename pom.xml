@@ -35,6 +35,7 @@
     <url>http://www.hazelcast.com/</url>
 
     <modules>
+        <module>hazelcast-parent</module>
         <module>hazelcast-tpc-engine</module>
         <module>hazelcast</module>
         <module>hazelcast-archunit-rules</module>
