@@ -34,6 +34,7 @@ import com.hazelcast.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
+import java.io.Serial;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -153,6 +154,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 new ProcessorSupplier() {
+                    @Serial
                     private static final long serialVersionUID = 1L;
 
                     private transient JdbcDataConnection dataConnection;
@@ -186,6 +188,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             private transient Context context;

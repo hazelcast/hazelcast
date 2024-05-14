@@ -19,6 +19,7 @@ package com.hazelcast.cp.exception;
 import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
+import java.io.Serial;
 import java.util.UUID;
 
 /**
@@ -29,6 +30,7 @@ import java.util.UUID;
  */
 public class StaleAppendRequestException extends CPSubsystemException implements IndeterminateOperationState {
 
+    @Serial
     private static final long serialVersionUID = -736303015926722821L;
 
     public StaleAppendRequestException(RaftEndpoint leader) {

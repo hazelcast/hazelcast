@@ -19,6 +19,8 @@ package com.hazelcast.jet.impl.exception;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.spi.exception.SilentException;
 
+import java.io.Serial;
+
 import static com.hazelcast.jet.Util.idToString;
 
 /**
@@ -27,6 +29,7 @@ import static com.hazelcast.jet.Util.idToString;
  */
 public class ExecutionNotFoundException extends JetException implements SilentException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public ExecutionNotFoundException() {

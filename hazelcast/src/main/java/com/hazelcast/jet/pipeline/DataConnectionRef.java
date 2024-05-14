@@ -20,6 +20,7 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import static java.util.Objects.requireNonNull;
@@ -32,6 +33,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class DataConnectionRef implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String name;

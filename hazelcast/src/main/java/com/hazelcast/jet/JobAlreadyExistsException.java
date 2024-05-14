@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import java.io.Serial;
+
 /**
  * Thrown when a named job is submitted while there is an <em>active job</em>
  * with the same name. Job is <em>active</em> if it is running, suspended or
@@ -25,6 +27,7 @@ package com.hazelcast.jet;
  */
 public class JobAlreadyExistsException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

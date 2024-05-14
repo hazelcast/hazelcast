@@ -18,6 +18,8 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
 
+import java.io.Serial;
+
 /**
  * Thrown when a topology change causes a job to abort. The job
  * is aborted when a participating member leaves the cluster. If
@@ -28,6 +30,7 @@ import com.hazelcast.jet.JetException;
  */
 public class TopologyChangedException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

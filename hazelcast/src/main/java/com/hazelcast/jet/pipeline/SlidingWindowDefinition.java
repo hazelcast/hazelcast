@@ -18,6 +18,8 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
+import java.io.Serial;
+
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
@@ -29,6 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 @SerializableByConvention
 public class SlidingWindowDefinition extends WindowDefinition {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final long windowSize;

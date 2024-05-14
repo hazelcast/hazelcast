@@ -35,6 +35,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -151,6 +152,7 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
      */
     public static class Supplier<T, K, V> extends AbstractHazelcastConnectorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         // use a conservative max parallelism to prevent overloading

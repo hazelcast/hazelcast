@@ -34,6 +34,7 @@ import com.hazelcast.jet.pipeline.StreamSourceStage;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import static java.util.stream.Collectors.toList;
 
 public class PipelineImpl implements Pipeline {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();

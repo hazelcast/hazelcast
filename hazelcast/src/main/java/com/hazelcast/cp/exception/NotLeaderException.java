@@ -19,6 +19,7 @@ package com.hazelcast.cp.exception;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
+import java.io.Serial;
 import java.util.UUID;
 
 /**
@@ -26,6 +27,7 @@ import java.util.UUID;
  * a leader-only request is received by a non-leader member.
  */
 public class NotLeaderException extends CPSubsystemException {
+    @Serial
     private static final long serialVersionUID = 1817579502149525710L;
 
     public NotLeaderException(CPGroupId groupId, RaftEndpoint local, RaftEndpoint leader) {

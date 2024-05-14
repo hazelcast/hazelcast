@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
@@ -33,6 +34,7 @@ import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 
 public class SinkTransform<T> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final int[] EMPTY_ORDINALS = new int[0];

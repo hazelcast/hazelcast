@@ -25,11 +25,14 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
 import javax.annotation.Nonnull;
 
+import java.io.Serial;
+
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.flatMapP;
 
 public class FlatMapTransform<T, R> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Nonnull

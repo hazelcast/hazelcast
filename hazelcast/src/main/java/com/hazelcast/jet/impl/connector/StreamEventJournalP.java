@@ -446,6 +446,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     private static class ClusterProcessorSupplier<E, T> implements ProcessorSupplier {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Nonnull

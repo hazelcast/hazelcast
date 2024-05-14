@@ -27,10 +27,13 @@ import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 
 import javax.annotation.Nonnull;
 
+import java.io.Serial;
+
 import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
 
 public class GlobalFlatMapStatefulTransform<T, S, R> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final ToLongFunctionEx<? super T> timestampFn;

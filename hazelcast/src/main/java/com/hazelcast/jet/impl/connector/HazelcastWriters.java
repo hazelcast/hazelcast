@@ -335,6 +335,7 @@ public final class HazelcastWriters {
 
     private static class WriteCachePSupplier<K, V> extends AbstractHazelcastConnectorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String name;
@@ -374,6 +375,7 @@ public final class HazelcastWriters {
 
     private static class WriteListPSupplier<T> extends AbstractHazelcastConnectorSupplier {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String name;

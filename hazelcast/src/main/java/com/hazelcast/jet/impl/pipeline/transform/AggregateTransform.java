@@ -26,6 +26,7 @@ import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -37,6 +38,7 @@ import static com.hazelcast.jet.core.processor.Processors.combineP;
 public class AggregateTransform<A, R> extends AbstractTransform {
     public static final String FIRST_STAGE_VERTEX_NAME_SUFFIX = "-prepare";
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Nonnull

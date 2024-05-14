@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
@@ -70,6 +71,7 @@ public final class EventTimePolicy<T> implements Serializable {
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final ObjLongBiFunction<?, ?> NO_WRAPPING = (event, timestamp) -> event;

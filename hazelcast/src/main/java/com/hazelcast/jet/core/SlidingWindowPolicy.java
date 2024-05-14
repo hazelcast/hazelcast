@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.internal.util.Preconditions;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
@@ -47,6 +48,7 @@ import static java.lang.Math.floorMod;
  * @since Jet 3.0
  */
 public class SlidingWindowPolicy implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final long frameSize;

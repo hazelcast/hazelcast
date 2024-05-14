@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+import java.io.Serial;
 import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -338,6 +339,7 @@ public abstract class XaSinkProcessorBase implements Processor {
 
     private static final class BetterXAException extends XAException {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private BetterXAException(String message, int errorCode, Throwable cause) {

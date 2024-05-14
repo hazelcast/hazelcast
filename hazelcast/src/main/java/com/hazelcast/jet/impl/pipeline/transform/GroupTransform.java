@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 
 import static com.hazelcast.function.Functions.entryKey;
@@ -38,6 +39,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST
 
 public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Nonnull

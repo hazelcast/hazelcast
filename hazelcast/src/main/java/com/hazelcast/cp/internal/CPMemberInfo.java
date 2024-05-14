@@ -42,6 +42,7 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
  */
 public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSerializable {
 
+    @Serial
     private static final long serialVersionUID = 5628148969327743953L;
 
     private UUID uuid;

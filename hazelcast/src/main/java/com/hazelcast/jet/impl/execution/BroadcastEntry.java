@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import java.io.Serial;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 
@@ -27,6 +28,7 @@ import java.util.Map.Entry;
  */
 public final class BroadcastEntry<K, V> extends SimpleImmutableEntry<K, V> implements BroadcastItem {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public BroadcastEntry(K key, V value) {

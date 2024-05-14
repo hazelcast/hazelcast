@@ -28,6 +28,8 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.io.Serial;
+
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
@@ -37,6 +39,7 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 
 public class SortTransform<T> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final String COLLECT_STAGE_SUFFIX = "-collect";

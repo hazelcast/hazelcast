@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.memory;
 
 import com.hazelcast.jet.config.InstanceConfig;
 
+import java.io.Serial;
+
 /**
  * This exception is thrown when a job exceeds a configurable processor accumulation limit.
  *
@@ -25,6 +27,7 @@ import com.hazelcast.jet.config.InstanceConfig;
  */
 public class AccumulationLimitExceededException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public AccumulationLimitExceededException() {

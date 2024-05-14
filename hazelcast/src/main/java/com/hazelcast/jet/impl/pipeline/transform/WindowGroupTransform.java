@@ -33,6 +33,7 @@ import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 
 import static com.hazelcast.function.Functions.entryKey;
@@ -50,6 +51,7 @@ import static java.util.Collections.nCopies;
 
 public class WindowGroupTransform<K, R> extends AbstractTransform {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("rawtypes")

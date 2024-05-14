@@ -18,12 +18,15 @@ package com.hazelcast.jet.impl.exception;
 
 import com.hazelcast.jet.JetException;
 
+import java.io.Serial;
+
 /**
  * JetDisabledException is thrown when Jet tried to be used even though it's
  * disabled in the configuration files.
  */
 public class JetDisabledException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public JetDisabledException(String message) {

@@ -19,12 +19,15 @@ package com.hazelcast.cp.internal.datastructures.exception;
 
 import com.hazelcast.core.HazelcastException;
 
+import java.io.Serial;
+
 /**
  * Thrown when a wait key is cancelled and means that
  * the corresponding operation has not succeeded
  */
 public class WaitKeyCancelledException extends HazelcastException {
 
+    @Serial
     private static final long serialVersionUID = 437835746549840631L;
 
     public WaitKeyCancelledException() {

@@ -18,12 +18,15 @@ package com.hazelcast.jet.impl.exception;
 
 import com.hazelcast.jet.JetException;
 
+import java.io.Serial;
+
 /**
  * Exception thrown internally from member that completed the execution as a
  * result of a terminal snapshot.
  */
 public class TerminatedWithSnapshotException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
 }

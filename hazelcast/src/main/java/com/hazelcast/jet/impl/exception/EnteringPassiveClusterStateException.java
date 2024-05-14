@@ -20,6 +20,8 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 
+import java.io.Serial;
+
 /**
  * An exception thrown internally for {@link InitExecutionOperation} and
  * {@link StartExecutionOperation} to indicate that the cluster is entering
@@ -27,6 +29,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
  */
 public class EnteringPassiveClusterStateException extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
 }

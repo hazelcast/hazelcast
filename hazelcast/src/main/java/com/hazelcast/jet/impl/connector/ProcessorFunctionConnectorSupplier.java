@@ -23,12 +23,14 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 
 /**
  * A ProcessorSupplier that checks permission of processor function
  */
 class ProcessorFunctionConnectorSupplier extends AbstractHazelcastConnectorSupplier {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final FunctionEx<HazelcastInstance, Processor> processorFunction;

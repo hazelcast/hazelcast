@@ -37,6 +37,7 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
  */
 public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -5184348267183410904L;
 
     private UUID uuid;

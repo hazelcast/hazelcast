@@ -18,6 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastException;
 
+import java.io.Serial;
+
 /**
  * Base Jet exception.
  *
@@ -25,6 +27,7 @@ import com.hazelcast.core.HazelcastException;
  */
 public class JetException extends HazelcastException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public JetException() {

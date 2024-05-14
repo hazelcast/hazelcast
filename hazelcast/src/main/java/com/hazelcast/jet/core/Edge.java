@@ -38,6 +38,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -763,6 +764,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     static class Single implements Partitioner<Object>, IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private Object key;
@@ -817,6 +819,7 @@ public class Edge implements IdentifiedDataSerializable {
     static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware,
             IdentifiedDataSerializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private FunctionEx<T, K> keyExtractor;

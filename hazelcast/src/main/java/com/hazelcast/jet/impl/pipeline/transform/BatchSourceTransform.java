@@ -33,6 +33,7 @@ import static java.util.Collections.emptyList;
 
 public class BatchSourceTransform<T> extends AbstractTransform implements BatchSource<T> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Nonnull

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.spi.impl.operationservice.WrappableException;
 
+import java.io.Serial;
 import java.util.UUID;
 
 /**
@@ -31,6 +32,7 @@ import java.util.UUID;
  */
 public class CPSubsystemException extends HazelcastException implements WrappableException<CPSubsystemException> {
 
+    @Serial
     private static final long serialVersionUID = 3165333502175586105L;
 
     private final UUID leaderUuid;

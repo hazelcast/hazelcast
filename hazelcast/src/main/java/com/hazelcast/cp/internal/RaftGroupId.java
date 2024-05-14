@@ -32,6 +32,7 @@ import java.io.Serializable;
  */
 public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -2381010126931378167L;
 
     private String name;

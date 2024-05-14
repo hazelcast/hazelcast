@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -116,6 +117,7 @@ public interface Partitioner<T> extends Serializable {
      */
     final class Default implements Partitioner<Object> {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         transient DefaultPartitionStrategy defaultPartitioning;
