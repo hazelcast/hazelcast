@@ -121,7 +121,7 @@
         <mssql.version>12.6.1.jre11</mssql.version>
         <netty.version>4.1.109.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
-        <oracle.version>23.3.0.23.09</oracle.version>
+        <oracle.version>23.4.0.24.05</oracle.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.6</picocli.version>
