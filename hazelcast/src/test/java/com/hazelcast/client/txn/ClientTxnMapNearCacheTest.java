@@ -66,7 +66,7 @@ public class ClientTxnMapNearCacheTest extends HazelcastTestSupport {
 
     private HazelcastInstance server;
     private HazelcastInstance client;
-    private IMap serverMap;
+    private IMap<Integer, Integer> serverMap;
 
     @After
     public void tearDown() {

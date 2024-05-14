@@ -106,13 +106,7 @@ public class ClientCacheClearTest extends CacheClearTest {
 
         CacheConfig config = cache.getConfiguration(CacheConfig.class);
 
-        registerInvalidationListener(new EventHandler() {
-            @Override
-            public void handle(Object event) {
-                counter.getAndIncrement();
-            }
-
-        }, config.getNameWithPrefix());
+        registerInvalidationListener(event -> counter.getAndIncrement(), config.getNameWithPrefix());
 
         cache.clear();
 

@@ -57,7 +57,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    private class MemberShipEventLogger implements MembershipListener {
+    private static class MemberShipEventLogger implements MembershipListener {
 
         public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 
@@ -71,7 +71,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     }
 
-    private class InitialMemberShipEventLogger implements InitialMembershipListener {
+    private static class InitialMemberShipEventLogger implements InitialMembershipListener {
 
         public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<>();
 

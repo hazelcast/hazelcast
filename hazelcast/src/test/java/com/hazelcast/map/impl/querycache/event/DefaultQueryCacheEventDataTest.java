@@ -33,7 +33,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,8 +70,8 @@ public class DefaultQueryCacheEventDataTest {
     @Before
     public void setUp() throws Exception {
         serializationService = mock(SerializationService.class);
-        when(serializationService.toObject(eq(DATA_KEY))).thenReturn(DESERIALIZED_KEY);
-        when(serializationService.toObject(eq(DATA_NEW_VALUE))).thenReturn(DESERIALIZED_VALUE);
+        when(serializationService.toObject(DATA_KEY)).thenReturn(DESERIALIZED_KEY);
+        when(serializationService.toObject(DATA_NEW_VALUE)).thenReturn(DESERIALIZED_VALUE);
 
         queryCacheEventData = new DefaultQueryCacheEventData();
         queryCacheEventDataSameAttributes = new DefaultQueryCacheEventData();

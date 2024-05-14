@@ -118,9 +118,9 @@ public class ValueContainer implements DataSerializable, Comparable<ValueContain
     public int compareTo(ValueContainer o) {
         switch (valueType) {
             case INTEGER:
-                return (intValue < o.intValue) ? -1 : ((intValue == o.intValue) ? 0 : 1);
+                return Integer.compare(intValue, o.intValue);
             case LONG:
-                return (longValue < o.longValue) ? -1 : ((longValue == o.longValue) ? 0 : 1);
+                return Long.compare(longValue, o.longValue);
             case FLOAT:
                 return Float.compare(floatValue, o.floatValue);
             case DOUBLE:

@@ -175,7 +175,7 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         xaResource.commit(xid, false);
     }
 
-    private void performRollbackWithXa(XAResource secondXaResource) throws XAException {
+    private void performRollbackWithXa(XAResource secondXaResource) {
         try {
             secondXaResource.rollback(xid);
         } catch (XAException xaerr) {

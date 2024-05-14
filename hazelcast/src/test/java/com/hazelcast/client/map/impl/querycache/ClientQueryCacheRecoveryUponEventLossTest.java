@@ -24,7 +24,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.EventLostListener;
@@ -76,13 +75,7 @@ public class ClientQueryCacheRecoveryUponEventLossTest extends HazelcastTestSupp
         setTestSequencer(map, 9);
 
         final QueryCache queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
-        queryCache.addEntryListener(new EventLostListener() {
-            @Override
-            public void eventLost(EventLostEvent event) {
-                queryCache.tryRecover();
-
-            }
-        }, false);
+        queryCache.addEntryListener((EventLostListener) event -> queryCache.tryRecover(), false);
 
 
         for (int i = 0; i < count; i++) {

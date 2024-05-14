@@ -100,7 +100,7 @@ public class ClientTxnDisconnectionTest {
         });
     }
 
-    private void testQueue(Callable task) {
+    private void testQueue(Callable<Object> task) {
         spawn(task);
         assertValidWaitingOperationCount(1);
         client.shutdown();
