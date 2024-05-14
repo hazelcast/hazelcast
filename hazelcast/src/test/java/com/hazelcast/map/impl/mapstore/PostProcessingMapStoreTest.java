@@ -158,7 +158,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         }, true);
         for (int i = 0; i < count; i++) {
             map.put(i, new SampleObject(i));
-            map.executeOnKey(i, new EntryProcessor<Integer, SampleObject, Object>() {
+            map.executeOnKey(i, new EntryProcessor<>() {
                 @Override
                 public Object process(Map.Entry<Integer, SampleObject> entry) {
                     SampleObject value = entry.getValue();

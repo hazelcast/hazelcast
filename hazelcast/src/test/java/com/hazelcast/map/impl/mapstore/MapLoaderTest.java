@@ -480,7 +480,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         final AtomicBoolean loadAllCalled = new AtomicBoolean();
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
-                .setImplementation(new MapLoader<Object, Object>() {
+                .setImplementation(new MapLoader<>() {
                     @Override
                     public Object load(Object key) {
                         return null;

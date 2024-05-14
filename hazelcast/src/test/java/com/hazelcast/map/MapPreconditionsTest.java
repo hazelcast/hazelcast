@@ -596,9 +596,9 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnKey() {
-        map.executeOnKey(null, new EntryProcessor<Object, Object, Object>() {
+        map.executeOnKey(null, new EntryProcessor<>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<Object, Object> entry) {
                 return null;
             }
 
@@ -614,9 +614,9 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         Set<Object> set = new HashSet<>();
         set.add(null);
 
-        map.executeOnKeys(set, new EntryProcessor<Object, Object, Object>() {
+        map.executeOnKeys(set, new EntryProcessor<>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<Object, Object> entry) {
                 return null;
             }
 

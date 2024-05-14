@@ -141,7 +141,7 @@ public class LiteMemberClientMapNearCacheBasicTest extends AbstractNearCacheBasi
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(liteMember))
                 .setNearCacheInstance(liteMember)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
+                .setNearCacheAdapter(new IMapDataStructureAdapter<>(liteMemberMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setLoader(mapStore);

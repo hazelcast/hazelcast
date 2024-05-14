@@ -314,7 +314,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     public void whenFilterProvidedAndNoItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
 
-        IFunction<String, Boolean> filter = (IFunction<String, Boolean>) input -> input.startsWith("good");
+        IFunction<String, Boolean> filter = input -> input.startsWith("good");
 
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, filter);
 
@@ -371,7 +371,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     public void whenFilterProvidedAndAllItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
 
-        IFunction<String, Boolean> filter = (IFunction<String, Boolean>) input -> input.startsWith("good");
+        IFunction<String, Boolean> filter = input -> input.startsWith("good");
 
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, filter);
 

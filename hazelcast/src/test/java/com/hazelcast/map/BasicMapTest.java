@@ -1683,7 +1683,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = () -> map.executeOnKeys(keys, new EntryProcessor<>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<String, String> entry) {
                 return null;
             }
 
@@ -1850,7 +1850,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = () -> map.executeOnKeys(null, new EntryProcessor<>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<String, String> entry) {
                 return null;
             }
 

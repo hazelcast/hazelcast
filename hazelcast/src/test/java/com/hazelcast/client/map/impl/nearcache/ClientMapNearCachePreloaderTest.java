@@ -124,7 +124,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCacheAdapter(new IMapDataStructureAdapter<>(clientMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager);
     }

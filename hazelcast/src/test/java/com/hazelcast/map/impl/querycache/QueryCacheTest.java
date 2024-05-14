@@ -142,7 +142,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
         populateMap(map, 1000);
 
-        IFunction evictAll = (ignored) -> {
+        IFunction<Object, Object> evictAll = (ignored) -> {
             map.evictAll();
             return null;
         };
@@ -157,7 +157,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
         populateMap(map, 1000);
 
-        IFunction clear = (ignored) -> {
+        IFunction<Object, Object> clear = (ignored) -> {
             map.clear();
             return null;
         };

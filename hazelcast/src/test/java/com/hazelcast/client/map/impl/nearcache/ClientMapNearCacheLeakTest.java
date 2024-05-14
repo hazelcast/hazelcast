@@ -133,7 +133,7 @@ public class ClientMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, 
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCacheAdapter(new IMapDataStructureAdapter<>(clientMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setRepairingTask(repairingTask);

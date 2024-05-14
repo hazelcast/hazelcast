@@ -1028,7 +1028,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         HazelcastInstance member = createHazelcastInstance(config);
         IMap<Integer, Integer> map = member.getMap("default");
 
-        map.executeOnKey(1, new EntryProcessor<Integer, Integer, Object>() {
+        map.executeOnKey(1, new EntryProcessor<>() {
 
             @Override
             public Object process(Map.Entry<Integer, Integer> entry) {
