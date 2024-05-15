@@ -207,14 +207,14 @@ public class JsonArray_Test {
 
   @Test
   public void add_long() {
-    array.add(23l);
+    array.add(23L);
 
     assertEquals("[23]", array.toString());
   }
 
   @Test
   public void add_long_enablesChaining() {
-    assertSame(array, array.add(23l));
+    assertSame(array, array.add(23L));
   }
 
   @Test
@@ -362,7 +362,7 @@ public class JsonArray_Test {
   public void set_long() {
     array.add(false);
 
-    array.set(0, 23l);
+    array.set(0, 23L);
 
     assertEquals("[23]", array.toString());
   }
@@ -371,7 +371,7 @@ public class JsonArray_Test {
   public void set_long_enablesChaining() {
     array.add(false);
 
-    assertSame(array, array.set(0, 23l));
+    assertSame(array, array.set(0, 23L));
   }
 
   @Test

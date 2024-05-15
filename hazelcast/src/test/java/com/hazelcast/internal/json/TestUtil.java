@@ -24,12 +24,6 @@ package com.hazelcast.internal.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 
 public class TestUtil {
 
@@ -75,15 +69,10 @@ public class TestUtil {
   }
 
   private static RunnableEx adapt(final Runnable runnable) {
-    return new RunnableEx() {
-      @Override
-      public void run() {
-        runnable.run();
-      }
-    };
+    return runnable::run;
   }
 
-  public static interface RunnableEx {
+  public interface RunnableEx {
     void run() throws Exception;
   }
 

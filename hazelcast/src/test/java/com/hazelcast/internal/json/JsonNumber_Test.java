@@ -93,7 +93,7 @@ public class JsonNumber_Test {
 
   @Test
   public void asLong() {
-    assertEquals(23l, new JsonNumber("23").asLong());
+    assertEquals(23L, new JsonNumber("23").asLong());
   }
 
   @Test(expected = NumberFormatException.class)

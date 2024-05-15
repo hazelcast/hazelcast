@@ -282,14 +282,14 @@ public class JsonObject_Test {
 
   @Test
   public void get_long_returnsValueFromMember() {
-    object.add("foo", 23l);
+    object.add("foo", 23L);
 
-    assertEquals(23l, object.getLong("foo", 42l));
+    assertEquals(23L, object.getLong("foo", 42L));
   }
 
   @Test
   public void get_long_returnsDefaultForMissingMember() {
-    assertEquals(23l, object.getLong("foo", 23l));
+    assertEquals(23L, object.getLong("foo", 23L));
   }
 
   @Test
@@ -359,14 +359,14 @@ public class JsonObject_Test {
 
   @Test
   public void add_long() {
-    object.add("a", 23l);
+    object.add("a", 23L);
 
     assertEquals("{\"a\":23}", object.toString());
   }
 
   @Test
   public void add_long_enablesChaining() {
-    assertSame(object, object.add("a", 23l));
+    assertSame(object, object.add("a", 23L));
   }
 
   @Test
@@ -509,14 +509,14 @@ public class JsonObject_Test {
 
   @Test
   public void set_long() {
-    object.set("a", 23l);
+    object.set("a", 23L);
 
     assertEquals("{\"a\":23}", object.toString());
   }
 
   @Test
   public void set_long_enablesChaining() {
-    assertSame(object, object.set("a", 23l));
+    assertSame(object, object.set("a", 23L));
   }
 
   @Test
