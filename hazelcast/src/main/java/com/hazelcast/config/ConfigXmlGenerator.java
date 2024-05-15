@@ -44,8 +44,6 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.ResourceType;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -102,8 +100,6 @@ public class ConfigXmlGenerator {
     public static final String MASK_FOR_SENSITIVE_DATA = "****";
 
     private static final int INDENT = 5;
-
-    private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
 
     private final boolean formatted;
     private final boolean maskSensitiveFields;
@@ -1114,10 +1110,7 @@ public class ConfigXmlGenerator {
     private static void handleSplitBrainProtectionFunction(XmlGenerator gen,
                                                            SplitBrainProtectionConfig splitBrainProtectionConfig) {
         if (splitBrainProtectionConfig.
-                getFunctionImplementation() instanceof ProbabilisticSplitBrainProtectionFunction) {
-            ProbabilisticSplitBrainProtectionFunction qf =
-                    (ProbabilisticSplitBrainProtectionFunction)
-                            splitBrainProtectionConfig.getFunctionImplementation();
+                getFunctionImplementation() instanceof ProbabilisticSplitBrainProtectionFunction qf) {
             long acceptableHeartbeatPause = qf.getAcceptableHeartbeatPauseMillis();
             double threshold = qf.getSuspicionThreshold();
             int maxSampleSize = qf.getMaxSampleSize();
@@ -1130,10 +1123,7 @@ public class ConfigXmlGenerator {
                     "heartbeat-interval-millis", firstHeartbeatEstimate);
             gen.close();
         } else if (splitBrainProtectionConfig.
-                getFunctionImplementation() instanceof RecentlyActiveSplitBrainProtectionFunction) {
-            RecentlyActiveSplitBrainProtectionFunction qf =
-                    (RecentlyActiveSplitBrainProtectionFunction)
-                            splitBrainProtectionConfig.getFunctionImplementation();
+                getFunctionImplementation() instanceof RecentlyActiveSplitBrainProtectionFunction qf) {
             gen.open("recently-active-split-brain-protection", "heartbeat-tolerance-millis",
                     qf.getHeartbeatToleranceMillis());
             gen.close();

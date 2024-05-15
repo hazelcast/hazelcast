@@ -129,7 +129,7 @@ public class RingbufferTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void readOne_whenHitsStale_shouldNotBeBlocked() throws Exception {
+    public void readOne_whenHitsStale_shouldNotBeBlocked() {
         final CountDownLatch latch = new CountDownLatch(1);
         Thread consumer = new Thread(() -> {
             try {

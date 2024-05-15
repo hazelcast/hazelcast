@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -261,7 +262,6 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
      * Compares based on the employee age
      */
     class EmployeeEntryComparator implements IdentifiedDataSerializable, Comparator<Map.Entry<Integer, Employee>> {
-        private int multiplier;
 
         @Override
         public int getFactoryId() {
@@ -390,6 +390,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
     }
 
     class MapGetInterceptor extends MapInterceptorAdaptor implements IdentifiedDataSerializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private String prefix;

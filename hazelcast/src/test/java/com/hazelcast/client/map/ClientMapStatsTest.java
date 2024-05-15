@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 public class ClientMapStatsTest extends LocalMapStatsTest {
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    private String mapName = "mapName";
     private HazelcastInstance client;
     private HazelcastInstance member;
 

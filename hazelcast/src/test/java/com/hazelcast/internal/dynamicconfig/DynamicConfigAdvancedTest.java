@@ -40,7 +40,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigAdvancedTest {
 
-    private static final int CLUSTER_SIZE = 3;
     private static final String MAP_NAME = "map-with-maploader";
 
     private TestHazelcastInstanceFactory factory;

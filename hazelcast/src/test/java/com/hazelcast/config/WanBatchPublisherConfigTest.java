@@ -37,7 +37,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WanBatchPublisherConfigTest {
 
-    private WanBatchPublisherConfig config = new WanBatchPublisherConfig();
     private static final WanBatchPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER
             = new WanBatchPublisherConfigChecker();
 
