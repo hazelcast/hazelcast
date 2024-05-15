@@ -21,10 +21,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -43,13 +41,10 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IntHashSetTest extends HazelcastTestSupport {
 
-    @Rule
-    public final ExpectedException rule = ExpectedException.none();
-
     private final IntHashSet set = new IntHashSet(1000, -1);
 
     @Test
-    public void initiallyContainsNoElements() throws Exception {
+    public void initiallyContainsNoElements() {
         for (int i = 0; i < 10000; i++) {
             assertNotContains(set, i);
         }
@@ -277,8 +272,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
     public void failsWhenOverCapacity() {
         final IntHashSet set = new IntHashSet(1, 0);
         set.add(1);
-        rule.expect(IllegalStateException.class);
-        set.add(2);
+        assertThrows(IllegalStateException.class, () -> set.add(2));
     }
 
     @Test

@@ -18,23 +18,20 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PhoneHomeParameterCreatorTest {
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void testPhoneHomeParameterCreator() {
@@ -58,8 +55,9 @@ public class PhoneHomeParameterCreatorTest {
     public void checkDuplicateKey() {
         PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
         phoneHomeParameterCreator.addParam("1", "hazelcast");
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Parameter 1 is already added");
-        phoneHomeParameterCreator.addParam("1", "phonehome");
+
+        assertThatThrownBy(() -> phoneHomeParameterCreator.addParam("1", "phonehome"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Parameter 1 is already added");
     }
 }

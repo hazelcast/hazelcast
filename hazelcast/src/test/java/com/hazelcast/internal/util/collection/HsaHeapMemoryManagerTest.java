@@ -21,10 +21,8 @@ import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.InvocationTargetException;
@@ -35,6 +33,7 @@ import static java.lang.Character.toUpperCase;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -52,9 +51,6 @@ public class HsaHeapMemoryManagerTest {
             tsv(float.class, (float) 0),
             tsv(double.class, (double) 0));
 
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private final HsaHeapMemoryManager memMgr = new HsaHeapMemoryManager();
     private final MemoryAllocator malloc = memMgr.getAllocator();
@@ -79,8 +75,7 @@ public class HsaHeapMemoryManagerTest {
     public void when_allocateThirdBlock_thenFail() {
         allocate();
         allocate();
-        exceptionRule.expect(AssertionError.class);
-        allocate();
+        assertThrows(AssertionError.class, this::allocate);
     }
 
     @Test

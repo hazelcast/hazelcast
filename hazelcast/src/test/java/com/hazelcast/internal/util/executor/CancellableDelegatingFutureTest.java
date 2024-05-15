@@ -24,10 +24,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -38,11 +36,9 @@ import java.util.concurrent.CancellationException;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CancellableDelegatingFutureTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test
-    public void testInnerFutureThrowsCancellationExceptionWhenOuterFutureIsCancelled() throws Exception {
+    public void testInnerFutureThrowsCancellationExceptionWhenOuterFutureIsCancelled() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance();
         IExecutorService executorService = instance.getExecutorService(randomString());
@@ -50,8 +46,7 @@ public class CancellableDelegatingFutureTest extends HazelcastTestSupport {
         final DelegatingCompletableFuture<Boolean> future = (DelegatingCompletableFuture<Boolean>) executorService.submit(callable);
 
         if (future.cancel(true)) {
-            expected.expect(CancellationException.class);
-            future.getDelegate().get();
+            assertThrows(CancellationException.class, () -> future.getDelegate().get());
         }
     }
 

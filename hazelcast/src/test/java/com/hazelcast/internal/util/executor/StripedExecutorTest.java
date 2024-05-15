@@ -20,10 +20,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.logging.Logger.getLogger;
@@ -33,21 +31,17 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class StripedExecutorTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void throws_illegalArgumentException_whenThreadCount_isNotPositive() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        new StripedExecutor(getLogger(getClass()), "", 0, 0);
+        assertThrows(IllegalArgumentException.class,
+                () -> new StripedExecutor(getLogger(getClass()), "", 0, 0)
+        );
     }
 
     @Test
     public void throws_illegalArgumentException_whenMaximumQueueCapacity_isNotPositive() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        new StripedExecutor(getLogger(getClass()), "", 0, 0);
+        assertThrows(IllegalArgumentException.class,
+                () -> new StripedExecutor(getLogger(getClass()), "", 0, 0));
     }
 
     @Test
