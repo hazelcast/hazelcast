@@ -19,15 +19,12 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.DATA_MEMORY_COST;
@@ -37,50 +34,44 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_ENABLED;
 
-public class StorageInfoCollector implements MetricsCollector {
+class StorageMetricsProvider implements MetricsProvider {
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
-        NodeEngineImpl nodeEngine = node.getNodeEngine();
-        Config config = nodeEngine.getConfig();
-
-        memory(metricsConsumer, config, node.getNodeExtension());
-        tieredStorage(metricsConsumer, config);
-        dataMemoryCost(metricsConsumer, nodeEngine);
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
+        memory(node, context);
+        tieredStorage(node.getConfig(), context);
+        dataMemoryCost(node.getNodeEngine(), context);
     }
 
-    private void memory(
-            BiConsumer<PhoneHomeMetrics, String> metricsConsumer,
-            Config config, NodeExtension nodeExtension
-    ) {
-        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+    private void memory(Node node, MetricsCollectionContext context) {
+        NativeMemoryConfig nativeMemoryConfig = node.getConfig().getNativeMemoryConfig();
 
         boolean isHdEnabled = nativeMemoryConfig.isEnabled();
-        metricsConsumer.accept(HD_MEMORY_ENABLED, String.valueOf(isHdEnabled));
+        context.collect(HD_MEMORY_ENABLED, isHdEnabled);
 
-        MemoryStats memoryStats = nodeExtension.getMemoryStats();
+        MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
         if (isHdEnabled) {
-            long offHeapMemorySize = memoryStats.getUsedNative();
-            metricsConsumer.accept(MEMORY_USED_NATIVE_SIZE, String.valueOf(offHeapMemorySize));
+            context.collect(MEMORY_USED_NATIVE_SIZE, memoryStats.getUsedNative());
         }
-        metricsConsumer.accept(MEMORY_USED_HEAP_SIZE, String.valueOf(memoryStats.getUsedHeap()));
-        metricsConsumer.accept(MEMORY_FREE_HEAP_SIZE, String.valueOf(memoryStats.getFreeHeap()));
+        context.collect(MEMORY_USED_HEAP_SIZE, memoryStats.getUsedHeap());
+        context.collect(MEMORY_FREE_HEAP_SIZE, memoryStats.getFreeHeap());
     }
 
-    private void tieredStorage(BiConsumer<PhoneHomeMetrics, String> metricsConsumer, Config config) {
+    private void tieredStorage(Config config, MetricsCollectionContext context) {
         boolean tieredStorageEnabled = config.getMapConfigs().values().stream()
                 .anyMatch(mapConfig -> mapConfig.getTieredStoreConfig().isEnabled());
-        metricsConsumer.accept(TIERED_STORAGE_ENABLED, String.valueOf(tieredStorageEnabled));
+        context.collect(TIERED_STORAGE_ENABLED, tieredStorageEnabled);
     }
 
-    private void dataMemoryCost(BiConsumer<PhoneHomeMetrics, String> metricsConsumer, NodeEngine nodeEngine) {
+    private void dataMemoryCost(NodeEngine nodeEngine, MetricsCollectionContext context) {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         ReplicatedMapService replicatedMapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        long totalEntryMemoryCost = Stream.concat(
+        long totalEntryMemoryCost =
+                Stream.concat(
                         mapService.getStats().values().stream(),
-                        replicatedMapService.getStats().values().stream()
-                ).mapToLong(LocalMapStats::getOwnedEntryMemoryCost)
+                        replicatedMapService.getStats().values().stream())
+                .mapToLong(LocalMapStats::getOwnedEntryMemoryCost)
                 .sum();
-        metricsConsumer.accept(DATA_MEMORY_COST, String.valueOf(totalEntryMemoryCost));
+        context.collect(DATA_MEMORY_COST, totalEntryMemoryCost);
     }
 }

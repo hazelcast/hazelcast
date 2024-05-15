@@ -552,7 +552,7 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         nodeExtension.afterStart();
-        nodeExtension.sendPhoneHome();
+        nodeEngine.getPhoneHome().start();
         healthMonitor.start();
     }
 

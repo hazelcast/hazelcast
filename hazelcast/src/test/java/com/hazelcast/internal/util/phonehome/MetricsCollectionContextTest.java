@@ -30,33 +30,32 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PhoneHomeParameterCreatorTest {
-
+public class MetricsCollectionContextTest {
 
     @Test
-    public void testPhoneHomeParameterCreator() {
-        PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
-        phoneHomeParameterCreator.addParam("1", "hazelcast");
-        phoneHomeParameterCreator.addParam("2", "phonehome");
-        Map<String, String> map = phoneHomeParameterCreator.getParameters();
-        assertEquals("1=hazelcast&2=phonehome", phoneHomeParameterCreator.build());
+    public void testMetricsCollectionContext() {
+        MetricsCollectionContext context = new MetricsCollectionContext();
+        context.collect(() -> "1", "hazelcast");
+        context.collect(() -> "2", "phonehome");
+        Map<String, String> map = context.getParameters();
+        assertEquals("1=hazelcast&2=phonehome", context.getQueryString());
         assertEquals(Map.of("1", "hazelcast", "2", "phonehome"), map);
     }
 
     @Test
     public void testEmptyParameter() {
-        PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
-        Map<String, String> map = phoneHomeParameterCreator.getParameters();
+        MetricsCollectionContext context = new MetricsCollectionContext();
+        Map<String, String> map = context.getParameters();
         assertEquals(Collections.emptyMap(), map);
-        assertEquals("", phoneHomeParameterCreator.build());
+        assertEquals("", context.getQueryString());
     }
 
     @Test
     public void checkDuplicateKey() {
-        PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
-        phoneHomeParameterCreator.addParam("1", "hazelcast");
+        MetricsCollectionContext context = new MetricsCollectionContext();
+        context.collect(() -> "1", "hazelcast");
 
-        assertThatThrownBy(() -> phoneHomeParameterCreator.addParam("1", "phonehome"))
+        assertThatThrownBy(() -> context.collect(() -> "1", "phonehome"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Parameter 1 is already added");
     }

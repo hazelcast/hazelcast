@@ -34,23 +34,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
-import com.hazelcast.mock.MockUtil;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -62,59 +58,47 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.internal.util.phonehome.BuildInfoProvider.PARDOT_ID_ENV_VAR;
+import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.AWS_ENDPOINT;
+import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.AZURE_ENDPOINT;
+import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.CLOUD_ENVIRONMENT_ENV_VAR;
+import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.DOCKER_FILE_PATH;
+import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.GCP_ENDPOINT;
+import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.KUBERNETES_TOKEN_PATH;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE;
 import static com.hazelcast.test.Accessors.getNode;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
-
-    static ContainsPattern containingParam(String paramName, String expectedValue) {
-        return new ContainsPattern(paramName + "=" + expectedValue);
-    }
-
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
+    private HazelcastInstance instance;
     private Node node;
     private PhoneHome phoneHome;
-    private CloudInfoCollector cloudInfoCollector;
-
-    @Mock
-    private Path kubernetesTokenPath;
-
-    @Mock
-    private Path dockerPath;
-
-    private AutoCloseable openMocks;
 
     @Before
-    public void initialise()
-            throws IOException {
-        openMocks = openMocks(this);
-        HazelcastInstance hz = createHazelcastInstance();
-        node = getNode(hz);
-
-        when(dockerPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
-        when(kubernetesTokenPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
-
+    public void initialise() {
         int port = wireMockRule.port();
-        cloudInfoCollector = spy(new CloudInfoCollector("http://localhost:" + port + "/latest/meta-data",
-                "http://localhost:" + port + "/metadata/instance/compute?api-version=2018-02-01",
-                "http://localhost:" + port + "/metadata.google.internal", kubernetesTokenPath, dockerPath));
 
-        phoneHome = new PhoneHome(node, "http://localhost:" + port + "/ping", cloudInfoCollector);
+        Map<HazelcastProperty, String> properties = Map.of(
+                AWS_ENDPOINT, "http://localhost:" + port + "/latest/meta-data",
+                AZURE_ENDPOINT, "http://localhost:" + port + "/metadata/instance/compute?api-version=2018-02-01",
+                GCP_ENDPOINT, "http://localhost:" + port + "/metadata.google.internal",
+                KUBERNETES_TOKEN_PATH, System.getProperty("user.dir"),
+                DOCKER_FILE_PATH, System.getProperty("user.dir")
+        );
+        properties.forEach(HazelcastProperty::setSystemProperty);
+        instance = createHazelcastInstance();
+        node = getNode(instance);
+
+        phoneHome = new PhoneHome(node, "http://localhost:" + port + "/ping");
         stubUrls("200", "4XX", "4XX", "4XX");
     }
 
-    @After
-    public void cleanUp() {
-        MockUtil.closeMocks(openMocks);
-    }
-
-    public void stubUrls(String phoneHomeStatus, String awsStatus, String azureStatus, String gcpStatus) {
+    private void stubUrls(String phoneHomeStatus, String awsStatus, String azureStatus, String gcpStatus) {
         stubFor(post(urlPathEqualTo("/ping"))
                 .willReturn(checkStatusConditional(phoneHomeStatus.equals("200"))));
         stubFor(get(urlPathEqualTo("/latest/meta-data"))
@@ -132,8 +116,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testMapMetrics() {
-        node.hazelcastInstance.getMap("hazelcast");
-        node.hazelcastInstance.getMap("phonehome");
+        instance.getMap("hazelcast");
+        instance.getMap("phonehome");
         MapConfig config = node.getConfig().getMapConfig("hazelcast");
         config.setReadBackupData(true);
         config.getMapStoreConfig().setClassName(DelayMapStore.class.getName()).setEnabled(true);
@@ -148,51 +132,51 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("mpct", "2"))
-                .withRequestBody(containingParam("mpbrct", "1"))
-                .withRequestBody(containingParam("mpmsct", "1"))
-                .withRequestBody(containingParam("mpaoqcct", "1"))
-                .withRequestBody(containingParam("mpaoict", "1"))
-                .withRequestBody(containingParam("mphect", "1"))
-                .withRequestBody(containingParam("mpwact", "1"))
-                .withRequestBody(containingParam("mpaocct", "1"))
-                .withRequestBody(containingParam("mpevct", "1"))
-                .withRequestBody(containingParam("mpnmct", "1")));
+                .withRequestBody(containingParam("mpct" /*COUNT_OF_MAPS*/, 2))
+                .withRequestBody(containingParam("mpbrct" /*MAP_COUNT_WITH_READ_ENABLED*/, 1))
+                .withRequestBody(containingParam("mpmsct" /*MAP_COUNT_WITH_MAP_STORE_ENABLED*/, 1))
+                .withRequestBody(containingParam("mpaoqcct" /*MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE*/, 1))
+                .withRequestBody(containingParam("mpaoict" /*MAP_COUNT_WITH_ATLEAST_ONE_INDEX*/, 1))
+                .withRequestBody(containingParam("mphect" /*MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED*/, 1))
+                .withRequestBody(containingParam("mpwact" /*MAP_COUNT_WITH_WAN_REPLICATION*/, 1))
+                .withRequestBody(containingParam("mpaocct" /*MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE*/, 1))
+                .withRequestBody(containingParam("mpevct" /*MAP_COUNT_USING_EVICTION*/, 1))
+                .withRequestBody(containingParam("mpnmct" /*MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT*/, 1)));
     }
 
     @Test
     public void testCountDistributedObjects() {
-        node.hazelcastInstance.getMap("hazelcast");
-        node.hazelcastInstance.getSet("hazelcast");
-        node.hazelcastInstance.getQueue("hazelcast");
-        node.hazelcastInstance.getMultiMap("hazelcast");
-        node.hazelcastInstance.getList("hazelcast");
-        node.hazelcastInstance.getRingbuffer("hazelcast");
-        node.hazelcastInstance.getTopic("hazelcast");
-        node.hazelcastInstance.getReplicatedMap("hazelcast");
-        node.hazelcastInstance.getCardinalityEstimator("hazelcast");
-        node.hazelcastInstance.getPNCounter("hazelcast");
-        node.hazelcastInstance.getFlakeIdGenerator("hazelcast");
+        instance.getMap("hazelcast");
+        instance.getSet("hazelcast");
+        instance.getQueue("hazelcast");
+        instance.getMultiMap("hazelcast");
+        instance.getList("hazelcast");
+        instance.getRingbuffer("hazelcast");
+        instance.getTopic("hazelcast");
+        instance.getReplicatedMap("hazelcast");
+        instance.getCardinalityEstimator("hazelcast");
+        instance.getPNCounter("hazelcast");
+        instance.getFlakeIdGenerator("hazelcast");
 
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("mpct", "1"))
-                .withRequestBody(containingParam("sect", "1"))
-                .withRequestBody(containingParam("quct", "1"))
-                .withRequestBody(containingParam("mmct", "1"))
-                .withRequestBody(containingParam("lict", "1"))
-                .withRequestBody(containingParam("rbct", "1"))
-                .withRequestBody(containingParam("tpct", "1"))
-                .withRequestBody(containingParam("rpct", "1"))
-                .withRequestBody(containingParam("cect", "1"))
-                .withRequestBody(containingParam("pncct", "1"))
-                .withRequestBody(containingParam("figct", "1")));
+                .withRequestBody(containingParam("mpct" /*COUNT_OF_MAPS*/, 1))
+                .withRequestBody(containingParam("sect" /*COUNT_OF_SETS*/, 1))
+                .withRequestBody(containingParam("quct" /*COUNT_OF_QUEUES*/, 1))
+                .withRequestBody(containingParam("mmct" /*COUNT_OF_MULTIMAPS*/, 1))
+                .withRequestBody(containingParam("lict" /*COUNT_OF_LISTS*/, 1))
+                .withRequestBody(containingParam("rbct" /*COUNT_OF_RING_BUFFERS*/, 1))
+                .withRequestBody(containingParam("tpct" /*COUNT_OF_TOPICS*/, 1))
+                .withRequestBody(containingParam("rpct" /*COUNT_OF_REPLICATED_MAPS*/, 1))
+                .withRequestBody(containingParam("cect" /*COUNT_OF_CARDINALITY_ESTIMATORS*/, 1))
+                .withRequestBody(containingParam("pncct" /*COUNT_OF_PN_COUNTERS*/, 1))
+                .withRequestBody(containingParam("figct" /*COUNT_OF_FLAKE_ID_GENERATORS*/, 1)));
     }
 
     @Test
     public void testCacheMetrics() {
-        CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
+        CachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
         cacheSimpleConfig.setName("hazelcast");
@@ -203,8 +187,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("cact", "1"))
-                .withRequestBody(containingParam("cawact", "1")));
+                .withRequestBody(containingParam("cact" /*COUNT_OF_CACHES*/, 1))
+                .withRequestBody(containingParam("cawact" /*CACHE_COUNT_WITH_WAN_REPLICATION*/, 1)));
     }
 
     @Test
@@ -212,7 +196,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new DelayMapStore());
-        IMap<String, String> iMap = node.hazelcastInstance.getMap("hazelcast");
+        IMap<String, String> iMap = instance.getMap("hazelcast");
         node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
         iMap.put("key1", "hazelcast");
         iMap.put("key2", "phonehome");
@@ -226,18 +210,22 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("mpptlams", String.valueOf(totalPutLatency / totalPutOperationCount)))
-                .withRequestBody(containingParam("mpgtlams", String.valueOf(totalGetLatency / totalGetOperationCount))));
+                .withRequestBody(containingParam("mpptlams" /*AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE*/,
+                        totalPutLatency / totalPutOperationCount))
+                .withRequestBody(containingParam("mpgtlams" /*AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE*/,
+                        totalGetLatency / totalGetOperationCount)));
 
-        assertGreaterOrEquals("mpptlams", totalPutLatency / totalPutOperationCount, 200);
-        assertGreaterOrEquals("mpgtlams", totalGetLatency / totalGetOperationCount, 200);
+        assertGreaterOrEquals(AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.toString(),
+                totalPutLatency / totalPutOperationCount, 200);
+        assertGreaterOrEquals(AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.toString(),
+                totalGetLatency / totalGetOperationCount, 200);
     }
 
     @Test
     public void testMapLatenciesWithoutMapStore() {
-        IMap<Object, Object> iMap1 = node.hazelcastInstance.getMap("hazelcast");
+        IMap<Object, Object> iMap1 = instance.getMap("hazelcast");
         LocalMapStatsImpl localMapStats1 = (LocalMapStatsImpl) iMap1.getLocalMapStats();
-        IMap<Object, Object> iMap2 = node.hazelcastInstance.getMap("phonehome");
+        IMap<Object, Object> iMap2 = instance.getMap("phonehome");
         LocalMapStatsImpl localMapStats2 = (LocalMapStatsImpl) iMap2.getLocalMapStats();
         localMapStats1.incrementPutLatencyNanos(2000000000L);
         localMapStats1.incrementPutLatencyNanos(1000000000L);
@@ -246,9 +234,10 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         localMapStats2.incrementGetLatencyNanos(1000000000L);
 
         phoneHome.phoneHome(false);
+
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("mpptla", "1666"))
-                .withRequestBody(containingParam("mpgtla", "1000")));
+                .withRequestBody(containingParam("mpptla" /*AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE*/, 1666))
+                .withRequestBody(containingParam("mpgtla" /*AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE*/, 1000)));
     }
 
     @Test
@@ -257,7 +246,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("cld", "A")));
+                .withRequestBody(containingParam("cld" /*CLOUD*/, "A")));
     }
 
     @Test
@@ -266,7 +255,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("cld", "Z")));
+                .withRequestBody(containingParam("cld" /*CLOUD*/, "Z")));
     }
 
     @Test
@@ -275,64 +264,91 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("cld", "G")));
+                .withRequestBody(containingParam("cld" /*CLOUD*/, "G")));
     }
 
     @Test
-    public void testDockerStateIfKuberNetes() {
+    public void testDockerStateIfKubernetes() {
         phoneHome.phoneHome(false);
+
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("dck", "K")));
+                .withRequestBody(containingParam("dck" /*DOCKER*/, "K")));
     }
 
     @Test
-    public void testDockerStateIfOnlyDocker()
-            throws IOException {
-        when(kubernetesTokenPath.toRealPath()).thenThrow(new IOException());
+    public void testDockerStateIfOnlyDocker() {
+        KUBERNETES_TOKEN_PATH.setSystemProperty("/non-existing/path");
         phoneHome.phoneHome(false);
+
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("dck", "D")));
+                .withRequestBody(containingParam("dck" /*DOCKER*/, "D")));
     }
 
     @Test
-    public void testDockerStateIfNone()
-            throws IOException {
-        when(dockerPath.toRealPath()).thenThrow(new IOException());
+    public void testDockerStateIfNone() {
+        DOCKER_FILE_PATH.setSystemProperty("/non-existing/path");
         phoneHome.phoneHome(false);
+
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("dck", "N")));
+                .withRequestBody(containingParam("dck" /*DOCKER*/, "N")));
     }
 
     @Test
     public void testPhoneHomeCalledTwice() {
-        node.hazelcastInstance.getMap("hazelcast");
+        instance.getMap("hazelcast");
 
         phoneHome.phoneHome(false);
         phoneHome.phoneHome(false);
 
         verify(2, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("mpct", "1")));
+                .withRequestBody(containingParam("mpct" /*COUNT_OF_MAPS*/, 1)));
     }
 
     @Test
     public void testCloudInfoCollectorCalledTwice_doesNotThrowException() {
-        PhoneHomeParameterCreator parameterCreator1 = new PhoneHomeParameterCreator();
-        cloudInfoCollector.forEachMetric(node,
-                (type, value) -> parameterCreator1.addParam(type.getRequestParameterName(), value));
+        CloudInfoProvider cloudInfoProvider = new CloudInfoProvider();
 
-        PhoneHomeParameterCreator parameterCreator2 = new PhoneHomeParameterCreator();
-        cloudInfoCollector.forEachMetric(node,
-                (type, value) -> parameterCreator2.addParam(type.getRequestParameterName(), value));
+        MetricsCollectionContext context1 = new MetricsCollectionContext();
+        cloudInfoProvider.provideMetrics(node, context1);
+
+        MetricsCollectionContext context2 = new MetricsCollectionContext();
+        cloudInfoProvider.provideMetrics(node, context2);
     }
 
     @Test
     public void testForViridian() {
-        when(cloudInfoCollector.getCloudEnvironment()).thenReturn("SERVERLESS");
+        Map<String, String> env = ENVIRONMENT.get();
+        env.put(CLOUD_ENVIRONMENT_ENV_VAR, "SERVERLESS");
 
         stubUrls("200", "200", "4XX", "4XX");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("vrd", "SERVERLESS")));
+                .withRequestBody(containingParam("vrd" /*VIRIDIAN*/, "SERVERLESS")));
+        env.remove(CLOUD_ENVIRONMENT_ENV_VAR);
+    }
+
+    @Test
+    public void testDownloadIdOverriddenWithEnvVar() {
+        Map<String, String> env = ENVIRONMENT.get();
+        env.put(PARDOT_ID_ENV_VAR, "1234");
+
+        phoneHome.phoneHome(false);
+
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("p" /*HAZELCAST_DOWNLOAD_ID*/, "1234")));
+        env.remove(PARDOT_ID_ENV_VAR);
+    }
+
+    static ContainsPattern containingParam(String key, boolean value) {
+        return new ContainsPattern(key + "=" + value);
+    }
+
+    static ContainsPattern containingParam(String key, long value) {
+        return new ContainsPattern(key + "=" + value);
+    }
+
+    static ContainsPattern containingParam(String key, String value) {
+        return new ContainsPattern(key + "=" + value);
     }
 }

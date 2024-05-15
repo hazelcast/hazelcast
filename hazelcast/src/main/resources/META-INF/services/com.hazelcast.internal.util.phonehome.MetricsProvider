@@ -1,0 +1,15 @@
+com.hazelcast.internal.util.phonehome.BuildInfoProvider
+com.hazelcast.internal.util.phonehome.CacheMetricsProvider
+com.hazelcast.internal.util.phonehome.ClientMetricsProvider
+com.hazelcast.internal.util.phonehome.CloudInfoProvider
+com.hazelcast.internal.util.phonehome.ClusterMetricsProvider
+com.hazelcast.internal.util.phonehome.DistributedObjectMetricsProvider
+com.hazelcast.internal.util.phonehome.DynamicConfigMetricsProvider
+com.hazelcast.internal.util.phonehome.JetMetricsProvider
+com.hazelcast.internal.util.phonehome.MapMetricsProvider
+com.hazelcast.internal.util.phonehome.OSInfoProvider
+com.hazelcast.internal.util.phonehome.RestApiMetricsProvider
+com.hazelcast.internal.util.phonehome.SqlMetricsProvider
+com.hazelcast.internal.util.phonehome.StorageMetricsProvider
+com.hazelcast.internal.util.phonehome.UserCodeNamespacesMetricsProvider
+com.hazelcast.internal.util.phonehome.VMMetricsProvider

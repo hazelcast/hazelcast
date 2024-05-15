@@ -389,11 +389,6 @@ public interface NodeExtension {
     void registerPlugins(Diagnostics diagnostics);
 
     /**
-     * Send PhoneHome ping from OS or EE instance to PhoneHome application
-     */
-    void sendPhoneHome();
-
-    /**
      * @return not-{@code null} {@link AuditlogService} instance
      */
     AuditlogService getAuditlogService();

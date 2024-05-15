@@ -26,11 +26,13 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_QUERIES_SUBMITTED;
 import static org.junit.Assert.assertEquals;
 
 public class SqlPhoneHomeTest extends SqlTestSupport {
     private Node node;
     private PhoneHome phoneHome;
+    private Map<String, String> parameters;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -43,11 +45,15 @@ public class SqlPhoneHomeTest extends SqlTestSupport {
         phoneHome = new PhoneHome(node);
     }
 
+    private String get(Metric metric) {
+        return parameters.get(metric.getQueryParameter());
+    }
+
     @Test
     public void testSqlQueriesSubmitted() {
         // given
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals("0", parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()));
+        parameters = phoneHome.phoneHome(true);
+        assertEquals("0", get(SQL_QUERIES_SUBMITTED));
 
         InternalSqlService sqlService = node.getNodeEngine().getSqlService();
         assertInstanceOf(SqlServiceImpl.class, sqlService);
@@ -55,9 +61,9 @@ public class SqlPhoneHomeTest extends SqlTestSupport {
         // when
         // 'CREATE MAPPING' query.
         createMapping("map", int.class, int.class);
-        parameters = phoneHome.phoneHome(true);
 
         // then
-        assertEquals("1", parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()));
+        parameters = phoneHome.phoneHome(true);
+        assertEquals("1", get(SQL_QUERIES_SUBMITTED));
     }
 }

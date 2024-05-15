@@ -18,14 +18,12 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
 
-import java.util.function.BiConsumer;
-
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.V_CPU_COUNT;
 
-public class VMMetricsCollector implements MetricsCollector {
+class VMMetricsProvider implements MetricsProvider {
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
-        metricsConsumer.accept(V_CPU_COUNT, String.valueOf(Runtime.getRuntime().availableProcessors()));
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
+        context.collect(V_CPU_COUNT, Runtime.getRuntime().availableProcessors());
     }
 }

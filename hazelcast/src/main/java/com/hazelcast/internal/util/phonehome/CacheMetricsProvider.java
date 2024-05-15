@@ -21,15 +21,16 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.impl.Node;
 
 import java.util.Collection;
-import java.util.function.BiConsumer;
+
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION;
 
 /**
- * Collects information about ICache usage
+ * Provides information about ICache usage
  */
-class CacheInfoCollector implements MetricsCollector {
+class CacheMetricsProvider implements MetricsProvider {
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
         Collection<DistributedObject> objects = node.hazelcastInstance.getDistributedObjects();
         long countCacheWithWANReplication =
                 objects.stream()
@@ -38,8 +39,6 @@ class CacheInfoCollector implements MetricsCollector {
                        .filter(config -> config != null && config.getWanReplicationRef() != null)
                        .count();
 
-        metricsConsumer.accept(
-                PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION,
-                String.valueOf(countCacheWithWANReplication));
+        context.collect(CACHE_COUNT_WITH_WAN_REPLICATION, countCacheWithWANReplication);
     }
 }

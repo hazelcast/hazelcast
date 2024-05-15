@@ -26,8 +26,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.function.BiConsumer;
-
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_QUERIES_SUBMITTED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_STREAMING_QUERIES_EXECUTED;
 import static org.mockito.Mockito.verify;
@@ -36,25 +34,18 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @Category({QuickTest.class})
-public class SqlInfoCollectorTest {
+public class SqlMetricsProviderTest {
 
-    SqlInfoCollector sqlInfoCollector;
+    SqlMetricsProvider sqlMetricsProvider;
 
-    @Mock
-    BiConsumer<PhoneHomeMetrics, String> metricsConsumer;
-
-    @Mock
-    Node node;
-
-    @Mock
-    NodeEngineImpl nodeEngine;
-
-    @Mock
-    InternalSqlService sqlService;
+    @Mock MetricsCollectionContext context;
+    @Mock Node node;
+    @Mock NodeEngineImpl nodeEngine;
+    @Mock InternalSqlService sqlService;
 
     @Before
     public void setUp() throws Exception {
-        sqlInfoCollector = new SqlInfoCollector();
+        sqlMetricsProvider = new SqlMetricsProvider();
 
         when(node.getNodeEngine()).thenReturn(nodeEngine);
         when(nodeEngine.getSqlService()).thenReturn(sqlService);
@@ -67,12 +58,11 @@ public class SqlInfoCollectorTest {
         when(sqlService.getSqlStreamingQueriesExecutedCount()).thenReturn(3L);
 
         // when
-        sqlInfoCollector.forEachMetric(node, metricsConsumer);
+        sqlMetricsProvider.provideMetrics(node, context);
 
         // then
-        verify(metricsConsumer).accept(SQL_QUERIES_SUBMITTED, "5");
-        verify(metricsConsumer).accept(SQL_STREAMING_QUERIES_EXECUTED, "3");
-        verifyNoMoreInteractions(metricsConsumer);
+        verify(context).collect(SQL_QUERIES_SUBMITTED, 5L);
+        verify(context).collect(SQL_STREAMING_QUERIES_EXECUTED, 3L);
+        verifyNoMoreInteractions(context);
     }
-
 }

@@ -20,20 +20,22 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 
-import java.util.function.BiConsumer;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_JOBS_SUBMITTED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED;
 
-public class JetInfoCollector implements MetricsCollector {
+class JetMetricsProvider implements MetricsProvider {
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
         JetConfig jetConfig = node.getNodeEngine().getConfig().getJetConfig();
         boolean isJetEnabled = jetConfig.isEnabled();
-        metricsConsumer.accept(PhoneHomeMetrics.JET_ENABLED, String.valueOf(isJetEnabled));
-        metricsConsumer.accept(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED, String.valueOf(jetConfig.isResourceUploadEnabled()));
+        context.collect(JET_ENABLED, isJetEnabled);
+        context.collect(JET_RESOURCE_UPLOAD_ENABLED, jetConfig.isResourceUploadEnabled());
         if (isJetEnabled) {
             JetServiceBackend jetServiceBackend = node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
             long jobSubmittedCount = jetServiceBackend.getJobCoordinationService().getJobSubmittedCount();
-            metricsConsumer.accept(PhoneHomeMetrics.JET_JOBS_SUBMITTED, String.valueOf(jobSubmittedCount));
+            context.collect(JET_JOBS_SUBMITTED, jobSubmittedCount);
         }
     }
 }

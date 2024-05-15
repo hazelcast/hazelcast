@@ -19,15 +19,14 @@ package com.hazelcast.internal.util.phonehome;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,37 +45,33 @@ import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_MAPS;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_QUEUES;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeIntegrationTest.containingParam;
 import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class RESTClientPhoneHomeTest {
-
-    protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
-
-    @BeforeClass
-    public static void beforeClass() {
-        Hazelcast.shutdownAll();
-    }
-
+public class RestApiPhoneHomeIntegrationTest extends HazelcastTestSupport {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
-    private HazelcastInstance instance;
+    // HTTPCommunicator fails when the mock network is used (hazelcast.test.use.network=false).
+    // That's why HazelcastTestSupport#createHazelcastInstance cannot be used, which calls
+    // TestHazelcastInstanceFactory#newHazelcastInstance under the hood.
+    private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     private HTTPCommunicator http;
-
     private Config config;
-    private int port;
+    private PhoneHome phoneHome;
 
     @Before
     public void setUp() {
-        config = createConfigWithRestEnabled();
-        instance = factory.newHazelcastInstance(config);
+        config = smallInstanceConfig();
+        RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         http = new HTTPCommunicator(instance);
+        phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + wireMockRule.port() + "/ping");
         stubFor(post(urlPathEqualTo("/ping")).willReturn(aResponse().withStatus(200)));
-        port = wireMockRule.port();
     }
 
     @After
@@ -84,20 +79,8 @@ public class RESTClientPhoneHomeTest {
         factory.terminateAll();
     }
 
-    protected Config createConfig() {
-        return smallInstanceConfig();
-    }
-
-    protected Config createConfigWithRestEnabled() {
-        Config config = createConfig();
-        RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
-        config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        return config;
-    }
-
     @Test
-    public void mapOperations()
-            throws IOException {
+    public void mapOperations() throws IOException {
         assertEquals(200, http.mapPut("my-map", "key", "value"));
         assertEquals(200, http.mapPut("my-map", "key2", "value2"));
         assertEquals(400, http.doPost(http.getUrl(URI_MAPS), "value").responseCode);
@@ -106,25 +89,23 @@ public class RESTClientPhoneHomeTest {
         assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
         assertEquals(200, http.mapDelete("my-map", "key"));
 
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("restenabled", "1"))
-                .withRequestBody(containingParam("restmaprequestct", "7"))
-                .withRequestBody(containingParam("restqueuerequestct", "0"))
-                .withRequestBody(containingParam("restrequestct", "7"))
-                .withRequestBody(containingParam("restuniqrequestct", "6"))
-                .withRequestBody(containingParam("restmappostsucc", "2"))
-                .withRequestBody(containingParam("restmappostfail", "1"))
-                .withRequestBody(containingParam("restmapgetsucc", "1"))
-                .withRequestBody(containingParam("restmapgetfail", "2"))
-                .withRequestBody(containingParam("restmapdeletesucc", "1"))
-                .withRequestBody(containingParam("restmapdeletefail", "0"))
-                .withRequestBody(containingParam("restmapct", "2"))
-                .withRequestBody(containingParam("restqueuepostsucc", "0"))
-                .withRequestBody(containingParam("restqueuepostfail", "0"))
-        );
+                .withRequestBody(containingParam("restenabled" /*REST_ENABLED*/, 1))
+                .withRequestBody(containingParam("restmaprequestct" /*REST_MAP_TOTAL_REQUEST_COUNT*/, 7))
+                .withRequestBody(containingParam("restqueuerequestct" /*REST_QUEUE_TOTAL_REQUEST_COUNT*/, 0))
+                .withRequestBody(containingParam("restrequestct" /*REST_REQUEST_COUNT*/, 7))
+                .withRequestBody(containingParam("restuniqrequestct" /*REST_UNIQUE_REQUEST_COUNT*/, 6))
+                .withRequestBody(containingParam("restmappostsucc" /*REST_MAP_POST_SUCCESS*/, 2))
+                .withRequestBody(containingParam("restmappostfail" /*REST_MAP_POST_FAILURE*/, 1))
+                .withRequestBody(containingParam("restmapgetsucc" /*REST_MAP_GET_SUCCESS*/, 1))
+                .withRequestBody(containingParam("restmapgetfail" /*REST_MAP_GET_FAILURE*/, 2))
+                .withRequestBody(containingParam("restmapdeletesucc" /*REST_MAP_DELETE_SUCCESS*/, 1))
+                .withRequestBody(containingParam("restmapdeletefail" /*REST_MAP_DELETE_FAILURE*/, 0))
+                .withRequestBody(containingParam("restmapct" /*REST_ACCESSED_MAP_COUNT*/, 2))
+                .withRequestBody(containingParam("restqueuepostsucc" /*REST_QUEUE_POST_SUCCESS*/, 0))
+                .withRequestBody(containingParam("restqueuepostfail" /*REST_QUEUE_POST_FAILURE*/, 0)));
     }
 
     @Test
@@ -137,22 +118,20 @@ public class RESTClientPhoneHomeTest {
         assertEquals(204, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue/10").responseCode);
         assertEquals(400, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue").responseCode);
 
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("restmappostsucc", "0"))
-                .withRequestBody(containingParam("restmappostfail", "0"))
-                .withRequestBody(containingParam("restmaprequestct", "0"))
-                .withRequestBody(containingParam("restqueuerequestct", "7"))
-                .withRequestBody(containingParam("restrequestct", "7"))
-                .withRequestBody(containingParam("restqueuepostsucc", "2"))
-                .withRequestBody(containingParam("restqueuepostfail", "1"))
-                .withRequestBody(containingParam("restqueuedeletesucc", "1"))
-                .withRequestBody(containingParam("restqueuedeletefail", "1"))
-                .withRequestBody(containingParam("restqueuegetsucc", "2"))
-                .withRequestBody(containingParam("restqueuect", "1"))
-        );
+                .withRequestBody(containingParam("restmappostsucc" /*REST_MAP_POST_SUCCESS*/, 0))
+                .withRequestBody(containingParam("restmappostfail" /*REST_MAP_POST_FAILURE*/, 0))
+                .withRequestBody(containingParam("restmaprequestct" /*REST_MAP_TOTAL_REQUEST_COUNT*/, 0))
+                .withRequestBody(containingParam("restqueuerequestct" /*REST_QUEUE_TOTAL_REQUEST_COUNT*/, 7))
+                .withRequestBody(containingParam("restrequestct" /*REST_REQUEST_COUNT*/, 7))
+                .withRequestBody(containingParam("restqueuepostsucc" /*REST_QUEUE_POST_SUCCESS*/, 2))
+                .withRequestBody(containingParam("restqueuepostfail" /*REST_QUEUE_POST_FAILURE*/, 1))
+                .withRequestBody(containingParam("restqueuedeletesucc" /*REST_QUEUE_DELETE_SUCCESS*/, 1))
+                .withRequestBody(containingParam("restqueuedeletefail" /*REST_QUEUE_DELETE_FAILURE*/, 1))
+                .withRequestBody(containingParam("restqueuegetsucc" /*REST_QUEUE_GET_SUCCESS*/, 2))
+                .withRequestBody(containingParam("restqueuect" /*REST_ACCESSED_QUEUE_COUNT*/, 1)));
     }
 
     @Test
@@ -160,15 +139,12 @@ public class RESTClientPhoneHomeTest {
         http.configReload(config.getClusterName(), "");
         http.configUpdate(config.getClusterName(), "", "hazelcast:\n");
 
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("restconfigreloadsucc", "0"))
-                .withRequestBody(containingParam("restconfigreloadfail", "1"))
-                .withRequestBody(containingParam("restconfigupdatesucc", "0"))
-                .withRequestBody(containingParam("restconfigupdatefail", "1"))
-        );
+                .withRequestBody(containingParam("restconfigreloadsucc" /*REST_CONFIG_RELOAD_SUCCESS*/, 0))
+                .withRequestBody(containingParam("restconfigreloadfail" /*REST_CONFIG_RELOAD_FAILURE*/, 1))
+                .withRequestBody(containingParam("restconfigupdatesucc" /*REST_CONFIG_UPDATE_SUCCESS*/, 0))
+                .withRequestBody(containingParam("restconfigupdatefail" /*REST_CONFIG_UPDATE_FAILURE*/, 1)));
     }
-
 }

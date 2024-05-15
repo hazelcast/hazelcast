@@ -16,15 +16,7 @@
 
 package com.hazelcast.internal.util.phonehome;
 
-import com.hazelcast.instance.impl.Node;
+public interface Metric {
 
-import java.util.function.BiConsumer;
-
-public class DynamicConfigInfoCollector implements MetricsCollector {
-
-    @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
-        boolean isEnabled = node.getNodeEngine().getConfig().getDynamicConfigurationConfig().isPersistenceEnabled();
-        metricsConsumer.accept(PhoneHomeMetrics.DYNAMIC_CONFIG_PERSISTENCE_ENABLED, String.valueOf(isEnabled));
-    }
+    String getQueryParameter();
 }

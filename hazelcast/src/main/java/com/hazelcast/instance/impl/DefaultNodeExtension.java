@@ -99,7 +99,6 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -162,7 +161,6 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final ILogger logoLogger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<>();
-    protected PhoneHome phoneHome;
     protected JetServiceBackend jetServiceBackend;
     protected IntegrityChecker integrityChecker;
 
@@ -173,11 +171,11 @@ public class DefaultNodeExtension implements NodeExtension {
         this.logger = node.getLogger(NodeExtension.class);
         this.logoLogger = node.getLogger("com.hazelcast.system.logo");
         this.systemLogger = node.getLogger("com.hazelcast.system");
+
         checkCPSubsystemAllowed();
         checkSecurityAllowed();
         checkPersistenceAllowed();
         checkLosslessRestartAllowed();
-        createAndSetPhoneHome();
         checkDynamicConfigurationPersistenceAllowed();
         checkSqlCatalogPersistenceAllowed();
 
@@ -513,9 +511,6 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void afterShutdown() {
         logger.info("Destroying node NodeExtension.");
-        if (phoneHome != null) {
-            phoneHome.shutdown();
-        }
     }
 
     @Override
@@ -674,11 +669,6 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void sendPhoneHome() {
-        phoneHome.check();
-    }
-
-    @Override
     public CPPersistenceService getCPPersistenceService() {
         throw new UnsupportedOperationException();
     }
@@ -686,10 +676,6 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
         return new CPSubsystemStubImpl();
-    }
-
-    protected void createAndSetPhoneHome() {
-        this.phoneHome = new PhoneHome(node);
     }
 
     public void setLicenseKey(String licenseKey) {

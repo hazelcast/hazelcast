@@ -20,18 +20,18 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.UserCodeNamespacesConfig;
 import com.hazelcast.instance.impl.Node;
 
-import java.util.function.BiConsumer;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UCN_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.UCN_NAMESPACE_COUNT;
 
-public class UserCodeNamespacesInfoCollector implements MetricsCollector {
+class UserCodeNamespacesMetricsProvider implements MetricsProvider {
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
         UserCodeNamespacesConfig nsConfigs = node.getConfig().getNamespacesConfig();
         boolean enabled = nsConfigs.isEnabled();
-        metricsConsumer.accept(PhoneHomeMetrics.UCN_ENABLED, String.valueOf(enabled));
+        context.collect(UCN_ENABLED, enabled);
         if (enabled) {
-            metricsConsumer.accept(PhoneHomeMetrics.UCN_NAMESPACE_COUNT,
-                    String.valueOf(ConfigAccessor.getNamespaceConfigs(nsConfigs).size()));
+            context.collect(UCN_NAMESPACE_COUNT, ConfigAccessor.getNamespaceConfigs(nsConfigs).size());
         }
     }
 }

@@ -34,6 +34,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -339,6 +340,8 @@ public interface NodeEngine {
      * @return the {@link MetricsRegistry}
      */
     MetricsRegistry getMetricsRegistry();
+
+    PhoneHome getPhoneHome();
 
     void onClientDisconnected(UUID clientUuid);
 

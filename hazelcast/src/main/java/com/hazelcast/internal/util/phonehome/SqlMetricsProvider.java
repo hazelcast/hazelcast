@@ -19,21 +19,19 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.sql.impl.InternalSqlService;
 
-import java.util.function.BiConsumer;
-
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_QUERIES_SUBMITTED;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_STREAMING_QUERIES_EXECUTED;
 
-public class SqlInfoCollector implements MetricsCollector {
+class SqlMetricsProvider implements MetricsProvider {
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
         InternalSqlService sqlService = node.getNodeEngine().getSqlService();
 
         long sqlQueriesSubmittedCount = sqlService.getSqlQueriesSubmittedCount();
-        metricsConsumer.accept(SQL_QUERIES_SUBMITTED, String.valueOf(sqlQueriesSubmittedCount));
+        context.collect(SQL_QUERIES_SUBMITTED, sqlQueriesSubmittedCount);
 
         long sqlStreamingQueriesExecutedCount = sqlService.getSqlStreamingQueriesExecutedCount();
-        metricsConsumer.accept(SQL_STREAMING_QUERIES_EXECUTED, String.valueOf(sqlStreamingQueriesExecutedCount));
+        context.collect(SQL_STREAMING_QUERIES_EXECUTED, sqlStreamingQueriesExecutedCount);
     }
 }

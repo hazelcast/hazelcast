@@ -29,53 +29,55 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
+
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_USING_EVICTION;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION;
 
 /**
  * Collects information about IMap
  */
-class MapInfoCollector
-        implements MetricsCollector {
-
+class MapMetricsProvider implements MetricsProvider {
     private static final Predicate<MapConfig> IS_MAP_STORE_ENABLED = mapConfig -> mapConfig.getMapStoreConfig().isEnabled();
 
     private Map<String, MapConfig> mapConfigs;
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
         initMapConfigs(node);
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED,
-                String.valueOf(countMapWithBackupReadEnabled()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED,
-                String.valueOf(countMapWithMapStoreEnabled()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE,
-                String.valueOf(countMapWithAtleastOneQueryCache()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX,
-                String.valueOf(countMapWithAtleastOneIndex()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED,
-                String.valueOf(countMapWithHotRestartOrPersistenceEnabled()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION,
-                String.valueOf(countMapWithWANReplication()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE,
-                String.valueOf(countMapWithAtleastOneAttribute()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION,
-                String.valueOf(countMapUsingEviction()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT,
-                String.valueOf(countMapWithNativeInMemoryFormat()));
-        metricsConsumer.accept(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE,
-                String.valueOf(mapOperationLatency(node, IS_MAP_STORE_ENABLED,
-                        LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
-        metricsConsumer.accept(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
-                String.valueOf(mapOperationLatency(node, IS_MAP_STORE_ENABLED.negate(),
-                        LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
-        metricsConsumer.accept(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE,
-                String.valueOf(mapOperationLatency(node, IS_MAP_STORE_ENABLED,
-                        LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
-        metricsConsumer.accept(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
-                String.valueOf(mapOperationLatency(node, IS_MAP_STORE_ENABLED.negate(),
-                        LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
+        context.collect(MAP_COUNT_WITH_READ_ENABLED, countMapWithBackupReadEnabled());
+        context.collect(MAP_COUNT_WITH_MAP_STORE_ENABLED, countMapWithMapStoreEnabled());
+        context.collect(MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE, countMapWithAtleastOneQueryCache());
+        context.collect(MAP_COUNT_WITH_ATLEAST_ONE_INDEX, countMapWithAtleastOneIndex());
+        context.collect(MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED, countMapWithHotRestartOrPersistenceEnabled());
+        context.collect(MAP_COUNT_WITH_WAN_REPLICATION, countMapWithWANReplication());
+        context.collect(MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE, countMapWithAtleastOneAttribute());
+        context.collect(MAP_COUNT_USING_EVICTION, countMapUsingEviction());
+        context.collect(MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT, countMapWithNativeInMemoryFormat());
+        context.collect(AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE,
+                mapOperationLatency(node, IS_MAP_STORE_ENABLED,
+                        LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount));
+        context.collect(AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
+                mapOperationLatency(node, IS_MAP_STORE_ENABLED.negate(),
+                        LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount));
+        context.collect(AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE,
+                mapOperationLatency(node, IS_MAP_STORE_ENABLED,
+                        LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount));
+        context.collect(AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
+                mapOperationLatency(node, IS_MAP_STORE_ENABLED.negate(),
+                        LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount));
     }
 
     private void initMapConfigs(Node node) {

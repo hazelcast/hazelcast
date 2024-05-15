@@ -90,15 +90,18 @@
         TimedMemberStateFactoryHelper:
            open java.management/sun.management
 
-        NOTE: There is a slightly different setting for IBM OpenJ9, see the specific profile
+        NOTE: There are additional arguments for IBM OpenJ9, see the specific profile
         -->
-        <javaModuleArgs>
+        <javaStandardModuleArgs>
             --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
             --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
+            --add-opens java.base/java.lang.reflect=${hazelcast.module.name}
+            --add-opens java.base/java.util=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
-        </javaModuleArgs>
+        </javaStandardModuleArgs>
+        <javaModuleArgs>${javaStandardModuleArgs}</javaModuleArgs>
     </properties>
     <licenses>
         <license>
@@ -1134,6 +1137,8 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
                             </excludes>
+                            <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                            <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                             <!-- Fixes missing parameters in test name for tests run via mvn -->
                             <statelessTestsetReporter
                                     implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
@@ -1270,11 +1275,7 @@
             </activation>
             <properties>
                 <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
-                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
-                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
-                    --add-opens java.base/java.lang=${hazelcast.module.name}
-                    --add-opens java.management/sun.management=${hazelcast.module.name}
+                    ${javaStandardModuleArgs}
                     --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
                 </javaModuleArgs>
             </properties>

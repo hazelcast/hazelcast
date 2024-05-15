@@ -23,28 +23,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Properties;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.BUILD_VERSION;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JAVA_CLASSPATH;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM;
 import static java.lang.Math.min;
 
 /**
- * Collects metadata about this instance
+ * Provides metadata about this instance
  */
-class BuildInfoCollector implements MetricsCollector {
-
-    static final int CLASSPATH_MAX_LENGTH = 100_000;
-
-    private static final String PARDOT_ID_ENV_VAR = "HZ_PARDOT_ID";
-
-    private final Map<String, String> envVars;
-
-    BuildInfoCollector(Map<String, String> envVars) {
-        this.envVars = envVars;
-    }
+class BuildInfoProvider implements MetricsProvider {
+    static final String PARDOT_ID_ENV_VAR = "HZ_PARDOT_ID";
+    private static final int CLASSPATH_MAX_LENGTH = 100_000;
 
     static String formatClassPath(String classpath) {
         String[] classPathEntries = classpath.split(File.pathSeparator);
@@ -56,15 +49,14 @@ class BuildInfoCollector implements MetricsCollector {
     }
 
     @Override
-    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+    public void provideMetrics(Node node, MetricsCollectionContext context) {
         BuildInfo imdgInfo = node.getBuildInfo();
-        metricsConsumer.accept(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
-        metricsConsumer.accept(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
-        metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
+        context.collect(HAZELCAST_DOWNLOAD_ID, getDownloadId());
+        context.collect(JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
+        context.collect(BUILD_VERSION, imdgInfo.getVersion());
         String classpath = System.getProperty("java.class.path");
         if (classpath != null) {
-            metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH,
-                    formatClassPath(classpath));
+            context.collect(JAVA_CLASSPATH, formatClassPath(classpath));
         }
     }
 
@@ -73,9 +65,9 @@ class BuildInfoCollector implements MetricsCollector {
      * {@code source} if unable to find the download ID.
      */
     private String getDownloadId() {
-        String passedByEnvVar = envVars.get(PARDOT_ID_ENV_VAR);
-        if (passedByEnvVar != null) {
-            return passedByEnvVar;
+        String pardotId = System.getenv(PARDOT_ID_ENV_VAR);
+        if (pardotId != null) {
+            return pardotId;
         }
         try (InputStream is = getClass().getClassLoader()
                                         .getResourceAsStream("hazelcast-download.properties")) {
@@ -84,9 +76,7 @@ class BuildInfoCollector implements MetricsCollector {
                 properties.load(is);
                 return properties.getProperty("hazelcastDownloadId");
             }
-        } catch (IOException ignored) {
-            ignore(ignored);
-        }
+        } catch (IOException ignored) { }
         return "source";
     }
 }

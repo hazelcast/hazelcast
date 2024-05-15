@@ -21,20 +21,21 @@ import com.hazelcast.instance.impl.Node;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.util.function.BiConsumer;
-
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
- * Class responsible for collecting phone home data (phone home metrics).
- *
- * @see PhoneHomeMetrics
+ * Interface to be implemented by the classes that expose {@linkplain PhoneHomeMetrics
+ * phone home data}. The {@link #provideMetrics(Node, MetricsCollectionContext)}
+ * method is called in every metrics collection cycle.
+ * <p>
+ * Registering instances of this interface can be done by providing the class name in
+ * {@code META-INF/services/com.hazelcast.internal.util.phonehome.MetricsProvider}.
  */
-public interface MetricsCollector {
+public interface MetricsProvider {
 
     int TIMEOUT = 2000;
     int RESPONSE_OK = 200;
     int RESPONSE_UNAUTHORIZED = 401;
+
     int A_INTERVAL = 5;
     int B_INTERVAL = 10;
     int C_INTERVAL = 20;
@@ -46,12 +47,14 @@ public interface MetricsCollector {
     int J_INTERVAL = 600;
 
     /**
-     * Calls the {@code metricsConsumer} for each metric collected by this collector.
+     * Metrics collection callback that is called in every metrics
+     * collection cycle. The collected metrics should be passed to the
+     * {@link MetricsCollectionContext#collect(Metric, Object)} method.
      *
-     * @param node            this node
-     * @param metricsConsumer the consumer to call with the metric type and value
+     * @param node    this node
+     * @param context the context used to collect the metrics
      */
-    void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer);
+    void provideMetrics(Node node, MetricsCollectionContext context);
 
     static String convertToLetter(int size) {
         String letter;
@@ -81,23 +84,20 @@ public interface MetricsCollector {
 
     static boolean fetchWebService(String urlStr, int responseCode) {
         HttpURLConnection conn = null;
-        boolean response;
         try {
             URL url = URI.create(urlStr).toURL();
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(TIMEOUT);
             conn.setReadTimeout(TIMEOUT);
             conn.connect();
-            response = conn.getResponseCode() == responseCode;
+            return conn.getResponseCode() == responseCode;
         } catch (Exception ignored) {
-            ignore(ignored);
             return false;
         } finally {
             if (conn != null) {
                 conn.disconnect();
             }
         }
-        return response;
     }
 
     static boolean fetchWebService(String url) {
