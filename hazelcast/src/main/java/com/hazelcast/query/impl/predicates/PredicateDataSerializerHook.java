@@ -57,8 +57,9 @@ public class PredicateDataSerializerHook implements DataSerializerHook {
     public static final int NEGATIVE_INFINITY = 19;
     public static final int POSITIVE_INFINITY = 20;
     public static final int MULTI_PARTITION_PREDICATE = 21;
+    public static final int BOUNDED_RANGE_PREDICATE = 22;
 
-    public static final int LEN = MULTI_PARTITION_PREDICATE + 1;
+    public static final int LEN = BOUNDED_RANGE_PREDICATE + 1;
 
     @Override
     public int getFactoryId() {
@@ -91,6 +92,7 @@ public class PredicateDataSerializerHook implements DataSerializerHook {
         constructors[NEGATIVE_INFINITY] = () -> CompositeValue.NEGATIVE_INFINITY;
         constructors[POSITIVE_INFINITY] = () -> CompositeValue.POSITIVE_INFINITY;
         constructors[MULTI_PARTITION_PREDICATE] = MultiPartitionPredicateImpl::new;
+        constructors[BOUNDED_RANGE_PREDICATE] = BoundedRangePredicate::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }
