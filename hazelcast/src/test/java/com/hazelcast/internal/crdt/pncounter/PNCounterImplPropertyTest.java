@@ -130,7 +130,6 @@ public class PNCounterImplPropertyTest extends AbstractCRDTPropertyTest<PNCounte
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected List<Class<? extends Operation<PNCounterImpl, MutableLong>>> getOperationClasses() {
         return Arrays.asList(AddAndGet.class, GetAndAdd.class, GetAndSubtract.class, SubtractAndGet.class);
     }
