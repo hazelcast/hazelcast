@@ -326,6 +326,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull
+    @Override
     <S, K, R> TriFunction<? super S, ? super K, ? super Long, ? extends JetEvent<R>> adaptOnEvictFn(
             @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
@@ -341,6 +342,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull
+    @Override
     <S, K, R> TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<JetEvent<R>>> adaptOnEvictFlatMapFn(
             @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {

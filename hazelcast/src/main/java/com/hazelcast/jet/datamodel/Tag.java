@@ -18,6 +18,7 @@ package com.hazelcast.jet.datamodel;
 
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -36,6 +37,7 @@ import java.io.Serializable;
 @SerializableByConvention
 public final class Tag<T> implements Comparable<Tag<?>>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final Tag TAG_0 = new Tag(0);

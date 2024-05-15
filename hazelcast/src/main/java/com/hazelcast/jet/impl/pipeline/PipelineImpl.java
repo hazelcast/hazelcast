@@ -65,7 +65,6 @@ public class PipelineImpl implements Pipeline {
 
     @Nonnull
     @Override
-    @SuppressWarnings("unchecked")
     public <T> BatchStage<T> readFrom(@Nonnull BatchSource<? extends T> source) {
         BatchSourceTransform<? extends T> xform = (BatchSourceTransform<? extends T>) source;
         xform.onAssignToStage();
