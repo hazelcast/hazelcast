@@ -19,6 +19,8 @@ package com.hazelcast.vector;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.vector.impl.VectorDocumentImpl;
 
+import javax.annotation.Nonnull;
+
 /**
  * A {@code VectorDocument} includes a user-supplied {@code V value} and the associated {@link VectorValues}
  * that represent the document.
@@ -29,11 +31,13 @@ import com.hazelcast.vector.impl.VectorDocumentImpl;
 @Beta
 public interface VectorDocument<V> {
 
+    @Nonnull
     V getValue();
 
+    @Nonnull
     VectorValues getVectors();
 
-    static <T> VectorDocument<T> of(T value, VectorValues vv) {
+    static <T> VectorDocument<T> of(@Nonnull T value, @Nonnull VectorValues vv) {
         return new VectorDocumentImpl<>(value, vv);
     }
 }
