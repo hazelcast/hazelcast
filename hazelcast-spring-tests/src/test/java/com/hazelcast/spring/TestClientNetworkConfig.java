@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
@@ -86,6 +87,13 @@ public class TestClientNetworkConfig {
         ClientConfig config = client.getClientConfig();
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
                 config.getNetworkConfig().getSSLConfig().getFactoryClassName());
+    }
+
+    @Test
+    public void smokeSubsetRoutingConfig() {
+        ClientConfig config = client.getClientConfig();
+        assertFalse(config.getNetworkConfig().getSubsetRoutingConfig().isEnabled());
+        assertEquals(RoutingStrategy.PARTITION_GROUPS, config.getNetworkConfig().getSubsetRoutingConfig().getRoutingStrategy());
     }
 
     @Test

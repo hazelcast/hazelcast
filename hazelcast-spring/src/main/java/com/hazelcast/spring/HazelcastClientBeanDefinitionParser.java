@@ -30,7 +30,9 @@ import com.hazelcast.client.config.ClientSqlConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.config.SubsetRoutingConfig;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -69,6 +71,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
@@ -85,6 +88,7 @@ import static org.springframework.util.Assert.isTrue;
  *          connection-timeout="1000"
  *          redo-operation="true"
  *          smart-routing="true">
+ *              <hz:subset-routing enabled="false" routing-strategy="PARTITION_GROUPS"/>
  *              <hz:member>10.10.1.2:5701</hz:member>
  *              <hz:member>10.10.1.3:5701</hz:member>
  *      </hz:network>
@@ -303,6 +307,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("userCodeDeploymentConfig", userCodeDeploymentConfig.getBeanDefinition());
         }
 
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private void handleNetwork(Node node) {
             BeanDefinitionBuilder clientNetworkConfig = createBeanBuilder(ClientNetworkConfig.class);
             List<String> members = new ArrayList<>(INITIAL_CAPACITY);
@@ -331,6 +336,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("hazelcast-cloud".equals(nodeName)) {
                     createAndFillBeanBuilder(child, ClientCloudConfig.class,
                             "cloudConfig", clientNetworkConfig);
+                } else if ("subset-routing".equals(nodeName)) {
+                    handleSubsetRouting(child, clientNetworkConfig);
                 }
 
             }
@@ -355,6 +362,20 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleSubsetRouting(Node node, BeanDefinitionBuilder networkConfigBuilder) {
+            boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+            if (enabled) {
+                BeanDefinitionBuilder subsetRoutingConfig = createBeanBuilder(SubsetRoutingConfig.class);
+                String attribute = getAttribute(node, "routing-strategy");
+                RoutingStrategy routingStrategy = attribute == null
+                        ? SubsetRoutingConfig.DEFAULT_ROUTING_STRATEGY : RoutingStrategy.valueOf(attribute);
+
+                subsetRoutingConfig.addPropertyValue("enabled", true);
+                subsetRoutingConfig.addPropertyValue("routingStrategy", routingStrategy);
+                networkConfigBuilder.addPropertyValue("subsetRoutingConfig", subsetRoutingConfig.getBeanDefinition());
+            }
         }
 
         private void handleLoadBalancer(Node node) {
