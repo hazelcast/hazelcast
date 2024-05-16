@@ -122,12 +122,7 @@ public class HazelcastPropertiesTest {
     @Test
     public void testGet_whenFunctionAvailable_andNoOtherSettings() {
         Properties props = new Properties();
-        HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {
-            @Override
-            public Integer apply(HazelcastProperties properties) {
-                return 23;
-            }
-        });
+        HazelcastProperty p = new HazelcastProperty("key", (Function<HazelcastProperties, Integer>) properties -> 23);
         HazelcastProperties properties = new HazelcastProperties(props);
 
         assertEquals(23, properties.getInteger(p));
@@ -137,12 +132,7 @@ public class HazelcastPropertiesTest {
     public void testGet_whenFunctionAvailable_andPropertySet() {
         Properties props = new Properties();
         props.setProperty("key", "1");
-        HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {
-            @Override
-            public Integer apply(HazelcastProperties properties) {
-                return 23;
-            }
-        });
+        HazelcastProperty p = new HazelcastProperty("key", (Function<HazelcastProperties, Integer>) properties -> 23);
         HazelcastProperties properties = new HazelcastProperties(props);
         assertEquals(1, properties.getInteger(p));
     }

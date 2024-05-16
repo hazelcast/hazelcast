@@ -34,12 +34,7 @@ public class NonStaticFunctionFactory {
     }
 
     public static Function<String, String> getAnonymousNonSerializableFunction(final String returnValue) {
-        return new Function<>() {
-            @Override
-            public String apply(String s) {
-                return returnValue;
-            }
-        };
+        return s -> returnValue;
     }
 
 }
