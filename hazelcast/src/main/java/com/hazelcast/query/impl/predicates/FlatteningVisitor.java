@@ -51,8 +51,8 @@ public class FlatteningVisitor extends AbstractVisitor {
         Predicate[] target = originalPredicates;
         for (int i = 0; i < target.length; i++) {
             Predicate predicate = target[i];
-            if (predicate instanceof AndPredicate) {
-                Predicate[] subPredicates = ((AndPredicate) predicate).predicates;
+            if (predicate instanceof AndPredicate andPredicateInstance) {
+                Predicate[] subPredicates = andPredicateInstance.predicates;
                 if (!modified) {
                     modified = true;
                     target = createCopy(target);
@@ -75,8 +75,8 @@ public class FlatteningVisitor extends AbstractVisitor {
         Predicate[] target = originalPredicates;
         for (int i = 0; i < target.length; i++) {
             Predicate predicate = target[i];
-            if (predicate instanceof OrPredicate) {
-                Predicate[] subPredicates = ((OrPredicate) predicate).predicates;
+            if (predicate instanceof OrPredicate orPredicateInstance) {
+                Predicate[] subPredicates = orPredicateInstance.predicates;
                 if (!modified) {
                     modified = true;
                     target = createCopy(target);
@@ -124,8 +124,8 @@ public class FlatteningVisitor extends AbstractVisitor {
     @Override
     public Predicate visit(NotPredicate predicate, IndexRegistry indexes) {
         Predicate inner = predicate.predicate;
-        if (inner instanceof NegatablePredicate) {
-            return ((NegatablePredicate) inner).negate();
+        if (inner instanceof NegatablePredicate negatablePredicate) {
+            return negatablePredicate.negate();
         }
         return predicate;
     }

@@ -397,9 +397,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             Integer inFlightItemsCount = inFlightItems.compute(tuple.f0(), (k, v) -> v == 1 ? null : v - 1);
             assert inFlightItemsCount == null || inFlightItemsCount > 0 : "inFlightItemsCount=" + inFlightItemsCount;
             // the result is either Throwable or Traverser<Object>
-            if (tuple.f2() instanceof Throwable) {
-                throw new JetException("Async operation completed exceptionally: " + tuple.f2(),
-                        (Throwable) tuple.f2());
+            if (tuple.f2() instanceof Throwable throwable) {
+                throw new JetException("Async operation completed exceptionally: " + throwable,
+                        throwable);
             }
             currentTraverser = (Traverser<Object>) tuple.f2();
             if (currentTraverser == null) {
