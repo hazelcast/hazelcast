@@ -349,7 +349,6 @@ see used in the comments on your PR:
 * `run-ee-compile` - compile hazelcast-enterprise with this PR
 * `run-ee-tests` - run tests from hazelcast-enterprise with this PR
 * `run-windows` - run the tests on a Windows machine (HighFive is not supported here)
-* `run-with-ibm-jdk-8` - run the tests with IBM JDK 8
 * `run-cdc-debezium-tests` - run all tests in the
   `extensions/cdc-debezium` module
 * `run-cdc-mysql-tests` - run all tests in the `extensions/cdc-mysql`
