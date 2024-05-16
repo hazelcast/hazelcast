@@ -262,7 +262,7 @@
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client-bom</artifactId>
-                <version>1.35.0</version>
+                <version>1.36.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
