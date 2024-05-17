@@ -91,7 +91,7 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         map.getAsync(1);
     }
 
-    static class SleepyProcessor implements Callable, Serializable {
+    private static class SleepyProcessor implements Callable<Object>, Serializable {
 
         private long millis;
 

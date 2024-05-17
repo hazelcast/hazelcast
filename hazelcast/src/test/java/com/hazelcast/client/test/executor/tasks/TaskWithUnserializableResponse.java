@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
  * This class is for Non-java clients as well. Please do not remove or modify.
  */
 public class TaskWithUnserializableResponse
-        implements Callable, IdentifiedDataSerializable {
+        implements Callable<Object>, IdentifiedDataSerializable {
     public static final int CLASS_ID = 14;
 
     public TaskWithUnserializableResponse() {

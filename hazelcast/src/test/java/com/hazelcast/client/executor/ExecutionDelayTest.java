@@ -124,10 +124,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         }
     }
 
-    public static class Task implements Callable, Serializable {
-
-        public Task() {
-        }
+    private static class Task implements Callable<Object>, Serializable {
 
         @Override
         public Object call() {

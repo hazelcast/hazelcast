@@ -136,7 +136,7 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
-        Future future = service.submit(task);
+        Future<Boolean> future = service.submit(task);
 
         future.get(1, TimeUnit.SECONDS);
     }
@@ -147,7 +147,7 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
-        Future future = service.submit(task);
+        Future<Boolean> future = service.submit(task);
 
         try {
             future.get(1, TimeUnit.SECONDS);
@@ -166,7 +166,7 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
-        Future future = service.submit(task);
+        Future<Boolean> future = service.submit(task);
 
         try {
             future.get(1, TimeUnit.SECONDS);
@@ -184,7 +184,7 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
-        Future future = service.submit(task);
+        Future<Boolean> future = service.submit(task);
         try {
             future.get(1, TimeUnit.SECONDS);
         } catch (TimeoutException ignored) {
@@ -248,8 +248,8 @@ public class ClientExecutorServiceTest {
         String name = randomString();
         IExecutorService service = client.getExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
-        Future future = service.submitToKeyOwner(counterCallable, name);
-        assertEquals(2, future.get());
+        Future<Integer> future = service.submitToKeyOwner(counterCallable, name);
+        assertEquals(Integer.valueOf(2), future.get());
     }
 
     @Test
@@ -258,8 +258,8 @@ public class ClientExecutorServiceTest {
         String name = randomString();
         IExecutorService service = client.getExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
-        Future future = service.submitToMember(counterCallable, instance.getCluster().getLocalMember());
-        assertEquals(2, future.get());
+        Future<Integer> future = service.submitToMember(counterCallable, instance.getCluster().getLocalMember());
+        assertEquals(Integer.valueOf(2), future.get());
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -267,7 +267,7 @@ public class ClientExecutorServiceTest {
             throws Throwable {
         IExecutorService service = client.getExecutorService("executor");
         TaskWithUnserializableResponse counterCallable = new TaskWithUnserializableResponse();
-        Future future = service.submit(counterCallable);
+        Future<Object> future = service.submit(counterCallable);
         try {
             future.get();
         } catch (ExecutionException e) {

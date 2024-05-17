@@ -109,19 +109,17 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         DurableExecutorService executor = client.getDurableExecutorService("executor");
         for (int i = 0; i < executions; i++) {
-            Future future = executor.submitToKeyOwner(task, i);
+            Future<Object> future = executor.submitToKeyOwner(task, i);
             future.get();
             Thread.sleep(100);
         }
     }
 
-    public static class Task implements Callable, Serializable {
+    private static class Task implements Callable<Object>, Serializable {
 
-        public Task() {
-        }
 
         @Override
-        public Object call() throws Exception {
+        public Object call() {
             COUNTER.incrementAndGet();
             return null;
         }

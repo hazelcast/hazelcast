@@ -464,7 +464,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
     }
 
-    public static class CallableSignalsRunAndSleep implements Callable, IdentifiedDataSerializable, HazelcastInstanceAware {
+    public static class CallableSignalsRunAndSleep implements Callable<Boolean>, IdentifiedDataSerializable, HazelcastInstanceAware {
 
         private transient HazelcastInstance hazelcastInstance;
         private String startSignalLatchName;
@@ -478,7 +478,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public Object call() {
+        public Boolean call() {
             hazelcastInstance.getCPSubsystem().getCountDownLatch("callableStartedLatch").countDown();
             try {
                 Thread.sleep(Long.MAX_VALUE);

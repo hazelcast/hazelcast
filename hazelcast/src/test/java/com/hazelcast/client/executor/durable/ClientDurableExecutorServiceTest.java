@@ -264,11 +264,11 @@ public class ClientDurableExecutorServiceTest {
         DurableExecutorService service = client.getDurableExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
 
-        Future future = service.submitToKeyOwner(counterCallable, name);
-        assertEquals(2, future.get());
+        Future<Integer> future = service.submitToKeyOwner(counterCallable, name);
+        assertEquals(Integer.valueOf(2), future.get());
     }
 
-    static class SerializedCounterCallable implements Callable, DataSerializable {
+    private static class SerializedCounterCallable implements Callable<Integer>, DataSerializable {
 
         int counter;
 
@@ -276,7 +276,7 @@ public class ClientDurableExecutorServiceTest {
         }
 
         @Override
-        public Object call() {
+        public Integer call() {
             return counter;
         }
 

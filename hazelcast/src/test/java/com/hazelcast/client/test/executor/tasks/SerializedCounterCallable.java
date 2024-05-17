@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
  * This class is for Non-java clients as well. Please do not remove or modify.
  */
 public class SerializedCounterCallable
-        implements Callable, IdentifiedDataSerializable {
+        implements Callable<Integer>, IdentifiedDataSerializable {
     public static final int CLASS_ID = 13;
 
     private int counter;
@@ -37,7 +37,7 @@ public class SerializedCounterCallable
     }
 
     @Override
-    public Object call()
+    public Integer call()
             throws Exception {
         return counter;
     }
