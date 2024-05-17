@@ -100,7 +100,7 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         }
 
         @Override
-        public Object call() throws Exception {
+        public Object call() {
             ILogger logger = Logger.getLogger(getClass());
             try {
                 logger.info("SleepyProcessor(" + this + ") sleeping for " + millis + " milliseconds");
