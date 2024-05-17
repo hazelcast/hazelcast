@@ -104,7 +104,7 @@ public class TestManagedContext {
         final AtomicReference<Throwable> error = new AtomicReference<>();
 
         instance1.getExecutorService("test").submitToMember(new SomeRunnableTask(),
-                instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+                instance2.getCluster().getLocalMember(), new ExecutionCallback<>() {
                     public void onResponse(Object response) {
                         latch.countDown();
                     }
@@ -154,7 +154,7 @@ public class TestManagedContext {
     public void testTransactionalRunnableTask() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         instance1.getExecutorService("test").submitToMember(new SomeTransactionalRunnableTask(),
-                instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+                instance2.getCluster().getLocalMember(), new ExecutionCallback<>() {
                     public void onResponse(Object response) {
                         latch.countDown();
                     }

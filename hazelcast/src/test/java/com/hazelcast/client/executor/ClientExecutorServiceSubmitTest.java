@@ -186,7 +186,7 @@ public class ClientExecutorServiceSubmitTest {
         Member member = server.getCluster().getLocalMember();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submitToMember(runnable, member, new ExecutionCallback() {
+        service.submitToMember(runnable, member, new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 responseLatch.countDown();
             }
@@ -235,7 +235,7 @@ public class ClientExecutorServiceSubmitTest {
         final CountDownLatch responseLatch = new CountDownLatch(1);
         final AtomicReference<Object> result = new AtomicReference<>();
 
-        service.submitToMember(getUuidCallable, member, new ExecutionCallback() {
+        service.submitToMember(getUuidCallable, member, new ExecutionCallback<>() {
             @Override
             public void onResponse(Object response) {
                 result.set(response);
@@ -291,7 +291,7 @@ public class ClientExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         MemberSelector selector = new SelectAllMembers();
 
-        service.submit(runnable, selector, new ExecutionCallback() {
+        service.submit(runnable, selector, new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 responseLatch.countDown();
             }
@@ -341,7 +341,7 @@ public class ClientExecutorServiceSubmitTest {
         MemberSelector selector = new SelectAllMembers();
         final AtomicReference<Object> result = new AtomicReference<>();
 
-        service.submit(runnable, selector, new ExecutionCallback() {
+        service.submit(runnable, selector, new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 result.set(response);
                 responseLatch.countDown();
@@ -515,7 +515,7 @@ public class ClientExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable, new ExecutionCallback() {
+        service.submit(runnable, new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 responseLatch.countDown();
             }
@@ -573,7 +573,7 @@ public class ClientExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submitToKeyOwner(runnable, "key", new ExecutionCallback() {
+        service.submitToKeyOwner(runnable, "key", new ExecutionCallback<>() {
             public void onResponse(Object response) {
                 responseLatch.countDown();
             }
@@ -657,7 +657,7 @@ public class ClientExecutorServiceSubmitTest {
         Runnable runnable = new MapPutPartitionAwareRunnable<>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable, new ExecutionCallback() {
+        service.submit(runnable, new ExecutionCallback<>() {
             @Override
             public void onResponse(Object response) {
                 responseLatch.countDown();

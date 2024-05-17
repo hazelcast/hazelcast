@@ -131,7 +131,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         //keep the slot for one invocation to test if client can reconnect even if all slots are kept
         CountDownLatch testFinished = new CountDownLatch(1);
         executorService.submit(new ExecutorServiceTestSupport.SleepingTask(0),
-                new ExecutionCallback<Boolean>() {
+                new ExecutionCallback<>() {
                     @Override
                     public void onResponse(Boolean response) {
                         try {

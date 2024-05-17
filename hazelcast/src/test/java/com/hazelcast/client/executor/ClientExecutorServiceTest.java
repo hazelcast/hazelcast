@@ -282,7 +282,7 @@ public class ClientExecutorServiceTest {
         TaskWithUnserializableResponse counterCallable = new TaskWithUnserializableResponse();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicReference<Throwable> throwable = new AtomicReference<>();
-        service.submit(counterCallable, new ExecutionCallback() {
+        service.submit(counterCallable, new ExecutionCallback<>() {
             @Override
             public void onResponse(Object response) {
 
