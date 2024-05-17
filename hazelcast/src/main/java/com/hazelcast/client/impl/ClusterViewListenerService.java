@@ -30,14 +30,15 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.impl.PartitionStateManagerImpl;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.version.Version;
 
+import javax.annotation.Nullable;
 import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,9 +48,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -68,30 +69,38 @@ public class ClusterViewListenerService {
     private final boolean advancedNetworkConfigEnabled;
     private final AtomicBoolean pushScheduled = new AtomicBoolean();
     private final CoalescingDelayedTrigger delayedPartitionUpdateTrigger;
-    // This is an emulation of the pre-4.1 partition state version.
-    // We will increment this version if a partition table change is detected
-    // while sending partition table to the client.
-    // Because of the client compatibility requirement, this integer version
-    // wil remain until the next major version of the client protocol.
+
+    /**
+     * This is an emulation of the pre-4.1 partition state version.
+     * We will increment this version if a partition table change is detected
+     * while sending partition table to the client.
+     * Because of the client compatibility requirements, this integer version
+     * will remain until the next major version of the client protocol.
+     */
     private final AtomicInteger partitionTableVersion = new AtomicInteger();
-    // Latest observed partition stamp
+    /** Latest observed partition stamp. */
     private final AtomicLong latestPartitionStamp = new AtomicLong();
 
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
-        this.delayedPartitionUpdateTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(),
+        advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
+        delayedPartitionUpdateTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(),
                 PARTITION_UPDATE_DELAY_MS, PARTITION_UPDATE_MAX_DELAY_MS, this::pushPartitionTableView);
     }
 
+    /**
+     * See <a href="https://github.com/hazelcast/hazelcast-mono/pull/871#issuecomment-1983519122">
+     * this comment</a> for why we do not use an acknowledgement mechanism.
+     */
     private void schedulePeriodicPush() {
         ExecutionService executor = nodeEngine.getExecutionService();
         int pushPeriodInSeconds = nodeEngine.getProperties().getSeconds(PUSH_PERIOD_IN_SECONDS);
-        executor.scheduleWithRepetition(this::pushView, pushPeriodInSeconds, pushPeriodInSeconds, TimeUnit.SECONDS);
+        executor.scheduleWithRepetition(this::pushView, pushPeriodInSeconds, pushPeriodInSeconds, SECONDS);
     }
 
     private void pushView() {
         pushPartitionTableView();
+
         MembersView membersView = getMembersView();
         ClientMessage memberListViewMessage = getMemberListViewMessage(membersView);
         sendToListeningEndpoints(memberListViewMessage);
@@ -100,10 +109,12 @@ public class ClusterViewListenerService {
         ClientMessage memberGroupsViewEvent = ClientAddClusterViewListenerCodec
                 .encodeMemberGroupsViewEvent(membersView.getVersion(), memberGroups);
         sendToListeningEndpoints(memberGroupsViewEvent);
+
+        sendToListeningEndpoints(getClusterVersionMessage());
     }
 
     private void pushPartitionTableView() {
-        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
+        ClientMessage partitionViewMessage = getPartitionViewMessage();
         if (partitionViewMessage != null) {
             sendToListeningEndpoints(partitionViewMessage);
         }
@@ -118,10 +129,14 @@ public class ClusterViewListenerService {
         sendToListeningEndpoints(getMemberListViewMessage(membersView));
     }
 
+    public void onClusterVersionChange() {
+        sendToListeningEndpoints(getClusterVersionMessage());
+    }
+
     private void sendToListeningEndpoints(ClientMessage clientMessage) {
-        for (Map.Entry<ClientEndpoint, Long> entry : clusterListeningEndpoints.entrySet()) {
+        for (Entry<ClientEndpoint, Long> entry : clusterListeningEndpoints.entrySet()) {
             Long correlationId = entry.getValue();
-            //share the partition and membership table, copy only initial frame
+            // Share the partition and membership tables, copy only the initial frame.
             ClientMessage message = clientMessage.copyWithNewCorrelationId(correlationId);
             ClientEndpoint clientEndpoint = entry.getKey();
             Connection connection = clientEndpoint.getConnection();
@@ -133,9 +148,8 @@ public class ClusterViewListenerService {
         try {
             connection.write(message);
         } catch (CancelledKeyException ignored) {
-            //if connection closes, while writing we can get CancelledKeyException.
-            // In that case, we can safely ignore the exception
-            EmptyStatement.ignore(ignored);
+            // If connection closes while writing, we can get CancelledKeyException.
+            // In that case, we can safely ignore the exception.
         }
     }
 
@@ -144,16 +158,17 @@ public class ClusterViewListenerService {
             schedulePeriodicPush();
         }
         clusterListeningEndpoints.put(clientEndpoint, correlationId);
+        Connection connection = clientEndpoint.getConnection();
 
         MembersView processedMembersView = getMembersView();
         ClientMessage memberListViewMessage = getMemberListViewMessage(processedMembersView);
         memberListViewMessage.setCorrelationId(correlationId);
-        write(memberListViewMessage, clientEndpoint.getConnection());
+        write(memberListViewMessage, connection);
 
-        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
+        ClientMessage partitionViewMessage = getPartitionViewMessage();
         if (partitionViewMessage != null) {
             partitionViewMessage.setCorrelationId(correlationId);
-            write(partitionViewMessage, clientEndpoint.getConnection());
+            write(partitionViewMessage, connection);
         }
 
         int version = processedMembersView.getVersion();
@@ -161,6 +176,10 @@ public class ClusterViewListenerService {
         ClientMessage memberGroupsViewEvent = ClientAddClusterViewListenerCodec
                 .encodeMemberGroupsViewEvent(version, memberGroups);
         write(memberGroupsViewEvent, clientEndpoint.getConnection());
+
+        ClientMessage clusterVersionMessage = getClusterVersionMessage();
+        clusterVersionMessage.setCorrelationId(correlationId);
+        write(clusterVersionMessage, connection);
     }
 
     public MembersView getMembersView() {
@@ -185,11 +204,10 @@ public class ClusterViewListenerService {
         return new MembersView(version, memberInfos);
     }
 
-    public record PartitionsView(Map<UUID, List<Integer>> partitions,
-                                 int version) {
-    }
+    public record PartitionsView(Map<UUID, List<Integer>> partitions, int version) { }
 
-    public PartitionsView getPartitionsViewOrNull() {
+    @Nullable
+    public PartitionsView getPartitionsView() {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
         PartitionTableView partitionTableView = partitionService.createPartitionTableView();
         Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
@@ -197,14 +215,13 @@ public class ClusterViewListenerService {
             return null;
         }
 
-        int version;
         long currentStamp = partitionTableView.stamp();
         long latestStamp = latestPartitionStamp.get();
         if (currentStamp != latestStamp && latestPartitionStamp.compareAndSet(latestStamp, currentStamp)) {
             partitionTableVersion.incrementAndGet();
         }
-        version = partitionTableVersion.get();
 
+        int version = partitionTableVersion.get();
         return new PartitionsView(partitions, version);
     }
 
@@ -250,19 +267,24 @@ public class ClusterViewListenerService {
                 nodeEngine.getPartitionService()).getPartitionStateManager();
     }
 
-    private ClientMessage getPartitionViewMessageOrNull() {
-        PartitionsView partitionsView = getPartitionsViewOrNull();
+    @Nullable
+    private ClientMessage getPartitionViewMessage() {
+        PartitionsView partitionsView = getPartitionsView();
         if (partitionsView == null) {
             return null;
         }
-
-        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(partitionsView.version(),
-                partitionsView.partitions().entrySet());
+        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(
+                partitionsView.version(), partitionsView.partitions().entrySet());
     }
 
     private ClientMessage getMemberListViewMessage(MembersView processedMembersView) {
         return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(
                 processedMembersView.getVersion(), processedMembersView.getMembers());
+    }
+
+    private ClientMessage getClusterVersionMessage() {
+        Version version = nodeEngine.getClusterService().getClusterVersion();
+        return ClientAddClusterViewListenerCodec.encodeClusterVersionEvent(version);
     }
 
     public void deregisterListener(ClientEndpoint clientEndpoint) {
@@ -277,16 +299,16 @@ public class ClusterViewListenerService {
         if (member != null) {
             return member.getAddressMap().get(CLIENT);
         } else {
-            // partition table contains stale entries for members which are not in the member list
+            // Partition table contains stale entries for members which are not in the member list.
             return null;
         }
     }
 
     /**
-     * If any partition does not have an owner, this method returns empty collection
+     * If any partition does not have an owner, this method returns empty collection.
      *
-     * @param partitionTableView will be converted to address-&gt;partitions mapping
-     * @return address-&gt;partitions mapping, where address is the client address of the member
+     * @param partitionTableView will be converted to address->partitions mapping
+     * @return address->partitions mapping, where address is the client address of the member
      */
     public Map<UUID, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
         Map<UUID, List<Integer>> partitionsMap = new HashMap<>();
@@ -305,7 +327,7 @@ public class ClusterViewListenerService {
         return partitionsMap;
     }
 
-    //for test purpose only
+    // for test purpose only
     public Map<ClientEndpoint, Long> getClusterListeningEndpoints() {
         return clusterListeningEndpoints;
     }

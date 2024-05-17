@@ -129,7 +129,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Implementation of {@link ClientConnectionManager}.
  */
-@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity", "ClassDataAbstractionCoupling",
+@SuppressWarnings({"MethodLength", "NPathComplexity", "ClassDataAbstractionCoupling",
         "ClassFanOutComplexity", "MethodCount"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
@@ -1163,8 +1163,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         if (response.isKeyValuePairsExists()) {
             Map<String, String> keyValuePairs = Collections.unmodifiableMap(response.getKeyValuePairs());
             client.getClientClusterService()
-                    .getSubsetMembers().updateOnAuth(connection.getClusterUuid(),
-                            connection.getRemoteUuid(), keyValuePairs);
+                    .updateOnAuth(connection.getClusterUuid(), connection.getRemoteUuid(), keyValuePairs);
         }
     }
 

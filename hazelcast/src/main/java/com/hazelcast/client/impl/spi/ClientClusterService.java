@@ -24,9 +24,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -93,6 +95,28 @@ public interface ClientClusterService {
      */
     boolean removeMembershipListener(@Nonnull UUID registrationId);
 
+    SubsetMembers getSubsetMembers();
+
+    /**
+     * @return cluster's uuid
+     */
+    UUID getClusterId();
+
+    /**
+     * @return config for subset routing.
+     */
+    SubsetRoutingConfig getSubsetRoutingConfig();
+
+    /**
+     * Returns the cluster version, which may be {@link Version#UNKNOWN}.
+     */
+    @Nonnull
+    Version getClusterVersion();
+
+    void onClusterConnect(UUID newClusterId);
+
+    void updateOnAuth(UUID clusterUuid, UUID authMemberUuid, Map<String, String> keyValuePairs);
+
     /**
      * Updates the members of the cluster with the latest list.
      * @param memberListVersion The version of the member list
@@ -101,17 +125,8 @@ public interface ClientClusterService {
      */
     void handleMembersViewEvent(int memberListVersion, Collection<MemberInfo> memberInfos, UUID clusterUuid);
 
-    SubsetMembers getSubsetMembers();
-
     /**
-     * @return cluster's uuid
+     * Updates the cluster version with the latest one.
      */
-    UUID getClusterId();
-
-    void onClusterConnect(UUID newClusterId);
-
-    /**
-     * @return config for subset routing.
-     */
-    SubsetRoutingConfig getSubsetRoutingConfig();
+    void handleClusterVersionEvent(Version version);
 }

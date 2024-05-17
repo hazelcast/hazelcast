@@ -152,6 +152,10 @@ public class ClientCompatibilityTest_2_4 {
         public void handleMemberGroupsViewEvent(int version, java.util.Collection<java.util.Collection<java.util.UUID>> memberGroups) {
             fail("This method should not be called since this is an v2.8 event handler but the test is for v2.4");
         }
+        @Override
+        public void handleClusterVersionEvent(com.hazelcast.version.Version version) {
+            fail("This method should not be called since this is an v2.8 event handler but the test is for v2.4");
+        }
     }
 
     @Test

@@ -31,6 +31,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.List;
@@ -102,6 +103,11 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         public void handleMemberGroupsViewEvent(int version, Collection<Collection<UUID>> memberGroups) {
             clusterService.getSubsetMembers()
                     .updateOnClusterViewEvent(connection.getClusterUuid(), memberGroups, version);
+        }
+
+        @Override
+        public void handleClusterVersionEvent(Version version) {
+            clusterService.handleClusterVersionEvent(version);
         }
     }
 

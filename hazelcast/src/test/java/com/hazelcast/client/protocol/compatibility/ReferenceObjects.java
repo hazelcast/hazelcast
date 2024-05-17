@@ -103,6 +103,7 @@ import com.hazelcast.vector.VectorValues;
 import com.hazelcast.vector.impl.DataSearchResult;
 import com.hazelcast.vector.impl.DataVectorDocument;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
@@ -1061,4 +1062,6 @@ public class ReferenceObjects {
             .hint(aString, aString)
             .build();
     public static List<DataSearchResult> aList_VectorSearchResult = List.of(new DataSearchResult(aData, aData, aFloat, aVectorValues));
+
+    public static Version aVersion = CustomTypeFactory.createVersion(aByte, aByte);
 }

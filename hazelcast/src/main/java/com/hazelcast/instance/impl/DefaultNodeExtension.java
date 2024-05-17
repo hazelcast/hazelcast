@@ -580,6 +580,10 @@ public class DefaultNodeExtension implements NodeExtension {
         for (ClusterVersionListener listener : clusterVersionListeners) {
             listener.onClusterVersionChange(newVersion);
         }
+        ClusterViewListenerService service = node.clientEngine.getClusterViewListenerService();
+        if (service != null) {
+            service.onClusterVersionChange();
+        }
     }
 
     @Override

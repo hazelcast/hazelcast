@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a cluster view listener to a connection.
  */
 @SuppressWarnings("unused")
-@Generated("273c5289e21af0c02668ab6ab4c3acb8")
+@Generated("abc8bb446d501242e578d738604829e6")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -58,6 +58,9 @@ public final class ClientAddClusterViewListenerCodec {
     private static final int EVENT_MEMBER_GROUPS_VIEW_INITIAL_FRAME_SIZE = EVENT_MEMBER_GROUPS_VIEW_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x000304
     private static final int EVENT_MEMBER_GROUPS_VIEW_MESSAGE_TYPE = 772;
+    private static final int EVENT_CLUSTER_VERSION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x000305
+    private static final int EVENT_CLUSTER_VERSION_MESSAGE_TYPE = 773;
 
     private ClientAddClusterViewListenerCodec() {
     }
@@ -121,6 +124,18 @@ public final class ClientAddClusterViewListenerCodec {
         return clientMessage;
     }
 
+    public static ClientMessage encodeClusterVersionEvent(com.hazelcast.version.Version version) {
+        ClientMessage clientMessage = ClientMessage.createForEncode();
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CLUSTER_VERSION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CLUSTER_VERSION_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        clientMessage.add(initialFrame);
+
+        VersionCodec.encode(clientMessage, version);
+        return clientMessage;
+    }
+
     public abstract static class AbstractEventHandler {
 
         public void handle(ClientMessage clientMessage) {
@@ -147,6 +162,13 @@ public final class ClientAddClusterViewListenerCodec {
                 handleMemberGroupsViewEvent(version, memberGroups);
                 return;
             }
+            if (messageType == EVENT_CLUSTER_VERSION_MESSAGE_TYPE) {
+                //empty initial frame
+                iterator.next();
+                com.hazelcast.version.Version version = VersionCodec.decode(iterator);
+                handleClusterVersionEvent(version);
+                return;
+            }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
 
@@ -168,5 +190,10 @@ public final class ClientAddClusterViewListenerCodec {
          * @param memberGroups Grouped members by their UUID. Grouping is done based on RoutingStrategy.
          */
         public abstract void handleMemberGroupsViewEvent(int version, java.util.Collection<java.util.Collection<java.util.UUID>> memberGroups);
+
+        /**
+         * @param version The cluster version.
+         */
+        public abstract void handleClusterVersionEvent(com.hazelcast.version.Version version);
     }
 }

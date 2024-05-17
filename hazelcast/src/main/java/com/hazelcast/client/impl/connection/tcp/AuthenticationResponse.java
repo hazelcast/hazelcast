@@ -25,18 +25,15 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 /**
  * Represents the combined authentication response parameters
  * of the various authentication response messages.
  * <p/>
- * If any new additions are made the the AuthenticationResponse, an options map
- * should be used just like the MemberHandshake. This way a set of key/values
- * can be passed without needing to modify the AuthenticationResponse if a
- * key is added or removed. Any option on the AuthenticationResponse is optional
- * and hence each client needs to deal with the fact that the value might not exist.
- * See the following JIRA ticket: https://hazelcast.atlassian.net/browse/HZ-3710
+ * Any option on the AuthenticationResponse is optional and hence each
+ * client needs to deal with the fact that the value might not exist.
  */
 public final class AuthenticationResponse {
     private final byte status;
@@ -51,23 +48,28 @@ public final class AuthenticationResponse {
     private final byte[] tpcToken;
 
     /**
-     * True if the memberListVersion is received from the member, false otherwise.
-     * If this is false, memberListVersion has the default value for its type.
+     * True if the {@link #memberListVersion} is received from the member, false otherwise.
+     * If this is false, {@link #memberListVersion} has the default value for its type.
      */
-    private boolean isMemberListVersionExists;
+    private final boolean isMemberListVersionExists;
 
     /**
-     * True if the partitionListVersion is received from the member, false otherwise.
-     * If this is false, partitionListVersion has the default value for its type.
+     * True if the {@link #partitionListVersion} is received from the member, false otherwise.
+     * If this is false, {@link #partitionListVersion} has the default value for its type.
      */
-    private boolean isPartitionListVersionExists;
-    private boolean isKeyValuePairsExists;
+    private final boolean isPartitionListVersionExists;
 
-    private int memberListVersion;
-    private List<MemberInfo> memberInfos;
-    private int partitionListVersion;
-    private List<Map.Entry<UUID, List<Integer>>> partitions;
-    private Map<String, String> keyValuePairs;
+    /**
+     * True if the {@link #keyValuePairs} is received from the member, false otherwise.
+     * If this is false, {@link #keyValuePairs} has the default value for its type.
+     */
+    private final boolean isKeyValuePairsExists;
+
+    private final int memberListVersion;
+    private final List<MemberInfo> memberInfos;
+    private final int partitionListVersion;
+    private final List<Entry<UUID, List<Integer>>> partitions;
+    private final Map<String, String> keyValuePairs;
 
     @SuppressWarnings("checkstyle:parameternumber")
     private AuthenticationResponse(byte status,
@@ -85,7 +87,7 @@ public final class AuthenticationResponse {
                                    List<MemberInfo> memberInfos,
                                    boolean isPartitionListVersionExists,
                                    int partitionListVersion,
-                                   List<Map.Entry<UUID, List<Integer>>> partitions,
+                                   List<Entry<UUID, List<Integer>>> partitions,
                                    boolean isKeyValuePairsExists,
                                    Map<String, String> keyValuePairs) {
         this.status = status;
@@ -193,46 +195,6 @@ public final class AuthenticationResponse {
         return tpcToken;
     }
 
-    /**
-     * Returns the member list version.
-     *
-     * @return the member list version
-     */
-    public int getMemberListVersion() {
-        return memberListVersion;
-    }
-
-    /**
-     * Returns the list of member infos.
-     *
-     * @return the list of member infos
-     */
-    public List<MemberInfo> getMemberInfos() {
-        return memberInfos;
-    }
-
-    /**
-     * Returns the partition list version.
-     *
-     * @return the partition list version
-     */
-    public int getPartitionListVersion() {
-        return partitionListVersion;
-    }
-
-    /**
-     * Returns the list of partitions.
-     *
-     * @return the list of partitions
-     */
-    public List<Map.Entry<UUID, List<Integer>>> getPartitions() {
-        return partitions;
-    }
-
-    public Map<String, String> getKeyValuePairs() {
-        return keyValuePairs;
-    }
-
     public boolean isMemberListVersionExists() {
         return isMemberListVersionExists;
     }
@@ -243,6 +205,26 @@ public final class AuthenticationResponse {
 
     public boolean isKeyValuePairsExists() {
         return isKeyValuePairsExists;
+    }
+
+    public int getMemberListVersion() {
+        return memberListVersion;
+    }
+
+    public List<MemberInfo> getMemberInfos() {
+        return memberInfos;
+    }
+
+    public int getPartitionListVersion() {
+        return partitionListVersion;
+    }
+
+    public List<Entry<UUID, List<Integer>>> getPartitions() {
+        return partitions;
+    }
+
+    public Map<String, String> getKeyValuePairs() {
+        return keyValuePairs;
     }
 
     public static AuthenticationResponse from(ClientMessage message) {
@@ -300,6 +282,7 @@ public final class AuthenticationResponse {
                 parameters.partitionListVersion,
                 parameters.partitions,
                 parameters.isKeyValuePairsExists,
-                parameters.keyValuePairs);
+                parameters.keyValuePairs
+        );
     }
 }

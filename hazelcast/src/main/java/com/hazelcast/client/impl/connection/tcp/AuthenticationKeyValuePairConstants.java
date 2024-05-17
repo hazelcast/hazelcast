@@ -29,10 +29,10 @@ import java.util.Map;
  */
 public final class AuthenticationKeyValuePairConstants {
 
+    public static final String CLUSTER_VERSION = "clusterVersion";
     public static final String SUBSET_MEMBER_GROUPS_INFO = "memberGroups";
 
-    private AuthenticationKeyValuePairConstants() {
-    }
+    private AuthenticationKeyValuePairConstants() { }
 
     public static boolean checkRequiredFieldsForSubsetRoutingExist(SubsetRoutingConfig subsetRoutingConfig,
                                                                    Map<String, String> keyValuePairs) {

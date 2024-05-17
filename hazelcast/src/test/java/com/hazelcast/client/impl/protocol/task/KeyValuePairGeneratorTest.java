@@ -27,6 +27,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,12 +42,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.createKeyValuePairs;
 import static com.hazelcast.client.impl.connection.tcp.KeyValuePairGenerator.parseJson;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -76,22 +77,20 @@ public class KeyValuePairGeneratorTest {
         Collection<Collection<UUID>> array = List.of(group1);
         when(clusterViewListenerService.toMemberGroups(any())).thenReturn(array);
 
-        Map<String, String> keyValuePairs = createKeyValuePairs(array, 123, true);
+        Map<String, String> keyValuePairs = createKeyValuePairs(array, 123, true, Version.of(5, 5));
+        String clusterVersionStr = keyValuePairs.get(CLUSTER_VERSION);
         String jsonValue = keyValuePairs.get(SUBSET_MEMBER_GROUPS_INFO);
 
-        // parse returned json
+        // parse stringified values
+        Version clusterVersion = Version.of(clusterVersionStr);
         KeyValuePairGenerator.MemberGroupsAndVersionHolder memberGroupsAndVersionHolder = parseJson(jsonValue);
         Collection<Collection<UUID>> collections = memberGroupsAndVersionHolder.allMemberGroups();
-        Collection<UUID> group = null;
-        for (Collection<UUID> g : collections) {
-            group = g;
-            break;
-        }
+        Collection<UUID> group = collections.iterator().next();
         SubsetMembersView subsetMembersView = new SubsetMembersView(null,
-                new HashSet<>(group), memberGroupsAndVersionHolder.version());
+                Set.copyOf(group), memberGroupsAndVersionHolder.version());
 
-        // test json includes expected values
-        assertNotNull(jsonValue);
+        // verify parsed values
+        assertEquals(Version.of(5, 5), clusterVersion);
         Set<UUID> members = subsetMembersView.members();
         int size = members.size();
         assertEquals(memberInfoList.size(), size);

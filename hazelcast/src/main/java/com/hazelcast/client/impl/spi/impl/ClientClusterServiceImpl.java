@@ -37,6 +37,7 @@ import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -72,8 +74,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
      */
     public static final int INITIAL_MEMBER_LIST_VERSION = -1;
     private final AtomicReference<MemberListSnapshot> memberListSnapshot =
-            new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(),
-                    null));
+            new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
+    private final AtomicReference<Version> clusterVersion = new AtomicReference<>(Version.UNKNOWN);
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
     private final Object clusterViewLock = new Object();
@@ -112,7 +114,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         UUID oldClusterId = clusterId;
         clusterId = newClusterId;
         subsetMembers.onClusterConnect(oldClusterId, newClusterId);
-
     }
 
     public Cluster getCluster() {
@@ -340,6 +341,34 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
+    public SubsetMembers getSubsetMembers() {
+        return subsetMembers;
+    }
+
+    @Override
+    public SubsetRoutingConfig getSubsetRoutingConfig() {
+        return subsetRoutingConfig;
+    }
+
+    @Nonnull
+    @Override
+    public Version getClusterVersion() {
+        return clusterVersion.get();
+    }
+
+    @Override
+    public void updateOnAuth(UUID clusterUuid, UUID authMemberUuid, Map<String, String> keyValuePairs) {
+        subsetMembers.updateOnAuth(clusterUuid, authMemberUuid, keyValuePairs);
+
+        String clusterVersionStr = keyValuePairs.get(CLUSTER_VERSION);
+        if (clusterVersionStr != null) {
+            clusterVersion.set(Version.of(clusterVersionStr));
+        } else if (logger.isFinestEnabled()) {
+            logger.finest("Cluster version is not received during authentication");
+        }
+    }
+
+    @Override
     public void handleMembersViewEvent(int memberListVersion, Collection<MemberInfo> memberInfos, UUID clusterUuid) {
         if (logger.isFinestEnabled()) {
             MemberListSnapshot snapshot = createSnapshot(memberListVersion, memberInfos, clusterUuid);
@@ -376,8 +405,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public SubsetMembers getSubsetMembers() {
-        return subsetMembers;
+    public void handleClusterVersionEvent(Version version) {
+        clusterVersion.set(version);
     }
 
     private void fireEvents(List<MembershipEvent> events) {
@@ -390,10 +419,5 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 }
             }
         }
-    }
-
-    @Override
-    public SubsetRoutingConfig getSubsetRoutingConfig() {
-        return subsetRoutingConfig;
     }
 }

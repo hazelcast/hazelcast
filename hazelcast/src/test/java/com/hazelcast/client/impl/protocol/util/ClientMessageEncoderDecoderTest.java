@@ -41,7 +41,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -205,10 +204,10 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         int partitionsVersion = 2;
         List<Map.Entry<UUID, List<Integer>>> partitions = new ArrayList<>();
         partitions.add(new AbstractMap.SimpleEntry<>(UUID.randomUUID(), Arrays.asList(1, 2, 3)));
-        Map<String, String> keyValuePairs = new HashMap<>();
+        Map<String, String> keyValuePairs = Map.of("key1", "value1", "key2", "value2");
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "5.4", 271, clusterId, true, tpcPorts, tpcToken,
+                uuid, (byte) 1, "5.5", 271, clusterId, true, tpcPorts, tpcToken,
                 memberListVersion, members, partitionsVersion, partitions, keyValuePairs);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
@@ -243,7 +242,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
         assertEquals(uuid, parameters.memberUuid);
         assertEquals(1, parameters.serializationVersion);
-        assertEquals("5.4", parameters.serverHazelcastVersion);
+        assertEquals("5.5", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
         assertTrue(parameters.failoverSupported);
@@ -253,6 +252,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(members, parameters.memberInfos);
         assertEquals(partitionsVersion, parameters.partitionListVersion);
         assertEquals(partitions, parameters.partitions);
+        assertEquals(keyValuePairs, parameters.keyValuePairs);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {

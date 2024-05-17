@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,17 +40,16 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
+import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -73,9 +73,8 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberAdded() {
-        LinkedList<Member> members = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService,
-                new SubsetRoutingConfig());
+        List<Member> members = new ArrayList<>();
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         clusterService.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
@@ -83,50 +82,46 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-
-            }
+            public void memberRemoved(MembershipEvent membershipEvent) { }
         });
         MemberInfo member = member("127.0.0.1");
         UUID clusterUuid = UUID.randomUUID();
         // triggers initial event
-        clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
+        clusterService.handleMembersViewEvent(1, List.of(member), clusterUuid);
         // triggers member added
         MemberInfo memberInfo = member("127.0.0.2");
-        clusterService.handleMembersViewEvent(2, asList(member, memberInfo), clusterUuid);
-        assertCollection(members, Collections.singleton(memberInfo.toMember()));
+        clusterService.handleMembersViewEvent(2, List.of(member, memberInfo), clusterUuid);
+        assertCollection(members, List.of(memberInfo.toMember()));
         assertEquals(2, clusterService.getMemberList().size());
     }
 
     @Test
     public void testMemberRemoved() {
-        LinkedList<Member> members = new LinkedList<>();
-        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService,
-                new SubsetRoutingConfig());
+        List<Member> members = new ArrayList<>();
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID clusterUuid = UUID.randomUUID();
         MemberInfo memberInfo = member("127.0.0.1");
-        clusterService.handleMembersViewEvent(1, asList(memberInfo), clusterUuid);
+        clusterService.handleMembersViewEvent(1, List.of(memberInfo), clusterUuid);
         clusterService.addMembershipListener(new MembershipListener() {
             @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
+            public void memberAdded(MembershipEvent membershipEvent) { }
 
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 members.add(membershipEvent.getMember());
             }
         });
-        clusterService.handleMembersViewEvent(2, Collections.emptyList(), clusterUuid);
-        assertCollection(members, Collections.singleton(memberInfo.toMember()));
+        clusterService.handleMembersViewEvent(2, emptyList(), clusterUuid);
+        assertCollection(members, List.of(memberInfo.toMember()));
         assertEquals(0, clusterService.getMemberList().size());
     }
 
     @Test
-    public void testInitialMembershipListener_AfterInitialListArrives() {
+    public void testInitialMembershipListener_afterInitialListArrives() {
         AtomicInteger initialEventCount = new AtomicInteger();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID clusterUuid = UUID.randomUUID();
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), clusterUuid);
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.1")), clusterUuid);
         clusterService.addMembershipListener(new InitialMembershipListener() {
             @Override
             public void init(InitialMembershipEvent event) {
@@ -134,18 +129,16 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
+            public void memberAdded(MembershipEvent membershipEvent) { }
 
             @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-            }
+            public void memberRemoved(MembershipEvent membershipEvent) { }
         });
         assertEquals(1, initialEventCount.get());
     }
 
     @Test
-    public void testInitialMembershipListener_BeforeInitialListArrives() {
+    public void testInitialMembershipListener_beforeInitialListArrives() {
         AtomicInteger initialEventCount = new AtomicInteger();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -155,25 +148,23 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
+            public void memberAdded(MembershipEvent membershipEvent) { }
 
             @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-            }
+            public void memberRemoved(MembershipEvent membershipEvent) { }
         });
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, initialEventCount.get());
     }
 
     @Test
-    public void testFireOnlyIncrementalEvents_AfterClusterRestart() {
+    public void testFireOnlyIncrementalEvents_afterClusterRestart() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        LinkedList<Member> addedMembers = new LinkedList<>();
-        LinkedList<Member> removedMembers = new LinkedList<>();
+        List<Member> addedMembers = new ArrayList<>();
+        List<Member> removedMembers = new ArrayList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         MemberInfo removedMemberInfo = member("127.0.0.1");
-        clusterService.handleMembersViewEvent(1, asList(removedMemberInfo), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(removedMemberInfo), UUID.randomUUID());
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
             @Override
@@ -196,20 +187,20 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         clusterService.onClusterConnect();
 
         MemberInfo addedMemberInfo = member("127.0.0.2");
-        clusterService.handleMembersViewEvent(1, asList(addedMemberInfo), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(addedMemberInfo), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
-        assertCollection(addedMembers, Collections.singleton(addedMemberInfo.toMember()));
-        assertCollection(removedMembers, Collections.singleton(removedMemberInfo.toMember()));
+        assertCollection(addedMembers, List.of(addedMemberInfo.toMember()));
+        assertCollection(removedMembers, List.of(removedMemberInfo.toMember()));
         assertEquals(1, initialEventCount.get());
     }
 
     @Test
-    public void testFireOnlyInitialEvent_AfterClusterChange() {
+    public void testFireOnlyInitialEvent_afterClusterChange() {
         AtomicInteger initialEventCount = new AtomicInteger();
         AtomicInteger addedCount = new AtomicInteger();
         AtomicInteger removedCount = new AtomicInteger();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.1")), UUID.randomUUID());
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
             @Override
@@ -231,7 +222,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         //called on cluster change
         clusterService.onTryToConnectNextCluster();
 
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         assertEquals(0, addedCount.get());
         assertEquals(0, removedCount.get());
@@ -239,12 +230,12 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDontFire_WhenReconnectToSameCluster() {
+    public void testDontFire_whenReconnectToSameCluster() {
         AtomicInteger initialEventCount = new AtomicInteger();
         AtomicInteger addedCount = new AtomicInteger();
         AtomicInteger removedCount = new AtomicInteger();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
-        List<MemberInfo> memberList = asList(member("127.0.0.1"));
+        List<MemberInfo> memberList = List.of(member("127.0.0.1"));
         UUID clusterUuid = UUID.randomUUID();
         clusterService.handleMembersViewEvent(1, memberList, clusterUuid);
 
@@ -276,14 +267,12 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     }
 
 
+    /** Related to HotRestart where members keep their uuid's same but addresses changes. */
     @Test
-    /*
-      Related to HotRestart where members keep their uuid's same but addresses changes.
-     */
-    public void testFireEvents_WhenAddressOfTheMembersChanges() {
+    public void testFireEvents_whenAddressOfTheMembersChanges() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        LinkedList<Member> addedMembers = new LinkedList<>();
-        LinkedList<Member> removedMembers = new LinkedList<>();
+        List<Member> addedMembers = new ArrayList<>();
+        List<Member> removedMembers = new ArrayList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID member1uuid = UUID.randomUUID();
         UUID member2uuid = UUID.randomUUID();
@@ -291,7 +280,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         MemberInfo removedMember1 = member("127.0.0.1", member1uuid);
         MemberInfo removedMember2 = member("127.0.0.2", member2uuid);
         clusterService.handleMembersViewEvent(1,
-                asList(removedMember1, removedMember2),
+                List.of(removedMember1, removedMember2),
                 clusterUuid);
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -317,27 +306,25 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         MemberInfo addedMember1 = member("127.0.0.1", member2uuid);
         MemberInfo addedMember2 = member("127.0.0.2", member1uuid);
         clusterService.handleMembersViewEvent(1,
-                asList(addedMember1, addedMember2),
+                List.of(addedMember1, addedMember2),
                 clusterUuid);
         assertEquals(2, clusterService.getMemberList().size());
-        assertCollection(addedMembers, Arrays.asList(addedMember1.toMember(), addedMember2.toMember()));
-        assertCollection(removedMembers, Arrays.asList(removedMember1.toMember(), removedMember2.toMember()));
+        assertCollection(addedMembers, List.of(addedMember1.toMember(), addedMember2.toMember()));
+        assertCollection(removedMembers, List.of(removedMember1.toMember(), removedMember2.toMember()));
         assertEquals(1, initialEventCount.get());
     }
 
+    /** Related to HotRestart where members keep their uuid's and addresses same. */
     @Test
-    /*
-      Related to HotRestart where members keep their uuid's and addresses same.
-     */
-    public void testFireEvents_WhenAddressAndUuidsDoesNotChange() {
+    public void testFireEvents_whenAddressAndUuidsDoesNotChange() {
         AtomicInteger initialEventCount = new AtomicInteger();
-        LinkedList<Member> addedMembers = new LinkedList<>();
-        LinkedList<Member> removedMembers = new LinkedList<>();
+        List<Member> addedMembers = new ArrayList<>();
+        List<Member> removedMembers = new ArrayList<>();
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         UUID clusterUuid = UUID.randomUUID();
         MemberInfo member1 = member("127.0.0.1");
         MemberInfo member2 = member("127.0.0.2");
-        List<MemberInfo> memberList = asList(member1, member2);
+        List<MemberInfo> memberList = List.of(member1, member2);
         clusterService.handleMembersViewEvent(1, memberList, clusterUuid);
 
         clusterService.addMembershipListener(new InitialMembershipListener() {
@@ -362,34 +349,34 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
         clusterService.handleMembersViewEvent(1, memberList, UUID.randomUUID());
         assertEquals(2, clusterService.getMemberList().size());
-        assertCollection(addedMembers, Arrays.asList(member1.toMember(), member2.toMember()));
-        assertCollection(removedMembers, Arrays.asList(member1.toMember(), member2.toMember()));
+        assertCollection(addedMembers, List.of(member1.toMember(), member2.toMember()));
+        assertCollection(removedMembers, List.of(member1.toMember(), member2.toMember()));
         assertEquals(1, initialEventCount.get());
 
     }
 
     @Test
-    public void testDontServeEmptyMemberList_DuringClusterRestart() {
+    public void testDontServeEmptyMemberList_duringClusterRestart() {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         //called on cluster restart
         clusterService.onClusterConnect();
         assertEquals(1, clusterService.getMemberList().size());
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.2")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.2")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
     }
 
     @Test
-    public void testDontServeEmptyMemberList_DuringClusterChange() {
+    public void testDontServeEmptyMemberList_duringClusterChange() {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         //called on cluster change
         clusterService.onTryToConnectNextCluster();
         assertEquals(1, clusterService.getMemberList().size());
         assertEquals(ClientClusterServiceImpl.INITIAL_MEMBER_LIST_VERSION, clusterService.getMemberListVersion());
-        clusterService.handleMembersViewEvent(1, asList(member("127.0.0.2")), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(member("127.0.0.2")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
     }
 
@@ -423,26 +410,24 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     @Test
     public void testListenersFromConfigWorking() {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
-        LinkedList<Member> addedMembers = new LinkedList<>();
-        clusterService.start(singleton(new MembershipListener() {
+        List<Member> addedMembers = new ArrayList<>();
+        clusterService.start(List.of(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 addedMembers.add(membershipEvent.getMember());
             }
 
             @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-
-            }
+            public void memberRemoved(MembershipEvent membershipEvent) { }
         }));
         MemberInfo member = member("127.0.0.1");
         UUID clusterUuid = UUID.randomUUID();
         // triggers initial event
-        clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
+        clusterService.handleMembersViewEvent(1, List.of(member), clusterUuid);
         // triggers member added
         MemberInfo addedMemberInfo = member("127.0.0.2");
-        clusterService.handleMembersViewEvent(2, asList(member, addedMemberInfo), clusterUuid);
-        assertCollection(addedMembers, Collections.singleton(addedMemberInfo.toMember()));
+        clusterService.handleMembersViewEvent(2, List.of(member, addedMemberInfo), clusterUuid);
+        assertCollection(addedMembers, List.of(addedMemberInfo.toMember()));
     }
 
     @Test
@@ -456,17 +441,15 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-
-            }
+            public void memberRemoved(MembershipEvent membershipEvent) { }
         });
         assertTrue(clusterService.removeMembershipListener(listenerUuid));
         MemberInfo member = member("127.0.0.1");
         UUID clusterUuid = UUID.randomUUID();
         // triggers initial event
-        clusterService.handleMembersViewEvent(1, asList(member), clusterUuid);
+        clusterService.handleMembersViewEvent(1, List.of(member), clusterUuid);
         // triggers member added
-        clusterService.handleMembersViewEvent(2, asList(member, member("127.0.0.2")), clusterUuid);
+        clusterService.handleMembersViewEvent(2, List.of(member, member("127.0.0.2")), clusterUuid);
         // we have removed the listener. No event should be fired to our listener
         assertEquals(0, addedCount.get());
     }
@@ -481,7 +464,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
     public void testGetMasterMember() {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
         MemberInfo masterMember = member("127.0.0.1");
-        clusterService.handleMembersViewEvent(1, asList(masterMember, member("127.0.0.2"),
+        clusterService.handleMembersViewEvent(1, List.of(masterMember, member("127.0.0.2"),
                 member("127.0.0.3")), UUID.randomUUID());
         assertEquals(masterMember.toMember(), clusterService.getMasterMember());
     }
@@ -492,7 +475,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         MemberInfo masterMember = member("127.0.0.1");
         UUID member2Uuid = UUID.randomUUID();
         MemberInfo member2 = member("127.0.0.2", member2Uuid);
-        clusterService.handleMembersViewEvent(1, asList(masterMember, member2), UUID.randomUUID());
+        clusterService.handleMembersViewEvent(1, List.of(masterMember, member2), UUID.randomUUID());
         assertEquals(member2.toMember(), clusterService.getMember(member2Uuid));
     }
 
@@ -502,11 +485,10 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         MemberInfo masterMember = member("127.0.0.1");
         MemberInfo liteMember = liteMember("127.0.0.2");
         MemberInfo dataMember = member("127.0.0.3");
-        clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember,
-                dataMember), UUID.randomUUID());
-        assertCollection(Arrays.asList(masterMember.toMember(), liteMember.toMember(), dataMember.toMember()), clusterService.getMemberList());
-        assertCollection(Arrays.asList(liteMember.toMember()), clusterService.getMembers(Member::isLiteMember));
-        assertCollection(Arrays.asList(masterMember.toMember(), dataMember.toMember()), clusterService.getMembers(member -> !member.isLiteMember()));
+        clusterService.handleMembersViewEvent(1, List.of(masterMember, liteMember, dataMember), UUID.randomUUID());
+        assertCollection(List.of(masterMember.toMember(), liteMember.toMember(), dataMember.toMember()), clusterService.getMemberList());
+        assertCollection(List.of(liteMember.toMember()), clusterService.getMembers(Member::isLiteMember));
+        assertCollection(List.of(masterMember.toMember(), dataMember.toMember()), clusterService.getMembers(member -> !member.isLiteMember()));
     }
 
     @Test
@@ -521,10 +503,9 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
 
         // Returns an empty list on startup, till the members view event
-        assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
+        assertCollection(emptyList(), clusterService.getEffectiveMemberList());
 
-        MemberInfo member = member("127.0.0.1");
-        List<MemberInfo> members = Collections.singletonList(member);
+        List<MemberInfo> members = List.of(member("127.0.0.1"));
 
         for (int i = 0; i < 3; i++) {
             clusterService.handleMembersViewEvent(i, members, UUID.randomUUID());
@@ -539,8 +520,25 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
             clusterService.onTryToConnectNextCluster();
 
             // Returns an empty list after reset
-            assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
+            assertCollection(emptyList(), clusterService.getEffectiveMemberList());
         }
     }
 
+    @Test
+    public void testGetClusterVersion_afterAuthentication() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
+        assertEquals(Version.UNKNOWN, clusterService.getClusterVersion());
+
+        clusterService.updateOnAuth(null, null, Map.of("clusterVersion", "5.5"));
+        assertEquals(Version.of(5, 5), clusterService.getClusterVersion());
+    }
+
+    @Test
+    public void testGetClusterVersion_afterEvent() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(loggingService, new SubsetRoutingConfig());
+        assertEquals(Version.UNKNOWN, clusterService.getClusterVersion());
+
+        clusterService.handleClusterVersionEvent(CURRENT_CLUSTER_VERSION);
+        assertEquals(CURRENT_CLUSTER_VERSION, clusterService.getClusterVersion());
+    }
 }

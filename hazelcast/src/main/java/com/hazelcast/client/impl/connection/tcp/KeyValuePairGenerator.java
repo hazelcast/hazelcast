@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.CLUSTER_VERSION;
 import static com.hazelcast.client.impl.connection.tcp.AuthenticationKeyValuePairConstants.SUBSET_MEMBER_GROUPS_INFO;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 
@@ -43,21 +45,22 @@ public final class KeyValuePairGenerator {
     private static final String GROUPS = "groups";
     private static final String VERSION = "version";
 
-    private KeyValuePairGenerator() {
-    }
+    private KeyValuePairGenerator() { }
 
-    // called on sever side
+    // called on server side
     public static Map<String, String> createKeyValuePairs(Collection<Collection<UUID>> memberGroups,
                                                           int version,
-                                                          boolean enterprise) {
+                                                          boolean enterprise,
+                                                          Version clusterVersion) {
         Map<String, String> keyValuePairs = new HashMap<>();
+        keyValuePairs.put(CLUSTER_VERSION, clusterVersion.toString());
         if (enterprise) {
             keyValuePairs.put(SUBSET_MEMBER_GROUPS_INFO, toJsonString(memberGroups, version));
         }
         return keyValuePairs;
     }
 
-    // called on sever side
+    // called on server side
     private static String toJsonString(Collection<Collection<UUID>> memberGroups, int version) {
         JsonObject root = new JsonObject();
         root.add(VERSION, version);
@@ -109,7 +112,6 @@ public final class KeyValuePairGenerator {
      */
     public record MemberGroupsAndVersionHolder(
             Collection<Collection<UUID>> allMemberGroups,
-            int version) {
-
-    }
+            int version
+    ) { }
 }
