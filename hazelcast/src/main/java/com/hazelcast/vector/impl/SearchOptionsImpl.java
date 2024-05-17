@@ -123,4 +123,15 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
     public int hashCode() {
         return Objects.hash(includePayload, includeVectors, limit, vectors);
     }
+
+    @Override
+    public String toString() {
+        return "SearchOptionsImpl{"
+                + "limit=" + limit
+                + ", includePayload=" + includePayload
+                + ", includeVectors=" + includeVectors
+                + ", vectors=" + vectors
+                + ", hints=" + hints
+                + '}';
+    }
 }
