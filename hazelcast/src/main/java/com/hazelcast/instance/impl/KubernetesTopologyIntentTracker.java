@@ -26,6 +26,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import javax.annotation.Nullable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -331,21 +333,30 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     }
 
     private void clusterWideShutdown() {
+        Instant start = Instant.now();
+        logger.info("cluster-wide-shutdown, Starting");
         try {
             changeClusterState(ClusterState.PASSIVE);
         } catch (Throwable t) {
             // let shutdown proceed even though we failed to switch to PASSIVE state
-            logger.warning("Could not switch to transient PASSIVE state while cluster "
+            logger.warning("cluster-wide-shutdown, Could not switch to transient PASSIVE state while cluster "
                     + "shutdown intent was CLUSTER_SHUTDOWN.", t);
         }
         long timeoutNanos = node.getProperties().getNanos(CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        logger.info("cluster-wide-shutdown, Starting partition replica sync, Timeout(s): "
+                            + node.getProperties().getSeconds(CLUSTER_SHUTDOWN_TIMEOUT_SECONDS));
+        Instant partitionSyncStart = Instant.now();
         try {
             // wait for replica sync
             getNodeExtension().getInternalHotRestartService()
                     .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+            logger.info("cluster-wide-shutdown, Completed partition replica sync, Took(ms): "
+                                + Duration.between(partitionSyncStart, Instant.now()).toMillis());
         } catch (IllegalStateException e) {
-            logger.severe("Failure while waiting for partition replica sync before shutdown.", e);
+            logger.severe("cluster-wide-shutdown, Failure while waiting for partition replica sync before shutdown, "
+                    + "Took(ms): " + Duration.between(partitionSyncStart, Instant.now()).toMillis(), e);
         }
+        logger.info("cluster-wide-shutdown, Completed, Took(ms): " + Duration.between(start, Instant.now()).toMillis());
     }
 
     /**
