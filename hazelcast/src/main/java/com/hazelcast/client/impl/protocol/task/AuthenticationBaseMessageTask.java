@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.client.impl.ClusterViewListenerService;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.ClusterViewListenerService.PartitionsView;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -64,6 +65,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     protected transient Credentials credentials;
     transient byte clientSerializationVersion;
     transient String clientVersion;
+    transient byte routingMode;
 
     AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -209,7 +211,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         ServerConnection connection = endpoint.getConnection();
         setConnectionType();
         setTpcTokenToEndpoint();
-        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels);
+        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels,
+                RoutingMode.getById(routingMode));
         validateNodeStart();
         final UUID clusterId = nodeEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;
@@ -248,6 +251,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         connection.setConnectionType(getClientType());
     }
 
+
     protected void setTpcTokenToEndpoint() {
     }
 
@@ -284,6 +288,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                                                                   Map<String, String> keyValuePairs);
 
     protected abstract String getClientType();
+
 
     @Override
     protected ClientMessage encodeResponse(Object response) {

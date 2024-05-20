@@ -77,6 +77,7 @@ public class MemberCompatibilityTest_2_7 {
         assertTrue(isEqual(aString, parameters.clientHazelcastVersion));
         assertTrue(isEqual(aString, parameters.clientName));
         assertTrue(isEqual(aListOfStrings, parameters.labels));
+        assertFalse(parameters.isRoutingModeExists);
     }
 
     @Test
@@ -100,6 +101,7 @@ public class MemberCompatibilityTest_2_7 {
         assertTrue(isEqual(aString, parameters.clientHazelcastVersion));
         assertTrue(isEqual(aString, parameters.clientName));
         assertTrue(isEqual(aListOfStrings, parameters.labels));
+        assertFalse(parameters.isRoutingModeExists);
     }
 
     @Test

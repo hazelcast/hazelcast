@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-
 import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.UUID;

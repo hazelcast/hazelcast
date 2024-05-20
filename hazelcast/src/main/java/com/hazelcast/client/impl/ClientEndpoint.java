@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.connection.tcp.RoutingMode;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.server.ServerConnection;
@@ -87,7 +88,7 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
     void setLoginContext(LoginContext lc);
 
     void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
-                       long authCorrelationId, String clientName, Set<String> labels);
+                       long authCorrelationId, String clientName, Set<String> labels, RoutingMode routingMode);
 
     /**
      * @return true if endpoint is authenticated with valid security credentials, returns false otherwise
@@ -156,4 +157,12 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
      */
     @Nullable
     TpcToken getTpcToken();
+
+    /**
+     * Returns the {@link RoutingMode} of this client.
+     *
+     * @return the {@link RoutingMode} of this client
+     */
+    RoutingMode getRoutingMode();
+
 }

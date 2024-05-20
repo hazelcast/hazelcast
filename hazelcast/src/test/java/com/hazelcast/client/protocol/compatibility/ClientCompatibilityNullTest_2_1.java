@@ -67,7 +67,7 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_ClientAuthenticationCodec_encodeRequest() {
         int fileClientMessageIndex = 0;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeRequest(aString, null, null, null, aString, aByte, aString, aString, aListOfStrings);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeRequest(aString, null, null, null, aString, aByte, aString, aString, aListOfStrings, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -97,7 +97,7 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeRequest() {
         int fileClientMessageIndex = 2;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeRequest(aString, aByteArray, null, aString, aByte, aString, aString, aListOfStrings);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeRequest(aString, aByteArray, null, aString, aByte, aString, aString, aListOfStrings, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

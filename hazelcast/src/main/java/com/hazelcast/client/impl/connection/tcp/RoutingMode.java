@@ -28,7 +28,23 @@ import com.hazelcast.client.config.RoutingStrategy;
  * </ul>
  */
 public enum RoutingMode {
-    UNISOCKET,
-    SMART,
-    SUBSET
+    UNISOCKET(0),
+    SMART(1),
+    SUBSET(2);
+
+    private static final RoutingMode[] VALUES = values();
+
+    private final int id;
+
+    RoutingMode(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public static RoutingMode getById(int id) {
+        return VALUES[id];
+    }
 }

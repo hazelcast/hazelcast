@@ -51,6 +51,7 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         clientVersion = parameters.clientHazelcastVersion;
         clientName = parameters.clientName;
         labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
+        routingMode = parameters.routingMode;
         return parameters;
     }
 
@@ -81,4 +82,5 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     protected String getClientType() {
         return parameters.clientType;
     }
+
 }

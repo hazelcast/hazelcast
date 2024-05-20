@@ -77,6 +77,8 @@ public class MemberCompatibilityNullTest_2_8 {
         assertTrue(isEqual(aString, parameters.clientHazelcastVersion));
         assertTrue(isEqual(aString, parameters.clientName));
         assertTrue(isEqual(aListOfStrings, parameters.labels));
+        assertTrue(parameters.isRoutingModeExists);
+        assertTrue(isEqual(aByte, parameters.routingMode));
     }
 
     @Test
@@ -100,6 +102,8 @@ public class MemberCompatibilityNullTest_2_8 {
         assertTrue(isEqual(aString, parameters.clientHazelcastVersion));
         assertTrue(isEqual(aString, parameters.clientName));
         assertTrue(isEqual(aListOfStrings, parameters.labels));
+        assertTrue(parameters.isRoutingModeExists);
+        assertTrue(isEqual(aByte, parameters.routingMode));
     }
 
     @Test

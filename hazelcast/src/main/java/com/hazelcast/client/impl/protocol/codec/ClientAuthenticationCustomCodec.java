@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Makes an authentication request to the cluster using custom credentials.
  */
 @SuppressWarnings("unused")
-@Generated("0eca3ba7d6d30567609cc896422d81c2")
+@Generated("29ac518c93aee99eb5e4cb89dab9aee0")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -45,7 +45,8 @@ public final class ClientAuthenticationCustomCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 513;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_ROUTING_MODE_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ROUTING_MODE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_STATUS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_MEMBER_UUID_FIELD_OFFSET = RESPONSE_STATUS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET = RESPONSE_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -101,9 +102,20 @@ public final class ClientAuthenticationCustomCodec {
          * User defined labels of the client instance
          */
         public java.util.List<java.lang.String> labels;
+
+        /**
+         * Identifies the routing mode of the client. It can be UNISCOKET(0), SMART(1) or SUBSET(2).
+         */
+        public byte routingMode;
+
+        /**
+         * True if the routingMode is received from the client, false otherwise.
+         * If this is false, routingMode has the default value for its type.
+         */
+        public boolean isRoutingModeExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String clusterName, byte[] credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels) {
+    public static ClientMessage encodeRequest(java.lang.String clusterName, byte[] credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, byte routingMode) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Client.AuthenticationCustom");
@@ -112,6 +124,7 @@ public final class ClientAuthenticationCustomCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
+        encodeByte(initialFrame.content, REQUEST_ROUTING_MODE_FIELD_OFFSET, routingMode);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, clusterName);
         ByteArrayCodec.encode(clientMessage, credentials);
@@ -128,6 +141,12 @@ public final class ClientAuthenticationCustomCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_ROUTING_MODE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES) {
+            request.routingMode = decodeByte(initialFrame.content, REQUEST_ROUTING_MODE_FIELD_OFFSET);
+            request.isRoutingModeExists = true;
+        } else {
+            request.isRoutingModeExists = false;
+        }
         request.clusterName = StringCodec.decode(iterator);
         request.credentials = ByteArrayCodec.decode(iterator);
         request.clientType = StringCodec.decode(iterator);

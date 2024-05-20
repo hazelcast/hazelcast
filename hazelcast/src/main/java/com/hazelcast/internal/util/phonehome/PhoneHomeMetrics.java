@@ -63,6 +63,9 @@ public enum PhoneHomeMetrics implements Metric {
     PYTHON_CLIENT_VERSIONS("cpycv"),
     GO_CLIENT_VERSIONS("cgocv"),
     CL_CLIENT_VERSIONS("cclcv"),
+    SMART_CLIENTS_COUNT("smartclients"),
+    UNISOCKET_CLIENTS_COUNT("unisocketclients"),
+    SUBSET_CLIENTS_COUNT("subsetclients"),
 
     //CLUSTER INFO METRICS
     UUID_OF_CLUSTER("m"),

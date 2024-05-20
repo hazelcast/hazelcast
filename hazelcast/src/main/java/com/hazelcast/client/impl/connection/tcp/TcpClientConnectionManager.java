@@ -1272,10 +1272,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         Credentials credentials = currentContext.getCredentialsFactory().newCredentials(toAddress);
         String clusterName = currentContext.getClusterName();
         currentCredentials = credentials;
-
+        byte routingModeByte = (byte) client.getConnectionManager().getRoutingMode().ordinal();
         if (credentials instanceof PasswordCredentials passwordCredentials) {
             return encodePasswordCredentialsRequest(clusterName, passwordCredentials,
-                    ss.getVersion(), clientVersion);
+                    ss.getVersion(), clientVersion, routingModeByte);
         } else {
             byte[] secretBytes;
             if (credentials instanceof TokenCredentials tokenCredentials) {
@@ -1284,25 +1284,26 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 secretBytes = ss.toDataWithSchema(credentials).toByteArray();
             }
 
-            return encodeCustomCredentialsRequest(clusterName, secretBytes, ss.getVersion(), clientVersion);
+            return encodeCustomCredentialsRequest(clusterName, secretBytes, ss.getVersion(), clientVersion, routingModeByte);
         }
     }
 
     private ClientMessage encodePasswordCredentialsRequest(String clusterName,
                                                            PasswordCredentials credentials,
                                                            byte serializationVersion,
-                                                           String clientVersion) {
+                                                           String clientVersion, byte routingMode) {
         return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
                 credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                clientVersion, client.getName(), labels);
+                clientVersion, client.getName(), labels, routingMode);
     }
 
     private ClientMessage encodeCustomCredentialsRequest(String clusterName,
                                                          byte[] secretBytes,
                                                          byte serializationVersion,
-                                                         String clientVersion) {
+                                                         String clientVersion,
+                                                         byte routingMode) {
         return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                connectionType, serializationVersion, clientVersion, client.getName(), labels);
+                connectionType, serializationVersion, clientVersion, client.getName(), labels, routingMode);
     }
 
     protected void checkClientActive() {
