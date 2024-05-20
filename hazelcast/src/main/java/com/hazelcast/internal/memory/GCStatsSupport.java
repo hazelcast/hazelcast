@@ -26,37 +26,47 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 /**
  * Used to gather garbage collection statistics.
  */
+@SuppressWarnings("ExecutableStatementCount")
 public final class GCStatsSupport {
 
-    public static final Set<String> YOUNG_GC;
-    public static final Set<String> OLD_GC;
+    public static final Set<String> MINOR_GC;
+    public static final Set<String> MAJOR_GC;
 
     static {
-        final Set<String> youngGC = createHashSet(8);
+        final Set<String> minorGC = createHashSet(8);
         // Hotspot JREs
-        youngGC.add("PS Scavenge");
-        youngGC.add("ParNew");
-        youngGC.add("G1 Young Generation");
-        youngGC.add("Copy");
-        youngGC.add("ZGC");
-        youngGC.add("Shenandoah Cycles");
+        minorGC.add("PS Scavenge");
+        minorGC.add("ParNew");
+        minorGC.add("G1 Young Generation");
+        minorGC.add("Copy");
+        minorGC.add("ZGC");
+        minorGC.add("Shenandoah Cycles");
+        // ZGC Non-generational
+        minorGC.add("ZGC Cycles");
+        minorGC.add("ZGC Pauses");
+        // ZGC Generational
+        minorGC.add("ZGC Minor Cycles");
+        minorGC.add("ZGC Minor Pauses");
         //IBM & OpenJ9 JREs
-        youngGC.add("partial gc");
-        youngGC.add("scavenge");
-        YOUNG_GC = Collections.unmodifiableSet(youngGC);
+        minorGC.add("partial gc");
+        minorGC.add("scavenge");
+        MINOR_GC = Collections.unmodifiableSet(minorGC);
 
-        final Set<String> oldGC = createHashSet(8);
+        final Set<String> majorGC = createHashSet(8);
         // Hotspot JREs
-        oldGC.add("PS MarkSweep");
-        oldGC.add("ConcurrentMarkSweep");
-        oldGC.add("G1 Old Generation");
-        oldGC.add("G1 Mixed Generation");
-        oldGC.add("MarkSweepCompact");
-        oldGC.add("Shenandoah Pauses");
+        majorGC.add("PS MarkSweep");
+        majorGC.add("ConcurrentMarkSweep");
+        majorGC.add("G1 Old Generation");
+        majorGC.add("G1 Mixed Generation");
+        majorGC.add("MarkSweepCompact");
+        majorGC.add("Shenandoah Pauses");
+        // ZGC Generational
+        majorGC.add("ZGC Major Cycles");
+        majorGC.add("ZGC Major Pauses");
         //IBM & OpenJ9 JREs
-        oldGC.add("global");
-        oldGC.add("global garbage collect");
-        OLD_GC = Collections.unmodifiableSet(oldGC);
+        majorGC.add("global");
+        majorGC.add("global garbage collect");
+        MAJOR_GC = Collections.unmodifiableSet(majorGC);
     }
 
     /**
@@ -76,10 +86,10 @@ public final class GCStatsSupport {
         for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
             long count = gc.getCollectionCount();
             if (count >= 0) {
-                if (YOUNG_GC.contains(gc.getName())) {
+                if (MINOR_GC.contains(gc.getName())) {
                     minorCount += count;
                     minorTime += gc.getCollectionTime();
-                } else if (OLD_GC.contains(gc.getName())) {
+                } else if (MAJOR_GC.contains(gc.getName())) {
                     majorCount += count;
                     majorTime += gc.getCollectionTime();
                 } else {
