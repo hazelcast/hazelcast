@@ -468,16 +468,6 @@
                             <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>per-jar-attribution</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
         </plugins>

@@ -881,6 +881,7 @@
                             </exclusionPattern>
                             <exclusionPattern>Substitute for l, l</exclusionPattern>
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
+                            <exclusionPattern>The size of the key-exchange key</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
                 </plugin>
@@ -950,6 +951,22 @@
                                 <includedLicense>EPL-2.0</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                             </includedLicenses>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.hazelcast.maven</groupId>
+                <artifactId>attribution-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>per-jar-attribution</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
                         </configuration>
                     </execution>
                 </executions>
