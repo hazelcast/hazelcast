@@ -28,7 +28,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
@@ -81,7 +80,9 @@ import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -206,7 +207,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, Tuple2<String, String>>kafka(
-                        properties(), r -> Tuple2.tuple2(r.value(), r.topic()), topicsConfig
+                        properties(), r -> tuple2(r.value(), r.topic()), topicsConfig
                 ))
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkListName));
@@ -226,6 +227,57 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 .isEqualTo(expectedRecordsReadFromTopic1);
         assertThat(recordsByTopic.get(topic2Name).size())
                 .isEqualTo(expectedRecordsReadFromTopic2);
+    }
+
+    @Test
+    public void when_processingGuaranteeAtLeastOnceAndJobResumedAfterSuspension_then_readFromPartitionsInitialOffsets() {
+        testSuspendResumeWithPartitionInitialOffsets(10, AT_LEAST_ONCE);
+    }
+
+    @Test
+    public void when_processingExactlyOnceAndJobResumedAfterSuspension_then_readFromPartitionsInitialOffsets() {
+        testSuspendResumeWithPartitionInitialOffsets(20, EXACTLY_ONCE);
+    }
+
+    private void testSuspendResumeWithPartitionInitialOffsets(int recordsCount, ProcessingGuarantee processingGuarantee) {
+        String sinkListName = randomName();
+
+        // produce a batch of records into single partition
+        for (int i = 0; i < recordsCount; i++) {
+            kafkaTestSupport.produce(topic1Name, 0, currentTimeMillis(), i, String.valueOf(i));
+        }
+
+        // skip all records that exists in given kafka topic's partition before the job starts
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        .addPartitionInitialOffset(0, recordsCount));
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.<Integer, String, Tuple2<String, String>>kafka(
+                        properties(), r -> tuple2(r.value(), r.topic()), topicsConfig
+                ))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkListName));
+
+        Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(processingGuarantee));
+        sleepAtLeastSeconds(3);
+
+        // make sure nothing was consumed from the topic due to initialOffset
+        assertTrueEventually(() -> assertEquals(0, instance().getList(sinkListName).size()), 5);
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+
+        job.resume();
+        assertJobStatusEventually(job, RUNNING);
+
+        // produce another batch of records
+        for (int i = recordsCount; i < 2 * recordsCount; i++) {
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        // make sure only newly produced records were consumed from the topic
+        assertTrueEventually(() -> assertEquals(recordsCount, instance().getList(sinkListName).size()), 5);
     }
 
     @Test
@@ -286,7 +338,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     ) {
         String sinkListName = randomName();
         for (int i = 0; i < messageCount; i++) {
-                kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
+            kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(kafkaProperties, ConsumerRecord::value, topicsConfig))
@@ -547,7 +599,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         ToLongFunctionEx<T> timestampFn = e ->
                 e instanceof Entry
                         ? (int) ((Entry<?, ?>) e).getKey()
-                        : System.currentTimeMillis();
+                        : currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);
         return new StreamKafkaP<>((c) -> new KafkaConsumer<>(properties), topicsConfig, projectionFn, eventTimePolicy);
@@ -663,7 +715,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
         job.suspend();
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertJobStatusEventually(job, SUSPENDED);
         // Note that the job might not have consumed all the zeroes from the topic at this point
 
         // When
