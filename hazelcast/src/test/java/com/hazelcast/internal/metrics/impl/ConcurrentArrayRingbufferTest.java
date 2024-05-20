@@ -18,9 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.stream.IntStream;
@@ -31,15 +29,13 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class ConcurrentArrayRingbufferTest {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
-    private ConcurrentArrayRingbuffer<Integer> rb = new ConcurrentArrayRingbuffer<>(3);
+    private final ConcurrentArrayRingbuffer<Integer> rb = new ConcurrentArrayRingbuffer<>(3);
 
     @Test
     public void test() {
@@ -68,14 +64,12 @@ public class ConcurrentArrayRingbufferTest {
 
     @Test
     public void when_sequenceTooHigh_then_fail() {
-        exception.expect(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class);
-        rb.get(0);
+        assertThrows(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class, () -> rb.get(0));
     }
 
     @Test
     public void when_sequenceTooLow_then_fail() {
-        exception.expect(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class);
-        rb.get(-1);
+        assertThrows(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class, () -> rb.get(-1));
     }
 
     @Test
@@ -106,7 +100,7 @@ public class ConcurrentArrayRingbufferTest {
     public void test_copyFromSequence() {
         rb.add(1);
         rb.add(2);
-        ConcurrentArrayRingbuffer.RingbufferSlice result = rb.copyFrom(0);
+        ConcurrentArrayRingbuffer.RingbufferSlice<Integer> result = rb.copyFrom(0);
         rb.add(3);
         result = rb.copyFrom(result.nextSequence());
         assertEquals(singletonList(3), result.elements());

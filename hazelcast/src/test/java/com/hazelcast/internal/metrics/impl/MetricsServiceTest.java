@@ -41,10 +41,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -75,8 +73,7 @@ import static org.mockito.MockitoAnnotations.openMocks;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsServiceTest extends HazelcastTestSupport {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+
     @Mock
     private HazelcastInstance hzMock;
     @Mock
@@ -297,7 +294,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReadMetricsThrowsOnFutureSequence() throws Exception {
+    public void testReadMetricsThrowsOnFutureSequence() {
         MetricsService metricsService = prepareMetricsService();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
