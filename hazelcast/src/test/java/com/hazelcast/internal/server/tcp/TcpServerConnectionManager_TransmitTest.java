@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TcpServerConnectionManager_TransmitTest
         extends TcpServerConnection_AbstractTest {
-    private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<>());
+    private final List<Packet> packetsB = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     @Before
@@ -46,7 +46,7 @@ public class TcpServerConnectionManager_TransmitTest
         super.setup();
         tcpServerA.start();
 
-        serverContextB.packetConsumer = packet -> packetsB.add(packet);
+        serverContextB.packetConsumer = packetsB::add;
     }
 
     // =============== tests {@link TcpIpConnectionManager#write(Packet,Address)} ===========
@@ -62,7 +62,7 @@ public class TcpServerConnectionManager_TransmitTest
     public void withAddress_whenNullAddress() {
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
-        tcpServerA.getConnectionManager(MEMBER).transmit(packet, (Address) null);
+        tcpServerA.getConnectionManager(MEMBER).transmit(packet, null);
     }
 
     @Test

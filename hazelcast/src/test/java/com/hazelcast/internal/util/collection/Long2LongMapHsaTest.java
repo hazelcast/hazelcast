@@ -192,7 +192,7 @@ public class Long2LongMapHsaTest {
     }
 
     @Test
-    public void testContainsKey_fail() throws Exception {
+    public void testContainsKey_fail() {
         long key = newKey();
         assertFalseKV(map.containsKey(key), key, 0);
     }
@@ -441,7 +441,7 @@ public class Long2LongMapHsaTest {
     }
 
     private long newKey(int keyRange) {
-        return (long) random.nextInt(keyRange);
+        return random.nextInt(keyRange);
     }
 
     private long newValue() {
