@@ -24,7 +24,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -203,7 +202,7 @@ public final class JobMetrics implements Iterable<Entry<String, List<Measurement
     public String toString() {
         StringBuilder sb = new StringBuilder();
         metrics.entrySet().stream()
-            .sorted(Comparator.comparing(Entry::getKey))
+            .sorted(Entry.comparingByKey())
             .forEach(mainEntry -> {
                 sb.append(mainEntry.getKey()).append(":\n");
                 mainEntry.getValue().stream()
@@ -212,7 +211,7 @@ public final class JobMetrics implements Iterable<Entry<String, List<Measurement
                         return vertex == null ? "" : vertex;
                     }))
                     .entrySet().stream()
-                    .sorted(Comparator.comparing(Entry::getKey))
+                    .sorted(Entry.comparingByKey())
                     .forEach(e -> {
                         String vertexName = e.getKey();
                         sb.append("  ").append(vertexName).append(":\n");

@@ -156,7 +156,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadLargeCsvFile() throws Exception {
+    public void shouldReadLargeCsvFile() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file-200-entries-with-header.csv")
                                                     .sharedFileSystem(true)
@@ -168,7 +168,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadLargeCsvFileCompressed() throws Exception {
+    public void shouldReadLargeCsvFileCompressed() {
         assumeThat(useHadoop).isTrue();
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
@@ -182,7 +182,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadLargeCsvFileCompressedSplittable() throws Exception {
+    public void shouldReadLargeCsvFileCompressedSplittable() {
         assumeThat(useHadoop).isTrue();
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")

@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
 import static java.util.Arrays.stream;
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
@@ -110,7 +109,7 @@ public class CoAggregateOperationBuilder {
         }
         // Variable `sorted` extracted due to type inference failure
         Stream<Entry<Tag, AggregateOperation1>> sorted = opsByTag.entrySet().stream()
-                                                                 .sorted(comparing(Entry::getKey));
+                                                                 .sorted(Entry.comparingByKey());
         List<AggregateOperation1> ops = sorted.map(Entry::getValue).collect(toList());
         BiConsumerEx[] combineFns =
                 ops.stream().map(AggregateOperation::combineFn).toArray(BiConsumerEx[]::new);

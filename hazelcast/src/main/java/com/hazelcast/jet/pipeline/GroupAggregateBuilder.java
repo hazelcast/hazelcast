@@ -37,7 +37,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  * refer to that method's Javadoc for further details.
  * <p>
  * <strong>Note:</strong> this is not a builder of {@code
- * AggregateOperation}. If that' s what you are looking for, go {@link
+ * AggregateOperation}. If that's what you are looking for, go {@link
  * AggregateOperation#withCreate here}.
  *
  * @param <K> type of the grouping key

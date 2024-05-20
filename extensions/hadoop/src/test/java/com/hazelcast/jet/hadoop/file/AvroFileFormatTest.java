@@ -75,7 +75,7 @@ public class AvroFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldThrowWhenInvalidFileType() throws Exception {
+    public void shouldThrowWhenInvalidFileType() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("invalid-data.png")
                                                     .format(FileFormat.avro(User.class));
