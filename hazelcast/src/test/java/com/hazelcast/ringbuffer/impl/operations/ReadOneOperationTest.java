@@ -31,10 +31,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -54,8 +52,6 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     private RingbufferContainer ringbufferContainer;
     private RingbufferService ringbufferService;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -107,15 +103,14 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenTooFarAfterTail() throws Exception {
+    public void whenTooFarAfterTail() {
         ringbuffer.add("tail");
 
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 2);
 
         // since there is an item, we don't need to wait
         op.shouldWait();
-        expectedException.expect(IllegalArgumentException.class);
-        op.beforeRun();
+        assertThrows(IllegalArgumentException.class, op::beforeRun);
     }
 
     @Test
@@ -128,13 +123,12 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOnTailAndBufferEmpty() throws Exception {
+    public void whenOnTailAndBufferEmpty() {
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence());
 
         // since there is an item, we don't need to wait
         op.shouldWait();
-        expectedException.expect(StaleSequenceException.class);
-        op.beforeRun();
+        assertThrows(StaleSequenceException.class, op::beforeRun);
     }
 
     @Test
@@ -172,7 +166,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenBeforeHead() throws Exception {
+    public void whenBeforeHead() {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
@@ -183,8 +177,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         ReadOneOperation op = getReadOneOperation(oldhead);
 
         op.shouldWait();
-        expectedException.expect(StaleSequenceException.class);
-        op.beforeRun();
+        assertThrows(StaleSequenceException.class, op::beforeRun);
     }
 
     private ReadOneOperation getReadOneOperation(long seq) {

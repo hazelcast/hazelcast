@@ -31,10 +31,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -53,8 +51,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     private SerializationService serializationService;
     private RingbufferService ringbufferService;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {

@@ -26,8 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collection;
 
@@ -41,8 +39,6 @@ import static org.junit.Assert.fail;
  */
 public abstract class AbstractExtractionTest extends AbstractExtractionSpecification {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     protected IMap<String, Object> map;
 
