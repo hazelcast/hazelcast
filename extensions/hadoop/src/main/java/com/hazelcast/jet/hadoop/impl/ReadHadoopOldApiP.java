@@ -42,6 +42,7 @@ import org.apache.hadoop.mapred.RecordReader;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -104,6 +105,7 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
     }
 
     public static class MetaSupplier<K, V, R> extends ReadHdfsMetaSupplierBase<R> {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @SuppressFBWarnings("SE_BAD_FIELD")
@@ -151,6 +153,7 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @SuppressFBWarnings("SE_BAD_FIELD")

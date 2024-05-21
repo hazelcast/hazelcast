@@ -19,6 +19,8 @@ package com.hazelcast.jet.grpc.impl;
 import com.hazelcast.jet.JetException;
 import io.grpc.StatusException;
 
+import java.io.Serial;
+
 /**
  * {@link io.grpc.StatusException} breaks the Serializable contract, see
  * <a href="https://github.com/grpc/grpc-java/issues/1913">gRPC Issue #1913</a>.
@@ -26,6 +28,7 @@ import io.grpc.StatusException;
  */
 public class StatusExceptionJet extends JetException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     StatusExceptionJet(StatusException brokenGrpcException) {

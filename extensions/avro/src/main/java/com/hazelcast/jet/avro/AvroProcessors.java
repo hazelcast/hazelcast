@@ -32,6 +32,7 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Permission;
@@ -101,6 +102,7 @@ public final class AvroProcessors {
     ) {
         return new FunctionEx<>() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -131,6 +133,7 @@ public final class AvroProcessors {
     ) {
         return new FunctionEx<>() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override

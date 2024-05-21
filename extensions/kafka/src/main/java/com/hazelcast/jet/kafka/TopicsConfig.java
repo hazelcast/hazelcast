@@ -21,6 +21,7 @@ import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -40,6 +41,7 @@ import static java.util.Collections.unmodifiableMap;
 public class TopicsConfig implements Serializable {
 
     private static final ILogger LOGGER = Logger.getLogger(TopicsConfig.class);
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final Map<String, TopicConfig> topicConfigs = new LinkedHashMap<>();
@@ -130,6 +132,7 @@ public class TopicsConfig implements Serializable {
      */
     public static class TopicConfig implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String topicName;

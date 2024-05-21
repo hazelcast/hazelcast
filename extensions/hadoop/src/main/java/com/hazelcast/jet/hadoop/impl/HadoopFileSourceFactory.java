@@ -57,6 +57,7 @@ import org.apache.parquet.avro.AvroParquetInputFormat;
 import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serial;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.List;
@@ -127,6 +128,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             FileSourceConfiguration<T> fsc, JobConfigurer configurer, FileFormat<T> fileFormat) {
         return new ConsumerEx<>() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -197,6 +199,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class AvroFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -230,6 +233,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class RawBytesFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -251,6 +255,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class CsvFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -281,6 +286,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class JsonFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -311,6 +317,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class LineTextJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -332,6 +339,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class ParquetFormatJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -362,6 +370,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class TextJobConfigurer implements JobConfigurer {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

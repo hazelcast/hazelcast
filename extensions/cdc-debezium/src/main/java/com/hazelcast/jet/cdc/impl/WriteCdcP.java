@@ -28,6 +28,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -80,6 +81,7 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
         HazelcastProperties hzProperties = new HazelcastProperties(properties);
         long expirationMs = hzProperties.getMillis(CdcSinks.SEQUENCE_CACHE_EXPIRATION_SECONDS);
         sequences = new LinkedHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override

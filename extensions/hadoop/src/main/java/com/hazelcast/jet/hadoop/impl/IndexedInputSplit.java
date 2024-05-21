@@ -37,6 +37,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  */
 class IndexedInputSplit implements Comparable<IndexedInputSplit>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private int index;

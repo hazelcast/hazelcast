@@ -32,6 +32,7 @@ import java.io.Serializable;
  */
 public final class SerializableConfiguration extends Configuration implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("unused") // for deserialization

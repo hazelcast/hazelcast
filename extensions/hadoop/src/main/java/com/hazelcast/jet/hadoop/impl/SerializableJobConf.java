@@ -31,6 +31,7 @@ import java.io.Serializable;
  */
 public final class SerializableJobConf extends JobConf implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     SerializableJobConf() {

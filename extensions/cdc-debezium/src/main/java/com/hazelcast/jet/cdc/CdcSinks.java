@@ -32,6 +32,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.io.Serial;
 import java.security.Permission;
 import java.util.List;
 
@@ -249,6 +250,7 @@ public final class CdcSinks {
     ) {
         return new FunctionEx<>() {
 
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override

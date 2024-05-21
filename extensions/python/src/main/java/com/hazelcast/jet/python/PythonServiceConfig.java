@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.StringJoiner;
@@ -102,6 +103,7 @@ import java.util.StringJoiner;
  */
 public class PythonServiceConfig implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final String HANDLER_FUNCTION_DEFAULT = "transform_list";

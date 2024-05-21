@@ -17,10 +17,12 @@
 package com.hazelcast.jet.elastic.impl;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.io.Serializable;
 
 class Shard implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String index;

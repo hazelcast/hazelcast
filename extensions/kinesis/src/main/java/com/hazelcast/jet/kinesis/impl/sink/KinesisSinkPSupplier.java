@@ -26,6 +26,7 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.stream.IntStream;
 
@@ -33,6 +34,7 @@ import static java.util.stream.Collectors.toList;
 
 public class KinesisSinkPSupplier<T> implements ProcessorSupplier {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Nonnull
