@@ -27,7 +27,6 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.List;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -116,7 +115,7 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
     private void renderStackTrace(DiagnosticsLogWriter writer, SlowOperationDTO slowOperation) {
         writer.startSection("stackTrace");
         // this is quite inefficient due to object allocations; it would be cheaper to manually traverse
-        String[] stackTraceLines = slowOperation.stackTrace.split(LINE_SEPARATOR);
+        String[] stackTraceLines = slowOperation.stackTrace.split(System.lineSeparator());
         for (String stackTraceLine : stackTraceLines) {
             writer.writeEntry(stackTraceLine);
         }

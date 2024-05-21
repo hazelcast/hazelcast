@@ -39,7 +39,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getAddress;
@@ -115,7 +114,7 @@ public class ClientConsoleTest {
 
     static class LineEndingsInputStream extends InputStream {
 
-        private static final byte[] NEWLINE_BYTES = stringToBytes(LINE_SEPARATOR);
+        private static final byte[] NEWLINE_BYTES = stringToBytes(System.lineSeparator());
         private final CountDownLatch latch = new CountDownLatch(1);
         private volatile int pos = NEWLINE_BYTES.length - 1;
 

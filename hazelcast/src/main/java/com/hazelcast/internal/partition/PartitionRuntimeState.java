@@ -34,7 +34,6 @@ import java.util.Map;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 public final class PartitionRuntimeState implements IdentifiedDataSerializable, Versioned {
 
@@ -208,9 +207,9 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + stamp + "]{" + LINE_SEPARATOR);
+        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + stamp + "]{" + System.lineSeparator());
         for (PartitionReplica replica : allReplicas) {
-            sb.append(replica).append(LINE_SEPARATOR);
+            sb.append(replica).append(System.lineSeparator());
         }
         sb.append(", completedMigrations=").append(completedMigrations);
         sb.append('}');

@@ -25,7 +25,6 @@ import java.util.TimeZone;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR_OF_DAY;
@@ -45,11 +44,11 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
     private static final String[] INDENTS = new String[]{
-            LINE_SEPARATOR + "                          ",
-            LINE_SEPARATOR + "                                  ",
-            LINE_SEPARATOR + "                                          ",
-            LINE_SEPARATOR + "                                                  ",
-            LINE_SEPARATOR + "                                                          ",
+            System.lineSeparator() + "                          ",
+            System.lineSeparator() + "                                  ",
+            System.lineSeparator() + "                                          ",
+            System.lineSeparator() + "                                                  ",
+            System.lineSeparator() + "                                                          ",
     };
 
     // 32 chars should be more than enough to encode primitives
@@ -149,7 +148,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
             sectionLevel = -1;
         }
         if (sectionLevel == -1) {
-            write(LINE_SEPARATOR);
+            write(System.lineSeparator());
         }
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils.ClassResource;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -207,7 +206,7 @@ public class ReflectionUtilsTest {
     @Test
     public void testGetStackTrace() {
         String stackTrace = ReflectionUtils.getStackTrace(Thread.currentThread());
-        String[] stackTraceLines = stackTrace.split(StringUtil.LINE_SEPARATOR);
+        String[] stackTraceLines = stackTrace.split(System.lineSeparator());
 
         // Because the stack trace contains line numbers, and those are implementation specific (i.e. within the
         // ReflectionUtils or ReflectionUtilsTest classes, or even in the JVM, we can't use a typical assertion

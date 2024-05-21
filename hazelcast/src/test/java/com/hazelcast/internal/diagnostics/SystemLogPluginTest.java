@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.ENABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.LOG_PARTITIONS;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
@@ -77,7 +76,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(() -> {
             plugin.run(logWriter);
 
-            assertContains("Lifecycle[" + LINE_SEPARATOR + "                          SHUTTING_DOWN]");
+            assertContains("Lifecycle[" + System.lineSeparator() + "                          SHUTTING_DOWN]");
         });
     }
 
