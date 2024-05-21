@@ -426,4 +426,12 @@ public interface NodeExtension {
     UserCodeNamespaceService getNamespaceService();
 
     TpcServerBootstrap createTpcServerBootstrap();
+
+    /**
+     * @return the license object, if a Hazelcast Enterprise license is configured, otherwise {@code null}
+     */
+    @Nullable
+    default Object getLicense() {
+        return null;
+    }
 }
