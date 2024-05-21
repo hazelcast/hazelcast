@@ -29,19 +29,18 @@ import java.util.Map;
  */
 @Beta
 public class SearchOptionsBuilder {
-    private boolean includePayload;
+    private boolean includeValue;
     private boolean includeVectors;
     private int limit = 1;
-    private VectorValues vectors;
     private Map<String, String> hints;
 
-    public SearchOptionsBuilder includePayload() {
-        this.includePayload = true;
+    public SearchOptionsBuilder includeValue() {
+        this.includeValue = true;
         return this;
     }
 
-    public SearchOptionsBuilder setIncludePayload(boolean includePayload) {
-        this.includePayload = includePayload;
+    public SearchOptionsBuilder setIncludeValue(boolean includeValue) {
+        this.includeValue = includeValue;
         return this;
     }
 
@@ -57,16 +56,6 @@ public class SearchOptionsBuilder {
 
     public SearchOptionsBuilder limit(int limit) {
         this.limit = limit;
-        return this;
-    }
-
-    public SearchOptionsBuilder vectors(VectorValues vectors) {
-        this.vectors = vectors;
-        return this;
-    }
-
-    public SearchOptionsBuilder vector(float[] vector) {
-        this.vectors = VectorValues.of(vector);
         return this;
     }
 
@@ -95,6 +84,6 @@ public class SearchOptionsBuilder {
     }
 
     public SearchOptions build() {
-        return new SearchOptionsImpl(includePayload, includeVectors, limit, vectors, hints);
+        return new SearchOptionsImpl(includeValue, includeVectors, limit, hints);
     }
 }

@@ -23,7 +23,7 @@ import com.hazelcast.vector.VectorValues;
  * Additional operations for mutable search results used during search execution.
  */
 public interface InternalSearchResult<K, V> extends SearchResult<K, V> {
-    InternalSearchResult<K, V> setDocument(V document);
+    InternalSearchResult<K, V> setValue(V value);
 
     InternalSearchResult<K, V> setVectors(VectorValues vectors);
 

@@ -23,14 +23,9 @@ import com.hazelcast.vector.VectorValues;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Arrays;
 
-public final class SingleIndexVectorValues implements VectorValues.SingleVectorValues, IdentifiedDataSerializable, Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public final class SingleIndexVectorValues implements VectorValues.SingleVectorValues, IdentifiedDataSerializable {
 
     private float[] vector;
 

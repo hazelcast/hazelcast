@@ -8216,6 +8216,7 @@ public class MemberCompatibilityNullTest_2_8 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         VectorCollectionSearchNearVectorCodec.RequestParameters parameters = VectorCollectionSearchNearVectorCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
+        assertTrue(isEqual(aList_VectorPair, parameters.vectors));
         assertTrue(isEqual(aVectorSearchOptions, parameters.options));
     }
 

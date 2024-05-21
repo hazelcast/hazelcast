@@ -25,7 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @SuppressWarnings("unused")
-@Generated("4bbffc1bad7de5e0fb11b7f05118348c")
+@Generated("7a322d14b624b70f98009e632caf41b4")
 public final class VectorSearchOptionsCodec {
     private static final int INCLUDE_VALUE_FIELD_OFFSET = 0;
     private static final int INCLUDE_VECTORS_FIELD_OFFSET = INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -44,7 +44,6 @@ public final class VectorSearchOptionsCodec {
         encodeInt(initialFrame.content, LIMIT_FIELD_OFFSET, vectorSearchOptions.getLimit());
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encode(clientMessage, vectorSearchOptions.getVectors(), VectorPairCodec::encode);
         MapCodec.encodeNullable(clientMessage, vectorSearchOptions.getHints(), StringCodec::encode, StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -59,11 +58,10 @@ public final class VectorSearchOptionsCodec {
         boolean includeVectors = decodeBoolean(initialFrame.content, INCLUDE_VECTORS_FIELD_OFFSET);
         int limit = decodeInt(initialFrame.content, LIMIT_FIELD_OFFSET);
 
-        java.util.List<com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder> vectors = ListMultiFrameCodec.decode(iterator, VectorPairCodec::decode);
         java.util.Map<java.lang.String, java.lang.String> hints = MapCodec.decodeNullable(iterator, StringCodec::decode, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createVectorSearchOptions(includeValue, includeVectors, limit, vectors, hints);
+        return CustomTypeFactory.createVectorSearchOptions(includeValue, includeVectors, limit, hints);
     }
 }

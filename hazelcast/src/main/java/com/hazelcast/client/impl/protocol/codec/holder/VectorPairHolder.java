@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.codec.holder;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 public class VectorPairHolder {
     /**
      * Marker name for unnamed vector. Empty string is not valid for vector index name.
@@ -44,5 +47,22 @@ public class VectorPairHolder {
 
     public float[] getVector() {
         return vector;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        VectorPairHolder that = (VectorPairHolder) o;
+        return type == that.type && Objects.equals(name, that.name) && Objects.deepEquals(vector, that.vector);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, type, Arrays.hashCode(vector));
     }
 }

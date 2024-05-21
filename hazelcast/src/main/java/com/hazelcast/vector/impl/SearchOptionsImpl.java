@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.vector.SearchOptions;
-import com.hazelcast.vector.VectorValues;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -35,32 +34,25 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
 
     private static final long serialVersionUID = 1L;
 
-    private boolean includePayload;
+    private boolean includeValue;
     private boolean includeVectors;
     private int limit;
-    private VectorValues vectors;
     private Map<String, String> hints = Map.of();
 
     public SearchOptionsImpl() {
     }
 
-    public SearchOptionsImpl(boolean includePayload, boolean includeVectors, int limit, VectorValues vectors,
+    public SearchOptionsImpl(boolean includeValue, boolean includeVectors, int limit,
                              Map<String, String> hints) {
-        this.includePayload = includePayload;
+        this.includeValue = includeValue;
         this.includeVectors = includeVectors;
         this.limit = limit;
-        this.vectors = vectors;
         this.hints = hints != null ? hints : Map.of();
     }
 
     @Override
-    public VectorValues getVectors() {
-        return vectors;
-    }
-
-    @Override
     public boolean isIncludeValue() {
-        return includePayload;
+        return includeValue;
     }
 
     @Override
@@ -80,19 +72,17 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(includePayload);
+        out.writeBoolean(includeValue);
         out.writeBoolean(includeVectors);
         out.writeInt(limit);
-        out.writeObject(vectors);
         writeMapStringKey(hints, out, ObjectDataOutput::writeString);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        includePayload = in.readBoolean();
+        includeValue = in.readBoolean();
         includeVectors = in.readBoolean();
         limit = in.readInt();
-        vectors = in.readObject();
         hints = readMapStringKey(in, ObjectDataInput::readString);
     }
 
@@ -115,22 +105,21 @@ public class SearchOptionsImpl implements SearchOptions, IdentifiedDataSerializa
             return false;
         }
         SearchOptionsImpl that = (SearchOptionsImpl) o;
-        return includePayload == that.includePayload && includeVectors == that.includeVectors
-                && limit == that.limit && Objects.equals(vectors, that.vectors);
+        return includeValue == that.includeValue && includeVectors == that.includeVectors
+                && limit == that.limit;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(includePayload, includeVectors, limit, vectors);
+        return Objects.hash(includeValue, includeVectors, limit);
     }
 
     @Override
     public String toString() {
         return "SearchOptionsImpl{"
                 + "limit=" + limit
-                + ", includePayload=" + includePayload
+                + ", includeValue=" + includeValue
                 + ", includeVectors=" + includeVectors
-                + ", vectors=" + vectors
                 + ", hints=" + hints
                 + '}';
     }

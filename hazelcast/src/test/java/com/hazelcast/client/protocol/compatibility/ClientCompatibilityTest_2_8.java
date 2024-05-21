@@ -7278,7 +7278,7 @@ public class ClientCompatibilityTest_2_8 {
     @Test
     public void test_VectorCollectionSearchNearVectorCodec_encodeRequest() {
         int fileClientMessageIndex = 923;
-        ClientMessage encoded = VectorCollectionSearchNearVectorCodec.encodeRequest(aString, aVectorSearchOptions);
+        ClientMessage encoded = VectorCollectionSearchNearVectorCodec.encodeRequest(aString, aList_VectorPair, aVectorSearchOptions);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

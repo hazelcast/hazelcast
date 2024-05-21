@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the VectorDocuments closest to the given vector.
  */
 @SuppressWarnings("unused")
-@Generated("3a90ec8afae59779f0e4fddd8d08f309")
+@Generated("668851752ac7f8c5de809a08e7d3bd72")
 public final class VectorCollectionSearchNearVectorCodec {
     //hex: 0x240800
     public static final int REQUEST_MESSAGE_TYPE = 2361344;
@@ -58,12 +58,17 @@ public final class VectorCollectionSearchNearVectorCodec {
         public java.lang.String name;
 
         /**
+         * Vector for which closest neighbours should be returned.
+         */
+        public java.util.List<com.hazelcast.client.impl.protocol.codec.holder.VectorPairHolder> vectors;
+
+        /**
          * Search options.
          */
         public com.hazelcast.vector.SearchOptions options;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.vector.SearchOptions options) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.vector.VectorValues vectors, com.hazelcast.vector.SearchOptions options) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("VectorCollection.SearchNearVector");
@@ -72,6 +77,7 @@ public final class VectorCollectionSearchNearVectorCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
+        ListMultiFrameCodec.encode(clientMessage, vectors, VectorPairCodec::encode);
         VectorSearchOptionsCodec.encode(clientMessage, options);
         return clientMessage;
     }
@@ -82,6 +88,7 @@ public final class VectorCollectionSearchNearVectorCodec {
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
+        request.vectors = ListMultiFrameCodec.decode(iterator, VectorPairCodec::decode);
         request.options = VectorSearchOptionsCodec.decode(iterator);
         return request;
     }

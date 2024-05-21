@@ -35,7 +35,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
     // internal vector index id
     private int id;
     @Nullable
-    private Data document;
+    private Data value;
     @Nullable
     private VectorValues vectors;
 
@@ -49,17 +49,17 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
     }
 
     // used only by client protocol codecs
-    public DataSearchResult(Data key, Data document, float score, VectorValues vectors) {
+    public DataSearchResult(Data key, Data value, float score, VectorValues vectors) {
         this.id = -1;
         this.key = key;
         this.score = score;
-        this.document = document;
+        this.value = value;
         this.vectors = vectors;
     }
 
     @Override
-    public DataSearchResult setDocument(Data document) {
-        this.document = document;
+    public DataSearchResult setValue(Data value) {
+        this.value = value;
         return this;
     }
 
@@ -77,8 +77,8 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
 
     @Nullable
     @Override
-    public Data getDocument() {
-        return document;
+    public Data getValue() {
+        return value;
     }
 
     @Nullable
@@ -96,7 +96,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeData(out, key);
         out.writeFloat(score);
-        IOUtil.writeData(out, document);
+        IOUtil.writeData(out, value);
         out.writeObject(vectors);
     }
 
@@ -104,7 +104,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readData(in);
         score = in.readFloat();
-        document = IOUtil.readData(in);
+        value = IOUtil.readData(in);
         vectors = in.readObject();
     }
 
@@ -123,7 +123,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
         return "DataSearchResult{"
                 + "key=" + key
                 + ", score=" + score
-                + ", document=" + getDocument()
+                + ", value=" + value
                 + ", vectors=" + vectors
                 + '}';
     }
@@ -143,7 +143,7 @@ public class DataSearchResult implements InternalSearchResult<Data, Data>, Ident
         }
         DataSearchResult that = (DataSearchResult) o;
         return Float.compare(score, that.score) == 0 && id == that.id
-                && Objects.equals(key, that.key) && Objects.equals(document, that.document)
+                && Objects.equals(key, that.key) && Objects.equals(value, that.value)
                 && Objects.equals(vectors, that.vectors);
     }
 

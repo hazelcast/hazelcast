@@ -360,7 +360,7 @@ public final class CustomTypeFactory {
         return vectorConfig;
     }
 
-    private static VectorValues toVectorValues(List<VectorPairHolder> vectors) {
+    public static VectorValues toVectorValues(List<VectorPairHolder> vectors) {
         if (vectors == null) {
             return null;
         }
@@ -388,18 +388,17 @@ public final class CustomTypeFactory {
     }
 
     public static SearchOptions createVectorSearchOptions(boolean includeValue, boolean includeVectors, int limit,
-                                                              List<VectorPairHolder> vectors, Map<String, String> hints) {
+                                                          Map<String, String> hints) {
         return SearchOptions.builder()
-                .setIncludePayload(includeValue)
+                .setIncludeValue(includeValue)
                 .setIncludeVectors(includeVectors)
                 .limit(limit)
-                .vectors(toVectorValues(vectors))
                 .hints(hints)
                 .build();
     }
 
-    public static DataSearchResult createVectorSearchResult(Data key, Data document, float score, List<VectorPairHolder> vectors) {
-        return new DataSearchResult(key, document, score, toVectorValues(vectors));
+    public static DataSearchResult createVectorSearchResult(Data key, Data value, float score, List<VectorPairHolder> vectors) {
+        return new DataSearchResult(key, value, score, toVectorValues(vectors));
     }
 
     public static Version createVersion(byte major, byte minor) {
