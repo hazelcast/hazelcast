@@ -55,10 +55,9 @@ public class PersonWithId {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PersonWithId)) {
+        if (!(o instanceof PersonWithId that)) {
             return false;
         }
-        PersonWithId that = (PersonWithId) o;
         return personId == that.personId && Objects.equals(name, that.name);
     }
 

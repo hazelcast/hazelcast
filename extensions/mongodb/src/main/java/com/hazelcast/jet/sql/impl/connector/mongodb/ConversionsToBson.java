@@ -135,81 +135,73 @@ public final class ConversionsToBson {
         if (value instanceof BsonDateTime) {
             return value;
         }
-        if (value instanceof Integer) {
-            return LocalDateTime.ofEpochSecond((Integer) value, 0, UTC);
+        if (value instanceof Integer integer) {
+            return LocalDateTime.ofEpochSecond(integer, 0, UTC);
         }
-        if (value instanceof Long) {
-            return LocalDateTime.ofInstant(Instant.ofEpochMilli((Long) value), UTC);
+        if (value instanceof Long longValue) {
+            return LocalDateTime.ofInstant(Instant.ofEpochMilli(longValue), UTC);
         }
-        if (value instanceof CharSequence) {
-            return LocalDateTime.parse((CharSequence) value);
+        if (value instanceof CharSequence charSequence) {
+            return LocalDateTime.parse(charSequence);
         }
-        if (value instanceof BsonString) {
-            return LocalDateTime.parse(((BsonString) value).getValue());
+        if (value instanceof BsonString bsonString) {
+            return LocalDateTime.parse(bsonString.getValue());
         }
-        if (value instanceof LocalDateTime) {
-            LocalDateTime v = (LocalDateTime) value;
-            return new BsonDateTime(v.atZone(systemDefault()).withZoneSameInstant(UTC).toInstant().toEpochMilli());
+        if (value instanceof LocalDateTime localDateTime) {
+            return new BsonDateTime(localDateTime.atZone(systemDefault()).withZoneSameInstant(UTC).toInstant().toEpochMilli());
         }
-        if (value instanceof ZonedDateTime) {
-            ZonedDateTime v = (ZonedDateTime) value;
-            return new BsonDateTime(v.withZoneSameInstant(UTC).toInstant().toEpochMilli());
+        if (value instanceof ZonedDateTime zonedDateTime) {
+            return new BsonDateTime(zonedDateTime.withZoneSameInstant(UTC).toInstant().toEpochMilli());
         }
-        if (value instanceof OffsetDateTime) {
-            OffsetDateTime v = (OffsetDateTime) value;
-            return new BsonDateTime(v.atZoneSameInstant(UTC).toInstant().toEpochMilli());
+        if (value instanceof OffsetDateTime offsetDateTime) {
+            return new BsonDateTime(offsetDateTime.atZoneSameInstant(UTC).toInstant().toEpochMilli());
         }
         return null;
     }
 
     private static BsonTimestamp convertToTimestamp(Object value) {
-        if (value instanceof BsonTimestamp) {
-            return (BsonTimestamp) value;
+        if (value instanceof BsonTimestamp bsonTimestamp) {
+            return bsonTimestamp;
         }
-        if (value instanceof Number) {
-            return new BsonTimestamp(((Number) value).longValue());
+        if (value instanceof Number number) {
+            return new BsonTimestamp(number.longValue());
         }
-        if (value instanceof String) {
-            return new BsonTimestamp(Long.parseLong((String) value));
+        if (value instanceof String string) {
+            return new BsonTimestamp(Long.parseLong(string));
         }
-        if (value instanceof BsonString) {
-            return new BsonTimestamp(Long.parseLong(((BsonString) value).getValue()));
+        if (value instanceof BsonString bsonString) {
+            return new BsonTimestamp(Long.parseLong(bsonString.getValue()));
         }
-        if (value instanceof LocalDateTime) {
-            LocalDateTime v = (LocalDateTime) value;
-            return new BsonTimestamp((int) v.atZone(systemDefault()).withZoneSameInstant(UTC).toEpochSecond(), 0);
+        if (value instanceof LocalDateTime localDateTime) {
+            return new BsonTimestamp((int) localDateTime.atZone(systemDefault()).withZoneSameInstant(UTC).toEpochSecond(), 0);
         }
-        if (value instanceof ZonedDateTime) {
-            ZonedDateTime v = (ZonedDateTime) value;
-            return new BsonTimestamp((int) v.withZoneSameInstant(UTC).toEpochSecond(), 0);
+        if (value instanceof ZonedDateTime zonedDateTime) {
+            return new BsonTimestamp((int) zonedDateTime.withZoneSameInstant(UTC).toEpochSecond(), 0);
         }
-        if (value instanceof OffsetDateTime) {
-            OffsetDateTime v = (OffsetDateTime) value;
-            return new BsonTimestamp((int) v.atZoneSameInstant(UTC).toEpochSecond(), 0);
+        if (value instanceof OffsetDateTime offsetDateTime) {
+            return new BsonTimestamp((int) offsetDateTime.atZoneSameInstant(UTC).toEpochSecond(), 0);
         }
         return null;
     }
 
     private static ObjectId convertToObjectId(Object value) {
-        if (value instanceof ObjectId) {
-            return (ObjectId) value;
+        if (value instanceof ObjectId objectId) {
+            return objectId;
         }
-        if (value instanceof String) {
-            return new ObjectId((String) value);
+        if (value instanceof String string) {
+            return new ObjectId(string);
         }
-        if (value instanceof Integer) {
-            return new ObjectId(Integer.toHexString((Integer) value));
+        if (value instanceof Integer integer) {
+            return new ObjectId(Integer.toHexString(integer));
         }
-        if (value instanceof Long) {
-            return new ObjectId(Long.toHexString((Long) value));
+        if (value instanceof Long longValue) {
+            return new ObjectId(Long.toHexString(longValue));
         }
-        if (value instanceof BigDecimal) {
-            BigDecimal v = (BigDecimal) value;
-            return new ObjectId(v.toBigInteger().toString(HEX_RADIX));
+        if (value instanceof BigDecimal bigDecimal) {
+            return new ObjectId(bigDecimal.toBigInteger().toString(HEX_RADIX));
         }
-        if (value instanceof BigInteger) {
-            BigInteger v = (BigInteger) value;
-            return new ObjectId(v.toString(HEX_RADIX));
+        if (value instanceof BigInteger bigInteger) {
+            return new ObjectId(bigInteger.toString(HEX_RADIX));
         }
         return null;
     }
@@ -223,62 +215,62 @@ public final class ConversionsToBson {
     }
 
     private static Boolean convertToBoolean(Object value) {
-        if (value instanceof Boolean) {
-            return (Boolean) value;
+        if (value instanceof Boolean booleanValue) {
+            return booleanValue;
         }
-        if (value instanceof String) {
-            return Boolean.parseBoolean((String) value);
+        if (value instanceof String string) {
+            return Boolean.parseBoolean(string);
         }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue() > 0;
+        if (value instanceof Number number) {
+            return number.doubleValue() > 0;
         }
         return null;
     }
 
     private static Integer convertToInt(Object value) {
-        if (value instanceof Integer) {
-            return (Integer) value;
+        if (value instanceof Integer integer) {
+            return integer;
         }
-        if (value instanceof BsonInt32) {
-            return ((BsonInt32) value).getValue();
+        if (value instanceof BsonInt32 bsonInt32) {
+            return bsonInt32.getValue();
         }
-        if (value instanceof String) {
-            return Integer.parseInt((String) value);
+        if (value instanceof String string) {
+            return Integer.parseInt(string);
         }
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
+        if (value instanceof Number number) {
+            return number.intValue();
         }
         return null;
     }
 
     private static Long convertToLong(Object value) {
-        if (value instanceof Long) {
-            return (Long) value;
+        if (value instanceof Long longValue) {
+            return longValue;
         }
-        if (value instanceof BsonInt64) {
-            return ((BsonInt64) value).getValue();
+        if (value instanceof BsonInt64 bsonInt64) {
+            return bsonInt64.getValue();
         }
-        if (value instanceof String) {
-            return Long.parseLong((String) value);
+        if (value instanceof String string) {
+            return Long.parseLong(string);
         }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
+        if (value instanceof Number number) {
+            return number.longValue();
         }
         return null;
     }
 
     private static Double convertToDouble(Object value) {
-        if (value instanceof Double) {
-            return (Double) value;
+        if (value instanceof Double doubleValue) {
+            return doubleValue;
         }
-        if (value instanceof BsonDouble) {
-            return ((BsonDouble) value).getValue();
+        if (value instanceof BsonDouble bsonDouble) {
+            return bsonDouble.getValue();
         }
-        if (value instanceof String) {
-            return Double.parseDouble((String) value);
+        if (value instanceof String string) {
+            return Double.parseDouble(string);
         }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
+        if (value instanceof Number number) {
+            return number.doubleValue();
         }
         return null;
     }
@@ -287,8 +279,8 @@ public final class ConversionsToBson {
         if (value instanceof BigDecimal || value instanceof BsonDecimal128 || value instanceof Decimal128) {
             return value;
         }
-        if (value instanceof String) {
-            return new BigDecimal((String) value);
+        if (value instanceof String string) {
+            return new BigDecimal(string);
         }
         if (value instanceof Number) {
             return new BigDecimal(value.toString());
@@ -298,17 +290,17 @@ public final class ConversionsToBson {
 
     @SuppressWarnings("unchecked")
     private static Document convertToDocument(Object value) {
-        if (value instanceof Document) {
-            return (Document) value;
+        if (value instanceof Document document) {
+            return document;
         }
-        if (value instanceof String) {
-            return Document.parse((String) value);
+        if (value instanceof String string) {
+            return Document.parse(string);
         }
-        if (value instanceof BsonString) {
-            return Document.parse(((BsonString) value).getValue());
+        if (value instanceof BsonString bsonString) {
+            return Document.parse(bsonString.getValue());
         }
-        if (value instanceof HazelcastJsonValue) {
-            return Document.parse(((HazelcastJsonValue) value).getValue());
+        if (value instanceof HazelcastJsonValue hazelcastJsonValue) {
+            return Document.parse(hazelcastJsonValue.getValue());
         }
         if (value instanceof Map) {
             return new Document((Map<String, Object>) value);
@@ -317,25 +309,23 @@ public final class ConversionsToBson {
     }
 
     private static BsonJavaScript convertToJavaScript(Object value) {
-        if (value instanceof BsonJavaScript) {
-            return (BsonJavaScript) value;
+        if (value instanceof BsonJavaScript bsonJavaScript) {
+            return bsonJavaScript;
         }
-        if (value instanceof String) {
-            return new BsonJavaScript((String) value);
+        if (value instanceof String string) {
+            return new BsonJavaScript(string);
         }
         return null;
     }
 
     private static BsonJavaScriptWithScope convertToJavaScriptWithScope(Object value) {
-        if (value instanceof BsonJavaScriptWithScope) {
-            return (BsonJavaScriptWithScope) value;
+        if (value instanceof BsonJavaScriptWithScope bsonJavaScriptWithScope) {
+            return bsonJavaScriptWithScope;
         }
-        if (value instanceof Document) {
-            Document doc = (Document) value;
+        if (value instanceof Document doc) {
             return new BsonJavaScriptWithScope(doc.getString("code"), (BsonDocument) doc.get("scope"));
         }
-        if (value instanceof BsonDocument) {
-            BsonDocument doc = (BsonDocument) value;
+        if (value instanceof BsonDocument doc) {
             return new BsonJavaScriptWithScope(doc.getString("code").toString(), (BsonDocument) doc.get("scope"));
         }
 
@@ -343,62 +333,61 @@ public final class ConversionsToBson {
     }
 
     private static String convertToString(Object value) {
-        if (value instanceof String) {
-            return (String) value;
+        if (value instanceof String string) {
+            return string;
         }
-        if (value instanceof BsonString) {
-            return ((BsonString) value).getValue();
+        if (value instanceof BsonString bsonString) {
+            return bsonString.getValue();
         }
-        if (value instanceof BsonJavaScript) {
-            return ((BsonJavaScript) value).getCode();
+        if (value instanceof BsonJavaScript bsonJavaScript) {
+            return bsonJavaScript.getCode();
         }
-        if (value instanceof Document) {
-            return ((Document) value).toJson();
+        if (value instanceof Document document) {
+            return document.toJson();
         }
-        if (value instanceof BsonDocument) {
-            return ((BsonDocument) value).toJson();
+        if (value instanceof BsonDocument bsonDocument) {
+            return bsonDocument.toJson();
         }
-        if (value instanceof BsonJavaScriptWithScope) {
-            BsonJavaScriptWithScope v = (BsonJavaScriptWithScope) value;
+        if (value instanceof BsonJavaScriptWithScope bsonJavaScriptWithScope) {
             Document doc = new Document();
-            doc.put("code", v.getCode());
-            doc.put("scope", v.getScope());
+            doc.put("code", bsonJavaScriptWithScope.getCode());
+            doc.put("scope", bsonJavaScriptWithScope.getScope());
             return doc.toJson();
         }
         return value.toString();
     }
 
     private static BsonRegularExpression convertToRegEx(Object value) {
-        if (value instanceof BsonRegularExpression) {
-            return (BsonRegularExpression) value;
+        if (value instanceof BsonRegularExpression bsonRegularExpression) {
+            return bsonRegularExpression;
         }
-        if (value instanceof String) {
-            return new BsonRegularExpression((String) value);
+        if (value instanceof String string) {
+            return new BsonRegularExpression(string);
         }
         return null;
     }
 
     private static MinKey convertToMinKey(Object value) {
-        if (value instanceof MinKey) {
-            return (MinKey) value;
+        if (value instanceof MinKey minKey) {
+            return minKey;
         }
         if (value instanceof BsonMinKey) {
             return new MinKey();
         }
-        if (value instanceof String && "Minkey".equalsIgnoreCase((String) value)) {
+        if (value instanceof String string && "Minkey".equalsIgnoreCase(string)) {
             return new MinKey();
         }
         return null;
     }
 
     private static MaxKey convertToMaxKey(Object value) {
-        if (value instanceof MaxKey) {
-            return (MaxKey) value;
+        if (value instanceof MaxKey maxKey) {
+            return maxKey;
         }
         if (value instanceof BsonMaxKey) {
             return new MaxKey();
         }
-        if (value instanceof String && "MaxKey".equalsIgnoreCase((String) value)) {
+        if (value instanceof String string && "MaxKey".equalsIgnoreCase(string)) {
             return new MaxKey();
         }
         return null;

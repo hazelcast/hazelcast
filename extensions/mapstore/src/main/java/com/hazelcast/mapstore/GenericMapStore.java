@@ -141,8 +141,8 @@ public class GenericMapStore<K, V> extends GenericMapLoader<K, V>
         Throwable rootCause = throwable;
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
             rootCause = rootCause.getCause();
-            if (rootCause instanceof SQLException) {
-                return (SQLException) rootCause;
+            if (rootCause instanceof SQLException sqlException) {
+                return sqlException;
             }
         }
         return null;

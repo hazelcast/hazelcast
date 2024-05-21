@@ -60,10 +60,9 @@ public class Person {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Person)) {
+        if (!(o instanceof Person person)) {
             return false;
         }
-        Person person = (Person) o;
         return Objects.equals(id, person.id) && Objects.equals(name, person.name);
     }
 
