@@ -689,6 +689,21 @@
                 <version>2.0.23</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- All of this is needed to upgrade GCS -->
+            <!-- see https://hazelcast.atlassian.net/browse/HZ-4706 -->
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>26.38.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.perfmark</groupId>
+                <artifactId>perfmark-api</artifactId>
+                <version>0.27.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -854,6 +869,10 @@
                                 Hazelcast Community License |
                                 The Hazelcast Community License
                             </licenseMerge>
+                            <licenseMerge>
+                                Go License
+                                The Go License
+                            </licenseMerge>
                         </licenseMerges>
                         <excludedGroups>com.hazelcast</excludedGroups>
                         <excludedScopes>test,provided</excludedScopes>
@@ -950,6 +969,7 @@
                                 <includedLicense>EPL-1.0</includedLicense>
                                 <includedLicense>EPL-2.0</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
+                                <includedLicense>Go License</includedLicense>
                             </includedLicenses>
                         </configuration>
                     </execution>
