@@ -67,6 +67,7 @@
         <jdk.version>17</jdk.version>
         <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
         <relocation.root>com.hazelcast.shaded</relocation.root>
+        <relocation.dir>com/hazelcast/shaded</relocation.dir>
 
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
 
