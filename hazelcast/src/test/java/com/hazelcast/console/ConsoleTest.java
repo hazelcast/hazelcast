@@ -119,7 +119,7 @@ public class ConsoleTest {
                 int terminationTimeoutSec = 10;
                 consoleApp.stop();
                 // write new line char to sys.in so that BufferedReader#readLine completes
-                String lineSep = System.getProperty("line.separator");
+                String lineSep = System.lineSeparator();
                 pipeOut.write(lineSep.getBytes(StandardCharsets.UTF_8));
                 tp.shutdownNow();
                 boolean terminated = tp.awaitTermination(terminationTimeoutSec, TimeUnit.SECONDS);

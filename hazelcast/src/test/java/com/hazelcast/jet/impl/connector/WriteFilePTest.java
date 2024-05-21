@@ -204,7 +204,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
 
         // Then
-        assertEquals(text + System.getProperty("line.separator"), Files.readString(onlyFile, charset));
+        assertEquals(text + System.lineSeparator(), Files.readString(onlyFile, charset));
     }
 
     @Test
