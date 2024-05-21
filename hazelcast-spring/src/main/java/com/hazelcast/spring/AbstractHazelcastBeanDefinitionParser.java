@@ -94,7 +94,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             if (attributes != null) {
                 Node lazyInitAttr = attributes.getNamedItem("lazy-init");
                 if (lazyInitAttr != null) {
-                    builder.setLazyInit(Boolean.valueOf(getTextContent(lazyInitAttr)));
+                    builder.setLazyInit(Boolean.parseBoolean(getTextContent(lazyInitAttr)));
                 } else {
                     builder.setLazyInit(parserContext.isDefaultLazyInit());
                 }

@@ -757,7 +757,7 @@ public class JsonParser_Test {
 
     @Override
     public void endBoolean(boolean value) {
-      record("endBoolean", Boolean.valueOf(value));
+      record("endBoolean", value);
     }
 
     @Override

@@ -184,7 +184,7 @@ public class HazelcastProperties {
      * @return the value as boolean
      */
     public boolean getBoolean(HazelcastProperty property) {
-        return Boolean.valueOf(getString(property));
+        return Boolean.parseBoolean(getString(property));
     }
 
     /**
