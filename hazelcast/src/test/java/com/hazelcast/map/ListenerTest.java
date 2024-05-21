@@ -663,21 +663,11 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private Predicate<String, String> matchingPredicate() {
-        return new Predicate<>() {
-            @Override
-            public boolean apply(Map.Entry<String, String> mapEntry) {
-                return true;
-            }
-        };
+        return mapEntry -> true;
     }
 
     private Predicate<String, String> nonMatchingPredicate() {
-        return new Predicate<>() {
-            @Override
-            public boolean apply(Map.Entry<String, String> mapEntry) {
-                return false;
-            }
-        };
+        return mapEntry -> false;
     }
 
     private class UpdateListenerRecordingOldValue<K, V> implements EntryUpdatedListener<K, V> {
