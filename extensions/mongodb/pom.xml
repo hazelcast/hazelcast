@@ -61,8 +61,8 @@
                         </goals>
                         <configuration>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <createSourcesJar>${maven.shade.createSourcesJar}</createSourcesJar>
+                            <shadeSourcesContent>${maven.shade.createSourcesJar}</shadeSourcesContent>
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.calcite</pattern>

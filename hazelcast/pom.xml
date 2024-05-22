@@ -210,8 +210,8 @@
                         </goals>
                         <configuration>
                             <finalName>${project.build.finalName}</finalName>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <createSourcesJar>${maven.shade.createSourcesJar}</createSourcesJar>
+                            <shadeSourcesContent>${maven.shade.createSourcesJar}</shadeSourcesContent>
                             <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <excludes>

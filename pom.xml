@@ -784,6 +784,8 @@
             <id>release</id>
             <properties>
                 <javadoc>true</javadoc>
+                <maven.source.skip>false</maven.source.skip>
+                <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
             </properties>
             <build>
                 <plugins>
@@ -833,6 +835,8 @@
             <id>release-snapshot</id>
             <properties>
                 <javadoc>true</javadoc>
+                <maven.source.skip>false</maven.source.skip>
+                <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
             </properties>
             <build>
                 <plugins>
@@ -848,6 +852,8 @@
             <id>release-devel</id>
             <properties>
                 <javadoc>true</javadoc>
+                <maven.source.skip>false</maven.source.skip>
+                <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
             </properties>
             <build>
                 <plugins>
