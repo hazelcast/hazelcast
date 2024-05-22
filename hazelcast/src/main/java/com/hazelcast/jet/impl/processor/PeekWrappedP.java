@@ -229,7 +229,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         }
 
         @Override
-        public boolean offer(int[] ordinals, @Nonnull Object item) {
+        public boolean offer(@Nonnull int[] ordinals, @Nonnull Object item) {
             // use broadcast logic to be able to report accurately
             // which queue was pushed to when.
             for (int i = 0; i < ordinals.length; i++) {

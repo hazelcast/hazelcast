@@ -79,7 +79,7 @@ public final class JetAssert {
     }
 
     private static void throwNotEqual(String message, Object expected, Object actual) {
-        if (message != null && !message.equals("")) {
+        if (message != null && !message.isEmpty()) {
             message = message + " ";
         }
         String expectedString = String.valueOf(expected);

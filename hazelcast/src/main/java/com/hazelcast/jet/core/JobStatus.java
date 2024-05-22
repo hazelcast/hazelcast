@@ -41,7 +41,7 @@ public enum JobStatus {
     RUNNING(2),
 
     /**
-     * The job is suspended and it can be manually resumed.
+     * The job is suspended, and it can be manually resumed.
      */
     SUSPENDED(3),
 

@@ -41,7 +41,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  * <h4>1. Reading partition by partition</h4>
  *
- * Upon restart it can happen that partition <em>P1</em> has one very
+ * Upon restart, it can happen that partition <em>P1</em> has one very
  * recent event and <em>P2</em> has an old one. If we poll <em>P1</em>
  * first and emit its recent event, it will advance the watermark. When we
  * poll <em>P2</em> later on, its event will be behind the watermark and
@@ -239,7 +239,7 @@ public class EventTimeMapper<T> {
         // opens the door to race conditions, where we first use the current time
         // to assign the event time and then check the current time again to
         // determine the watermark. If enough time passes between these two calls,
-        // the event would be artificially rendered late. Therefore we cap the WM
+        // the event would be artificially rendered late. Therefore, we cap the WM
         // to this event's timestamp, while still not allowing it to go back.
         handleNoEventInternal(now, eventTime);
     }

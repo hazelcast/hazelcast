@@ -626,6 +626,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             }
         }
 
+        @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             Address memberAddressToUse = memberAddress != null

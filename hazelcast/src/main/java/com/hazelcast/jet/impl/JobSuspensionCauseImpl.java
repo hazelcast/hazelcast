@@ -48,6 +48,7 @@ public class JobSuspensionCauseImpl implements JobSuspensionCause, IdentifiedDat
         return error != null;
     }
 
+    @Nonnull
     @Override
     public String errorCause() {
         if (error == null) {

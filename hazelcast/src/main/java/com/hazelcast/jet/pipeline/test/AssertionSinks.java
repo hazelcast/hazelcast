@@ -53,7 +53,7 @@ public final class AssertionSinks {
      * {@link AssertionError} with the given message.
      * <p>
      * Since Jet jobs are distributed, input from multiple upstream processors
-     * is merged in a non-deterministic way. Therefore this assertion is usable
+     * is merged in a non-deterministic way. Therefore, this assertion is usable
      * only for testing of non-distributed sources.
      */
     @Nonnull
@@ -68,7 +68,7 @@ public final class AssertionSinks {
      * {@link AssertionError}.
      * <p>
      * Since Jet jobs are distributed, input from multiple upstream processors
-     * is merged in a non-deterministic way. Therefore this assertion is usable
+     * is merged in a non-deterministic way. Therefore, this assertion is usable
      * only for testing of non-distributed sources.
      */
     @Nonnull
@@ -106,7 +106,7 @@ public final class AssertionSinks {
     }
 
     /**
-     * Asserts that the previous stage emitted all of the given items in any order.
+     * Asserts that the previous stage emitted all the given items in any order.
      * If the assertion fails, the job will fail with a {@link AssertionError} with
      * the given message.
      */

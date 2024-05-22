@@ -755,7 +755,7 @@ public class Edge implements IdentifiedDataSerializable {
          * behavior is equal to {@link #UNICAST}.
          * <p>
          * To work as expected, the edge must be also {@link #distributed()}.
-         * Otherwise it will work just like {@link #UNICAST}.
+         * Otherwise, it will work just like {@link #UNICAST}.
          *
          * @since Jet 4.4
          */

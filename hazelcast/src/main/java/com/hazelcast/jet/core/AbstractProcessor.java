@@ -350,7 +350,7 @@ public abstract class AbstractProcessor implements Processor {
      * <p>
      * If this method returns {@code false}, then the caller must retain the
      * traverser and pass it again in the subsequent invocation of this method,
-     * so as to resume emitting where it left off.
+     * to resume emitting where it left off.
      * <p>
      * For simplified usage from {@link #tryProcess(int, Object)
      * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
@@ -386,7 +386,7 @@ public abstract class AbstractProcessor implements Processor {
      * using them in a different thread, resulting in concurrent access.
      * <p>
      * If this method returns {@code false}, then you must retain the traverser
-     * and pass it again in the subsequent invocation of this method, so as to
+     * and pass it again in the subsequent invocation of this method, to
      * resume emitting where you left off.
      * <p>
      * For simplified usage in {@link #tryProcess(int, Object)
@@ -453,7 +453,7 @@ public abstract class AbstractProcessor implements Processor {
      * <p>
      * If this method returns {@code false}, then the caller must retain the
      * traverser and pass it again in the subsequent invocation of this method,
-     * so as to resume emitting where it left off.
+     * to resume emitting where it left off.
      * <p>
      * The type of the offered key determines which processors receive the key
      * and value pair when it is restored. If the key is of type {@link

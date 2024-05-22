@@ -286,6 +286,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
             return wrappingPms.initIsCooperative();
         }
 
+        @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@NotNull List<Address> addresses) {
             return wrappingPms.get(addresses);

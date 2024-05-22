@@ -209,7 +209,7 @@ public final class EventTimePolicy<T> implements Serializable {
     /**
      * Returns an event time policy that results in no timestamping. Only
      * useful in jobs with streaming sources that don't do any aggregation.
-     * If there is an aggregation step in the job and you use these parameters,
+     * If there is an aggregation step in the job, and you use these parameters,
      * your job will keep accumulating the data without producing any output.
      */
     public static <T> EventTimePolicy<T> noEventTime() {
