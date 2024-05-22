@@ -60,7 +60,7 @@ jobs:
 
       - name: Build hazelcast jar
         run: |
-          ./mvnw -T 4 -B -V -e clean package --activate-profiles quick \
+          ./mvnw -T 4 -B -V -e clean package --activate-profiles quick
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
           cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
 
