@@ -46,6 +46,7 @@ import com.hazelcast.topic.ITopic;
 
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
+import java.io.Serial;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -74,6 +75,7 @@ public final class SecuredFunctions {
 
     public static <K, V> FunctionEx<? super Context, IMap<K, V>> iMapFn(String name) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -92,6 +94,7 @@ public final class SecuredFunctions {
     public static <K, V> FunctionEx<HazelcastInstance, EventJournalReader<EventJournalMapEvent<K, V>>>
     mapEventJournalReaderFn(String name) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -110,6 +113,7 @@ public final class SecuredFunctions {
     public static <K, V> FunctionEx<HazelcastInstance, EventJournalReader<EventJournalCacheEvent<K, V>>>
     cacheEventJournalReaderFn(String name) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -126,6 +130,7 @@ public final class SecuredFunctions {
 
     public static <K, V> FunctionEx<? super Context, ReplicatedMap<K, V>> replicatedMapFn(String name) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -142,6 +147,7 @@ public final class SecuredFunctions {
 
     public static SupplierEx<Processor> readListProcessorFn(String name, String clientXml) {
         return new SupplierEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -158,6 +164,7 @@ public final class SecuredFunctions {
 
     public static <E> FunctionEx<Processor.Context, ITopic<E>> reliableTopicFn(String name) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -176,6 +183,7 @@ public final class SecuredFunctions {
             FunctionEx<? super Processor.Context, ? extends S> createContextFn
     ) {
         return new BiFunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -192,6 +200,7 @@ public final class SecuredFunctions {
 
     public static SupplierEx<Processor> streamSocketProcessorFn(String host, int port, String charset) {
         return new SupplierEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -212,6 +221,7 @@ public final class SecuredFunctions {
             BiFunctionEx<? super String, ? super String, ? extends T> mapOutputFn
     ) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -236,6 +246,7 @@ public final class SecuredFunctions {
             FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
 
         return new SupplierEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -255,6 +266,7 @@ public final class SecuredFunctions {
             Class<T> type
     ) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -273,6 +285,7 @@ public final class SecuredFunctions {
             String directory
     ) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -295,6 +308,7 @@ public final class SecuredFunctions {
             BiFunctionEx<? super String, ? super String, ?> mapOutputFn
     ) {
         return new SupplierEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -316,6 +330,7 @@ public final class SecuredFunctions {
             String host, int port, String charsetName
     ) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -340,6 +355,7 @@ public final class SecuredFunctions {
             LongSupplier clock
     ) {
         return new SupplierEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -361,6 +377,7 @@ public final class SecuredFunctions {
             BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -384,6 +401,7 @@ public final class SecuredFunctions {
             FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return new FunctionEx<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             @Override
