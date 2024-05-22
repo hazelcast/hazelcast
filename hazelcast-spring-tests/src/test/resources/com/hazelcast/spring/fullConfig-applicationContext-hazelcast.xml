@@ -986,6 +986,11 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:user-code-namespace-permission>
+                    <hz:vector-collection-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:vector-collection-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

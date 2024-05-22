@@ -996,6 +996,11 @@
                     <action>all</action>
                 </actions>
             </user-code-namespace-permission>
+            <vector-collection-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </vector-collection-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

@@ -932,6 +932,10 @@ hazelcast:
         - name: "*"
           actions:
             - all
+      vector-collection:
+        - name: "*"
+          actions:
+            - all
 
     client-block-unmapped-actions: true
 

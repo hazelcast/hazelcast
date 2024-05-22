@@ -41,7 +41,6 @@ import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.security.permission.UserCodeNamespacePermission;
 import com.hazelcast.security.permission.PNCounterPermission;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.security.permission.ReliableTopicPermission;
@@ -54,6 +53,8 @@ import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.security.permission.UserCodeDeploymentPermission;
+import com.hazelcast.security.permission.UserCodeNamespacePermission;
+import com.hazelcast.security.permission.VectorCollectionPermission;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -225,7 +226,11 @@ public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
         /**
          * User Code Namespace permissions
          */
-        USER_CODE_NAMESPACE("user-code-namespace-permission", UserCodeNamespacePermission.class);
+        USER_CODE_NAMESPACE("user-code-namespace-permission", UserCodeNamespacePermission.class),
+        /**
+         * Vector collection permissions
+         */
+        VECTOR_COLLECTION("vector-collection-permission", VectorCollectionPermission.class);
 
         private final String nodeName;
         private final String className;

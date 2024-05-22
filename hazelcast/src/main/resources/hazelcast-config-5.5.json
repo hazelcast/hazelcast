@@ -3000,7 +3000,8 @@
               "connector",
               "sql",
               "cpmap",
-              "user-code-namespace"
+              "user-code-namespace",
+              "vector-collection"
             ]
           },
           "properties": {
@@ -3095,6 +3096,7 @@
         "aggregate",
         "projection",
         "deploy",
+        "optimize",
         "submit",
         "cancel",
         "restart",
