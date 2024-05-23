@@ -78,7 +78,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     private static final int STRESS_TEST_RUN_SECONDS = 3;
     private static final int STRESS_TEST_THREAD_COUNT = 4;
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() throws Exception {

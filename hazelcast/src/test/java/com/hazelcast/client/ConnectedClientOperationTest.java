@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConnectedClientOperationTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {

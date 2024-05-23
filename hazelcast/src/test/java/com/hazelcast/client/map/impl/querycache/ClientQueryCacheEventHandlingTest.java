@@ -49,7 +49,7 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private IMap<Integer, Integer> map;
     private QueryCache<Integer, Integer> queryCache;

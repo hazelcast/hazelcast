@@ -33,8 +33,8 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientReplicatedMapStatisticsTest extends ReplicatedMapStatsTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
-    private String replicatedMapName = "replicatedMap";
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final String replicatedMapName = "replicatedMap";
     private HazelcastInstance client;
     private HazelcastInstance member;
 

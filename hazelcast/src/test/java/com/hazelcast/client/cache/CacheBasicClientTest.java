@@ -31,7 +31,7 @@ import javax.cache.spi.CachingProvider;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheBasicClientTest extends CacheBasicAbstractTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Override
     protected void onSetup() {

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 public class TestHazelcastFactoryTest extends HazelcastTestSupport {
 
     private HazelcastInstance server;
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
     public void setUp() throws Exception {

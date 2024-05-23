@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class LocalElasticSinkTest extends CommonElasticSinksTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {

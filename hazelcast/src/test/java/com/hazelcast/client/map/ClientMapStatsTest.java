@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapStatsTest extends LocalMapStatsTest {
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private HazelcastInstance client;
     private HazelcastInstance member;

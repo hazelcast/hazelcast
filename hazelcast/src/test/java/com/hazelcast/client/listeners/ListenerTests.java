@@ -43,7 +43,7 @@ import static junit.framework.TestCase.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ListenerTests extends ClientTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {

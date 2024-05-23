@@ -36,10 +36,10 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMultiMapStatsTest extends LocalMultiMapStatsTest {
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    private String mapName = "mapName";
-    private String mapNameSet = "mapNameSet";
+    private final String mapName = "mapName";
+    private final String mapNameSet = "mapNameSet";
     private HazelcastInstance client;
     private HazelcastInstance member;
 

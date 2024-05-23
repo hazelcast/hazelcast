@@ -33,7 +33,7 @@ import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheContextTest extends CacheContextTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
     @Override

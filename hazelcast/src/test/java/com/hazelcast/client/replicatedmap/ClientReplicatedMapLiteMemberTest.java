@@ -68,7 +68,7 @@ public class ClientReplicatedMapLiteMemberTest {
         return Arrays.asList(RoutingMode.UNISOCKET, RoutingMode.SMART, RoutingMode.SUBSET);
     }
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private ClientConfig newClientConfig() {
         return ConfigRoutingUtil.newClientConfig(routingMode);

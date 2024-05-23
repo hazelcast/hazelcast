@@ -45,7 +45,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance instance2;
     private HazelcastInstance instance1;
 
