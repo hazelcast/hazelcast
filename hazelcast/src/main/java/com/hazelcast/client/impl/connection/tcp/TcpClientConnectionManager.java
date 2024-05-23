@@ -21,6 +21,7 @@ import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.UnsupportedRoutingModeException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -520,7 +521,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
-        } catch (InvalidConfigurationException e) {
+        } catch (InvalidConfigurationException | UnsupportedRoutingModeException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
@@ -580,6 +581,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                  | InvalidConfigurationException e) {
             logger.warning("Stopped trying on the cluster: " + context.getClusterName()
                     + " reason: " + e.getMessage());
+        } catch (UnsupportedRoutingModeException e) {
+            connectionProcessListenerRunner.onClusterConnectionFailed(context.getClusterName());
+            logger.warning("Stopped trying on the cluster: " + context.getClusterName()
+                    + " reason: " + e.getMessage());
+            throw new InvalidConfigurationException(e.getMessage());
         }
 
         connectionProcessListenerRunner.onClusterConnectionFailed(context.getClusterName());

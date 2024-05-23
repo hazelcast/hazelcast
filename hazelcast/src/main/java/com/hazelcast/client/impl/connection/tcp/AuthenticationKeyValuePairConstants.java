@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
+import com.hazelcast.client.UnsupportedRoutingModeException;
 import com.hazelcast.client.config.RoutingStrategy;
 import com.hazelcast.client.config.SubsetRoutingConfig;
 
@@ -49,7 +50,7 @@ public final class AuthenticationKeyValuePairConstants {
                     + " cannot be supported because the server has not sent the required information. "
                     + "Subset routing is an Enterprise feature. "
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
-            throw new UnsupportedOperationException(msg);
+            throw new UnsupportedRoutingModeException(msg);
         }
 
         return true;
