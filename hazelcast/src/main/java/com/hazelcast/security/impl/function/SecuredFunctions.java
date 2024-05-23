@@ -224,6 +224,10 @@ public final class SecuredFunctions {
             @Serial
             private static final long serialVersionUID = 1L;
 
+            /**
+              The stream returned by Files.lines() is closed in ReadFilesP#processFile()
+             */
+            @SuppressWarnings("resource")
             @Override
             public Stream<T> applyEx(Path path) throws Exception {
                 String fileName = path.getFileName().toString();
@@ -333,6 +337,10 @@ public final class SecuredFunctions {
             @Serial
             private static final long serialVersionUID = 1L;
 
+            /**
+             * The Socket is closed in SinkProcessors#writeSocketP()
+             */
+            @SuppressWarnings("resource")
             @Override
             public BufferedWriter applyEx(Processor.Context context) throws Exception {
                 return new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName));

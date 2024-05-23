@@ -44,7 +44,7 @@ public class DependencyReducedPomIT {
     @Test
     public void testZeroCompileScopedDeps() throws Exception {
         DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
-        Document xmlDocument = null;
+        Document xmlDocument;
         try (FileInputStream fis = new FileInputStream("dependency-reduced-pom.xml")) {
             xmlDocument = builder.parse(fis);
         }
@@ -52,7 +52,7 @@ public class DependencyReducedPomIT {
         xPath.setNamespaceContext(new NamespaceContext() {
 
             @Override
-            public Iterator getPrefixes(String namespaceURI) {
+            public Iterator<String> getPrefixes(String namespaceURI) {
                 return null;
             }
 
