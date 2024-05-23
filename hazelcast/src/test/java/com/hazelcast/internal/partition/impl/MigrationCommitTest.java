@@ -29,14 +29,12 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationI
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,10 +64,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationCommitTest extends HazelcastTestSupport {
-
-    @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
-
     private static final int PARTITION_COUNT = 2;
 
     private TestHazelcastInstanceFactory factory;
