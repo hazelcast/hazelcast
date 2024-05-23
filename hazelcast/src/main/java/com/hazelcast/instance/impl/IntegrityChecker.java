@@ -23,9 +23,9 @@ import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static java.lang.String.format;
@@ -61,13 +61,16 @@ public final class IntegrityChecker {
 
         logger.info(INTEGRITY_CHECKER_IS_ENABLED);
         final long start = System.nanoTime();
-        final List<String> classNames = new ClassGraph()
+        final List<String> classNames;
+        try (ScanResult scanResult = new ClassGraph()
                 .enableClassInfo()
-                .scan()
-                .getClassesImplementing(DataSerializerHook.class)
-                .stream()
-                .map(ClassInfo::getName)
-                .collect(Collectors.toList());
+                .scan()) {
+            classNames = scanResult
+                    .getClassesImplementing(DataSerializerHook.class)
+                    .stream()
+                    .map(ClassInfo::getName)
+                    .toList();
+        }
 
         final long scanTime = (System.nanoTime() - start) / 1000_000L;
         logger.info(format("Integrity Check scan finished in %d milliseconds", scanTime));
