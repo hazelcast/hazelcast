@@ -577,24 +577,26 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         IQueue<VersionedObject<String>> queue1 = instance1.getQueue(name);
         IQueue<VersionedObject<String>> queue2 = instance2.getQueue(name);
 
-        for (int i = 0; i < 4; i++) {
-            queue1.offer(new VersionedObject<>("item" + i, i));
+        int iterations = 10;
+        int drainMaxElements = 4;
+        for (int i = 0; i < iterations; i++) {
+            // Reverse version order to account for priority heap sorting in priority queues
+            queue1.offer(new VersionedObject<>("item" + i, iterations - i));
         }
+        assertSizeEventually(iterations, queue2);
+        assertIterableEquals(queue2, queue1.toArray());
 
-        assertSizeEventually(4, queue2);
-        assertIterableEquals(queue2,
-                new VersionedObject<>("item0", 0),
-                new VersionedObject<>("item1", 1),
-                new VersionedObject<>("item2", 2),
-                new VersionedObject<>("item3", 3));
-
-        List<VersionedObject<String>> list = new ArrayList<>();
-        queue1.drainTo(list, 2);
+        List<VersionedObject<String>> drained = new ArrayList<>();
+        queue1.drainTo(drained, drainMaxElements);
+        List<VersionedObject<String>> remaining = List.copyOf(queue1);
 
         instance1.shutdown();
 
-        assertSizeEventually(2, queue2);
-        assertIterableEquals(queue2, new VersionedObject<>("item2", 2), new VersionedObject<>("item3", 3));
+        assertSizeEventually(iterations - drainMaxElements, queue2);
+        for (VersionedObject<String> drainedElement : drained) {
+            assertNotContains(queue2, drainedElement);
+        }
+        assertIterableEquals(queue2, remaining.toArray());
     }
 
     @Test
@@ -685,7 +687,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    private static QueueContainer getQueueContainer(IQueue<String> producer) {
+    private static QueueContainer getQueueContainer(IQueue<?> producer) {
         QueueService queueService = (QueueService) ((QueueProxyImpl) producer).getService();
         QueueContainer container = queueService.getExistingContainerOrNull(producer.getName());
         return container;
