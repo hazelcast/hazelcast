@@ -68,6 +68,7 @@ import static com.hazelcast.internal.util.phonehome.CloudInfoProvider.KUBERNETES
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE;
 import static com.hazelcast.test.Accessors.getNode;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -316,28 +317,22 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testForViridian() {
-        Map<String, String> env = ENVIRONMENT.get();
-        env.put(CLOUD_ENVIRONMENT_ENV_VAR, "SERVERLESS");
-
+    public void testForViridian() throws Exception {
         stubUrls("200", "200", "4XX", "4XX");
-        phoneHome.phoneHome(false);
+        withEnvironmentVariables(CLOUD_ENVIRONMENT_ENV_VAR, "SERVERLESS")
+                .execute(() -> phoneHome.phoneHome(false));
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("vrd" /*VIRIDIAN*/, "SERVERLESS")));
-        env.remove(CLOUD_ENVIRONMENT_ENV_VAR);
     }
 
     @Test
-    public void testDownloadIdOverriddenWithEnvVar() {
-        Map<String, String> env = ENVIRONMENT.get();
-        env.put(PARDOT_ID_ENV_VAR, "1234");
-
-        phoneHome.phoneHome(false);
+    public void testDownloadIdOverriddenWithEnvVar() throws Exception {
+        withEnvironmentVariables(PARDOT_ID_ENV_VAR, "1234")
+                .execute(() -> phoneHome.phoneHome(false));
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("p" /*HAZELCAST_DOWNLOAD_ID*/, "1234")));
-        env.remove(PARDOT_ID_ENV_VAR);
     }
 
     static ContainsPattern containingParam(String key, boolean value) {

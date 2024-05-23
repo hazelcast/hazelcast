@@ -71,11 +71,9 @@ import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -86,7 +84,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -102,7 +99,6 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -119,8 +115,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Base class for Hazelcast tests which provides a big number of convenient test methods.
@@ -143,10 +137,6 @@ public abstract class HazelcastTestSupport {
             "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
-
-    /** Mutable map of environment variables. Do not modify environment variables in parallel tests. */
-    public static final Supplier<Map<String, String>> ENVIRONMENT =
-            memoize(HazelcastTestSupport::getEnvironmentVariables);
 
     @ClassRule
     public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
@@ -1483,67 +1473,6 @@ public abstract class HazelcastTestSupport {
                 field.setAccessible(true);
             }
             return (T) field.get(object);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
-    }
-
-    public static void setFieldValue(Object object, String fieldName, Object value) {
-        setFieldValue(object.getClass(), object, fieldName, value);
-    }
-
-    public static void setFieldValue(Class<?> clazz, String fieldName, Object value) {
-        setFieldValue(clazz, null, fieldName, value);
-    }
-
-    private static void setFieldValue(Class<?> clazz, Object object, String fieldName, Object value) {
-        try {
-            Field field = clazz.getDeclaredField(fieldName);
-            if (!field.canAccess(object) || Modifier.isFinal(field.getModifiers())) {
-                // Accessible final fields need this to ignore the old field accessor in Field#getFieldAccessor(Object).
-                // This makes final instance fields non-final; static final fields are treated in the following check.
-                field.setAccessible(true);
-            }
-            if (object == null && Modifier.isFinal(field.getModifiers())) {
-                // See https://bugs.openjdk.org/browse/JDK-8210522 for why Field.class.getDeclaredField("modifiers") doesn't work.
-                Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-                getDeclaredFields0.setAccessible(true);
-                Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-                Field modifiersField = Arrays.stream(fields).filter(f -> f.getName().equals("modifiers")).findAny().orElseThrow();
-                modifiersField.setAccessible(true);
-                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-            }
-            field.set(object, value);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
-    }
-
-    /**
-     * @implNote {@link java.lang.ProcessEnvironment} has different implementations in
-     * <a href="https://github.com/openjdk/jdk/blob/master/src/java.base/unix/classes/java/lang/ProcessEnvironment.java">
-     * Unix</a> and
-     * <a href="https://github.com/openjdk/jdk/blob/master/src/java.base/windows/classes/java/lang/ProcessEnvironment.java">
-     * Windows</a>. Requires the following JVM arguments: <table>
-     * <tr><td> In Windows <td> {@code --add-opens java.base/java.lang=ALL-UNNAMED}
-     *                     <br> {@code --add-opens java.base/java.lang.reflect=ALL-UNNAMED}
-     * <tr><td> In Unix    <td> {@code --add-opens java.base/java.util=ALL-UNNAMED}
-     */
-    @SuppressWarnings("unchecked")
-    private static Map<String, String> getEnvironmentVariables() {
-        try {
-            if (OS.isWindows()) {
-                Class<?> environmentClass = Class.forName("java.lang.ProcessEnvironment");
-                TreeMap<String, String> environment = getFieldValue(environmentClass, "theCaseInsensitiveEnvironment");
-                setFieldValue(environmentClass, "theEnvironment",
-                        when(((HashMap<String, String>) mock(environmentClass)).clone())
-                                .then(i -> environment.clone()).getMock());
-                setFieldValue(environmentClass, "theUnmodifiableEnvironment",
-                        Collections.unmodifiableMap(environment));
-                return environment;
-            } else {
-                return getFieldValue(System.getenv(), "m");
-            }
         } catch (Exception e) {
             throw sneakyThrow(e);
         }

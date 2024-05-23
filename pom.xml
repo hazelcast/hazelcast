@@ -97,8 +97,6 @@
             --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
-            --add-opens java.base/java.lang.reflect=${hazelcast.module.name}
-            --add-opens java.base/java.util=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
         </javaStandardModuleArgs>
         <javaModuleArgs>${javaStandardModuleArgs}</javaModuleArgs>
