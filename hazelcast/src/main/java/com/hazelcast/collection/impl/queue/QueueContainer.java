@@ -625,12 +625,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        long current = Clock.currentTimeMillis();
-        for (int i = 0; i < maxSizeParam; i++) {
-            QueueItem item = getItemQueue().poll();
-            // for stats
-            age(item, current);
-        }
         if (maxSizeParam != 0) {
             scheduleEvictionIfEmpty();
         }
@@ -638,9 +632,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public void mapDrainIterator(int maxSize, Map<Long, Data> map) {
-        Iterator<QueueItem> iterator = getItemQueue().iterator();
+        long current = Clock.currentTimeMillis();
         for (int i = 0; i < maxSize; i++) {
-            QueueItem item = iterator.next();
+            QueueItem item = getItemQueue().peek();
+            if (item == null) {
+                return;
+            }
             if (store.isEnabled() && item.getSerializedObject() == null) {
                 try {
                     load(item);
@@ -649,6 +646,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 }
             }
             map.put(item.getItemId(), item.getSerializedObject());
+            getItemQueue().remove(item);
+            // for stats
+            age(item, current);
         }
     }
 
