@@ -28,7 +28,7 @@ interface ConfigProvider {
     Map<String, String> properties();
 
     /**
-     * @return Returns a human readable identifier of the configuration source.
+     * @return Returns a human-readable identifier of the configuration source.
      */
     String name();
 }

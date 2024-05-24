@@ -137,7 +137,7 @@ public final class MulticastService implements Runnable {
             Boolean loopbackModeEnabled = multicastConfig.getLoopbackModeEnabled();
             if (loopbackModeEnabled != null) {
                 // setting loopbackmode is just a hint - and the argument means "disable"!
-                // to check the real value value we call getLoopbackMode() (and again - return value means "disabled")
+                // to check the real value we call getLoopbackMode() (and again - return value means "disabled")
                 multicastSocket.setLoopbackMode(!loopbackModeEnabled);
             }
             // If LoopBack mode is not enabled (i.e. getLoopbackMode return true) and bind address is a loopback one,

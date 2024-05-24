@@ -114,7 +114,7 @@ public final class Versions {
                 () -> MessageFormat.format("Failed to find matching constant for version {0}", buildPropertiesVersion));
 
         PREVIOUS_CLUSTER_VERSION = Objects.requireNonNull(previousHighest,
-                () -> MessageFormat.format("Failed to find version preceeding {0}", CURRENT_CLUSTER_VERSION));
+                () -> MessageFormat.format("Failed to find version preceding {0}", CURRENT_CLUSTER_VERSION));
     }
 
     private Versions() {

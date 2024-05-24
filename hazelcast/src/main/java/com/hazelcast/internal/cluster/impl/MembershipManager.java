@@ -970,7 +970,7 @@ public class MembershipManager {
                         latestMembersView = membersView;
 
                         // If we discover a new member via a fetched member list, we should also ask for its members view.
-                        // there are some new members added to the futures map. lets wait for their results.
+                        // there are some new members added to the futures map. let's wait for their results.
                         done &= !fetchMembersViewFromNewMembers(membersView, futures);
                     }
                 } catch (InterruptedException ignored) {

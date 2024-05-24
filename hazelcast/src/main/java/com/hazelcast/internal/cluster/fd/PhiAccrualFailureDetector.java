@@ -183,7 +183,7 @@ public class PhiAccrualFailureDetector implements FailureDetector {
      * Holds the heartbeat statistics for a specific member.
      * It is capped by the number of samples specified in `maxSampleSize`.
      *
-     * The stats (mean, variance, stdDeviation) are not defined for
+     * The stats (mean, variance, stdDeviation) are not defined
      * for empty HeartbeatHistory, i.e. throws ArithmeticException.
      */
     private static class HeartbeatHistory {

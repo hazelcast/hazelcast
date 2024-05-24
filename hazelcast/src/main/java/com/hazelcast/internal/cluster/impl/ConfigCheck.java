@@ -83,7 +83,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
      * @param found the {@link ConfigCheck} to compare this to
      * @return true if compatible. False if part of another cluster.
      * @throws ConfigMismatchException if the configuration is not compatible.
-     *                                 An exception is thrown so we can pass a nice message.
+     *                                 An exception is thrown, so we can pass a nice message.
      */
     public boolean isCompatible(ConfigCheck found) {
         // check cluster properties.

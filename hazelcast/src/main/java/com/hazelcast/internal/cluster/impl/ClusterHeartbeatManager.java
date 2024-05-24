@@ -239,7 +239,7 @@ public class ClusterHeartbeatManager {
                 if (clusterService.getThisUuid().equals(receiverUuid)) {
                     logger.fine("Ignoring heartbeat of sender: " + senderMembersViewMetadata + ", because node is not joined!");
                 } else {
-                    // we know that sender version is 3.9 so we send explicit suspicion back even if we are not joined...
+                    // we know that sender version is 3.9, so we send explicit suspicion back even if we are not joined...
                     logger.fine("Sending explicit suspicion to " + senderAddress + " for heartbeat " + senderMembersViewMetadata
                             + ", because this node has received an invalid heartbeat before it joins to the cluster");
                     OperationService operationService = nodeEngine.getOperationService();
@@ -457,7 +457,7 @@ public class ClusterHeartbeatManager {
                         timeToString(lastHeartbeat), timeToString(now), clockJump));
 
                 // We only set cluster clock, if clock jumps more than threshold.
-                // If the last cluster-time diff we've seen is significantly different than what we read now,
+                // If the last cluster-time diff we've seen is significantly different from what we read now,
                 // that means, it's already adjusted by master heartbeat. Then don't update the cluster time again.
                 long currentClusterTimeDiff = clusterClock.getClusterTimeDiff();
                 if (Math.abs(lastClusterTimeDiff - currentClusterTimeDiff) < CLOCK_JUMP_THRESHOLD) {
@@ -730,6 +730,7 @@ public class ClusterHeartbeatManager {
             super(member);
         }
 
+        @Override
         public void run() {
             Address address = member.getAddress();
             logger.fine(format("%s will ping %s", node.getThisAddress(), address));
