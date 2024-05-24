@@ -164,7 +164,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, output, true);
-            assertTrue("consumed different number of items than expected", output.size() == 0);
+            assertTrue("consumed different number of items than expected", output.isEmpty());
         }, 3);
 
         assertTrueEventually(() -> {
@@ -204,7 +204,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueFiveSeconds(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertTrue("consumed different number of items than expected", actual.size() == 0);
+            assertTrue("consumed different number of items than expected", actual.isEmpty());
         });
 
         // add one item to each partition

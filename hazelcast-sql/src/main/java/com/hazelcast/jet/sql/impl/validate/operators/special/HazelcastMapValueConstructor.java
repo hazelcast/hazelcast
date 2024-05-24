@@ -78,7 +78,7 @@ public class HazelcastMapValueConstructor extends HazelcastSpecialOperator {
                 callBinding.getScope(),
                 callBinding.operands()
         );
-        if (argTypes.size() == 0) {
+        if (argTypes.isEmpty()) {
             throw callBinding.newValidationError(RESOURCE.mapRequiresTwoOrMoreArgs());
         }
         if (argTypes.size() % 2 > 0) {

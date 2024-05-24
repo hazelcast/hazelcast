@@ -163,9 +163,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     /**
-     * Indicates that instance is not shutting down or it has not already shut down
+     * Indicates that instance is not shutting down, or it has not already shut down
      *
-     * @return true if instance is not shutting down or it has not already shut down
+     * @return true if instance is not shutting down, or it has not already shut down
      */
     public boolean isRunning() {
         return node.isRunning();
@@ -438,10 +438,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HazelcastInstance)) {
+        if (!(o instanceof HazelcastInstance that)) {
             return false;
         }
-        HazelcastInstance that = (HazelcastInstance) o;
         return Objects.equals(this.name, that.getName());
     }
 

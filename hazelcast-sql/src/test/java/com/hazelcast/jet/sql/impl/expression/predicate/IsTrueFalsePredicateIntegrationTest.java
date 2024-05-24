@@ -297,7 +297,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     private Set<Integer> keys(String sql, Object... params) {
         List<SqlRow> rows = execute(sql, params);
 
-        if (rows.size() == 0) {
+        if (rows.isEmpty()) {
             return Collections.emptySet();
         }
 

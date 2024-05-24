@@ -65,7 +65,7 @@ public class InterfacesTest extends HazelcastTestSupport {
                 .addInterface(interfaceC);
         assertTrue(interfaces.getInterfaces().size() == 3);
         interfaces.clear();
-        assertTrue(interfaces.getInterfaces().size() == 0);
+        assertTrue(interfaces.getInterfaces().isEmpty());
     }
 
     @Test

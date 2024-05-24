@@ -83,7 +83,7 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
 
         @Override
         public boolean hasNext() {
-            if (resultSets.size() == 0) {
+            if (resultSets.isEmpty()) {
                 return false;
             }
             if (currentIterator != null && currentIterator.hasNext()) {
@@ -100,7 +100,7 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
 
         @Override
         public QueryableEntry next() {
-            if (resultSets.size() == 0) {
+            if (resultSets.isEmpty()) {
                 return null;
             }
             if (currentIterator != null && currentIterator.hasNext()) {

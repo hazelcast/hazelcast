@@ -236,7 +236,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     ) {
         List<SqlRow> rows = execute(sql, params);
         assertEquals(expectedResults.length, rows.size());
-        if (rows.size() == 0) {
+        if (rows.isEmpty()) {
             return;
         }
 

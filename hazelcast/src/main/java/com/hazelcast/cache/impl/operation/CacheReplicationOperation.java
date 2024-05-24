@@ -216,7 +216,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             for (int j = 0; j < subCount + 1; j++) {
                 Data key = IOUtil.readData(in);
                 // Empty data received so reading can be stopped here since
-                // since the real object subCount might be different from
+                //  the real object subCount might be different from
                 // the number on the stream due to found expired entries
                 if (key == null || key.dataSize() == 0) {
                     break;

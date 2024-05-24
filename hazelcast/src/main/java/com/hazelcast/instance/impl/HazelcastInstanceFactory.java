@@ -316,7 +316,7 @@ public final class HazelcastInstanceFactory {
         if (future != null && future.isSet()) {
             future.get().original = null;
         }
-        if (INSTANCE_MAP.size() == 0) {
+        if (INSTANCE_MAP.isEmpty()) {
             ManagementService.shutdown(instance.getName());
         }
     }
