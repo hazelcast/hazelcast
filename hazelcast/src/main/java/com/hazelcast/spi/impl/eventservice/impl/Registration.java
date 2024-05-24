@@ -99,10 +99,9 @@ public class Registration implements EventRegistration, Versioned {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Registration)) {
+        if (!(o instanceof Registration that)) {
             return false;
         }
-        Registration that = (Registration) o;
         return id.equals(that.id);
     }
 

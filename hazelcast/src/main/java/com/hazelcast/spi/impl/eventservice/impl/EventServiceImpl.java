@@ -91,14 +91,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Service responsible for routing and dispatching local and remote events and keeping track of listener
  * registrations. Local events are events published on a local subscriber (the subscriber is on this node)
  * and remote events are published on a remote subscriber (the subscriber is on a different node and the
- * event is sent to that node). The remote events are generally asnychronous meaning that we send the event
+ * event is sent to that node). The remote events are generally asynchronous meaning that we send the event
  * and don't wait for the response. The exception to this is that every {@link #eventSyncFrequency} remote
- * event is sent as an operation and we wait for it to be submitted to the remote queue.
+ * event is sent as an operation, and we wait for it to be submitted to the remote queue.
  * <p>
  * This implementation keeps registrations grouped into {@link EventServiceSegment}s. Each segment is
  * responsible for a single service (e.g. map service, cluster service, proxy service).
  * <p>
- * The events are processed on a {@link StripedExecutor}. The executor has a fixed queue and thread size
+ * The events are processed on a {@link StripedExecutor}. The executor has a fixed queue and thread size,
  * and it is shared between all events meaning that it is important to configure it correctly. Inadequate thread
  * count sizing can lead to wasted threads or low throughput. Inadequate queue size can lead
  * to {@link OutOfMemoryError} or events being dropped when the queue is full.
@@ -106,7 +106,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * define your custom ordering. Events with the same order key will be processed by the same thread on
  * the executor.
  * <p>
- * This order can still be broken in some cases. This is possible because remote events are asynchronous
+ * This order can still be broken in some cases. This is possible because remote events are asynchronous,
  * and we don't wait for the response before publishing the next event. The previously published
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
@@ -139,7 +139,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      */
     private static final int SEND_RETRY_COUNT = 50;
     /**
-     * How often failures are logged with {@link Level#WARNING}. Otherwise the failures are
+     * How often failures are logged with {@link Level#WARNING}. Otherwise, the failures are
      * logged with a lower log level.
      */
     private static final int WARNING_LOG_FREQUENCY = 1000;
@@ -817,7 +817,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         long total = totalFailures.get();
 
         // it can happen that 2 threads at the same conclude that the level should be warn because of the
-        // non atomic int/get. This is an acceptable trade of since it is unlikely to happen and you only get
+        // non-atomic int/get. This is an acceptable trade of since it is unlikely to happen, and you only get
         // additional warning under log as a side effect.
         Level level = total % WARNING_LOG_FREQUENCY == 0
                 ? Level.WARNING : Level.FINEST;
