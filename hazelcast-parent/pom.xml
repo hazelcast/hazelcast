@@ -153,7 +153,6 @@
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <confluent.version>7.6.1</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
-        <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <http.core.version>4.4.16</http.core.version>
         <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
@@ -603,9 +602,9 @@
                 <version>${reflections.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <version>${findbugs.annotations.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>4.8.5</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
