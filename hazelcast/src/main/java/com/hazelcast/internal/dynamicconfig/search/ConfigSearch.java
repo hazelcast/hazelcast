@@ -411,7 +411,7 @@ public final class ConfigSearch {
                             @Nonnull final ConfigurationService configurationService,
                             @Nonnull final ConfigPatternMatcher configPatternMatcher, boolean isStaticFirst) {
         return isStaticFirst
-                ? new StaticFirstSearcher<T>(configurationService, staticConfig, configPatternMatcher)
-                : new DynamicFirstSearcher<T>(configurationService, staticConfig, configPatternMatcher);
+                ? new StaticFirstSearcher<>(configurationService, staticConfig, configPatternMatcher)
+                : new DynamicFirstSearcher<>(configurationService, staticConfig, configPatternMatcher);
     }
 }

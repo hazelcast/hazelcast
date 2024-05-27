@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * The response for the event journal subcription. This includes
+ * The response for the event journal subscription. This includes
  * the sequence IDs of the newest and oldest event in the event
  * journal from which new events can be read.
  * Keep in mind that these sequence IDs may be overwritten at any point

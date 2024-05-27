@@ -44,7 +44,7 @@ public class IteratorWithCursorManager<T> {
     }
 
     /**
-     * Creates a new iterator with the cursor id if it already does not exists.
+     * Creates a new iterator with the cursor id if it already does not exist.
      * @param items the items to iterate over
      * @param iteratorId id of the iterator
      */

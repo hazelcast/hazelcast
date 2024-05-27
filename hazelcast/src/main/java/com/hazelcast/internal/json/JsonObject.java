@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -68,6 +69,7 @@ import java.util.List;
 @SerializableByConvention
 public class JsonObject extends JsonValue implements Iterable<Member> {
 
+  @Serial
   private static final long serialVersionUID = -1139160206104439809L;
 
   private final List<String> names;
@@ -681,6 +683,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
         return new Member(name, value);
       }
 
+      @Override
       public void remove() {
         throw new UnsupportedOperationException();
       }
@@ -748,6 +751,7 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
     return names.lastIndexOf(name);
   }
 
+  @Serial
   private void readObject(ObjectInputStream inputStream)
       throws IOException, ClassNotFoundException
   {
