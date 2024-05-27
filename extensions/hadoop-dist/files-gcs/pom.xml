@@ -83,7 +83,6 @@
         <dependency>
             <groupId>com.google.api</groupId>
             <artifactId>api-common</artifactId>
-            <version>2.30.0</version>
         </dependency>
         <dependency>
             <groupId>io.opencensus</groupId>

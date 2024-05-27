@@ -105,7 +105,6 @@
         <classgraph.version>4.8.172</classgraph.version>
         <debezium.version>1.9.8.Final</debezium.version>
         <grpc.version>1.60.0</grpc.version>
-        <guava.version>33.2.0-jre</guava.version>
         <hadoop.version>3.3.6</hadoop.version>
         <h2.version>2.2.224</h2.version>
         <gson.version>2.10.1</gson.version>
@@ -257,27 +256,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>com.google.auth</groupId>
-                <artifactId>google-auth-library-bom</artifactId>
-                <version>1.23.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.google.http-client</groupId>
-                <artifactId>google-http-client-bom</artifactId>
-                <version>1.44.2</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.google.oauth-client</groupId>
-                <artifactId>google-oauth-client-bom</artifactId>
-                <version>1.36.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -385,11 +363,6 @@
                 <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
@@ -438,11 +411,6 @@
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
                 <version>1.1.10.5</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.api.grpc</groupId>
-                <artifactId>proto-google-common-protos</artifactId>
-                <version>2.39.0</version>
             </dependency>
             <dependency>
                 <groupId>com.microsoft.sqlserver</groupId>
@@ -495,11 +463,6 @@
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>stax2-api</artifactId>
                 <version>4.2.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -582,11 +545,6 @@
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
                 <version>1.32.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.api.grpc</groupId>
-                <artifactId>proto-google-iam-v1</artifactId>
-                <version>1.34.0</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
